@@ -100,7 +100,7 @@ export default function Step5_SpacingRadius() {
                   onClick={() => applyBase(p.value)}
                   className={`px-2.5 py-1 rounded text-xs transition-all ${
                     baseUnit === p.value
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-violet-600 text-white'
                       : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-neutral-600'
                   }`}
                 >
@@ -151,7 +151,7 @@ export default function Step5_SpacingRadius() {
                     type="text"
                     value={val}
                     onChange={(e) => handleSpacingInput(step, e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-blue-500 rounded px-2 py-1 text-xs font-mono text-white outline-none transition-colors text-right"
+                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-violet-500 rounded px-2 py-1 text-xs font-mono text-white outline-none transition-colors text-right"
                   />
                 </div>
               </motion.div>
@@ -174,7 +174,7 @@ export default function Step5_SpacingRadius() {
                 onClick={() => applyRadiusPreset(preset)}
                 className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 ${
                   isSelected
-                    ? 'bg-neutral-800 ring-2 ring-blue-500/50 border border-blue-500/30'
+                    ? 'bg-neutral-800 ring-2 ring-violet-500/50 border border-violet-500/30'
                     : 'bg-neutral-900 border border-neutral-800 hover:border-neutral-600'
                 }`}
               >
@@ -228,7 +228,7 @@ export default function Step5_SpacingRadius() {
                   type="text"
                   value={radius[step] ?? '0px'}
                   onChange={(e) => setRadius({ ...radius, [step]: e.target.value })}
-                  className="bg-neutral-900 border border-neutral-800 focus:border-blue-500 rounded-lg px-2 py-1.5 text-xs font-mono text-white outline-none transition-colors text-center"
+                  className="bg-neutral-900 border border-neutral-800 focus:border-violet-500 rounded-lg px-2 py-1.5 text-xs font-mono text-white outline-none transition-colors text-center"
                 />
                 {/* Mini shape preview */}
                 <div

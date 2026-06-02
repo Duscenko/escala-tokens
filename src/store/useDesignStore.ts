@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -6,13 +7,12 @@ interface ColorScale {
 
 interface TypographyTokens {
   fontFamily: string
+  headingFontFamily: string
   sizes: Record<string, string>
   weights: Record<string, number>
 }
 
 // ── Fixed neutral scales from the Figma design system ─────────────────────
-// These are the foundational gray scales. Everything in UI (text, fields,
-// backgrounds, dividers) maps to one of these two neutral palettes.
 export const GRAY_LIGHT_SCALE: ColorScale = {
   1: '#fdfdfd', 2: '#fafafa', 3: '#f5f5f5',  4: '#e9eaeb',
   5: '#d5d7da', 6: '#a4a7ae', 7: '#717680',  8: '#535862',
@@ -79,121 +79,131 @@ interface DesignStore {
   // Step 7 — Selected atoms
   selectedAtoms: string[]
   toggleAtom: (atom: string) => void
+  setSelectedAtoms: (atoms: string[]) => void
 
   // Current step
   currentStep: number
   setCurrentStep: (step: number) => void
 }
 
-export const useDesignStore = create<DesignStore>((set) => ({
-  projectName: '',
-  setProjectName: (name) => set({ projectName: name }),
+export const useDesignStore = create<DesignStore>()(
+  persist(
+    (set) => ({
+      projectName: '',
+      setProjectName: (name) => set({ projectName: name }),
 
-  // Brand
-  primaryColor: '#7f56d9',
-  primaryScale: {},
-  setPrimaryColor: (hex) => set({ primaryColor: hex }),
-  setPrimaryScale: (scale) => set({ primaryScale: scale }),
+      // Brand
+      primaryColor: '#7f56d9',
+      primaryScale: {},
+      setPrimaryColor: (hex) => set({ primaryColor: hex }),
+      setPrimaryScale: (scale) => set({ primaryScale: scale }),
 
-  // Error (Figma base: error-500 = #f04438)
-  errorColor: '#f04438',
-  errorScale: {},
-  setErrorColor: (hex) => set({ errorColor: hex }),
-  setErrorScale: (scale) => set({ errorScale: scale }),
+      // Error (Figma base: error-500 = #f04438)
+      errorColor: '#f04438',
+      errorScale: {},
+      setErrorColor: (hex) => set({ errorColor: hex }),
+      setErrorScale: (scale) => set({ errorScale: scale }),
 
-  // Warning (Figma base: warning-500 = #f79009)
-  warningColor: '#f79009',
-  warningScale: {},
-  setWarningColor: (hex) => set({ warningColor: hex }),
-  setWarningScale: (scale) => set({ warningScale: scale }),
+      // Warning (Figma base: warning-500 = #f79009)
+      warningColor: '#f79009',
+      warningScale: {},
+      setWarningColor: (hex) => set({ warningColor: hex }),
+      setWarningScale: (scale) => set({ warningScale: scale }),
 
-  // Success (Figma base: success-500 = #17b26a)
-  successColor: '#17b26a',
-  successScale: {},
-  setSuccessColor: (hex) => set({ successColor: hex }),
-  setSuccessScale: (scale) => set({ successScale: scale }),
+      // Success (Figma base: success-500 = #17b26a)
+      successColor: '#17b26a',
+      successScale: {},
+      setSuccessColor: (hex) => set({ successColor: hex }),
+      setSuccessScale: (scale) => set({ successScale: scale }),
 
-  // Info (Figma base: blue-500 = #2e90fa)
-  infoColor: '#2e90fa',
-  infoScale: {},
-  setInfoColor: (hex) => set({ infoColor: hex }),
-  setInfoScale: (scale) => set({ infoScale: scale }),
+      // Info (Figma base: blue-500 = #2e90fa)
+      infoColor: '#2e90fa',
+      infoScale: {},
+      setInfoColor: (hex) => set({ infoColor: hex }),
+      setInfoScale: (scale) => set({ infoScale: scale }),
 
-  semanticTokens: {
-    // ── Text ──────────────────────────────────────────────────
-    'text-primary': '', 'text-primary_on-brand': '',
-    'text-secondary': '', 'text-secondary_hover': '', 'text-secondary_on-brand': '',
-    'text-tertiary': '', 'text-tertiary_hover': '', 'text-tertiary_on-brand': '',
-    'text-quaternary': '', 'text-quaternary_on-brand': '',
-    'text-white': '', 'text-disabled': '',
-    'text-placeholder': '', 'text-placeholder_subtle': '',
-    'text-brand-primary': '',
-    'text-brand-secondary': '', 'text-brand-secondary_hover': '',
-    'text-brand-tertiary': '', 'text-brand-tertiary_alt': '',
-    'text-error-primary': '', 'text-warning-primary': '', 'text-success-primary': '', 'text-info-primary': '',
-    // ── Border ────────────────────────────────────────────────
-    'border-primary': '',
-    'border-secondary': '', 'border-secondary_alt': '',
-    'border-tertiary': '',
-    'border-disabled': '', 'border-disabled_subtle': '',
-    'border-brand': '', 'border-brand_alt': '',
-    'border-error': '', 'border-error_subtle': '',
-    // ── Foreground ────────────────────────────────────────────
-    'fg-primary': '',
-    'fg-secondary': '', 'fg-secondary_hover': '',
-    'fg-tertiary': '', 'fg-tertiary_hover': '',
-    'fg-quaternary': '', 'fg-quaternary_hover': '',
-    'fg-white': '', 'fg-disabled': '', 'fg-disabled_subtle': '',
-    'fg-brand-primary': '', 'fg-brand-primary_alt': '',
-    'fg-brand-secondary': '', 'fg-brand-secondary_alt': '',
-    'fg-error-primary': '', 'fg-error-secondary': '',
-    'fg-warning-primary': '', 'fg-warning-secondary': '',
-    'fg-success-primary': '', 'fg-success-secondary': '',
-    'fg-info-primary': '', 'fg-info-secondary': '',
-    // ── Background ────────────────────────────────────────────
-    'bg-primary': '', 'bg-primary_alt': '', 'bg-primary_hover': '',
-    'bg-primary-solid': '',
-    'bg-secondary': '', 'bg-secondary_alt': '', 'bg-secondary_hover': '', 'bg-secondary_subtle': '',
-    'bg-secondary-solid': '',
-    'bg-tertiary': '', 'bg-quaternary': '',
-    'bg-active': '', 'bg-disabled': '', 'bg-disabled_subtle': '', 'bg-overlay': '',
-    'bg-brand-primary': '', 'bg-brand-primary_alt': '',
-    'bg-brand-secondary': '',
-    'bg-brand-solid': '', 'bg-brand-solid_hover': '',
-    'bg-brand-section': '', 'bg-brand-section_subtle': '',
-    'bg-error-primary': '', 'bg-error-secondary': '', 'bg-error-solid': '',
-    'bg-warning-primary': '', 'bg-warning-secondary': '', 'bg-warning-solid': '',
-    'bg-success-primary': '', 'bg-success-secondary': '', 'bg-success-solid': '',
-    'bg-info-primary': '', 'bg-info-secondary': '', 'bg-info-solid': '',
-  },
-  setSemanticToken: (key, value) =>
-    set((state) => ({
-      semanticTokens: { ...state.semanticTokens, [key]: value },
-    })),
+      semanticTokens: {
+        // ── Text ──────────────────────────────────────────────────
+        'text-primary': '', 'text-primary_on-brand': '',
+        'text-secondary': '', 'text-secondary_hover': '', 'text-secondary_on-brand': '',
+        'text-tertiary': '', 'text-tertiary_hover': '', 'text-tertiary_on-brand': '',
+        'text-quaternary': '', 'text-quaternary_on-brand': '',
+        'text-white': '', 'text-disabled': '',
+        'text-placeholder': '', 'text-placeholder_subtle': '',
+        'text-brand-primary': '',
+        'text-brand-secondary': '', 'text-brand-secondary_hover': '',
+        'text-brand-tertiary': '', 'text-brand-tertiary_alt': '',
+        'text-error-primary': '', 'text-warning-primary': '', 'text-success-primary': '', 'text-info-primary': '',
+        // ── Border ────────────────────────────────────────────────
+        'border-primary': '',
+        'border-secondary': '', 'border-secondary_alt': '',
+        'border-tertiary': '',
+        'border-disabled': '', 'border-disabled_subtle': '',
+        'border-brand': '', 'border-brand_alt': '',
+        'border-error': '', 'border-error_subtle': '',
+        // ── Foreground ────────────────────────────────────────────
+        'fg-primary': '',
+        'fg-secondary': '', 'fg-secondary_hover': '',
+        'fg-tertiary': '', 'fg-tertiary_hover': '',
+        'fg-quaternary': '', 'fg-quaternary_hover': '',
+        'fg-white': '', 'fg-disabled': '', 'fg-disabled_subtle': '',
+        'fg-brand-primary': '', 'fg-brand-primary_alt': '',
+        'fg-brand-secondary': '', 'fg-brand-secondary_alt': '',
+        'fg-error-primary': '', 'fg-error-secondary': '',
+        'fg-warning-primary': '', 'fg-warning-secondary': '',
+        'fg-success-primary': '', 'fg-success-secondary': '',
+        'fg-info-primary': '', 'fg-info-secondary': '',
+        // ── Background ────────────────────────────────────────────
+        'bg-primary': '', 'bg-primary_alt': '', 'bg-primary_hover': '',
+        'bg-primary-solid': '',
+        'bg-secondary': '', 'bg-secondary_alt': '', 'bg-secondary_hover': '', 'bg-secondary_subtle': '',
+        'bg-secondary-solid': '',
+        'bg-tertiary': '', 'bg-quaternary': '',
+        'bg-active': '', 'bg-disabled': '', 'bg-disabled_subtle': '', 'bg-overlay': '',
+        'bg-brand-primary': '', 'bg-brand-primary_alt': '',
+        'bg-brand-secondary': '',
+        'bg-brand-solid': '', 'bg-brand-solid_hover': '',
+        'bg-brand-section': '', 'bg-brand-section_subtle': '',
+        'bg-error-primary': '', 'bg-error-secondary': '', 'bg-error-solid': '',
+        'bg-warning-primary': '', 'bg-warning-secondary': '', 'bg-warning-solid': '',
+        'bg-success-primary': '', 'bg-success-secondary': '', 'bg-success-solid': '',
+        'bg-info-primary': '', 'bg-info-secondary': '', 'bg-info-solid': '',
+      },
+      setSemanticToken: (key, value) =>
+        set((state) => ({
+          semanticTokens: { ...state.semanticTokens, [key]: value },
+        })),
 
-  typography: {
-    fontFamily: 'Inter',
-    sizes: { xs: '12px', sm: '14px', base: '16px', lg: '18px', xl: '24px', '2xl': '32px' },
-    weights: { regular: 400, medium: 500, semibold: 600, bold: 700 },
-  },
-  setTypography: (t) => set({ typography: t }),
+      typography: {
+        fontFamily: 'Inter',
+        headingFontFamily: 'Inter',
+        sizes: { xs: '12px', sm: '14px', base: '16px', lg: '18px', xl: '24px', '2xl': '32px' },
+        weights: { regular: 400, medium: 500, semibold: 600, bold: 700 },
+      },
+      setTypography: (t) => set({ typography: t }),
 
-  spacing: { '1': '4px', '2': '8px', '3': '12px', '4': '16px', '6': '24px', '8': '32px' },
-  radius: { none: '0px', sm: '4px', md: '8px', lg: '12px', full: '9999px' },
-  setSpacing: (s) => set({ spacing: s }),
-  setRadius: (r) => set({ radius: r }),
+      spacing: { '1': '4px', '2': '8px', '3': '12px', '4': '16px', '6': '24px', '8': '32px' },
+      radius: { none: '0px', sm: '4px', md: '8px', lg: '12px', full: '9999px' },
+      setSpacing: (s) => set({ spacing: s }),
+      setRadius: (r) => set({ radius: r }),
 
-  styleDirection: null,
-  setStyleDirection: (s) => set({ styleDirection: s }),
+      styleDirection: null,
+      setStyleDirection: (s) => set({ styleDirection: s }),
 
-  selectedAtoms: [],
-  toggleAtom: (atom) =>
-    set((state) => ({
-      selectedAtoms: state.selectedAtoms.includes(atom)
-        ? state.selectedAtoms.filter((a) => a !== atom)
-        : [...state.selectedAtoms, atom],
-    })),
+      selectedAtoms: [],
+      toggleAtom: (atom) =>
+        set((state) => ({
+          selectedAtoms: state.selectedAtoms.includes(atom)
+            ? state.selectedAtoms.filter((a) => a !== atom)
+            : [...state.selectedAtoms, atom],
+        })),
+      setSelectedAtoms: (atoms) => set({ selectedAtoms: atoms }),
 
-  currentStep: 1,
-  setCurrentStep: (step) => set({ currentStep: step }),
-}))
+      currentStep: 1,
+      setCurrentStep: (step) => set({ currentStep: step }),
+    }),
+    {
+      name: 'scalable-designs-store',
+    }
+  )
+)

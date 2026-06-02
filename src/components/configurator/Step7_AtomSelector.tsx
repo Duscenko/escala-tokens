@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { StyleDirection } from '../../types/tokens'
@@ -75,7 +76,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <span>Choose one…</span><span style={{ color: border }}>↕</span>
       </div>
     ),
-    material: ({ text, border, radius }) => (
+    material: ({ text, border }) => (
       <div className="px-2 py-1.5 text-[11px] flex justify-between w-full border-b-2" style={{ color: text, borderColor: border }}>
         <span>Option A</span><span style={{ color: border }}>▾</span>
       </div>
@@ -90,7 +91,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <span className="text-[11px] font-mono" style={{ color: text }}>Accept terms</span>
       </div>
     ),
-    organic: ({ primary, text, border, radius }) => (
+    organic: ({ primary, text }) => (
       <div className="flex items-center gap-2">
         <div className="w-4 h-4 flex items-center justify-center" style={{ backgroundColor: primary, borderRadius: 4, boxShadow: `0 1px 4px ${primary}55` }}>
           <span className="text-[9px] text-white font-bold">✓</span>
@@ -98,7 +99,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <span className="text-[11px]" style={{ color: text }}>Accept terms</span>
       </div>
     ),
-    material: ({ primary, text, border }) => (
+    material: ({ primary, text }) => (
       <div className="flex items-center gap-2">
         <div className="w-4 h-4 flex items-center justify-center rounded-sm" style={{ backgroundColor: primary }}>
           <span className="text-[9px] text-white font-bold">✓</span>
@@ -108,7 +109,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Toggle: {
-    brutalist: ({ primary, border, text }) => (
+    brutalist: ({ primary, text }) => (
       <div className="flex items-center gap-2">
         <div className="w-9 h-5 flex items-center px-0.5" style={{ backgroundColor: primary, border: `2px solid ${primary}` }}>
           <div className="w-3.5 h-3.5 ml-auto" style={{ backgroundColor: '#000' }} />
@@ -140,13 +141,13 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <span className="px-2 py-0.5 text-[10px] font-bold font-mono uppercase" style={{ color: text, border: `1.5px solid ${border}` }}>DRAFT</span>
       </div>
     ),
-    organic: ({ primary, text, border, radius }) => (
+    organic: ({ primary, text, border }) => (
       <div className="flex gap-1.5 flex-wrap">
         <span className="px-2.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: primary + '33', color: primary, borderRadius: 999 }}>New</span>
         <span className="px-2.5 py-0.5 text-[10px]" style={{ color: text, border: `1px solid ${border}`, borderRadius: 999 }}>Draft</span>
       </div>
     ),
-    material: ({ primary, text, border, radius }) => (
+    material: ({ primary, text, border }) => (
       <div className="flex gap-1.5 flex-wrap">
         <span className="px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase" style={{ backgroundColor: primary, color: '#fff', borderRadius: 4 }}>New</span>
         <span className="px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase" style={{ color: text, border: `1px solid ${border}`, borderRadius: 4 }}>Draft</span>
@@ -187,7 +188,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <div className="text-[10px] mt-1" style={{ color: text + '88' }}>Supporting content with a soft elevated surface.</div>
       </div>
     ),
-    material: ({ text, border, surface, radius }) => (
+    material: ({ text, border, surface }) => (
       <div className="p-2.5 w-full" style={{ backgroundColor: surface, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)', border: `1px solid ${border}` }}>
         <div className="text-[11px] font-medium" style={{ color: text }}>Card Title</div>
         <div className="text-[10px] mt-0.5" style={{ color: text + '77' }}>Elevated surface, clear hierarchy.</div>
@@ -212,17 +213,16 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     material: ({ border, text }) => (
       <div className="w-full flex items-center gap-2">
         <div className="flex-1 h-px" style={{ backgroundColor: border }} />
-        <span className="text-[10px] uppercase tracking-widest text-[9px]" style={{ color: text + '66' }}>Section</span>
+        <span className="text-[9px] uppercase tracking-widest" style={{ color: text + '66' }}>Section</span>
         <div className="flex-1 h-px" style={{ backgroundColor: border }} />
       </div>
     ),
   },
   Tooltip: {
-    brutalist: ({ text, border, surface, primary }) => (
+    brutalist: ({ text, border, surface }) => (
       <div className="flex flex-col items-center gap-1">
         <div className="px-2 py-1 text-[10px] font-mono font-bold" style={{ backgroundColor: surface, color: text, border: `2px solid ${border}` }}>Keyboard shortcut: ⌘K</div>
         <div className="w-2 h-2 rotate-45" style={{ backgroundColor: surface, border: `2px solid ${border}`, marginTop: -6 }} />
-        <div className="text-[11px] font-mono" style={{ color: primary }}>Hover me</div>
       </div>
     ),
     organic: ({ text, radius }) => (
@@ -239,7 +239,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Toast: {
-    brutalist: ({ primary, text, border }) => (
+    brutalist: ({ primary, text }) => (
       <div className="px-3 py-2 flex items-center gap-2 w-full" style={{ backgroundColor: '#000', border: `2px solid ${primary}`, borderLeft: `4px solid ${primary}` }}>
         <span className="text-[10px] font-bold font-mono" style={{ color: primary }}>✓</span>
         <span className="text-[10px] font-mono" style={{ color: text }}>SAVED SUCCESSFULLY</span>
@@ -253,7 +253,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         <span className="text-[10px]" style={{ color: text }}>Changes saved</span>
       </div>
     ),
-    material: ({ primary, text }) => (
+    material: ({ primary }) => (
       <div className="px-3 py-2 flex items-center justify-between gap-2 w-full rounded" style={{ backgroundColor: '#323232' }}>
         <span className="text-[10px]" style={{ color: '#fff' }}>Changes saved successfully</span>
         <span className="text-[10px] font-medium" style={{ color: primary }}>UNDO</span>
@@ -303,7 +303,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         </div>
       </div>
     ),
-    organic: ({ primary, text, border, radius }) => (
+    organic: ({ primary, text, border }) => (
       <div className="w-full">
         <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: border + '22' }}>
           {['Overview','Details','Logs'].map((t, i) => (
@@ -323,12 +323,12 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Breadcrumb: {
-    brutalist: ({ text, border, primary }) => (
+    brutalist: ({ text, primary }) => (
       <div className="flex items-center gap-1 font-mono text-[10px]">
         {['HOME','PRODUCTS','ITEM'].map((s, i, arr) => (
           <span key={s} className="flex items-center gap-1">
             <span style={{ color: i === arr.length - 1 ? primary : text + '66' }}>{s}</span>
-            {i < arr.length - 1 && <span style={{ color: border }}>{'>'}</span>}
+            {i < arr.length - 1 && <span style={{ color: text + '44' }}>{'>'}</span>}
           </span>
         ))}
       </div>
@@ -385,7 +385,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
         </div>
       </div>
     ),
-    organic: ({ primary, text, radius }) => (
+    organic: ({ primary, text }) => (
       <div className="flex flex-col gap-1 w-full">
         <div className="flex justify-between text-[10px]" style={{ color: text + '88' }}>
           <span>Progress</span><span>72%</span>
@@ -411,7 +411,7 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function Step7_AtomSelector() {
-  const { selectedAtoms, toggleAtom, styleDirection, semanticTokens, primaryColor, radius } =
+  const { selectedAtoms, toggleAtom, setSelectedAtoms, styleDirection, semanticTokens, primaryColor, radius } =
     useDesignStore()
 
   const dir: StyleDirection = styleDirection ?? 'material'
@@ -425,16 +425,38 @@ export default function Step7_AtomSelector() {
 
   const recommended = ATOMS.filter((a) => (a.recommended as readonly string[]).includes(dir)).map((a) => a.key)
 
+  // Auto-select recommended on first visit (empty selection)
+  useEffect(() => {
+    if (selectedAtoms.length === 0) {
+      setSelectedAtoms(recommended)
+    }
+  }, [])
+
+  // Confirmation state for destructive "reset to recommended"
+  const [confirmReset, setConfirmReset] = useState(false)
+
+  function handleSelectRecommended() {
+    const rec = recommended as string[]
+    const hasCustom = selectedAtoms.some((a) => !rec.includes(a))
+    const hasMissing = rec.some((a) => !selectedAtoms.includes(a))
+
+    if (!hasCustom && !hasMissing) return // already matches
+
+    if (confirmReset) {
+      setSelectedAtoms(recommended)
+      setConfirmReset(false)
+    } else {
+      setConfirmReset(true)
+      setTimeout(() => setConfirmReset(false), 3000)
+    }
+  }
+
   function selectAll() {
-    ATOMS.forEach((a) => { if (!selectedAtoms.includes(a.key)) toggleAtom(a.key) })
+    setSelectedAtoms(ATOMS.map((a) => a.key))
   }
-  function selectRecommended() {
-    // Clear all, then add recommended
-    ATOMS.forEach((a) => { if (selectedAtoms.includes(a.key)) toggleAtom(a.key) })
-    recommended.forEach((k) => toggleAtom(k))
-  }
+
   function clearAll() {
-    ATOMS.forEach((a) => { if (selectedAtoms.includes(a.key)) toggleAtom(a.key) })
+    setSelectedAtoms([])
   }
 
   return (
@@ -448,12 +470,19 @@ export default function Step7_AtomSelector() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-neutral-500">
           {selectedAtoms.length === 0
-            ? 'Pick the components you need — only what you select gets exported.'
+            ? 'No atoms selected — none will be exported.'
             : `${selectedAtoms.length} atom${selectedAtoms.length > 1 ? 's' : ''} selected`}
         </p>
         <div className="flex gap-2">
-          <button onClick={selectRecommended} className="text-xs px-2.5 py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition border border-neutral-700">
-            Recommended
+          <button
+            onClick={handleSelectRecommended}
+            className={`text-xs px-2.5 py-1 rounded transition border ${
+              confirmReset
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-700'
+            }`}
+          >
+            {confirmReset ? 'Confirm reset?' : 'Recommended'}
           </button>
           <button onClick={selectAll} className="text-xs px-2.5 py-1 rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition border border-neutral-700">
             All
@@ -485,11 +514,10 @@ export default function Step7_AtomSelector() {
                     onClick={() => toggleAtom(atom.key)}
                     className={`text-left rounded-xl p-3 flex flex-col gap-3 transition-all ${
                       isSelected
-                        ? 'bg-neutral-800 ring-2 ring-blue-500/50 border border-blue-500/20'
+                        ? 'bg-neutral-800 ring-2 ring-violet-500/50 border border-violet-500/20'
                         : 'bg-neutral-900 border border-neutral-800 hover:border-neutral-600'
                     }`}
                   >
-                    {/* Mini preview */}
                     <div className="pointer-events-none select-none min-h-[52px] flex items-center w-full overflow-hidden">
                       {PreviewFn ? (
                         <PreviewFn {...tokens} />
@@ -498,21 +526,20 @@ export default function Step7_AtomSelector() {
                       )}
                     </div>
 
-                    {/* Label row */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-neutral-400'}`}>
                           {atom.label}
                         </span>
                         {isRec && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-blue-500/15 text-blue-400">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-violet-500/15 text-violet-400">
                             rec
                           </span>
                         )}
                       </div>
                       <div
                         className={`w-4 h-4 rounded flex items-center justify-center transition-all ${
-                          isSelected ? 'bg-blue-500' : 'bg-neutral-800 border border-neutral-700'
+                          isSelected ? 'bg-violet-500' : 'bg-neutral-800 border border-neutral-700'
                         }`}
                       >
                         {isSelected && (
@@ -542,7 +569,7 @@ export default function Step7_AtomSelector() {
             <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2">Selected atoms</p>
             <div className="flex flex-wrap gap-1.5">
               {selectedAtoms.map((a) => (
-                <span key={a} className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 font-medium">
+                <span key={a} className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-300 font-medium">
                   {a}
                 </span>
               ))}

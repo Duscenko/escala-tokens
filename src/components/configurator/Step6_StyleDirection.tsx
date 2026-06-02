@@ -259,7 +259,7 @@ export default function Step6_StyleDirection() {
               onClick={() => setStyleDirection(style.key)}
               className={`text-left rounded-xl p-4 flex flex-col gap-4 transition-all ${
                 isSelected
-                  ? 'bg-neutral-800 ring-2 ring-blue-500/60 border border-blue-500/20'
+                  ? 'bg-neutral-800 ring-2 ring-violet-500/60 border border-violet-500/20'
                   : 'bg-neutral-900 border border-neutral-800 hover:border-neutral-600'
               }`}
             >
@@ -282,7 +282,7 @@ export default function Step6_StyleDirection() {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"
+                      className="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center"
                     >
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
                         <path d="M1.5 4L3.5 6L6.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -300,7 +300,7 @@ export default function Step6_StyleDirection() {
                     key={t}
                     className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                       isSelected
-                        ? 'bg-blue-500/20 text-blue-300'
+                        ? 'bg-violet-500/20 text-violet-300'
                         : 'bg-neutral-800 text-neutral-500'
                     }`}
                   >

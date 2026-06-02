@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE } from '../../store/useDesignStore'
 import { generateColorScale, isAccessible, checkContrast } from '../../lib/colorUtils'
@@ -65,7 +65,7 @@ function ContrastBadge({ fg, bg }: { fg: string; bg: string }) {
   return (
     <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
       aaa ? 'bg-emerald-900/60 text-emerald-400'
-          : aa ? 'bg-blue-900/60 text-blue-400'
+          : aa ? 'bg-violet-900/60 text-violet-400'
                : 'bg-neutral-800 text-neutral-500'
     }`}>
       {ratio.toFixed(1)}{aaa ? ' AAA' : aa ? ' AA' : ' ✗'}
@@ -103,7 +103,6 @@ function ScaleSwatch({ index, color }: { index: number; color: string }) {
   )
 }
 
-/** Compact scale — semantic scales with a full picker UX (swatch + hex + presets) */
 function CompactScale({
   scale,
   label,
@@ -126,9 +125,7 @@ function CompactScale({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Picker row — mirrors the brand color UX */}
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Swatch / color picker */}
         {isEditable ? (
           <div className="relative flex-shrink-0 w-12 h-12">
             <div
@@ -151,7 +148,6 @@ function CompactScale({
           />
         )}
 
-        {/* Label + hex input */}
         <div className="flex flex-col gap-1 min-w-0">
           <span className="text-sm font-semibold text-white leading-none">{label}</span>
           {isEditable ? (
@@ -163,7 +159,7 @@ function CompactScale({
                 const v = e.target.value
                 if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onColorChange!(v)
               }}
-              className="bg-neutral-900 border border-neutral-700 focus:border-blue-500
+              className="bg-neutral-900 border border-neutral-700 focus:border-violet-500
                          rounded-lg px-3 py-1.5 text-white font-mono text-xs
                          outline-none transition-colors w-28"
               aria-label={`${label} hex value`}
@@ -173,7 +169,6 @@ function CompactScale({
           )}
         </div>
 
-        {/* Description (editable row only, pushed right) */}
         {isEditable && (
           <p className="text-xs text-neutral-500 leading-snug ml-1 flex-1 min-w-[120px]">
             {description}
@@ -181,7 +176,6 @@ function CompactScale({
         )}
       </div>
 
-      {/* Quick presets */}
       {isEditable && presets.length > 0 && (
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-neutral-600 uppercase tracking-wider w-14 shrink-0 text-right">Presets</span>
@@ -204,7 +198,6 @@ function CompactScale({
         </div>
       )}
 
-      {/* 12-tone scale row */}
       <div className="grid grid-cols-12 gap-1">
         {entries.map(([key, c]) => {
           const isBase = Number(key) === accentIndex
@@ -228,6 +221,69 @@ function CompactScale({
   )
 }
 
+// ── Collapsible section wrapper ────────────────────────────────────────────
+
+function CollapsibleSection({
+  label,
+  description,
+  swatchColors,
+  defaultOpen = false,
+  children,
+}: {
+  label: string
+  description: string
+  swatchColors?: string[]
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-3 group text-left w-full"
+      >
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          className={`text-neutral-500 transition-transform duration-200 flex-shrink-0 ${open ? 'rotate-90' : ''}`}
+        >
+          <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <label className="text-sm text-neutral-400 uppercase tracking-wide cursor-pointer group-hover:text-neutral-300 transition-colors">
+          {label}
+        </label>
+
+        {!open && swatchColors && swatchColors.length > 0 && (
+          <div className="flex gap-1 flex-wrap ml-1">
+            {swatchColors.map((c, i) => (
+              <div key={i} className="w-4 h-4 rounded-sm ring-1 ring-white/10" style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        )}
+      </button>
+
+      {!open && (
+        <p className="text-xs text-neutral-600 -mt-2 ml-5">{description}</p>
+      )}
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function Step2_ColorPalette() {
@@ -239,7 +295,6 @@ export default function Step2_ColorPalette() {
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
   } = useDesignStore()
 
-  // Brand regeneration
   const regenerate = useCallback((hex: string) => {
     try {
       const scale = generateColorScale(hex)
@@ -248,7 +303,6 @@ export default function Step2_ColorPalette() {
     } catch {}
   }, [setPrimaryColor, setPrimaryScale])
 
-  // Semantic scale regenerations
   const regenerateError = useCallback((hex: string) => {
     try { setErrorColor(hex); setErrorScale(generateColorScale(hex)) } catch {}
   }, [setErrorColor, setErrorScale])
@@ -265,7 +319,6 @@ export default function Step2_ColorPalette() {
     try { setInfoColor(hex); setInfoScale(generateColorScale(hex)) } catch {}
   }, [setInfoColor, setInfoScale])
 
-  // Auto-generate scales on mount if empty
   useEffect(() => {
     if (Object.keys(primaryScale).length === 0) regenerate(primaryColor)
     if (Object.keys(errorScale).length   === 0) regenerateError(errorColor)
@@ -275,6 +328,10 @@ export default function Step2_ColorPalette() {
   }, [])
 
   const scaleEntries = Object.entries(primaryScale).sort(([a], [b]) => Number(a) - Number(b))
+
+  // Swatch previews for collapsed state
+  const semanticSwatches = [errorColor, warningColor, successColor, infoColor]
+  const neutralSwatches = Object.values(GRAY_LIGHT_SCALE).filter((_, i) => i % 3 === 0)
 
   return (
     <motion.div
@@ -311,7 +368,7 @@ export default function Step2_ColorPalette() {
               const val = e.target.value
               if (/^#[0-9a-fA-F]{0,6}$/.test(val)) regenerate(val)
             }}
-            className="bg-neutral-900 border border-neutral-700 focus:border-blue-500
+            className="bg-neutral-900 border border-neutral-700 focus:border-violet-500
                        rounded-lg px-4 py-2 text-white font-mono text-sm
                        outline-none transition-colors w-36"
             placeholder="#7f56d9"
@@ -417,20 +474,13 @@ export default function Step2_ColorPalette() {
         </motion.div>
       )}
 
-      {/* ── Semantic state scales ───────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex flex-col gap-4"
+      {/* ── Semantic state scales — collapsible ─────────────────── */}
+      <CollapsibleSection
+        label="Semantic Scales"
+        description="Error, warning, success and info colors — auto-generated, expand to customize."
+        swatchColors={semanticSwatches}
+        defaultOpen={false}
       >
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">
-          Semantic Scales
-        </label>
-        <p className="text-xs text-neutral-600 -mt-2">
-          Error, warning and success colors communicate state across your UI.
-        </p>
-
         <div className="flex flex-col gap-5 rounded-lg border border-neutral-800/60 p-4 bg-neutral-950/40">
           {Object.keys(errorScale).length > 0 && (
             <CompactScale
@@ -473,22 +523,15 @@ export default function Step2_ColorPalette() {
             />
           )}
         </div>
-      </motion.div>
+      </CollapsibleSection>
 
-      {/* ── Neutral scales (fixed from Figma DS) ────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
-        className="flex flex-col gap-4"
+      {/* ── Neutral scales — collapsible ────────────────────────── */}
+      <CollapsibleSection
+        label="Neutral Scales"
+        description="Foundation grays for text, fields, backgrounds and dividers — fixed from the Figma DS."
+        swatchColors={neutralSwatches}
+        defaultOpen={false}
       >
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">
-          Neutral Scales
-        </label>
-        <p className="text-xs text-neutral-600 -mt-2">
-          Foundation of the color system — text, fields, backgrounds, and dividers map to these grays.
-        </p>
-
         <div className="flex flex-col gap-5 rounded-lg border border-neutral-800/60 p-4 bg-neutral-950/40">
           <CompactScale
             scale={GRAY_LIGHT_SCALE}
@@ -503,7 +546,7 @@ export default function Step2_ColorPalette() {
             accentIndex={7}
           />
         </div>
-      </motion.div>
+      </CollapsibleSection>
     </motion.div>
   )
 }

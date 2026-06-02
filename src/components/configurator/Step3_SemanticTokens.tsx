@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, GRAY_LIGHT_SCALE } from '../../store/useDesignStore'
 import { checkContrast } from '../../lib/colorUtils'
 
@@ -15,13 +15,12 @@ const SCALE_META: Record<ScaleSource, { label: string }> = {
   info:    { label: 'info' },
 }
 
-// ── Types ──────────────────────────────────────────────────────────────────
 type Role = {
   key: string
-  label: string          // token name → CSS var suffix
+  label: string
   description: string
-  scale: ScaleSource     // which primitive palette this token references
-  tone: number           // 1–12, mapped from the Figma light-mode weight
+  scale: ScaleSource
+  tone: number
   contrastAgainst: string | null
   isVariant: boolean
 }
@@ -33,13 +32,7 @@ type RoleGroup = {
   roles: Role[]
 }
 
-// Figma weight → 12-tone index:
-// 25→1, 50→2, 100→3, 200→4, 300→5, 400→6, 500→7, 600→8, 700→9, 800→10, 900→11, 950→12
-
 const ROLE_GROUPS: RoleGroup[] = [
-  // ──────────────────────────────────────────────────────────────────────────
-  // TEXT
-  // ──────────────────────────────────────────────────────────────────────────
   {
     category: 'text',
     label: 'Text',
@@ -70,9 +63,6 @@ const ROLE_GROUPS: RoleGroup[] = [
       { key: 'text-info-primary',          label: 'text-info-primary',          description: 'Info state semantic text. (info-600)',                        scale: 'info',    tone: 8,  contrastAgainst: 'bg-primary',    isVariant: false },
     ],
   },
-  // ──────────────────────────────────────────────────────────────────────────
-  // BORDER
-  // ──────────────────────────────────────────────────────────────────────────
   {
     category: 'border',
     label: 'Border',
@@ -90,9 +80,6 @@ const ROLE_GROUPS: RoleGroup[] = [
       { key: 'border-error_subtle',     label: 'border-error_subtle',     description: 'Subtle error border — error state inputs. (error-300)',         scale: 'error', tone: 5, contrastAgainst: null, isVariant: true  },
     ],
   },
-  // ──────────────────────────────────────────────────────────────────────────
-  // FOREGROUND
-  // ──────────────────────────────────────────────────────────────────────────
   {
     category: 'fg',
     label: 'Foreground',
@@ -122,9 +109,6 @@ const ROLE_GROUPS: RoleGroup[] = [
       { key: 'fg-info-secondary',      label: 'fg-info-secondary',      description: 'Secondary info icons. (info-500)',                         scale: 'info',    tone: 7,  contrastAgainst: 'bg-primary', isVariant: false },
     ],
   },
-  // ──────────────────────────────────────────────────────────────────────────
-  // BACKGROUND
-  // ──────────────────────────────────────────────────────────────────────────
   {
     category: 'bg',
     label: 'Background',
@@ -227,9 +211,69 @@ function ContrastPair({ fg, bg, fgLabel, bgLabel }: { fg: string; bg: string; fg
       <div className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ backgroundColor: bg, color: fg, border: `1px solid ${fg}22` }}>
         Aa
       </div>
-      <span className={`font-mono ${aaa ? 'text-emerald-400' : aa ? 'text-blue-400' : 'text-rose-400'}`}>{ratio.toFixed(2)}:1</span>
-      <span className={`${aaa ? 'text-emerald-500' : aa ? 'text-blue-500' : 'text-rose-500'}`}>{aaa ? 'AAA' : aa ? 'AA' : '✗ fail'}</span>
+      <span className={`font-mono ${aaa ? 'text-emerald-400' : aa ? 'text-violet-400' : 'text-rose-400'}`}>{ratio.toFixed(2)}:1</span>
+      <span className={`${aaa ? 'text-emerald-500' : aa ? 'text-violet-500' : 'text-rose-500'}`}>{aaa ? 'AAA' : aa ? 'AA' : '✗ fail'}</span>
       <span className="text-neutral-600 truncate">{fgLabel} / {bgLabel}</span>
+    </div>
+  )
+}
+
+// ── Group header with collapsed swatch preview ─────────────────────────────
+
+function GroupHeader({
+  group,
+  tokenColors,
+  isExpanded,
+  onToggle,
+  onReset,
+}: {
+  group: RoleGroup
+  tokenColors: string[]
+  isExpanded: boolean
+  onToggle: () => void
+  onReset: () => void
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 bg-neutral-900/60">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 flex-1 min-w-0 text-left group"
+      >
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          className={`text-neutral-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+        >
+          <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className="text-xs font-semibold text-neutral-300 uppercase tracking-widest group-hover:text-white transition-colors">
+          {group.label}
+        </span>
+        <span className="text-[10px] text-neutral-600 font-mono">
+          {group.roles.length}
+        </span>
+      </button>
+
+      {/* Collapsed swatch preview */}
+      {!isExpanded && tokenColors.length > 0 && (
+        <div className="flex gap-0.5 flex-shrink-0">
+          {tokenColors.slice(0, 10).map((c, i) => (
+            <div
+              key={i}
+              className="w-3.5 h-3.5 rounded-sm ring-1 ring-white/5"
+              style={{ backgroundColor: c || '#1a1a1a' }}
+              title={c}
+            />
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={(e) => { e.stopPropagation(); onReset() }}
+        className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors px-2 py-0.5 rounded hover:bg-neutral-800 flex-shrink-0"
+        title="Reset to recommended values"
+      >
+        Reset
+      </button>
     </div>
   )
 }
@@ -242,7 +286,6 @@ export default function Step3_SemanticTokens() {
     semanticTokens, setSemanticToken,
   } = useDesignStore()
 
-  // Map each source name → its concrete 12-tone palette
   const scales: Record<ScaleSource, Record<number, string>> = {
     gray:    GRAY_LIGHT_SCALE,
     brand:   primaryScale,
@@ -252,7 +295,6 @@ export default function Step3_SemanticTokens() {
     info:    infoScale,
   }
 
-  // All generated scales must be present before mapping tokens
   const ready =
     Object.keys(primaryScale).length > 0 &&
     Object.keys(errorScale).length   > 0 &&
@@ -260,7 +302,33 @@ export default function Step3_SemanticTokens() {
     Object.keys(successScale).length > 0 &&
     Object.keys(infoScale).length    > 0
 
-  // Auto-populate each token from its OWN source scale + Figma tone
+  // All groups collapsed by default — auto-filled values are pre-populated
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  function toggleGroup(category: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }
+
+  function resetGroup(group: RoleGroup) {
+    group.roles.forEach((role) => {
+      const hex = scales[role.scale][role.tone]
+      if (hex) setSemanticToken(role.key, hex)
+    })
+  }
+
+  function resetAll() {
+    ALL_ROLES.forEach((role) => {
+      const hex = scales[role.scale][role.tone]
+      if (hex) setSemanticToken(role.key, hex)
+    })
+  }
+
+  // Auto-populate on mount if tokens are empty
   useEffect(() => {
     if (!ready) return
     ALL_ROLES.forEach((role) => {
@@ -286,89 +354,118 @@ export default function Step3_SemanticTokens() {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-2"
     >
-      <p className="text-sm text-neutral-500 mb-4">
-        Each token maps to a tone from its source palette — neutral tokens use the gray scale,
-        state tokens use error / warning / success / info, brand tokens use your brand color.
-      </p>
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-neutral-500">
+          All tokens are pre-filled from your color scales. Expand any group to customize individual values.
+        </p>
+        <button
+          onClick={resetAll}
+          className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors px-2.5 py-1 rounded border border-neutral-800 hover:border-neutral-700 flex-shrink-0 ml-4"
+        >
+          Reset all
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-8">
-        {ROLE_GROUPS.map((group, gi) => (
-          <motion.div
-            key={group.category}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: gi * 0.06 }}
-          >
-            <div className="flex items-baseline gap-3 mb-3">
-              <span className="text-xs font-semibold text-neutral-300 uppercase tracking-widest">{group.label}</span>
-              <span className="text-xs text-neutral-600">{group.description}</span>
-            </div>
+      <div className="flex flex-col gap-3">
+        {ROLE_GROUPS.map((group, gi) => {
+          const isExpanded = expandedGroups.has(group.category)
+          const tokenColors = group.roles
+            .filter((r) => !r.isVariant)
+            .map((r) => semanticTokens[r.key])
+            .filter(Boolean) as string[]
 
-            <div className="flex flex-col rounded-lg border border-neutral-800/60 overflow-hidden">
-              {group.roles.map((role, ri) => {
-                const sourceScale   = scales[role.scale]
-                const dot           = sourceScale[7] ?? sourceScale[6] ?? '#888'
-                const selected      = semanticTokens[role.key] ?? ''
-                const contrastBgHex = role.contrastAgainst ? semanticTokens[role.contrastAgainst] ?? '' : ''
-                const contrastLabel = ALL_ROLES.find((r) => r.key === role.contrastAgainst)?.label ?? role.contrastAgainst ?? ''
+          return (
+            <motion.div
+              key={group.category}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: gi * 0.05 }}
+              className="rounded-lg border border-neutral-800/60 overflow-hidden"
+            >
+              <GroupHeader
+                group={group}
+                tokenColors={tokenColors}
+                isExpanded={isExpanded}
+                onToggle={() => toggleGroup(group.category)}
+                onReset={() => resetGroup(group)}
+              />
 
-                return (
+              <AnimatePresence initial={false}>
+                {isExpanded && (
                   <motion.div
-                    key={role.key}
-                    initial={{ opacity: 0, x: -4 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.18, delay: gi * 0.05 + ri * 0.02 }}
-                    className={[
-                      'flex flex-col gap-2 px-4 py-3 bg-neutral-950/40',
-                      ri > 0 ? 'border-t border-neutral-800/50' : '',
-                      role.isVariant ? 'pl-8 border-l-2 border-neutral-800/60 ml-4' : '',
-                    ].join(' ')}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    style={{ overflow: 'hidden' }}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`rounded-md flex-shrink-0 ring-1 ring-white/10 transition-colors duration-300 ${role.isVariant ? 'w-5 h-5' : 'w-7 h-7'}`}
-                          style={{ backgroundColor: selected || '#1a1a1a' }}
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <code className={`font-mono ${role.isVariant ? 'text-[10px] text-neutral-400' : 'text-[11px] text-neutral-300'}`}>
-                              --color-{role.label}
-                            </code>
-                            <ScaleBadge scale={role.scale} dot={dot} />
+                    <div className="border-t border-neutral-800/50">
+                      {group.roles.map((role, ri) => {
+                        const sourceScale   = scales[role.scale]
+                        const dot           = sourceScale[7] ?? sourceScale[6] ?? '#888'
+                        const selected      = semanticTokens[role.key] ?? ''
+                        const contrastBgHex = role.contrastAgainst ? semanticTokens[role.contrastAgainst] ?? '' : ''
+                        const contrastLabel = ALL_ROLES.find((r) => r.key === role.contrastAgainst)?.label ?? role.contrastAgainst ?? ''
+
+                        return (
+                          <div
+                            key={role.key}
+                            className={[
+                              'flex flex-col gap-2 px-4 py-3 bg-neutral-950/40',
+                              ri > 0 ? 'border-t border-neutral-800/40' : '',
+                              role.isVariant ? 'pl-8 border-l-2 border-neutral-800/60 ml-4' : '',
+                            ].join(' ')}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                  className={`rounded-md flex-shrink-0 ring-1 ring-white/10 transition-colors duration-300 ${role.isVariant ? 'w-5 h-5' : 'w-7 h-7'}`}
+                                  style={{ backgroundColor: selected || '#1a1a1a' }}
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <code className={`font-mono ${role.isVariant ? 'text-[10px] text-neutral-400' : 'text-[11px] text-neutral-300'}`}>
+                                      --color-{role.label}
+                                    </code>
+                                    <ScaleBadge scale={role.scale} dot={dot} />
+                                  </div>
+                                  <p className="text-[11px] text-neutral-600 mt-0.5 leading-snug">{role.description}</p>
+                                </div>
+                              </div>
+                              {selected && (
+                                <span className="text-[10px] font-mono text-neutral-600 flex-shrink-0 pt-0.5">{selected}</span>
+                              )}
+                            </div>
+
+                            <TonePicker
+                              scale={sourceScale}
+                              selected={selected}
+                              onChange={(hex) => setSemanticToken(role.key, hex)}
+                              compact={role.isVariant}
+                            />
+
+                            {role.contrastAgainst && selected && contrastBgHex && (
+                              <ContrastPair fg={selected} bg={contrastBgHex} fgLabel={role.label} bgLabel={contrastLabel} />
+                            )}
                           </div>
-                          <p className="text-[11px] text-neutral-600 mt-0.5 leading-snug">{role.description}</p>
-                        </div>
-                      </div>
-                      {selected && (
-                        <span className="text-[10px] font-mono text-neutral-600 flex-shrink-0 pt-0.5">{selected}</span>
-                      )}
+                        )
+                      })}
                     </div>
-
-                    <TonePicker
-                      scale={sourceScale}
-                      selected={selected}
-                      onChange={(hex) => setSemanticToken(role.key, hex)}
-                      compact={role.isVariant}
-                    />
-
-                    {role.contrastAgainst && selected && contrastBgHex && (
-                      <ContrastPair fg={selected} bg={contrastBgHex} fgLabel={role.label} bgLabel={contrastLabel} />
-                    )}
                   </motion.div>
-                )
-              })}
-            </div>
-          </motion.div>
-        ))}
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )
+        })}
       </div>
 
       {/* CSS Variables preview */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-6 rounded-lg bg-neutral-900 border border-neutral-800 p-4"
+        transition={{ delay: 0.3 }}
+        className="mt-4 rounded-lg bg-neutral-900 border border-neutral-800 p-4"
       >
         <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">CSS Variables preview</p>
         <pre className="text-xs font-mono leading-relaxed text-neutral-400 overflow-x-auto max-h-64 overflow-y-auto">

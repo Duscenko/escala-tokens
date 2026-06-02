@@ -34,7 +34,7 @@ export default function Step1_ProjectName() {
           maxLength={48}
           className="
             w-full bg-transparent border-b-2 border-neutral-700
-            focus:border-blue-500 outline-none
+            focus:border-violet-500 outline-none
             text-3xl font-semibold text-white placeholder:text-neutral-700
             pb-3 transition-colors duration-200
           "
@@ -60,7 +60,7 @@ export default function Step1_ProjectName() {
           <p className="text-xs text-neutral-500 mb-2 uppercase tracking-wider">
             Token preview
           </p>
-          <code className="text-sm text-blue-400 font-mono">
+          <code className="text-sm text-violet-400 font-mono">
             {projectName
               .toLowerCase()
               .replace(/\s+/g, '-')

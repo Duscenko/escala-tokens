@@ -11,29 +11,25 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
   const { primaryScale, semanticTokens, typography, spacing, radius } = store
   const lines: string[] = [':root {']
 
-  // Primitive color scale
   lines.push('  /* Primitive scale */')
   Object.entries(primaryScale)
     .sort(([a], [b]) => Number(a) - Number(b))
     .forEach(([k, v]) => lines.push(`  --color-${k}: ${v};`))
 
-  // Semantic tokens
   lines.push('\n  /* Semantic tokens */')
   Object.entries(semanticTokens).forEach(([k, v]) => {
     if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`)
   })
 
-  // Typography
   lines.push('\n  /* Typography */')
-  lines.push(`  --font-family: '${typography.fontFamily}', sans-serif;`)
+  lines.push(`  --font-family-heading: '${typography.headingFontFamily ?? typography.fontFamily}', sans-serif;`)
+  lines.push(`  --font-family-body: '${typography.fontFamily}', sans-serif;`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
 
-  // Spacing
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
 
-  // Radius
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
 
@@ -44,6 +40,7 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
 function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
   const { projectName, primaryColor, primaryScale, semanticTokens, typography, spacing, radius, styleDirection, selectedAtoms } = store
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const headingFont = typography.headingFontFamily ?? typography.fontFamily
 
   return `# ${projectName} — Design System
 
@@ -53,7 +50,8 @@ function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): strin
 
 - **Style direction:** ${styleDirection ?? 'not set'}
 - **Primary color:** \`${primaryColor}\`
-- **Font family:** ${typography.fontFamily}
+- **Heading font:** ${headingFont}
+- **Body font:** ${typography.fontFamily}
 - **Atoms included:** ${selectedAtoms.length > 0 ? selectedAtoms.join(', ') : 'none selected'}
 
 ---
@@ -78,7 +76,8 @@ ${Object.entries(semanticTokens).filter(([,v])=>v).map(([k,v])=>`| \`--color-${k
 
 | Token | Value |
 |-------|-------|
-| \`--font-family\` | \`'${typography.fontFamily}', sans-serif\` |
+| \`--font-family-heading\` | \`'${headingFont}', sans-serif\` |
+| \`--font-family-body\` | \`'${typography.fontFamily}', sans-serif\` |
 ${Object.entries(typography.sizes).map(([k,v])=>`| \`--font-size-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`${v}\` |`).join('\n')}
 
@@ -140,10 +139,6 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
   )
 }
 
-// ─── Publish to /api/tokens ──────────────────────────────────────────────────
-
-type PublishState = 'idle' | 'loading' | 'success' | 'error'
-
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 export default function Step8_Export() {
@@ -152,39 +147,12 @@ export default function Step8_Export() {
   const [activeTab, setActiveTab] = useState<Tab>('tokens')
   const [copiedTab, setCopiedTab] = useState<Tab | null>(null)
   const [justDownloaded, setJustDownloaded] = useState<string | null>(null)
-  const [publishState, setPublishState] = useState<PublishState>('idle')
-  const [publishError, setPublishError] = useState<string | null>(null)
-  const [deployUrl, setDeployUrl] = useState<string>('')
 
-  // Try to detect the current deployment URL
+  const [isDeployed, setIsDeployed] = useState(false)
   useEffect(() => {
     const origin = window.location.origin
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1')
-    setDeployUrl(isLocalhost ? '' : origin)
+    setIsDeployed(!origin.includes('localhost') && !origin.includes('127.0.0.1'))
   }, [])
-
-  async function publishTokens() {
-    setPublishState('loading')
-    setPublishError(null)
-    try {
-      const tokens = generateTokenJSON()
-      const res = await fetch('/api/tokens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tokens),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-        throw new Error(err.error ?? `HTTP ${res.status}`)
-      }
-      setPublishState('success')
-      setTimeout(() => setPublishState('idle'), 4000)
-    } catch (e) {
-      setPublishState('error')
-      setPublishError(e instanceof Error ? e.message : String(e))
-      setTimeout(() => setPublishState('idle'), 5000)
-    }
-  }
 
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'scalable-designs'
 
@@ -198,11 +166,7 @@ export default function Step8_Export() {
     { id: 'markdown', label: 'README.md' },
   ]
 
-  const content: Record<Tab, string> = {
-    tokens: tokenJSON,
-    css: cssVars,
-    markdown,
-  }
+  const content: Record<Tab, string> = { tokens: tokenJSON, css: cssVars, markdown }
 
   async function copyTab(tab: Tab) {
     await navigator.clipboard.writeText(content[tab])
@@ -243,7 +207,6 @@ export default function Step8_Export() {
 
       {/* ── File tabs ── */}
       <div className="flex flex-col gap-0">
-        {/* Tab bar */}
         <div className="flex items-center justify-between border-b border-neutral-800">
           <div className="flex">
             {TABS.map((t) => (
@@ -252,7 +215,7 @@ export default function Step8_Export() {
                 onClick={() => setActiveTab(t.id)}
                 className={`px-4 py-2.5 text-xs font-mono transition-all border-b-2 ${
                   activeTab === t.id
-                    ? 'text-white border-blue-500'
+                    ? 'text-white border-violet-500'
                     : 'text-neutral-500 border-transparent hover:text-neutral-300'
                 }`}
               >
@@ -290,7 +253,6 @@ export default function Step8_Export() {
           </div>
         </div>
 
-        {/* Code block */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -335,93 +297,28 @@ export default function Step8_Export() {
         >
           {justDownloaded === 'all' ? '✓ Downloaded!' : `Download ${slug}-tokens`}
         </motion.button>
-
-        <p className="text-[11px] text-neutral-600 text-center">
-          Next: use the Figma plugin (Phase 2) to sync these tokens directly into your file.
-        </p>
-      </div>
-
-      {/* ── Publish / Live Sync ── */}
-      <div className="flex flex-col gap-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: primaryColor + '22', border: `1px solid ${primaryColor}44` }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <circle cx="9" cy="9" r="7.5" stroke={primaryColor} strokeWidth="1.5"/>
-              <path d="M9 5.5v4l2.5 2" stroke={primaryColor} strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">Publish for live sync</p>
-            <p className="text-xs text-neutral-500">
-              Push tokens to <code className="text-blue-400 text-[11px]">/api/tokens</code> — the Figma plugin polls this URL automatically.
-            </p>
-          </div>
-        </div>
-
-        <motion.button
-          onClick={publishTokens}
-          disabled={publishState === 'loading'}
-          whileHover={{ scale: publishState === 'loading' ? 1 : 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed"
-          style={{
-            backgroundColor:
-              publishState === 'success' ? '#10b981' :
-              publishState === 'error'   ? '#f43f5e' :
-              publishState === 'loading' ? primaryColor + '88' :
-              primaryColor,
-            color: '#fff',
-          }}
-        >
-          {publishState === 'loading' ? 'Publishing…' :
-           publishState === 'success' ? '✓ Published!' :
-           publishState === 'error'   ? '✗ Failed — retry' :
-           'Publish tokens →'}
-        </motion.button>
-
-        {publishState === 'error' && publishError && (
-          <p className="text-xs text-rose-400">{publishError}</p>
-        )}
-
-        {/* Sync URL — shown when deployed */}
-        {publishState === 'success' && deployUrl && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-2"
-          >
-            <p className="text-xs text-neutral-500">Paste this URL in the Figma plugin → Live Sync tab:</p>
-            <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2">
-              <code className="text-xs text-blue-400 flex-1 truncate font-mono">
-                {deployUrl}/api/tokens
-              </code>
-              <button
-                onClick={() => navigator.clipboard.writeText(`${deployUrl}/api/tokens`)}
-                className="text-[10px] text-neutral-500 hover:text-white transition flex-shrink-0"
-              >
-                Copy
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Localhost notice */}
-        {!deployUrl && (
-          <p className="text-xs text-neutral-600 text-center">
-            Deploy to Vercel first — then this button pushes tokens to your live URL.
-          </p>
-        )}
       </div>
 
       {/* ── What's next ── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: '⬡', title: 'Figma Plugin', desc: 'Sync tokens into your Figma file automatically (Phase 2).' },
-          { icon: '⌗', title: 'Code Components', desc: 'Use tokens in React, Vue, or Svelte via CSS variables.' },
-          { icon: '↻', title: 'Iterate', desc: 'Come back anytime — your config is preserved in the browser.' },
+          {
+            icon: '⌗',
+            title: 'Use in code',
+            desc: 'Import variables.css and reference tokens via CSS custom properties in any framework.',
+          },
+          {
+            icon: '⬡',
+            title: 'Figma sync',
+            desc: isDeployed
+              ? 'Publish tokens to /api/tokens so your Figma plugin can poll and sync them automatically.'
+              : 'Deploy to a live URL first, then use the publish endpoint to sync with Figma plugins.',
+          },
+          {
+            icon: '↻',
+            title: 'Iterate',
+            desc: 'Your configuration is saved automatically. Come back any time to refine your tokens.',
+          },
         ].map((item) => (
           <div key={item.title} className="rounded-xl bg-neutral-900 border border-neutral-800 p-4 flex flex-col gap-2">
             <span className="text-xl">{item.icon}</span>
@@ -430,6 +327,30 @@ export default function Step8_Export() {
           </div>
         ))}
       </div>
+
+      {/* ── Publish endpoint — only shown when deployed ── */}
+      {isDeployed && (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-sm font-semibold text-white">Live publish endpoint</p>
+          </div>
+          <p className="text-xs text-neutral-500">
+            POST to <code className="text-violet-400 text-[11px] px-1 py-0.5 rounded bg-neutral-800">/api/tokens</code> to push your current token set. Use this URL in your Figma plugin's live sync configuration.
+          </p>
+          <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2">
+            <code className="text-xs text-violet-400 flex-1 truncate font-mono">
+              {window.location.origin}/api/tokens
+            </code>
+            <button
+              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/tokens`)}
+              className="text-[10px] text-neutral-500 hover:text-white transition flex-shrink-0"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
