@@ -5,13 +5,6 @@ import { generateTokenJSON } from '../../lib/tokenGenerator'
 
 type Tab = 'tokens' | 'css' | 'markdown'
 
-// Human-readable labels for the style direction key
-const STYLE_LABEL: Record<string, string> = {
-  ios26: 'iOS 26',
-  organic: 'Organic',
-  material: 'Material',
-}
-
 // ─── Generators ─────────────────────────────────────────────────────────────
 
 function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
@@ -45,7 +38,7 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
 }
 
 function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, primaryColor, primaryScale, semanticTokens, typography, spacing, radius, styleDirection, selectedAtoms } = store
+  const { projectName, primaryColor, primaryScale, semanticTokens, typography, spacing, radius, selectedComponents } = store
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
 
@@ -55,11 +48,10 @@ function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): strin
 
 ## Overview
 
-- **Style direction:** ${styleDirection ? STYLE_LABEL[styleDirection] ?? styleDirection : 'not set'}
 - **Primary color:** \`${primaryColor}\`
 - **Heading font:** ${headingFont}
 - **Body font:** ${typography.fontFamily}
-- **Atoms included:** ${selectedAtoms.length > 0 ? selectedAtoms.join(', ') : 'none selected'}
+- **Components:** ${selectedComponents.length > 0 ? selectedComponents.join(', ') : 'none selected'}
 
 ---
 
@@ -106,11 +98,11 @@ ${Object.entries(radius).map(([k,v])=>`| \`--radius-${k}\` | \`${v}\` |`).join('
 
 ---
 
-## Atoms
+## Components
 
-${selectedAtoms.length > 0
-  ? selectedAtoms.map(a => `- \`${a}\``).join('\n')
-  : '_No atoms selected._'}
+${selectedComponents.length > 0
+  ? selectedComponents.map((c: string) => `- \`${c}\``).join('\n')
+  : '_No components selected._'}
 
 ---
 
@@ -150,7 +142,7 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
 
 export default function Step8_Export() {
   const store = useDesignStore()
-  const { projectName, primaryColor, styleDirection, selectedAtoms } = store
+  const { projectName, primaryColor, selectedComponents } = store
   const [activeTab, setActiveTab] = useState<Tab>('tokens')
   const [copiedTab, setCopiedTab] = useState<Tab | null>(null)
   const [justDownloaded, setJustDownloaded] = useState<string | null>(null)
@@ -208,8 +200,7 @@ export default function Step8_Export() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Pill label="Project"   value={projectName || '—'} />
         <Pill label="Primary"   value={primaryColor}       color={primaryColor} />
-        <Pill label="Style"     value={styleDirection ? STYLE_LABEL[styleDirection] ?? styleDirection : '—'} />
-        <Pill label="Atoms"     value={`${selectedAtoms.length} selected`} />
+        <Pill label="Components" value={`${selectedComponents.length} selected`} />
       </div>
 
       {/* ── File tabs ── */}

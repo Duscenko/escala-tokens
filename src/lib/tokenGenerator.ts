@@ -12,8 +12,7 @@ export function generateTokenJSON() {
     typography: store.typography,
     spacing: store.spacing,
     radius: store.radius,
-    style: store.styleDirection,
-    atoms: store.selectedAtoms,
+    components: store.selectedComponents,
   }
 }
 
