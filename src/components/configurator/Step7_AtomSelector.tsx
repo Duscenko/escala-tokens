@@ -6,22 +6,22 @@ import type { StyleDirection } from '../../types/tokens'
 // ─── Atom definitions ───────────────────────────────────────────────────────
 
 const ATOMS = [
-  { key: 'Button',    label: 'Button',    category: 'Action',   recommended: ['brutalist','organic','material'] },
-  { key: 'Input',     label: 'Input',     category: 'Form',     recommended: ['brutalist','organic','material'] },
+  { key: 'Button',    label: 'Button',    category: 'Action',   recommended: ['ios26','organic','material'] },
+  { key: 'Input',     label: 'Input',     category: 'Form',     recommended: ['ios26','organic','material'] },
   { key: 'Select',    label: 'Select',    category: 'Form',     recommended: ['organic','material'] },
-  { key: 'Checkbox',  label: 'Checkbox',  category: 'Form',     recommended: ['brutalist','material'] },
+  { key: 'Checkbox',  label: 'Checkbox',  category: 'Form',     recommended: ['ios26','material'] },
   { key: 'Toggle',    label: 'Toggle',    category: 'Form',     recommended: ['organic','material'] },
-  { key: 'Badge',     label: 'Badge',     category: 'Display',  recommended: ['brutalist','organic','material'] },
+  { key: 'Badge',     label: 'Badge',     category: 'Display',  recommended: ['ios26','organic','material'] },
   { key: 'Avatar',    label: 'Avatar',    category: 'Display',  recommended: ['organic','material'] },
   { key: 'Card',      label: 'Card',      category: 'Layout',   recommended: ['organic','material'] },
-  { key: 'Divider',   label: 'Divider',   category: 'Layout',   recommended: ['brutalist','material'] },
+  { key: 'Divider',   label: 'Divider',   category: 'Layout',   recommended: ['ios26','material'] },
   { key: 'Tooltip',   label: 'Tooltip',   category: 'Overlay',  recommended: ['organic','material'] },
   { key: 'Toast',     label: 'Toast',     category: 'Overlay',  recommended: ['organic','material'] },
-  { key: 'Modal',     label: 'Modal',     category: 'Overlay',  recommended: ['brutalist','organic','material'] },
-  { key: 'Tabs',      label: 'Tabs',      category: 'Nav',      recommended: ['brutalist','material'] },
-  { key: 'Breadcrumb',label: 'Breadcrumb',category: 'Nav',      recommended: ['brutalist','material'] },
+  { key: 'Modal',     label: 'Modal',     category: 'Overlay',  recommended: ['ios26','organic','material'] },
+  { key: 'Tabs',      label: 'Tabs',      category: 'Nav',      recommended: ['ios26','material'] },
+  { key: 'Breadcrumb',label: 'Breadcrumb',category: 'Nav',      recommended: ['ios26','material'] },
   { key: 'Spinner',   label: 'Spinner',   category: 'Feedback', recommended: ['organic','material'] },
-  { key: 'Progress',  label: 'Progress',  category: 'Feedback', recommended: ['brutalist','organic','material'] },
+  { key: 'Progress',  label: 'Progress',  category: 'Feedback', recommended: ['ios26','organic','material'] },
 ] as const
 
 const CATEGORIES = ['Action', 'Form', 'Display', 'Layout', 'Overlay', 'Nav', 'Feedback'] as const
@@ -30,12 +30,19 @@ const CATEGORIES = ['Action', 'Form', 'Display', 'Layout', 'Overlay', 'Nav', 'Fe
 
 type PreviewProps = { primary: string; surface: string; text: string; border: string; radius: string }
 
+// iOS 26 "Liquid Glass" shared tokens
+const SF = '-apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif'
+const glassFill = 'rgba(255,255,255,0.12)'
+const glassBorder = '1px solid rgba(255,255,255,0.22)'
+const glassBlur = 'blur(8px) saturate(170%)'
+const glassInset = 'inset 0 1px 0 rgba(255,255,255,0.4)'
+
 const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React.ReactElement>> = {
   Button: {
-    brutalist: ({ primary, text, border }) => (
-      <div className="flex gap-1.5">
-        <div className="px-3 py-1.5 text-[11px] font-bold font-mono" style={{ backgroundColor: primary, color: '#000', border: `2px solid ${primary}` }}>SUBMIT</div>
-        <div className="px-3 py-1.5 text-[11px] font-bold font-mono" style={{ color: text, border: `2px solid ${border}` }}>CANCEL</div>
+    ios26: ({ primary }) => (
+      <div className="flex gap-1.5" style={{ fontFamily: SF }}>
+        <div className="px-3.5 py-1.5 text-[11px] font-semibold" style={{ backgroundColor: primary, color: '#fff', borderRadius: 999, boxShadow: `${glassInset}, 0 2px 8px ${primary}66` }}>Continue</div>
+        <div className="px-3.5 py-1.5 text-[11px] font-medium" style={{ color: '#fff', borderRadius: 999, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur }}>Skip</div>
       </div>
     ),
     organic: ({ primary, text, border, radius }) => (
@@ -52,8 +59,11 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Input: {
-    brutalist: ({ text, border }) => (
-      <div className="px-2 py-1.5 text-[11px] font-mono w-full" style={{ color: text, border: `2px solid ${border}`, backgroundColor: 'transparent' }}>user@email.com_</div>
+    ios26: () => (
+      <div className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] w-full" style={{ fontFamily: SF, color: 'rgba(255,255,255,0.6)', borderRadius: 12, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: glassInset }}>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}><circle cx="5" cy="5" r="3.4" stroke="currentColor" strokeWidth="1.3" /><path d="M8 8L11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+        Search
+      </div>
     ),
     organic: ({ text, border, surface, radius }) => (
       <div className="px-3 py-2 text-[11px] w-full" style={{ color: text + '88', backgroundColor: surface, border: `1px solid ${border}`, borderRadius: radius }}>Email address…</div>
@@ -66,9 +76,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Select: {
-    brutalist: ({ text, border }) => (
-      <div className="px-2 py-1.5 text-[11px] font-mono flex justify-between w-full" style={{ color: text, border: `2px solid ${border}` }}>
-        <span>Option A</span><span>▼</span>
+    ios26: () => (
+      <div className="px-3 py-1.5 text-[11px] flex justify-between items-center w-full" style={{ fontFamily: SF, color: '#fff', borderRadius: 12, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: glassInset }}>
+        <span>Option A</span>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.65 }}><path d="M3.5 5L6 2.5L8.5 5M3.5 7L6 9.5L8.5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
     ),
     organic: ({ text, border, radius }) => (
@@ -83,12 +94,12 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Checkbox: {
-    brutalist: ({ primary, text, border }) => (
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 flex items-center justify-center" style={{ border: `2px solid ${border}`, backgroundColor: primary }}>
-          <span className="text-[9px] font-bold text-black">✓</span>
+    ios26: ({ primary, text }) => (
+      <div className="flex items-center gap-2" style={{ fontFamily: SF }}>
+        <div className="w-4 h-4 flex items-center justify-center rounded-md" style={{ backgroundColor: primary, boxShadow: `${glassInset}, 0 1px 4px ${primary}66` }}>
+          <span className="text-[9px] text-white font-bold">✓</span>
         </div>
-        <span className="text-[11px] font-mono" style={{ color: text }}>Accept terms</span>
+        <span className="text-[11px]" style={{ color: text }}>Accept terms</span>
       </div>
     ),
     organic: ({ primary, text }) => (
@@ -109,12 +120,12 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Toggle: {
-    brutalist: ({ primary, text }) => (
-      <div className="flex items-center gap-2">
-        <div className="w-9 h-5 flex items-center px-0.5" style={{ backgroundColor: primary, border: `2px solid ${primary}` }}>
-          <div className="w-3.5 h-3.5 ml-auto" style={{ backgroundColor: '#000' }} />
+    ios26: ({ primary, text }) => (
+      <div className="flex items-center gap-2" style={{ fontFamily: SF }}>
+        <div className="w-9 h-5 flex items-center px-0.5 rounded-full" style={{ backgroundColor: primary, boxShadow: `inset 0 1px 3px ${primary}88, 0 1px 4px ${primary}55` }}>
+          <div className="w-4 h-4 rounded-full ml-auto bg-white" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.35)' }} />
         </div>
-        <span className="text-[11px] font-mono" style={{ color: text }}>ON</span>
+        <span className="text-[11px]" style={{ color: text }}>On</span>
       </div>
     ),
     organic: ({ primary, text }) => (
@@ -135,10 +146,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Badge: {
-    brutalist: ({ primary, border, text }) => (
-      <div className="flex gap-1.5 flex-wrap">
-        <span className="px-2 py-0.5 text-[10px] font-bold font-mono uppercase" style={{ backgroundColor: primary, color: '#000' }}>NEW</span>
-        <span className="px-2 py-0.5 text-[10px] font-bold font-mono uppercase" style={{ color: text, border: `1.5px solid ${border}` }}>DRAFT</span>
+    ios26: ({ primary }) => (
+      <div className="flex gap-1.5 flex-wrap" style={{ fontFamily: SF }}>
+        <span className="px-2.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: primary, color: '#fff', borderRadius: 999, boxShadow: glassInset }}>New</span>
+        <span className="px-2.5 py-0.5 text-[10px] font-medium" style={{ color: '#fff', borderRadius: 999, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur }}>Draft</span>
       </div>
     ),
     organic: ({ primary, text, border }) => (
@@ -155,10 +166,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Avatar: {
-    brutalist: ({ primary, text, border }) => (
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 flex items-center justify-center text-[11px] font-bold font-mono" style={{ backgroundColor: primary, color: '#000', border: `2px solid ${border}` }}>CD</div>
-        <span className="text-[11px] font-mono" style={{ color: text }}>Cesar D.</span>
+    ios26: ({ primary, text }) => (
+      <div className="flex items-center gap-2" style={{ fontFamily: SF }}>
+        <div className="w-8 h-8 flex items-center justify-center text-[11px] font-semibold rounded-full" style={{ background: `linear-gradient(140deg, ${primary}, ${primary}aa)`, color: '#fff', boxShadow: `${glassInset}, 0 2px 8px ${primary}55` }}>CD</div>
+        <span className="text-[11px]" style={{ color: text }}>Cesar D.</span>
       </div>
     ),
     organic: ({ primary, text }) => (
@@ -175,11 +186,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Card: {
-    brutalist: ({ text, border, surface }) => (
-      <div className="p-2 w-full" style={{ border: `2px solid ${border}`, backgroundColor: surface }}>
-        <div className="text-[11px] font-bold font-mono" style={{ color: text }}>CARD TITLE</div>
-        <div className="h-px my-1.5" style={{ backgroundColor: border }} />
-        <div className="text-[10px] font-mono" style={{ color: text + '99' }}>Card content goes here.</div>
+    ios26: ({ text }) => (
+      <div className="p-3 w-full" style={{ fontFamily: SF, borderRadius: 18, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: `${glassInset}, 0 8px 24px rgba(0,0,0,0.28)` }}>
+        <div className="text-[11px] font-semibold" style={{ color: text }}>Card Title</div>
+        <div className="text-[10px] mt-1" style={{ color: text + '99' }}>Translucent surface with concentric radii.</div>
       </div>
     ),
     organic: ({ text, border, surface, radius }) => (
@@ -196,11 +206,11 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Divider: {
-    brutalist: ({ border, text }) => (
-      <div className="w-full flex items-center gap-2">
-        <div className="flex-1 h-0.5" style={{ backgroundColor: border }} />
-        <span className="text-[10px] font-mono" style={{ color: text }}>SECTION</span>
-        <div className="flex-1 h-0.5" style={{ backgroundColor: border }} />
+    ios26: ({ text }) => (
+      <div className="w-full flex items-center gap-2" style={{ fontFamily: SF }}>
+        <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} />
+        <span className="text-[10px]" style={{ color: text + '99' }}>or</span>
+        <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} />
       </div>
     ),
     organic: ({ border, text }) => (
@@ -219,10 +229,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Tooltip: {
-    brutalist: ({ text, border, surface }) => (
-      <div className="flex flex-col items-center gap-1">
-        <div className="px-2 py-1 text-[10px] font-mono font-bold" style={{ backgroundColor: surface, color: text, border: `2px solid ${border}` }}>Keyboard shortcut: ⌘K</div>
-        <div className="w-2 h-2 rotate-45" style={{ backgroundColor: surface, border: `2px solid ${border}`, marginTop: -6 }} />
+    ios26: () => (
+      <div className="flex flex-col items-center gap-1" style={{ fontFamily: SF }}>
+        <div className="px-3 py-1.5 text-[10px]" style={{ color: '#fff', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: `${glassInset}, 0 4px 16px rgba(0,0,0,0.3)` }}>Keyboard shortcut ⌘K</div>
+        <div className="w-2 h-2 rotate-45" style={{ backgroundColor: 'rgba(255,255,255,0.16)', borderRight: glassBorder, borderBottom: glassBorder, marginTop: -5 }} />
       </div>
     ),
     organic: ({ text, radius }) => (
@@ -239,10 +249,12 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Toast: {
-    brutalist: ({ primary, text }) => (
-      <div className="px-3 py-2 flex items-center gap-2 w-full" style={{ backgroundColor: '#000', border: `2px solid ${primary}`, borderLeft: `4px solid ${primary}` }}>
-        <span className="text-[10px] font-bold font-mono" style={{ color: primary }}>✓</span>
-        <span className="text-[10px] font-mono" style={{ color: text }}>SAVED SUCCESSFULLY</span>
+    ios26: ({ primary, text }) => (
+      <div className="px-3 py-2 flex items-center gap-2 w-full" style={{ fontFamily: SF, borderRadius: 999, backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: `${glassInset}, 0 8px 24px rgba(0,0,0,0.3)` }}>
+        <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: primary, boxShadow: glassInset }}>
+          <span className="text-[8px] text-white font-bold">✓</span>
+        </div>
+        <span className="text-[10px]" style={{ color: text }}>Changes saved</span>
       </div>
     ),
     organic: ({ primary, text, radius }) => (
@@ -261,14 +273,13 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Modal: {
-    brutalist: ({ text, border, surface, primary }) => (
-      <div className="p-3 w-full" style={{ backgroundColor: surface, border: `2px solid ${border}` }}>
-        <div className="text-[11px] font-bold font-mono mb-1.5" style={{ color: text }}>CONFIRM ACTION</div>
-        <div className="h-px mb-1.5" style={{ backgroundColor: border }} />
-        <div className="text-[10px] font-mono mb-2" style={{ color: text + '88' }}>This cannot be undone.</div>
+    ios26: ({ text, primary }) => (
+      <div className="p-3 w-full" style={{ fontFamily: SF, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)', border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur, boxShadow: `${glassInset}, 0 16px 40px rgba(0,0,0,0.4)` }}>
+        <div className="text-[11px] font-semibold mb-1" style={{ color: text }}>Confirm action</div>
+        <div className="text-[10px] mb-2.5" style={{ color: text + '99' }}>This cannot be undone.</div>
         <div className="flex gap-1.5">
-          <div className="px-2 py-1 text-[10px] font-bold font-mono" style={{ backgroundColor: primary, color: '#000' }}>CONFIRM</div>
-          <div className="px-2 py-1 text-[10px] font-bold font-mono" style={{ color: text, border: `1.5px solid ${border}` }}>CANCEL</div>
+          <div className="px-3 py-1 text-[10px] font-semibold" style={{ backgroundColor: primary, color: '#fff', borderRadius: 999, boxShadow: glassInset }}>Confirm</div>
+          <div className="px-3 py-1 text-[10px] font-medium" style={{ color: '#fff', borderRadius: 999, backgroundColor: glassFill, border: glassBorder }}>Cancel</div>
         </div>
       </div>
     ),
@@ -294,11 +305,11 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Tabs: {
-    brutalist: ({ primary, text, border }) => (
-      <div className="w-full">
-        <div className="flex" style={{ borderBottom: `2px solid ${border}` }}>
-          {['OVERVIEW','DETAILS','LOGS'].map((t, i) => (
-            <div key={t} className="px-3 py-1.5 text-[10px] font-bold font-mono" style={{ color: i === 0 ? primary : text + '66', borderBottom: i === 0 ? `2px solid ${primary}` : 'none', marginBottom: -2 }}>{t}</div>
+    ios26: ({ text }) => (
+      <div className="w-full" style={{ fontFamily: SF }}>
+        <div className="flex gap-1 p-1 rounded-full" style={{ backgroundColor: glassFill, border: glassBorder, backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur }}>
+          {['Overview','Details','Logs'].map((t, i) => (
+            <div key={t} className="px-3 py-1 text-[10px] font-medium flex-1 text-center" style={{ color: '#fff', borderRadius: 999, backgroundColor: i === 0 ? 'rgba(255,255,255,0.25)' : 'transparent', border: i === 0 ? '1px solid rgba(255,255,255,0.4)' : '1px solid transparent', boxShadow: i === 0 ? glassInset : 'none' }}>{t}</div>
           ))}
         </div>
       </div>
@@ -323,12 +334,12 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Breadcrumb: {
-    brutalist: ({ text, primary }) => (
-      <div className="flex items-center gap-1 font-mono text-[10px]">
-        {['HOME','PRODUCTS','ITEM'].map((s, i, arr) => (
+    ios26: ({ text, primary }) => (
+      <div className="flex items-center gap-1 text-[10px]" style={{ fontFamily: SF }}>
+        {['Home','Products','Item'].map((s, i, arr) => (
           <span key={s} className="flex items-center gap-1">
-            <span style={{ color: i === arr.length - 1 ? primary : text + '66' }}>{s}</span>
-            {i < arr.length - 1 && <span style={{ color: text + '44' }}>{'>'}</span>}
+            <span style={{ color: i === arr.length - 1 ? primary : text + '88', fontWeight: i === arr.length - 1 ? 600 : 400 }}>{s}</span>
+            {i < arr.length - 1 && <span style={{ color: text + '44' }}>›</span>}
           </span>
         ))}
       </div>
@@ -355,10 +366,10 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Spinner: {
-    brutalist: ({ primary, text }) => (
-      <div className="flex items-center gap-2">
-        <div className="w-5 h-5 border-2 animate-spin" style={{ borderColor: primary, borderTopColor: 'transparent' }} />
-        <span className="text-[10px] font-mono" style={{ color: text }}>LOADING...</span>
+    ios26: ({ primary, text }) => (
+      <div className="flex items-center gap-2" style={{ fontFamily: SF }}>
+        <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: 'rgba(255,255,255,0.2)', borderTopColor: primary }} />
+        <span className="text-[10px]" style={{ color: text + '99' }}>Loading…</span>
       </div>
     ),
     organic: ({ primary, text }) => (
@@ -375,13 +386,13 @@ const PREVIEWS: Record<string, Record<StyleDirection, (p: PreviewProps) => React
     ),
   },
   Progress: {
-    brutalist: ({ primary, text, border }) => (
-      <div className="flex flex-col gap-1 w-full">
-        <div className="flex justify-between text-[10px] font-mono" style={{ color: text }}>
-          <span>PROGRESS</span><span>72%</span>
+    ios26: ({ primary, text }) => (
+      <div className="flex flex-col gap-1 w-full" style={{ fontFamily: SF }}>
+        <div className="flex justify-between text-[10px]" style={{ color: text + '99' }}>
+          <span>Progress</span><span>72%</span>
         </div>
-        <div className="h-3 w-full" style={{ border: `2px solid ${border}` }}>
-          <div className="h-full" style={{ width: '72%', backgroundColor: primary }} />
+        <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+          <div className="h-full rounded-full" style={{ width: '72%', backgroundColor: primary, boxShadow: `${glassInset}, 0 0 8px ${primary}66` }} />
         </div>
       </div>
     ),

@@ -10,11 +10,11 @@ const STYLES: {
   traits: string[]
 }[] = [
   {
-    key: 'brutalist',
-    label: 'Brutalist',
-    tagline: 'Raw. Precise. Unapologetic.',
-    description: 'Hard edges, high contrast, monospace type, no decorative shadows. Inspired by Swiss grid and developer tools.',
-    traits: ['No border radius', 'Heavy borders', 'Mono typography', 'Max contrast'],
+    key: 'ios26',
+    label: 'iOS 26',
+    tagline: 'Liquid Glass. Depth. Clarity.',
+    description: 'Translucent Liquid Glass surfaces, concentric radii, floating pill controls and SF-style typography. Apple’s iOS 26 design language — light, layered and alive.',
+    traits: ['Liquid Glass', 'Concentric radii', 'SF typography', 'Floating controls'],
   },
   {
     key: 'organic',
@@ -32,64 +32,85 @@ const STYLES: {
   },
 ]
 
+// SF-style system font stack used across the iOS 26 specimens
+const SF = '-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif'
+
 // Mini UI previews — rendered with the user's own tokens
-function BrutalistPreview({
-  primary,
-  surface,
-  text,
-  border,
-}: {
-  primary: string
-  surface: string
-  text: string
-  border: string
-}) {
+// iOS 26 "Liquid Glass": a colourful wallpaper with a floating frosted-glass
+// panel on top, so you can see the tint refract through the translucent surface.
+function IOSPreview({ primary }: { primary: string }) {
+  const tint = primary || '#3b82f6'
   return (
     <div
-      className="p-3 flex flex-col gap-2 font-mono text-[11px]"
-      style={{ backgroundColor: surface || '#111', border: `2px solid ${border || '#fff'}` }}
+      className="relative p-3 overflow-hidden"
+      style={{
+        fontFamily: SF,
+        borderRadius: 20,
+        background: `linear-gradient(140deg, ${tint} 0%, ${tint}aa 55%, #ffffff33 100%)`,
+      }}
     >
+      {/* Refraction orbs behind the glass */}
+      <div className="absolute -top-3 -left-2 w-16 h-16 rounded-full" style={{ background: '#ffffff66', filter: 'blur(14px)' }} />
+      <div className="absolute -bottom-4 right-2 w-16 h-16 rounded-full" style={{ background: `${tint}`, filter: 'blur(16px)', opacity: 0.7 }} />
+
+      {/* Floating Liquid Glass panel */}
       <div
-        className="font-bold tracking-tight"
-        style={{ color: text || '#fff', fontSize: 13 }}
-      >
-        DASHBOARD
-      </div>
-      <div
-        className="h-px w-full"
-        style={{ backgroundColor: border || '#fff' }}
-      />
-      <div className="flex gap-1">
-        <div
-          className="px-2 py-1 text-[10px] font-bold"
-          style={{
-            backgroundColor: primary || '#3b82f6',
-            color: '#000',
-            border: `1.5px solid ${primary || '#3b82f6'}`,
-          }}
-        >
-          ACTION
-        </div>
-        <div
-          className="px-2 py-1 text-[10px] font-bold"
-          style={{
-            backgroundColor: 'transparent',
-            color: text || '#fff',
-            border: `1.5px solid ${border || '#fff'}`,
-          }}
-        >
-          CANCEL
-        </div>
-      </div>
-      <div
-        className="px-2 py-1 text-[10px]"
+        className="relative flex flex-col gap-2 p-2.5"
         style={{
-          backgroundColor: 'transparent',
-          color: text || '#666',
-          border: `1px solid ${border || '#333'}`,
+          borderRadius: 16,
+          backgroundColor: 'rgba(255,255,255,0.16)',
+          backdropFilter: 'blur(10px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+          border: '1px solid rgba(255,255,255,0.35)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.55)',
         }}
       >
-        input field_
+        <div
+          className="font-semibold tracking-tight"
+          style={{ color: '#fff', fontSize: 15, textShadow: '0 1px 2px rgba(0,0,0,0.18)' }}
+        >
+          Today
+        </div>
+        <div className="flex gap-1.5">
+          <div
+            className="px-3 py-1 text-[10px] font-semibold"
+            style={{
+              color: '#fff',
+              borderRadius: 999,
+              backgroundColor: 'rgba(255,255,255,0.28)',
+              border: '1px solid rgba(255,255,255,0.45)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+            }}
+          >
+            Continue
+          </div>
+          <div
+            className="px-3 py-1 text-[10px] font-medium"
+            style={{
+              color: '#fff',
+              borderRadius: 999,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.25)',
+            }}
+          >
+            Skip
+          </div>
+        </div>
+        <div
+          className="flex items-center gap-1.5 px-2.5 py-1 text-[10px]"
+          style={{
+            color: 'rgba(255,255,255,0.85)',
+            borderRadius: 999,
+            backgroundColor: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.22)',
+          }}
+        >
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+            <circle cx="5" cy="5" r="3.4" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M8 8L11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          Search
+        </div>
       </div>
     </div>
   )
@@ -219,7 +240,7 @@ function MaterialPreview({
 }
 
 const PREVIEW_MAP = {
-  brutalist: BrutalistPreview,
+  ios26: IOSPreview,
   organic: OrganicPreview,
   material: MaterialPreview,
 }

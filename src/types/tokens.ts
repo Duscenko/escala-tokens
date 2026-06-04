@@ -17,11 +17,11 @@ export interface DesignTokens {
   typography: TypographyTokens
   spacing: Record<string, string>
   radius: Record<string, string>
-  style: 'brutalist' | 'organic' | 'material' | null
+  style: 'ios26' | 'organic' | 'material' | null
   atoms: string[]
 }
 
-export type StyleDirection = 'brutalist' | 'organic' | 'material'
+export type StyleDirection = 'ios26' | 'organic' | 'material'
 
 export type AtomType =
   | 'Button'

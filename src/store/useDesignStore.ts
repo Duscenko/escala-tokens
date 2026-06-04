@@ -37,6 +37,12 @@ interface DesignStore {
   setPrimaryColor: (hex: string) => void
   setPrimaryScale: (scale: ColorScale) => void
 
+  // Step 2 — Neutral gray (user-selectable flavor, generates light scale)
+  grayBaseColor: string
+  grayLightScale: ColorScale
+  setGrayBaseColor: (hex: string) => void
+  setGrayLightScale: (scale: ColorScale) => void
+
   // Step 2 — Semantic state scales (user-adjustable, default from Figma DS)
   errorColor: string
   errorScale: ColorScale
@@ -72,14 +78,10 @@ interface DesignStore {
   setSpacing: (s: Record<string, string>) => void
   setRadius: (r: Record<string, string>) => void
 
-  // Step 6 — Style direction
-  styleDirection: 'brutalist' | 'organic' | 'material' | null
-  setStyleDirection: (s: 'brutalist' | 'organic' | 'material') => void
-
-  // Step 7 — Selected atoms
-  selectedAtoms: string[]
-  toggleAtom: (atom: string) => void
-  setSelectedAtoms: (atoms: string[]) => void
+  // Step 6 — Selected components
+  selectedComponents: string[]
+  toggleComponent: (key: string) => void
+  setSelectedComponents: (keys: string[]) => void
 
   // Current step
   currentStep: number
@@ -97,6 +99,12 @@ export const useDesignStore = create<DesignStore>()(
       primaryScale: {},
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
       setPrimaryScale: (scale) => set({ primaryScale: scale }),
+
+      // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
+      grayBaseColor: '#6c737f',
+      grayLightScale: GRAY_LIGHT_SCALE,
+      setGrayBaseColor: (hex) => set({ grayBaseColor: hex }),
+      setGrayLightScale: (scale) => set({ grayLightScale: scale }),
 
       // Error (Figma base: error-500 = #f04438)
       errorColor: '#f04438',
@@ -187,23 +195,32 @@ export const useDesignStore = create<DesignStore>()(
       setSpacing: (s) => set({ spacing: s }),
       setRadius: (r) => set({ radius: r }),
 
-      styleDirection: null,
-      setStyleDirection: (s) => set({ styleDirection: s }),
-
-      selectedAtoms: [],
-      toggleAtom: (atom) =>
+      selectedComponents: [],
+      toggleComponent: (key) =>
         set((state) => ({
-          selectedAtoms: state.selectedAtoms.includes(atom)
-            ? state.selectedAtoms.filter((a) => a !== atom)
-            : [...state.selectedAtoms, atom],
+          selectedComponents: state.selectedComponents.includes(key)
+            ? state.selectedComponents.filter((k) => k !== key)
+            : [...state.selectedComponents, key],
         })),
-      setSelectedAtoms: (atoms) => set({ selectedAtoms: atoms }),
+      setSelectedComponents: (keys) => set({ selectedComponents: keys }),
 
       currentStep: 1,
       setCurrentStep: (step) => set({ currentStep: step }),
     }),
     {
       name: 'scalable-designs-store',
+      version: 2,
+      migrate: (persisted: any) => {
+        // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
+        if (persisted) {
+          delete persisted.styleDirection
+          if (persisted.selectedAtoms && !persisted.selectedComponents) {
+            persisted.selectedComponents = persisted.selectedAtoms
+            delete persisted.selectedAtoms
+          }
+        }
+        return persisted
+      },
     }
   )
 )

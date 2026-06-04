@@ -13,7 +13,7 @@ const BASE_PRESETS = [
 const RADIUS_PRESETS = [
   {
     label: 'Sharp',
-    description: 'No rounding — brutalist, precise',
+    description: 'No rounding — sharp, precise',
     values: { none: '0px', sm: '2px', md: '4px', lg: '6px', full: '9999px' },
   },
   {

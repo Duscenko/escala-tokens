@@ -4,9 +4,8 @@ import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import Step3_SemanticTokens from '../components/configurator/Step3_SemanticTokens'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_SpacingRadius from '../components/configurator/Step5_SpacingRadius'
-import Step6_StyleDirection from '../components/configurator/Step6_StyleDirection'
-import Step7_AtomSelector from '../components/configurator/Step7_AtomSelector'
-import Step8_Export from '../components/configurator/Step8_Export'
+import Step6_Components from '../components/configurator/Step6_Components'
+import Step7_Export from '../components/configurator/Step8_Export'
 
 const STEPS = [
   { id: 1, label: 'Project Name' },
@@ -14,24 +13,24 @@ const STEPS = [
   { id: 3, label: 'Semantic Tokens' },
   { id: 4, label: 'Typography' },
   { id: 5, label: 'Spacing & Radius' },
-  { id: 6, label: 'Style Direction' },
-  { id: 7, label: 'Select Atoms' },
-  { id: 8, label: 'Export' },
+  { id: 6, label: 'Components' },
+  { id: 7, label: 'Export' },
 ]
 
 export default function Configurator() {
-  const { currentStep, setCurrentStep, projectName, styleDirection, selectedAtoms } = useDesignStore()
+  const { currentStep, setCurrentStep, projectName, selectedComponents } = useDesignStore()
 
   const canContinue =
     currentStep === 1 ? projectName.trim().length > 0 :
-    currentStep === 6 ? styleDirection !== null :
-    currentStep === 7 ? selectedAtoms.length > 0 :
     true
 
   const nextStep = STEPS[currentStep] // index = currentStep since STEPS is 1-indexed in .id but 0-indexed in array
 
+  // Step 6 is a component gallery — give it more room than the form-style steps.
+  const containerWidth = currentStep === 6 ? 'max-w-5xl' : 'max-w-3xl'
+
   return (
-    <div className="max-w-3xl mx-auto px-6 pt-16 pb-32">
+    <div className={`${containerWidth} mx-auto px-6 pt-16 pb-32 transition-[max-width] duration-300`}>
 
       {/* Step indicator — clickable for completed steps */}
       <div className="flex gap-1.5 mb-10">
@@ -81,7 +80,7 @@ export default function Configurator() {
             <code className="text-violet-400 text-xs px-1 py-0.5 rounded bg-neutral-800">README.md</code>.
           </p>
           <div className="flex items-center gap-3 text-xs text-neutral-600">
-            <span>8 steps</span>
+            <span>7 steps</span>
             <span>·</span>
             <span>~10 min</span>
             <span>·</span>
@@ -97,14 +96,13 @@ export default function Configurator() {
         {currentStep === 3 && <Step3_SemanticTokens />}
         {currentStep === 4 && <Step4_Typography />}
         {currentStep === 5 && <Step5_SpacingRadius />}
-        {currentStep === 6 && <Step6_StyleDirection />}
-        {currentStep === 7 && <Step7_AtomSelector />}
-        {currentStep === 8 && <Step8_Export />}
+        {currentStep === 6 && <Step6_Components />}
+        {currentStep === 7 && <Step7_Export />}
       </div>
 
       {/* Navigation — sticky at bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-800/60 bg-neutral-950/95 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className={`${containerWidth} mx-auto px-6 py-4 flex justify-between items-center transition-[max-width] duration-300`}>
           <button
             onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
             disabled={currentStep === 1}
@@ -113,9 +111,7 @@ export default function Configurator() {
             ← Back
           </button>
 
-          {currentStep === 7 && selectedAtoms.length === 0 && (
-            <span className="text-xs text-neutral-600">Select at least one atom to continue</span>
-          )}
+
 
           {currentStep < STEPS.length && (
             <button

@@ -5,6 +5,13 @@ import { generateTokenJSON } from '../../lib/tokenGenerator'
 
 type Tab = 'tokens' | 'css' | 'markdown'
 
+// Human-readable labels for the style direction key
+const STYLE_LABEL: Record<string, string> = {
+  ios26: 'iOS 26',
+  organic: 'Organic',
+  material: 'Material',
+}
+
 // ─── Generators ─────────────────────────────────────────────────────────────
 
 function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
@@ -48,7 +55,7 @@ function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): strin
 
 ## Overview
 
-- **Style direction:** ${styleDirection ?? 'not set'}
+- **Style direction:** ${styleDirection ? STYLE_LABEL[styleDirection] ?? styleDirection : 'not set'}
 - **Primary color:** \`${primaryColor}\`
 - **Heading font:** ${headingFont}
 - **Body font:** ${typography.fontFamily}
@@ -201,7 +208,7 @@ export default function Step8_Export() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Pill label="Project"   value={projectName || '—'} />
         <Pill label="Primary"   value={primaryColor}       color={primaryColor} />
-        <Pill label="Style"     value={styleDirection ? styleDirection.charAt(0).toUpperCase() + styleDirection.slice(1) : '—'} />
+        <Pill label="Style"     value={styleDirection ? STYLE_LABEL[styleDirection] ?? styleDirection : '—'} />
         <Pill label="Atoms"     value={`${selectedAtoms.length} selected`} />
       </div>
 

@@ -3,20 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE } from '../../store/useDesignStore'
 import { generateColorScale, isAccessible, checkContrast } from '../../lib/colorUtils'
 
+// ── Gray flavor options for neutral scale ─────────────────────────────────
+const GRAY_FLAVORS: { label: string; hex: string }[] = [
+  { label: 'Gray Blue',    hex: '#4e5ba6' },
+  { label: 'Gray Cool',    hex: '#5d6b98' },
+  { label: 'Gray Modern',  hex: '#697586' },
+  { label: 'Gray Neutral', hex: '#6c737f' },
+  { label: 'Gray Iron',    hex: '#70707b' },
+  { label: 'Gray True',    hex: '#737373' },
+  { label: 'Gray Warm',    hex: '#79716b' },
+]
+
 // ── Color preset groups (Figma design system palette) ────────────────────
 const PRESET_GROUPS: { label: string; colors: { label: string; hex: string }[] }[] = [
-  {
-    label: 'Grays',
-    colors: [
-      { label: 'Gray Blue',    hex: '#4e5ba6' },
-      { label: 'Gray Cool',    hex: '#5d6b98' },
-      { label: 'Gray Modern',  hex: '#697586' },
-      { label: 'Gray Neutral', hex: '#6c737f' },
-      { label: 'Gray Iron',    hex: '#70707b' },
-      { label: 'Gray True',    hex: '#737373' },
-      { label: 'Gray Warm',    hex: '#79716b' },
-    ],
-  },
   {
     label: 'Greens',
     colors: [
@@ -293,6 +292,7 @@ export default function Step2_ColorPalette() {
     warningColor, warningScale, setWarningColor, setWarningScale,
     successColor, successScale, setSuccessColor, setSuccessScale,
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
+    grayBaseColor, grayLightScale, setGrayBaseColor, setGrayLightScale,
   } = useDesignStore()
 
   const regenerate = useCallback((hex: string) => {
@@ -319,6 +319,10 @@ export default function Step2_ColorPalette() {
     try { setInfoColor(hex); setInfoScale(generateColorScale(hex)) } catch {}
   }, [setInfoColor, setInfoScale])
 
+  const regenerateGray = useCallback((hex: string) => {
+    try { setGrayBaseColor(hex); setGrayLightScale(generateColorScale(hex)) } catch {}
+  }, [setGrayBaseColor, setGrayLightScale])
+
   useEffect(() => {
     if (Object.keys(primaryScale).length === 0) regenerate(primaryColor)
     if (Object.keys(errorScale).length   === 0) regenerateError(errorColor)
@@ -331,7 +335,7 @@ export default function Step2_ColorPalette() {
 
   // Swatch previews for collapsed state
   const semanticSwatches = [errorColor, warningColor, successColor, infoColor]
-  const neutralSwatches = Object.values(GRAY_LIGHT_SCALE).filter((_, i) => i % 3 === 0)
+  const neutralSwatches = Object.values(grayLightScale).filter((_, i) => i % 3 === 0)
 
   return (
     <motion.div
@@ -528,13 +532,39 @@ export default function Step2_ColorPalette() {
       {/* ── Neutral scales — collapsible ────────────────────────── */}
       <CollapsibleSection
         label="Neutral Scales"
-        description="Foundation grays for text, fields, backgrounds and dividers — fixed from the Figma DS."
+        description="Foundation grays for text, fields, backgrounds and dividers — pick a flavor below."
         swatchColors={neutralSwatches}
         defaultOpen={false}
       >
         <div className="flex flex-col gap-5 rounded-lg border border-neutral-800/60 p-4 bg-neutral-950/40">
+          {/* Gray flavor selector */}
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-neutral-600 uppercase tracking-wider w-14 shrink-0 text-right">
+              Flavor
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {GRAY_FLAVORS.map((g) => (
+                <button
+                  key={g.hex}
+                  onClick={() => regenerateGray(g.hex)}
+                  title={g.label}
+                  className={`w-6 h-6 rounded-full transition-all duration-150 hover:scale-110 ${
+                    grayBaseColor === g.hex
+                      ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-neutral-950 scale-110'
+                      : 'ring-1 ring-white/10'
+                  }`}
+                  style={{ backgroundColor: g.hex }}
+                  aria-label={g.label}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-neutral-600 font-mono ml-1">
+              {GRAY_FLAVORS.find((g) => g.hex === grayBaseColor)?.label ?? 'Custom'}
+            </span>
+          </div>
+
           <CompactScale
-            scale={GRAY_LIGHT_SCALE}
+            scale={grayLightScale}
             label="Gray (light mode)"
             description="Neutral gray used for text, form fields, backgrounds and dividers in light mode."
             accentIndex={7}
