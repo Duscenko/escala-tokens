@@ -105,8 +105,8 @@ function Section({ kicker, title, children }: { kicker: string; title: string; c
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-neutral-600">{kicker}</p>
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <p className="text-[10px] uppercase tracking-widest text-fg-faint">{kicker}</p>
+        <h3 className="text-sm font-semibold text-fg">{title}</h3>
       </div>
       {children}
     </section>
@@ -124,7 +124,7 @@ function Stage({
 }) {
   return (
     <div
-      className={cn('flex items-center justify-center rounded-xl border border-neutral-800 p-8', className)}
+      className={cn('flex items-center justify-center rounded-xl border border-line p-8', className)}
       style={{ background: surface }}
     >
       {children}
@@ -142,14 +142,14 @@ function Segmented<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="inline-flex flex-wrap gap-0.5 rounded-lg bg-neutral-800/50 p-0.5 border border-neutral-800">
+    <div className="inline-flex flex-wrap gap-0.5 rounded-lg bg-elevated/50 p-0.5 border border-line">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={cn(
             'px-2.5 py-1 text-xs rounded-md transition-all whitespace-nowrap',
-            value === o.value ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200',
+            value === o.value ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg',
           )}
         >
           {o.label}
@@ -167,8 +167,8 @@ function TogglePill({ label, active, onClick }: { label: string; active: boolean
       className={cn(
         'px-2.5 py-1 text-xs rounded-md border transition-all',
         active
-          ? 'bg-violet-500/15 border-violet-500/40 text-violet-300'
-          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200',
+          ? 'bg-[#0088FF]/15 border-[#0088FF]/40 text-[#8FC8FF]'
+          : 'bg-surface border-line text-fg-muted hover:text-fg',
       )}
     >
       {label}
@@ -179,7 +179,7 @@ function TogglePill({ label, active, onClick }: { label: string; active: boolean
 function ControlRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-fg-faint">{label}</span>
       <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
   )
@@ -206,18 +206,18 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-white">Button</h2>
-            <span className="text-[10px] uppercase tracking-widest text-neutral-600 mt-1">Action</span>
+            <h2 className="text-xl font-semibold text-fg">Button</h2>
+            <span className="text-[10px] uppercase tracking-widest text-fg-faint mt-1">Action</span>
           </div>
-          <p className="text-sm text-neutral-400 mt-1 max-w-md leading-relaxed">{TAGLINE}</p>
+          <p className="text-sm text-fg-muted mt-1 max-w-md leading-relaxed">{TAGLINE}</p>
         </div>
         <button
           onClick={onToggle}
           className={cn(
             'text-xs px-3 py-1.5 rounded-lg font-medium transition-all shrink-0 whitespace-nowrap',
             selected
-              ? 'bg-violet-600 text-white'
-              : 'bg-neutral-800 text-neutral-300 border border-neutral-700 hover:border-neutral-500',
+              ? 'bg-[#0088FF] text-white'
+              : 'bg-elevated text-fg-muted border border-line-strong hover:border-line-strong',
           )}
         >
           {selected ? '✓ Added to system' : 'Add to system'}
@@ -239,7 +239,7 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
               tokens={tokens}
             />
           </Stage>
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex flex-wrap gap-x-8 gap-y-4">
+          <div className="rounded-xl border border-line bg-surface/40 p-4 flex flex-wrap gap-x-8 gap-y-4">
             <ControlRow label="Style">
               <Segmented
                 value={variant}
@@ -283,8 +283,8 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
                 <ButtonPreview variant={v.key} size="md" labelType="icon-text" label="Play" tokens={tokens} />
               </Stage>
               <div>
-                <p className="text-xs font-medium text-neutral-200">{v.label}</p>
-                <p className="text-[11px] text-neutral-500 leading-snug">{v.when}</p>
+                <p className="text-xs font-medium text-fg-muted">{v.label}</p>
+                <p className="text-[11px] text-fg-faint leading-snug">{v.when}</p>
               </div>
             </div>
           ))}
@@ -298,9 +298,9 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
             <ButtonPreview key={s.key} variant="primary" size={s.key} labelType="text" label="Play" tokens={tokens} />
           ))}
         </Stage>
-        <div className="rounded-xl border border-neutral-800 overflow-hidden">
+        <div className="rounded-xl border border-line overflow-hidden">
           <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-900/60 text-neutral-500">
+            <thead className="bg-surface/60 text-fg-faint">
               <tr>
                 <th className="px-3 py-2 font-medium">Size</th>
                 <th className="px-3 py-2 font-medium">Height</th>
@@ -309,18 +309,18 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
                 <th className="px-3 py-2 font-medium">Icon</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800/60">
+            <tbody className="divide-y divide-line/60">
               {BUTTON_SIZES.map((s) => (
-                <tr key={s.key} className="text-neutral-300">
+                <tr key={s.key} className="text-fg-muted">
                   <td className="px-3 py-2">{s.label}</td>
-                  <td className="px-3 py-2 font-mono text-neutral-400">{s.height}px</td>
-                  <td className="px-3 py-2 font-mono text-neutral-400">
+                  <td className="px-3 py-2 font-mono text-fg-muted">{s.height}px</td>
+                  <td className="px-3 py-2 font-mono text-fg-muted">
                     {resolvePx(tokens.spacing, s.paddingKey, s.padPx)}px
                   </td>
-                  <td className="px-3 py-2 font-mono text-neutral-400">
+                  <td className="px-3 py-2 font-mono text-fg-muted">
                     {resolvePx(tokens.typography?.sizes, s.fontKey, s.fontPx)}px
                   </td>
-                  <td className="px-3 py-2 font-mono text-neutral-400">{s.icon}px</td>
+                  <td className="px-3 py-2 font-mono text-fg-muted">{s.icon}px</td>
                 </tr>
               ))}
             </tbody>
@@ -347,7 +347,7 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
                   }
                 />
               </Stage>
-              <span className="text-[11px] text-neutral-500">{st.label}</span>
+              <span className="text-[11px] text-fg-faint">{st.label}</span>
             </div>
           ))}
         </div>
@@ -364,8 +364,8 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
               <li key={a.part} className="flex items-start gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ background: a.dot }} />
                 <div>
-                  <p className="text-xs font-medium text-neutral-200">{a.part}</p>
-                  <p className="text-[11px] text-neutral-500 leading-snug">{a.desc}</p>
+                  <p className="text-xs font-medium text-fg-muted">{a.part}</p>
+                  <p className="text-[11px] text-fg-faint leading-snug">{a.desc}</p>
                 </div>
               </li>
             ))}
@@ -375,14 +375,14 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
 
       {/* Props */}
       <Section kicker="API" title="Props">
-        <div className="flex flex-col divide-y divide-neutral-800/60">
+        <div className="flex flex-col divide-y divide-line/60">
           {PROPS.map((p) => (
             <div key={p.name} className="py-2.5 flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <code className="text-xs text-violet-400 font-mono">{p.name}</code>
-                <code className="text-[10px] text-neutral-600 font-mono">{p.type}</code>
+                <code className="text-xs text-[#5AADFF] font-mono">{p.name}</code>
+                <code className="text-[10px] text-fg-faint font-mono">{p.type}</code>
               </div>
-              <p className="text-xs text-neutral-500">{p.desc}</p>
+              <p className="text-xs text-fg-faint">{p.desc}</p>
             </div>
           ))}
         </div>
@@ -390,10 +390,10 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
 
       {/* Accessibility */}
       <Section kicker="Inclusive" title="Accessibility">
-        <ul className="rounded-xl bg-neutral-900/50 border border-neutral-800 p-4 flex flex-col gap-2">
+        <ul className="rounded-xl bg-surface/50 border border-line p-4 flex flex-col gap-2">
           {A11Y.map((a) => (
-            <li key={a} className="text-xs text-neutral-400 leading-relaxed flex gap-2">
-              <span className="text-violet-400 shrink-0">•</span>
+            <li key={a} className="text-xs text-fg-muted leading-relaxed flex gap-2">
+              <span className="text-[#5AADFF] shrink-0">•</span>
               {a}
             </li>
           ))}
@@ -413,7 +413,7 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
             </Stage>
             <ul className="flex flex-col gap-1.5">
               {DO.map((d) => (
-                <li key={d} className="text-[11px] text-neutral-400 leading-snug">
+                <li key={d} className="text-[11px] text-fg-muted leading-snug">
                   {d}
                 </li>
               ))}
@@ -429,7 +429,7 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
             </Stage>
             <ul className="flex flex-col gap-1.5">
               {DONT.map((d) => (
-                <li key={d} className="text-[11px] text-neutral-400 leading-snug">
+                <li key={d} className="text-[11px] text-fg-muted leading-snug">
                   {d}
                 </li>
               ))}
@@ -441,21 +441,21 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
       {/* When to use */}
       <Section kicker="Usage" title="When to use">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4">
-            <p className="text-[11px] uppercase tracking-wider text-neutral-500 mb-2">Use it for</p>
+          <div className="rounded-xl border border-line bg-surface/40 p-4">
+            <p className="text-[11px] uppercase tracking-wider text-fg-faint mb-2">Use it for</p>
             <ul className="flex flex-col gap-1.5">
               {WHEN_TO_USE.map((w) => (
-                <li key={w} className="text-xs text-neutral-400 leading-snug">
+                <li key={w} className="text-xs text-fg-muted leading-snug">
                   {w}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4">
-            <p className="text-[11px] uppercase tracking-wider text-neutral-500 mb-2">Reach for something else</p>
+          <div className="rounded-xl border border-line bg-surface/40 p-4">
+            <p className="text-[11px] uppercase tracking-wider text-fg-faint mb-2">Reach for something else</p>
             <ul className="flex flex-col gap-1.5">
               {WHEN_NOT_TO_USE.map((w) => (
-                <li key={w} className="text-xs text-neutral-400 leading-snug">
+                <li key={w} className="text-xs text-fg-muted leading-snug">
                   {w}
                 </li>
               ))}
@@ -468,7 +468,7 @@ export default function ButtonDoc({ tokens, selected, onToggle }: RichDocProps) 
       <Section kicker="Theming" title="Tokens used">
         <div className="flex flex-wrap gap-1.5">
           {TOKENS_USED.map((t) => (
-            <span key={t} className="text-[11px] px-2 py-0.5 rounded bg-neutral-800/80 text-neutral-300 font-mono">
+            <span key={t} className="text-[11px] px-2 py-0.5 rounded bg-elevated/80 text-fg-muted font-mono">
               {t}
             </span>
           ))}

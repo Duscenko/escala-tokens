@@ -1,20 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-
-const FONT_PRESETS = [
-  { label: 'Inter',        value: 'Inter',             category: 'Sans-serif' },
-  { label: 'Geist',        value: 'Geist',             category: 'Sans-serif' },
-  { label: 'DM Sans',      value: 'DM Sans',           category: 'Sans-serif' },
-  { label: 'Plus Jakarta', value: 'Plus Jakarta Sans',  category: 'Sans-serif' },
-  { label: 'Sora',         value: 'Sora',              category: 'Sans-serif' },
-  { label: 'Outfit',       value: 'Outfit',            category: 'Sans-serif' },
-  { label: 'Fraunces',     value: 'Fraunces',          category: 'Serif'      },
-  { label: 'Playfair',     value: 'Playfair Display',  category: 'Serif'      },
-  { label: 'Libre Bask.',  value: 'Libre Baskerville', category: 'Serif'      },
-  { label: 'JetBrains',    value: 'JetBrains Mono',    category: 'Mono'       },
-  { label: 'Fira Code',    value: 'Fira Code',         category: 'Mono'       },
-]
+import { FONT_PRESETS, fontStack } from '../../lib/fonts'
 
 const WEIGHTS = [
   { label: 'Regular',   value: 400 },
@@ -44,36 +31,75 @@ function loadGoogleFont(family: string) {
   document.head.appendChild(link)
 }
 
-function FontPicker({
-  selectedFont,
-  onSelect,
-  label,
+function FontSelector({
+  headingFont,
+  bodyFont,
+  setHeadingFont,
+  setBodyFont,
 }: {
-  selectedFont: string
-  onSelect: (font: string) => void
-  label: string
+  headingFont: string
+  bodyFont: string
+  setHeadingFont: (f: string) => void
+  setBodyFont: (f: string) => void
 }) {
+  // One shared font list; the toggle picks which role the next click assigns.
+  const [target, setTarget] = useState<'heading' | 'body'>('heading')
+  const current = target === 'heading' ? headingFont : bodyFont
+  const onSelect = target === 'heading' ? setHeadingFont : setBodyFont
+
   return (
-    <div className="flex flex-col gap-3">
-      <label className="text-sm text-neutral-400 uppercase tracking-wide">{label}</label>
+    <div className="flex flex-col gap-4">
+      {/* Target toggle + current pairing */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-surface border border-line">
+          {(['heading', 'body'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTarget(t)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+                target === t ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {t} font
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 text-xs font-mono text-fg-faint">
+          <span>Heading <span className="text-fg-muted">{headingFont}</span></span>
+          <span>Body <span className="text-fg-muted">{bodyFont}</span></span>
+        </div>
+      </div>
+
+      {/* Full-width font grid grouped by category */}
       {(['Sans-serif', 'Serif', 'Mono'] as const).map((cat) => (
         <div key={cat} className="flex flex-col gap-1.5">
-          <span className="text-[11px] text-neutral-600 uppercase tracking-widest">{cat}</span>
-          <div className="flex flex-wrap gap-2">
-            {FONT_PRESETS.filter((f) => f.category === cat).map((f) => (
-              <button
-                key={f.value}
-                onClick={() => onSelect(f.value)}
-                style={{ fontFamily: `'${f.value}', sans-serif` }}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                  selectedFont === f.value
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-400/30'
-                    : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-600'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+          <span className="text-[11px] text-fg-faint uppercase tracking-widest">{cat}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {FONT_PRESETS.filter((f) => f.category === cat).map((f) => {
+              const isActive = current === f.value
+              const otherTag =
+                target === 'heading'
+                  ? bodyFont === f.value ? 'B' : ''
+                  : headingFont === f.value ? 'H' : ''
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => onSelect(f.value)}
+                  style={{ fontFamily: fontStack(f.value) }}
+                  className={`relative px-3 py-2.5 rounded-lg text-sm text-left truncate transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+                    isActive
+                      ? 'bg-[#0088FF] text-white ring-2 ring-[#5AADFF]/30'
+                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
+                  }`}
+                  title={f.label}
+                >
+                  {f.label}
+                  {otherTag && !isActive && (
+                    <span className="absolute top-1 right-1.5 text-[9px] font-mono text-fg-faint">{otherTag}</span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
       ))}
@@ -129,11 +155,13 @@ export default function Step4_Typography() {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-10"
     >
-      {/* ── Font pickers ── */}
-      <div className="grid grid-cols-2 gap-8">
-        <FontPicker selectedFont={headingFont} onSelect={setHeadingFont} label="Heading Font" />
-        <FontPicker selectedFont={bodyFont} onSelect={setBodyFont} label="Body Font" />
-      </div>
+      {/* ── Font selector ── */}
+      <FontSelector
+        headingFont={headingFont}
+        bodyFont={bodyFont}
+        setHeadingFont={setHeadingFont}
+        setBodyFont={setBodyFont}
+      />
 
       {/* ── Live Specimen ── */}
       <AnimatePresence mode="wait">
@@ -143,34 +171,34 @@ export default function Step4_Typography() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-xl bg-neutral-900 border border-neutral-800 p-6 flex flex-col gap-5"
+          className="rounded-xl bg-surface border border-line p-6 flex flex-col gap-5"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-500 uppercase tracking-wider">Specimen</span>
+            <span className="text-xs text-fg-faint uppercase tracking-wider">Specimen</span>
             {headingFont !== bodyFont && (
-              <span className="text-xs text-neutral-600 font-mono">{headingFont} / {bodyFont}</span>
+              <span className="text-xs text-fg-faint font-mono">{headingFont} / {bodyFont}</span>
             )}
             {headingFont === bodyFont && (
-              <span className="text-xs text-neutral-600 font-mono">{bodyFont}</span>
+              <span className="text-xs text-fg-faint font-mono">{bodyFont}</span>
             )}
           </div>
 
           {/* Heading specimen */}
-          <div className="flex flex-col gap-1 border-b border-neutral-800/60 pb-5">
-            <span className="text-[10px] text-neutral-600 font-mono uppercase tracking-wider mb-1">Heading</span>
+          <div className="flex flex-col gap-1 border-b border-line/60 pb-5">
+            <span className="text-[10px] text-fg-faint font-mono uppercase tracking-wider mb-1">Heading</span>
             {(['2xl', 'xl'] as const).map((step) => {
               const size = typography.sizes[step] ?? DEFAULT_SIZES[step]
               return (
                 <div key={step} className="flex items-baseline gap-3">
-                  <span className="text-[10px] text-neutral-600 font-mono w-8 flex-shrink-0">{step}</span>
+                  <span className="text-[10px] text-fg-faint font-mono w-8 flex-shrink-0">{step}</span>
                   <span
                     style={{
-                      fontFamily: `'${headingFont}', sans-serif`,
+                      fontFamily: fontStack(headingFont),
                       fontSize: size,
                       lineHeight: 1.15,
                       fontWeight: Math.max(...activeWeights),
                     }}
-                    className="text-white truncate"
+                    className="text-fg truncate"
                   >
                     {SPECIMEN_HEADING}
                   </span>
@@ -181,20 +209,20 @@ export default function Step4_Typography() {
 
           {/* Body specimen */}
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-neutral-600 font-mono uppercase tracking-wider mb-1">Body</span>
+            <span className="text-[10px] text-fg-faint font-mono uppercase tracking-wider mb-1">Body</span>
             {(['lg', 'base', 'sm', 'xs'] as const).map((step) => {
               const size = typography.sizes[step] ?? DEFAULT_SIZES[step]
               return (
                 <div key={step} className="flex items-baseline gap-3">
-                  <span className="text-[10px] text-neutral-600 font-mono w-8 flex-shrink-0">{step}</span>
+                  <span className="text-[10px] text-fg-faint font-mono w-8 flex-shrink-0">{step}</span>
                   <span
                     style={{
-                      fontFamily: `'${bodyFont}', sans-serif`,
+                      fontFamily: fontStack(bodyFont),
                       fontSize: size,
                       lineHeight: 1.5,
                       fontWeight: medianWeight,
                     }}
-                    className="text-neutral-300 truncate"
+                    className="text-fg-muted truncate"
                   >
                     {SPECIMEN_BODY}
                   </span>
@@ -207,17 +235,17 @@ export default function Step4_Typography() {
 
       {/* ── Type Scale ── */}
       <div className="flex flex-col gap-3">
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">Type Scale</label>
+        <label className="text-sm text-fg-muted uppercase tracking-wide">Type Scale</label>
         <div className="grid grid-cols-3 gap-3">
           {SCALE_STEPS.map((step) => (
             <div key={step} className="flex flex-col gap-1">
-              <label className="text-[11px] text-neutral-500 font-mono">{step}</label>
-              <div className="flex items-center gap-1.5 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 focus-within:border-violet-500 transition-colors">
+              <label className="text-[11px] text-fg-faint font-mono">{step}</label>
+              <div className="flex items-center gap-1.5 bg-surface border border-line rounded-lg px-3 py-2 focus-within:border-[#0088FF] transition-colors">
                 <input
                   type="text"
                   value={typography.sizes[step] ?? DEFAULT_SIZES[step]}
                   onChange={(e) => setSize(step, e.target.value)}
-                  className="bg-transparent text-white text-sm font-mono w-full outline-none"
+                  className="bg-transparent text-fg text-sm font-mono w-full outline-none"
                 />
               </div>
             </div>
@@ -227,7 +255,7 @@ export default function Step4_Typography() {
 
       {/* ── Weights ── */}
       <div className="flex flex-col gap-3">
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">Weights</label>
+        <label className="text-sm text-fg-muted uppercase tracking-wide">Weights</label>
         <div className="flex flex-wrap gap-2">
           {WEIGHTS.map((w) => {
             const active = activeWeights.includes(w.value)
@@ -235,11 +263,11 @@ export default function Step4_Typography() {
               <button
                 key={w.value}
                 onClick={() => toggleWeight(w.value)}
-                style={{ fontFamily: `'${bodyFont}', sans-serif`, fontWeight: w.value }}
-                className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                style={{ fontFamily: fontStack(bodyFont), fontWeight: w.value }}
+                className={`px-4 py-2 rounded-lg text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
                   active
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-400/30'
-                    : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-neutral-600'
+                    ? 'bg-[#0088FF] text-white ring-2 ring-[#5AADFF]/30'
+                    : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
                 }`}
               >
                 {w.label}
@@ -247,7 +275,7 @@ export default function Step4_Typography() {
             )
           })}
         </div>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-fg-faint">
           Only selected weights are included in the export.
         </p>
       </div>
@@ -257,13 +285,13 @@ export default function Step4_Typography() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="rounded-lg bg-neutral-900 border border-neutral-800 p-4"
+        className="rounded-lg bg-surface border border-line p-4"
       >
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-neutral-400 overflow-x-auto">
+        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
+        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
 {`:root {
-  --font-family-heading: '${headingFont}', sans-serif;
-  --font-family-body: '${bodyFont}', sans-serif;
+  --font-family-heading: ${fontStack(headingFont)};
+  --font-family-body: ${fontStack(bodyFont)};
 ${SCALE_STEPS.map(
   (s) => `  --font-size-${s}: ${typography.sizes[s] ?? DEFAULT_SIZES[s]};`
 ).join('\n')}

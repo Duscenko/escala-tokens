@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -67,6 +68,7 @@ interface DesignStore {
   // Step 3 — Semantic tokens
   semanticTokens: Record<string, string>
   setSemanticToken: (key: string, value: string) => void
+  mergeSemanticTokens: (partial: Record<string, string>) => void
 
   // Step 4 — Typography
   typography: TypographyTokens
@@ -78,20 +80,16 @@ interface DesignStore {
   setSpacing: (s: Record<string, string>) => void
   setRadius: (r: Record<string, string>) => void
 
-  // Step 6 — Selected components
+  // Components — every component ships selected by default (toggle = remove)
   selectedComponents: string[]
   toggleComponent: (key: string) => void
   setSelectedComponents: (keys: string[]) => void
-
-  // Current step
-  currentStep: number
-  setCurrentStep: (step: number) => void
 }
 
 export const useDesignStore = create<DesignStore>()(
   persist(
     (set) => ({
-      projectName: '',
+      projectName: 'Apollo',
       setProjectName: (name) => set({ projectName: name }),
 
       // Brand
@@ -181,6 +179,10 @@ export const useDesignStore = create<DesignStore>()(
         set((state) => ({
           semanticTokens: { ...state.semanticTokens, [key]: value },
         })),
+      mergeSemanticTokens: (partial) =>
+        set((state) => ({
+          semanticTokens: { ...state.semanticTokens, ...partial },
+        })),
 
       typography: {
         fontFamily: 'Inter',
@@ -195,7 +197,8 @@ export const useDesignStore = create<DesignStore>()(
       setSpacing: (s) => set({ spacing: s }),
       setRadius: (r) => set({ radius: r }),
 
-      selectedComponents: [],
+      // Every component is included by default — the user removes what they don't want.
+      selectedComponents: [...COMPONENT_KEYS],
       toggleComponent: (key) =>
         set((state) => ({
           selectedComponents: state.selectedComponents.includes(key)
@@ -203,20 +206,24 @@ export const useDesignStore = create<DesignStore>()(
             : [...state.selectedComponents, key],
         })),
       setSelectedComponents: (keys) => set({ selectedComponents: keys }),
-
-      currentStep: 1,
-      setCurrentStep: (step) => set({ currentStep: step }),
     }),
     {
       name: 'scalable-designs-store',
-      version: 2,
+      version: 3,
       migrate: (persisted: any) => {
-        // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
         if (persisted) {
+          // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
           delete persisted.styleDirection
           if (persisted.selectedAtoms && !persisted.selectedComponents) {
             persisted.selectedComponents = persisted.selectedAtoms
             delete persisted.selectedAtoms
+          }
+          // v2→v3: hub model — nav state is no longer persisted; the system now
+          // ships named "Apollo" with every component included by default.
+          delete persisted.currentStep
+          if (!persisted.projectName) persisted.projectName = 'Apollo'
+          if (!persisted.selectedComponents?.length) {
+            persisted.selectedComponents = [...COMPONENT_KEYS]
           }
         }
         return persisted

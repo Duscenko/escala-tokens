@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { checkContrast } from '../../lib/colorUtils'
+import { checkContrast, accessibleSolidTone } from '../../lib/colorUtils'
 
 // ── Source palettes a token can draw from ──────────────────────────────────
 type ScaleSource = 'gray' | 'brand' | 'error' | 'warning' | 'success' | 'info'
@@ -154,6 +154,12 @@ const ROLE_GROUPS: RoleGroup[] = [
 
 const ALL_ROLES = ROLE_GROUPS.flatMap((g) => g.roles)
 
+// Brand-scale tokens (key → recommended tone). Reused by the quick brand-color
+// edit in the Components catalogue to re-derive brand tokens from a new scale.
+export const BRAND_TOKEN_TONES: Record<string, number> = Object.fromEntries(
+  ALL_ROLES.filter((r) => r.scale === 'brand').map((r) => [r.key, r.tone]),
+)
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** Index (1–12) of the tone in `scale` whose hex matches `hex`, else null. */
@@ -175,11 +181,11 @@ function cleanDescription(description: string): string {
 
 function ScaleToneChip({ scale, tone, dot }: { scale: ScaleSource; tone: number | null; dot: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[10px] font-mono tracking-tight text-neutral-400 shrink-0">
+    <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono tracking-tight text-fg-muted shrink-0">
       <span className="w-2 h-2 rounded-full ring-1 ring-white/20" style={{ backgroundColor: dot }} />
       {SCALE_META[scale].label}
-      <span className="text-neutral-600">·</span>
-      <span className="text-neutral-300 tabular-nums">{tone ?? '—'}</span>
+      <span className="text-fg-faint">·</span>
+      <span className="text-fg-muted tabular-nums">{tone ?? '—'}</span>
     </span>
   )
 }
@@ -210,7 +216,7 @@ function TonePicker({
             {/* Selection caret — only visible when selected */}
             <div className="h-2 flex items-end justify-center">
               {isSelected && (
-                <svg width="6" height="4" viewBox="0 0 6 4" className="text-violet-400 flex-shrink-0">
+                <svg width="6" height="4" viewBox="0 0 6 4" className="text-[#5AADFF] flex-shrink-0">
                   <path d="M3 4L0 0h6L3 4z" fill="currentColor" />
                 </svg>
               )}
@@ -220,7 +226,7 @@ function TonePicker({
               title={`Tone ${key} — ${color}${isRecommended ? ' · recommended' : ''}`}
               className={`${size} rounded-md transition-all duration-150 ${
                 isSelected
-                  ? 'ring-2 ring-violet-400 ring-offset-[3px] ring-offset-neutral-950 scale-125 shadow-[0_0_8px_rgba(167,139,250,0.35)]'
+                  ? 'ring-2 ring-[#5AADFF] ring-offset-[3px] ring-offset-app scale-125 shadow-[0_0_8px_rgba(0,136,255,0.35)]'
                   : 'ring-1 ring-white/10 hover:scale-110 hover:ring-white/20'
               }`}
               style={{ backgroundColor: color }}
@@ -228,10 +234,10 @@ function TonePicker({
             />
             <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${
               isSelected
-                ? 'text-violet-300 font-semibold'
+                ? 'text-[#8FC8FF] font-semibold'
                 : isRecommended
-                ? 'text-violet-400'
-                : 'text-neutral-600'
+                ? 'text-[#5AADFF]'
+                : 'text-fg-faint'
             }`}>
               {key}
             </span>
@@ -252,9 +258,9 @@ function ContrastPair({ fg, bg, fgLabel, bgLabel }: { fg: string; bg: string; fg
       <div className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ backgroundColor: bg, color: fg, border: `1px solid ${fg}22` }}>
         Aa
       </div>
-      <span className={`font-mono tabular-nums ${aaa ? 'text-emerald-400' : aa ? 'text-violet-300' : 'text-rose-400'}`}>{ratio.toFixed(2)}:1</span>
-      <span className={`${aaa ? 'text-emerald-400' : aa ? 'text-violet-300' : 'text-rose-400'}`}>{aaa ? 'AAA' : aa ? 'AA' : '✗ fail'}</span>
-      <span className="text-neutral-500 truncate">{fgLabel} on {bgLabel}</span>
+      <span className={`font-mono tabular-nums ${aaa ? 'text-emerald-400' : aa ? 'text-[#8FC8FF]' : 'text-rose-400'}`}>{ratio.toFixed(2)}:1</span>
+      <span className={`${aaa ? 'text-emerald-400' : aa ? 'text-[#8FC8FF]' : 'text-rose-400'}`}>{aaa ? 'AAA' : aa ? 'AA' : '✗ fail'}</span>
+      <span className="text-fg-faint truncate">{fgLabel} on {bgLabel}</span>
     </div>
   )
 }
@@ -299,27 +305,27 @@ function TokenRow({
   const varId = `${role.key}:var`
 
   return (
-    <div className={role.isVariant ? 'border-l-2 border-neutral-800/60' : ''}>
+    <div className={role.isVariant ? 'border-l-2 border-line/60' : ''}>
       {/* ── Dense line ── */}
       <div className="flex items-stretch group">
         <button
           onClick={onToggle}
           aria-expanded={expanded}
-          className={`flex items-center gap-3 flex-1 min-w-0 py-2.5 pr-2 text-left transition-colors hover:bg-neutral-900/40 ${role.isVariant ? 'pl-7' : 'pl-4'}`}
+          className={`flex items-center gap-3 flex-1 min-w-0 py-2.5 pr-2 text-left transition-colors hover:bg-surface/40 ${role.isVariant ? 'pl-7' : 'pl-4'}`}
         >
           <span
             className="w-5 h-5 rounded-md flex-shrink-0 ring-1 ring-white/10 transition-colors duration-300"
-            style={{ backgroundColor: value || '#1a1a1a' }}
+            style={{ backgroundColor: value || 'var(--elevated)' }}
           />
           <span className="flex flex-col min-w-0">
             <span className="flex items-center gap-2 min-w-0">
-              <code className="font-mono text-[12px] text-neutral-200 truncate">{role.label}</code>
+              <code className="font-mono text-[12px] text-fg-muted truncate">{role.label}</code>
               <ScaleToneChip scale={role.scale} tone={selectedTone} dot={dot} />
               {modified && (
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" title="Modified from recommended" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] shrink-0" title="Modified from recommended" />
               )}
             </span>
-            <span className="text-[11px] text-neutral-500 truncate" title={cleanDescription(role.description)}>
+            <span className="text-[11px] text-fg-faint truncate" title={cleanDescription(role.description)}>
               {cleanDescription(role.description)}
             </span>
           </span>
@@ -329,15 +335,15 @@ function TokenRow({
         <button
           onClick={() => onCopy(value, hexId)}
           title="Copy hex"
-          className="shrink-0 w-[76px] text-right font-mono text-[11px] tabular-nums text-neutral-300 hover:text-white transition-colors"
+          className="shrink-0 w-[76px] text-right font-mono text-[11px] tabular-nums text-fg-muted hover:text-fg transition-colors"
         >
-          {copiedId === hexId ? <span className="text-violet-300">✓ copied</span> : value || '—'}
+          {copiedId === hexId ? <span className="text-[#8FC8FF]">✓ copied</span> : value || '—'}
         </button>
 
         <button
           onClick={onToggle}
           aria-label={expanded ? 'Collapse' : 'Expand'}
-          className="shrink-0 px-3 flex items-center text-neutral-600 hover:text-neutral-300 transition-colors"
+          className="shrink-0 px-3 flex items-center text-fg-faint hover:text-fg-muted transition-colors"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}>
             <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -371,14 +377,14 @@ function TokenRow({
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => onCopy(`--color-${role.label}`, varId)}
-                  className="text-[10px] font-mono text-neutral-400 hover:text-neutral-200 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-700 transition-colors"
+                  className="text-[10px] font-mono text-fg-muted hover:text-fg px-2 py-1 rounded border border-line hover:border-line-strong transition-colors"
                 >
                   {copiedId === varId ? '✓ Copied' : `Copy --color-${role.label}`}
                 </button>
                 <button
                   onClick={onReset}
                   disabled={!modified}
-                  className="text-[10px] text-neutral-500 hover:text-violet-300 disabled:opacity-30 disabled:hover:text-neutral-500 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-700 disabled:hover:border-neutral-800 transition-colors"
+                  className="text-[10px] text-fg-faint hover:text-[#8FC8FF] disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
                   title={`Reset to recommended (${SCALE_META[role.scale].label}·${role.tone})`}
                 >
                   Reset to recommended
@@ -412,22 +418,22 @@ function GroupHeader({
   onReset: () => void
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-neutral-900/60">
+    <div className="flex items-center gap-3 px-4 py-3 bg-surface/60">
       <button onClick={onToggle} aria-expanded={isExpanded} className="flex items-center gap-2 flex-1 min-w-0 text-left group">
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`text-neutral-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+          className={`text-fg-faint transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
         >
           <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-xs font-semibold text-neutral-300 uppercase tracking-widest group-hover:text-white transition-colors">
+        <span className="text-xs font-semibold text-fg-muted uppercase tracking-widest group-hover:text-fg transition-colors">
           {group.label}
         </span>
-        <span className="text-[10px] text-neutral-600 font-mono tabular-nums">
+        <span className="text-[10px] text-fg-faint font-mono tabular-nums">
           {matchInfo ?? group.roles.length}
         </span>
         {modifiedCount > 0 && (
-          <span className="text-[10px] font-mono text-violet-300/90 bg-violet-500/10 border border-violet-500/20 rounded px-1.5 py-0.5 tabular-nums">
+          <span className="text-[10px] font-mono text-[#8FC8FF]/90 bg-[#0088FF]/10 border border-[#0088FF]/20 rounded px-1.5 py-0.5 tabular-nums">
             {modifiedCount} modified
           </span>
         )}
@@ -436,14 +442,14 @@ function GroupHeader({
       {!isExpanded && tokenColors.length > 0 && (
         <div className="flex gap-0.5 flex-shrink-0">
           {tokenColors.slice(0, 10).map((c, i) => (
-            <div key={i} className="w-3.5 h-3.5 rounded-sm ring-1 ring-white/5" style={{ backgroundColor: c || '#1a1a1a' }} title={c} />
+            <div key={i} className="w-3.5 h-3.5 rounded-sm ring-1 ring-white/5" style={{ backgroundColor: c || 'var(--elevated)' }} title={c} />
           ))}
         </div>
       )}
 
       <button
         onClick={(e) => { e.stopPropagation(); onReset() }}
-        className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors px-2 py-0.5 rounded hover:bg-neutral-800 flex-shrink-0"
+        className="text-[10px] text-fg-faint hover:text-fg-muted transition-colors px-2 py-0.5 rounded hover:bg-elevated flex-shrink-0"
         title="Reset group to recommended values"
       >
         Reset
@@ -479,7 +485,16 @@ export default function Step3_SemanticTokens() {
     Object.keys(successScale).length > 0 &&
     Object.keys(infoScale).length    > 0
 
-  const recHexOf = (role: Role) => scales[role.scale][role.tone] ?? ''
+  const recHexOf = (role: Role) => {
+    // The solid brand button uses white text — pick a dark-enough brand tone so
+    // it always passes WCAG AA, even for bright hues (overrides the fixed tone).
+    if (role.key === 'bg-brand-solid' || role.key === 'bg-brand-solid_hover') {
+      const solid = accessibleSolidTone(primaryScale)
+      const tone = role.key === 'bg-brand-solid' ? solid : Math.min(solid + 1, 12)
+      return primaryScale[tone] ?? ''
+    }
+    return scales[role.scale][role.tone] ?? ''
+  }
   const isModified = (role: Role) => {
     const cur = semanticTokens[role.key]
     const rec = recHexOf(role)
@@ -549,8 +564,8 @@ export default function Step3_SemanticTokens() {
 
   if (!ready) {
     return (
-      <div className="flex items-center justify-center h-48 text-neutral-600 text-sm">
-        ← Go back to Step 2 to generate the color scales first.
+      <div className="flex items-center justify-center h-48 text-fg-faint text-sm">
+        Pick a brand color in the Color section first to generate the scales.
       </div>
     )
   }
@@ -565,20 +580,20 @@ export default function Step3_SemanticTokens() {
       {/* Summary + filter */}
       <div className="flex flex-col gap-3 mb-1">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-500 font-mono tabular-nums">
+          <p className="text-xs text-fg-faint font-mono tabular-nums">
             {ALL_ROLES.length} tokens
-            {totalModified > 0 && <span className="text-violet-300/90"> · {totalModified} modified</span>}
+            {totalModified > 0 && <span className="text-[#8FC8FF]/90"> · {totalModified} modified</span>}
           </p>
           <button
             onClick={resetAll}
-            className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors px-2.5 py-1 rounded border border-neutral-800 hover:border-neutral-700 flex-shrink-0"
+            className="text-xs text-fg-faint hover:text-fg-muted transition-colors px-2.5 py-1 rounded border border-line hover:border-line-strong flex-shrink-0"
           >
             Reset all
           </button>
         </div>
 
         <div className="relative">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 pointer-events-none">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-faint pointer-events-none">
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
             <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
@@ -587,14 +602,14 @@ export default function Step3_SemanticTokens() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter tokens by name or description…"
-            className="w-full bg-neutral-900 border border-neutral-700 focus:border-violet-500 rounded-lg pl-9 pr-9 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 outline-none transition-colors font-mono"
+            className="w-full bg-surface border border-line-strong focus:border-[#0088FF] rounded-lg pl-9 pr-9 py-2 text-sm text-fg-muted placeholder:text-fg-faint outline-none transition-colors font-mono"
             aria-label="Filter tokens"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
               aria-label="Clear filter"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-300 transition-colors w-5 h-5 flex items-center justify-center"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-faint hover:text-fg-muted transition-colors w-5 h-5 flex items-center justify-center"
             >
               ✕
             </button>
@@ -622,7 +637,7 @@ export default function Step3_SemanticTokens() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduce ? 0 : 0.25, delay: reduce ? 0 : gi * 0.05 }}
-              className="rounded-lg border border-neutral-800/60 overflow-hidden"
+              className="rounded-lg border border-line/60 overflow-hidden"
             >
               <GroupHeader
                 group={group}
@@ -643,7 +658,7 @@ export default function Step3_SemanticTokens() {
                     transition={{ duration: reduce ? 0 : 0.22, ease: 'easeOut' }}
                     style={{ overflow: 'hidden' }}
                   >
-                    <div className="border-t border-neutral-800/50 divide-y divide-neutral-800/40 bg-neutral-950/40">
+                    <div className="border-t border-line/50 divide-y divide-line/40 bg-app/40">
                       {matched.map((role) => {
                         const sourceScale   = scales[role.scale]
                         const dot           = sourceScale[7] ?? sourceScale[6] ?? '#888'
@@ -686,10 +701,10 @@ export default function Step3_SemanticTokens() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: reduce ? 0 : 0.3 }}
-        className="mt-4 rounded-lg bg-neutral-900 border border-neutral-800 p-4"
+        className="mt-4 rounded-lg bg-surface border border-line p-4"
       >
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-neutral-500 uppercase tracking-wider">CSS Variables preview</p>
+          <p className="text-xs text-fg-faint uppercase tracking-wider">CSS Variables preview</p>
           <button
             onClick={() => copy(
               `:root {\n${ROLE_GROUPS.map((g) =>
@@ -697,12 +712,12 @@ export default function Step3_SemanticTokens() {
               ).join('\n\n')}\n}`,
               'css:all',
             )}
-            className="text-[10px] font-mono text-neutral-500 hover:text-neutral-200 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-700 transition-colors"
+            className="text-[10px] font-mono text-fg-faint hover:text-fg-muted px-2 py-1 rounded border border-line hover:border-line-strong transition-colors"
           >
             {copiedId === 'css:all' ? '✓ Copied' : 'Copy all'}
           </button>
         </div>
-        <pre className="text-xs font-mono leading-relaxed text-neutral-400 overflow-x-auto max-h-64 overflow-y-auto">
+        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto max-h-64 overflow-y-auto">
           {`:root {\n${ROLE_GROUPS.map((g) =>
             `  /* ${g.label} */\n` +
             g.roles.map((r) => `  --color-${r.label}: ${semanticTokens[r.key] || '/* unset */'};`).join('\n')

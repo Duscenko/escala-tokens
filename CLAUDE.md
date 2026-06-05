@@ -13,19 +13,26 @@ A web configurator that lets product designers build a minimal, custom design to
 
 ---
 
-## 7-Step Flow
+## Navigation model — Hub (foundations-first)
+
+The app is **NOT a linear wizard**. It's a hub: the design system ("Apollo") ships
+complete. The intended flow is **pick your tokens first (Foundations), then see them
+reflected in the components** — so Foundations is the landing view.
 
 ```
-Step 1  Project Name       → sets the token namespace slug
-Step 2  Color Palette      → brand color + 12-tone scale (chroma-js) + semantic state colors
-Step 3  Semantic Tokens    → maps scale tones to design roles (text, bg, border, fg)
-Step 4  Typography         → font family (Google Fonts), type scale, weights
-Step 5  Spacing & Radius   → spacing scale (base unit), radius presets + fine-tune
-Step 6  Components         → component catalogue: select + view generated docs
-Step 7  Export             → tokens.json / variables.css / README + Publish to /api/tokens
+HEADER (persistent)   editable project name + namespace slug · [Foundations] [Components] [Export]
+
+Foundations (home)    → one global editor with 4 sections: Color · Semantic · Typography · Spacing & Radius
+Components             → component catalogue: every component included by default; remove what you don't need; view docs/previews
+Export                → tokens.json / variables.css / README + Publish to /api/tokens
 ```
 
-**Important:** Step 6 (Style Direction) and the old Step 7 (Atom Selector) were deliberately removed. Do NOT re-introduce them. The new Step 6 is a component catalogue with selection + auto-generated documentation.
+- **Entry point = Foundations.** The header toggle is ordered `[Foundations] [Components]`, and the default `view` is `'foundations'`.
+- **Foundations is a single global editor** (`FoundationsEditor.tsx`) that composes the four foundation section components (`Step2_ColorPalette` … `Step5_SpacingRadius`, reused as-is). A "Components →" link jumps forward to the catalogue.
+- **Components ship complete.** All components are selected by default (`selectedComponents` defaults to every key); toggling a checkbox *removes* one.
+- **View state is local** (`useState` in `Configurator.tsx`), not persisted — every reload lands on Foundations.
+
+**Important:** This replaced the old linear 7-step wizard (and `currentStep`). Do NOT re-introduce a step counter, progress bar, or Continue/Back wizard nav. The old Style Direction and Atom Selector remain removed.
 
 ---
 
@@ -34,19 +41,20 @@ Step 7  Export             → tokens.json / variables.css / README + Publish to
 ```
 src/
 ├── components/
-│   ├── configurator/       ← One file per step: Step1_ProjectName.tsx … Step6_Components.tsx
+│   ├── configurator/       ← ComponentCatalogue, FoundationsEditor, ExportView + Step2…Step5 (foundation sections)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge...)
-│   └── preview/            ← Preview cards (future)
+│   └── preview/            ← Preview cards (ButtonPreview...)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 2)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 3)
 ├── lib/
-│   ├── colorUtils.ts       ← generateColorScale, checkContrast, isAccessible (chroma-js)
-│   ├── tokenGenerator.ts   ← generateTokenJSON(), downloadTokenJSON()
-│   └── utils.ts            ← cn() helper (clsx + tailwind-merge)
+│   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible (chroma-js)
+│   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
+│   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
+│   └── utils.ts               ← cn() + slugify() helpers
 ├── types/
 │   └── tokens.ts           ← TypeScript types for DesignTokens, ColorScale, etc.
 └── pages/
-    └── Configurator.tsx    ← Step router, progress bar, navigation
+    └── Configurator.tsx    ← Hub shell: persistent header + view switch (components/foundations/export)
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
 ```
@@ -55,31 +63,30 @@ api/
 
 ## State Shape (useDesignStore)
 
-Key fields — always use the store, never local state for cross-step data:
+Key fields — always use the store, never local state for cross-view data:
 
-| Field | Type | Step |
-|-------|------|------|
-| `projectName` | string | 1 |
-| `primaryColor` | string (hex) | 2 |
-| `primaryScale` | Record<number, string> | 2 |
-| `grayLightScale` | ColorScale | 2 |
-| `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | 2 |
-| `semanticTokens` | Record<string, string> | 3 |
-| `typography` | { fontFamily, headingFontFamily, sizes, weights } | 4 |
-| `spacing` | Record<string, string> | 5 |
-| `radius` | Record<string, string> | 5 |
-| `selectedComponents` | string[] | 6 |
-| `currentStep` | number | all |
+| Field | Type | Edited in |
+|-------|------|-----------|
+| `projectName` | string (default `"Apollo"`) | Header |
+| `primaryColor` | string (hex) | Foundations · Color |
+| `primaryScale` | Record<number, string> | Foundations · Color |
+| `grayLightScale` | ColorScale | Foundations · Color |
+| `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | Foundations · Color |
+| `semanticTokens` | Record<string, string> | Foundations · Semantic |
+| `typography` | { fontFamily, headingFontFamily, sizes, weights } | Foundations · Typography |
+| `spacing` | Record<string, string> | Foundations · Spacing & Radius |
+| `radius` | Record<string, string> | Foundations · Spacing & Radius |
+| `selectedComponents` | string[] (defaults to **all** `COMPONENT_KEYS`) | Components |
 
-**Removed fields:** `styleDirection`, `selectedAtoms` — do not re-add these.
+**Removed fields:** `styleDirection`, `selectedAtoms`, `currentStep` — do not re-add these. Nav state (`view`) is local `useState` in `Configurator.tsx`, not store.
 
-Store uses `persist` middleware with `version: 2`. If you add fields, bump the version and add a migrate function.
+Store uses `persist` middleware with `version: 3`. If you add fields, bump the version and add a migrate function.
 
 ---
 
-## Component Catalogue (Step 6)
+## Component Catalogue
 
-`Step6_Components.tsx` contains a `COMPONENTS` array with 15 component definitions. Each has:
+`src/lib/componentCatalogue.ts` contains the `COMPONENTS` array of component definitions (16 today; pure data — imported by both the store and the catalogue UI). `ComponentCatalogue.tsx` renders them. Each definition has:
 
 ```ts
 interface ComponentDef {
@@ -94,7 +101,7 @@ interface ComponentDef {
 }
 ```
 
-**To add a new component:** append to the `COMPONENTS` array in `Step6_Components.tsx`. The UI renders it automatically. No other file needs to change.
+**To add a new component:** append to the `COMPONENTS` array in `src/lib/componentCatalogue.ts`. The UI renders it automatically, and it's included by default. No other file needs to change.
 
 **To enrich docs:** edit the `props`, `variants`, `usage`, or `accessibility` fields for any component.
 
@@ -153,9 +160,9 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
 1. **No bloat** — every feature should earn its place. If it doesn't help the designer configure tokens, it doesn't belong.
 2. **Tokens first** — all visual choices (colors, radius, spacing) come from the store. Never hardcode design values in components.
-3. **Progressive disclosure** — steps are linear. Don't add branching logic or skip-ahead navigation (except back to completed steps).
+3. **Hub, not wizard** — components/foundations/export live behind a persistent header (see Navigation model). Don't add a linear step counter, progress bar, or Continue/Back nav.
 4. **Accessibility** — all interactive elements need keyboard support and ARIA. The component docs we generate should model this.
-5. **Dark UI** — the configurator runs on `bg-neutral-950`. Tailwind dark classes only, no light mode.
+5. **Light & dark** — both themes are supported; **light is the default**. Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the header, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills (e.g. on `bg-violet-600`); the user's token colors/previews are theme-independent.
 
 ---
 
@@ -164,7 +171,7 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 - Component files: `PascalCase.tsx`
 - Step files: `StepN_Name.tsx` where N is the step number
 - Store actions: `set` prefix (`setProjectName`, `setTypography`)
-- CSS: Tailwind utility classes only — no `style` tags, no CSS modules
+- CSS: Tailwind utility classes only — no `style` tags, no CSS modules. For chrome colors use the semantic theme utilities (`bg-app`, `bg-surface`, `text-fg`, `border-line`…), never raw `neutral-*`.
 - Animations: Framer Motion (`motion.div`, `AnimatePresence`) for transitions between states
 - No `console.log` in production code
 - TypeScript strict mode — no `any` unless absolutely necessary
@@ -189,10 +196,10 @@ npm run build          # outputs dist/code.js + dist/ui.html
 
 ## What's next (backlog)
 
-- [ ] Step 6: Add live component previews rendered with user tokens (not just docs)
-- [ ] Step 6: "Copy usage snippet" button per component
-- [ ] Step 7 Export: Generate per-component CSS with token references
+- [ ] Components: Add live component previews rendered with user tokens (not just docs)
+- [ ] Components: "Copy usage snippet" button per component
+- [ ] Export: Generate per-component CSS with token references
 - [ ] Plugin: TextStyle creation for typography tokens
 - [ ] Plugin: Two-way sync — read Figma Variables → update configurator
 - [ ] Plugin: Diff view before import (show what changed)
-- [ ] Add dark/light mode toggle for the token preview in Step 3
+- [ ] Add dark/light mode toggle for the token preview in Foundations · Semantic

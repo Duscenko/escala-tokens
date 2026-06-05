@@ -1,140 +1,150 @@
+import { useState } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import Step1_ProjectName from '../components/configurator/Step1_ProjectName'
-import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
-import Step3_SemanticTokens from '../components/configurator/Step3_SemanticTokens'
-import Step4_Typography from '../components/configurator/Step4_Typography'
-import Step5_SpacingRadius from '../components/configurator/Step5_SpacingRadius'
-import Step6_Components from '../components/configurator/Step6_Components'
-import Step7_Export from '../components/configurator/Step8_Export'
+import { slugify } from '../lib/utils'
+import { useTheme, toggleTheme } from '../lib/theme'
+import ComponentCatalogue from '../components/configurator/ComponentCatalogue'
+import FoundationsEditor from '../components/configurator/FoundationsEditor'
+import ExportView from '../components/configurator/ExportView'
 
-const STEPS = [
-  { id: 1, label: 'Project Name' },
-  { id: 2, label: 'Color Palette' },
-  { id: 3, label: 'Semantic Tokens' },
-  { id: 4, label: 'Typography' },
-  { id: 5, label: 'Spacing & Radius' },
-  { id: 6, label: 'Components' },
-  { id: 7, label: 'Export' },
-]
+type View = 'components' | 'foundations' | 'export'
+
+const VIEW_META: Record<View, { title: string; subtitle: string }> = {
+  components: {
+    title: 'Components',
+    subtitle: 'The Apollo component library — remove any you do not need.',
+  },
+  foundations: {
+    title: 'Foundations',
+    subtitle: 'Customize the tokens every component is built on.',
+  },
+  export: {
+    title: 'Export',
+    subtitle: 'Download tokens.json, variables.css and README.md.',
+  },
+}
+
+// Custom icon paths from /public/icons — used inline so stroke tracks currentColor.
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.00004 1.33334V2.66668M8.00004 13.3333V14.6667M2.66671 8.00001H1.33337M4.20945 4.20942L3.26664 3.26661M11.7906 4.20942L12.7334 3.26661M4.20945 11.7933L3.26664 12.7362M11.7906 11.7933L12.7334 12.7362M14.6667 8.00001H13.3334M11.3334 8.00001C11.3334 9.84096 9.84099 11.3333 8.00004 11.3333C6.15909 11.3333 4.66671 9.84096 4.66671 8.00001C4.66671 6.15906 6.15909 4.66668 8.00004 4.66668C9.84099 4.66668 11.3334 6.15906 11.3334 8.00001Z" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 1.33333L12.4119 2.15705C12.5889 2.51104 12.6774 2.68803 12.7956 2.8414C12.9005 2.9775 13.0225 3.09951 13.1586 3.20442C13.312 3.32264 13.489 3.41114 13.843 3.58813L14.6667 3.99999L13.843 4.41186C13.489 4.58885 13.312 4.67735 13.1586 4.79557C13.0225 4.90048 12.9005 5.02249 12.7956 5.15859C12.6774 5.31196 12.5889 5.48895 12.4119 5.84294L12 6.66666L11.5882 5.84294C11.4112 5.48895 11.3227 5.31196 11.2045 5.15859C11.0996 5.02249 10.9775 4.90048 10.8414 4.79557C10.6881 4.67735 10.5111 4.58885 10.1571 4.41186L9.33337 3.99999L10.1571 3.58813C10.5111 3.41114 10.6881 3.32264 10.8414 3.20442C10.9775 3.09951 11.0996 2.9775 11.2045 2.8414C11.3227 2.68803 11.4112 2.51104 11.5882 2.15705L12 1.33333Z" />
+      <path d="M14 8.92619C13.126 10.4593 11.4764 11.493 9.58534 11.493C6.78076 11.493 4.50721 9.21944 4.50721 6.41488C4.50721 4.52369 5.54103 2.87395 7.07437 1.99999C3.85324 2.30541 1.33337 5.01794 1.33337 8.31902C1.33337 11.8247 4.17532 14.6667 7.68104 14.6667C10.982 14.6667 13.6944 12.1471 14 8.92619Z" />
+    </svg>
+  )
+}
 
 export default function Configurator() {
-  const { currentStep, setCurrentStep, projectName, selectedComponents } = useDesignStore()
+  const { projectName, primaryScale, primaryColor } = useDesignStore()
+  const [view, setView] = useState<View>('foundations')
+  const theme = useTheme()
+  const slug = slugify(projectName) || 'scalable-designs'
 
-  const canContinue =
-    currentStep === 1 ? projectName.trim().length > 0 :
-    true
-
-  const nextStep = STEPS[currentStep] // index = currentStep since STEPS is 1-indexed in .id but 0-indexed in array
-
-  // Step 6 is a component gallery — give it more room than the form-style steps.
-  const containerWidth = currentStep === 6 ? 'max-w-5xl' : 'max-w-3xl'
+  // Page-wide wash derived from the chosen brand color — a light brand tint at
+  // the top fading down across the page.
+  const brandTint = primaryScale[2] ?? primaryScale[1] ?? primaryColor ?? '#cdeef6'
 
   return (
-    <div className={`${containerWidth} mx-auto px-6 pt-16 pb-32 transition-[max-width] duration-300`}>
+    <div className="relative isolate min-h-screen">
+      {/* Brand-matched wash behind the whole page (hidden in dark) */}
+      <div
+        aria-hidden
+        style={{ background: `linear-gradient(180deg, ${brandTint} 0%, transparent 100%)` }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-[820px] -z-10 opacity-80 dark:opacity-0"
+      />
 
-      {/* Step indicator — clickable for completed steps */}
-      <div className="flex gap-1.5 mb-10">
-        {STEPS.map((step) => {
-          const isCompleted = step.id < currentStep
-          const isCurrent = step.id === currentStep
-          return (
-            <button
-              key={step.id}
-              title={step.label}
-              onClick={() => isCompleted && setCurrentStep(step.id)}
-              disabled={!isCompleted}
-              aria-label={`${step.label}${isCompleted ? ' — click to return' : ''}`}
-              className={[
-                'h-1 flex-1 rounded-full transition-all duration-300',
-                isCompleted
-                  ? 'bg-violet-500 hover:bg-violet-400 cursor-pointer'
-                  : isCurrent
-                  ? 'bg-violet-500'
-                  : 'bg-neutral-800',
-              ].join(' ')}
+      {/* ── Persistent header ── */}
+      <header className="sticky top-0 z-50 border-b border-line/60 bg-app/80 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+
+          {/* Left: Apollewn logo + editable system name */}
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src="/logo-apollewn.svg"
+              alt="Apollewn"
+              className="h-7 flex-shrink-0"
             />
-          )
-        })}
+            <span className="hidden md:inline text-xs text-fg-faint whitespace-nowrap">
+              Design System · V1
+            </span>
+          </div>
+
+          {/* Center: rounded-full nav pill */}
+          <div className="flex items-center gap-1 p-1 rounded-full bg-surface/90 border border-line justify-self-center">
+            {(['foundations', 'components'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all ${
+                  view === v ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+
+          {/* Right: theme toggle + Export */}
+          <div className="flex items-center gap-2 flex-shrink-0 justify-self-end">
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              className="p-2 rounded-lg bg-surface border border-line text-fg-muted hover:text-fg transition-colors"
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <button
+              onClick={() => setView('export')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-all ${
+                view === 'export'
+                  ? 'bg-[#0088FF] ring-2 ring-[#0088FF]/40'
+                  : 'bg-[#0088FF] hover:bg-[#006ECC]'
+              }`}
+            >
+              Export
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Body ── */}
+      <div className="max-w-6xl mx-auto px-6 pt-8 pb-24">
+        {view !== 'foundations' && (
+          <div className="mb-8">
+            <h1 className="text-3xl font-semibold text-fg">{VIEW_META[view].title}</h1>
+            <p className="text-sm text-fg-faint mt-1">{VIEW_META[view].subtitle}</p>
+          </div>
+        )}
+
+        {view === 'components' && <ComponentCatalogue />}
+        {view === 'foundations' && <FoundationsEditor />}
+        {view === 'export' && <ExportView />}
       </div>
 
-      {/* Step counter + label */}
-      <div className="flex items-baseline gap-3 mb-3 overflow-hidden">
-        <span className="text-xs font-mono text-neutral-500 tabular-nums tracking-wider uppercase whitespace-nowrap shrink-0">
-          {currentStep} / {STEPS.length}
-        </span>
-        <span className="text-xs text-neutral-700 truncate">
-          {STEPS.slice(currentStep).map(s => s.label).join('  ·  ')}
-        </span>
-      </div>
-      <h1 className="text-3xl font-semibold mb-10 text-white">
-        {STEPS[currentStep - 1].label}
-      </h1>
-
-      {/* Intro banner — only on step 1 */}
-      {currentStep === 1 && (
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 px-5 py-4 mb-8 flex flex-col gap-2">
-          <p className="text-sm text-neutral-300 leading-relaxed">
-            Generate a complete design token system — colors, semantic roles, typography, spacing, and component atoms.
-            Outputs <code className="text-violet-400 text-xs px-1 py-0.5 rounded bg-neutral-800">tokens.json</code>,{' '}
-            <code className="text-violet-400 text-xs px-1 py-0.5 rounded bg-neutral-800">variables.css</code>, and{' '}
-            <code className="text-violet-400 text-xs px-1 py-0.5 rounded bg-neutral-800">README.md</code>.
-          </p>
-          <div className="flex items-center gap-3 text-xs text-neutral-600">
-            <span>7 steps</span>
-            <span>·</span>
-            <span>~10 min</span>
-            <span>·</span>
-            <span>Progress saved automatically</span>
+      {/* ── Foundations → Components sticky CTA ── */}
+      {view === 'foundations' && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-app/90 backdrop-blur-md">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-fg-faint">
+              Tokens set? See them applied to your components.
+            </p>
+            <button
+              onClick={() => setView('components')}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#0088FF] hover:bg-[#006ECC] transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF]"
+            >
+              View in Components →
+            </button>
           </div>
         </div>
       )}
-
-      {/* Step content */}
-      <div className="min-h-[300px]">
-        {currentStep === 1 && <Step1_ProjectName />}
-        {currentStep === 2 && <Step2_ColorPalette />}
-        {currentStep === 3 && <Step3_SemanticTokens />}
-        {currentStep === 4 && <Step4_Typography />}
-        {currentStep === 5 && <Step5_SpacingRadius />}
-        {currentStep === 6 && <Step6_Components />}
-        {currentStep === 7 && <Step7_Export />}
-      </div>
-
-      {/* Navigation — sticky at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-800/60 bg-neutral-950/95 backdrop-blur-sm">
-        <div className={`${containerWidth} mx-auto px-6 py-4 flex justify-between items-center transition-[max-width] duration-300`}>
-          <button
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
-            className="px-5 py-2 rounded-lg border border-neutral-800 text-neutral-400 disabled:opacity-30 hover:border-neutral-600 hover:text-neutral-300 transition text-sm"
-          >
-            ← Back
-          </button>
-
-
-
-          {currentStep < STEPS.length && (
-            <button
-              onClick={() => setCurrentStep(Math.min(STEPS.length, currentStep + 1))}
-              disabled={!canContinue}
-              className="px-5 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition disabled:opacity-30 disabled:cursor-not-allowed text-sm font-medium"
-            >
-              {canContinue && nextStep
-                ? `Continue → ${nextStep.label}`
-                : 'Continue'}
-            </button>
-          )}
-
-          {currentStep === STEPS.length && (
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="px-5 py-2 rounded-lg border border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-neutral-300 transition text-sm"
-            >
-              Start over
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

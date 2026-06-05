@@ -77,7 +77,7 @@ export default function Step5_SpacingRadius() {
     setRadius(preset.values)
   }
 
-  const accentColor = semanticTokens.primary || primaryColor || '#3B82F6'
+  const accentColor = semanticTokens.primary || primaryColor || '#7f56d9'
 
   return (
     <motion.div
@@ -89,19 +89,19 @@ export default function Step5_SpacingRadius() {
       {/* ── Spacing ── */}
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
-          <label className="text-sm text-neutral-400 uppercase tracking-wide">Spacing Scale</label>
+          <label className="text-sm text-fg-muted uppercase tracking-wide">Spacing Scale</label>
           {/* Base unit picker */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-600">Base unit</span>
+            <span className="text-xs text-fg-faint">Base unit</span>
             <div className="flex gap-1">
               {BASE_PRESETS.map((p) => (
                 <button
                   key={p.value}
                   onClick={() => applyBase(p.value)}
-                  className={`px-2.5 py-1 rounded text-xs transition-all ${
+                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
                     baseUnit === p.value
-                      ? 'bg-violet-600 text-white'
-                      : 'bg-neutral-900 text-neutral-400 border border-neutral-800 hover:border-neutral-600'
+                      ? 'bg-[#0088FF] text-white'
+                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
                   }`}
                 >
                   {p.value}px
@@ -127,12 +127,12 @@ export default function Step5_SpacingRadius() {
                 className="flex items-center gap-3"
               >
                 {/* Step label */}
-                <span className="text-xs font-mono text-neutral-500 w-5 text-right flex-shrink-0">
+                <span className="text-xs font-mono text-fg-faint w-5 text-right flex-shrink-0">
                   {step}
                 </span>
 
                 {/* Bar */}
-                <div className="flex-1 h-6 bg-neutral-900 rounded-md overflow-hidden relative">
+                <div className="flex-1 h-6 bg-surface rounded-md overflow-hidden relative">
                   <motion.div
                     layout
                     className="h-full rounded-md"
@@ -151,7 +151,7 @@ export default function Step5_SpacingRadius() {
                     type="text"
                     value={val}
                     onChange={(e) => handleSpacingInput(step, e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 focus:border-violet-500 rounded px-2 py-1 text-xs font-mono text-white outline-none transition-colors text-right"
+                    className="w-full bg-surface border border-line focus:border-[#0088FF] rounded px-2 py-1 text-xs font-mono text-fg outline-none transition-colors text-right"
                   />
                 </div>
               </motion.div>
@@ -162,7 +162,7 @@ export default function Step5_SpacingRadius() {
 
       {/* ── Radius ── */}
       <div className="flex flex-col gap-5">
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">Border Radius</label>
+        <label className="text-sm text-fg-muted uppercase tracking-wide">Border Radius</label>
 
         {/* Preset cards */}
         <div className="grid grid-cols-2 gap-3">
@@ -172,10 +172,10 @@ export default function Step5_SpacingRadius() {
               <button
                 key={preset.label}
                 onClick={() => applyRadiusPreset(preset)}
-                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 ${
+                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
                   isSelected
-                    ? 'bg-neutral-800 ring-2 ring-violet-500/50 border border-violet-500/30'
-                    : 'bg-neutral-900 border border-neutral-800 hover:border-neutral-600'
+                    ? 'bg-elevated ring-2 ring-[#0088FF]/50 border border-[#0088FF]/30'
+                    : 'bg-surface border border-line hover:border-line-strong'
                 }`}
               >
                 {/* Shape previews */}
@@ -190,22 +190,22 @@ export default function Step5_SpacingRadius() {
                           width: size,
                           height: size,
                           borderRadius: r,
-                          backgroundColor: isSelected ? accentColor + '33' : '#ffffff14',
-                          border: `1.5px solid ${isSelected ? accentColor + '88' : '#ffffff22'}`,
+                          backgroundColor: isSelected ? accentColor + '33' : 'var(--elevated)',
+                          border: `1.5px solid ${isSelected ? accentColor + '88' : 'var(--line-strong)'}`,
                         }}
                       />
                     )
                   })}
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+                  <p className={`text-sm font-medium ${isSelected ? 'text-fg' : 'text-fg-muted'}`}>
                     {preset.label}
                   </p>
-                  <p className="text-xs text-neutral-600 mt-0.5">{preset.description}</p>
+                  <p className="text-xs text-fg-faint mt-0.5">{preset.description}</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(preset.values).map(([k, v]) => (
-                    <span key={k} className="text-[10px] font-mono text-neutral-600">
+                    <span key={k} className="text-[10px] font-mono text-fg-faint">
                       {k}: {v}
                     </span>
                   ))}
@@ -217,18 +217,18 @@ export default function Step5_SpacingRadius() {
 
         {/* Custom fine-tune row */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-neutral-600 uppercase tracking-wider">Fine-tune</span>
+          <span className="text-xs text-fg-faint uppercase tracking-wider">Fine-tune</span>
           <div className="grid grid-cols-5 gap-2">
             {RADIUS_STEPS.map((step) => (
               <div key={step} className="flex flex-col gap-1">
-                <label className="text-[11px] text-neutral-600 font-mono text-center">
+                <label className="text-[11px] text-fg-faint font-mono text-center">
                   {step}
                 </label>
                 <input
                   type="text"
                   value={radius[step] ?? '0px'}
                   onChange={(e) => setRadius({ ...radius, [step]: e.target.value })}
-                  className="bg-neutral-900 border border-neutral-800 focus:border-violet-500 rounded-lg px-2 py-1.5 text-xs font-mono text-white outline-none transition-colors text-center"
+                  className="bg-surface border border-line focus:border-[#0088FF] rounded-lg px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-center"
                 />
                 {/* Mini shape preview */}
                 <div
@@ -252,10 +252,10 @@ export default function Step5_SpacingRadius() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="rounded-lg bg-neutral-900 border border-neutral-800 p-4"
+        className="rounded-lg bg-surface border border-line p-4"
       >
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-neutral-400 overflow-x-auto">
+        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
+        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
 {`:root {
 ${SPACING_STEPS.map(
   (s) => `  --spacing-${s}: ${editingSpacing[s] ?? `${Number(s) * baseUnit}px`};`

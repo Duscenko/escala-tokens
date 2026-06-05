@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
+import { fontStack } from '../../lib/fonts'
 
 type Tab = 'tokens' | 'css' | 'markdown'
 
@@ -22,8 +23,8 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
   })
 
   lines.push('\n  /* Typography */')
-  lines.push(`  --font-family-heading: '${typography.headingFontFamily ?? typography.fontFamily}', sans-serif;`)
-  lines.push(`  --font-family-body: '${typography.fontFamily}', sans-serif;`)
+  lines.push(`  --font-family-heading: ${fontStack(typography.headingFontFamily ?? typography.fontFamily)};`)
+  lines.push(`  --font-family-body: ${fontStack(typography.fontFamily)};`)
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
 
@@ -75,8 +76,8 @@ ${Object.entries(semanticTokens).filter(([,v])=>v).map(([k,v])=>`| \`--color-${k
 
 | Token | Value |
 |-------|-------|
-| \`--font-family-heading\` | \`'${headingFont}', sans-serif\` |
-| \`--font-family-body\` | \`'${typography.fontFamily}', sans-serif\` |
+| \`--font-family-heading\` | \`${fontStack(headingFont)}\` |
+| \`--font-family-body\` | \`${fontStack(typography.fontFamily)}\` |
 ${Object.entries(typography.sizes).map(([k,v])=>`| \`--font-size-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`${v}\` |`).join('\n')}
 
@@ -126,13 +127,13 @@ function download(content: string, filename: string, mime: string) {
 
 function Pill({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-neutral-900 border border-neutral-800 min-w-0">
-      <span className="text-[10px] text-neutral-600 uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
+      <span className="text-[10px] text-fg-faint uppercase tracking-wider">{label}</span>
       <div className="flex items-center gap-1.5">
         {color && (
           <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
         )}
-        <span className="text-sm font-medium text-white truncate">{value}</span>
+        <span className="text-sm font-medium text-fg truncate">{value}</span>
       </div>
     </div>
   )
@@ -140,7 +141,7 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export default function Step8_Export() {
+export default function ExportView() {
   const store = useDesignStore()
   const { projectName, primaryColor, selectedComponents } = store
   const [activeTab, setActiveTab] = useState<Tab>('tokens')
@@ -205,7 +206,7 @@ export default function Step8_Export() {
 
       {/* ── File tabs ── */}
       <div className="flex flex-col gap-0">
-        <div className="flex items-center justify-between border-b border-neutral-800">
+        <div className="flex items-center justify-between border-b border-line">
           <div className="flex">
             {TABS.map((t) => (
               <button
@@ -213,8 +214,8 @@ export default function Step8_Export() {
                 onClick={() => setActiveTab(t.id)}
                 className={`px-4 py-2.5 text-xs font-mono transition-all border-b-2 ${
                   activeTab === t.id
-                    ? 'text-white border-violet-500'
-                    : 'text-neutral-500 border-transparent hover:text-neutral-300'
+                    ? 'text-fg border-[#0088FF]'
+                    : 'text-fg-faint border-transparent hover:text-fg-muted'
                 }`}
               >
                 {t.label}
@@ -224,7 +225,7 @@ export default function Step8_Export() {
           <div className="flex gap-2 pr-1">
             <button
               onClick={() => copyTab(activeTab)}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition border border-neutral-700"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-elevated text-fg-muted hover:bg-line-strong transition border border-line-strong"
             >
               {copiedTab === activeTab ? (
                 <><span className="text-emerald-400">✓</span> Copied</>
@@ -237,7 +238,7 @@ export default function Step8_Export() {
             </button>
             <button
               onClick={() => downloadOne(activeTab)}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition border border-neutral-700"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-elevated text-fg-muted hover:bg-line-strong transition border border-line-strong"
             >
               {justDownloaded === activeTab ? (
                 <><span className="text-emerald-400">✓</span> Saved</>
@@ -258,9 +259,9 @@ export default function Step8_Export() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="bg-neutral-950 border border-t-0 border-neutral-800 rounded-b-xl overflow-auto max-h-72"
+            className="bg-app border border-t-0 border-line rounded-b-xl overflow-auto max-h-72"
           >
-            <pre className="p-4 text-[11px] font-mono leading-relaxed text-neutral-300 whitespace-pre">
+            <pre className="p-4 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
               {content[activeTab]}
             </pre>
           </motion.div>
@@ -268,7 +269,7 @@ export default function Step8_Export() {
       </div>
 
       {/* ── Download all CTA ── */}
-      <div className="flex flex-col gap-3 items-center rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
+      <div className="flex flex-col gap-3 items-center rounded-xl border border-line bg-surface/50 p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: primaryColor + '22', border: `1px solid ${primaryColor}44` }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -277,8 +278,8 @@ export default function Step8_Export() {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Export all files</p>
-            <p className="text-xs text-neutral-500">tokens.json · variables.css · README.md</p>
+            <p className="text-sm font-semibold text-fg">Export all files</p>
+            <p className="text-xs text-fg-faint">tokens.json · variables.css · README.md</p>
           </div>
         </div>
 
@@ -318,31 +319,31 @@ export default function Step8_Export() {
             desc: 'Your configuration is saved automatically. Come back any time to refine your tokens.',
           },
         ].map((item) => (
-          <div key={item.title} className="rounded-xl bg-neutral-900 border border-neutral-800 p-4 flex flex-col gap-2">
+          <div key={item.title} className="rounded-xl bg-surface border border-line p-4 flex flex-col gap-2">
             <span className="text-xl">{item.icon}</span>
-            <p className="text-sm font-medium text-white">{item.title}</p>
-            <p className="text-xs text-neutral-500 leading-relaxed">{item.desc}</p>
+            <p className="text-sm font-medium text-fg">{item.title}</p>
+            <p className="text-xs text-fg-faint leading-relaxed">{item.desc}</p>
           </div>
         ))}
       </div>
 
       {/* ── Publish endpoint — only shown when deployed ── */}
       {isDeployed && (
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5 flex flex-col gap-3">
+        <div className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <p className="text-sm font-semibold text-white">Live publish endpoint</p>
+            <p className="text-sm font-semibold text-fg">Live publish endpoint</p>
           </div>
-          <p className="text-xs text-neutral-500">
-            POST to <code className="text-violet-400 text-[11px] px-1 py-0.5 rounded bg-neutral-800">/api/tokens</code> to push your current token set. Use this URL in your Figma plugin's live sync configuration.
+          <p className="text-xs text-fg-faint">
+            POST to <code className="text-[#5AADFF] text-[11px] px-1 py-0.5 rounded bg-elevated">/api/tokens</code> to push your current token set. Use this URL in your Figma plugin's live sync configuration.
           </p>
-          <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2">
-            <code className="text-xs text-violet-400 flex-1 truncate font-mono">
+          <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2">
+            <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">
               {window.location.origin}/api/tokens
             </code>
             <button
               onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/tokens`)}
-              className="text-[10px] text-neutral-500 hover:text-white transition flex-shrink-0"
+              className="text-[10px] text-fg-faint hover:text-fg transition flex-shrink-0"
             >
               Copy
             </button>

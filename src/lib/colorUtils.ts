@@ -25,3 +25,14 @@ export function isAccessible(fg: string, bg: string, level: 'AA' | 'AAA' = 'AA')
   const contrast = checkContrast(fg, bg)
   return level === 'AA' ? contrast >= 4.5 : contrast >= 7
 }
+
+// Lightest brand tone (>= start) whose WHITE text passes WCAG AA (4.5:1).
+// Keeps the solid brand button accessible even for bright hues where the design
+// system's default tone (8) is too light for white text. Falls back to 12.
+export function accessibleSolidTone(scale: Record<number, string>, start = 8): number {
+  for (let t = start; t <= 12; t++) {
+    const hex = scale[t]
+    if (hex && checkContrast('#ffffff', hex) >= 4.5) return t
+  }
+  return 12
+}

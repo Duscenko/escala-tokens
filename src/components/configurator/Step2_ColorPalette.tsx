@@ -1,9 +1,10 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore, GRAY_LIGHT_SCALE, GRAY_DARK_SCALE } from '../../store/useDesignStore'
-import { generateColorScale, isAccessible, checkContrast } from '../../lib/colorUtils'
+import { useDesignStore } from '../../store/useDesignStore'
+import { generateColorScale } from '../../lib/colorUtils'
+import { PRESET_GROUPS } from '../../lib/brandPalette'
 
-// ── Gray flavor options for neutral scale ─────────────────────────────────
+// ── Gray flavor options for the neutral scale ──────────────────────────────
 const GRAY_FLAVORS: { label: string; hex: string }[] = [
   { label: 'Gray Blue',    hex: '#4e5ba6' },
   { label: 'Gray Cool',    hex: '#5d6b98' },
@@ -14,276 +15,178 @@ const GRAY_FLAVORS: { label: string; hex: string }[] = [
   { label: 'Gray Warm',    hex: '#79716b' },
 ]
 
-// ── Color preset groups (Figma design system palette) ────────────────────
-const PRESET_GROUPS: { label: string; colors: { label: string; hex: string }[] }[] = [
-  {
-    label: 'Greens',
-    colors: [
-      { label: 'Moss',        hex: '#669f2a' },
-      { label: 'Green Light', hex: '#66c61c' },
-      { label: 'Green',       hex: '#16b364' },
-      { label: 'Teal',        hex: '#15b79e' },
-      { label: 'Cyan',        hex: '#06aed4' },
-    ],
-  },
-  {
-    label: 'Blues',
-    colors: [
-      { label: 'Blue Light', hex: '#0ba5ec' },
-      { label: 'Blue',       hex: '#2e90fa' },
-      { label: 'Blue Dark',  hex: '#2970ff' },
-      { label: 'Indigo',     hex: '#6172f3' },
-      { label: 'Violet',     hex: '#875bf7' },
-      { label: 'Purple',     hex: '#7a5af8' },
-    ],
-  },
-  {
-    label: 'Pinks',
-    colors: [
-      { label: 'Fuchsia', hex: '#d444f1' },
-      { label: 'Pink',    hex: '#ee46bc' },
-      { label: 'Rosé',    hex: '#f63d68' },
-    ],
-  },
-  {
-    label: 'Warm',
-    colors: [
-      { label: 'Orange Dark', hex: '#ff4405' },
-      { label: 'Orange',      hex: '#ef6820' },
-      { label: 'Yellow',      hex: '#eaaa08' },
-    ],
-  },
-]
+type Option = { label: string; hex: string }
+type OptionGroup = { label: string; options: Option[] }
 
-// ── Sub-components ────────────────────────────────────────────────────────
+const BRAND_GROUPS: OptionGroup[] = PRESET_GROUPS.map((g) => ({
+  label: g.label,
+  options: g.colors.map((c) => ({ label: c.label, hex: c.hex })),
+}))
+const NEUTRAL_GROUPS: OptionGroup[] = [{ label: '', options: GRAY_FLAVORS }]
 
-function ContrastBadge({ fg, bg }: { fg: string; bg: string }) {
-  const ratio = checkContrast(fg, bg)
-  const aa  = ratio >= 4.5
-  const aaa = ratio >= 7
-  return (
-    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
-      aaa ? 'bg-emerald-900/60 text-emerald-400'
-          : aa ? 'bg-violet-900/60 text-violet-400'
-               : 'bg-neutral-800 text-neutral-500'
-    }`}>
-      {ratio.toFixed(1)}{aaa ? ' AAA' : aa ? ' AA' : ' ✗'}
-    </span>
-  )
+function findOption(groups: OptionGroup[], hex: string): Option | null {
+  const target = hex.toLowerCase()
+  for (const g of groups) {
+    const hit = g.options.find((o) => o.hex.toLowerCase() === target)
+    if (hit) return hit
+  }
+  return null
 }
 
-function ScaleSwatch({ index, color }: { index: number; color: string }) {
-  const isBase = index === 5
-  const textOnSwatch = index < 6 ? '#0a0a0a' : '#ffffff'
+// ── Color dropdown ─────────────────────────────────────────────────────────
+
+function ColorSelect({
+  label,
+  value,
+  groups,
+  onChange,
+}: {
+  label?: string
+  value: string
+  groups: OptionGroup[]
+  onChange: (hex: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = findOption(groups, value)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
   return (
-    <motion.div
-      initial={{ opacity: 0, scaleY: 0.8 }}
-      animate={{ opacity: 1, scaleY: 1 }}
-      transition={{ duration: 0.2, delay: index * 0.03 }}
-      className="flex flex-col gap-1"
-    >
-      <div
-        className={`h-12 rounded-md relative flex items-center justify-center transition-all duration-300 ${
-          isBase ? 'ring-2 ring-white/30 ring-offset-1 ring-offset-neutral-950' : ''
-        }`}
-        style={{ backgroundColor: color }}
-      >
-        {isBase && (
-          <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: textOnSwatch }}>
-            base
+    <div className="flex flex-col gap-1.5 min-w-0">
+      {label && <span className="text-xs text-fg-muted">{label}</span>}
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left"
+        >
+          <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: value }} />
+          <span className="flex-1 min-w-0 truncate text-sm text-fg font-mono">
+            {value}
+            {selected && <span className="text-fg-faint font-sans"> ({selected.label})</span>}
           </span>
-        )}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.12 }}
+              role="listbox"
+              className="absolute z-30 mt-1.5 w-full max-h-72 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5"
+            >
+              {groups.map((g) => (
+                <div key={g.label || 'all'}>
+                  {g.label && (
+                    <div className="text-[10px] text-fg-faint uppercase tracking-wider px-2 pt-2 pb-1">{g.label}</div>
+                  )}
+                  {g.options.map((o) => {
+                    const isSel = o.hex.toLowerCase() === value.toLowerCase()
+                    return (
+                      <button
+                        key={o.hex}
+                        type="button"
+                        role="option"
+                        aria-selected={isSel}
+                        onClick={() => { onChange(o.hex); setOpen(false) }}
+                        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${
+                          isSel ? 'bg-elevated' : 'hover:bg-surface'
+                        }`}
+                      >
+                        <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: o.hex }} />
+                        <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
+                        <span className="text-[11px] font-mono text-fg-faint">{o.hex}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] text-neutral-500 text-center font-mono">{index + 1}</span>
-        <ContrastBadge fg={textOnSwatch} bg={color} />
-      </div>
-    </motion.div>
+    </div>
   )
 }
 
-function CompactScale({
-  scale,
+// ── Scale row (12 tones, BASE marker) ──────────────────────────────────────
+
+function ScaleRow({ scale, baseIndex = 6 }: { scale: Record<number, string>; baseIndex?: number }) {
+  const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
+  if (entries.length === 0) return null
+  return (
+    <div className="grid grid-cols-12 gap-1.5">
+      {entries.map(([key, color]) => {
+        const k = Number(key)
+        const isBase = k === baseIndex
+        const onLight = k >= 6 ? '#ffffff' : '#0a0a0a'
+        return (
+          <div key={key} className="flex flex-col gap-1 min-w-0">
+            <div
+              className={`h-11 rounded-lg flex items-center justify-center ${isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''}`}
+              style={{ backgroundColor: color }}
+              title={`Tone ${key} — ${color}`}
+            >
+              {isBase && (
+                <span className="text-[8px] font-bold uppercase tracking-widest" style={{ color: onLight }}>
+                  base
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-fg-faint text-center font-mono tabular-nums leading-none">{key}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Semantic state card ────────────────────────────────────────────────────
+
+function SemanticRow({
   label,
   description,
   color,
+  scale,
+  presets,
   onColorChange,
-  presets = [],
-  accentIndex = 6,
 }: {
+  label: string
+  description: string
+  color: string
   scale: Record<number, string>
-  label: string
-  description: string
-  color?: string
-  onColorChange?: (hex: string) => void
-  presets?: string[]
-  accentIndex?: number
+  presets: { hex: string; label: string }[]
+  onColorChange: (hex: string) => void
 }) {
-  const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
-  const isEditable = !!color && !!onColorChange
-
+  const groups: OptionGroup[] = [{ label: '', options: presets }]
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 flex-wrap">
-        {isEditable ? (
-          <div className="relative flex-shrink-0 w-12 h-12">
-            <div
-              className="w-full h-full rounded-xl ring-2 ring-white/10 hover:ring-white/25 cursor-pointer transition"
-              style={{ backgroundColor: color }}
-            >
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => onColorChange!(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                aria-label={`Pick ${label} base color`}
-              />
-            </div>
-          </div>
-        ) : (
-          <div
-            className="w-12 h-12 rounded-xl ring-1 ring-white/10 flex-shrink-0"
-            style={{ backgroundColor: entries[accentIndex - 1]?.[1] ?? '#888' }}
-          />
-        )}
-
-        <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-sm font-semibold text-white leading-none">{label}</span>
-          {isEditable ? (
-            <input
-              type="text"
-              value={color}
-              maxLength={7}
-              onChange={(e) => {
-                const v = e.target.value
-                if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onColorChange!(v)
-              }}
-              className="bg-neutral-900 border border-neutral-700 focus:border-violet-500
-                         rounded-lg px-3 py-1.5 text-white font-mono text-xs
-                         outline-none transition-colors w-28"
-              aria-label={`${label} hex value`}
-            />
-          ) : (
-            <p className="text-xs text-neutral-500 leading-snug">{description}</p>
-          )}
-        </div>
-
-        {isEditable && (
-          <p className="text-xs text-neutral-500 leading-snug ml-1 flex-1 min-w-[120px]">
-            {description}
-          </p>
-        )}
+    <div className="rounded-xl border border-line p-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-semibold text-fg uppercase tracking-wide">{label}</span>
+        <span className="text-xs text-fg-faint">{description}</span>
       </div>
-
-      {isEditable && presets.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider w-14 shrink-0 text-right">Presets</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {presets.map((hex) => (
-              <button
-                key={hex}
-                onClick={() => onColorChange!(hex)}
-                title={hex}
-                className={`w-5 h-5 rounded-full transition-all duration-150 hover:scale-110 ${
-                  color === hex
-                    ? 'ring-2 ring-white/60 ring-offset-1 ring-offset-neutral-950 scale-110'
-                    : 'ring-1 ring-white/10'
-                }`}
-                style={{ backgroundColor: hex }}
-                aria-label={hex}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-12 gap-1">
-        {entries.map(([key, c]) => {
-          const isBase = Number(key) === accentIndex
-          return (
-            <div key={key} className="flex flex-col gap-0.5">
-              <div
-                className={`h-8 rounded-sm transition-all ${
-                  isBase ? 'ring-1 ring-white/30 ring-offset-1 ring-offset-neutral-950' : ''
-                }`}
-                style={{ backgroundColor: c }}
-                title={`Tone ${key} — ${c}`}
-              />
-              <span className="text-[8px] text-neutral-600 text-center font-mono leading-none">
-                {isBase ? '●' : key}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+      <ColorSelect value={color} groups={groups} onChange={onColorChange} />
+      <ScaleRow scale={scale} />
     </div>
   )
 }
 
-// ── Collapsible section wrapper ────────────────────────────────────────────
-
-function CollapsibleSection({
-  label,
-  description,
-  swatchColors,
-  defaultOpen = false,
-  children,
-}: {
-  label: string
-  description: string
-  swatchColors?: string[]
-  defaultOpen?: boolean
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-
-  return (
-    <div className="flex flex-col gap-4">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-3 group text-left w-full"
-      >
-        <svg
-          width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`text-neutral-500 transition-transform duration-200 flex-shrink-0 ${open ? 'rotate-90' : ''}`}
-        >
-          <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <label className="text-sm text-neutral-400 uppercase tracking-wide cursor-pointer group-hover:text-neutral-300 transition-colors">
-          {label}
-        </label>
-
-        {!open && swatchColors && swatchColors.length > 0 && (
-          <div className="flex gap-1 flex-wrap ml-1">
-            {swatchColors.map((c, i) => (
-              <div key={i} className="w-4 h-4 rounded-sm ring-1 ring-white/10" style={{ backgroundColor: c }} />
-            ))}
-          </div>
-        )}
-      </button>
-
-      {!open && (
-        <p className="text-xs text-neutral-600 -mt-2 ml-5">{description}</p>
-      )}
-
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ── Main component ────────────────────────────────────────────────────────
+// ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step2_ColorPalette() {
   const {
@@ -296,11 +199,7 @@ export default function Step2_ColorPalette() {
   } = useDesignStore()
 
   const regenerate = useCallback((hex: string) => {
-    try {
-      const scale = generateColorScale(hex)
-      setPrimaryColor(hex)
-      setPrimaryScale(scale)
-    } catch {}
+    try { setPrimaryColor(hex); setPrimaryScale(generateColorScale(hex)) } catch {}
   }, [setPrimaryColor, setPrimaryScale])
 
   const regenerateError = useCallback((hex: string) => {
@@ -324,259 +223,108 @@ export default function Step2_ColorPalette() {
   }, [setGrayBaseColor, setGrayLightScale])
 
   useEffect(() => {
-    if (Object.keys(primaryScale).length === 0) regenerate(primaryColor)
-    if (Object.keys(errorScale).length   === 0) regenerateError(errorColor)
-    if (Object.keys(warningScale).length === 0) regenerateWarning(warningColor)
-    if (Object.keys(successScale).length === 0) regenerateSuccess(successColor)
-    if (Object.keys(infoScale).length    === 0) regenerateInfo(infoColor)
-  }, [])
+    if (Object.keys(primaryScale).length    === 0) regenerate(primaryColor)
+    if (Object.keys(errorScale).length       === 0) regenerateError(errorColor)
+    if (Object.keys(warningScale).length     === 0) regenerateWarning(warningColor)
+    if (Object.keys(successScale).length     === 0) regenerateSuccess(successColor)
+    if (Object.keys(infoScale).length        === 0) regenerateInfo(infoColor)
+    if (Object.keys(grayLightScale).length   === 0) regenerateGray(grayBaseColor)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const scaleEntries = Object.entries(primaryScale).sort(([a], [b]) => Number(a) - Number(b))
-
-  // Swatch previews for collapsed state
-  const semanticSwatches = [errorColor, warningColor, successColor, infoColor]
-  const neutralSwatches = Object.values(grayLightScale).filter((_, i) => i % 3 === 0)
+  const semanticDots = [errorColor, warningColor, successColor, infoColor]
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-10"
+      className="flex flex-col gap-8"
     >
-      {/* ── Brand / Accent color ────────────────────────────────── */}
-      <div className="flex flex-col gap-4">
-        <label className="text-sm text-neutral-400 uppercase tracking-wide">Brand Color</label>
+      {/* ── Source colors + accent scale: one block, separated below ─ */}
+      <section className="-mx-8 -mt-8 px-8 pt-8 pb-8 flex flex-col gap-8 border-b border-line">
+        {/* Source colors */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <ColorSelect label="Brand Color" value={primaryColor} groups={BRAND_GROUPS} onChange={regenerate} />
+          <ColorSelect label="Neutral suggested" value={grayBaseColor} groups={NEUTRAL_GROUPS} onChange={regenerateGray} />
+        </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div
-              className="w-14 h-14 rounded-xl cursor-pointer ring-2 ring-white/10 hover:ring-white/30 transition"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => regenerate(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                aria-label="Pick brand color"
-              />
-            </div>
+        {/* Accent + neutral scales */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-fg">Accent scale</h3>
+            <span className="text-xs text-fg-faint font-mono">1 = lightest · 12 = darkest</span>
           </div>
+          <ScaleRow scale={primaryScale} />
+          <ScaleRow scale={grayLightScale} />
+        </div>
+      </section>
 
-          <input
-            type="text"
-            value={primaryColor}
-            maxLength={7}
-            onChange={(e) => {
-              const val = e.target.value
-              if (/^#[0-9a-fA-F]{0,6}$/.test(val)) regenerate(val)
-            }}
-            className="bg-neutral-900 border border-neutral-700 focus:border-violet-500
-                       rounded-lg px-4 py-2 text-white font-mono text-sm
-                       outline-none transition-colors w-36"
-            placeholder="#7f56d9"
-          />
-
-          <div className="flex items-center gap-2 text-sm text-neutral-500">
-            <span>on dark</span>
-            <ContrastBadge fg={primaryColor} bg="#0a0a0a" />
-            <span>on white</span>
-            <ContrastBadge fg={primaryColor} bg="#ffffff" />
+      {/* ── Color semantics ────────────────────────────────────── */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-semibold text-fg">Color Semantics</h3>
+          <div className="flex gap-1.5">
+            {semanticDots.map((c, i) => (
+              <span key={i} className="w-3 h-3 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c }} />
+            ))}
           </div>
         </div>
 
-        {/* Presets */}
-        <div className="flex flex-col gap-2 mt-1">
-          {PRESET_GROUPS.map((group) => (
-            <div key={group.label} className="flex items-center gap-3">
-              <span className="text-[10px] text-neutral-600 uppercase tracking-wider w-14 shrink-0 text-right">
-                {group.label}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {group.colors.map((preset) => (
-                  <button
-                    key={preset.hex}
-                    onClick={() => regenerate(preset.hex)}
-                    title={preset.label}
-                    className={`w-6 h-6 rounded-full transition-all duration-150 hover:scale-110 ${
-                      primaryColor === preset.hex
-                        ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-neutral-950 scale-110'
-                        : 'ring-1 ring-white/10'
-                    }`}
-                    style={{ backgroundColor: preset.hex }}
-                    aria-label={preset.label}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col gap-4">
+          <SemanticRow
+            label="Error"
+            description="Destructive actions, validation errors, removal states."
+            color={errorColor}
+            scale={errorScale}
+            onColorChange={regenerateError}
+            presets={[
+              { hex: '#f04438', label: 'Red 500' },
+              { hex: '#d92d20', label: 'Red 600' },
+              { hex: '#ef4444', label: 'Tailwind Red' },
+              { hex: '#e11d48', label: 'Rose' },
+            ]}
+          />
+          <SemanticRow
+            label="Warning"
+            description="Potentially destructive or 'on-hold' actions and confirmations."
+            color={warningColor}
+            scale={warningScale}
+            onColorChange={regenerateWarning}
+            presets={[
+              { hex: '#f79009', label: 'Amber 500' },
+              { hex: '#f59e0b', label: 'Amber' },
+              { hex: '#dc6803', label: 'Orange 600' },
+              { hex: '#f97316', label: 'Orange' },
+            ]}
+          />
+          <SemanticRow
+            label="Success"
+            description="Positive actions, successful confirmations, positive trends."
+            color={successColor}
+            scale={successScale}
+            onColorChange={regenerateSuccess}
+            presets={[
+              { hex: '#17b26a', label: 'Green 500' },
+              { hex: '#079455', label: 'Green 600' },
+              { hex: '#10b981', label: 'Emerald' },
+              { hex: '#22c55e', label: 'Green 400' },
+            ]}
+          />
+          <SemanticRow
+            label="Info"
+            description="Informational messages, neutral highlights, tips and hints."
+            color={infoColor}
+            scale={infoScale}
+            onColorChange={regenerateInfo}
+            presets={[
+              { hex: '#2e90fa', label: 'Blue 400' },
+              { hex: '#3b82f6', label: 'Blue' },
+              { hex: '#0ea5e9', label: 'Sky' },
+              { hex: '#06b6d4', label: 'Cyan' },
+            ]}
+          />
         </div>
       </div>
-
-      {/* ── Brand 12-tone scale ─────────────────────────────────── */}
-      <AnimatePresence mode="wait">
-        {scaleEntries.length > 0 && (
-          <motion.div
-            key={primaryColor}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-3"
-          >
-            <div className="flex items-center justify-between">
-              <label className="text-sm text-neutral-400 uppercase tracking-wide">
-                12-Tone Scale
-              </label>
-              <span className="text-xs text-neutral-600 font-mono">
-                1 = lightest · 12 = darkest
-              </span>
-            </div>
-            <div className="grid grid-cols-12 gap-1.5">
-              {scaleEntries.map(([key, color], i) => (
-                <ScaleSwatch key={key} index={i} color={color} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Accessibility summary ───────────────────────────────── */}
-      {scaleEntries.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="rounded-lg bg-neutral-900 border border-neutral-800 p-4 flex gap-6 text-sm"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-neutral-500 text-xs uppercase tracking-wide">AA pass (4.5:1)</span>
-            <span className="text-white font-semibold">
-              {scaleEntries.filter(([, c]) => isAccessible(c, '#0a0a0a') || isAccessible(c, '#ffffff')).length}
-              <span className="text-neutral-500 font-normal"> / 12 tones</span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-neutral-500 text-xs uppercase tracking-wide">Base on white</span>
-            <span className="text-white font-semibold">
-              {checkContrast(primaryColor, '#ffffff').toFixed(2)}:1
-              <span className={`ml-2 text-xs ${isAccessible(primaryColor, '#ffffff') ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {isAccessible(primaryColor, '#ffffff') ? '✓ AA' : '✗ fail'}
-              </span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-neutral-500 text-xs uppercase tracking-wide">Base on dark</span>
-            <span className="text-white font-semibold">
-              {checkContrast(primaryColor, '#0a0a0a').toFixed(2)}:1
-              <span className={`ml-2 text-xs ${isAccessible(primaryColor, '#0a0a0a') ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {isAccessible(primaryColor, '#0a0a0a') ? '✓ AA' : '✗ fail'}
-              </span>
-            </span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── Semantic state scales — collapsible ─────────────────── */}
-      <CollapsibleSection
-        label="Semantic Scales"
-        description="Error, warning, success and info colors — auto-generated, expand to customize."
-        swatchColors={semanticSwatches}
-        defaultOpen={false}
-      >
-        <div className="flex flex-col gap-5 rounded-lg border border-neutral-800/60 p-4 bg-neutral-950/40">
-          {Object.keys(errorScale).length > 0 && (
-            <CompactScale
-              scale={errorScale}
-              label="Error"
-              description="Destructive actions, validation errors, removal states."
-              color={errorColor}
-              onColorChange={regenerateError}
-              presets={['#f04438', '#d92d20', '#ef4444', '#e11d48', '#dc2626']}
-            />
-          )}
-          {Object.keys(warningScale).length > 0 && (
-            <CompactScale
-              scale={warningScale}
-              label="Warning"
-              description="Potentially destructive or 'on-hold' actions and confirmations."
-              color={warningColor}
-              onColorChange={regenerateWarning}
-              presets={['#f79009', '#f59e0b', '#dc6803', '#f97316', '#eab308']}
-            />
-          )}
-          {Object.keys(successScale).length > 0 && (
-            <CompactScale
-              scale={successScale}
-              label="Success"
-              description="Positive actions, successful confirmations, positive trends."
-              color={successColor}
-              onColorChange={regenerateSuccess}
-              presets={['#17b26a', '#079455', '#10b981', '#22c55e', '#16a34a']}
-            />
-          )}
-          {Object.keys(infoScale).length > 0 && (
-            <CompactScale
-              scale={infoScale}
-              label="Info"
-              description="Informational messages, neutral highlights, tips and hints."
-              color={infoColor}
-              onColorChange={regenerateInfo}
-              presets={['#2e90fa', '#3b82f6', '#0ea5e9', '#06b6d4', '#6172f3']}
-            />
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* ── Neutral scales — collapsible ────────────────────────── */}
-      <CollapsibleSection
-        label="Neutral Scales"
-        description="Foundation grays for text, fields, backgrounds and dividers — pick a flavor below."
-        swatchColors={neutralSwatches}
-        defaultOpen={false}
-      >
-        <div className="flex flex-col gap-5 rounded-lg border border-neutral-800/60 p-4 bg-neutral-950/40">
-          {/* Gray flavor selector */}
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-neutral-600 uppercase tracking-wider w-14 shrink-0 text-right">
-              Flavor
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {GRAY_FLAVORS.map((g) => (
-                <button
-                  key={g.hex}
-                  onClick={() => regenerateGray(g.hex)}
-                  title={g.label}
-                  className={`w-6 h-6 rounded-full transition-all duration-150 hover:scale-110 ${
-                    grayBaseColor === g.hex
-                      ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-neutral-950 scale-110'
-                      : 'ring-1 ring-white/10'
-                  }`}
-                  style={{ backgroundColor: g.hex }}
-                  aria-label={g.label}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-neutral-600 font-mono ml-1">
-              {GRAY_FLAVORS.find((g) => g.hex === grayBaseColor)?.label ?? 'Custom'}
-            </span>
-          </div>
-
-          <CompactScale
-            scale={grayLightScale}
-            label="Gray (light mode)"
-            description="Neutral gray used for text, form fields, backgrounds and dividers in light mode."
-            accentIndex={7}
-          />
-          <CompactScale
-            scale={GRAY_DARK_SCALE}
-            label="Gray (dark mode)"
-            description="Desaturated gray palette optimised specifically for dark mode variables."
-            accentIndex={7}
-          />
-        </div>
-      </CollapsibleSection>
     </motion.div>
   )
 }

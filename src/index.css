@@ -1,9 +1,35 @@
 @import "tailwindcss";
 
+/* Class-strategy dark mode: `.dark` on <html> activates the dark palette. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic color utilities — track runtime CSS vars so they switch with `.dark`.
+   bg-app/surface/elevated · text-fg/fg-muted/fg-faint · border-line/line-strong */
+@theme inline {
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+}
+
 :root {
+  /* ── Light theme (default) ── */
+  --app: #ffffff;
+  --surface: #f6f6f7;
+  --elevated: #e8e8ea;
+  --fg: #18181b;
+  --fg-muted: #52525b;
+  --fg-faint: #737373;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+
   font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0.18px;
-  color-scheme: dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -14,10 +40,24 @@
   }
 }
 
+.dark {
+  /* ── Dark theme ── */
+  --app: #0a0a0a;
+  --surface: #171717;
+  --elevated: #262626;
+  --fg: #fafafa;
+  --fg-muted: #a1a1aa;
+  --fg-faint: #6b6b6b;
+  --line: #262626;
+  --line-strong: #404040;
+
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
-  background: #0a0a0a;
-  color: #fafafa;
+  background: var(--app);
+  color: var(--fg);
 }
 
 #root {

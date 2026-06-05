@@ -2,7 +2,7 @@ import Configurator from './pages/Configurator'
 
 function App() {
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
+    <main className="min-h-screen bg-app text-fg">
       <Configurator />
     </main>
   )
