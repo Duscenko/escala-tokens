@@ -9,7 +9,7 @@ type Tab = 'tokens' | 'css' | 'markdown'
 // ─── Generators ─────────────────────────────────────────────────────────────
 
 function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, semanticTokens, typography, spacing, radius } = store
+  const { primaryScale, semanticTokens, darkSemanticTokens, typography, spacing, radius } = store
   const lines: string[] = [':root {']
 
   lines.push('  /* Primitive scale */')
@@ -17,7 +17,7 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
     .sort(([a], [b]) => Number(a) - Number(b))
     .forEach(([k, v]) => lines.push(`  --color-${k}: ${v};`))
 
-  lines.push('\n  /* Semantic tokens */')
+  lines.push('\n  /* Semantic tokens — light */')
   Object.entries(semanticTokens).forEach(([k, v]) => {
     if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`)
   })
@@ -35,11 +35,21 @@ function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
 
   lines.push('}')
+
+  // Dark mode — semantic tokens only; applied via the .dark class on <html>.
+  const darkEntries = Object.entries(darkSemanticTokens).filter(([, v]) => v)
+  if (darkEntries.length) {
+    lines.push('\n.dark {')
+    lines.push('  /* Semantic tokens — dark */')
+    darkEntries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`))
+    lines.push('}')
+  }
+
   return lines.join('\n')
 }
 
 function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, primaryColor, primaryScale, semanticTokens, typography, spacing, radius, selectedComponents } = store
+  const { projectName, primaryColor, primaryScale, semanticTokens, darkSemanticTokens, typography, spacing, radius, selectedComponents } = store
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
 
@@ -66,9 +76,9 @@ ${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=
 
 ### Semantic Tokens
 
-| Token | Value |
-|-------|-------|
-${Object.entries(semanticTokens).filter(([,v])=>v).map(([k,v])=>`| \`--color-${k.replace(/([A-Z])/g,'-$1').toLowerCase()}\` | \`${v}\` |`).join('\n')}
+| Token | Light | Dark |
+|-------|-------|------|
+${Object.entries(semanticTokens).filter(([,v])=>v).map(([k,v])=>`| \`--color-${k.replace(/([A-Z])/g,'-$1').toLowerCase()}\` | \`${v}\` | \`${darkSemanticTokens[k] || '—'}\` |`).join('\n')}
 
 ---
 

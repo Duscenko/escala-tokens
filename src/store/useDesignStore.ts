@@ -27,6 +27,56 @@ export const GRAY_DARK_SCALE: ColorScale = {
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+// Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
+// dark (darkSemanticTokens) maps so both stay in sync as roles are added.
+const EMPTY_SEMANTIC: Record<string, string> = {
+  // ── Text ──────────────────────────────────────────────────
+  'text-primary': '', 'text-primary_on-brand': '',
+  'text-secondary': '', 'text-secondary_hover': '', 'text-secondary_on-brand': '',
+  'text-tertiary': '', 'text-tertiary_hover': '', 'text-tertiary_on-brand': '',
+  'text-quaternary': '', 'text-quaternary_on-brand': '',
+  'text-white': '', 'text-disabled': '',
+  'text-placeholder': '', 'text-placeholder_subtle': '',
+  'text-brand-primary': '',
+  'text-brand-secondary': '', 'text-brand-secondary_hover': '',
+  'text-brand-tertiary': '', 'text-brand-tertiary_alt': '',
+  'text-error-primary': '', 'text-warning-primary': '', 'text-success-primary': '', 'text-info-primary': '',
+  // ── Border ────────────────────────────────────────────────
+  'border-primary': '',
+  'border-secondary': '', 'border-secondary_alt': '',
+  'border-tertiary': '',
+  'border-disabled': '', 'border-disabled_subtle': '',
+  'border-brand': '', 'border-brand_alt': '',
+  'border-error': '', 'border-error_subtle': '',
+  // ── Foreground ────────────────────────────────────────────
+  'fg-primary': '',
+  'fg-secondary': '', 'fg-secondary_hover': '',
+  'fg-tertiary': '', 'fg-tertiary_hover': '',
+  'fg-quaternary': '', 'fg-quaternary_hover': '',
+  'fg-white': '', 'fg-disabled': '', 'fg-disabled_subtle': '',
+  'fg-brand-primary': '', 'fg-brand-primary_alt': '',
+  'fg-brand-secondary': '', 'fg-brand-secondary_alt': '',
+  'fg-error-primary': '', 'fg-error-secondary': '',
+  'fg-warning-primary': '', 'fg-warning-secondary': '',
+  'fg-success-primary': '', 'fg-success-secondary': '',
+  'fg-info-primary': '', 'fg-info-secondary': '',
+  // ── Background ────────────────────────────────────────────
+  'bg-primary': '', 'bg-primary_alt': '', 'bg-primary_hover': '',
+  'bg-primary-solid': '',
+  'bg-secondary': '', 'bg-secondary_alt': '', 'bg-secondary_hover': '', 'bg-secondary_subtle': '',
+  'bg-secondary-solid': '',
+  'bg-tertiary': '', 'bg-quaternary': '',
+  'bg-active': '', 'bg-disabled': '', 'bg-disabled_subtle': '', 'bg-overlay': '',
+  'bg-brand-primary': '', 'bg-brand-primary_alt': '',
+  'bg-brand-secondary': '',
+  'bg-brand-solid': '', 'bg-brand-solid_hover': '',
+  'bg-brand-section': '', 'bg-brand-section_subtle': '',
+  'bg-error-primary': '', 'bg-error-secondary': '', 'bg-error-solid': '',
+  'bg-warning-primary': '', 'bg-warning-secondary': '', 'bg-warning-solid': '',
+  'bg-success-primary': '', 'bg-success-secondary': '', 'bg-success-solid': '',
+  'bg-info-primary': '', 'bg-info-secondary': '', 'bg-info-solid': '',
+}
+
 interface DesignStore {
   // Step 1
   projectName: string
@@ -65,10 +115,15 @@ interface DesignStore {
   setInfoColor: (hex: string) => void
   setInfoScale: (scale: ColorScale) => void
 
-  // Step 3 — Semantic tokens
+  // Step 3 — Semantic tokens (light mode = the default)
   semanticTokens: Record<string, string>
   setSemanticToken: (key: string, value: string) => void
   mergeSemanticTokens: (partial: Record<string, string>) => void
+
+  // Step 3 — Semantic tokens (dark mode — same keys, independent values)
+  darkSemanticTokens: Record<string, string>
+  setDarkSemanticToken: (key: string, value: string) => void
+  mergeDarkSemanticTokens: (partial: Record<string, string>) => void
 
   // Step 4 — Typography
   typography: TypographyTokens
@@ -128,53 +183,7 @@ export const useDesignStore = create<DesignStore>()(
       setInfoColor: (hex) => set({ infoColor: hex }),
       setInfoScale: (scale) => set({ infoScale: scale }),
 
-      semanticTokens: {
-        // ── Text ──────────────────────────────────────────────────
-        'text-primary': '', 'text-primary_on-brand': '',
-        'text-secondary': '', 'text-secondary_hover': '', 'text-secondary_on-brand': '',
-        'text-tertiary': '', 'text-tertiary_hover': '', 'text-tertiary_on-brand': '',
-        'text-quaternary': '', 'text-quaternary_on-brand': '',
-        'text-white': '', 'text-disabled': '',
-        'text-placeholder': '', 'text-placeholder_subtle': '',
-        'text-brand-primary': '',
-        'text-brand-secondary': '', 'text-brand-secondary_hover': '',
-        'text-brand-tertiary': '', 'text-brand-tertiary_alt': '',
-        'text-error-primary': '', 'text-warning-primary': '', 'text-success-primary': '', 'text-info-primary': '',
-        // ── Border ────────────────────────────────────────────────
-        'border-primary': '',
-        'border-secondary': '', 'border-secondary_alt': '',
-        'border-tertiary': '',
-        'border-disabled': '', 'border-disabled_subtle': '',
-        'border-brand': '', 'border-brand_alt': '',
-        'border-error': '', 'border-error_subtle': '',
-        // ── Foreground ────────────────────────────────────────────
-        'fg-primary': '',
-        'fg-secondary': '', 'fg-secondary_hover': '',
-        'fg-tertiary': '', 'fg-tertiary_hover': '',
-        'fg-quaternary': '', 'fg-quaternary_hover': '',
-        'fg-white': '', 'fg-disabled': '', 'fg-disabled_subtle': '',
-        'fg-brand-primary': '', 'fg-brand-primary_alt': '',
-        'fg-brand-secondary': '', 'fg-brand-secondary_alt': '',
-        'fg-error-primary': '', 'fg-error-secondary': '',
-        'fg-warning-primary': '', 'fg-warning-secondary': '',
-        'fg-success-primary': '', 'fg-success-secondary': '',
-        'fg-info-primary': '', 'fg-info-secondary': '',
-        // ── Background ────────────────────────────────────────────
-        'bg-primary': '', 'bg-primary_alt': '', 'bg-primary_hover': '',
-        'bg-primary-solid': '',
-        'bg-secondary': '', 'bg-secondary_alt': '', 'bg-secondary_hover': '', 'bg-secondary_subtle': '',
-        'bg-secondary-solid': '',
-        'bg-tertiary': '', 'bg-quaternary': '',
-        'bg-active': '', 'bg-disabled': '', 'bg-disabled_subtle': '', 'bg-overlay': '',
-        'bg-brand-primary': '', 'bg-brand-primary_alt': '',
-        'bg-brand-secondary': '',
-        'bg-brand-solid': '', 'bg-brand-solid_hover': '',
-        'bg-brand-section': '', 'bg-brand-section_subtle': '',
-        'bg-error-primary': '', 'bg-error-secondary': '', 'bg-error-solid': '',
-        'bg-warning-primary': '', 'bg-warning-secondary': '', 'bg-warning-solid': '',
-        'bg-success-primary': '', 'bg-success-secondary': '', 'bg-success-solid': '',
-        'bg-info-primary': '', 'bg-info-secondary': '', 'bg-info-solid': '',
-      },
+      semanticTokens: { ...EMPTY_SEMANTIC },
       setSemanticToken: (key, value) =>
         set((state) => ({
           semanticTokens: { ...state.semanticTokens, [key]: value },
@@ -182,6 +191,16 @@ export const useDesignStore = create<DesignStore>()(
       mergeSemanticTokens: (partial) =>
         set((state) => ({
           semanticTokens: { ...state.semanticTokens, ...partial },
+        })),
+
+      darkSemanticTokens: { ...EMPTY_SEMANTIC },
+      setDarkSemanticToken: (key, value) =>
+        set((state) => ({
+          darkSemanticTokens: { ...state.darkSemanticTokens, [key]: value },
+        })),
+      mergeDarkSemanticTokens: (partial) =>
+        set((state) => ({
+          darkSemanticTokens: { ...state.darkSemanticTokens, ...partial },
         })),
 
       typography: {
@@ -209,7 +228,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 3,
+      version: 4,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -224,6 +243,11 @@ export const useDesignStore = create<DesignStore>()(
           if (!persisted.projectName) persisted.projectName = 'Apollo'
           if (!persisted.selectedComponents?.length) {
             persisted.selectedComponents = [...COMPONENT_KEYS]
+          }
+          // v3→v4: semantic tokens gained an independent dark-mode map. Seed it
+          // empty; Step3 re-derives values from the scales on mount.
+          if (!persisted.darkSemanticTokens) {
+            persisted.darkSemanticTokens = { ...EMPTY_SEMANTIC }
           }
         }
         return persisted

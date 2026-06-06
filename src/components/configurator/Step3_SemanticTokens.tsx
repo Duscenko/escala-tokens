@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
-import { checkContrast, accessibleSolidTone } from '../../lib/colorUtils'
+import { useDesignStore, GRAY_DARK_SCALE } from '../../store/useDesignStore'
+import { accessibleSolidTone } from '../../lib/colorUtils'
 
 // ── Source palettes a token can draw from ──────────────────────────────────
 type ScaleSource = 'gray' | 'brand' | 'error' | 'warning' | 'success' | 'info'
@@ -172,21 +172,63 @@ function toneIndexOf(scale: Record<number, string>, hex: string): number | null 
   return null
 }
 
-/** Strip the trailing "(gray-900)"-style tone hint — the chip now shows it from data. */
+/** Strip the trailing "(gray-900)"-style tone hint — shown via the alias badge now. */
 function cleanDescription(description: string): string {
   return description.replace(/\s*\([^)]*\)\s*$/, '').trim()
 }
 
+/**
+ * Recommended dark-mode tone for a role. Gray hierarchy inverts (dark text in
+ * light mode → light text in dark mode); colored scales keep their hue but
+ * shift to read well on dark surfaces. These are editable seeds, not fixed.
+ */
+function recDarkTone(role: Role): number {
+  const t = role.tone
+  if (role.key === 'text-white' || role.key === 'fg-white') return 1
+  if (role.scale === 'gray') {
+    // Solid / overlay surfaces stay dark in dark mode — don't invert them.
+    if (role.key === 'bg-overlay' || role.key === 'bg-primary-solid' || role.key === 'bg-secondary-solid') return t
+    return Math.min(12, Math.max(1, 13 - t))
+  }
+  // Colored (brand / error / warning / success / info) — keep the hue.
+  if (role.key.includes('-solid') || role.key.includes('-section')) return t   // brand fills hold
+  if (role.key.endsWith('_on-brand')) return t                                 // sit on a constant brand fill
+  if (t <= 3) return Math.min(12, t + 9)                                       // subtle tints deepen
+  return Math.max(6, t - 1)                                                    // text / fg / border lift one step
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function ScaleToneChip({ scale, tone, dot }: { scale: ScaleSource; tone: number | null; dot: string }) {
+/** Aliased reference badge — mirrors how Figma shows a variable bound to a primitive. */
+function AliasBadge({ scale, tone, color }: { scale: ScaleSource; tone: number | null; color: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono tracking-tight text-fg-muted shrink-0">
-      <span className="w-2 h-2 rounded-full ring-1 ring-white/20" style={{ backgroundColor: dot }} />
-      {SCALE_META[scale].label}
-      <span className="text-fg-faint">·</span>
-      <span className="text-fg-muted tabular-nums">{tone ?? '—'}</span>
+    <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-[11px] font-mono text-fg-muted max-w-full">
+      <span
+        className="w-3.5 h-3.5 rounded-[3px] flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
+        style={{ backgroundColor: color || 'var(--elevated)' }}
+      />
+      <span className="truncate tabular-nums">
+        {SCALE_META[scale].label}<span className="text-fg-faint">-</span>{tone ?? '—'}
+      </span>
     </span>
+  )
+}
+
+/** Sliders / "tune" icon — opens the per-mode scale editor. */
+function SlidersIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="15" height="15" viewBox="0 0 14 14" fill="none"
+      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"
+      className={`transition-colors ${active ? 'text-[#5AADFF]' : 'text-fg-faint group-hover:text-fg-muted'}`}
+    >
+      <line x1="3" y1="2" x2="3" y2="12" />
+      <line x1="7" y1="2" x2="7" y2="12" />
+      <line x1="11" y1="2" x2="11" y2="12" />
+      <circle cx="3" cy="5" r="1.7" fill="var(--app)" />
+      <circle cx="7" cy="9" r="1.7" fill="var(--app)" />
+      <circle cx="11" cy="4" r="1.7" fill="var(--app)" />
+    </svg>
   )
 }
 
@@ -213,7 +255,6 @@ function TonePicker({
         const isRecommended = k === recommendedTone
         return (
           <div key={key} className="flex flex-col items-center gap-0.5">
-            {/* Selection caret — only visible when selected */}
             <div className="h-2 flex items-end justify-center">
               {isSelected && (
                 <svg width="6" height="4" viewBox="0 0 6 4" className="text-[#5AADFF] flex-shrink-0">
@@ -227,16 +268,16 @@ function TonePicker({
               className={`${size} rounded-md transition-all duration-150 ${
                 isSelected
                   ? 'ring-2 ring-[#5AADFF] ring-offset-[3px] ring-offset-app scale-125 shadow-[0_0_8px_rgba(0,136,255,0.35)]'
-                  : 'ring-1 ring-white/10 hover:scale-110 hover:ring-white/20'
+                  : 'ring-1 ring-black/10 dark:ring-white/10 hover:scale-110 hover:ring-black/20 dark:hover:ring-white/20'
               }`}
               style={{ backgroundColor: color }}
               aria-label={`Tone ${key}${isRecommended ? ' (recommended)' : ''}${isSelected ? ' (selected)' : ''}`}
             />
             <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${
               isSelected
-                ? 'text-[#8FC8FF] font-semibold'
+                ? 'text-[#5AADFF] font-semibold'
                 : isRecommended
-                ? 'text-[#5AADFF]'
+                ? 'text-[#5AADFF]/70'
                 : 'text-fg-faint'
             }`}>
               {key}
@@ -248,110 +289,79 @@ function TonePicker({
   )
 }
 
-function ContrastPair({ fg, bg, fgLabel, bgLabel }: { fg: string; bg: string; fgLabel: string; bgLabel: string }) {
-  if (!fg || !bg) return null
-  const ratio = checkContrast(fg, bg)
-  const aa = ratio >= 4.5
-  const aaa = ratio >= 7
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <div className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ backgroundColor: bg, color: fg, border: `1px solid ${fg}22` }}>
-        Aa
-      </div>
-      <span className={`font-mono tabular-nums ${aaa ? 'text-emerald-400' : aa ? 'text-[#8FC8FF]' : 'text-rose-400'}`}>{ratio.toFixed(2)}:1</span>
-      <span className={`${aaa ? 'text-emerald-400' : aa ? 'text-[#8FC8FF]' : 'text-rose-400'}`}>{aaa ? 'AAA' : aa ? 'AA' : '✗ fail'}</span>
-      <span className="text-fg-faint truncate">{fgLabel} on {bgLabel}</span>
-    </div>
-  )
-}
+// ── Matrix row — Name · Light · Dark + filter-icon editor ───────────────────
 
-// ── Token row (dense line + progressive-disclosure editor) ──────────────────
+const GRID = 'grid grid-cols-[minmax(6rem,1fr)_6.25rem_6.25rem_2.25rem]'
 
-function TokenRow({
+function MatrixRow({
   role,
-  sourceScale,
-  value,
-  recHex,
-  dot,
+  lightScale,
+  darkScale,
+  lightValue,
+  darkValue,
+  lightRecTone,
+  darkRecTone,
   modified,
   expanded,
   reduce,
-  copiedId,
   onToggle,
-  onPick,
+  onPickLight,
+  onPickDark,
   onReset,
-  onCopy,
-  contrastBgHex,
-  contrastLabel,
 }: {
   role: Role
-  sourceScale: Record<number, string>
-  value: string
-  recHex: string
-  dot: string
+  lightScale: Record<number, string>
+  darkScale: Record<number, string>
+  lightValue: string
+  darkValue: string
+  lightRecTone: number
+  darkRecTone: number
   modified: boolean
   expanded: boolean
   reduce: boolean
-  copiedId: string | null
   onToggle: () => void
-  onPick: (hex: string) => void
+  onPickLight: (hex: string) => void
+  onPickDark: (hex: string) => void
   onReset: () => void
-  onCopy: (text: string, id: string) => void
-  contrastBgHex: string
-  contrastLabel: string
 }) {
-  const selectedTone = toneIndexOf(sourceScale, value)
-  const hexId = `${role.key}:hex`
-  const varId = `${role.key}:var`
+  const lightTone = toneIndexOf(lightScale, lightValue)
+  const darkTone = toneIndexOf(darkScale, darkValue)
+  const desc = cleanDescription(role.description)
 
   return (
-    <div className={role.isVariant ? 'border-l-2 border-line/60' : ''}>
-      {/* ── Dense line ── */}
-      <div className="flex items-stretch group">
+    <div className={expanded ? 'bg-surface/50' : ''}>
+      <div className={`${GRID} items-center border-t border-line/40 group transition-colors hover:bg-surface/40`}>
+        {/* Name */}
+        <button onClick={onToggle} className={`flex items-center gap-2.5 py-2.5 pr-2 min-w-0 text-left ${role.isVariant ? 'pl-7' : 'pl-4'}`}>
+          <span
+            className="w-5 h-5 rounded-md flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10 transition-colors duration-300"
+            style={{ backgroundColor: lightValue || 'var(--elevated)' }}
+          />
+          <code className="font-mono text-[12px] text-fg-muted truncate" title={desc}>{role.label}</code>
+          {modified && <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified from recommended" />}
+        </button>
+
+        {/* Light value */}
+        <button onClick={onToggle} className="flex items-center min-w-0 px-2 py-2.5 text-left" aria-label={`Light value ${SCALE_META[role.scale].label}-${lightTone ?? '?'}`}>
+          <AliasBadge scale={role.scale} tone={lightTone} color={lightValue} />
+        </button>
+
+        {/* Dark value */}
+        <button onClick={onToggle} className="flex items-center min-w-0 px-2 py-2.5 text-left" aria-label={`Dark value ${SCALE_META[role.scale].label}-${darkTone ?? '?'}`}>
+          <AliasBadge scale={role.scale} tone={darkTone} color={darkValue} />
+        </button>
+
+        {/* Filter / edit toggle */}
         <button
           onClick={onToggle}
           aria-expanded={expanded}
-          className={`flex items-center gap-3 flex-1 min-w-0 py-2.5 pr-2 text-left transition-colors hover:bg-surface/40 ${role.isVariant ? 'pl-7' : 'pl-4'}`}
+          aria-label={expanded ? 'Close scale editor' : 'Edit scale'}
+          className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors"
         >
-          <span
-            className="w-5 h-5 rounded-md flex-shrink-0 ring-1 ring-white/10 transition-colors duration-300"
-            style={{ backgroundColor: value || 'var(--elevated)' }}
-          />
-          <span className="flex flex-col min-w-0">
-            <span className="flex items-center gap-2 min-w-0">
-              <code className="font-mono text-[12px] text-fg-muted truncate">{role.label}</code>
-              <ScaleToneChip scale={role.scale} tone={selectedTone} dot={dot} />
-              {modified && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] shrink-0" title="Modified from recommended" />
-              )}
-            </span>
-            <span className="text-[11px] text-fg-faint truncate" title={cleanDescription(role.description)}>
-              {cleanDescription(role.description)}
-            </span>
-          </span>
-        </button>
-
-        {/* Always-visible value — click to copy */}
-        <button
-          onClick={() => onCopy(value, hexId)}
-          title="Copy hex"
-          className="shrink-0 w-[76px] text-right font-mono text-[11px] tabular-nums text-fg-muted hover:text-fg transition-colors"
-        >
-          {copiedId === hexId ? <span className="text-[#8FC8FF]">✓ copied</span> : value || '—'}
-        </button>
-
-        <button
-          onClick={onToggle}
-          aria-label={expanded ? 'Collapse' : 'Expand'}
-          className="shrink-0 px-3 flex items-center text-fg-faint hover:text-fg-muted transition-colors"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}>
-            <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <SlidersIcon active={expanded} />
         </button>
       </div>
 
-      {/* ── Editor (progressive disclosure) ── */}
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
@@ -361,31 +371,29 @@ function TokenRow({
             transition={{ duration: reduce ? 0 : 0.2, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className={`flex flex-col gap-3 pb-4 pt-1 pr-4 ${role.isVariant ? 'pl-7' : 'pl-4'}`}>
-              <TonePicker
-                scale={sourceScale}
-                selectedTone={selectedTone}
-                recommendedTone={role.tone}
-                onChange={onPick}
-                compact={role.isVariant}
-              />
+            <div className="flex flex-col gap-4 px-4 pt-2 pb-5">
+              <div className="flex flex-col gap-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-amber-500"><circle cx="6" cy="6" r="2.4" fill="currentColor"/><path d="M6 1v1.4M6 9.6V11M1 6h1.4M9.6 6H11M2.5 2.5l1 1M8.5 8.5l1 1M9.5 2.5l-1 1M3.5 8.5l-1 1" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>
+                  Light mode
+                </span>
+                <TonePicker scale={lightScale} selectedTone={lightTone} recommendedTone={lightRecTone} onChange={onPickLight} compact={role.isVariant} />
+              </div>
 
-              {role.contrastAgainst && value && contrastBgHex && (
-                <ContrastPair fg={value} bg={contrastBgHex} fgLabel={role.label} bgLabel={contrastLabel} />
-              )}
+              <div className="flex flex-col gap-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-indigo-400"><path d="M10 7.2A4.2 4.2 0 1 1 4.8 2a3.3 3.3 0 0 0 5.2 5.2z" fill="currentColor"/></svg>
+                  Dark mode
+                </span>
+                <TonePicker scale={darkScale} selectedTone={darkTone} recommendedTone={darkRecTone} onChange={onPickDark} compact={role.isVariant} />
+              </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => onCopy(`--color-${role.label}`, varId)}
-                  className="text-[10px] font-mono text-fg-muted hover:text-fg px-2 py-1 rounded border border-line hover:border-line-strong transition-colors"
-                >
-                  {copiedId === varId ? '✓ Copied' : `Copy --color-${role.label}`}
-                </button>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={onReset}
                   disabled={!modified}
-                  className="text-[10px] text-fg-faint hover:text-[#8FC8FF] disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
-                  title={`Reset to recommended (${SCALE_META[role.scale].label}·${role.tone})`}
+                  className="text-[10px] text-fg-faint hover:text-[#5AADFF] disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
+                  title="Reset both modes to recommended"
                 >
                   Reset to recommended
                 </button>
@@ -398,66 +406,6 @@ function TokenRow({
   )
 }
 
-// ── Group header with collapsed swatch preview ─────────────────────────────
-
-function GroupHeader({
-  group,
-  tokenColors,
-  matchInfo,
-  modifiedCount,
-  isExpanded,
-  onToggle,
-  onReset,
-}: {
-  group: RoleGroup
-  tokenColors: string[]
-  matchInfo: string | null
-  modifiedCount: number
-  isExpanded: boolean
-  onToggle: () => void
-  onReset: () => void
-}) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-surface/60">
-      <button onClick={onToggle} aria-expanded={isExpanded} className="flex items-center gap-2 flex-1 min-w-0 text-left group">
-        <svg
-          width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`text-fg-faint transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-        >
-          <path d="M4 2.5L8 6L4 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="text-xs font-semibold text-fg-muted uppercase tracking-widest group-hover:text-fg transition-colors">
-          {group.label}
-        </span>
-        <span className="text-[10px] text-fg-faint font-mono tabular-nums">
-          {matchInfo ?? group.roles.length}
-        </span>
-        {modifiedCount > 0 && (
-          <span className="text-[10px] font-mono text-[#8FC8FF]/90 bg-[#0088FF]/10 border border-[#0088FF]/20 rounded px-1.5 py-0.5 tabular-nums">
-            {modifiedCount} modified
-          </span>
-        )}
-      </button>
-
-      {!isExpanded && tokenColors.length > 0 && (
-        <div className="flex gap-0.5 flex-shrink-0">
-          {tokenColors.slice(0, 10).map((c, i) => (
-            <div key={i} className="w-3.5 h-3.5 rounded-sm ring-1 ring-white/5" style={{ backgroundColor: c || 'var(--elevated)' }} title={c} />
-          ))}
-        </div>
-      )}
-
-      <button
-        onClick={(e) => { e.stopPropagation(); onReset() }}
-        className="text-[10px] text-fg-faint hover:text-fg-muted transition-colors px-2 py-0.5 rounded hover:bg-elevated flex-shrink-0"
-        title="Reset group to recommended values"
-      >
-        Reset
-      </button>
-    </div>
-  )
-}
-
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step3_SemanticTokens() {
@@ -465,6 +413,7 @@ export default function Step3_SemanticTokens() {
     primaryScale, errorScale, warningScale, successScale, infoScale,
     grayLightScale,
     semanticTokens, setSemanticToken,
+    darkSemanticTokens, setDarkSemanticToken,
   } = useDesignStore()
 
   const reduce = useReducedMotion() ?? false
@@ -477,6 +426,9 @@ export default function Step3_SemanticTokens() {
     success: successScale,
     info:    infoScale,
   }
+
+  // Colored scales are shared across modes; only gray has a distinct dark ramp.
+  const darkScaleOf = (role: Role) => (role.scale === 'gray' ? GRAY_DARK_SCALE : scales[role.scale])
 
   const ready =
     Object.keys(primaryScale).length > 0 &&
@@ -495,72 +447,65 @@ export default function Step3_SemanticTokens() {
     }
     return scales[role.scale][role.tone] ?? ''
   }
-  const isModified = (role: Role) => {
+  const recDarkHexOf = (role: Role) => darkScaleOf(role)[recDarkTone(role)] ?? ''
+
+  const isLightModified = (role: Role) => {
     const cur = semanticTokens[role.key]
     const rec = recHexOf(role)
     return !!cur && !!rec && cur.toLowerCase() !== rec.toLowerCase()
   }
+  const isDarkModified = (role: Role) => {
+    const cur = darkSemanticTokens[role.key]
+    const rec = recDarkHexOf(role)
+    return !!cur && !!rec && cur.toLowerCase() !== rec.toLowerCase()
+  }
+  const isModified = (role: Role) => isLightModified(role) || isDarkModified(role)
 
   // UI state
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [activeCategory, setActiveCategory] = useState<string>('all')
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function copy(text: string, id: string) {
-    if (!text) return
-    navigator.clipboard?.writeText(text).catch(() => {})
-    setCopiedId(id)
-    if (copyTimer.current) clearTimeout(copyTimer.current)
-    copyTimer.current = setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1300)
-  }
-  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current) }, [])
-
-  function toggleGroup(category: string) {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev)
-      if (next.has(category)) next.delete(category)
-      else next.add(category)
-      return next
-    })
+  function resetRole(role: Role) {
+    const l = recHexOf(role); if (l) setSemanticToken(role.key, l)
+    const d = recDarkHexOf(role); if (d) setDarkSemanticToken(role.key, d)
   }
 
-  function resetGroup(group: RoleGroup) {
-    group.roles.forEach((role) => {
-      const hex = recHexOf(role)
-      if (hex) setSemanticToken(role.key, hex)
-    })
-  }
-
-  function resetAll() {
-    ALL_ROLES.forEach((role) => {
-      const hex = recHexOf(role)
-      if (hex) setSemanticToken(role.key, hex)
-    })
-  }
-
-  // Auto-populate on mount + resync whenever any scale changes.
-  // Overwrites only empty OR stale values (ones whose stored hex no longer
-  // maps to any tone in the token's current source scale — e.g. after a
-  // gray-flavor change in Step 2 regenerates grayLightScale).
-  // Intentional customisations (values that still resolve to a tone) are preserved.
+  // Auto-populate on mount + resync whenever any scale changes. Overwrites only
+  // empty OR stale values (a stored hex that no longer maps to any tone in the
+  // token's current source scale — e.g. after a gray-flavor change regenerates
+  // the gray ramp). Intentional customisations are preserved.
   useEffect(() => {
     if (!ready) return
     ALL_ROLES.forEach((role) => {
-      const cur = semanticTokens[role.key]
-      const srcScale = scales[role.scale]
-      const isStale = !cur || toneIndexOf(srcScale, cur) === null
-      if (isStale) {
+      const lightSrc = scales[role.scale]
+      if (!semanticTokens[role.key] || toneIndexOf(lightSrc, semanticTokens[role.key]) === null) {
         const hex = recHexOf(role)
         if (hex) setSemanticToken(role.key, hex)
+      }
+      const darkSrc = darkScaleOf(role)
+      if (!darkSemanticTokens[role.key] || toneIndexOf(darkSrc, darkSemanticTokens[role.key]) === null) {
+        const hex = recDarkHexOf(role)
+        if (hex) setDarkSemanticToken(role.key, hex)
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, grayLightScale, primaryScale, errorScale, warningScale, successScale, infoScale])
 
   const q = query.trim().toLowerCase()
-  const totalModified = useMemo(() => ALL_ROLES.filter(isModified).length, [semanticTokens, grayLightScale, primaryScale, errorScale, warningScale, successScale, infoScale])
+
+  // Internal category nav (master) → table (detail). "All" shows every role flat.
+  const NAV = [
+    { key: 'all', label: 'All tokens', roles: ALL_ROLES },
+    ...ROLE_GROUPS.map((g) => ({ key: g.category, label: g.label, roles: g.roles })),
+  ]
+  const baseRoles = activeCategory === 'all'
+    ? ALL_ROLES
+    : ROLE_GROUPS.find((g) => g.category === activeCategory)?.roles ?? []
+  const visibleRoles = q
+    ? baseRoles.filter((r) => r.label.toLowerCase().includes(q) || cleanDescription(r.description).toLowerCase().includes(q))
+    : baseRoles
+  const activeLabel = NAV.find((n) => n.key === activeCategory)?.label ?? 'All tokens'
 
   if (!ready) {
     return (
@@ -577,153 +522,97 @@ export default function Step3_SemanticTokens() {
       transition={{ duration: reduce ? 0 : 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-4"
     >
-      {/* Summary + filter */}
-      <div className="flex flex-col gap-3 mb-1">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-fg-faint font-mono tabular-nums">
-            {ALL_ROLES.length} tokens
-            {totalModified > 0 && <span className="text-[#8FC8FF]/90"> · {totalModified} modified</span>}
-          </p>
-          <button
-            onClick={resetAll}
-            className="text-xs text-fg-faint hover:text-fg-muted transition-colors px-2.5 py-1 rounded border border-line hover:border-line-strong flex-shrink-0"
-          >
-            Reset all
-          </button>
-        </div>
+      {/* Master-detail: category side-nav + matrix table */}
+      <div className="flex gap-4 items-start">
+        {/* Internal category nav */}
+        <nav aria-label="Token categories" className="w-40 flex-shrink-0 self-start rounded-xl border border-line/70 bg-surface/40 p-1.5 flex flex-col gap-0.5">
+          {NAV.map((item) => {
+            const isActive = activeCategory === item.key
+            const mod = item.roles.filter(isModified).length
+            return (
+              <button
+                key={item.key}
+                onClick={() => { setActiveCategory(item.key); setExpandedRole(null) }}
+                aria-current={isActive}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors ${
+                  isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                }`}
+              >
+                <span className="text-[13px] flex-1 min-w-0 truncate">{item.label}</span>
+                {mod > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title={`${mod} modified`} />}
+                <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{item.roles.length}</span>
+              </button>
+            )
+          })}
+        </nav>
 
-        <div className="relative">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-faint pointer-events-none">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter tokens by name or description…"
-            className="w-full bg-surface border border-line-strong focus:border-[#0088FF] rounded-lg pl-9 pr-9 py-2 text-sm text-fg-muted placeholder:text-fg-faint outline-none transition-colors font-mono"
-            aria-label="Filter tokens"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              aria-label="Clear filter"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-faint hover:text-fg-muted transition-colors w-5 h-5 flex items-center justify-center"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        {ROLE_GROUPS.map((group, gi) => {
-          const matched = q
-            ? group.roles.filter((r) => r.label.toLowerCase().includes(q) || cleanDescription(r.description).toLowerCase().includes(q))
-            : group.roles
-          if (q && matched.length === 0) return null
-
-          const isExpanded = q ? true : expandedGroups.has(group.category)
-          const tokenColors = group.roles
-            .filter((r) => !r.isVariant)
-            .map((r) => semanticTokens[r.key])
-            .filter(Boolean) as string[]
-          const groupModified = group.roles.filter(isModified).length
-
-          return (
-            <motion.div
-              key={group.category}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduce ? 0 : 0.25, delay: reduce ? 0 : gi * 0.05 }}
-              className="rounded-lg border border-line/60 overflow-hidden"
-            >
-              <GroupHeader
-                group={group}
-                tokenColors={tokenColors}
-                matchInfo={q ? `${matched.length}/${group.roles.length}` : null}
-                modifiedCount={groupModified}
-                isExpanded={isExpanded}
-                onToggle={() => toggleGroup(group.category)}
-                onReset={() => resetGroup(group)}
-              />
-
-              <AnimatePresence initial={false}>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: reduce ? 0 : 0.22, ease: 'easeOut' }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    <div className="border-t border-line/50 divide-y divide-line/40 bg-app/40">
-                      {matched.map((role) => {
-                        const sourceScale   = scales[role.scale]
-                        const dot           = sourceScale[7] ?? sourceScale[6] ?? '#888'
-                        const value         = semanticTokens[role.key] ?? ''
-                        const contrastBgHex = role.contrastAgainst ? semanticTokens[role.contrastAgainst] ?? '' : ''
-                        const contrastLabel = ALL_ROLES.find((r) => r.key === role.contrastAgainst)?.label ?? role.contrastAgainst ?? ''
-
-                        return (
-                          <TokenRow
-                            key={role.key}
-                            role={role}
-                            sourceScale={sourceScale}
-                            value={value}
-                            recHex={recHexOf(role)}
-                            dot={dot}
-                            modified={isModified(role)}
-                            expanded={expandedRole === role.key}
-                            reduce={reduce}
-                            copiedId={copiedId}
-                            onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}
-                            onPick={(hex) => setSemanticToken(role.key, hex)}
-                            onReset={() => setSemanticToken(role.key, recHexOf(role))}
-                            onCopy={copy}
-                            contrastBgHex={contrastBgHex}
-                            contrastLabel={contrastLabel}
-                          />
-                        )
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )
-        })}
-      </div>
-
-      {/* CSS Variables preview */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: reduce ? 0 : 0.3 }}
-        className="mt-4 rounded-lg bg-surface border border-line p-4"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-fg-faint uppercase tracking-wider">CSS Variables preview</p>
-          <button
-            onClick={() => copy(
-              `:root {\n${ROLE_GROUPS.map((g) =>
-                `  /* ${g.label} */\n` + g.roles.map((r) => `  --color-${r.label}: ${semanticTokens[r.key] || '/* unset */'};`).join('\n')
-              ).join('\n\n')}\n}`,
-              'css:all',
+        {/* Matrix table */}
+        <div className="flex-1 min-w-0 rounded-xl border border-line/70 overflow-hidden">
+          {/* Search — integrated top row */}
+          <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-line bg-surface/50">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter tokens by name or description…"
+              className="flex-1 min-w-0 bg-transparent text-sm text-fg-muted placeholder:text-fg-faint outline-none font-mono"
+              aria-label="Filter tokens"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear filter"
+                className="text-fg-faint hover:text-fg-muted transition-colors w-5 h-5 flex items-center justify-center flex-shrink-0"
+              >
+                ✕
+              </button>
             )}
-            className="text-[10px] font-mono text-fg-faint hover:text-fg-muted px-2 py-1 rounded border border-line hover:border-line-strong transition-colors"
-          >
-            {copiedId === 'css:all' ? '✓ Copied' : 'Copy all'}
-          </button>
+          </div>
+
+          {/* Scrollable matrix body */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[24rem]">
+              {/* Column header */}
+              <div className={`${GRID} items-center bg-surface/70 border-b border-line text-[10px] font-semibold uppercase tracking-widest text-fg-faint`}>
+                <span className="pl-4 py-2.5 normal-case tracking-normal text-[11px] font-mono text-fg-muted">{activeLabel}</span>
+                <span className="px-2 py-2.5">Light</span>
+                <span className="px-2 py-2.5">Dark</span>
+                <span aria-hidden />
+              </div>
+
+              {visibleRoles.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-fg-faint">
+                  No tokens match “{query}”.
+                </div>
+              ) : (
+                visibleRoles.map((role) => (
+                  <MatrixRow
+                    key={role.key}
+                    role={role}
+                    lightScale={scales[role.scale]}
+                    darkScale={darkScaleOf(role)}
+                    lightValue={semanticTokens[role.key] ?? ''}
+                    darkValue={darkSemanticTokens[role.key] ?? ''}
+                    lightRecTone={role.tone}
+                    darkRecTone={recDarkTone(role)}
+                    modified={isModified(role)}
+                    expanded={expandedRole === role.key}
+                    reduce={reduce}
+                    onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}
+                    onPickLight={(hex) => setSemanticToken(role.key, hex)}
+                    onPickDark={(hex) => setDarkSemanticToken(role.key, hex)}
+                    onReset={() => resetRole(role)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
         </div>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto max-h-64 overflow-y-auto">
-          {`:root {\n${ROLE_GROUPS.map((g) =>
-            `  /* ${g.label} */\n` +
-            g.roles.map((r) => `  --color-${r.label}: ${semanticTokens[r.key] || '/* unset */'};`).join('\n')
-          ).join('\n\n')}\n}`}
-        </pre>
-      </motion.div>
+      </div>
     </motion.div>
   )
 }

@@ -8,6 +8,7 @@ export function generateTokenJSON() {
     colors: {
       primitive: store.primaryScale,
       semantic: store.semanticTokens,
+      semanticDark: store.darkSemanticTokens,
     },
     typography: store.typography,
     spacing: store.spacing,

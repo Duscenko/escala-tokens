@@ -103,7 +103,7 @@ export default function FoundationsEditor() {
       </div>
 
       {/* Right: content card with centered section title + active section */}
-      <div className="flex-1 min-w-0 rounded-2xl border border-line bg-transparent shadow-sm overflow-hidden">
+      <div className="flex-1 min-w-0 rounded-2xl border border-line bg-transparent overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
@@ -112,7 +112,7 @@ export default function FoundationsEditor() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
           >
-            <header className="border-b border-line px-8 py-6 text-center">
+            <header className="border-b border-line px-8 py-6 text-center bg-surface/60">
               <h2 className="text-2xl font-bold text-fg">{section.title}</h2>
               <p className="text-sm text-fg-faint mt-1.5 max-w-xl mx-auto">{section.subtitle}</p>
             </header>
