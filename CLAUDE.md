@@ -13,26 +13,76 @@ A web configurator that lets product designers build a minimal, custom design to
 
 ---
 
-## Navigation model — Hub (foundations-first)
+## Navigation model — 3-column workspace ("DS.by.MD")
 
-The app is **NOT a linear wizard**. It's a hub: the design system ("Apollo") ships
-complete. The intended flow is **pick your tokens first (Foundations), then see them
-reflected in the components** — so Foundations is the landing view.
+The app is a **3-column workspace** (Claude Code–style), **not a wizard**. Designers
+**configure tokens and see them live at the same time**: pick foundations in the center,
+watch the right-hand preview update, then export.
 
 ```
-HEADER (persistent)   editable project name + namespace slug · [Foundations] [Components] [Export]
-
-Foundations (home)    → one global editor with 4 sections: Color · Semantic · Typography · Spacing & Radius
-Components             → component catalogue: every component included by default; remove what you don't need; view docs/previews
-Export                → tokens.json / variables.css / README + Publish to /api/tokens
+┌── LEFT RAIL ────────┬── CENTER (active editor) ──┬── RIGHT (persistent) ──┐
+│ (80px icon rail)    │  ✦ <section> | <subtitle>  │ Components Preview  ☀︎☾ │
+│ Home · Color ·      │                            │  live token-driven     │
+│ Semantic · Font ·   │  active foundation section │  atoms: buttons ·      │
+│ Icons · Spacing ·   │  / component doc / export  │  input · badge ·       │
+│ Opacity · Shadow ·  │                            │  toggle · sign-up card │
+│ Grid · Sizes        │                            │                        │
+│ ───── (sticky) ──── │  TopNav: Foundations ·     │                        │
+│ Bring to Figma ·    │  Components · Docs ·       │                        │
+│ Get MD              │  [Export] [GitHub] pills   │                        │
+└─────────────────────┴────────────────────────────┴────────────────────────┘
 ```
 
-- **Entry point = Foundations.** The header toggle is ordered `[Foundations] [Components]`, and the default `view` is `'foundations'`.
-- **Foundations is a single global editor** (`FoundationsEditor.tsx`) that composes the four foundation section components (`Step2_ColorPalette` … `Step5_SpacingRadius`, reused as-is). A "Components →" link jumps forward to the catalogue.
-- **Components ship complete.** All components are selected by default (`selectedComponents` defaults to every key); toggling a checkbox *removes* one.
-- **View state is local** (`useState` in `Configurator.tsx`), not persisted — every reload lands on Foundations.
+- **Shell = `Configurator.tsx`** (3-column flex). All nav state is **local** there:
+  `tab` (`foundations`|`components`), `activeFoundation`, `activeComponent`, `exportMode`
+  (`null`|`code`|`md`|`figma`|`github`), `semanticCategory`. None persisted — every reload
+  lands on **Home**. Leaving a foundation marks it complete (`commitVisit()` →
+  `markFoundationComplete`) for the Home overview checklist.
+- **Home is a hub with 3 states** (`HomeView`, keyed on `projectCreated` + `savedSystems`):
+  *intro* (no system, none saved → dashed "New Design System" create card + 4 intro
+  mini-cards), *list* (saved systems exist, none active → cards with Open/Remove + an
+  "Add new" dashed card), *dashboard* (active system → identity, "My design systems"
+  strip with Save-to-GitHub / Switch affordances, summary chips, overview checklist,
+  connections, share). **Pre-creation gating**: while `!projectCreated` the rail shows
+  only Home and TopNav shows only logo + theme toggle — a clear entry point, but NOT a
+  wizard once created.
+- **Multi design system**: `savedSystems` (persisted registry) — a system is *saved* only
+  by a successful GitHub push (`GitHubConnectView` upserts `{ id: repo, name, description,
+  repo, savedAt, snapshot }`). `loadSystem(id)` restores a deep-cloned `DesignSnapshot`;
+  `startNewSystem()` resets to `makeDesignDefaults()`. GitHub (PAT identity) is "the
+  account" — no separate auth backend. Removing an entry is local-only.
+- **Left rail = `Sidebar.tsx`**: an 80px icon rail — scrollable foundations list (Home,
+  Color, Semantic, Font, Icons, Spacing, Opacity, Shadow, Grid, Sizes) over a sticky
+  bottom block with **Bring to Figma** (→ `FigmaConnectView`) and **Get MD** (→ the
+  didactic README). **GitHub lives in `TopNav`** as a black pill next to Export
+  (→ `GitHubConnectView`: PAT connect → pick/create repo → push tokens.json/variables.css/README.md).
+- **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
+  body — `HomeView`, a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
+  `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
+  the component docs (`ComponentDocPane`, incl. the rich `ButtonDoc`), `ExportView`
+  (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
+  project name), `FigmaConnectView` (opened by Bring to Figma — download the plugin zip +
+  live-sync guide), or `GitHubConnectView` (opened by the TopNav GitHub pill / Home's
+  Connect; a successful push also upserts the system into `savedSystems`).
+- **Right = `PreviewPanel.tsx`**: "Components Preview" + a light/dark toggle (drives the global
+  theme). Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview`) from
+  `usePreviewTokens()`, so editing any foundation updates them **live**. **Context-aware in
+  Semantic**: it takes a `focus` prop (the active token category) and swaps to a matching live
+  specimen — `text`→`TextSpecimenPreview`, `bg`→`BackgroundSpecimenPreview`,
+  `border`→`BorderSpecimenPreview`, `fg`→`ForegroundSpecimenPreview` (header reads "Text
+  preview"… ); `all` and every other foundation show the generic overview. The category comes
+  from `Step3_SemanticTokens` (a **controlled** `activeCategory`/`onCategoryChange`, owned as
+  `semanticCategory` state in `Configurator`). **Hidden in the Components tab** (docs go
+  full-width) and below `xl`; the rail becomes a drawer below `md`.
+- **Components ship complete**: `selectedComponents` defaults to every key; a checkbox *removes* one.
+- **Foundation progress** (`completedFoundations`) persists; "visited = done" — shown as ✓
+  in the Home overview checklist.
 
-**Important:** This replaced the old linear 7-step wizard (and `currentStep`). Do NOT re-introduce a step counter, progress bar, or Continue/Back wizard nav. The old Style Direction and Atom Selector remain removed.
+**Important:** This is **not a wizard** — no global step counter, no Continue/Back, no locked
+steps. `currentStep`, `styleDirection`, `selectedAtoms` stay removed. The old
+`FoundationsEditor` (in-Foundations stepper) and `ComponentCatalogue` were **retired** — their
+roles moved into the rail + `ComponentDocPane`. Don't reintroduce a persistent top header or a
+stepper.
 
 ---
 
@@ -41,22 +91,30 @@ Export                → tokens.json / variables.css / README + Publish to /api
 ```
 src/
 ├── components/
-│   ├── configurator/       ← ComponentCatalogue, FoundationsEditor, ExportView + Step2…Step5 (foundation sections)
+│   ├── configurator/       ← Sidebar, HomeView, ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, TokenTable (generic filterable token table) + Step2…Step9 (foundation sections)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge...)
-│   └── preview/            ← Preview cards (ButtonPreview...)
+│   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 3)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 17)
 ├── lib/
-│   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible (chroma-js)
+│   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
+│   ├── iconLibraries.ts       ← ICON_LIBRARIES (incl. iconifyPrefix for the live Iconify browser), getIconLibrary(), SAMPLE_GLYPHS (pure data)
+│   ├── previewTokens.ts       ← resolvePreviewTokens()/usePreviewTokens() — single source for live-preview tokens
+│   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
+│   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
 │   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
-│   └── utils.ts               ← cn() + slugify() helpers
+│   ├── exporters.ts           ← buildCSS()/buildMarkdown() — shared by ExportView + GitHubConnectView
+│   ├── github.ts              ← GitHub REST client (PAT in localStorage 'sd-github-token', NEVER in the store): validateToken, listRepos, createRepo, pushFiles (Contents API, sequential)
+│   └── utils.ts               ← cn(), slugify(), sanitizeSvg() helpers
 ├── types/
 │   └── tokens.ts           ← TypeScript types for DesignTokens, ColorScale, etc.
 └── pages/
-    └── Configurator.tsx    ← Hub shell: persistent header + view switch (components/foundations/export)
+    └── Configurator.tsx    ← 3-column shell: Sidebar | center editor | PreviewPanel
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
+scripts/
+└── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/scalable-designs-figma-plugin.zip (npm run bundle:plugin)
 ```
 
 ---
@@ -67,26 +125,46 @@ Key fields — always use the store, never local state for cross-view data:
 
 | Field | Type | Edited in |
 |-------|------|-----------|
-| `projectName` | string (default `"Apollo"`) | Header |
+| `projectName` | string (default `"DS.by.MD"`) | Home (hero input) + Export pane (editable pill) |
+| `projectDescription` | string (flows into the README intro) | Home |
+| `figmaLastPublishAt` / `githubRepo` / `githubLastPushAt` | string \| null — connection status shown on Home; written by the connect views | Home (read-only) |
 | `primaryColor` | string (hex) | Foundations · Color |
 | `primaryScale` | Record<number, string> | Foundations · Color |
 | `grayLightScale` | ColorScale | Foundations · Color |
 | `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | Foundations · Color |
-| `semanticTokens` | Record<string, string> | Foundations · Semantic |
-| `typography` | { fontFamily, headingFontFamily, sizes, weights } | Foundations · Typography |
+| `customColors` | CustomColor[] (`{ key, label, base, scale }` — named families with auto 1–12 scales; keys in `RESERVED_COLOR_KEYS` are blocked) | Foundations · Color |
+| `themes` | Record<theme, Record<role, hex>> — `light`/`dark` always exist (protected); user themes via `addTheme(key, base)` duplicate an existing one | Foundations · Semantic |
+| `themeOrder` | string[] (column order, default `['light','dark']`) | Foundations · Semantic |
+| `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
+| `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
 | `spacing` | Record<string, string> | Foundations · Spacing & Radius |
 | `radius` | Record<string, string> | Foundations · Spacing & Radius |
+| `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
+| `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
+| `opacity` | Record<string, string> (steps 0–100, `%` values) | Foundations · Opacity |
+| `shadows` | Record<string, string> (xs–2xl CSS box-shadows) | Foundations · Shadow |
+| `grid` | Record<string, string> (columns/gutter/margin/container + breakpoints) | Foundations · Grid |
+| `sizes` | Record<string, string> (component heights xs–2xl) | Foundations · Sizes |
 | `selectedComponents` | string[] (defaults to **all** `COMPONENT_KEYS`) | Components |
+| `completedFoundations` | string[] (`color`/`semantic`/`typography`/`spacing`; gamified progress) | Rail ✓ |
 
-**Removed fields:** `styleDirection`, `selectedAtoms`, `currentStep` — do not re-add these. Nav state (`view`) is local `useState` in `Configurator.tsx`, not store.
+**Removed fields:** `styleDirection`, `selectedAtoms`, `currentStep` — do not re-add these. Nav state (`tab`, `activeFoundation`, `activeComponent`, `exportMode`, `railOpen`) is local `useState` in `Configurator.tsx`, not the store.
 
-Store uses `persist` middleware with `version: 3`. If you add fields, bump the version and add a migrate function.
+Other key fields: `projectCreated` (gates Home + rail/TopNav pre-creation) and
+`savedSystems: SavedSystem[]` (multi-DS registry — `{ id: "owner/repo", name, description,
+repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub push).
+`makeDesignDefaults()` is the single source for initial + reset design state;
+`captureSnapshot()` deep-clones the design fields. Both exported from the store.
+
+Store uses `persist` middleware with `version: 17`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`.
+
+> **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
 
 ---
 
 ## Component Catalogue
 
-`src/lib/componentCatalogue.ts` contains the `COMPONENTS` array of component definitions (16 today; pure data — imported by both the store and the catalogue UI). `ComponentCatalogue.tsx` renders them. Each definition has:
+`src/lib/componentCatalogue.ts` contains the `COMPONENTS` array of component definitions (16 today; pure data — imported by the store, the `Sidebar` list, and `ComponentDocPane`). Each definition has:
 
 ```ts
 interface ComponentDef {
@@ -101,9 +179,9 @@ interface ComponentDef {
 }
 ```
 
-**To add a new component:** append to the `COMPONENTS` array in `src/lib/componentCatalogue.ts`. The UI renders it automatically, and it's included by default. No other file needs to change.
+**To add a new component:** append to the `COMPONENTS` array in `src/lib/componentCatalogue.ts`. The rail lists it automatically and it's included by default. No other file needs to change.
 
-**To enrich docs:** edit the `props`, `variants`, `usage`, or `accessibility` fields for any component.
+**To enrich docs:** edit the `props`, `variants`, `usage`, or `accessibility` fields, or add a rich Storybook-style doc in `components/configurator/docs/XDoc.tsx` and register it in the `RICH_DOCS` map in `ComponentDocPane.tsx` (today: `Button`).
 
 ---
 
@@ -114,20 +192,29 @@ interface ComponentDef {
   "project": "my-system",
   "colors": {
     "primitive": { "1": "#f5f0ff", ... "12": "#1a0a3d" },
-    "semantic": { "text-primary": "#101828", "bg-primary": "#ffffff", ... }
+    "semantic": { "text-primary": "#101828", "bg-primary": "#ffffff", ... },
+    "semanticDark": { ... },
+    "themes": { "light": { ... }, "dark": { ... }, "<custom>": { ... } }
   },
   "typography": {
     "fontFamily": "Inter",
-    "sizes": { "xs": "12px", "sm": "14px", ... },
+    "headingFontFamily": "Inter",
+    "sizes": { "text-xs": "12px", "text-sm": "14px", ... "display-2xl": "72px" },
+    "lineHeights": { "text-xs": "18px", "text-sm": "20px", ... "display-2xl": "90px" },
     "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
   },
   "spacing": { "1": "4px", "2": "8px", ... },
   "radius": { "none": "0px", "sm": "4px", "md": "8px", "lg": "12px", "full": "9999px" },
-  "components": ["Button", "Input", "Badge", ...]
+  "opacity": { "0": "0%", "5": "5%", ... "100": "100%" },
+  "shadows": { "xs": "0 1px 2px rgba(10,13,18,0.05)", ... "2xl": "..." },
+  "grid": { "columns": "12", "gutter": "24px", "margin": "32px", "container": "1280px", "breakpoint-sm": "640px", ... },
+  "sizes": { "xs": "24px", "sm": "32px", "md": "40px", "lg": "48px", "xl": "56px", "2xl": "64px" },
+  "icons": { "library": "lucide", "name": "Lucide", "package": "lucide-react", "custom": [{ "name": "star", "svg": "<svg…>" }] },
+  "atoms": ["Button", "Input", "Badge", ...]   // ← canonical field name the Figma plugin expects (NOT "components")
 }
 ```
 
-`tokenGenerator.ts` generates this. If you add fields to the store, also add them to `generateTokenJSON()`.
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown.
 
 ---
 
@@ -159,19 +246,20 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 ## Design Principles
 
 1. **No bloat** — every feature should earn its place. If it doesn't help the designer configure tokens, it doesn't belong.
-2. **Tokens first** — all visual choices (colors, radius, spacing) come from the store. Never hardcode design values in components.
-3. **Hub, not wizard** — components/foundations/export live behind a persistent header (see Navigation model). Don't add a linear step counter, progress bar, or Continue/Back nav.
+2. **Tokens first** — all visual choices (colors, radius, spacing) come from the store. Never hardcode design values in components. Live previews resolve tokens via `usePreviewTokens()`.
+3. **Workspace, not wizard** — the 3-column shell (rail · center · preview) has no linear step counter, progress bar, or Continue/Back nav between Foundations/Components/Export (see Navigation model).
 4. **Accessibility** — all interactive elements need keyboard support and ARIA. The component docs we generate should model this.
-5. **Light & dark** — both themes are supported; **light is the default**. Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the header, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills (e.g. on `bg-violet-600`); the user's token colors/previews are theme-independent.
+5. **Light & dark** — both themes are supported; **light is the default**. Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the **preview panel header**, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills; the user's token colors/previews are theme-independent (atoms render on `tokens.surface`).
 
 ---
 
 ## Conventions
 
 - Component files: `PascalCase.tsx`
-- Step files: `StepN_Name.tsx` where N is the step number
-- Store actions: `set` prefix (`setProjectName`, `setTypography`)
-- CSS: Tailwind utility classes only — no `style` tags, no CSS modules. For chrome colors use the semantic theme utilities (`bg-app`, `bg-surface`, `text-fg`, `border-line`…), never raw `neutral-*`.
+- Step files: `StepN_Name.tsx` where N is the step number (foundation sections, rendered as-is in the center pane)
+- Preview atoms: `components/preview/atoms/*Preview.tsx`, each takes `tokens: PreviewTokens` and styles inline from tokens
+- Store actions: `set` prefix (`setProjectName`, `setTypography`, `setIconLibrary`)
+- CSS: Tailwind utility classes for chrome (use the semantic theme utilities — `bg-app`, `bg-surface`, `text-fg`, `border-line`… — never raw `neutral-*`). Preview atoms are the deliberate exception: they use inline `style` from resolved tokens.
 - Animations: Framer Motion (`motion.div`, `AnimatePresence`) for transitions between states
 - No `console.log` in production code
 - TypeScript strict mode — no `any` unless absolutely necessary
@@ -190,16 +278,31 @@ npx vercel --prod      # deploy
 cd ~/sync-ds-platform/scalable-designs-figma-plugin
 npm run build          # outputs dist/code.js + dist/ui.html
 # Reload in Figma: Plugins → Development → Scalable Designs Sync → ⟳
+
+# Refresh the downloadable plugin zip served by "Bring to Figma"
+cd ~/sync-ds-platform/scalable-designs
+npm run bundle:plugin  # → public/scalable-designs-figma-plugin.zip (commit it; Vercel only builds this repo)
 ```
 
 ---
 
 ## What's next (backlog)
 
-- [ ] Components: Add live component previews rendered with user tokens (not just docs)
+- [x] Components: live component previews rendered with user tokens (starter set: buttons, input, badge, toggle, sign-up card — extend `preview/atoms/` with more)
+- [x] Export: "Bring to Figma" — downloadable plugin zip + guided install + auto-publish to `/api/tokens` (`FigmaConnectView`)
+- [x] Export: "Save to GitHub" — PAT connect, repo pick/create, push tokens+css+README (`GitHubConnectView` + `lib/github.ts`)
+- [x] Foundations: Opacity / Shadow / Grid / Sizes token tables (`TokenTable` + Step6–9)
+- [x] Color: custom named color families with auto 1–12 scales (`customColors`)
+- [x] Semantic: multi-theme matrix (`themes`/`themeOrder`/`themeKinds`, "+ Theme" duplicates an existing one)
+- [x] Home: onboarding view — name/description, connection status, share endpoint
+- [x] Icons: live Iconify browser per library + sanitized custom SVG upload (`customIcons`)
+- [ ] GitHub: OAuth App flow (popup + serverless token exchange) to replace the manual PAT
+- [ ] Semantic: surface custom color families as token sources (needs per-family role generation in Step3)
+- [ ] Plugin: import `icons.custom` SVGs as Figma components; import extra `colors.themes` as Variable modes
+- [ ] Plugin: publish to Figma Community → replace the zip download with a one-click "Open in Figma" deep link
+- [ ] Preview: independent per-theme token preview (render atoms from any `themes[key]`) instead of driving the global theme
 - [ ] Components: "Copy usage snippet" button per component
 - [ ] Export: Generate per-component CSS with token references
 - [ ] Plugin: TextStyle creation for typography tokens
 - [ ] Plugin: Two-way sync — read Figma Variables → update configurator
 - [ ] Plugin: Diff view before import (show what changed)
-- [ ] Add dark/light mode toggle for the token preview in Foundations · Semantic

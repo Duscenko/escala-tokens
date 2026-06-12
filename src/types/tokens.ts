@@ -4,7 +4,9 @@ export interface ColorScale {
 
 export interface TypographyTokens {
   fontFamily: string
+  headingFontFamily: string
   sizes: Record<string, string>
+  lineHeights: Record<string, string>
   weights: Record<string, number>
 }
 

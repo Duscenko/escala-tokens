@@ -49,7 +49,7 @@ function buildSpacingFromBase(base: number): Record<string, string> {
 }
 
 export default function Step5_SpacingRadius() {
-  const { spacing, radius, setSpacing, setRadius, primaryColor, semanticTokens } =
+  const { spacing, radius, setSpacing, setRadius, primaryColor, themes } =
     useDesignStore()
 
   const [baseUnit, setBaseUnit] = useState(4)
@@ -77,7 +77,7 @@ export default function Step5_SpacingRadius() {
     setRadius(preset.values)
   }
 
-  const accentColor = semanticTokens.primary || primaryColor || '#7f56d9'
+  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
 
   return (
     <motion.div

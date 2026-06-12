@@ -24,6 +24,14 @@ export interface PreviewTokens {
   errorColor: string // destructive accent
   disabledBg: string
   disabledText: string
+  // Optional extras consumed by the richer preview atoms (Input, Badge, Card…).
+  // Resolved in lib/previewTokens.ts; absent in older callers (ButtonDoc) → fallbacks.
+  border?: string // field / card border (border-primary)
+  fgMuted?: string // secondary copy (text-tertiary)
+  placeholderText?: string // input placeholder (text-placeholder)
+  successColor?: string
+  warningColor?: string
+  infoColor?: string
   radius: Record<string, string>
   spacing: Record<string, string>
   typography: { fontFamily: string; sizes: Record<string, string>; weights: Record<string, number> }

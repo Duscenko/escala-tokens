@@ -1,306 +1,468 @@
-import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { FONT_PRESETS, fontStack } from '../../lib/fonts'
+import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
+import {
+  TYPE_SCALE_KEYS,
+  FONT_SIZE_STANDARD,
+  LINE_HEIGHT_STANDARD,
+  FONT_WEIGHT_STANDARD,
+  FONT_WEIGHT_ROWS,
+  FONT_FAMILY_ROWS,
+  TYPO_CATEGORIES,
+  type TypoCategory,
+} from '../../lib/typographyStandard'
 
-const WEIGHTS = [
-  { label: 'Regular',   value: 400 },
-  { label: 'Medium',    value: 500 },
-  { label: 'Semibold',  value: 600 },
-  { label: 'Bold',      value: 700 },
-  { label: 'Extrabold', value: 800 },
-]
+const GRID = 'grid grid-cols-[minmax(10rem,1fr)_8rem_minmax(8rem,1.6fr)_3rem]'
+const PREVIEW = 'Ag — Sphinx of black quartz'
 
-const SCALE_STEPS = ['xs', 'sm', 'base', 'lg', 'xl', '2xl'] as const
+// ── Small reusable bits ─────────────────────────────────────────────────────
 
-const DEFAULT_SIZES: Record<string, string> = {
-  xs: '12px', sm: '14px', base: '16px', lg: '18px', xl: '24px', '2xl': '32px',
+function ResetIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+    </svg>
+  )
 }
 
-const SPECIMEN_BODY = 'The quick brown fox jumps over the lazy dog.'
-const SPECIMEN_HEADING = 'Designing at scale'
-
-function loadGoogleFont(family: string) {
-  const id = `gfont-${family.replace(/\s+/g, '-')}`
-  if (document.getElementById(id)) return
-  const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;500;600;700;800&display=swap`
-  const link = document.createElement('link')
-  link.id = id
-  link.rel = 'stylesheet'
-  link.href = url
-  document.head.appendChild(link)
+function ResetButton({ modified, onReset, title }: { modified: boolean; onReset: () => void; title: string }) {
+  return (
+    <button
+      onClick={onReset}
+      disabled={!modified}
+      title={title}
+      aria-label={title}
+      className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-[#0088FF] disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+    >
+      <ResetIcon />
+    </button>
+  )
 }
 
-function FontSelector({
-  headingFont,
-  bodyFont,
-  setHeadingFont,
-  setBodyFont,
+/** Inline px / numeric editor — reveals a border box on hover/focus. */
+function ValueInput({ value, onChange, mono = true }: { value: string; onChange: (v: string) => void; mono?: boolean }) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full bg-app text-[13px] ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-[#0088FF] px-2 py-1 outline-none transition-colors`}
+    />
+  )
+}
+
+// ── Google Font picker popover ──────────────────────────────────────────────
+
+function FontPickerPopover({
+  value,
+  onSelect,
+  onClose,
 }: {
-  headingFont: string
-  bodyFont: string
-  setHeadingFont: (f: string) => void
-  setBodyFont: (f: string) => void
+  value: string
+  onSelect: (family: string) => void
+  onClose: () => void
 }) {
-  // One shared font list; the toggle picks which role the next click assigns.
-  const [target, setTarget] = useState<'heading' | 'body'>('heading')
-  const current = target === 'heading' ? headingFont : bodyFont
-  const onSelect = target === 'heading' ? setHeadingFont : setBodyFont
+  const [query, setQuery] = useState('')
+  const rootRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const q = query.trim().toLowerCase()
+  const matches = q ? POPULAR_GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(q)) : POPULAR_GOOGLE_FONTS
+  const exact = POPULAR_GOOGLE_FONTS.some((f) => f.toLowerCase() === q)
+
+  // Lazy-load each option's webfont as it scrolls into view (avoids 200 requests).
+  useEffect(() => {
+    const root = listRef.current
+    if (!root) return
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          const fam = (e.target as HTMLElement).dataset.family
+          if (fam) loadGoogleFont(fam)
+        }
+      }),
+      { root, rootMargin: '120px' },
+    )
+    root.querySelectorAll('[data-family]').forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [matches.length])
+
+  // Close on outside click / Escape.
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Target toggle + current pairing */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-surface border border-line">
-          {(['heading', 'body'] as const).map((t) => (
+    <div
+      ref={rootRef}
+      className="absolute right-2 top-full mt-1 z-30 w-72 rounded-xl border border-line bg-app shadow-xl overflow-hidden"
+    >
+      <div className="flex items-center gap-2 px-3 h-10 border-b border-line">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+          <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search Google Fonts…"
+          className="flex-1 min-w-0 bg-transparent text-[13px] text-fg placeholder:text-fg-faint outline-none"
+        />
+      </div>
+      <div ref={listRef} className="max-h-72 overflow-y-auto py-1">
+        {q && !exact && (
+          <button
+            onClick={() => onSelect(query.trim())}
+            className="w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] text-fg-muted hover:bg-elevated/60 transition-colors"
+          >
+            <span className="text-fg-faint">Use</span>
+            <span className="font-medium text-fg" style={{ fontFamily: fontStack(query.trim()) }}>“{query.trim()}”</span>
+          </button>
+        )}
+        {matches.map((f) => {
+          const active = f === value
+          return (
             <button
-              key={t}
-              onClick={() => setTarget(t)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
-                target === t ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
+              key={f}
+              data-family={f}
+              onClick={() => onSelect(f)}
+              style={{ fontFamily: fontStack(f) }}
+              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[15px] transition-colors ${
+                active ? 'bg-[#0088FF]/10 text-[#0088FF]' : 'text-fg hover:bg-elevated/60'
               }`}
             >
-              {t} font
+              <span className="truncate">{f}</span>
+              {active && (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+                  <path d="M2.5 7.5l3 3 6-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-4 text-xs font-mono text-fg-faint">
-          <span>Heading <span className="text-fg-muted">{headingFont}</span></span>
-          <span>Body <span className="text-fg-muted">{bodyFont}</span></span>
-        </div>
+          )
+        })}
+        {matches.length === 0 && !q && (
+          <p className="px-3 py-6 text-center text-[13px] text-fg-faint">No fonts</p>
+        )}
       </div>
-
-      {/* Full-width font grid grouped by category */}
-      {(['Sans-serif', 'Serif', 'Mono'] as const).map((cat) => (
-        <div key={cat} className="flex flex-col gap-1.5">
-          <span className="text-[11px] text-fg-faint uppercase tracking-widest">{cat}</span>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {FONT_PRESETS.filter((f) => f.category === cat).map((f) => {
-              const isActive = current === f.value
-              const otherTag =
-                target === 'heading'
-                  ? bodyFont === f.value ? 'B' : ''
-                  : headingFont === f.value ? 'H' : ''
-              return (
-                <button
-                  key={f.value}
-                  onClick={() => onSelect(f.value)}
-                  style={{ fontFamily: fontStack(f.value) }}
-                  className={`relative px-3 py-2.5 rounded-lg text-sm text-left truncate transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
-                    isActive
-                      ? 'bg-[#0088FF] text-white ring-2 ring-[#5AADFF]/30'
-                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
-                  }`}
-                  title={f.label}
-                >
-                  {f.label}
-                  {otherTag && !isActive && (
-                    <span className="absolute top-1 right-1.5 text-[9px] font-mono text-fg-faint">{otherTag}</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
 
+// ── Column header ───────────────────────────────────────────────────────────
+
+function TableHeader({ valueLabel }: { valueLabel: string }) {
+  return (
+    <div className={`${GRID} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint`}>
+      <span className="pl-4 py-3 border-r border-line">Token name</span>
+      <span className="px-3 py-3 border-r border-line">{valueLabel}</span>
+      <span className="px-3 py-3 border-r border-line">Preview</span>
+      <span className="py-3" aria-hidden />
+    </div>
+  )
+}
+
+// ── Group sub-header (used in the "All" view) ───────────────────────────────
+
+function GroupLabel({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-surface/50 border-b border-line">
+      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
+      <span className="text-[11px] font-mono tabular-nums text-fg-faint">{count}</span>
+    </div>
+  )
+}
+
+// ── Row wrapper (zebra + hover, matches Semantic) ───────────────────────────
+
+function rowClass(index: number) {
+  const isEven = index % 2 === 1
+  return `${GRID} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+    isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+  }`
+}
+
+const nameCell = 'flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line'
+const valueCell = 'flex items-center px-3 py-2 border-r border-line'
+const previewCell = 'flex items-center px-3 py-2 border-r border-line overflow-hidden'
+
+// ── Main ────────────────────────────────────────────────────────────────────
+
 export default function Step4_Typography() {
   const { typography, setTypography } = useDesignStore()
-  const [activeWeights, setActiveWeights] = useState<number[]>(
-    Object.values(typography.weights)
-  )
+  const reduce = useReducedMotion() ?? false
 
+  const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
+  const [query, setQuery] = useState('')
+  const [pickerRole, setPickerRole] = useState<'display' | 'body' | null>(null)
+
+  const bodyFont = typography.fontFamily
+  const displayFont = typography.headingFontFamily ?? typography.fontFamily
+  const sizes = typography.sizes ?? FONT_SIZE_STANDARD
+  const lineHeights = typography.lineHeights ?? LINE_HEIGHT_STANDARD
+  const weights = typography.weights ?? FONT_WEIGHT_STANDARD
+
+  // Load the two active families (covers every preview cell).
   useEffect(() => {
-    FONT_PRESETS.forEach((f) => loadGoogleFont(f.value))
-  }, [])
+    loadGoogleFont(displayFont)
+    loadGoogleFont(bodyFont)
+  }, [displayFont, bodyFont])
 
-  const bodyFont    = typography.fontFamily
-  const headingFont = typography.headingFontFamily ?? typography.fontFamily
+  // ── setters ──
+  const setFamily = (role: 'display' | 'body', family: string) =>
+    setTypography(
+      role === 'display'
+        ? { ...typography, headingFontFamily: family }
+        : { ...typography, fontFamily: family },
+    )
+  const setSize = (key: string, v: string) => setTypography({ ...typography, sizes: { ...sizes, [key]: v } })
+  const setLineHeight = (key: string, v: string) => setTypography({ ...typography, lineHeights: { ...lineHeights, [key]: v } })
+  const setWeight = (base: string, n: number) => setTypography({ ...typography, weights: { ...weights, [base]: n } })
 
-  function setBodyFont(family: string) {
-    setTypography({ ...typography, fontFamily: family })
+  const q = query.trim().toLowerCase()
+  const match = (name: string) => !q || name.toLowerCase().includes(q)
+
+  const activeLabel = TYPO_CATEGORIES.find((c) => c.key === activeCategory)?.label ?? 'All'
+  const activeCount = TYPO_CATEGORIES.find((c) => c.key === activeCategory)?.count ?? 32
+
+  // ── per-category tables ──
+  const familyTable = () => {
+    const rows = FONT_FAMILY_ROWS.filter((r) => match(r.key))
+    if (!rows.length) return null
+    return (
+      <div>
+        {activeCategory === 'all' && <GroupLabel label="Font family" count={FONT_FAMILY_ROWS.length} />}
+        <TableHeader valueLabel="Family" />
+        {rows.map((r, i) => {
+          const family = r.role === 'display' ? displayFont : bodyFont
+          const modified = family !== 'Inter'
+          return (
+            <div key={r.key} className={rowClass(i)}>
+              <div className={nameCell}>
+                <code className="font-mono text-[12px] text-fg-muted truncate">{r.label}</code>
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+              </div>
+              <div className={`${valueCell} relative`}>
+                <button
+                  onClick={() => setPickerRole(pickerRole === r.role ? null : r.role)}
+                  className="flex items-center gap-1.5 w-full text-left text-[13px] text-fg hover:text-[#0088FF] transition-colors"
+                >
+                  <span className="truncate" style={{ fontFamily: fontStack(family) }}>{family}</span>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-fg-faint flex-shrink-0">
+                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {pickerRole === r.role && (
+                  <FontPickerPopover
+                    value={family}
+                    onClose={() => setPickerRole(null)}
+                    onSelect={(f) => { setFamily(r.role, f); loadGoogleFont(f); setPickerRole(null) }}
+                  />
+                )}
+              </div>
+              <div className={previewCell}>
+                <span className="text-fg truncate text-[18px]" style={{ fontFamily: fontStack(family) }}>{PREVIEW}</span>
+              </div>
+              <ResetButton modified={modified} onReset={() => setFamily(r.role, 'Inter')} title="Reset to Inter" />
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
-  function setHeadingFont(family: string) {
-    setTypography({ ...typography, headingFontFamily: family })
+  const weightTable = () => {
+    const rows = FONT_WEIGHT_ROWS.filter((r) => match(r.name))
+    if (!rows.length) return null
+    return (
+      <div>
+        {activeCategory === 'all' && <GroupLabel label="Font weight" count={FONT_WEIGHT_ROWS.length} />}
+        <TableHeader valueLabel="Weight" />
+        {rows.map((r, i) => {
+          const n = weights[r.base] ?? FONT_WEIGHT_STANDARD[r.base]
+          const modified = !r.italic && n !== FONT_WEIGHT_STANDARD[r.base]
+          return (
+            <div key={r.name} className={rowClass(i)}>
+              <div className={nameCell}>
+                <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+              </div>
+              <div className={valueCell}>
+                {r.italic ? (
+                  <span className="text-[13px] font-mono text-fg-faint px-2">{n} · italic</span>
+                ) : (
+                  <ValueInput value={String(n)} onChange={(v) => { const p = parseInt(v, 10); if (!Number.isNaN(p)) setWeight(r.base, p) }} />
+                )}
+              </div>
+              <div className={previewCell}>
+                <span
+                  className="text-fg truncate"
+                  style={{ fontFamily: fontStack(bodyFont), fontWeight: n, fontStyle: r.italic ? 'italic' : 'normal', fontSize: 18 }}
+                >
+                  {PREVIEW}
+                </span>
+              </div>
+              <ResetButton modified={modified} onReset={() => setWeight(r.base, FONT_WEIGHT_STANDARD[r.base])} title="Reset to standard" />
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
-  function setSize(step: string, value: string) {
-    setTypography({ ...typography, sizes: { ...typography.sizes, [step]: value } })
+  const sizeTable = () => {
+    const rows = TYPE_SCALE_KEYS.filter((k) => match(k))
+    if (!rows.length) return null
+    return (
+      <div>
+        {activeCategory === 'all' && <GroupLabel label="Font size" count={TYPE_SCALE_KEYS.length} />}
+        <TableHeader valueLabel="Size" />
+        {rows.map((key, i) => {
+          const val = sizes[key] ?? FONT_SIZE_STANDARD[key]
+          const modified = val !== FONT_SIZE_STANDARD[key]
+          const px = Math.min(parseInt(val, 10) || 16, 44)
+          return (
+            <div key={key} className={rowClass(i)}>
+              <div className={nameCell}>
+                <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+              </div>
+              <div className={valueCell}>
+                <ValueInput value={val} onChange={(v) => setSize(key, v)} />
+              </div>
+              <div className={previewCell}>
+                <span className="text-fg truncate leading-none" style={{ fontFamily: fontStack(displayFont), fontSize: px }}>{PREVIEW}</span>
+              </div>
+              <ResetButton modified={modified} onReset={() => setSize(key, FONT_SIZE_STANDARD[key])} title="Reset to standard" />
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
-  function toggleWeight(w: number) {
-    const next = activeWeights.includes(w)
-      ? activeWeights.filter((x) => x !== w)
-      : [...activeWeights, w].sort((a, b) => a - b)
-    if (next.length === 0) return
-    setActiveWeights(next)
-    const newWeights: Record<string, number> = {}
-    next.forEach((val) => {
-      const match = WEIGHTS.find((wt) => wt.value === val)
-      if (match) newWeights[match.label.toLowerCase()] = val
-    })
-    setTypography({ ...typography, weights: newWeights })
+  const lineHeightTable = () => {
+    const rows = TYPE_SCALE_KEYS.filter((k) => match(k))
+    if (!rows.length) return null
+    return (
+      <div>
+        {activeCategory === 'all' && <GroupLabel label="Line height" count={TYPE_SCALE_KEYS.length} />}
+        <TableHeader valueLabel="Line height" />
+        {rows.map((key, i) => {
+          const val = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
+          const modified = val !== LINE_HEIGHT_STANDARD[key]
+          return (
+            <div key={key} className={rowClass(i)}>
+              <div className={nameCell}>
+                <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+              </div>
+              <div className={valueCell}>
+                <ValueInput value={val} onChange={(v) => setLineHeight(key, v)} />
+              </div>
+              <div className={previewCell}>
+                <span className="text-fg-muted text-[13px] block w-full leading-tight" style={{ lineHeight: val, fontFamily: fontStack(bodyFont) }}>
+                  Sphinx of black quartz,<br />judge my vow.
+                </span>
+              </div>
+              <ResetButton modified={modified} onReset={() => setLineHeight(key, LINE_HEIGHT_STANDARD[key])} title="Reset to standard" />
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
-  const medianWeight = activeWeights[Math.floor(activeWeights.length / 2)] ?? 400
+  const showFamily = activeCategory === 'all' || activeCategory === 'family'
+  const showWeight = activeCategory === 'all' || activeCategory === 'weight'
+  const showSize = activeCategory === 'all' || activeCategory === 'size'
+  const showLineHeight = activeCategory === 'all' || activeCategory === 'lineHeight'
+
+  const anyVisible =
+    (showFamily && FONT_FAMILY_ROWS.some((r) => match(r.key))) ||
+    (showWeight && FONT_WEIGHT_ROWS.some((r) => match(r.name))) ||
+    ((showSize || showLineHeight) && TYPE_SCALE_KEYS.some((k) => match(k)))
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-10"
+      transition={{ duration: reduce ? 0 : 0.3, ease: 'easeOut' }}
+      className="flex flex-col bg-app border border-line rounded-xl overflow-hidden"
     >
-      {/* ── Font selector ── */}
-      <FontSelector
-        headingFont={headingFont}
-        bodyFont={bodyFont}
-        setHeadingFont={setHeadingFont}
-        setBodyFont={setBodyFont}
-      />
-
-      {/* ── Live Specimen ── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${headingFont}-${bodyFont}`}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-xl bg-surface border border-line p-6 flex flex-col gap-5"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-fg-faint uppercase tracking-wider">Specimen</span>
-            {headingFont !== bodyFont && (
-              <span className="text-xs text-fg-faint font-mono">{headingFont} / {bodyFont}</span>
-            )}
-            {headingFont === bodyFont && (
-              <span className="text-xs text-fg-faint font-mono">{bodyFont}</span>
-            )}
-          </div>
-
-          {/* Heading specimen */}
-          <div className="flex flex-col gap-1 border-b border-line/60 pb-5">
-            <span className="text-[10px] text-fg-faint font-mono uppercase tracking-wider mb-1">Heading</span>
-            {(['2xl', 'xl'] as const).map((step) => {
-              const size = typography.sizes[step] ?? DEFAULT_SIZES[step]
-              return (
-                <div key={step} className="flex items-baseline gap-3">
-                  <span className="text-[10px] text-fg-faint font-mono w-8 flex-shrink-0">{step}</span>
-                  <span
-                    style={{
-                      fontFamily: fontStack(headingFont),
-                      fontSize: size,
-                      lineHeight: 1.15,
-                      fontWeight: Math.max(...activeWeights),
-                    }}
-                    className="text-fg truncate"
-                  >
-                    {SPECIMEN_HEADING}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Body specimen */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-fg-faint font-mono uppercase tracking-wider mb-1">Body</span>
-            {(['lg', 'base', 'sm', 'xs'] as const).map((step) => {
-              const size = typography.sizes[step] ?? DEFAULT_SIZES[step]
-              return (
-                <div key={step} className="flex items-baseline gap-3">
-                  <span className="text-[10px] text-fg-faint font-mono w-8 flex-shrink-0">{step}</span>
-                  <span
-                    style={{
-                      fontFamily: fontStack(bodyFont),
-                      fontSize: size,
-                      lineHeight: 1.5,
-                      fontWeight: medianWeight,
-                    }}
-                    className="text-fg-muted truncate"
-                  >
-                    {SPECIMEN_BODY}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ── Type Scale ── */}
-      <div className="flex flex-col gap-3">
-        <label className="text-sm text-fg-muted uppercase tracking-wide">Type Scale</label>
-        <div className="grid grid-cols-3 gap-3">
-          {SCALE_STEPS.map((step) => (
-            <div key={step} className="flex flex-col gap-1">
-              <label className="text-[11px] text-fg-faint font-mono">{step}</label>
-              <div className="flex items-center gap-1.5 bg-surface border border-line rounded-lg px-3 py-2 focus-within:border-[#0088FF] transition-colors">
-                <input
-                  type="text"
-                  value={typography.sizes[step] ?? DEFAULT_SIZES[step]}
-                  onChange={(e) => setSize(step, e.target.value)}
-                  className="bg-transparent text-fg text-sm font-mono w-full outline-none"
-                />
-              </div>
-            </div>
-          ))}
+      {/* Top bar */}
+      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-sm text-fg truncate">{activeLabel}</span>
+          <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeCount}</span>
+        </div>
+        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+            aria-label="Filter typography tokens"
+          />
+          {query && (
+            <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+          )}
         </div>
       </div>
 
-      {/* ── Weights ── */}
-      <div className="flex flex-col gap-3">
-        <label className="text-sm text-fg-muted uppercase tracking-wide">Weights</label>
-        <div className="flex flex-wrap gap-2">
-          {WEIGHTS.map((w) => {
-            const active = activeWeights.includes(w.value)
+      {/* Body: side nav + tables */}
+      <div className="flex items-stretch">
+        <nav aria-label="Typography categories" className="w-40 flex-shrink-0 border-r border-line p-2 flex flex-col gap-0.5 bg-app">
+          {TYPO_CATEGORIES.map((c) => {
+            const isActive = activeCategory === c.key
             return (
               <button
-                key={w.value}
-                onClick={() => toggleWeight(w.value)}
-                style={{ fontFamily: fontStack(bodyFont), fontWeight: w.value }}
-                className={`px-4 py-2 rounded-lg text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
-                  active
-                    ? 'bg-[#0088FF] text-white ring-2 ring-[#5AADFF]/30'
-                    : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
+                key={c.key}
+                onClick={() => setActiveCategory(c.key)}
+                aria-current={isActive}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                 }`}
               >
-                {w.label}
+                <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
+                <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{c.count}</span>
               </button>
             )
           })}
-        </div>
-        <p className="text-xs text-fg-faint">
-          Only selected weights are included in the export.
-        </p>
-      </div>
+        </nav>
 
-      {/* ── Token preview ── */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="rounded-lg bg-surface border border-line p-4"
-      >
-        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
-{`:root {
-  --font-family-heading: ${fontStack(headingFont)};
-  --font-family-body: ${fontStack(bodyFont)};
-${SCALE_STEPS.map(
-  (s) => `  --font-size-${s}: ${typography.sizes[s] ?? DEFAULT_SIZES[s]};`
-).join('\n')}
-${Object.entries(typography.weights)
-  .map(([k, v]) => `  --font-weight-${k}: ${v};`)
-  .join('\n')}
-}`}
-        </pre>
-      </motion.div>
+        <div className="flex-1 min-w-0 overflow-x-auto">
+          <div className="min-w-[30rem]">
+            {!anyVisible ? (
+              <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
+            ) : (
+              <>
+                {showFamily && familyTable()}
+                {showWeight && weightTable()}
+                {showSize && sizeTable()}
+                {showLineHeight && lineHeightTable()}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </motion.div>
   )
 }
