@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { downloadTokenJSON } from '../../lib/tokenGenerator'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
+import { OverviewChecklistPreview } from '../preview/atoms/OverviewChecklistPreview'
 
 interface HomeViewProps {
   /** Opens the Bring to Figma view (export mode lives in the shell). */
@@ -16,20 +17,6 @@ interface HomeViewProps {
   onOpenExport: () => void
 }
 
-// Overview checklist items — foundation keys must match FOUNDATIONS in
-// Configurator.tsx; 'components' is a synthetic key for the catalogue tab.
-const OVERVIEW_ITEMS: { key: string; label: string }[] = [
-  { key: 'color', label: 'Color' },
-  { key: 'semantic', label: 'Semantic Tokens' },
-  { key: 'typography', label: 'Typography' },
-  { key: 'icons', label: 'Icon Library' },
-  { key: 'spacing', label: 'Spacing & Radius' },
-  { key: 'opacity', label: 'Opacity' },
-  { key: 'shadow', label: 'Shadow' },
-  { key: 'grid', label: 'Grid' },
-  { key: 'sizes', label: 'Sizes' },
-  { key: 'components', label: 'Components' },
-]
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
@@ -70,89 +57,6 @@ function GitHubGlyph() {
   )
 }
 
-// ── Intro: what you can do — shown next to the create card for new users ────
-const INTRO_STEPS: { step: string; title: string; blurb: string }[] = [
-  { step: '1', title: 'Define tokens', blurb: 'Colors, type, spacing — only what you choose, no bloat.' },
-  { step: '2', title: 'See it live', blurb: 'Real components render from your tokens as you edit.' },
-  { step: '3', title: 'Sync to Figma', blurb: 'One plugin turns your tokens into Figma Variables.' },
-  { step: '4', title: 'Save to GitHub', blurb: 'Push to a repo to save it — and pick it up anywhere.' },
-]
-
-function IntroSteps() {
-  return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-3xl">
-      {INTRO_STEPS.map((s) => (
-        <div key={s.step} className="flex flex-col gap-1 px-4 py-3 rounded-xl bg-surface border border-line">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold text-fg-faint tabular-nums">{s.step}</span>
-            <span className="text-xs font-medium text-fg">{s.title}</span>
-          </div>
-          <p className="text-[11px] text-fg-faint leading-snug">{s.blurb}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── New-user onboarding: a single dashed card to name the system ────────────
-function NewSystemCard({ onBack }: { onBack?: () => void }) {
-  const { projectName, setProjectName, setProjectDescription, setProjectCreated } = useDesignStore()
-  // Local until Create — abandoning the form doesn't half-create a project.
-  const [name, setName] = useState(projectName === 'DS.by.MD' ? '' : projectName)
-  const [desc, setDesc] = useState('')
-
-  function create() {
-    const trimmed = name.trim()
-    if (!trimmed) return
-    setProjectName(trimmed)
-    setProjectDescription(desc.trim())
-    setProjectCreated(true)
-  }
-
-  return (
-    <div className="rounded-2xl border-2 border-dashed border-line-strong bg-surface/50 p-8 max-w-xl flex flex-col gap-4">
-      {onBack && (
-        <button onClick={onBack} className="self-start flex items-center gap-1.5 text-xs text-fg-faint hover:text-fg transition-colors">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7.5 2.5 4 6l3.5 3.5" />
-          </svg>
-          Back to my systems
-        </button>
-      )}
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-bold text-fg">New Design System</h2>
-        <p className="text-sm text-fg-faint">
-          Name it, describe who it's for, and start configuring your tokens.
-        </p>
-      </div>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') create() }}
-        placeholder="Name your design system"
-        aria-label="Design system name"
-        autoFocus
-        className="text-lg font-semibold text-fg bg-surface border border-line rounded-xl px-4 py-2.5 outline-none focus:border-[#0088FF] transition-colors w-full"
-      />
-      <textarea
-        value={desc}
-        onChange={(e) => setDesc(e.target.value)}
-        placeholder="What is this design system for? Who uses it? (shown in your README)"
-        aria-label="Design system description"
-        rows={2}
-        className="text-sm text-fg-muted bg-surface border border-line rounded-xl px-4 py-2.5 outline-none focus:border-[#0088FF] resize-none w-full placeholder:text-fg-faint transition-colors"
-      />
-      <button
-        onClick={create}
-        disabled={!name.trim()}
-        className="self-start px-4 py-2 rounded-lg text-sm font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] focus-visible:ring-offset-2 focus-visible:ring-offset-app"
-      >
-        Create
-      </button>
-    </div>
-  )
-}
-
 // ── Saved systems list: open, remove (local only), or start a new one ───────
 function SavedSystemsList({ onAddNew }: { onAddNew: () => void }) {
   const { savedSystems, loadSystem, removeSavedSystem } = useDesignStore()
@@ -169,8 +73,14 @@ function SavedSystemsList({ onAddNew }: { onAddNew: () => void }) {
               <p className="text-xs text-fg-faint leading-relaxed line-clamp-2">{sys.description}</p>
             )}
             <div className="flex items-center gap-1.5 text-[11px] text-fg-faint">
-              <GitHubGlyph />
-              <span className="font-mono truncate">{sys.repo}</span>
+              {sys.repo ? (
+                <>
+                  <GitHubGlyph />
+                  <span className="font-mono truncate">{sys.repo}</span>
+                </>
+              ) : (
+                <span className="truncate">Saved in this browser</span>
+              )}
               <span className="ml-auto flex-shrink-0">saved {timeAgo(sys.savedAt)}</span>
             </div>
             {confirmingDelete === sys.id ? (
@@ -274,68 +184,17 @@ function SystemsStrip({ onOpenGithub }: { onOpenGithub: () => void }) {
   )
 }
 
-// ── Overview checklist: free-order navigation with visited status ───────────
-function OverviewChecklist({ onOpenFoundation }: { onOpenFoundation: (key: string) => void }) {
-  const { completedFoundations } = useDesignStore()
-  const doneCount = OVERVIEW_ITEMS.filter((i) => completedFoundations.includes(i.key)).length
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-2">
-        <h3 className="text-sm text-fg-muted uppercase tracking-wide">Overview</h3>
-        <span className="text-[11px] text-fg-faint">{doneCount} of {OVERVIEW_ITEMS.length} configured</span>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-1.5">
-        {OVERVIEW_ITEMS.map((item) => {
-          const done = completedFoundations.includes(item.key)
-          return (
-            <button
-              key={item.key}
-              onClick={() => onOpenFoundation(item.key)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-line bg-surface hover:bg-elevated/40 text-left transition-colors group"
-            >
-              {done ? (
-                <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0" aria-hidden>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5.2 4 7.2 8 2.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-              ) : (
-                <span className="w-4 h-4 rounded-full border border-line-strong flex-shrink-0" aria-hidden />
-              )}
-              <span className="text-[13px] text-fg flex-1 truncate">{item.label}</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-fg-faint group-hover:text-fg-muted flex-shrink-0 transition-colors" aria-hidden>
-                <path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-export default function HomeView({ onOpenFigma, onOpenGithub, onOpenFoundation, onOpenExport }: HomeViewProps) {
+export default function HomeView({ onOpenFigma, onOpenGithub, onOpenExport }: HomeViewProps) {
   const {
     projectName, setProjectName,
     projectDescription, setProjectDescription,
-    projectCreated, savedSystems,
+    savedSystems, startNewSystem,
     primaryColor, themeOrder, selectedComponents, iconLibrary,
     figmaLastPublishAt, githubRepo, githubLastPushAt,
   } = useDesignStore()
 
   const [copied, setCopied] = useState(false)
-  // State 1 → "Add new" detour into the create card. Cleared once a system is
-  // active so leaving it later lands on the list, not the create card.
-  const [creating, setCreating] = useState(false)
-  useEffect(() => {
-    if (projectCreated) setCreating(false)
-  }, [projectCreated])
-  const homeState: 'intro' | 'list' | 'dashboard' = projectCreated
-    ? 'dashboard'
-    : savedSystems.length === 0 || creating
-      ? 'intro'
-      : 'list'
   const isDeployed =
     typeof window !== 'undefined' &&
     !window.location.origin.includes('localhost') &&
@@ -349,35 +208,9 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenFoundation, 
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {homeState === 'intro' ? (
         <motion.div
-          key="intro"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="flex flex-col gap-6"
-        >
-          <NewSystemCard onBack={creating ? () => setCreating(false) : undefined} />
-          <IntroSteps />
-        </motion.div>
-      ) : homeState === 'list' ? (
-        <motion.div
-          key="list"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          <SavedSystemsList onAddNew={() => setCreating(true)} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="dashboard"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           className="flex flex-col gap-8 max-w-3xl"
         >
@@ -400,8 +233,9 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenFoundation, 
             />
           </div>
 
-          {/* ── My design systems: save / switch ── */}
+          {/* ── My design systems: save / switch + open a saved one ── */}
           <SystemsStrip onOpenGithub={onOpenGithub} />
+          {savedSystems.length > 0 && <SavedSystemsList onAddNew={startNewSystem} />}
 
           {/* ── Summary chips ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -411,8 +245,7 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenFoundation, 
             <SummaryChip label="Icons" value={getIconLibrary(iconLibrary)?.label ?? iconLibrary} />
           </div>
 
-          {/* ── Overview checklist ── */}
-          <OverviewChecklist onOpenFoundation={onOpenFoundation} />
+          {/* ── Overview checklist (rendered in the Preview panel on xl+) ── */}
 
           {/* ── Connections ── */}
           <div className="flex flex-col gap-3">
@@ -503,7 +336,5 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenFoundation, 
             </div>
           </div>
         </motion.div>
-      )}
-    </AnimatePresence>
   )
 }

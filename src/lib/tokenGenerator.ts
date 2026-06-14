@@ -1,44 +1,47 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
+import { toneLabel, type ColorNaming } from './colorUtils'
 
 // Flatten a numeric color scale into prefixed string keys, e.g. brand-1 … brand-12
+// (or brand-50 … brand-1000 under the "hundreds" naming scheme).
 function flattenScale(
   name: string,
   scale: Record<number, string>,
+  naming: ColorNaming,
 ): Record<string, string> {
   const result: Record<string, string> = {}
   Object.entries(scale).forEach(([k, v]) => {
-    if (v) result[`${name}-${k}`] = v
+    if (v) result[`${name}-${toneLabel(naming, Number(k))}`] = v
   })
   return result
 }
 
 export function generateTokenJSON() {
   const store = useDesignStore.getState()
-  const { typography } = store
+  const { typography, colorNaming } = store
 
   // Merge all color scales into a single primitive map with prefixed keys.
   // Only include secondary scales if they've been populated (non-empty objects).
   const primitive: Record<string, string> = {
-    ...flattenScale('brand', store.primaryScale),
-    ...flattenScale('gray', store.grayLightScale),
+    ...flattenScale('brand', store.primaryScale, colorNaming),
+    ...flattenScale('gray', store.grayLightScale, colorNaming),
     ...(Object.keys(store.errorScale).length
-      ? flattenScale('error', store.errorScale)
+      ? flattenScale('error', store.errorScale, colorNaming)
       : {}),
     ...(Object.keys(store.warningScale).length
-      ? flattenScale('warning', store.warningScale)
+      ? flattenScale('warning', store.warningScale, colorNaming)
       : {}),
     ...(Object.keys(store.successScale).length
-      ? flattenScale('success', store.successScale)
+      ? flattenScale('success', store.successScale, colorNaming)
       : {}),
     ...(Object.keys(store.infoScale).length
-      ? flattenScale('info', store.infoScale)
+      ? flattenScale('info', store.infoScale, colorNaming)
       : {}),
   }
 
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12).
   store.customColors.forEach((c) => {
-    Object.assign(primitive, flattenScale(c.key, c.scale))
+    Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
   })
 
   return {

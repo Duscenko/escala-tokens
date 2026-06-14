@@ -34,6 +34,7 @@ export default function AddThemeModal({
   const {
     themes, addTheme, customColors,
     primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor,
+    colorAlgorithm, contrastShift,
   } = useDesignStore()
   const reduce = useReducedMotion() ?? false
 
@@ -71,14 +72,14 @@ export default function AddThemeModal({
   }, [open, onClose])
 
   // Live scales (BASE = tone 6).
-  const scale = (hex: string) => { try { return generateColorScale(hex) } catch { return {} } }
-  const brandScale = useMemo(() => scale(brand), [brand])
-  const neutralScale = useMemo(() => scale(neutral), [neutral])
+  const scale = (hex: string) => { try { return generateColorScale(hex, colorAlgorithm, contrastShift) } catch { return {} } }
+  const brandScale = useMemo(() => scale(brand), [brand, colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
+  const neutralScale = useMemo(() => scale(neutral), [neutral, colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
   const semanticScales = {
-    error: useMemo(() => scale(error), [error]),
-    warning: useMemo(() => scale(warning), [warning]),
-    success: useMemo(() => scale(success), [success]),
-    info: useMemo(() => scale(info), [info]),
+    error: useMemo(() => scale(error), [error, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
+    warning: useMemo(() => scale(warning), [warning, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
+    success: useMemo(() => scale(success), [success, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
+    info: useMemo(() => scale(info), [info, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
   }
 
   // When linked, the neutral tracks the brand hue.
@@ -99,12 +100,12 @@ export default function AddThemeModal({
     if (themes[key]) { setErr(`"${key}" already exists.`); return }
     try {
       const palette: ThemePalette = {
-        brand: generateColorScale(brand),
-        gray: generateColorScale(neutral),
-        error: generateColorScale(error),
-        warning: generateColorScale(warning),
-        success: generateColorScale(success),
-        info: generateColorScale(info),
+        brand: generateColorScale(brand, colorAlgorithm, contrastShift),
+        gray: generateColorScale(neutral, colorAlgorithm, contrastShift),
+        error: generateColorScale(error, colorAlgorithm, contrastShift),
+        warning: generateColorScale(warning, colorAlgorithm, contrastShift),
+        success: generateColorScale(success, colorAlgorithm, contrastShift),
+        info: generateColorScale(info, colorAlgorithm, contrastShift),
       }
       addTheme(key, kind, palette)
       onClose()

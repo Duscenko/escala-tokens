@@ -12,9 +12,13 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import HomeView from '../components/configurator/HomeView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
-import Step3_SemanticTokens, { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
+import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
+import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
+import SectionExportModal from '../components/configurator/SectionExportModal'
+import { type SectionKey } from '../lib/sectionExport'
 import Step4_Typography from '../components/configurator/Step4_Typography'
-import Step5_SpacingRadius from '../components/configurator/Step5_SpacingRadius'
+import Step5_Spacing from '../components/configurator/Step5_Spacing'
+import StepRadius from '../components/configurator/StepRadius'
 import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
@@ -63,16 +67,6 @@ const FOUNDATIONS: FoundationSection[] = [
     Icon: ic('M12 22a7 7 0 0 0 7-7c0-3-7-12-7-12S5 12 5 15a7 7 0 0 0 7 7Z', '1.8'),
   },
   {
-    key: 'semantic',
-    label: 'Semantic Tokens',
-    short: 'Semantic Tokens',
-    hint: 'Map scales to roles',
-    title: 'Semantic Tokens',
-    subtitle: 'Map each color scale to a semantic role — text, border, foreground and background.',
-    Component: Step3_SemanticTokens,
-    Icon: ic('M12 20.4722C13.0615 21.4223 14.4633 22 16 22C19.3137 22 22 19.3137 22 16C22 13.2331 20.1271 10.9036 17.5798 10.2102M6.42018 10.2102C3.87293 10.9036 2 13.2331 2 16C2 19.3137 4.68629 22 8 22C11.3137 22 14 19.3137 14 16C14 15.2195 13.851 14.4738 13.5798 13.7898M18 8C18 11.3137 15.3137 14 12 14C8.68629 14 6 11.3137 6 8C6 4.68629 8.68629 2 12 2C15.3137 2 18 4.68629 18 8Z'),
-  },
-  {
     key: 'typography',
     label: 'Typography',
     short: 'Font',
@@ -81,6 +75,16 @@ const FOUNDATIONS: FoundationSection[] = [
     subtitle: 'Pair a heading and body font, then tune the size scale and weights.',
     Component: Step4_Typography,
     Icon: ic('M8 7H16M12 7V17M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z'),
+  },
+  {
+    key: 'radius',
+    label: 'Border Radius',
+    short: 'Radius',
+    hint: 'Corner-radius personality',
+    title: 'Border Radius',
+    subtitle: 'Choose the corner-radius personality of your system — from sharp to pill.',
+    Component: StepRadius,
+    Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
   },
   {
     key: 'icons',
@@ -94,12 +98,12 @@ const FOUNDATIONS: FoundationSection[] = [
   },
   {
     key: 'spacing',
-    label: 'Spacing & Radius',
-    short: 'Spacing & Radius',
-    hint: 'Spacing scale & corners',
-    title: 'Spacing & Radius',
-    subtitle: 'Set the base spacing unit and the corner-radius personality of your system.',
-    Component: Step5_SpacingRadius,
+    label: 'Spacing',
+    short: 'Spacing',
+    hint: 'Base spacing scale',
+    title: 'Spacing',
+    subtitle: 'Set the base unit that drives every margin, padding and gap in your system.',
+    Component: Step5_Spacing,
     Icon: ic('M21 21V3M3 21V3M9 8V16C9 16.9319 9 17.3978 9.15224 17.7654C9.35523 18.2554 9.74458 18.6448 10.2346 18.8478C10.6022 19 11.0681 19 12 19C12.9319 19 13.3978 19 13.7654 18.8478C14.2554 18.6448 14.6448 18.2554 14.8478 17.7654C15 17.3978 15 16.9319 15 16V8C15 7.06812 15 6.60218 14.8478 6.23463C14.6448 5.74458 14.2554 5.35523 13.7654 5.15224C13.3978 5 12.9319 5 12 5C11.0681 5 10.6022 5 10.2346 5.15224C9.74458 5.35523 9.35523 5.74458 9.15224 6.23463C9 6.60218 9 7.06812 9 8Z'),
   },
   {
@@ -147,6 +151,12 @@ const FOUNDATIONS: FoundationSection[] = [
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
+const SaveIcon: ComponentType = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+    <path d="M17 21v-8H7v8M7 3v5h8" />
+  </svg>
+)
 
 // Figma brand mark (monochrome — tracks currentColor so it inherits the header tint).
 const FigmaIcon: ComponentType = () => (
@@ -174,27 +184,37 @@ function CatalogueCheck() {
   )
 }
 
-type ExportMode = 'code' | 'md' | 'figma' | 'github' | null
+type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 
-// ── Center header (icon + colored title + | + subtitle) ──────────────────────
-function CenterHeader({ Icon, title, subtitle }: { Icon: ComponentType; title: string; subtitle: string }) {
+// ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
+function CenterHeader({ Icon, title, subtitle, onExport, accentColor }: { Icon: ComponentType; title: string; subtitle: string; onExport?: () => void; accentColor?: string }) {
   return (
     <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[60px] border-b border-line/60 flex-shrink-0">
-      <span className="text-[#0088FF] flex-shrink-0">
+      <span className="flex-shrink-0" style={{ color: accentColor }}>
         <Icon />
       </span>
-      <h1 className="text-sm font-semibold text-[#0088FF] flex-shrink-0">{title}</h1>
+      <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
       <p className="text-sm text-fg-faint truncate">{subtitle}</p>
+      {onExport && (
+        <button
+          onClick={onExport}
+          className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+          title="Copy this section as CSS · Tailwind · Tokens · MD"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+          Export
+        </button>
+      )}
     </div>
   )
 }
 
 export default function Configurator() {
-  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, projectCreated } = useDesignStore()
+  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary } = useDesignStore()
   const theme = useTheme()
   const [tab, setTab] = useState<Tab>('foundations')
-  const [activeFoundation, setActiveFoundation] = useState<string>('home')
+  const [activeFoundation, setActiveFoundation] = useState<string>('color')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -202,21 +222,18 @@ export default function Configurator() {
   // Active Semantic category — shared with the table (master nav) and the preview,
   // so the right panel mirrors whichever token group is being edited.
   const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
+  // Sub-tab within the Color hub (Primitives ↔ Alias/Semantics). The preview
+  // mirrors the semantic category only while the semantics tab is active.
+  const [colorTab, setColorTab] = useState<ColorTab>('primitives')
   // Theme shown in the right-hand preview — toggled by the eye icons in the
   // Semantic table's column headers. Defaults to the built-in light theme.
   const [previewTheme, setPreviewTheme] = useState('light')
+  // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
+  const [sectionExportOpen, setSectionExportOpen] = useState(false)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
-
-  // Land cleanly on Home whenever there's no active design system (startNewSystem,
-  // persist rehydration) — pre-creation the rest of the workspace is gated off.
-  useEffect(() => {
-    if (!projectCreated) {
-      setTab('foundations')
-      setActiveFoundation('home')
-      setExportMode(null)
-    }
-  }, [projectCreated])
+  // Foundation sections (not Home) can export their token slice.
+  const canExportSection = tab === 'foundations' && !exportMode && activeFoundation !== 'home'
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = primaryScale
@@ -299,19 +316,35 @@ export default function Configurator() {
       </div>
     )
     centerKey = 'export-code'
+  } else if (exportMode === 'save') {
+    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Name your system, save it, and export every file.' }
+    body = (
+      <div className="h-full overflow-y-auto">
+        <ExportView showSave initialTab="markdown" onClose={() => setExportMode(null)} />
+      </div>
+    )
+    centerKey = 'export-save'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     const Active = section.Component
-    body = section.key === 'semantic' ? (
-      // Semantic owns its own internal scroll so the table's top bar + column
-      // header can stay pinned — no outer overflow here.
-      <div className="h-full p-8 flex flex-col min-h-0">
-        <Step3_SemanticTokens
+    body = section.key === 'color' ? (
+      // Color hub manages its own per-tab scroll (Primitives scrolls; the Alias
+      // table self-scrolls with pinned headers) — no outer overflow here.
+      <div className="h-full min-h-0">
+        <ColorHub
+          colorTab={colorTab}
+          onColorTabChange={setColorTab}
           activeCategory={semanticCategory}
           onCategoryChange={setSemanticCategory}
           previewTheme={previewTheme}
           onPreviewThemeChange={setPreviewTheme}
         />
+      </div>
+    ) : section.key === 'typography' ? (
+      // Typography owns its own internal scroll so its top bar + section column
+      // headers can stay pinned — no outer overflow here.
+      <div className="h-full p-8 flex flex-col min-h-0">
+        <Active />
       </div>
     ) : (
       <div className="h-full overflow-y-auto p-8">
@@ -395,7 +428,9 @@ export default function Configurator() {
     centerKey = `c-${activeComponent?.key ?? 'none'}`
   }
 
-  const showPreview = tab !== 'components'
+  // Preview is hidden in the Components tab (docs go full-width) and in every
+  // export/connect view (Code · Docs · Figma · GitHub) — those own the full panel.
+  const showPreview = tab !== 'components' && !exportMode
   const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
   return (
@@ -408,8 +443,8 @@ export default function Configurator() {
         tab={tab}
         exportMode={exportMode}
         onTabChange={changeTab}
-        onDocs={() => openExport('md')}
         onGithub={() => openExport('github')}
+        onHome={() => selectFoundation('home')}
       />
 
       {/* ── Body: 80px rail + floating white panel ── */}
@@ -427,15 +462,21 @@ export default function Configurator() {
           onFoundationSelect={selectFoundation}
           exportMode={exportMode}
           onGetFigma={() => openExport('figma')}
-          onHub={() => selectFoundation('home')}
-          hubActive={railActive === 'home'}
+          onSave={() => openExport('save')}
+          saveActive={exportMode === 'save'}
         />
 
         {/* ── Layer 1: white panel (rounded top, flush right & bottom) ── */}
         <div className="flex-1 min-w-0 flex mt-2 rounded-t-2xl overflow-hidden bg-app ring-1 ring-line/70 shadow-[0_-1px_28px_-8px_rgba(0,0,0,0.18)]">
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
-            <CenterHeader Icon={header.Icon} title={header.title} subtitle={header.subtitle} />
+            <CenterHeader
+              Icon={header.Icon}
+              title={header.title}
+              subtitle={header.subtitle}
+              onExport={canExportSection ? () => setSectionExportOpen(true) : undefined}
+              accentColor={primaryScale[8] ?? primaryColor}
+            />
             <div className="flex-1 min-h-0">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -456,13 +497,30 @@ export default function Configurator() {
           {showPreview && (
             <aside className="hidden xl:flex w-[400px] flex-shrink-0 overflow-hidden border-l border-line">
               <PreviewPanel
-                focus={!exportMode && tab === 'foundations' && activeFoundation === 'semantic' ? semanticCategory : null}
+                focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticCategory : null}
                 previewTheme={previewTheme}
+                iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
+                showOverview={!exportMode && tab === 'foundations' && activeFoundation === 'home'}
+                onNavigateFoundation={(key) => {
+                  if (key === 'components') { setTab('components') }
+                  else { setTab('foundations'); setActiveFoundation(key) }
+                }}
               />
             </aside>
           )}
         </div>
       </div>
+
+      {/* Per-section export window */}
+      <AnimatePresence>
+        {sectionExportOpen && canExportSection && (
+          <SectionExportModal
+            section={activeFoundation as SectionKey}
+            title={section.title}
+            onClose={() => setSectionExportOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

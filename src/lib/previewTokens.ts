@@ -32,6 +32,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     successColor: (pal?.success?.[8]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[8]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[8]) || infoColor || '#2e90fa',
+    semanticMap: semanticTokens,
     radius,
     spacing,
     typography,

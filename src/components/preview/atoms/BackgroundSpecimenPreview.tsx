@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react'
-import { useDesignStore } from '../../../store/useDesignStore'
 import { fontFamilyOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
@@ -7,7 +6,7 @@ import type { PreviewTokens } from '../ButtonPreview'
 // labeled fill swatch, grouped (surfaces · brand · feedback · disabled). Reads
 // values live so edits in the table repaint the swatches.
 export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
-  const sem = useDesignStore((s) => s.themes.light)
+  const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
   const fontFamily = fontFamilyOf(tokens)
   const border = tokens.border || '#eaecf0'

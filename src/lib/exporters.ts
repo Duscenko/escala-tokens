@@ -4,22 +4,23 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
+import { toneLabel } from './colorUtils'
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes } = store
+  const { primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, colorNaming } = store
   const semanticTokens = themes.light ?? {}
   const lines: string[] = [':root {']
 
   lines.push('  /* Primitive scale */')
   Object.entries(primaryScale)
     .sort(([a], [b]) => Number(a) - Number(b))
-    .forEach(([k, v]) => lines.push(`  --color-${k}: ${v};`))
+    .forEach(([k, v]) => lines.push(`  --color-${toneLabel(colorNaming, Number(k))}: ${v};`))
 
   customColors.forEach((c) => {
     lines.push(`\n  /* Custom — ${c.label} */`)
     Object.entries(c.scale)
       .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([k, v]) => lines.push(`  --color-${c.key}-${k}: ${v};`))
+      .forEach(([k, v]) => lines.push(`  --color-${c.key}-${toneLabel(colorNaming, Number(k))}: ${v};`))
   })
 
   lines.push('\n  /* Semantic tokens — light */')
@@ -70,7 +71,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 }
 
 export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo } = store
+  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming } = store
   const semanticTokens = themes.light ?? {}
   const themeCols = themeOrder.filter((t) => themes[t])
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -99,13 +100,13 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 
 | Token | Value |
 |-------|-------|
-${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${k}\` | \`${v}\` |`).join('\n')}
+${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}
 ${customColors.map((c)=>`
 ### Custom — ${c.label}
 
 | Token | Value |
 |-------|-------|
-${Object.entries(c.scale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${c.key}-${k}\` | \`${v}\` |`).join('\n')}`).join('\n')}
+${Object.entries(c.scale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${c.key}-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}`).join('\n')}
 
 ### Semantic Tokens
 

@@ -1,0 +1,214 @@
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useDesignStore } from '../../store/useDesignStore'
+
+// Radius presets — each defines the full none→full ramp, named by personality.
+const RADIUS_PRESETS = [
+  {
+    label: 'Sharp',
+    description: 'No rounding — sharp, precise',
+    values: { none: '0px', sm: '2px', md: '4px', lg: '6px', full: '9999px' },
+  },
+  {
+    label: 'Soft',
+    description: 'Moderate rounding — balanced, modern',
+    values: { none: '0px', sm: '4px', md: '8px', lg: '12px', full: '9999px' },
+  },
+  {
+    label: 'Rounded',
+    description: 'Generous rounding — friendly, approachable',
+    values: { none: '0px', sm: '8px', md: '16px', lg: '24px', full: '9999px' },
+  },
+  {
+    label: 'Pill',
+    description: 'Very rounded — playful, consumer apps',
+    values: { none: '0px', sm: '12px', md: '20px', lg: '32px', full: '9999px' },
+  },
+]
+
+const RADIUS_STEPS = ['none', 'sm', 'md', 'lg', 'full'] as const
+
+function pxToNum(val: string): number {
+  return parseFloat(val.replace('px', '')) || 0
+}
+
+// Which preset (if any) the current radius map exactly matches.
+function matchPreset(radius: Record<string, string>): string | null {
+  const hit = RADIUS_PRESETS.find((p) =>
+    RADIUS_STEPS.every((s) => (radius[s] ?? '') === p.values[s]),
+  )
+  return hit?.label ?? null
+}
+
+export default function StepRadius() {
+  const { radius, setRadius, primaryColor, themes } = useDesignStore()
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchPreset(radius) ?? 'Soft')
+
+  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
+
+  function applyPreset(preset: (typeof RADIUS_PRESETS)[number]) {
+    setSelectedPreset(preset.label)
+    setRadius(preset.values)
+  }
+
+  function fineTune(step: string, raw: string) {
+    const next = { ...radius, [step]: raw }
+    setRadius(next)
+    setSelectedPreset(matchPreset(next))
+  }
+
+  // Grade the whole ramp from one handle: sm ≈ ⅓, md ≈ ⅔, lg = handle. `full`
+  // stays pill. Keeps the scale proportional so a single drag reads as roundness.
+  function scaleRoundness(lg: number) {
+    const next = {
+      ...radius,
+      sm: `${Math.round(lg / 3)}px`,
+      md: `${Math.round((lg * 2) / 3)}px`,
+      lg: `${lg}px`,
+    }
+    setRadius(next)
+    setSelectedPreset(matchPreset(next))
+  }
+
+  // The lg radius drives the slider — the one buttons & cards actually use.
+  const lgPx = pxToNum(radius.lg ?? '12px')
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="flex flex-col gap-12"
+    >
+      {/* ── Preset personalities ── */}
+      <div className="flex flex-col gap-5">
+        <label className="text-sm text-fg-muted uppercase tracking-wide">Border Radius</label>
+
+        <div className="grid grid-cols-2 gap-3">
+          {RADIUS_PRESETS.map((preset) => {
+            const isSelected = selectedPreset === preset.label
+            return (
+              <button
+                key={preset.label}
+                onClick={() => applyPreset(preset)}
+                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+                  isSelected
+                    ? 'bg-elevated ring-2 ring-[#0088FF]/50 border border-[#0088FF]/30'
+                    : 'bg-surface border border-line hover:border-line-strong'
+                }`}
+              >
+                {/* Shape previews */}
+                <div className="flex items-end gap-2">
+                  {(['sm', 'md', 'lg', 'full'] as const).map((step) => {
+                    const r = preset.values[step]
+                    const size = step === 'sm' ? 20 : step === 'md' ? 28 : step === 'lg' ? 36 : 28
+                    return (
+                      <div
+                        key={step}
+                        style={{
+                          width: size,
+                          height: size,
+                          borderRadius: r,
+                          backgroundColor: isSelected ? accentColor + '33' : 'var(--elevated)',
+                          border: `1.5px solid ${isSelected ? accentColor + '88' : 'var(--line-strong)'}`,
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+                <div>
+                  <p className={`text-sm font-medium ${isSelected ? 'text-fg' : 'text-fg-muted'}`}>
+                    {preset.label}
+                  </p>
+                  <p className="text-xs text-fg-faint mt-0.5">{preset.description}</p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(preset.values).map(([k, v]) => (
+                    <span key={k} className="text-[10px] font-mono text-fg-faint">
+                      {k}: {v}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Scale slider — grade the overall roundness in one move ── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-fg-faint uppercase tracking-wider">Scale roundness</span>
+          <span className="text-xs font-mono text-fg-muted tabular-nums">lg · {radius.lg ?? '12px'}</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min={0}
+            max={32}
+            step={1}
+            value={Math.min(lgPx, 32)}
+            onChange={(e) => scaleRoundness(Number(e.target.value))}
+            className="flex-1 accent-[#0088FF] cursor-pointer"
+            aria-label="Scale border radius"
+          />
+          {/* Live shape that grows with the slider */}
+          <div
+            className="flex-shrink-0 transition-all"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: radius.lg ?? '12px',
+              backgroundColor: accentColor + '22',
+              border: `1.5px solid ${accentColor}88`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ── Per-step fine-tune ── */}
+      <div className="flex flex-col gap-2">
+        <span className="text-xs text-fg-faint uppercase tracking-wider">Fine-tune</span>
+        <div className="grid grid-cols-5 gap-2">
+          {RADIUS_STEPS.map((step) => (
+            <div key={step} className="flex flex-col gap-1">
+              <label className="text-[11px] text-fg-faint font-mono text-center">{step}</label>
+              <input
+                type="text"
+                value={radius[step] ?? '0px'}
+                onChange={(e) => fineTune(step, e.target.value)}
+                className="bg-surface border border-line focus:border-[#0088FF] rounded-lg px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-center"
+              />
+              {/* Mini shape preview */}
+              <div
+                className="mx-auto mt-1"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: radius[step] ?? '0px',
+                  backgroundColor: accentColor + '22',
+                  border: `1.5px solid ${accentColor}55`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Token preview ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="rounded-lg bg-surface border border-line p-4"
+      >
+        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
+        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
+{`:root {
+${RADIUS_STEPS.map((s) => `  --radius-${s}: ${radius[s] ?? '0px'};`).join('\n')}
+}`}
+        </pre>
+      </motion.div>
+    </motion.div>
+  )
+}

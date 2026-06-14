@@ -6,10 +6,11 @@ import type { Tab } from './Sidebar'
 
 interface TopNavProps {
   tab: Tab
-  exportMode: 'code' | 'md' | 'figma' | 'github' | null
+  exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
   onTabChange: (t: Tab) => void
-  onDocs: () => void
   onGithub: () => void
+  /** Logo click → the Home hub (saved systems live there). */
+  onHome: () => void
 }
 
 // GitHub brand mark — monochrome, tracks currentColor.
@@ -36,18 +37,23 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
 }
 
 // ── Transparent top navigation, layered over the brand gradient (layer 0) ─────
-export default function TopNav({ tab, exportMode, onTabChange, onDocs, onGithub }: TopNavProps) {
+export default function TopNav({ tab, exportMode, onTabChange, onGithub, onHome }: TopNavProps) {
   const { projectCreated } = useDesignStore()
   const foundationsActive = !exportMode && tab === 'foundations'
   const componentsActive = !exportMode && tab === 'components'
-  const docsActive = exportMode === 'md'
 
   return (
     <header className="relative z-20 flex items-center justify-between gap-2 h-14 px-2 sm:px-3 lg:px-5 flex-shrink-0">
-      {/* Logo — icon mark only on phones, full wordmark from md up */}
-      <div className="h-8 w-[34px] md:w-[130px] overflow-hidden flex-shrink-0">
-        <Logo className="h-8 w-[130px] max-w-none text-fg" />
-      </div>
+      {/* Logo — icon mark only on phones, full wordmark from md up. Click → Home. */}
+      <button
+        type="button"
+        onClick={onHome}
+        title="Home"
+        aria-label="Home"
+        className="h-8 w-[34px] md:w-auto overflow-hidden flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30 transition-opacity hover:opacity-80"
+      >
+        <Logo className="h-8 text-fg" />
+      </button>
 
       <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
         {/* Pre-creation the nav is just logo + theme — Home is the entry point. */}
@@ -58,9 +64,6 @@ export default function TopNav({ tab, exportMode, onTabChange, onDocs, onGithub 
             </NavLink>
             <NavLink active={componentsActive} onClick={() => onTabChange('components')}>
               Components
-            </NavLink>
-            <NavLink active={docsActive} onClick={onDocs}>
-              Docs
             </NavLink>
             <button
               onClick={onGithub}

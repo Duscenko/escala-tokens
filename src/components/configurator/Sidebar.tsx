@@ -16,12 +16,12 @@ interface SidebarProps {
   /** Highlighted foundation key, or null when not in the foundations view. */
   activeFoundation: string | null
   onFoundationSelect: (key: string) => void
-  exportMode: 'code' | 'md' | 'figma' | 'github' | null
+  exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
   onGetFigma: () => void
-  /** Opens the Home/hub screen (save + saved systems). */
-  onHub: () => void
-  /** True when the hub (home) screen is the active view. */
-  hubActive: boolean
+  /** Opens the Save hub (name · save to registry · export every file). */
+  onSave: () => void
+  /** True when the Save hub is the active view. */
+  saveActive: boolean
 }
 
 // Figma brand mark — monochrome, tracks currentColor.
@@ -37,13 +37,16 @@ function FigmaGlyph() {
   )
 }
 
-function DownloadIcon() {
+// Floppy-disk save mark.
+function SaveIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M14 2.26953V6.40007C14 6.96012 14 7.24015 14.109 7.45406C14.2049 7.64222 14.3578 7.7952 14.546 7.89108C14.7599 8.00007 15.0399 8.00007 15.6 8.00007H19.7305M15 15L12 18L9 15M12 18L12 12M14 2H8.8C7.11984 2 6.27976 2 5.63803 2.32698C5.07354 2.6146 4.6146 3.07354 4.32698 3.63803C4 4.27976 4 5.11984 4 6.8V17.2C4 18.8802 4 19.7202 4.32698 20.362C4.6146 20.9265 5.07354 21.3854 5.63803 21.673C6.27976 22 7.11984 22 8.8 22H15.2C16.8802 22 17.7202 22 18.362 21.673C18.9265 21.3854 19.3854 20.9265 19.673 20.362C20 19.7202 20 18.8802 20 17.2V8L14 2Z" />
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+      <path d="M17 21v-8H7v8M7 3v5h8" />
     </svg>
   )
 }
+
 
 // Chevron that rotates when the "More" group is expanded.
 function MoreIcon({ open }: { open: boolean }) {
@@ -109,15 +112,15 @@ export default function Sidebar({
   onFoundationSelect,
   exportMode,
   onGetFigma,
-  onHub,
-  hubActive,
+  onSave,
+  saveActive,
 }: SidebarProps) {
   const { primaryScale, primaryColor, projectCreated } = useDesignStore()
   const accent = primaryScale[9] ?? primaryScale[8] ?? primaryColor ?? '#0088FF'
   const [moreOpen, setMoreOpen] = useState(false)
 
-  // Pre-creation the rail is empty — the "Get MD" hub button is the entry point.
-  // Once created, core foundations show always; secondary ones collapse under More.
+  // Pre-creation the rail is empty. Once created, core foundations show always;
+  // secondary ones collapse under More.
   const core = projectCreated ? foundations.filter((f) => !f.secondary) : []
   const secondary = projectCreated ? foundations.filter((f) => f.secondary) : []
   // Keep More open while one of its items is active, so the highlight is visible.
@@ -164,12 +167,18 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Hub + connect block — "Get MD" is the always-present entry to the hub. */}
+      {/* Connect + save block — "Save" stores the current tokens locally. */}
       <div className={`flex-shrink-0 w-full flex flex-col items-center gap-0.5 pt-2 mt-1 ${projectCreated ? 'border-t border-line/50' : ''}`}>
         {projectCreated && (
           <RailItem Icon={FigmaGlyph} label="Bring to Figma" active={exportMode === 'figma'} accent={accent} onClick={onGetFigma} />
         )}
-        <RailItem Icon={DownloadIcon} label="Get MD" active={hubActive} accent={accent} onClick={onHub} />
+        <RailItem
+          Icon={SaveIcon}
+          label="Save"
+          active={saveActive}
+          accent={accent}
+          onClick={onSave}
+        />
       </div>
     </nav>
   )

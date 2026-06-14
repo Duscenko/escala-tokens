@@ -223,9 +223,9 @@ function CustomIcons() {
 // choice is persisted (store.iconLibrary) and surfaced in tokens.json + README.
 function GlyphStrip() {
   return (
-    <div className="flex items-center gap-3 text-fg-muted">
+    <div className="flex items-center gap-2.5 text-fg-muted">
       {SAMPLE_GLYPHS.map((g) => (
-        <svg key={g.name} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg key={g.name} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d={g.path} />
         </svg>
       ))}
@@ -238,39 +238,37 @@ function LibraryCard({ lib, selected, onSelect }: { lib: IconLibraryDef; selecte
     <button
       onClick={onSelect}
       aria-pressed={selected}
-      className={`text-left rounded-2xl border p-5 flex flex-col gap-4 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+      className={`text-left rounded-xl border p-3.5 flex flex-col gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
         selected
           ? 'border-[#0088FF] bg-[#0088FF]/5 shadow-sm'
           : 'border-line bg-surface/40 hover:border-line-strong hover:bg-surface'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-fg">{lib.label}</h3>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-semibold text-fg">{lib.label}</h3>
             <span className="text-[10px] uppercase tracking-wider text-fg-faint">{lib.style}</span>
           </div>
-          <p className="text-xs text-fg-muted leading-relaxed">{lib.description}</p>
+          <p className="text-[11px] text-fg-muted leading-snug line-clamp-2">{lib.description}</p>
         </div>
         {/* Selected check */}
         <span
-          className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+          className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
             selected ? 'bg-[#0088FF]' : 'border border-line-strong'
           }`}
         >
           {selected && (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
               <path d="M2 5.2 4 7.2 8 2.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </span>
       </div>
 
-      <GlyphStrip />
-
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/60">
-        <code className="text-[11px] font-mono text-fg-faint truncate">{lib.npm}</code>
-        <span className="text-[11px] text-fg-faint flex-shrink-0">{lib.count} icons</span>
+      <div className="flex items-center justify-between gap-2">
+        <GlyphStrip />
+        <code className="text-[10px] font-mono text-fg-faint truncate">{lib.npm}</code>
       </div>
     </button>
   )
@@ -301,10 +299,6 @@ export default function IconLibrary() {
         Your selection is saved with your tokens and noted in the generated <code className="font-mono text-fg-muted">tokens.json</code> and{' '}
         <code className="font-mono text-fg-muted">README.md</code>, so engineers install the same set.
       </p>
-
-      <div className="border-t border-line pt-6">
-        <IconBrowser libraryKey={iconLibrary} />
-      </div>
 
       <div className="border-t border-line pt-6">
         <CustomIcons />

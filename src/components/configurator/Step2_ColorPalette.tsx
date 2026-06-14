@@ -1,7 +1,11 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
-import { generateColorScale, accessibleSolidTone } from '../../lib/colorUtils'
+import {
+  generateColorScale, accessibleSolidTone, recommendStateColors,
+  ALGORITHM_OPTIONS, RECOMMENDED_ALGORITHM, NAMING_SCHEMES,
+  type ColorAlgorithm, type ColorNaming,
+} from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
 import { BRAND_TOKEN_TONES } from './Step3_SemanticTokens'
 import {
@@ -9,41 +13,13 @@ import {
   BRAND_GROUPS, NEUTRAL_GROUPS, type OptionGroup,
 } from './colorControls'
 
-// ── Semantic state card ────────────────────────────────────────────────────
-
-function SemanticRow({
-  label,
-  color,
-  scale,
-  presets,
-  onColorChange,
-}: {
-  label: string
-  description?: string // accepted (call sites still pass it) but not rendered in the row layout
-  color: string
-  scale: Record<number, string>
-  presets: { hex: string; label: string }[]
-  onColorChange: (hex: string) => void
-}) {
-  const groups: OptionGroup[] = [{ label: '', options: presets }]
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-14 flex-shrink-0 text-xs font-semibold text-fg">{label}</span>
-      <div className="flex-1 min-w-0">
-        <ScaleRow scale={scale} />
-      </div>
-      <ColorSelect variant="compact" label={label} value={color} groups={groups} onChange={onColorChange} />
-    </div>
-  )
-}
-
 // ── Custom color families ───────────────────────────────────────────────────
 // User-named colors that auto-generate the same 1–12 scale structure as the
 // built-in families and flow into the export (tokens.json / CSS / README).
 // Saved customs surface in the Brand/Neutral dropdowns under "Saved".
 
 function AddCustomColorButton() {
-  const { customColors, addCustomColor, updateCustomColor, removeCustomColor } = useDesignStore()
+  const { customColors, addCustomColor, updateCustomColor, removeCustomColor, colorAlgorithm, contrastShift } = useDesignStore()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [hex, setHex] = useState('#0ea5e9')
@@ -73,7 +49,7 @@ function AddCustomColorButton() {
     if (RESERVED_COLOR_KEYS.includes(key)) { setError(`"${key}" is reserved by a built-in scale.`); return }
     if (customColors.some((c) => c.key === key)) { setError(`"${key}" already exists.`); return }
     try {
-      addCustomColor({ key, label, base: hex, scale: generateColorScale(hex) })
+      addCustomColor({ key, label, base: hex, scale: generateColorScale(hex, colorAlgorithm, contrastShift) })
       setName('')
       setError(null)
       setOpen(false)
@@ -132,7 +108,7 @@ function AddCustomColorButton() {
                           type="color"
                           value={c.base}
                           onChange={(e) =>
-                            updateCustomColor(c.key, { base: e.target.value, scale: generateColorScale(e.target.value) })
+                            updateCustomColor(c.key, { base: e.target.value, scale: generateColorScale(e.target.value, colorAlgorithm, contrastShift) })
                           }
                           aria-label={`${c.label} base color`}
                           className="absolute inset-0 opacity-0 cursor-pointer"
@@ -192,6 +168,156 @@ function AddCustomColorButton() {
   )
 }
 
+// ── Generic outlined dropdown (Algorithm · Naming) ──────────────────────────
+
+function SelectMenu<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T
+  options: { key: T; label: string }[]
+  onChange: (v: T) => void
+  ariaLabel: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const active = options.find((o) => o.key === value)?.label ?? options[0]?.label
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left"
+      >
+        <span className="text-sm text-fg truncate">{active}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            role="listbox"
+            className="absolute z-30 left-0 right-0 mt-1.5 rounded-lg border border-line-strong bg-app shadow-lg p-1.5 max-h-72 overflow-y-auto"
+          >
+            {options.map((o) => (
+              <button
+                key={o.key}
+                type="button"
+                role="option"
+                aria-selected={o.key === value}
+                onClick={() => { onChange(o.key); setOpen(false) }}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  o.key === value ? 'bg-elevated text-[#0088FF] font-medium' : 'text-fg hover:bg-surface'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Color controls card — Algorithm · Naming · Contrast shift ───────────────
+// Drives how every 1–12 ramp is generated + how the export names them. Changing
+// the algorithm or shift regenerates all scales so the preview + export track live.
+
+function ColorControls({
+  algorithm,
+  naming,
+  contrastShift,
+  onAlgorithm,
+  onNaming,
+  onShift,
+}: {
+  algorithm: ColorAlgorithm
+  naming: ColorNaming
+  contrastShift: number
+  onAlgorithm: (a: ColorAlgorithm) => void
+  onNaming: (n: ColorNaming) => void
+  onShift: (n: number) => void
+}) {
+  const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
+
+  return (
+    <div className="rounded-xl border border-line p-4 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+      {/* Algorithm */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Algorithm</span>
+          {algorithm === RECOMMENDED_ALGORITHM && (
+            <span className="text-[10px] font-medium text-emerald-600">Recommended</span>
+          )}
+        </div>
+        <SelectMenu value={algorithm} options={ALGORITHM_OPTIONS} onChange={onAlgorithm} ariaLabel="Scale algorithm" />
+      </div>
+
+      {/* Naming */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Naming</span>
+        <SelectMenu
+          value={naming}
+          options={NAMING_SCHEMES.map((s) => ({ key: s.key, label: s.label }))}
+          onChange={onNaming}
+          ariaLabel="Token naming scheme"
+        />
+      </div>
+
+      {/* Contrast shift */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Contrast shift</span>
+          <button
+            type="button"
+            onClick={() => onShift(0)}
+            disabled={contrastShift === 0}
+            className="flex items-center gap-1 text-[11px] text-fg-faint hover:text-fg disabled:opacity-40 disabled:hover:text-fg-faint transition-colors"
+          >
+            Reset
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" /></svg>
+          </button>
+        </div>
+        <span className="text-lg font-bold text-fg tabular-nums leading-none">{contrastShift.toFixed(2)}</span>
+        <input
+          type="range"
+          min={-1}
+          max={1}
+          step={0.05}
+          value={contrastShift}
+          onChange={(e) => onShift(Number(e.target.value))}
+          aria-label="Contrast shift"
+          className="sd-slider mt-1"
+          style={{ ['--sd-fill' as string]: `${fill}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step2_ColorPalette() {
@@ -202,7 +328,8 @@ export default function Step2_ColorPalette() {
     successColor, successScale, setSuccessColor, setSuccessScale,
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
     grayBaseColor, grayLightScale, setGrayBaseColor, setGrayLightScale,
-    themes, mergeThemeTokens, customColors,
+    themes, mergeThemeTokens, customColors, updateCustomColor,
+    colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
   } = useDesignStore()
   const lightTokens = themes.light ?? {}
 
@@ -215,10 +342,15 @@ export default function Step2_ColorPalette() {
 
   // When ON, the neutral scale auto-derives from the brand color. Default ON.
   const [linked, setLinked] = useState(true)
+  // When ON, the state colors are recommended from (harmonized with) the brand.
+  const [statesLinked, setStatesLinked] = useState(true)
+
+  // Tone labels shown above the brand scale, per the active naming scheme.
+  const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
   const regenerate = useCallback((hex: string) => {
     try {
-      const scale = generateColorScale(hex)
+      const scale = generateColorScale(hex, colorAlgorithm, contrastShift)
       setPrimaryColor(hex)
       setPrimaryScale(scale)
       // Keep already-mapped brand semantic tokens in sync with the new brand so
@@ -238,35 +370,57 @@ export default function Step2_ColorPalette() {
       if (linked) {
         const n = neutralFromBrand(hex)
         setGrayBaseColor(n)
-        setGrayLightScale(generateColorScale(n))
+        setGrayLightScale(generateColorScale(n, colorAlgorithm, contrastShift))
       }
     } catch {}
-  }, [setPrimaryColor, setPrimaryScale, lightTokens, mergeThemeTokens, linked, setGrayBaseColor, setGrayLightScale])
+  }, [setPrimaryColor, setPrimaryScale, lightTokens, mergeThemeTokens, linked, setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift])
 
   const regenerateError = useCallback((hex: string) => {
-    try { setErrorColor(hex); setErrorScale(generateColorScale(hex)) } catch {}
-  }, [setErrorColor, setErrorScale])
+    try { setErrorColor(hex); setErrorScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
+  }, [setErrorColor, setErrorScale, colorAlgorithm, contrastShift])
 
   const regenerateWarning = useCallback((hex: string) => {
-    try { setWarningColor(hex); setWarningScale(generateColorScale(hex)) } catch {}
-  }, [setWarningColor, setWarningScale])
+    try { setWarningColor(hex); setWarningScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
+  }, [setWarningColor, setWarningScale, colorAlgorithm, contrastShift])
 
   const regenerateSuccess = useCallback((hex: string) => {
-    try { setSuccessColor(hex); setSuccessScale(generateColorScale(hex)) } catch {}
-  }, [setSuccessColor, setSuccessScale])
+    try { setSuccessColor(hex); setSuccessScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
+  }, [setSuccessColor, setSuccessScale, colorAlgorithm, contrastShift])
 
   const regenerateInfo = useCallback((hex: string) => {
-    try { setInfoColor(hex); setInfoScale(generateColorScale(hex)) } catch {}
-  }, [setInfoColor, setInfoScale])
+    try { setInfoColor(hex); setInfoScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
+  }, [setInfoColor, setInfoScale, colorAlgorithm, contrastShift])
 
   const regenerateGray = useCallback((hex: string) => {
-    try { setGrayBaseColor(hex); setGrayLightScale(generateColorScale(hex)) } catch {}
-  }, [setGrayBaseColor, setGrayLightScale])
+    try { setGrayBaseColor(hex); setGrayLightScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
+  }, [setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift])
 
   function toggleLink() {
     const next = !linked
     setLinked(next)
     if (next) regenerateGray(neutralFromBrand(primaryColor))
+  }
+
+  // Recommend harmonized state colors from a brand hex, then regenerate scales.
+  function applyStateRecommendations(brandHex: string) {
+    const rec = recommendStateColors(brandHex)
+    regenerateError(rec.error)
+    regenerateWarning(rec.warning)
+    regenerateSuccess(rec.success)
+    regenerateInfo(rec.info)
+  }
+
+  // Brand change → regenerate the brand (+ linked neutral) and, when state
+  // colors are linked, re-recommend them so they harmonize with the new brand.
+  function changeBrand(hex: string) {
+    regenerate(hex)
+    if (statesLinked) applyStateRecommendations(hex)
+  }
+
+  function toggleStatesLink() {
+    const next = !statesLinked
+    setStatesLinked(next)
+    if (next) applyStateRecommendations(primaryColor)
   }
 
   useEffect(() => {
@@ -278,17 +432,24 @@ export default function Step2_ColorPalette() {
     if (Object.keys(grayLightScale).length   === 0) regenerateGray(grayBaseColor)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When linked + brand scale changes, refresh all state scales so Step3's
-  // useEffect re-seeds any empty/stale semantic tokens for error/warning/success/info.
+  // Algorithm / contrast-shift change → rebuild every ramp from its base color
+  // (brand · neutral · state · custom families). Skips the initial mount so it
+  // doesn't clobber freshly-seeded scales.
+  const algoMounted = useRef(false)
   useEffect(() => {
-    if (!linked || !Object.keys(primaryScale).length) return
-    regenerateError(errorColor)
-    regenerateWarning(warningColor)
-    regenerateSuccess(successColor)
-    regenerateInfo(infoColor)
-  }, [primaryScale, linked]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const semanticDots = [errorColor, warningColor, successColor, infoColor]
+    if (!algoMounted.current) { algoMounted.current = true; return }
+    regenerate(primaryColor)
+    if (!linked) regenerateGray(grayBaseColor)
+    if (statesLinked) {
+      regenerateError(errorColor)
+      regenerateWarning(warningColor)
+      regenerateSuccess(successColor)
+      regenerateInfo(infoColor)
+    }
+    customColors.forEach((c) =>
+      updateCustomColor(c.key, { scale: generateColorScale(c.base, colorAlgorithm, contrastShift) }),
+    )
+  }, [colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <motion.div
@@ -297,13 +458,22 @@ export default function Step2_ColorPalette() {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-8"
     >
-      {/* ── Accent scale: heading · Brand/Neutral (+link) · scales ─ */}
+      {/* ── Color controls: Algorithm · Naming · Contrast shift ── */}
       <section className="-mx-8 -mt-8 px-8 pt-8 pb-8 flex flex-col gap-5 border-b border-line">
-        <h3 className="text-base font-semibold text-fg">Accent scale</h3>
+        <ColorControls
+          algorithm={colorAlgorithm}
+          naming={colorNaming}
+          contrastShift={contrastShift}
+          onAlgorithm={setColorAlgorithm}
+          onNaming={setColorNaming}
+          onShift={setContrastShift}
+        />
+
+        <h3 className="text-base font-semibold text-fg">Primitives</h3>
 
         {/* Brand · link/info · Neutral · + Custom */}
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Brand Color" value={primaryColor} groups={brandGroups} onChange={regenerate} />
+          <ColorSelect label="Brand Color" value={primaryColor} groups={brandGroups} onChange={changeBrand} />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
             <InfoDot tip="Auto-matches the neutral scale to your brand color." />
             <LinkToggle active={linked} onClick={toggleLink} />
@@ -313,75 +483,30 @@ export default function Step2_ColorPalette() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <ScaleRow scale={primaryScale} />
+          <ScaleRow scale={primaryScale} labels={namingLabels} />
           <ScaleRow scale={grayLightScale} showNumbers={false} />
         </div>
       </section>
 
-      {/* ── Color semantics ────────────────────────────────────── */}
+      {/* ── State colors — compact pills (Error · Success · Warning · info) ── */}
       <div className="flex flex-col gap-4">
+        <h3 className="text-base font-semibold text-fg">State colors</h3>
         <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-fg">Color semantics</h3>
-          <div className="flex gap-1.5">
-            {semanticDots.map((c, i) => (
-              <span key={i} className="w-3 h-3 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c }} />
-            ))}
+          <LinkToggle active={statesLinked} onClick={toggleStatesLink} accentColor={primaryScale[7] ?? primaryColor} />
+          <div className="grid grid-cols-2 gap-2.5 flex-1">
+            <ColorSelect variant="pill" label="Error" value={errorColor} onChange={regenerateError} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
+              { hex: '#f04438', label: 'Red 500' }, { hex: '#d92d20', label: 'Red 600' }, { hex: '#ef4444', label: 'Tailwind Red' }, { hex: '#e11d48', label: 'Rose' },
+            ] }]} />
+            <ColorSelect variant="pill" label="Success" value={successColor} onChange={regenerateSuccess} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
+              { hex: '#17b26a', label: 'Green 500' }, { hex: '#079455', label: 'Green 600' }, { hex: '#10b981', label: 'Emerald' }, { hex: '#22c55e', label: 'Green 400' },
+            ] }]} />
+            <ColorSelect variant="pill" label="Warning" value={warningColor} onChange={regenerateWarning} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
+              { hex: '#f79009', label: 'Amber 500' }, { hex: '#f59e0b', label: 'Amber' }, { hex: '#dc6803', label: 'Orange 600' }, { hex: '#f97316', label: 'Orange' },
+            ] }]} />
+            <ColorSelect variant="pill" label="Info" value={infoColor} onChange={regenerateInfo} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
+              { hex: '#2e90fa', label: 'Blue 400' }, { hex: '#3b82f6', label: 'Blue' }, { hex: '#0ea5e9', label: 'Sky' }, { hex: '#06b6d4', label: 'Cyan' },
+            ] }]} />
           </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <SemanticRow
-            label="Error"
-            description="Destructive actions, validation errors, removal states."
-            color={errorColor}
-            scale={errorScale}
-            onColorChange={regenerateError}
-            presets={[
-              { hex: '#f04438', label: 'Red 500' },
-              { hex: '#d92d20', label: 'Red 600' },
-              { hex: '#ef4444', label: 'Tailwind Red' },
-              { hex: '#e11d48', label: 'Rose' },
-            ]}
-          />
-          <SemanticRow
-            label="Warning"
-            description="Potentially destructive or 'on-hold' actions and confirmations."
-            color={warningColor}
-            scale={warningScale}
-            onColorChange={regenerateWarning}
-            presets={[
-              { hex: '#f79009', label: 'Amber 500' },
-              { hex: '#f59e0b', label: 'Amber' },
-              { hex: '#dc6803', label: 'Orange 600' },
-              { hex: '#f97316', label: 'Orange' },
-            ]}
-          />
-          <SemanticRow
-            label="Success"
-            description="Positive actions, successful confirmations, positive trends."
-            color={successColor}
-            scale={successScale}
-            onColorChange={regenerateSuccess}
-            presets={[
-              { hex: '#17b26a', label: 'Green 500' },
-              { hex: '#079455', label: 'Green 600' },
-              { hex: '#10b981', label: 'Emerald' },
-              { hex: '#22c55e', label: 'Green 400' },
-            ]}
-          />
-          <SemanticRow
-            label="Info"
-            description="Informational messages, neutral highlights, tips and hints."
-            color={infoColor}
-            scale={infoScale}
-            onColorChange={regenerateInfo}
-            presets={[
-              { hex: '#2e90fa', label: 'Blue 400' },
-              { hex: '#3b82f6', label: 'Blue' },
-              { hex: '#0ea5e9', label: 'Sky' },
-              { hex: '#06b6d4', label: 'Cyan' },
-            ]}
-          />
         </div>
       </div>
     </motion.div>

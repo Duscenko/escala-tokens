@@ -137,8 +137,8 @@ Key fields — always use the store, never local state for cross-view data:
 | `themeOrder` | string[] (column order, default `['light','dark']`) | Foundations · Semantic |
 | `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
-| `spacing` | Record<string, string> | Foundations · Spacing & Radius |
-| `radius` | Record<string, string> | Foundations · Spacing & Radius |
+| `spacing` | Record<string, string> | Foundations · Spacing |
+| `radius` | Record<string, string> | Foundations · Border Radius |
 | `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
 | `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
 | `opacity` | Record<string, string> (steps 0–100, `%` values) | Foundations · Opacity |

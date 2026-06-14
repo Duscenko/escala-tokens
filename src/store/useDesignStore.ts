@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
+import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
+import { slugify } from '../lib/utils'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -141,6 +143,9 @@ export const SIZES_DEFAULT: Record<string, string> = {
 export interface DesignSnapshot {
   projectName: string
   projectDescription: string
+  colorAlgorithm: ColorAlgorithm
+  contrastShift: number
+  colorNaming: ColorNaming
   primaryColor: string
   primaryScale: ColorScale
   grayBaseColor: string
@@ -192,6 +197,9 @@ export function makeDesignDefaults(): DesignSnapshot {
   return {
     projectName: 'DS.by.MD',
     projectDescription: '',
+    colorAlgorithm: 'lightness',
+    contrastShift: 0,
+    colorNaming: 'numeric',
     primaryColor: '#7f56d9',
     primaryScale: {},
     grayBaseColor: '#6c737f',
@@ -265,6 +273,15 @@ interface DesignStore {
   githubLastPushAt: string | null
   setGithubLastPushAt: (iso: string | null) => void
 
+  // Color — scale generation algorithm + contrast shift (drive every 1–12 ramp)
+  // and the token-naming scheme used in the export.
+  colorAlgorithm: ColorAlgorithm
+  contrastShift: number
+  colorNaming: ColorNaming
+  setColorAlgorithm: (a: ColorAlgorithm) => void
+  setContrastShift: (n: number) => void
+  setColorNaming: (n: ColorNaming) => void
+
   // Step 2 — Brand / accent color (user-defined, generates 12-tone scale)
   primaryColor: string
   primaryScale: ColorScale
@@ -323,7 +340,7 @@ interface DesignStore {
   typography: TypographyTokens
   setTypography: (t: TypographyTokens) => void
 
-  // Step 5 — Spacing & Radius
+  // Foundations — Spacing & Radius (separate rail sections, shared store fields)
   spacing: Record<string, string>
   radius: Record<string, string>
   setSpacing: (s: Record<string, string>) => void
@@ -366,6 +383,9 @@ interface DesignStore {
   removeSavedSystem: (id: string) => void // local-only; the repository is untouched
   loadSystem: (id: string) => void
   startNewSystem: () => void
+  // Save the current token state into the local registry without a GitHub push.
+  // Reuses the connected repo's id when present, else a slug of the project name.
+  saveCurrentSystem: () => void
 }
 
 export const useDesignStore = create<DesignStore>()(
@@ -377,12 +397,19 @@ export const useDesignStore = create<DesignStore>()(
 
       setProjectName: (name) => set({ projectName: name }),
       setProjectDescription: (d) => set({ projectDescription: d }),
-      projectCreated: false,
+      // The system always exists with defaults — the workspace opens on Color, no
+      // name-first onboarding gate. (Kept in the store for the multi-system flow.)
+      projectCreated: true,
       setProjectCreated: (v) => set({ projectCreated: v }),
 
       setFigmaLastPublishAt: (iso) => set({ figmaLastPublishAt: iso }),
       setGithubRepo: (repo) => set({ githubRepo: repo }),
       setGithubLastPushAt: (iso) => set({ githubLastPushAt: iso }),
+
+      // Color scale generation
+      setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
+      setContrastShift: (n) => set({ contrastShift: n }),
+      setColorNaming: (n) => set({ colorNaming: n }),
 
       // Brand
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
@@ -517,11 +544,31 @@ export const useDesignStore = create<DesignStore>()(
           // Clone so editing the loaded system never mutates the saved entry.
           return { ...deepClone(sys.snapshot), projectCreated: true }
         }),
-      startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: false }),
+      startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true }),
+      saveCurrentSystem: () =>
+        set((state) => {
+          const snapshot = captureSnapshot(state as unknown as DesignSnapshot)
+          // A GitHub-backed system keeps its repo id so a local save updates the
+          // same entry; an unconnected one gets a stable slug id.
+          const id = state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
+          const entry: SavedSystem = {
+            id,
+            name: state.projectName,
+            description: state.projectDescription,
+            repo: state.githubRepo ?? '',
+            savedAt: new Date().toISOString(),
+            snapshot,
+          }
+          return {
+            savedSystems: state.savedSystems.some((s) => s.id === id)
+              ? state.savedSystems.map((s) => (s.id === id ? entry : s))
+              : [...state.savedSystems, entry],
+          }
+        }),
     }),
     {
       name: 'scalable-designs-store',
-      version: 18,
+      version: 21,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -627,6 +674,16 @@ export const useDesignStore = create<DesignStore>()(
           // v17→v18: per-theme primitive palettes for custom "style themes".
           // Built-in light/dark have no entry and use the global scales.
           if (!persisted.themePalettes) persisted.themePalettes = {}
+          // v18→v19: color-scale algorithm + contrast shift. Default keeps the
+          // legacy ramp so existing scales render identically until changed.
+          if (!persisted.colorAlgorithm) persisted.colorAlgorithm = 'default'
+          if (persisted.contrastShift === undefined) persisted.contrastShift = 0
+          // v19→v20: token naming scheme for the export. Default numeric (1–12)
+          // preserves existing token names.
+          if (!persisted.colorNaming) persisted.colorNaming = 'numeric'
+          // v20→v21: onboarding now opens straight on Color — the name-first gate
+          // is gone, so every system is "created". Supersedes the v15→v16 heuristic.
+          persisted.projectCreated = true
         }
         return persisted
       },

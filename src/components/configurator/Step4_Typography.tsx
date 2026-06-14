@@ -163,9 +163,11 @@ function FontPickerPopover({
 
 // ── Column header ───────────────────────────────────────────────────────────
 
-function TableHeader({ valueLabel }: { valueLabel: string }) {
+// `stacked` (the "All" view) drops the column header below the sticky group
+// label so both can pin without overlapping; otherwise it pins at the top.
+function TableHeader({ valueLabel, stacked = false }: { valueLabel: string; stacked?: boolean }) {
   return (
-    <div className={`${GRID} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint`}>
+    <div className={`${GRID} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10 ${stacked ? 'top-[34px]' : 'top-0'}`}>
       <span className="pl-4 py-3 border-r border-line">Token name</span>
       <span className="px-3 py-3 border-r border-line">{valueLabel}</span>
       <span className="px-3 py-3 border-r border-line">Preview</span>
@@ -178,7 +180,7 @@ function TableHeader({ valueLabel }: { valueLabel: string }) {
 
 function GroupLabel({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-surface/50 border-b border-line">
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-app border-b border-line sticky top-0 z-20">
       <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
       <span className="text-[11px] font-mono tabular-nums text-fg-faint">{count}</span>
     </div>
@@ -244,7 +246,7 @@ export default function Step4_Typography() {
     return (
       <div>
         {activeCategory === 'all' && <GroupLabel label="Font family" count={FONT_FAMILY_ROWS.length} />}
-        <TableHeader valueLabel="Family" />
+        <TableHeader valueLabel="Family" stacked={activeCategory === 'all'} />
         {rows.map((r, i) => {
           const family = r.role === 'display' ? displayFont : bodyFont
           const modified = family !== 'Inter'
@@ -289,7 +291,7 @@ export default function Step4_Typography() {
     return (
       <div>
         {activeCategory === 'all' && <GroupLabel label="Font weight" count={FONT_WEIGHT_ROWS.length} />}
-        <TableHeader valueLabel="Weight" />
+        <TableHeader valueLabel="Weight" stacked={activeCategory === 'all'} />
         {rows.map((r, i) => {
           const n = weights[r.base] ?? FONT_WEIGHT_STANDARD[r.base]
           const modified = !r.italic && n !== FONT_WEIGHT_STANDARD[r.base]
@@ -328,7 +330,7 @@ export default function Step4_Typography() {
     return (
       <div>
         {activeCategory === 'all' && <GroupLabel label="Font size" count={TYPE_SCALE_KEYS.length} />}
-        <TableHeader valueLabel="Size" />
+        <TableHeader valueLabel="Size" stacked={activeCategory === 'all'} />
         {rows.map((key, i) => {
           const val = sizes[key] ?? FONT_SIZE_STANDARD[key]
           const modified = val !== FONT_SIZE_STANDARD[key]
@@ -359,7 +361,7 @@ export default function Step4_Typography() {
     return (
       <div>
         {activeCategory === 'all' && <GroupLabel label="Line height" count={TYPE_SCALE_KEYS.length} />}
-        <TableHeader valueLabel="Line height" />
+        <TableHeader valueLabel="Line height" stacked={activeCategory === 'all'} />
         {rows.map((key, i) => {
           const val = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
           const modified = val !== LINE_HEIGHT_STANDARD[key]
@@ -400,10 +402,10 @@ export default function Step4_Typography() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.3, ease: 'easeOut' }}
-      className="flex flex-col bg-app border border-line rounded-xl overflow-hidden"
+      className="flex flex-col bg-app border border-line rounded-xl overflow-hidden flex-1 min-h-0"
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app">
+      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-sm text-fg truncate">{activeLabel}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeCount}</span>
@@ -428,8 +430,8 @@ export default function Step4_Typography() {
       </div>
 
       {/* Body: side nav + tables */}
-      <div className="flex items-stretch">
-        <nav aria-label="Typography categories" className="w-40 flex-shrink-0 border-r border-line p-2 flex flex-col gap-0.5 bg-app">
+      <div className="flex items-stretch flex-1 min-h-0">
+        <nav aria-label="Typography categories" className="w-40 flex-shrink-0 border-r border-line p-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
           {TYPO_CATEGORIES.map((c) => {
             const isActive = activeCategory === c.key
             return (
@@ -448,7 +450,7 @@ export default function Step4_Typography() {
           })}
         </nav>
 
-        <div className="flex-1 min-w-0 overflow-x-auto">
+        <div className="flex-1 min-w-0 overflow-auto">
           <div className="min-w-[30rem]">
             {!anyVisible ? (
               <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>

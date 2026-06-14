@@ -32,6 +32,10 @@ export interface PreviewTokens {
   successColor?: string
   warningColor?: string
   infoColor?: string
+  // Full semantic map for the active preview theme — the per-category Semantic
+  // specimens read token values from here so they track the selected theme
+  // (light · dark · custom) instead of always reading themes.light.
+  semanticMap?: Record<string, string>
   radius: Record<string, string>
   spacing: Record<string, string>
   typography: { fontFamily: string; sizes: Record<string, string>; weights: Record<string, number> }
@@ -188,7 +192,10 @@ export function ButtonPreview({
 
   const fontSize = resolvePx(tokens.typography?.sizes, sz.fontKey, sz.fontPx)
   const paddingX = isIconOnly ? 0 : resolvePx(tokens.spacing, sz.paddingKey, sz.padPx)
-  const radius = tokens.radius?.full || '9999px'
+  // Buttons follow the system's `lg` radius so the chosen radius personality
+  // (Sharp → Pill) is visible in the preview. CSS caps it at 50% height, so the
+  // Pill preset still renders fully rounded.
+  const radius = tokens.radius?.lg || '12px'
   const showRing = state === 'focused'
 
   const style: CSSProperties = {

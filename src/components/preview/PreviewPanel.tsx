@@ -9,6 +9,9 @@ import { TextSpecimenPreview } from './atoms/TextSpecimenPreview'
 import { BackgroundSpecimenPreview } from './atoms/BackgroundSpecimenPreview'
 import { BorderSpecimenPreview } from './atoms/BorderSpecimenPreview'
 import { ForegroundSpecimenPreview } from './atoms/ForegroundSpecimenPreview'
+import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
+import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
+import { getIconLibrary } from '../../lib/iconLibraries'
 import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
@@ -46,16 +49,30 @@ function Tile({ tokens, children }: { tokens: PreviewTokens; children: ReactNode
 export default function PreviewPanel({
   focus = null,
   previewTheme = 'light',
+  iconLibraryKey = null,
+  showOverview = false,
+  onNavigateFoundation,
 }: {
   focus?: SemanticCategory | null
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
   previewTheme?: string
+  /** When set (Icons foundation), the panel previews that library's glyphs. */
+  iconLibraryKey?: string | null
+  /** When true (Home), the panel shows the foundations overview checklist. */
+  showOverview?: boolean
+  onNavigateFoundation?: (key: string) => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const specimen = focus && focus !== 'all' ? focus : null
-  const title = specimen ? FOCUS_TITLE[specimen] : 'Components Preview'
+  const title = showOverview
+    ? 'Overview'
+    : iconLibraryKey
+    ? `${getIconLibrary(iconLibraryKey)?.label ?? 'Icon'} preview`
+    : specimen
+    ? FOCUS_TITLE[specimen]
+    : 'Components Preview'
   // Show which theme is on display when it isn't the default light one.
-  const themeBadge = previewTheme && previewTheme !== 'light' ? previewTheme : null
+  const themeBadge = !iconLibraryKey && previewTheme && previewTheme !== 'light' ? previewTheme : null
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
@@ -69,9 +86,13 @@ export default function PreviewPanel({
         )}
       </header>
 
-      {/* Artboard — a category specimen when focused, else the general overview */}
+      {/* Artboard — overview · icon set · a category specimen when focused · else component grid */}
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-5 flex flex-col gap-6">
-        {specimen === 'text' ? (
+        {showOverview ? (
+          <OverviewChecklistPreview onOpenFoundation={onNavigateFoundation ?? (() => {})} />
+        ) : iconLibraryKey ? (
+          <IconSpecimenPreview libraryKey={iconLibraryKey} />
+        ) : specimen === 'text' ? (
           <TextSpecimenPreview tokens={tokens} />
         ) : specimen === 'bg' ? (
           <BackgroundSpecimenPreview tokens={tokens} />

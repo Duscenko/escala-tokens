@@ -1,13 +1,12 @@
 import { type ReactNode } from 'react'
-import { useDesignStore } from '../../../store/useDesignStore'
 import { fontFamilyOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
 // Live specimen for the **Text** semantic category. Every line is painted by its
-// own `text-*` token (read live from the store) with a faint mono caption naming
-// it, so editing a tone in the table updates the matching line immediately.
+// own `text-*` token (read live from the active preview theme) with a faint mono
+// caption naming it, so editing a tone in the table updates the line immediately.
 export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
-  const sem = useDesignStore((s) => s.themes.light)
+  const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
   const fontFamily = fontFamilyOf(tokens)
   const border = tokens.border || '#eaecf0'

@@ -1,12 +1,11 @@
 import { type ReactNode } from 'react'
-import { useDesignStore } from '../../../store/useDesignStore'
 import { fontFamilyOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
 // Live specimen for the **Border** semantic category — real bordered elements
 // (inputs, a card, a divider) each stroked by its `border-*` token, captioned.
 export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
-  const sem = useDesignStore((s) => s.themes.light)
+  const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
   const fontFamily = fontFamilyOf(tokens)
   const surfaceBorder = tokens.border || '#eaecf0'

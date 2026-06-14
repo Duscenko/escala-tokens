@@ -91,7 +91,7 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-8 max-w-2xl"
+      className="flex flex-col gap-8 max-w-2xl p-8"
     >
       {onClose && (
         <button

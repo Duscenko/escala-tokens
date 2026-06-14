@@ -67,3 +67,36 @@ body {
   flex-direction: column;
   box-sizing: border-box;
 }
+
+/* Contrast-shift slider — solid filled track (left of thumb) + white thumb.
+   The filled portion is set inline via --sd-fill (a percentage). */
+.sd-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--fg) 0%, var(--fg) var(--sd-fill, 50%), var(--line-strong) var(--sd-fill, 50%), var(--line-strong) 100%);
+  outline: none;
+  cursor: pointer;
+}
+.sd-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.sd-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
