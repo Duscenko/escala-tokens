@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { generateTokenJSON } from '../../lib/tokenGenerator'
+import { isLiveEnvironment, publishTokens, syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 
 interface FigmaConnectViewProps {
   /** Back-to-editor affordance shown when rendered inside the shell. */
@@ -12,6 +12,18 @@ interface FigmaConnectViewProps {
 const PLUGIN_ZIP = '/scalable-designs-figma-plugin.zip'
 
 type PublishState = 'idle' | 'publishing' | 'done' | 'error'
+
+// "just now" / "3m ago" / "2h ago" — compact last-published label.
+function relativeTime(iso: string | null): string {
+  if (!iso) return 'never'
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 60_000) return 'just now'
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
 
 // ─── Figma brand mark (full color) ────────────────────────────────────────────
 function FigmaLogo({ size = 40 }: { size?: number }) {
@@ -43,15 +55,11 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}) {
-  const { projectName, selectedComponents } = useDesignStore()
+  const { projectName, selectedComponents, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt } = useDesignStore()
 
-  const [isDeployed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    const o = window.location.origin
-    return !o.includes('localhost') && !o.includes('127.0.0.1')
-  })
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const syncUrl = `${origin}/api/tokens`
+  const [isDeployed] = useState(isLiveEnvironment)
+  // Per-system scoped endpoint (re-reads projectName each render so it stays current).
+  const syncUrl = buildSyncUrl()
 
   const [publishState, setPublishState] = useState<PublishState>('idle')
   const [copied, setCopied] = useState(false)
@@ -62,17 +70,9 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
     if (!isDeployed) return
     let cancelled = false
     setPublishState('publishing')
-    fetch('/api/tokens', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(generateTokenJSON()),
+    publishTokens().then((ok) => {
+      if (!cancelled) setPublishState(ok ? 'done' : 'error')
     })
-      .then((r) => {
-        if (cancelled) return
-        setPublishState(r.ok ? 'done' : 'error')
-        if (r.ok) useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
-      })
-      .catch(() => !cancelled && setPublishState('error'))
     return () => {
       cancelled = true
     }
@@ -178,6 +178,32 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
               {publishState === 'error' && (
                 <><span className="w-1.5 h-1.5 rounded-full bg-red-400" /><span className="text-fg-faint">Couldn&apos;t publish automatically — open the plugin&apos;s Import tab to paste tokens manually.</span></>
               )}
+            </div>
+
+            {/* ── Auto-sync toggle ── */}
+            <div className="flex items-start justify-between gap-3 mt-3 rounded-lg border border-line bg-app px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-fg">Keep Figma in sync</p>
+                <p className="text-[11px] text-fg-faint leading-relaxed mt-0.5">
+                  Re-publish automatically after every edit. Last published{' '}
+                  <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span>.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={autoSyncFigma}
+                aria-label="Toggle auto-sync to Figma"
+                onClick={() => setAutoSyncFigma(!autoSyncFigma)}
+                className={`relative flex-shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors ${
+                  autoSyncFigma ? 'bg-emerald-500' : 'bg-line-strong'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    autoSyncFigma ? 'translate-x-4' : ''
+                  }`}
+                />
+              </button>
             </div>
           </>
         ) : (

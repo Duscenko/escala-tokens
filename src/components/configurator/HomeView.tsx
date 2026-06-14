@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { downloadTokenJSON } from '../../lib/tokenGenerator'
+import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { OverviewChecklistPreview } from '../preview/atoms/OverviewChecklistPreview'
@@ -199,7 +200,7 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenExport }: Ho
     typeof window !== 'undefined' &&
     !window.location.origin.includes('localhost') &&
     !window.location.origin.includes('127.0.0.1')
-  const syncUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/tokens` : ''
+  const syncUrl = typeof window !== 'undefined' ? buildSyncUrl() : ''
 
   function copyShareUrl() {
     navigator.clipboard.writeText(syncUrl)

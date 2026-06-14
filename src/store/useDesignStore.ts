@@ -272,6 +272,11 @@ interface DesignStore {
   setGithubRepo: (repo: string | null) => void
   githubLastPushAt: string | null
   setGithubLastPushAt: (iso: string | null) => void
+  // When on, the configurator re-publishes the token set to /api/tokens shortly
+  // after every edit, so the Figma plugin's live sync always reads the current
+  // state. A global preference (not per-system), driven by useAutoFigmaSync().
+  autoSyncFigma: boolean
+  setAutoSyncFigma: (v: boolean) => void
 
   // Color — scale generation algorithm + contrast shift (drive every 1–12 ramp)
   // and the token-naming scheme used in the export.
@@ -405,6 +410,8 @@ export const useDesignStore = create<DesignStore>()(
       setFigmaLastPublishAt: (iso) => set({ figmaLastPublishAt: iso }),
       setGithubRepo: (repo) => set({ githubRepo: repo }),
       setGithubLastPushAt: (iso) => set({ githubLastPushAt: iso }),
+      autoSyncFigma: false,
+      setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
 
       // Color scale generation
       setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
@@ -568,7 +575,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 21,
+      version: 22,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -684,6 +691,9 @@ export const useDesignStore = create<DesignStore>()(
           // v20→v21: onboarding now opens straight on Color — the name-first gate
           // is gone, so every system is "created". Supersedes the v15→v16 heuristic.
           persisted.projectCreated = true
+          // v21→v22: auto-publish to /api/tokens preference. Off by default so
+          // existing sessions keep publishing only via the explicit Sync action.
+          if (persisted.autoSyncFigma === undefined) persisted.autoSyncFigma = false
         }
         return persisted
       },

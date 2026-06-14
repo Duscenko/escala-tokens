@@ -4,6 +4,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
 import { slugify } from '../../lib/utils'
+import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 
 type Tab = 'tokens' | 'css' | 'markdown'
 
@@ -341,14 +342,14 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
             <p className="text-sm font-semibold text-fg">Live publish endpoint</p>
           </div>
           <p className="text-xs text-fg-faint">
-            POST to <code className="text-[#5AADFF] text-[11px] px-1 py-0.5 rounded bg-elevated">/api/tokens</code> to push your current token set. Use this URL in your Figma plugin's live sync configuration.
+            POST to <code className="text-[#5AADFF] text-[11px] px-1 py-0.5 rounded bg-elevated">/api/tokens</code> to push your current token set. This system has its own scoped URL — paste it into your Figma plugin's live sync.
           </p>
           <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2">
             <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">
-              {window.location.origin}/api/tokens
+              {buildSyncUrl()}
             </code>
             <button
-              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/tokens`)}
+              onClick={() => navigator.clipboard.writeText(buildSyncUrl())}
               className="text-[10px] text-fg-faint hover:text-fg transition flex-shrink-0"
             >
               Copy

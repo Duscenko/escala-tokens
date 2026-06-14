@@ -2,6 +2,10 @@ import { useDesignStore } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, type ColorNaming } from './colorUtils'
 
+// Version of the tokens.json contract shared with the Figma plugin. The plugin
+// declares the schema it supports and logs a warning when this is newer.
+export const TOKEN_SCHEMA_VERSION = 1
+
 // Flatten a numeric color scale into prefixed string keys, e.g. brand-1 … brand-12
 // (or brand-50 … brand-1000 under the "hundreds" naming scheme).
 function flattenScale(
@@ -44,15 +48,30 @@ export function generateTokenJSON() {
     Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
   })
 
+  // Themes in the user's column order (themeOrder), with any stragglers appended.
+  // The plugin maps each theme to one variable-collection mode (column), so this
+  // ordering is the Figma column order.
+  const themeNames = [
+    ...store.themeOrder.filter((t) => store.themes[t]),
+    ...Object.keys(store.themes).filter((t) => !store.themeOrder.includes(t)),
+  ]
+  const orderedThemes: Record<string, Record<string, string>> = {}
+  for (const name of themeNames) orderedThemes[name] = store.themes[name]
+
   return {
+    // Contract version the Figma plugin checks on import. Bump only on a
+    // breaking change to the payload shape; the plugin warns on a mismatch.
+    schemaVersion: TOKEN_SCHEMA_VERSION,
     project: store.projectName,
     colors: {
       primitive,
       // 'semantic'/'semanticDark' stay for Figma-plugin compatibility; 'themes'
-      // carries the full multi-theme map (incl. user-added themes).
+      // carries the full multi-theme map (incl. user-added themes), and
+      // 'themeOrder' is the column order the plugin creates modes in.
       semantic: store.themes.light ?? {},
       semanticDark: store.themes.dark ?? {},
-      themes: store.themes,
+      themes: orderedThemes,
+      themeOrder: themeNames,
     },
     typography: {
       fontFamily: typography.fontFamily,

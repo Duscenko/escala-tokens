@@ -2,6 +2,7 @@ import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme } from '../lib/theme'
+import { useAutoFigmaSync } from '../lib/figmaSync'
 import Sidebar, { type Tab } from '../components/configurator/Sidebar'
 import TopNav from '../components/configurator/TopNav'
 import PreviewPanel from '../components/preview/PreviewPanel'
@@ -213,6 +214,8 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor }: { Icon: 
 export default function Configurator() {
   const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary } = useDesignStore()
   const theme = useTheme()
+  // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
+  useAutoFigmaSync()
   const [tab, setTab] = useState<Tab>('foundations')
   const [activeFoundation, setActiveFoundation] = useState<string>('color')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(

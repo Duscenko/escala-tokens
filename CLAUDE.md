@@ -156,7 +156,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 17`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`.
+Store uses `persist` middleware with `version: 22`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
 
@@ -189,12 +189,14 @@ interface ComponentDef {
 
 ```json
 {
+  "schemaVersion": 1,
   "project": "my-system",
   "colors": {
     "primitive": { "1": "#f5f0ff", ... "12": "#1a0a3d" },
     "semantic": { "text-primary": "#101828", "bg-primary": "#ffffff", ... },
     "semanticDark": { ... },
-    "themes": { "light": { ... }, "dark": { ... }, "<custom>": { ... } }
+    "themes": { "light": { ... }, "dark": { ... }, "<custom>": { ... } },
+    "themeOrder": ["light", "dark", "<custom>"]
   },
   "typography": {
     "fontFamily": "Inter",
@@ -214,16 +216,24 @@ interface ComponentDef {
 }
 ```
 
-`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown.
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`) versions the contract the plugin checks — bump it only on a breaking payload change. The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
 
 ---
 
 ## API — /api/tokens
 
-- `GET /api/tokens` → returns stored tokens from Vercel Blob
-- `POST /api/tokens` → saves tokens to Vercel Blob (key: `design-tokens.json`)
+- `GET /api/tokens?project=<id>` → returns that system's tokens (Blob key `tokens/<id>.json`)
+- `GET /api/tokens` (no project) → returns the **most recently published** set across the global key + every `tokens/*.json` (so plugins pinned to the bare URL still get "whatever was published last")
+- `GET /api/tokens?list=1` → `{ systems: [{ project, updatedAt }] }` — every published system, newest first
+- `POST /api/tokens?project=<id>` → saves to `tokens/<id>.json`; `POST /api/tokens` (no project) → legacy global key `design-tokens.json`
 - CORS headers allow `*` — required for Figma plugin to fetch cross-origin
 - Uses `@vercel/blob` (free tier, 1GB). Do NOT switch to KV — it requires paid plan.
+- **Per-system scoping (Fase 2)** — each design system publishes to its own scoped key, derived from `slugify(projectName)`. The plugin syncs one system by pasting its scoped URL; switching systems no longer overwrites another's tokens. The plugin names its Figma variable collection after `project`, so different systems land in different collections.
+
+**Publishing flow** (`src/lib/figmaSync.ts` — the single source for POSTing tokens):
+- `syncProjectId()` = `slugify(projectName)`; `syncPath()`/`syncUrl()` build the scoped `/api/tokens?project=<id>` endpoint shown in FigmaConnectView / ExportView / HomeView.
+- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by the **TopNav "Sync" pill** (manual push, only rendered when live), the **Figma connect view** (auto-publishes on open), and the auto-sync subscription.
+- `useAutoFigmaSync()` (mounted in `Configurator.tsx`): while `autoSyncFigma` is on, debounce-republishes ~1.5s after edits stop. The change signal is the JSON of `generateTokenJSON()`, so the `figmaLastPublishAt` write can't loop. Toggle lives in `FigmaConnectView`.
 
 ---
 
