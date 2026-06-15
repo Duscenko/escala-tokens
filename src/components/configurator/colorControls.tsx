@@ -22,7 +22,7 @@ export const GRAY_FLAVORS: { label: string; hex: string }[] = [
 export type Option = { label: string; hex: string }
 // `badge` marks a group's provenance in the dropdown — 'Tested' for the
 // curated presets vs the user's own 'Saved' customs.
-export type OptionGroup = { label: string; badge?: string; options: Option[] }
+export type OptionGroup = { label: string; badge?: string; options: Option[]; onRemove?: (hex: string) => void }
 
 export const BRAND_GROUPS: OptionGroup[] = PRESET_GROUPS.map((g) => ({
   label: g.label,
@@ -184,20 +184,33 @@ export function ColorSelect({
                   {g.options.map((o) => {
                     const isSel = o.hex.toLowerCase() === value.toLowerCase()
                     return (
-                      <button
-                        key={o.hex}
-                        type="button"
-                        role="option"
-                        aria-selected={isSel}
-                        onClick={() => { onChange(o.hex); setOpen(false) }}
-                        className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${
-                          isSel ? 'bg-elevated' : 'hover:bg-surface'
-                        }`}
-                      >
-                        <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: o.hex }} />
-                        <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
-                        <span className="text-[11px] font-mono text-fg-faint">{o.hex}</span>
-                      </button>
+                      <div key={o.hex} className="relative group/opt">
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={isSel}
+                          onClick={() => { onChange(o.hex); setOpen(false) }}
+                          className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${g.onRemove ? 'pr-8' : ''} ${
+                            isSel ? 'bg-elevated' : 'hover:bg-surface'
+                          }`}
+                        >
+                          <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: o.hex }} />
+                          <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
+                          <span className="text-[11px] font-mono text-fg-faint">{o.hex}</span>
+                        </button>
+                        {g.onRemove && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); g.onRemove!(o.hex) }}
+                            aria-label={`Remove ${o.label}`}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/opt:opacity-100 transition-all"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     )
                   })}
                 </div>

@@ -3,7 +3,7 @@
 // The yellow square becomes a semi-transparent fill; star and text track fg.
 export default function Logo({ className }: { className?: string }) {
   return (
-    <div role="img" aria-label="Scalable Designs" className={`flex items-center gap-2.5 ${className ?? ''}`}>
+    <div role="img" aria-label="Scala DS" className={`flex items-center gap-2.5 ${className ?? ''}`}>
       {/* Icon mark — brand square with star burst, all in currentColor */}
       <svg width="34" height="34" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
         <path
@@ -36,7 +36,7 @@ export default function Logo({ className }: { className?: string }) {
 
       {/* Wordmark */}
       <span className="font-semibold text-[14px] tracking-[-0.025em] leading-none hidden md:inline">
-        Scalable Designs
+        Scala DS
       </span>
     </div>
   )

@@ -23,8 +23,15 @@ function AddCustomColorButton() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [hex, setHex] = useState('#0ea5e9')
+  const [hexDraft, setHexDraft] = useState('0EA5E9')
   const [error, setError] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+
+  function handleHexDraft(raw: string) {
+    const cleaned = raw.replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
+    setHexDraft(cleaned.toUpperCase())
+    if (cleaned.length === 6) setHex(`#${cleaned}`)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -64,7 +71,7 @@ function AddCustomColorButton() {
       <div ref={ref} className="relative">
         <button
           type="button"
-          onClick={() => { setOpen((v) => !v); setError(null) }}
+          onClick={() => { setOpen((v) => { if (!v) setHexDraft(hex.replace('#', '').toUpperCase()); return !v }); setError(null) }}
           aria-haspopup="dialog"
           aria-expanded={open}
           className="w-36 flex items-center gap-2 px-3 py-2 rounded-full border border-dashed border-line-strong text-fg-muted hover:border-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left"
@@ -87,7 +94,7 @@ function AddCustomColorButton() {
               transition={{ duration: 0.12 }}
               role="dialog"
               aria-label="Custom colors"
-              className="absolute z-30 right-0 mt-1.5 w-72 rounded-lg border border-line-strong bg-app shadow-lg p-3 flex flex-col gap-3"
+              className="absolute z-30 right-0 mt-1.5 w-80 rounded-lg border border-line-strong bg-app shadow-lg p-3 flex flex-col gap-3"
             >
               <p className="text-[11px] text-fg-faint leading-snug">
                 Name a color and it adopts the same 12-tone scale. Saved colors appear
@@ -138,11 +145,24 @@ function AddCustomColorButton() {
                   <input
                     type="color"
                     value={hex}
-                    onChange={(e) => setHex(e.target.value)}
+                    onChange={(e) => { setHex(e.target.value); setHexDraft(e.target.value.replace('#', '').toUpperCase()) }}
                     aria-label="New custom color"
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
                 </label>
+                <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-surface border border-line focus-within:border-[#0088FF] transition-colors flex-shrink-0">
+                  <span className="text-[12px] font-mono text-fg-faint select-none">#</span>
+                  <input
+                    type="text"
+                    value={hexDraft}
+                    onChange={(e) => handleHexDraft(e.target.value)}
+                    onBlur={() => setHexDraft(hex.replace('#', '').toUpperCase())}
+                    aria-label="Hex color value"
+                    maxLength={6}
+                    className="w-[50px] text-[12px] font-mono text-fg bg-transparent outline-none uppercase"
+                    placeholder="0EA5E9"
+                  />
+                </div>
                 <input
                   type="text"
                   value={name}
@@ -328,14 +348,21 @@ export default function Step2_ColorPalette() {
     successColor, successScale, setSuccessColor, setSuccessScale,
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
     grayBaseColor, grayLightScale, setGrayBaseColor, setGrayLightScale,
-    themes, mergeThemeTokens, customColors, updateCustomColor,
+    themes, mergeThemeTokens, customColors, updateCustomColor, removeCustomColor,
     colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
   } = useDesignStore()
   const lightTokens = themes.light ?? {}
 
   // Saved customs surface in both dropdowns ahead of the Tested presets.
   const savedGroup: OptionGroup | null = customColors.length
-    ? { label: 'Saved', options: customColors.map((c) => ({ label: c.label, hex: c.base })) }
+    ? {
+        label: 'Saved',
+        options: customColors.map((c) => ({ label: c.label, hex: c.base })),
+        onRemove: (hex) => {
+          const match = customColors.find((c) => c.base.toLowerCase() === hex.toLowerCase())
+          if (match) removeCustomColor(match.key)
+        },
+      }
     : null
   const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
   const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
