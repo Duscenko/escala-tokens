@@ -1,6 +1,7 @@
 import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, type ColorNaming } from './colorUtils'
+import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
@@ -85,8 +86,33 @@ export function generateTokenJSON() {
     ...store.themeOrder.filter((t) => store.themes[t]),
     ...Object.keys(store.themes).filter((t) => !store.themeOrder.includes(t)),
   ]
+
+  // Normalize every semantic value onto its role's CURRENT source ramp: values
+  // that are a tone of the ramp pass through; empty or stale ones (left over
+  // after a scale was regenerated) snap to the recommended tone. This keeps the
+  // export in lockstep with the primitives so the Figma plugin can alias every
+  // semantic to a primitive variable instead of holding loose hex values.
+  const globalScales: GlobalScales = {
+    gray:    store.grayLightScale,
+    brand:   store.primaryScale,
+    error:   store.errorScale,
+    warning: store.warningScale,
+    success: store.successScale,
+    info:    store.infoScale,
+  }
   const orderedThemes: Record<string, Record<string, string>> = {}
-  for (const name of themeNames) orderedThemes[name] = store.themes[name]
+  for (const name of themeNames) {
+    const kind = store.themeKinds[name] ?? 'light'
+    const palette = store.themePalettes[name]
+    const normalized = { ...store.themes[name] }
+    for (const role of ALL_ROLES) {
+      const scale = sourceScaleFor(role, kind, globalScales, palette)
+      if (!scale || Object.keys(scale).length === 0) continue
+      const hex = normalizeThemeValue(role, kind, scale, normalized[role.key])
+      if (hex) normalized[role.key] = hex
+    }
+    orderedThemes[name] = normalized
+  }
 
   return {
     // Contract version the Figma plugin checks on import. Bump only on a
@@ -98,8 +124,8 @@ export function generateTokenJSON() {
       // 'semantic'/'semanticDark' stay for Figma-plugin compatibility; 'themes'
       // carries the full multi-theme map (incl. user-added themes), and
       // 'themeOrder' is the column order the plugin creates modes in.
-      semantic: store.themes.light ?? {},
-      semanticDark: store.themes.dark ?? {},
+      semantic: orderedThemes.light ?? store.themes.light ?? {},
+      semanticDark: orderedThemes.dark ?? store.themes.dark ?? {},
       themes: orderedThemes,
       themeOrder: themeNames,
     },

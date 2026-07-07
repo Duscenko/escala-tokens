@@ -7,7 +7,7 @@ import {
   type ColorAlgorithm, type ColorNaming,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
-import { BRAND_TOKEN_TONES } from './Step3_SemanticTokens'
+import { BRAND_TOKEN_TONES } from '../../lib/semanticRoles'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
   BRAND_GROUPS, NEUTRAL_GROUPS, type OptionGroup,
