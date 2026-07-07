@@ -19,7 +19,7 @@ export interface CustomColor {
 }
 
 // Family names reserved by the built-in scales — custom colors can't use them.
-export const RESERVED_COLOR_KEYS = ['brand', 'gray', 'error', 'warning', 'success', 'info']
+export const RESERVED_COLOR_KEYS = ['accent', 'neutral', 'error', 'warning', 'success', 'info']
 
 // Per-theme primitive palette — a custom "style theme" carries its own 1–12
 // scales (brand/neutral/semantic) instead of drawing from the global ones. The
@@ -57,52 +57,110 @@ export const GRAY_DARK_SCALE: ColorScale = {
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
 // dark (darkSemanticTokens) maps so both stay in sync as roles are added.
+// Old (v23) → new (v24) semantic-token key map. Single source of truth for the
+// readable-taxonomy rename: the v23→v24 migration relabels persisted theme
+// values without losing any user customisation. Append-only — never reorder.
+const SEMANTIC_KEY_RENAME: Record<string, string> = {
+  // ── Surface (was bg-* neutral surfaces + states) ──
+  'bg-primary': 'surface-0', 'bg-primary_alt': 'surface-0-alt', 'bg-primary_hover': 'surface-0-hover',
+  'bg-secondary': 'surface-1', 'bg-secondary_alt': 'surface-1-alt', 'bg-secondary_hover': 'surface-1-hover',
+  'bg-secondary_subtle': 'surface-1-subtle', 'bg-tertiary': 'surface-2', 'bg-quaternary': 'surface-3',
+  'bg-active': 'surface-selected', 'bg-primary-solid': 'surface-inverse', 'bg-secondary-solid': 'surface-inverse-muted',
+  'bg-overlay': 'surface-overlay',
+  'bg-accent-primary': 'surface-brand-subtle', 'bg-accent-primary_alt': 'surface-brand-subtle-alt',
+  'bg-accent-secondary': 'surface-brand-muted', 'bg-accent-section': 'surface-brand-strong',
+  'bg-accent-section_subtle': 'surface-brand-strong-alt',
+  // ── Action (was brand solid fills + disabled) ──
+  'bg-accent-solid': 'action-primary', 'bg-accent-solid_hover': 'action-primary-hover',
+  'bg-disabled': 'action-disabled', 'bg-disabled_subtle': 'action-disabled-subtle',
+  // ── Status (was bg-{error,warning,success,info}-*) ──
+  'bg-error-primary': 'status-error-subtle', 'bg-error-secondary': 'status-error-muted', 'bg-error-solid': 'status-error',
+  'bg-warning-primary': 'status-warning-subtle', 'bg-warning-secondary': 'status-warning-muted', 'bg-warning-solid': 'status-warning',
+  'bg-success-primary': 'status-success-subtle', 'bg-success-secondary': 'status-success-muted', 'bg-success-solid': 'status-success',
+  'bg-info-primary': 'status-info-subtle', 'bg-info-secondary': 'status-info-muted', 'bg-info-solid': 'status-info',
+  // ── Icon (was fg-*) ──
+  'fg-primary': 'icon-primary', 'fg-secondary': 'icon-secondary', 'fg-secondary_hover': 'icon-secondary-hover',
+  'fg-tertiary': 'icon-tertiary', 'fg-tertiary_hover': 'icon-tertiary-hover',
+  'fg-quaternary': 'icon-quaternary', 'fg-quaternary_hover': 'icon-quaternary-hover',
+  'fg-white': 'icon-on-inverse', 'fg-disabled': 'icon-disabled', 'fg-disabled_subtle': 'icon-disabled-subtle',
+  'fg-accent-primary': 'icon-brand', 'fg-accent-primary_alt': 'icon-brand-alt',
+  'fg-accent-secondary': 'icon-brand-secondary', 'fg-accent-secondary_alt': 'icon-brand-secondary-alt',
+  'fg-error-primary': 'icon-error', 'fg-error-secondary': 'icon-error-secondary',
+  'fg-warning-primary': 'icon-warning', 'fg-warning-secondary': 'icon-warning-secondary',
+  'fg-success-primary': 'icon-success', 'fg-success-secondary': 'icon-success-secondary',
+  'fg-info-primary': 'icon-info', 'fg-info-secondary': 'icon-info-secondary',
+  // ── Text ──
+  'text-secondary_hover': 'text-secondary-hover', 'text-tertiary_hover': 'text-tertiary-hover',
+  'text-white': 'text-on-inverse', 'text-placeholder_subtle': 'text-placeholder-subtle',
+  'text-primary_on-accent': 'text-on-brand', 'text-secondary_on-accent': 'text-on-brand-secondary',
+  'text-tertiary_on-accent': 'text-on-brand-tertiary', 'text-quaternary_on-accent': 'text-on-brand-quaternary',
+  'text-accent-primary': 'text-brand', 'text-accent-secondary': 'text-brand-secondary',
+  'text-accent-secondary_hover': 'text-brand-secondary-hover', 'text-accent-tertiary': 'text-brand-tertiary',
+  'text-accent-tertiary_alt': 'text-brand-tertiary-alt',
+  'text-error-primary': 'text-error', 'text-warning-primary': 'text-warning',
+  'text-success-primary': 'text-success', 'text-info-primary': 'text-info',
+  // ── Border ──
+  'border-primary': 'border-strong', 'border-secondary': 'border-default', 'border-secondary_alt': 'border-default-alt',
+  'border-tertiary': 'border-subtle', 'border-disabled_subtle': 'border-disabled-subtle',
+  'border-accent': 'border-brand', 'border-accent_alt': 'border-brand-alt', 'border-error_subtle': 'border-error-subtle',
+  // (text-primary, text-secondary, text-tertiary, text-quaternary, text-disabled,
+  //  text-placeholder, border-disabled, border-error — keys unchanged.)
+}
+
+/** Rename the keys of one semantic-token map old→new, preserving values. Idempotent. */
+function renameSemanticKeys(map: Record<string, string> | undefined): Record<string, string> | undefined {
+  if (!map || typeof map !== 'object') return map
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(map)) out[SEMANTIC_KEY_RENAME[k] ?? k] = v as string
+  return out
+}
+
 const EMPTY_SEMANTIC: Record<string, string> = {
+  // ── Surface ───────────────────────────────────────────────
+  'surface-0': '', 'surface-0-alt': '', 'surface-0-hover': '',
+  'surface-1': '', 'surface-1-alt': '', 'surface-1-hover': '', 'surface-1-subtle': '',
+  'surface-2': '', 'surface-3': '',
+  'surface-selected': '', 'surface-inverse': '', 'surface-inverse-muted': '', 'surface-overlay': '',
+  'surface-brand-subtle': '', 'surface-brand-subtle-alt': '', 'surface-brand-muted': '',
+  'surface-brand-strong': '', 'surface-brand-strong-alt': '',
+  // ── Action ────────────────────────────────────────────────
+  'action-primary': '', 'action-primary-hover': '',
+  'action-disabled': '', 'action-disabled-subtle': '',
+  // ── Status ────────────────────────────────────────────────
+  'status-error-subtle': '', 'status-error-muted': '', 'status-error': '',
+  'status-warning-subtle': '', 'status-warning-muted': '', 'status-warning': '',
+  'status-success-subtle': '', 'status-success-muted': '', 'status-success': '',
+  'status-info-subtle': '', 'status-info-muted': '', 'status-info': '',
   // ── Text ──────────────────────────────────────────────────
-  'text-primary': '', 'text-primary_on-brand': '',
-  'text-secondary': '', 'text-secondary_hover': '', 'text-secondary_on-brand': '',
-  'text-tertiary': '', 'text-tertiary_hover': '', 'text-tertiary_on-brand': '',
-  'text-quaternary': '', 'text-quaternary_on-brand': '',
-  'text-white': '', 'text-disabled': '',
-  'text-placeholder': '', 'text-placeholder_subtle': '',
-  'text-brand-primary': '',
-  'text-brand-secondary': '', 'text-brand-secondary_hover': '',
-  'text-brand-tertiary': '', 'text-brand-tertiary_alt': '',
-  'text-error-primary': '', 'text-warning-primary': '', 'text-success-primary': '', 'text-info-primary': '',
+  'text-primary': '', 'text-on-brand': '',
+  'text-secondary': '', 'text-secondary-hover': '', 'text-on-brand-secondary': '',
+  'text-tertiary': '', 'text-tertiary-hover': '', 'text-on-brand-tertiary': '',
+  'text-quaternary': '', 'text-on-brand-quaternary': '',
+  'text-on-inverse': '', 'text-disabled': '',
+  'text-placeholder': '', 'text-placeholder-subtle': '',
+  'text-brand': '',
+  'text-brand-secondary': '', 'text-brand-secondary-hover': '',
+  'text-brand-tertiary': '', 'text-brand-tertiary-alt': '',
+  'text-error': '', 'text-warning': '', 'text-success': '', 'text-info': '',
+  // ── Icon ──────────────────────────────────────────────────
+  'icon-primary': '',
+  'icon-secondary': '', 'icon-secondary-hover': '',
+  'icon-tertiary': '', 'icon-tertiary-hover': '',
+  'icon-quaternary': '', 'icon-quaternary-hover': '',
+  'icon-on-inverse': '', 'icon-disabled': '', 'icon-disabled-subtle': '',
+  'icon-brand': '', 'icon-brand-alt': '',
+  'icon-brand-secondary': '', 'icon-brand-secondary-alt': '',
+  'icon-error': '', 'icon-error-secondary': '',
+  'icon-warning': '', 'icon-warning-secondary': '',
+  'icon-success': '', 'icon-success-secondary': '',
+  'icon-info': '', 'icon-info-secondary': '',
   // ── Border ────────────────────────────────────────────────
-  'border-primary': '',
-  'border-secondary': '', 'border-secondary_alt': '',
-  'border-tertiary': '',
-  'border-disabled': '', 'border-disabled_subtle': '',
-  'border-brand': '', 'border-brand_alt': '',
-  'border-error': '', 'border-error_subtle': '',
-  // ── Foreground ────────────────────────────────────────────
-  'fg-primary': '',
-  'fg-secondary': '', 'fg-secondary_hover': '',
-  'fg-tertiary': '', 'fg-tertiary_hover': '',
-  'fg-quaternary': '', 'fg-quaternary_hover': '',
-  'fg-white': '', 'fg-disabled': '', 'fg-disabled_subtle': '',
-  'fg-brand-primary': '', 'fg-brand-primary_alt': '',
-  'fg-brand-secondary': '', 'fg-brand-secondary_alt': '',
-  'fg-error-primary': '', 'fg-error-secondary': '',
-  'fg-warning-primary': '', 'fg-warning-secondary': '',
-  'fg-success-primary': '', 'fg-success-secondary': '',
-  'fg-info-primary': '', 'fg-info-secondary': '',
-  // ── Background ────────────────────────────────────────────
-  'bg-primary': '', 'bg-primary_alt': '', 'bg-primary_hover': '',
-  'bg-primary-solid': '',
-  'bg-secondary': '', 'bg-secondary_alt': '', 'bg-secondary_hover': '', 'bg-secondary_subtle': '',
-  'bg-secondary-solid': '',
-  'bg-tertiary': '', 'bg-quaternary': '',
-  'bg-active': '', 'bg-disabled': '', 'bg-disabled_subtle': '', 'bg-overlay': '',
-  'bg-brand-primary': '', 'bg-brand-primary_alt': '',
-  'bg-brand-secondary': '',
-  'bg-brand-solid': '', 'bg-brand-solid_hover': '',
-  'bg-brand-section': '', 'bg-brand-section_subtle': '',
-  'bg-error-primary': '', 'bg-error-secondary': '', 'bg-error-solid': '',
-  'bg-warning-primary': '', 'bg-warning-secondary': '', 'bg-warning-solid': '',
-  'bg-success-primary': '', 'bg-success-secondary': '', 'bg-success-solid': '',
-  'bg-info-primary': '', 'bg-info-secondary': '', 'bg-info-solid': '',
+  'border-strong': '',
+  'border-default': '', 'border-default-alt': '',
+  'border-subtle': '',
+  'border-disabled': '', 'border-disabled-subtle': '',
+  'border-brand': '', 'border-brand-alt': '',
+  'border-error': '', 'border-error-subtle': '',
 }
 
 // ── Default token sets for the Opacity / Shadow / Grid / Sizes foundations ──
@@ -575,7 +633,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 22,
+      version: 24,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -694,6 +752,43 @@ export const useDesignStore = create<DesignStore>()(
           // v21→v22: auto-publish to /api/tokens preference. Off by default so
           // existing sessions keep publishing only via the explicit Sync action.
           if (persisted.autoSyncFigma === undefined) persisted.autoSyncFigma = false
+          // v22→v23: primitive families renamed brand→accent / gray→neutral.
+          // Primitive scales persist by numeric tone (no prefix) so they need no
+          // change; only the semantic token KEYS carry "brand"
+          // (e.g. bg-brand-solid → bg-accent-solid). Rename those keys in place.
+          const renameBrandKeys = (map: Record<string, string> | undefined) => {
+            if (!map || typeof map !== 'object') return map
+            const out: Record<string, string> = {}
+            for (const [k, v] of Object.entries(map)) out[k.replace(/brand/g, 'accent')] = v as string
+            return out
+          }
+          if (persisted.themes && typeof persisted.themes === 'object') {
+            for (const t of Object.keys(persisted.themes)) {
+              persisted.themes[t] = renameBrandKeys(persisted.themes[t])
+            }
+          }
+          if (persisted.semanticTokens) persisted.semanticTokens = renameBrandKeys(persisted.semanticTokens)
+          if (persisted.darkSemanticTokens) persisted.darkSemanticTokens = renameBrandKeys(persisted.darkSemanticTokens)
+          // v23→v24: readable semantic taxonomy — rename every semantic-token KEY
+          // (bg-primary → surface-0, bg-accent-solid → action-primary, fg-* → icon-*,
+          //  text-*_on-accent → text-on-brand-*, …). Values are preserved, so user
+          //  customisations survive. Also rewrite keys inside every saved-system
+          //  snapshot so loading an older system doesn't reset to defaults.
+          if (persisted.themes && typeof persisted.themes === 'object') {
+            for (const t of Object.keys(persisted.themes)) {
+              persisted.themes[t] = renameSemanticKeys(persisted.themes[t])
+            }
+          }
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              const snap = sys?.snapshot
+              if (snap?.themes && typeof snap.themes === 'object') {
+                for (const t of Object.keys(snap.themes)) {
+                  snap.themes[t] = renameSemanticKeys(snap.themes[t])
+                }
+              }
+            }
+          }
         }
         return persisted
       },

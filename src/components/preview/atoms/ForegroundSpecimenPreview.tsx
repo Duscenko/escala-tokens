@@ -2,9 +2,9 @@ import { type ReactNode } from 'react'
 import { fontFamilyOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
-// Live specimen for the **Foreground** semantic category — the same star glyph
-// repeated, each tinted by an `fg-*` token, so the colour (the thing the token
-// controls) is what visibly changes. fg-white sits on a dark tile to stay visible.
+// Live specimen for the **Icon** semantic category — the same star glyph
+// repeated, each tinted by an `icon-*` token, so the colour (the thing the token
+// controls) is what visibly changes. icon-on-inverse sits on a dark tile to stay visible.
 export function ForegroundSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
@@ -27,7 +27,7 @@ export function ForegroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
           className="flex items-center justify-center w-full"
           style={{
             height: 50, borderRadius: 10,
-            background: dark ? v('bg-primary-solid', '#0a0a0a') : 'transparent',
+            background: dark ? v('surface-inverse', '#0a0a0a') : 'transparent',
             border: dark ? 'none' : `1px solid ${border}`,
           }}
         >
@@ -55,21 +55,21 @@ export function ForegroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
       className="p-5 flex flex-col gap-5"
     >
       <Section title="Neutral">
-        <Cell token="fg-primary" fb="#181d27" />
-        <Cell token="fg-secondary" fb="#414651" />
-        <Cell token="fg-tertiary" fb="#535862" />
-        <Cell token="fg-quaternary" fb="#a4a7ae" />
+        <Cell token="icon-primary" fb="#181d27" />
+        <Cell token="icon-secondary" fb="#414651" />
+        <Cell token="icon-tertiary" fb="#535862" />
+        <Cell token="icon-quaternary" fb="#a4a7ae" />
       </Section>
       <Section title="Brand & feedback">
-        <Cell token="fg-brand-primary" fb={tokens.brandSolid} />
-        <Cell token="fg-error-primary" fb="#d92d20" />
-        <Cell token="fg-warning-primary" fb="#dc6803" />
-        <Cell token="fg-success-primary" fb="#079455" />
-        <Cell token="fg-info-primary" fb="#1570ef" />
+        <Cell token="icon-brand" fb={tokens.brandSolid} />
+        <Cell token="icon-error" fb="#d92d20" />
+        <Cell token="icon-warning" fb="#dc6803" />
+        <Cell token="icon-success" fb="#079455" />
+        <Cell token="icon-info" fb="#1570ef" />
       </Section>
       <Section title="States">
-        <Cell token="fg-disabled" fb="#a4a7ae" />
-        <Cell token="fg-white" fb="#ffffff" dark />
+        <Cell token="icon-disabled" fb="#a4a7ae" />
+        <Cell token="icon-on-inverse" fb="#ffffff" dark />
       </Section>
     </div>
   )

@@ -295,7 +295,7 @@ export function LinkToggle({ active, onClick, accentColor }: { active: boolean; 
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      title={active ? 'Neutral linked to brand' : 'Link neutral to brand'}
+      title={active ? 'Neutral linked to accent' : 'Link neutral to accent'}
       className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 ${
         active ? '' : 'bg-surface border-line-strong text-fg-faint hover:text-fg hover:border-fg-faint'
       }`}

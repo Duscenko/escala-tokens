@@ -2,9 +2,9 @@ import { type ReactNode } from 'react'
 import { fontFamilyOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
-// Live specimen for the **Background** semantic category — each `bg-*` token as a
-// labeled fill swatch, grouped (surfaces · brand · feedback · disabled). Reads
-// values live so edits in the table repaint the swatches.
+// Live specimen for the **Surface / Action / Status** semantic categories — each
+// fill token as a labeled swatch, grouped (surfaces · brand · action · status).
+// Reads values live so edits in the table repaint the swatches.
 export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
@@ -38,25 +38,26 @@ export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
       className="p-5 flex flex-col gap-5"
     >
       <Section title="Surfaces">
-        <Swatch token="bg-primary" fb="#ffffff" />
-        <Swatch token="bg-secondary" fb="#fafafa" />
-        <Swatch token="bg-tertiary" fb="#f5f5f5" />
-        <Swatch token="bg-quaternary" fb="#e9eaeb" />
+        <Swatch token="surface-0" fb="#ffffff" />
+        <Swatch token="surface-1" fb="#fafafa" />
+        <Swatch token="surface-2" fb="#f5f5f5" />
+        <Swatch token="surface-3" fb="#e9eaeb" />
       </Section>
       <Section title="Brand">
-        <Swatch token="bg-brand-primary" fb="#f4f3ff" />
-        <Swatch token="bg-brand-secondary" fb="#ebe9fe" />
-        <Swatch token="bg-brand-solid" fb={tokens.brandSolid} />
+        <Swatch token="surface-brand-subtle" fb="#f4f3ff" />
+        <Swatch token="surface-brand-muted" fb="#ebe9fe" />
+        <Swatch token="surface-brand-strong" fb={tokens.brandSolid} />
       </Section>
-      <Section title="Feedback">
-        <Swatch token="bg-error-primary" fb="#fef3f2" />
-        <Swatch token="bg-error-solid" fb="#d92d20" />
-        <Swatch token="bg-warning-primary" fb="#fffaeb" />
-        <Swatch token="bg-success-primary" fb="#ecfdf3" />
-        <Swatch token="bg-info-primary" fb="#eff8ff" />
+      <Section title="Action">
+        <Swatch token="action-primary" fb={tokens.brandSolid} />
+        <Swatch token="action-disabled" fb="#f5f5f5" />
       </Section>
-      <Section title="Disabled">
-        <Swatch token="bg-disabled" fb="#f5f5f5" />
+      <Section title="Status">
+        <Swatch token="status-error-subtle" fb="#fef3f2" />
+        <Swatch token="status-error" fb="#d92d20" />
+        <Swatch token="status-warning-subtle" fb="#fffaeb" />
+        <Swatch token="status-success-subtle" fb="#ecfdf3" />
+        <Swatch token="status-info-subtle" fb="#eff8ff" />
       </Section>
     </div>
   )

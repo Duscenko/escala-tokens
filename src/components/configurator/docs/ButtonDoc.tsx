@@ -86,11 +86,11 @@ const DONT = [
 ]
 
 const TOKENS_USED = [
-  'bg-brand-solid',
-  'text-white',
-  'bg-secondary',
+  'action-primary',
+  'text-on-brand',
+  'surface-1',
   'text-primary',
-  'text-brand-primary',
+  'text-brand',
   'errorColor',
   'radius.full',
   'spacing.3 / 4 / 6',

@@ -387,8 +387,8 @@ export default function Step2_ColorPalette() {
       for (const [key, tone] of Object.entries(BRAND_TOKEN_TONES)) {
         if (!lightTokens[key]) continue
         const t =
-          key === 'bg-brand-solid' ? solid
-          : key === 'bg-brand-solid_hover' ? Math.min(solid + 1, 12)
+          key === 'action-primary' ? solid
+          : key === 'action-primary-hover' ? Math.min(solid + 1, 12)
           : tone
         if (scale[t]) updates[key] = scale[t]
       }
@@ -500,9 +500,9 @@ export default function Step2_ColorPalette() {
 
         {/* Brand · link/info · Neutral · + Custom */}
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Brand Color" value={primaryColor} groups={brandGroups} onChange={changeBrand} />
+          <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeBrand} />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
-            <InfoDot tip="Auto-matches the neutral scale to your brand color." />
+            <InfoDot tip="Auto-matches the neutral scale to your accent color." />
             <LinkToggle active={linked} onClick={toggleLink} />
           </div>
           <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={regenerateGray} />

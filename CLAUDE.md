@@ -68,8 +68,8 @@ watch the right-hand preview update, then export.
   theme). Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview`) from
   `usePreviewTokens()`, so editing any foundation updates them **live**. **Context-aware in
   Semantic**: it takes a `focus` prop (the active token category) and swaps to a matching live
-  specimen — `text`→`TextSpecimenPreview`, `bg`→`BackgroundSpecimenPreview`,
-  `border`→`BorderSpecimenPreview`, `fg`→`ForegroundSpecimenPreview` (header reads "Text
+  specimen — `text`→`TextSpecimenPreview`, `surface`/`action`/`status`→`BackgroundSpecimenPreview`,
+  `border`→`BorderSpecimenPreview`, `icon`→`ForegroundSpecimenPreview` (header reads "Text
   preview"… ); `all` and every other foundation show the generic overview. The category comes
   from `Step3_SemanticTokens` (a **controlled** `activeCategory`/`onCategoryChange`, owned as
   `semanticCategory` state in `Configurator`). **Hidden in the Components tab** (docs go
@@ -95,7 +95,7 @@ src/
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge...)
 │   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 17)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 24)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
@@ -133,7 +133,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `grayLightScale` | ColorScale | Foundations · Color |
 | `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | Foundations · Color |
 | `customColors` | CustomColor[] (`{ key, label, base, scale }` — named families with auto 1–12 scales; keys in `RESERVED_COLOR_KEYS` are blocked) | Foundations · Color |
-| `themes` | Record<theme, Record<role, hex>> — `light`/`dark` always exist (protected); user themes via `addTheme(key, base)` duplicate an existing one | Foundations · Semantic |
+| `themes` | Record<theme, Record<role, hex>> — `light`/`dark` always exist (protected); user themes via `addTheme(key, base)` duplicate an existing one. Role keys use the **readable taxonomy**: `surface-*` (page/card levels), `action-*` (button/control fills), `status-*` (feedback fills), `text-*`, `icon-*`, `border-*`. Defined once in `ROLE_GROUPS` (`Step3_SemanticTokens.tsx`); `SEMANTIC_KEY_RENAME` (store) migrates old v23 keys | Foundations · Semantic |
 | `themeOrder` | string[] (column order, default `['light','dark']`) | Foundations · Semantic |
 | `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
@@ -156,7 +156,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 22`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 24`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
 
@@ -189,11 +189,11 @@ interface ComponentDef {
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 3,
   "project": "my-system",
   "colors": {
     "primitive": { "1": "#f5f0ff", ... "12": "#1a0a3d" },
-    "semantic": { "text-primary": "#101828", "bg-primary": "#ffffff", ... },
+    "semantic": { "text-primary": "#101828", "surface-0": "#ffffff", "action-primary": "#7f56d9", ... },
     "semanticDark": { ... },
     "themes": { "light": { ... }, "dark": { ... }, "<custom>": { ... } },
     "themeOrder": ["light", "dark", "<custom>"]

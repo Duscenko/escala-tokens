@@ -28,10 +28,10 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const rule = <div style={{ height: 1, background: border }} />
 
   const states: [string, string][] = [
-    ['text-error-primary', 'Could not save your changes'],
-    ['text-warning-primary', 'Your free trial ends soon'],
-    ['text-success-primary', 'Payment confirmed'],
-    ['text-info-primary', 'A new version is available'],
+    ['text-error', 'Could not save your changes'],
+    ['text-warning', 'Your free trial ends soon'],
+    ['text-success', 'Payment confirmed'],
+    ['text-info', 'A new version is available'],
   ]
 
   return (
@@ -43,7 +43,7 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       <Line token="text-secondary" size={15} weight={600} color={v('text-secondary', '#414651')}>Foundations that scale</Line>
       <Line token="text-tertiary" size={14} weight={400} color={v('text-tertiary', '#535862')}>Tokens keep color, type and spacing consistent.</Line>
       <Line token="text-quaternary" size={12} weight={400} color={v('text-quaternary', '#717680')}>Last updated a few seconds ago</Line>
-      <Line token="text-brand-primary" size={14} weight={600} color={v('text-brand-primary', tokens.brandText)}>Learn more →</Line>
+      <Line token="text-brand" size={14} weight={600} color={v('text-brand', tokens.brandText)}>Learn more →</Line>
 
       {rule}
       {states.map(([token, label]) => (
@@ -56,10 +56,10 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
 
       <div
         className="flex items-center justify-between gap-3"
-        style={{ marginTop: 2, padding: '9px 12px', borderRadius: 10, background: v('bg-brand-solid', tokens.brandSolid) }}
+        style={{ marginTop: 2, padding: '9px 12px', borderRadius: 10, background: v('action-primary', tokens.brandSolid) }}
       >
-        <span style={{ color: v('text-white', '#ffffff'), fontSize: 13, fontWeight: 600 }}>Text on a brand fill</span>
-        <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: v('text-white', '#ffffff'), opacity: 0.85 }}>text-white</code>
+        <span style={{ color: v('text-on-brand', '#ffffff'), fontSize: 13, fontWeight: 600 }}>Text on a brand fill</span>
+        <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: v('text-on-brand', '#ffffff'), opacity: 0.85 }}>text-on-brand</code>
       </div>
     </div>
   )

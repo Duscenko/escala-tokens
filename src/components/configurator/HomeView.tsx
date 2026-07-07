@@ -240,7 +240,7 @@ export default function HomeView({ onOpenFigma, onOpenGithub, onOpenExport }: Ho
 
           {/* ── Summary chips ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <SummaryChip label="Brand" value={primaryColor} swatch={primaryColor} />
+            <SummaryChip label="Accent" value={primaryColor} swatch={primaryColor} />
             <SummaryChip label="Themes" value={`${themeOrder.length} (${themeOrder.join(', ')})`} />
             <SummaryChip label="Components" value={`${selectedComponents.length} of ${COMPONENT_KEYS.length}`} />
             <SummaryChip label="Icons" value={getIconLibrary(iconLibrary)?.label ?? iconLibrary} />

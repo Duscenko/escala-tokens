@@ -191,9 +191,9 @@ export default function AddThemeModal({
               <section className="flex flex-col gap-4 pt-1">
                 <h3 className="text-sm font-semibold text-fg">Accent scale</h3>
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
-                  <ColorSelect label="Brand Color" value={brand} groups={brandGroups} onChange={changeBrand} />
+                  <ColorSelect label="Accent Color" value={brand} groups={brandGroups} onChange={changeBrand} />
                   <div className="flex flex-col items-center gap-1.5 pb-1.5">
-                    <InfoDot tip="Auto-matches the neutral scale to your brand color." />
+                    <InfoDot tip="Auto-matches the neutral scale to your accent color." />
                     <LinkToggle active={linked} onClick={toggleLink} />
                   </div>
                   <ColorSelect label="Neutral" value={neutral} groups={neutralGroups} onChange={(h) => { setNeutral(h); setLinked(false) }} />

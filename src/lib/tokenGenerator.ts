@@ -1,13 +1,16 @@
-import { useDesignStore } from '../store/useDesignStore'
+import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, type ColorNaming } from './colorUtils'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
-export const TOKEN_SCHEMA_VERSION = 1
+// v2: primitive color families renamed brand→accent, gray→neutral.
+// v3: semantic token KEYS renamed to a readable taxonomy (bg-primary → surface-0,
+//     bg-accent-solid → action-primary, fg-* → icon-*, text-*_on-accent → text-on-brand-*).
+export const TOKEN_SCHEMA_VERSION = 3
 
-// Flatten a numeric color scale into prefixed string keys, e.g. brand-1 … brand-12
-// (or brand-50 … brand-1000 under the "hundreds" naming scheme).
+// Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
+// (or accent-50 … accent-1000 under the "hundreds" naming scheme).
 function flattenScale(
   name: string,
   scale: Record<number, string>,
@@ -27,8 +30,8 @@ export function generateTokenJSON() {
   // Merge all color scales into a single primitive map with prefixed keys.
   // Only include secondary scales if they've been populated (non-empty objects).
   const primitive: Record<string, string> = {
-    ...flattenScale('brand', store.primaryScale, colorNaming),
-    ...flattenScale('gray', store.grayLightScale, colorNaming),
+    ...flattenScale('accent', store.primaryScale, colorNaming),
+    ...flattenScale('neutral', store.grayLightScale, colorNaming),
     ...(Object.keys(store.errorScale).length
       ? flattenScale('error', store.errorScale, colorNaming)
       : {}),
@@ -43,10 +46,37 @@ export function generateTokenJSON() {
       : {}),
   }
 
+  // Dark-mode neutral ramp — dark-theme gray semantics are seeded from
+  // GRAY_DARK_SCALE (see Step3's scaleFor), so it must ship as primitives too,
+  // otherwise the Figma plugin has nothing to alias dark neutrals to.
+  const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
+    ([t, kind]) => kind === 'dark' && store.themes[t] && !store.themePalettes[t],
+  ) || Boolean(store.themes.dark)
+  if (hasDarkTheme) {
+    Object.assign(primitive, flattenScale('neutral-dark', GRAY_DARK_SCALE, colorNaming))
+  }
+
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12).
   store.customColors.forEach((c) => {
     Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
   })
+
+  // Custom style themes carry their own source ramps (themePalettes). Export
+  // each ramp namespaced by theme ("ocean/accent-7") so that theme's semantic
+  // values can alias primitives in Figma instead of holding loose hex values.
+  const PALETTE_FAMILY: Record<keyof ThemePalette, string> = {
+    brand: 'accent', gray: 'neutral',
+    error: 'error', warning: 'warning', success: 'success', info: 'info',
+  }
+  for (const [theme, pal] of Object.entries(store.themePalettes)) {
+    if (!store.themes[theme]) continue
+    for (const [src, family] of Object.entries(PALETTE_FAMILY) as [keyof ThemePalette, string][]) {
+      const scale = pal[src]
+      if (scale && Object.keys(scale).length) {
+        Object.assign(primitive, flattenScale(`${theme}/${family}`, scale, colorNaming))
+      }
+    }
+  }
 
   // Themes in the user's column order (themeOrder), with any stragglers appended.
   // The plugin maps each theme to one variable-collection mode (column), so this

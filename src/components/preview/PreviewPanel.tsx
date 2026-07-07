@@ -16,10 +16,12 @@ import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
 const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
+  surface: 'Surface preview',
+  action: 'Action preview',
+  status: 'Status preview',
   text: 'Text preview',
-  bg: 'Background preview',
+  icon: 'Icon preview',
   border: 'Border preview',
-  fg: 'Foreground preview',
 }
 
 // ── Layout helpers ──────────────────────────────────────────────────────────
@@ -94,11 +96,11 @@ export default function PreviewPanel({
           <IconSpecimenPreview libraryKey={iconLibraryKey} />
         ) : specimen === 'text' ? (
           <TextSpecimenPreview tokens={tokens} />
-        ) : specimen === 'bg' ? (
+        ) : specimen === 'surface' || specimen === 'action' || specimen === 'status' ? (
           <BackgroundSpecimenPreview tokens={tokens} />
         ) : specimen === 'border' ? (
           <BorderSpecimenPreview tokens={tokens} />
-        ) : specimen === 'fg' ? (
+        ) : specimen === 'icon' ? (
           <ForegroundSpecimenPreview tokens={tokens} />
         ) : (
           <>

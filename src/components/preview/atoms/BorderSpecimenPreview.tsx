@@ -55,24 +55,24 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       style={{ background: tokens.surface, border: `1px solid ${surfaceBorder}`, borderRadius: 14, fontFamily }}
       className="p-5 flex flex-col gap-4"
     >
-      <Field token="border-primary" fb="#d5d7da" width={1} placeholderText="you@company.com" />
+      <Field token="border-strong" fb="#d5d7da" width={1} placeholderText="you@company.com" />
 
-      {/* Card — border-secondary */}
-      <Row token="border-secondary">
+      {/* Card — border-default */}
+      <Row token="border-default">
         <div
-          style={{ flex: 1, borderRadius: 10, padding: 12, background: tokens.surface, border: `1px solid ${v('border-secondary', '#e9eaeb')}` }}
+          style={{ flex: 1, borderRadius: 10, padding: 12, background: tokens.surface, border: `1px solid ${v('border-default', '#e9eaeb')}` }}
         >
           <span style={{ fontSize: 13, fontWeight: 600, color: tokens.neutralText }}>Card surface</span>
         </div>
       </Row>
 
-      {/* Divider — border-tertiary */}
-      <Row token="border-tertiary">
-        <div style={{ flex: 1, height: 1, background: v('border-tertiary', '#f5f5f5') }} />
+      {/* Divider — border-subtle */}
+      <Row token="border-subtle">
+        <div style={{ flex: 1, height: 1, background: v('border-subtle', '#f5f5f5') }} />
       </Row>
 
       <Field token="border-brand" fb={tokens.brandSolid} width={2} placeholderText="Focused field" />
-      <Field token="border-error" fb="#fd6f6f" width={2} placeholderText="bad-email" note="Enter a valid email address" noteColor={sem['text-error-primary'] || '#d92d20'} />
+      <Field token="border-error" fb="#fd6f6f" width={2} placeholderText="bad-email" note="Enter a valid email address" noteColor={sem['text-error'] || '#d92d20'} />
       <Field token="border-disabled" fb="#d5d7da" width={1} placeholderText="Disabled field" />
     </div>
   )

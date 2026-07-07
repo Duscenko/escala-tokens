@@ -17,16 +17,16 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   const brandFallback = pal?.brand?.[8] || primaryColor
   const grayScale = pal?.gray ?? grayLightScale
   return {
-    surface: semanticTokens['bg-primary'] || '#ffffff',
-    brandSolid: semanticTokens['bg-brand-solid'] || brandFallback || '#7f56d9',
-    brandText: semanticTokens['text-brand-primary'] || brandFallback || '#7f56d9',
-    onBrand: semanticTokens['text-white'] || '#ffffff',
-    neutralFill: semanticTokens['bg-secondary'] || grayScale[3] || '#f5f5f5',
+    surface: semanticTokens['surface-0'] || '#ffffff',
+    brandSolid: semanticTokens['action-primary'] || brandFallback || '#7f56d9',
+    brandText: semanticTokens['text-brand'] || brandFallback || '#7f56d9',
+    onBrand: semanticTokens['text-on-inverse'] || '#ffffff',
+    neutralFill: semanticTokens['surface-1'] || grayScale[3] || '#f5f5f5',
     neutralText: semanticTokens['text-primary'] || grayScale[11] || '#101828',
     errorColor: (pal?.error?.[8]) || errorColor || '#f04438',
-    disabledBg: semanticTokens['bg-disabled'] || grayScale[3] || '#f5f5f5',
+    disabledBg: semanticTokens['action-disabled'] || grayScale[3] || '#f5f5f5',
     disabledText: semanticTokens['text-disabled'] || grayScale[6] || '#a4a7ae',
-    border: semanticTokens['border-primary'] || grayScale[5] || '#d0d5dd',
+    border: semanticTokens['border-strong'] || grayScale[5] || '#d0d5dd',
     fgMuted: semanticTokens['text-tertiary'] || grayScale[7] || '#717680',
     placeholderText: semanticTokens['text-placeholder'] || grayScale[6] || '#a4a7ae',
     successColor: (pal?.success?.[8]) || successColor || '#17b26a',
