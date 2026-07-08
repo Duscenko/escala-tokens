@@ -453,14 +453,12 @@ export default function Configurator() {
       {/* ── Body: 80px rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
         <Sidebar
-          foundations={FOUNDATIONS
-            .filter((f) => f.key !== 'home')
-            .map((f) => ({
-              key: f.key,
-              short: f.short,
-              Icon: f.Icon,
-              secondary: ['opacity', 'shadow', 'grid', 'sizes'].includes(f.key),
-            }))}
+          foundations={FOUNDATIONS.map((f) => ({
+            key: f.key,
+            short: f.short,
+            Icon: f.Icon,
+            secondary: ['opacity', 'shadow', 'grid', 'sizes'].includes(f.key),
+          }))}
           activeFoundation={railActive}
           onFoundationSelect={selectFoundation}
           exportMode={exportMode}

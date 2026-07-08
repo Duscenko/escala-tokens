@@ -7,21 +7,27 @@ import { getIconLibrary } from './iconLibraries'
 import { toneLabel } from './colorUtils'
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, colorNaming } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, colorNaming } = store
   const semanticTokens = themes.light ?? {}
   const lines: string[] = [':root {']
 
-  lines.push('  /* Primitive scale */')
-  Object.entries(primaryScale)
-    .sort(([a], [b]) => Number(a) - Number(b))
-    .forEach(([k, v]) => lines.push(`  --color-${toneLabel(colorNaming, Number(k))}: ${v};`))
-
-  customColors.forEach((c) => {
-    lines.push(`\n  /* Custom — ${c.label} */`)
-    Object.entries(c.scale)
+  // Primitive families — names match tokens.json (`accent`/`neutral`, the
+  // Figma-plugin contract) so variables.css and tokens.json stay in lockstep.
+  const family = (name: string, scale: Record<number, string>) => {
+    if (!Object.keys(scale).length) return
+    lines.push(`\n  /* ${name.charAt(0).toUpperCase() + name.slice(1)} */`)
+    Object.entries(scale)
       .sort(([a], [b]) => Number(a) - Number(b))
-      .forEach(([k, v]) => lines.push(`  --color-${c.key}-${toneLabel(colorNaming, Number(k))}: ${v};`))
-  })
+      .forEach(([k, v]) => { if (v) lines.push(`  --color-${name}-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  lines.push('  /* Primitive scales */')
+  family('accent', primaryScale)
+  family('neutral', grayLightScale)
+  family('error', errorScale)
+  family('warning', warningScale)
+  family('success', successScale)
+  family('info', infoScale)
+  customColors.forEach((c) => family(c.key, c.scale))
 
   lines.push('\n  /* Semantic tokens — light */')
   Object.entries(semanticTokens).forEach(([k, v]) => {
@@ -96,11 +102,11 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 
 ## Color Tokens
 
-### Primitive Scale
+### Primitive Scale — Accent
 
 | Token | Value |
 |-------|-------|
-${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}
+${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-accent-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}
 ${customColors.map((c)=>`
 ### Custom — ${c.label}
 
@@ -197,8 +203,8 @@ ${selectedComponents.length > 0
 
 \`\`\`css
 .card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-secondary);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-4);

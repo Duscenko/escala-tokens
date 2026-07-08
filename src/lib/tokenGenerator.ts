@@ -146,6 +146,9 @@ export function generateTokenJSON() {
       library: store.iconLibrary,
       name: getIconLibrary(store.iconLibrary)?.label ?? store.iconLibrary,
       package: getIconLibrary(store.iconLibrary)?.npm ?? '',
+      // Iconify collection prefix — the Figma plugin fetches the library's
+      // core glyphs from api.iconify.design and imports them as components.
+      prefix: getIconLibrary(store.iconLibrary)?.iconifyPrefix ?? store.iconLibrary,
       custom: store.customIcons,
     },
     style: null,

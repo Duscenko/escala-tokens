@@ -6,6 +6,7 @@ import chroma from 'chroma-js'
 import { toneLabel } from './colorUtils'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
+import { generateTokenJSON } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
 
 type Store = ReturnType<typeof useDesignStore.getState>
@@ -21,9 +22,9 @@ export type ExportFormat = 'css' | 'tailwind' | 'tokens' | 'md'
 export type ColorFormat = 'hex' | 'rgba' | 'hsl' | 'oklch'
 
 export const EXPORT_FORMATS: { key: ExportFormat; label: string }[] = [
+  { key: 'tokens', label: 'JSON' },
   { key: 'css', label: 'CSS' },
   { key: 'tailwind', label: 'Tailwind' },
-  { key: 'tokens', label: 'Tokens' },
   { key: 'md', label: 'MD' },
 ]
 
@@ -55,11 +56,13 @@ export function exportLanguage(format: ExportFormat): string {
 
 // ── Section token sources ───────────────────────────────────────────────────
 
-/** Ordered color families present in the system: [name, scale]. */
+/** Ordered color families present in the system: [name, scale].
+ *  Family names match tokens.json (`accent`/`neutral` — the plugin contract),
+ *  so every export surface speaks the same vocabulary. */
 function colorFamilies(store: Store): [string, Record<number, string>][] {
   const fams: [string, Record<number, string>][] = [
-    ['brand', store.primaryScale],
-    ['gray', store.grayLightScale],
+    ['accent', store.primaryScale],
+    ['neutral', store.grayLightScale],
   ]
   if (Object.keys(store.errorScale).length) fams.push(['error', store.errorScale])
   if (Object.keys(store.warningScale).length) fams.push(['warning', store.warningScale])
@@ -73,13 +76,13 @@ const sortedEntries = (o: Record<string, string>) =>
   Object.entries(o).sort(([a], [b]) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b))
 
 // Simple key→value sections share one code path.
-const SIMPLE: Partial<Record<SectionKey, { prefix: string; tokenKey: string; tailwind: string; get: (s: Store) => Record<string, string> }>> = {
-  spacing: { prefix: 'spacing', tokenKey: 'spacing', tailwind: 'spacing', get: (s) => s.spacing },
-  radius: { prefix: 'radius', tokenKey: 'radius', tailwind: 'borderRadius', get: (s) => s.radius },
-  opacity: { prefix: 'opacity', tokenKey: 'opacity', tailwind: 'opacity', get: (s) => s.opacity },
-  shadow: { prefix: 'shadow', tokenKey: 'shadows', tailwind: 'boxShadow', get: (s) => s.shadows },
-  grid: { prefix: 'grid', tokenKey: 'grid', tailwind: 'grid', get: (s) => s.grid },
-  sizes: { prefix: 'size', tokenKey: 'sizes', tailwind: 'height', get: (s) => s.sizes },
+const SIMPLE: Partial<Record<SectionKey, { prefix: string; tailwind: string; get: (s: Store) => Record<string, string> }>> = {
+  spacing: { prefix: 'spacing', tailwind: 'spacing', get: (s) => s.spacing },
+  radius: { prefix: 'radius', tailwind: 'borderRadius', get: (s) => s.radius },
+  opacity: { prefix: 'opacity', tailwind: 'opacity', get: (s) => s.opacity },
+  shadow: { prefix: 'shadow', tailwind: 'boxShadow', get: (s) => s.shadows },
+  grid: { prefix: 'grid', tailwind: 'grid', get: (s) => s.grid },
+  sizes: { prefix: 'size', tailwind: 'height', get: (s) => s.sizes },
 }
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
@@ -168,27 +171,25 @@ function tailwindFor(section: SectionKey, store: Store, cf: ColorFormat): string
   return twConfig(twExtend(section, store, cf))
 }
 
-// ── Tokens (JSON slice) ───────────────────────────────────────────────────────
+// ── Tokens (exact tokens.json slices) ────────────────────────────────────────
+// The Tokens format is NOT a re-render: it slices the real `generateTokenJSON()`
+// payload (the contract the Figma plugin imports), so keys and values are always
+// byte-identical to the full tokens.json. Canonical hex — the color-format
+// toggle doesn't apply here (the modal hides it).
 
-function tokensFor(section: SectionKey, store: Store, cf: ColorFormat): unknown {
-  if (section === 'color') {
-    const primitive: Record<string, string> = {}
-    colorFamilies(store).forEach(([name, scale]) => {
-      sortedEntries(scale).forEach(([k, v]) => { primitive[`${name}-${toneLabel(store.colorNaming, Number(k))}`] = formatColor(v, cf) })
-    })
-    const fmt = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).filter(([, v]) => v).map(([k, v]) => [k, formatColor(v, cf)]))
-    return { colors: { primitive, semantic: fmt(store.themes.light ?? {}), semanticDark: fmt(store.themes.dark ?? {}) } }
+function tokensFor(section: SectionKey): unknown {
+  const full = generateTokenJSON()
+  switch (section) {
+    case 'color': return { colors: full.colors }
+    case 'typography': return { typography: full.typography }
+    case 'spacing': return { spacing: full.spacing }
+    case 'radius': return { radius: full.radius }
+    case 'opacity': return { opacity: full.opacity }
+    case 'shadow': return { shadows: full.shadows }
+    case 'grid': return { grid: full.grid }
+    case 'sizes': return { sizes: full.sizes }
+    case 'icons': return { icons: full.icons }
   }
-  if (section === 'typography') {
-    const t = store.typography
-    return { typography: { fontFamily: t.fontFamily, headingFontFamily: t.headingFontFamily ?? t.fontFamily, sizes: t.sizes, lineHeights: t.lineHeights, weights: t.weights } }
-  }
-  if (section === 'icons') {
-    const lib = getIconLibrary(store.iconLibrary)
-    return { icons: { library: store.iconLibrary, name: lib?.label, package: lib?.npm, custom: store.customIcons } }
-  }
-  const simple = SIMPLE[section]!
-  return { [simple.tokenKey]: simple.get(store) }
 }
 
 // ── Markdown ──────────────────────────────────────────────────────────────────
@@ -256,7 +257,9 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat): s
     case 'tailwind':
       return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))
     case 'tokens':
-      return JSON.stringify(Object.assign({ project: store.projectName }, ...ALL_SECTIONS.map((s) => tokensFor(s, store, cf))), null, 2)
+      // The full Tokens export IS tokens.json — the exact payload the Figma
+      // plugin imports (schemaVersion, themes, atoms and all).
+      return JSON.stringify(generateTokenJSON(), null, 2)
     case 'md': {
       const desc = store.projectDescription?.trim()
       const header = `# ${store.projectName} — design tokens\n${desc ? `\n${desc}\n` : ''}\n_Personalized design-system context. Use these tokens verbatim; don't invent new values._`
@@ -271,7 +274,7 @@ export function buildSectionExport(section: SectionKey | 'all', format: ExportFo
   switch (format) {
     case 'css': return cssFor(section, store, colorFormat)
     case 'tailwind': return tailwindFor(section, store, colorFormat)
-    case 'tokens': return JSON.stringify(tokensFor(section, store, colorFormat), null, 2)
+    case 'tokens': return JSON.stringify(tokensFor(section), null, 2)
     case 'md': return mdFor(section, store, colorFormat)
   }
 }

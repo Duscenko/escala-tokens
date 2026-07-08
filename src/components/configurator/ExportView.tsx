@@ -89,8 +89,10 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
   const cssVars   = buildCSS(useDesignStore.getState())
   const markdown  = buildMarkdown(useDesignStore.getState())
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'tokens',   label: 'tokens.json' },
+  // tokens.json is the contract the Figma plugin imports — badge it so users
+  // know exactly which file feeds the plugin.
+  const TABS: { id: Tab; label: string; badge?: string }[] = [
+    { id: 'tokens',   label: 'tokens.json', badge: 'Figma plugin' },
     { id: 'css',      label: 'variables.css' },
     { id: 'markdown', label: 'README.md' },
   ]
@@ -124,7 +126,7 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-8"
+      className="flex flex-col gap-6 px-6 lg:px-8 py-6 max-w-4xl"
     >
       {onClose && (
         <button
@@ -181,6 +183,19 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
             >
               {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save design system'}
             </motion.button>
+            <motion.button
+              onClick={downloadAll}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
+              style={{ color: justDownloaded === 'all' ? '#10b981' : primaryColor, borderColor: (justDownloaded === 'all' ? '#10b981' : primaryColor) + '55' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden>
+                <path d="M9 2v10M5.5 8l3.5 4 3.5-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 13.5v1.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              {justDownloaded === 'all' ? 'Downloaded' : 'Download files'}
+            </motion.button>
             <span className="text-xs text-fg-faint">
               {justSaved
                 ? 'Saved to your systems.'
@@ -219,13 +234,18 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`px-4 py-2.5 text-xs font-mono transition-all border-b-2 ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono transition-all border-b-2 ${
                   activeTab === t.id
                     ? 'text-fg border-[#0088FF]'
                     : 'text-fg-faint border-transparent hover:text-fg-muted'
                 }`}
               >
                 {t.label}
+                {t.badge && (
+                  <span className="text-[9px] font-sans px-1.5 py-px rounded-full bg-elevated text-fg-faint border border-line whitespace-nowrap">
+                    {t.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>

@@ -59,7 +59,7 @@ watch the right-hand preview update, then export.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — `HomeView`, a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
-  the component docs (`ComponentDocPane`, incl. the rich `ButtonDoc`), `ExportView`
+  the component docs (`ComponentDocPane` — interactive playground per component), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
   project name), `FigmaConnectView` (opened by Bring to Figma — download the plugin zip +
   live-sync guide), or `GitHubConnectView` (opened by the TopNav GitHub pill / Home's
@@ -164,24 +164,27 @@ Store uses `persist` middleware with `version: 24`. If you add fields, bump the 
 
 ## Component Catalogue
 
-`src/lib/componentCatalogue.ts` contains the `COMPONENTS` array of component definitions (16 today; pure data — imported by the store, the `Sidebar` list, and `ComponentDocPane`). Each definition has:
+**The Figma plugin is the source of truth** (`../scalable-designs-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma (16 keys → 38 sets), and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
+
+`src/lib/componentCatalogue.ts` contains the `COMPONENTS` array (pure data — imported by the store, the catalogue list, and `ComponentDocPane`). Each definition has:
 
 ```ts
 interface ComponentDef {
-  key: string         // unique ID — matches export key in tokens.json
+  key: string         // unique ID — plugin gate; matches export key in tokens.json `atoms`
   label: string       // display name
-  category: string    // Action | Form | Display | Layout | Overlay | Navigation | Feedback
+  category: string    // Button & Actions | Form Controls | Indicators | Content & Surfaces | Feedback | Navigation
   description: string // one-liner
   usage: string       // when to use / when not to use
-  variants: string[]  // visual variant names
+  axes: { name: string; values: string[] }[]  // plugin variant matrix; [] = single component
+  figmaSets: string[] // Figma component sets this key unlocks (plugin CATALOG entries)
   props: { name, type, description }[]
   accessibility: string
 }
 ```
 
-**To add a new component:** append to the `COMPONENTS` array in `src/lib/componentCatalogue.ts`. The rail lists it automatically and it's included by default. No other file needs to change.
+**To add a new component:** add its gate + spec in the plugin first, then mirror it in `COMPONENTS`. The catalogue list renders it automatically and it's included by default.
 
-**To enrich docs:** edit the `props`, `variants`, `usage`, or `accessibility` fields, or add a rich Storybook-style doc in `components/configurator/docs/XDoc.tsx` and register it in the `RICH_DOCS` map in `ComponentDocPane.tsx` (today: `Button`).
+**Docs are an interactive playground** (`ComponentDocPane.tsx` + `docs/specimens.tsx`): a live token-driven specimen on a canvas, per-axis controls (dropdowns / switches driving the exact plugin axes), a usage snippet with Copy, a "Ships in Figma" section (figmaSets + variant count), the prop table, and usage/a11y cards. To support a new component, add its render to the `SPECIMENS` registry and a case to `snippetFor()` in `docs/specimens.tsx`.
 
 ---
 
