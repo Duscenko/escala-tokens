@@ -26,7 +26,8 @@ export interface PreviewTokens {
   disabledText: string
   // Optional extras consumed by the richer preview atoms (Input, Badge, Card…).
   // Resolved in lib/previewTokens.ts; absent in older callers (ButtonDoc) → fallbacks.
-  border?: string // field / card border (border-primary)
+  border?: string // field / input border (border-strong)
+  borderDefault?: string // general card / container border (border-default)
   fgMuted?: string // secondary copy (text-tertiary)
   placeholderText?: string // input placeholder (text-placeholder)
   successColor?: string
@@ -38,7 +39,24 @@ export interface PreviewTokens {
   semanticMap?: Record<string, string>
   radius: Record<string, string>
   spacing: Record<string, string>
-  typography: { fontFamily: string; sizes: Record<string, string>; weights: Record<string, number> }
+  // Per-side surface padding (top/right/bottom/left) for padded surfaces.
+  padding?: Record<string, string>
+  typography: { fontFamily: string; headingFontFamily?: string; sizes: Record<string, string>; weights: Record<string, number> }
+  // Radix-style panel treatment for raised surfaces (surface-1: cards, panels).
+  // 'page' reuses the primitives page background as the panel fill.
+  panelBackground?: 'solid' | 'translucent' | 'page'
+  // Primitives page background — the fill panels use in 'page' mode. Only set
+  // for light-kind themes (a light page anchor makes no sense on dark panels).
+  pageBackground?: string
+  // Component heights from Foundations · Sizes (xs–2xl) — Size axes resolve
+  // control heights from here so previews track that foundation live.
+  sizes?: Record<string, string>
+  // Elevation ramp from Foundations · Shadow (xs–2xl CSS box-shadows).
+  shadows?: Record<string, string>
+  // Transparency steps from Foundations · Opacity ('10' → '10%').
+  opacity?: Record<string, string>
+  // Iconify prefix of the Foundations · Icons library (drives content glyphs).
+  iconPrefix?: string
 }
 
 // ─── Static specs (shared with the doc's galleries & tables) ──────────────────

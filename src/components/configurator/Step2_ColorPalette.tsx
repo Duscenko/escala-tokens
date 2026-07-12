@@ -1,192 +1,16 @@
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
+import { useDesignStore } from '../../store/useDesignStore'
 import {
-  generateColorScale, accessibleSolidTone, recommendStateColors,
+  generateColorScale, recommendStateColors,
   ALGORITHM_OPTIONS, RECOMMENDED_ALGORITHM, NAMING_SCHEMES,
   type ColorAlgorithm, type ColorNaming,
 } from '../../lib/colorUtils'
-import { slugify } from '../../lib/utils'
-import { BRAND_TOKEN_TONES } from '../../lib/semanticRoles'
+import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
-  BRAND_GROUPS, NEUTRAL_GROUPS, type OptionGroup,
+  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, type OptionGroup,
 } from './colorControls'
-
-// ── Custom color families ───────────────────────────────────────────────────
-// User-named colors that auto-generate the same 1–12 scale structure as the
-// built-in families and flow into the export (tokens.json / CSS / README).
-// Saved customs surface in the Brand/Neutral dropdowns under "Saved".
-
-function AddCustomColorButton() {
-  const { customColors, addCustomColor, updateCustomColor, removeCustomColor, colorAlgorithm, contrastShift } = useDesignStore()
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [hex, setHex] = useState('#0ea5e9')
-  const [hexDraft, setHexDraft] = useState('0EA5E9')
-  const [error, setError] = useState<string | null>(null)
-  const ref = useRef<HTMLDivElement>(null)
-
-  function handleHexDraft(raw: string) {
-    const cleaned = raw.replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
-    setHexDraft(cleaned.toUpperCase())
-    if (cleaned.length === 6) setHex(`#${cleaned}`)
-  }
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  function handleAdd() {
-    const label = name.trim()
-    const key = slugify(label)
-    if (!key) { setError('Name the color first.'); return }
-    if (RESERVED_COLOR_KEYS.includes(key)) { setError(`"${key}" is reserved by a built-in scale.`); return }
-    if (customColors.some((c) => c.key === key)) { setError(`"${key}" already exists.`); return }
-    try {
-      addCustomColor({ key, label, base: hex, scale: generateColorScale(hex, colorAlgorithm, contrastShift) })
-      setName('')
-      setError(null)
-      setOpen(false)
-    } catch {
-      setError('Invalid color value.')
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-1.5 min-w-0">
-      <span className="text-xs text-fg-muted">Custom</span>
-      <div ref={ref} className="relative">
-        <button
-          type="button"
-          onClick={() => { setOpen((v) => { if (!v) setHexDraft(hex.replace('#', '').toUpperCase()); return !v }); setError(null) }}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className="w-36 flex items-center gap-2 px-3 py-2 rounded-full border border-dashed border-line-strong text-fg-muted hover:border-fg-faint hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0" aria-hidden>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          <span className="text-sm truncate">Custom</span>
-          {customColors.length > 0 && (
-            <span className="ml-auto text-[11px] font-mono text-fg-faint flex-shrink-0">{customColors.length}</span>
-          )}
-        </button>
-
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.12 }}
-              role="dialog"
-              aria-label="Custom colors"
-              className="absolute z-30 right-0 mt-1.5 w-80 rounded-lg border border-line-strong bg-app shadow-lg p-3 flex flex-col gap-3"
-            >
-              <p className="text-[11px] text-fg-faint leading-snug">
-                Name a color and it adopts the same 12-tone scale. Saved colors appear
-                in the Brand and Neutral dropdowns under <span className="font-medium text-fg-muted">Saved</span>.
-              </p>
-
-              {/* Existing families */}
-              {customColors.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  {customColors.map((c) => (
-                    <div key={c.key} className="flex items-center gap-2">
-                      <label
-                        className="relative w-6 h-6 rounded-full ring-1 ring-black/10 cursor-pointer flex-shrink-0 overflow-hidden"
-                        title={`${c.label} base — ${c.base}`}
-                      >
-                        <span className="absolute inset-0" style={{ backgroundColor: c.base }} />
-                        <input
-                          type="color"
-                          value={c.base}
-                          onChange={(e) =>
-                            updateCustomColor(c.key, { base: e.target.value, scale: generateColorScale(e.target.value, colorAlgorithm, contrastShift) })
-                          }
-                          aria-label={`${c.label} base color`}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </label>
-                      <span className="flex-1 min-w-0 truncate text-sm text-fg">{c.label}</span>
-                      <span className="text-[11px] font-mono text-fg-faint">{c.base}</span>
-                      <button
-                        onClick={() => removeCustomColor(c.key)}
-                        aria-label={`Remove ${c.label}`}
-                        title={`Remove ${c.label}`}
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-fg-faint hover:text-red-500 hover:bg-red-500/10 transition-colors flex-shrink-0"
-                      >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <path d="M18 6 6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add form */}
-              <div className="flex items-center gap-2">
-                <label className="relative w-8 h-8 rounded-full ring-1 ring-black/10 cursor-pointer flex-shrink-0 overflow-hidden" title="Pick a color">
-                  <span className="absolute inset-0" style={{ backgroundColor: hex }} />
-                  <input
-                    type="color"
-                    value={hex}
-                    onChange={(e) => { setHex(e.target.value); setHexDraft(e.target.value.replace('#', '').toUpperCase()) }}
-                    aria-label="New custom color"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </label>
-                <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-surface border border-line focus-within:border-[#0088FF] transition-colors flex-shrink-0">
-                  <span className="text-[12px] font-mono text-fg-faint select-none">#</span>
-                  <input
-                    type="text"
-                    value={hexDraft}
-                    onChange={(e) => handleHexDraft(e.target.value)}
-                    onBlur={() => setHexDraft(hex.replace('#', '').toUpperCase())}
-                    aria-label="Hex color value"
-                    maxLength={6}
-                    className="w-[50px] text-[12px] font-mono text-fg bg-transparent outline-none uppercase"
-                    placeholder="0EA5E9"
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => { setName(e.target.value); setError(null) }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
-                  placeholder="Name — e.g. Teal"
-                  aria-label="Custom color name"
-                  className="flex-1 min-w-0 bg-surface border border-line focus:border-[#0088FF] rounded-full px-3 py-1.5 text-sm text-fg outline-none transition-colors"
-                />
-                <button
-                  onClick={handleAdd}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF]"
-                >
-                  Save
-                </button>
-              </div>
-              {error && <p className="text-xs text-red-500">{error}</p>}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  )
-}
 
 // ── Generic outlined dropdown (Algorithm · Naming) ──────────────────────────
 
@@ -224,7 +48,7 @@ function SelectMenu<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left"
       >
         <span className="text-sm text-fg truncate">{active}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -249,7 +73,7 @@ function SelectMenu<T extends string>({
                 aria-selected={o.key === value}
                 onClick={() => { onChange(o.key); setOpen(false) }}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  o.key === value ? 'bg-elevated text-[#0088FF] font-medium' : 'text-fg hover:bg-surface'
+                  o.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
                 }`}
               >
                 {o.label}
@@ -262,11 +86,12 @@ function SelectMenu<T extends string>({
   )
 }
 
-// ── Color controls card — Algorithm · Naming · Contrast shift ───────────────
+// ── Scale settings — Algorithm · Naming · Contrast shift ────────────────────
 // Drives how every 1–12 ramp is generated + how the export names them. Changing
 // the algorithm or shift regenerates all scales so the preview + export track live.
+// Lives in a modal (gear entry point next to the Primitives heading).
 
-function ColorControls({
+export function ColorControls({
   algorithm,
   naming,
   contrastShift,
@@ -284,7 +109,7 @@ function ColorControls({
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
 
   return (
-    <div className="rounded-xl border border-line p-4 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+    <div className="flex flex-col gap-5">
       {/* Algorithm */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
@@ -338,20 +163,90 @@ function ColorControls({
   )
 }
 
+// Anchored popover for the scale settings — mirrors QuickFoundationsPanel's
+// style exactly (no backdrop overlay; Esc/click-outside to dismiss). Entry
+// point is the filter-icon button in the Primitives header, which this must
+// render right next to (parent wraps both in a `relative` container).
+export function ScaleSettingsModal({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose])
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+          transition={{ duration: 0.14, ease: 'easeOut' }}
+          role="dialog"
+          aria-label="Scale settings"
+          className="absolute right-0 top-full mt-2 z-30 w-80 rounded-2xl border border-line bg-app shadow-xl p-5 flex flex-col gap-6"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-fg">Scale settings</h3>
+              <p className="text-xs text-fg-faint mt-0.5">
+                How every 1–12 ramp is generated and how tokens are named in the export.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step2_ColorPalette() {
   const {
-    primaryColor, primaryScale, setPrimaryColor, setPrimaryScale,
+    primaryColor, primaryScale,
     errorColor,   errorScale,   setErrorColor,   setErrorScale,
     warningColor, warningScale, setWarningColor, setWarningScale,
     successColor, successScale, setSuccessColor, setSuccessScale,
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
-    grayBaseColor, grayLightScale, setGrayBaseColor, setGrayLightScale,
-    themes, mergeThemeTokens, customColors, updateCustomColor, removeCustomColor,
+    grayBaseColor, grayLightScale,
+    customColors, updateCustomColor, removeCustomColor,
     colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
+    pageBackground, setPageBackground,
   } = useDesignStore()
-  const lightTokens = themes.light ?? {}
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const applyAccentColor = useApplyAccentColor()
+  const applyGrayColor = useApplyGrayColor()
+  const applyPageBackground = useApplyPageBackground()
 
   // Saved customs surface in both dropdowns ahead of the Tested presets.
   const savedGroup: OptionGroup | null = customColors.length
@@ -376,51 +271,26 @@ export default function Step2_ColorPalette() {
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
   const regenerate = useCallback((hex: string) => {
-    try {
-      const scale = generateColorScale(hex, colorAlgorithm, contrastShift)
-      setPrimaryColor(hex)
-      setPrimaryScale(scale)
-      // Keep already-mapped brand semantic tokens in sync with the new brand so
-      // the live preview + export track it (unmapped keys fall back to primaryColor).
-      const solid = accessibleSolidTone(scale)
-      const updates: Record<string, string> = {}
-      for (const [key, tone] of Object.entries(BRAND_TOKEN_TONES)) {
-        if (!lightTokens[key]) continue
-        const t =
-          key === 'action-primary' ? solid
-          : key === 'action-primary-hover' ? Math.min(solid + 1, 12)
-          : tone
-        if (scale[t]) updates[key] = scale[t]
-      }
-      if (Object.keys(updates).length) mergeThemeTokens('light', updates)
-      // When linked, re-derive the neutral scale from the new brand.
-      if (linked) {
-        const n = neutralFromBrand(hex)
-        setGrayBaseColor(n)
-        setGrayLightScale(generateColorScale(n, colorAlgorithm, contrastShift))
-      }
-    } catch {}
-  }, [setPrimaryColor, setPrimaryScale, lightTokens, mergeThemeTokens, linked, setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift])
+    applyAccentColor(hex, linked)
+  }, [applyAccentColor, linked])
 
   const regenerateError = useCallback((hex: string) => {
-    try { setErrorColor(hex); setErrorScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
-  }, [setErrorColor, setErrorScale, colorAlgorithm, contrastShift])
+    try { setErrorColor(hex); setErrorScale(generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)) } catch {}
+  }, [setErrorColor, setErrorScale, colorAlgorithm, contrastShift, pageBackground])
 
   const regenerateWarning = useCallback((hex: string) => {
-    try { setWarningColor(hex); setWarningScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
-  }, [setWarningColor, setWarningScale, colorAlgorithm, contrastShift])
+    try { setWarningColor(hex); setWarningScale(generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)) } catch {}
+  }, [setWarningColor, setWarningScale, colorAlgorithm, contrastShift, pageBackground])
 
   const regenerateSuccess = useCallback((hex: string) => {
-    try { setSuccessColor(hex); setSuccessScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
-  }, [setSuccessColor, setSuccessScale, colorAlgorithm, contrastShift])
+    try { setSuccessColor(hex); setSuccessScale(generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)) } catch {}
+  }, [setSuccessColor, setSuccessScale, colorAlgorithm, contrastShift, pageBackground])
 
   const regenerateInfo = useCallback((hex: string) => {
-    try { setInfoColor(hex); setInfoScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
-  }, [setInfoColor, setInfoScale, colorAlgorithm, contrastShift])
+    try { setInfoColor(hex); setInfoScale(generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)) } catch {}
+  }, [setInfoColor, setInfoScale, colorAlgorithm, contrastShift, pageBackground])
 
-  const regenerateGray = useCallback((hex: string) => {
-    try { setGrayBaseColor(hex); setGrayLightScale(generateColorScale(hex, colorAlgorithm, contrastShift)) } catch {}
-  }, [setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift])
+  const regenerateGray = applyGrayColor
 
   function toggleLink() {
     const next = !linked
@@ -461,7 +331,9 @@ export default function Step2_ColorPalette() {
 
   // Algorithm / contrast-shift change → rebuild every ramp from its base color
   // (brand · neutral · state · custom families). Skips the initial mount so it
-  // doesn't clobber freshly-seeded scales.
+  // doesn't clobber freshly-seeded scales. Background changes regenerate via
+  // useApplyPageBackground (shared with Home's picker) — not this effect, so
+  // the pipeline runs even when this section isn't mounted.
   const algoMounted = useRef(false)
   useEffect(() => {
     if (!algoMounted.current) { algoMounted.current = true; return }
@@ -474,7 +346,7 @@ export default function Step2_ColorPalette() {
       regenerateInfo(infoColor)
     }
     customColors.forEach((c) =>
-      updateCustomColor(c.key, { scale: generateColorScale(c.base, colorAlgorithm, contrastShift) }),
+      updateCustomColor(c.key, { scale: generateColorScale(c.base, colorAlgorithm, contrastShift, pageBackground) }),
     )
   }, [colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -485,28 +357,53 @@ export default function Step2_ColorPalette() {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-8"
     >
-      {/* ── Color controls: Algorithm · Naming · Contrast shift ── */}
       <section className="-mx-8 -mt-8 px-8 pt-8 pb-8 flex flex-col gap-5 border-b border-line">
-        <ColorControls
-          algorithm={colorAlgorithm}
-          naming={colorNaming}
-          contrastShift={contrastShift}
-          onAlgorithm={setColorAlgorithm}
-          onNaming={setColorNaming}
-          onShift={setContrastShift}
-        />
+        {/* Primitives header — the scale-settings entry point */}
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-fg">Primitives</h3>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((v) => !v)}
+                aria-haspopup="dialog"
+                aria-expanded={settingsOpen}
+                aria-label="Scale settings — algorithm, naming, contrast shift"
+                title="Scale settings"
+                className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                  settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+                  <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+                  <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+                </svg>
+              </button>
+              <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
+                <ColorControls
+                  algorithm={colorAlgorithm}
+                  naming={colorNaming}
+                  contrastShift={contrastShift}
+                  onAlgorithm={setColorAlgorithm}
+                  onNaming={setColorNaming}
+                  onShift={setContrastShift}
+                />
+              </ScaleSettingsModal>
+            </div>
+          </div>
+        </div>
 
-        <h3 className="text-base font-semibold text-fg">Primitives</h3>
-
-        {/* Brand · link/info · Neutral · + Custom */}
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeBrand} />
+        {/* Accent · link/info · Neutral · Background */}
+        <div className="grid grid-cols-[1fr_auto_1fr_1fr] gap-3 items-end">
+          <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeBrand} allowCustom />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
             <InfoDot tip="Auto-matches the neutral scale to your accent color." />
             <LinkToggle active={linked} onClick={toggleLink} />
           </div>
-          <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={regenerateGray} />
-          <AddCustomColorButton />
+          <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={regenerateGray} allowCustom />
+          <ColorSelect label="Background" value={pageBackground} groups={BACKGROUND_GROUPS} onChange={applyPageBackground} allowCustom />
         </div>
 
         <div className="flex flex-col gap-1.5">

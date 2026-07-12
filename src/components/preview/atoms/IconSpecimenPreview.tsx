@@ -113,7 +113,7 @@ export function IconSpecimenPreview({ libraryKey }: { libraryKey: string }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={`Search ${lib?.count ?? ''} icons…`}
           aria-label="Search icons"
-          className="w-full bg-surface border border-line focus:border-[#0088FF] rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
+          className="w-full bg-surface border border-line focus:border-fg rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
         />
       </div>
 

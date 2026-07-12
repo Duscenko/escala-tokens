@@ -52,7 +52,7 @@ export default function TokenTable({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          className="w-full bg-surface border border-line focus:border-[#0088FF] rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
+          className="w-full bg-surface border border-line focus:border-fg rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
         />
       </div>
 
@@ -84,7 +84,7 @@ export default function TokenTable({
               aria-label={`--${prefix}-${key} value`}
               className={`${
                 wideValues ? 'flex-[2] min-w-0' : 'w-28 flex-shrink-0'
-              } bg-app border border-line focus:border-[#0088FF] rounded px-2 py-1 text-[11px] font-mono text-fg outline-none transition-colors ${
+              } bg-app border border-line focus:border-fg rounded px-2 py-1 text-[11px] font-mono text-fg outline-none transition-colors ${
                 wideValues ? '' : 'text-right'
               }`}
             />

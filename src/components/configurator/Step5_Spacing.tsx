@@ -23,8 +23,15 @@ function buildSpacingFromBase(base: number): Record<string, string> {
   return result
 }
 
+const PADDING_SIDES = [
+  { key: 'top', label: 'Top' },
+  { key: 'right', label: 'Right' },
+  { key: 'bottom', label: 'Bottom' },
+  { key: 'left', label: 'Left' },
+] as const
+
 export default function Step5_Spacing() {
-  const { spacing, setSpacing, primaryColor, themes } = useDesignStore()
+  const { spacing, setSpacing, padding, setPadding, primaryColor, themes } = useDesignStore()
 
   const [baseUnit, setBaseUnit] = useState(4)
   const [editingSpacing, setEditingSpacing] = useState<Record<string, string>>(spacing)
@@ -66,9 +73,9 @@ export default function Step5_Spacing() {
                 <button
                   key={p.value}
                   onClick={() => applyBase(p.value)}
-                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                     baseUnit === p.value
-                      ? 'bg-[#0088FF] text-white'
+                      ? 'bg-fg text-app'
                       : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
                   }`}
                 >
@@ -119,10 +126,42 @@ export default function Step5_Spacing() {
                     type="text"
                     value={val}
                     onChange={(e) => handleSpacingInput(step, e.target.value)}
-                    className="w-full bg-surface border border-line focus:border-[#0088FF] rounded px-2 py-1 text-xs font-mono text-fg outline-none transition-colors text-right"
+                    className="w-full bg-surface border border-line focus:border-fg rounded px-2 py-1 text-xs font-mono text-fg outline-none transition-colors text-right"
                   />
                 </div>
               </motion.div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Surface padding ── the per-side inset padded surfaces use (cards,
+          tiles, panels). Same `padding` token Quick edit's Padding row writes. */}
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-fg-muted uppercase tracking-wide">Surface padding</label>
+          <p className="text-xs text-fg-faint">Per-side inset for padded surfaces — cards, tiles, panels. Exported as <code className="font-mono">--padding-*</code>.</p>
+        </div>
+        <div className="grid grid-cols-4 gap-3 max-w-md">
+          {PADDING_SIDES.map((side) => {
+            const raw = padding?.[side.key] ?? '20px'
+            const value = parseInt(raw, 10)
+            return (
+              <label key={side.key} className="flex flex-col gap-1.5">
+                <span className="text-xs text-fg-faint">{side.label}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  value={Number.isFinite(value) ? value : 20}
+                  onChange={(e) => {
+                    const n = Math.max(0, Math.min(99, Number(e.target.value) || 0))
+                    setPadding({ ...padding, [side.key]: `${n}px` })
+                  }}
+                  aria-label={`Surface padding ${side.label.toLowerCase()}`}
+                  className="w-full bg-surface border border-line focus:border-fg rounded px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </label>
             )
           })}
         </div>

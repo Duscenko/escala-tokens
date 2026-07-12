@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { fontFamilyOf } from '../../../lib/previewTokens'
+import { fontFamilyOf, panelStyle } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
 // Live specimen for the **Surface / Action / Status** semantic categories — each
@@ -12,12 +12,27 @@ export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
   const border = tokens.border || '#eaecf0'
   const muted = tokens.fgMuted || '#717680'
 
-  function Swatch({ token, fb }: { token: string; fb: string }) {
+  // Panel-background tokens (surface-1: cards, panels, sections) render on a
+  // checkerboard when translucent, so the alpha is legible — same convention
+  // as a color picker's alpha swatch.
+  function Swatch({ token, fb, isPanel = false }: { token: string; fb: string; isPanel?: boolean }) {
+    const hex = v(token, fb)
+    const translucent = isPanel && tokens.panelBackground === 'translucent'
     return (
       <div className="flex flex-col gap-1.5" style={{ width: 92 }}>
-        <div style={{ height: 46, borderRadius: 10, background: v(token, fb), border: `1px solid ${border}` }} />
+        <div
+          style={{
+            height: 46, borderRadius: 10, border: `1px solid ${border}`, position: 'relative', overflow: 'hidden',
+            backgroundImage: translucent
+              ? 'conic-gradient(#00000018 25%, transparent 0 50%, #00000018 0 75%, transparent 0)'
+              : undefined,
+            backgroundSize: '10px 10px',
+          }}
+        >
+          <div style={{ position: 'absolute', inset: 0, ...(isPanel ? panelStyle(tokens, hex) : { background: hex }) }} />
+        </div>
         <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: muted }} className="truncate" title={token}>
-          {token}
+          {token}{translucent && ' · alpha'}
         </code>
       </div>
     )
@@ -39,7 +54,7 @@ export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
     >
       <Section title="Surfaces">
         <Swatch token="surface-0" fb="#ffffff" />
-        <Swatch token="surface-1" fb="#fafafa" />
+        <Swatch token="surface-1" fb="#fafafa" isPanel />
         <Swatch token="surface-2" fb="#f5f5f5" />
         <Swatch token="surface-3" fb="#e9eaeb" />
       </Section>

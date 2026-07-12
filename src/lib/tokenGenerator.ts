@@ -1,6 +1,6 @@
 import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
-import { toneLabel, type ColorNaming } from './colorUtils'
+import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
@@ -62,6 +62,23 @@ export function generateTokenJSON() {
     Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
   })
 
+  // Alpha twins (Radix custom-palette architecture): for every light-appearance
+  // ramp, the overlay color that reproduces each solid step when composited
+  // over the page background (#rrggbbaa). Background-dependent by construction
+  // — which is why `pageBackground` ships alongside as `colors.background`.
+  const primitiveAlpha: Record<string, string> = {}
+  const alphaOf = (name: string, scale: Record<number, string>) => {
+    if (!Object.keys(scale).length) return
+    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground), colorNaming))
+  }
+  alphaOf('accent', store.primaryScale)
+  alphaOf('neutral', store.grayLightScale)
+  alphaOf('error', store.errorScale)
+  alphaOf('warning', store.warningScale)
+  alphaOf('success', store.successScale)
+  alphaOf('info', store.infoScale)
+  store.customColors.forEach((c) => alphaOf(c.key, c.scale))
+
   // Custom style themes carry their own source ramps (themePalettes). Export
   // each ramp namespaced by theme ("ocean/accent-7") so that theme's semantic
   // values can alias primitives in Figma instead of holding loose hex values.
@@ -120,7 +137,12 @@ export function generateTokenJSON() {
     schemaVersion: TOKEN_SCHEMA_VERSION,
     project: store.projectName,
     colors: {
+      // The page background every ramp is generated against and every alpha
+      // token composites over (Radix custom-palette "background" input).
+      background: store.pageBackground,
       primitive,
+      // Alpha twins of the light-appearance primitives, derived vs background.
+      primitiveAlpha,
       // 'semantic'/'semanticDark' stay for Figma-plugin compatibility; 'themes'
       // carries the full multi-theme map (incl. user-added themes), and
       // 'themeOrder' is the column order the plugin creates modes in.
@@ -128,6 +150,8 @@ export function generateTokenJSON() {
       semanticDark: orderedThemes.dark ?? store.themes.dark ?? {},
       themes: orderedThemes,
       themeOrder: themeNames,
+      // Radix-style panel treatment for surface-1 (cards, panels, sections).
+      panelBackground: store.panelBackground,
     },
     typography: {
       fontFamily: typography.fontFamily,
@@ -137,6 +161,8 @@ export function generateTokenJSON() {
       weights: typography.weights,
     },
     spacing: store.spacing,
+    // Per-side surface padding for padded surfaces (cards, tiles, panels).
+    padding: store.padding,
     radius: store.radius,
     opacity: store.opacity,
     shadows: store.shadows,

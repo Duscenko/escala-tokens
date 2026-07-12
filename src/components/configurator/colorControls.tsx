@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
+import { BASE_TONE } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
 
 // ── Gray flavor options for the neutral scale ──────────────────────────────
@@ -19,6 +20,18 @@ export const GRAY_FLAVORS: { label: string; hex: string }[] = [
   { label: 'Gray Warm',    hex: '#79716b' },
 ]
 
+// ── Page-background options (Radix custom-palette "background" input) ──────
+// The surface every ramp is generated against: tone 1 anchors to its lightness
+// and the exported alpha ramps composite over it. White = the classic default.
+export const BACKGROUND_OPTIONS: { label: string; hex: string }[] = [
+  { label: 'Pure White', hex: '#ffffff' },
+  { label: 'Snow',       hex: '#fcfcfc' },
+  { label: 'Cool Gray',  hex: '#f8fafc' },
+  { label: 'Warm Gray',  hex: '#faf9f7' },
+  { label: 'Cream',      hex: '#fdfbf7' },
+  { label: 'Ivory',      hex: '#fffcf0' },
+]
+
 export type Option = { label: string; hex: string }
 // `badge` marks a group's provenance in the dropdown — 'Tested' for the
 // curated presets vs the user's own 'Saved' customs.
@@ -30,6 +43,7 @@ export const BRAND_GROUPS: OptionGroup[] = PRESET_GROUPS.map((g) => ({
   options: g.colors.map((c) => ({ label: c.label, hex: c.hex })),
 }))
 export const NEUTRAL_GROUPS: OptionGroup[] = [{ label: 'Grays', badge: 'Tested', options: GRAY_FLAVORS }]
+export const BACKGROUND_GROUPS: OptionGroup[] = [{ label: 'Backgrounds', badge: 'Tested', options: BACKGROUND_OPTIONS }]
 
 export function findOption(groups: OptionGroup[], hex: string): Option | null {
   const target = hex.toLowerCase()
@@ -49,6 +63,7 @@ export function ColorSelect({
   onChange,
   variant = 'full',
   accentColor,
+  allowCustom = false,
 }: {
   label?: string
   value: string
@@ -56,13 +71,30 @@ export function ColorSelect({
   onChange: (hex: string) => void
   variant?: 'full' | 'compact' | 'pill'
   accentColor?: string
+  /** Renders a "Custom" row (native picker + hex field) as the dropdown's first option. */
+  allowCustom?: boolean
 }) {
   const compact = variant === 'compact'
   const pill = variant === 'pill'
   const [open, setOpen] = useState(false)
+  const [customDraft, setCustomDraft] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const selected = findOption(groups, value)
   const hexLabel = value.replace(/^#/, '').toUpperCase()
+
+  function openToggle() {
+    setOpen((v) => {
+      if (!v) setCustomDraft(hexLabel)
+      return !v
+    })
+  }
+
+  // Free-typed hex — applies live once 6 valid digits are in.
+  function handleCustomDraft(raw: string) {
+    const cleaned = raw.replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
+    setCustomDraft(cleaned.toUpperCase())
+    if (cleaned.length === 6) onChange(`#${cleaned.toLowerCase()}`)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -84,7 +116,7 @@ export function ColorSelect({
           aria-expanded={open}
           aria-label={`${label ?? 'Color'} — ${hexLabel}`}
           className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 transition-colors"
-          style={{ ['--tw-ring-color' as string]: accentColor ?? '#0088FF' }}
+          style={{ ['--tw-ring-color' as string]: accentColor ?? '#111111' }}
         >
           {label && <span className="text-[13px] text-fg">{label}</span>}
           <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: value }} />
@@ -137,14 +169,14 @@ export function ColorSelect({
       <div ref={ref} className="relative">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={openToggle}
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-label={compact ? (label ? `${label} color` : 'Choose color') : undefined}
           className={
             compact
-              ? 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors'
-              : 'w-full flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] transition-colors text-left'
+              ? 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors'
+              : 'w-full flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left'
           }
         >
           <span className={`${compact ? 'w-5 h-5' : 'w-4 h-4'} rounded-full flex-shrink-0 ring-1 ring-black/10`} style={{ backgroundColor: value }} />
@@ -169,6 +201,33 @@ export function ColorSelect({
               role="listbox"
               className={`absolute z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${compact ? 'right-0 w-56' : 'w-full'}`}
             >
+              {allowCustom && (
+                <div className="flex items-center gap-2.5 px-2 py-1.5 mb-1 border-b border-line">
+                  <label
+                    className="relative w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10 overflow-hidden cursor-pointer"
+                    style={{ background: 'conic-gradient(#f04438, #f79009, #17b26a, #06aed4, #2e90fa, #7a5af8, #f04438)' }}
+                    title="Pick a custom color"
+                  >
+                    <input
+                      type="color"
+                      value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#7f56d9'}
+                      onChange={(e) => { onChange(e.target.value); setCustomDraft(e.target.value.replace('#', '').toUpperCase()) }}
+                      aria-label={`Custom ${label ?? 'color'}`}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </label>
+                  <span className="flex-1 text-sm text-fg">Custom</span>
+                  <span className="text-[11px] font-mono text-fg-faint">#</span>
+                  <input
+                    value={customDraft}
+                    onChange={(e) => handleCustomDraft(e.target.value)}
+                    placeholder="7F56D9"
+                    spellCheck={false}
+                    aria-label={`Custom ${label ?? 'color'} hex`}
+                    className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
+                  />
+                </div>
+              )}
               {groups.map((g) => (
                 <div key={g.label || 'all'}>
                   {g.label && (
@@ -225,7 +284,7 @@ export function ColorSelect({
 
 // ── Scale row (12 tones, BASE marker) ──────────────────────────────────────
 
-export function ScaleRow({ scale, baseIndex = 6, showNumbers = true, labels }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[] }) {
+export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, labels }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[] }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
   return (
@@ -233,7 +292,7 @@ export function ScaleRow({ scale, baseIndex = 6, showNumbers = true, labels }: {
       {entries.map(([key, color], i) => {
         const k = Number(key)
         const isBase = k === baseIndex
-        const onLight = k >= 6 ? '#ffffff' : '#0a0a0a'
+        const onLight = k >= BASE_TONE ? '#ffffff' : '#0a0a0a'
         return (
           <div key={key} className="flex flex-col gap-1 min-w-0">
             {showNumbers && (
@@ -289,7 +348,7 @@ export function InfoDot({ tip }: { tip: string }) {
 }
 
 export function LinkToggle({ active, onClick, accentColor }: { active: boolean; onClick: () => void; accentColor?: string }) {
-  const accent = accentColor ?? '#0088FF'
+  const accent = accentColor ?? '#111111'
   return (
     <button
       type="button"

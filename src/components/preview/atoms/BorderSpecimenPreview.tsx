@@ -8,7 +8,9 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
   const fontFamily = fontFamilyOf(tokens)
-  const surfaceBorder = tokens.border || '#eaecf0'
+  // The card/container shell uses border-default — the general-purpose surface
+  // stroke — not the stronger input border.
+  const surfaceBorder = v('border-default', tokens.border || '#eaecf0')
   const muted = tokens.fgMuted || '#717680'
   const placeholder = tokens.placeholderText || '#a4a7ae'
   const label = tokens.neutralText || '#414651'

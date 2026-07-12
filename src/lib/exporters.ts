@@ -4,11 +4,23 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
-import { toneLabel } from './colorUtils'
+import { toneLabel, withAlpha } from './colorUtils'
+
+// Panel (surface-1: cards, panels, sections) tokens — translucent mode bakes
+// alpha into the color and pairs it with --panel-blur for backdrop-filter;
+// page mode swaps in the primitives page background (light themes only).
+const PANEL_KEYS = ['surface-1', 'surface-1-alt']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, colorNaming } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, opacity, shadows, grid, sizes, colorNaming, panelBackground, pageBackground } = store
   const semanticTokens = themes.light ?? {}
+  const translucent = panelBackground === 'translucent'
+  const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
+    if (!PANEL_KEYS.includes(key)) return hex
+    if (translucent) return withAlpha(hex, 0.7)
+    if (panelBackground === 'page' && kind === 'light') return pageBackground
+    return hex
+  }
   const lines: string[] = [':root {']
 
   // Primitive families — names match tokens.json (`accent`/`neutral`, the
@@ -31,8 +43,11 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('\n  /* Semantic tokens — light */')
   Object.entries(semanticTokens).forEach(([k, v]) => {
-    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`)
+    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v)};`)
   })
+
+  lines.push('\n  /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */')
+  lines.push(`  --panel-blur: ${translucent ? 'blur(16px)' : 'none'};`)
 
   lines.push('\n  /* Typography */')
   lines.push(`  --font-family-heading: ${fontStack(typography.headingFontFamily ?? typography.fontFamily)};`)
@@ -43,6 +58,9 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
+
+  lines.push('\n  /* Padding — per-side surface inset */')
+  Object.entries(padding).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
@@ -67,9 +85,10 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
     if (!entries.length) return
     const selector = theme === 'dark' ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`
+    const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
     lines.push(`\n${selector} {`)
     lines.push(`  /* Semantic tokens — ${theme} */`)
-    entries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`))
+    entries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, kind)};`))
     lines.push('}')
   })
 
@@ -77,7 +96,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 }
 
 export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming } = store
+  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, padding, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground } = store
   const semanticTokens = themes.light ?? {}
   const themeCols = themeOrder.filter((t) => themes[t])
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -93,6 +112,7 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 
 - **Primary color:** \`${primaryColor}\`
 - **Themes:** ${themeCols.map(cap).join(', ')}
+- **Panel background:** ${cap(panelBackground)}
 - **Heading font:** ${headingFont}
 - **Body font:** ${typography.fontFamily}
 - **Icons:** ${lib?.label ?? iconLibrary}${lib?.npm ? ` (\`${lib.npm}\`)` : ''}
@@ -139,6 +159,12 @@ ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`
 | Token | Value |
 |-------|-------|
 ${Object.entries(spacing).map(([k,v])=>`| \`--spacing-${k}\` | \`${v}\` |`).join('\n')}
+
+### Padding — surface inset
+
+| Token | Value |
+|-------|-------|
+${Object.entries(padding).map(([k,v])=>`| \`--padding-${k}\` | \`${v}\` |`).join('\n')}
 
 ---
 
@@ -204,6 +230,7 @@ ${selectedComponents.length > 0
 \`\`\`css
 .card {
   background: var(--color-surface-1);
+  backdrop-filter: var(--panel-blur);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);

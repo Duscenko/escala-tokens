@@ -191,12 +191,12 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
                 onKeyDown={(e) => { if (e.key === 'Enter') connect() }}
                 placeholder="ghp_…"
                 aria-label="GitHub personal access token"
-                className="flex-1 bg-app border border-line focus:border-[#0088FF] rounded-lg px-3 py-2 text-sm font-mono text-fg outline-none transition-colors"
+                className="flex-1 bg-app border border-line focus:border-fg rounded-lg px-3 py-2 text-sm font-mono text-fg outline-none transition-colors"
               />
               <button
                 onClick={connect}
                 disabled={authBusy || !tokenInput.trim()}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] disabled:opacity-40 transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-fg text-app hover:opacity-90 disabled:opacity-40 transition-colors"
               >
                 {authBusy ? 'Connecting…' : 'Connect'}
               </button>
@@ -217,7 +217,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
           value={githubRepo ?? ''}
           onChange={(e) => setGithubRepo(e.target.value || null)}
           aria-label="Target repository"
-          className="bg-app border border-line rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-[#0088FF] transition-colors"
+          className="bg-app border border-line rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-fg transition-colors"
         >
           <option value="">Choose a repository…</option>
           {repos.map((r) => (
@@ -234,7 +234,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
             onChange={(e) => { setNewRepoName(e.target.value); setRepoError(null) }}
             placeholder={`${slug}-design-system`}
             aria-label="New repository name"
-            className="flex-1 bg-app border border-line focus:border-[#0088FF] rounded-lg px-3 py-2 text-sm font-mono text-fg outline-none transition-colors"
+            className="flex-1 bg-app border border-line focus:border-fg rounded-lg px-3 py-2 text-sm font-mono text-fg outline-none transition-colors"
           />
           <button
             onClick={handleCreateRepo}
@@ -265,7 +265,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
         <button
           onClick={push}
           disabled={pushState === 'pushing'}
-          className="self-start px-4 py-2 rounded-lg text-sm font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] disabled:opacity-40 transition-colors"
+          className="self-start px-4 py-2 rounded-lg text-sm font-medium bg-fg text-app hover:opacity-90 disabled:opacity-40 transition-colors"
         >
           {pushState === 'pushing' ? 'Pushing…' : pushState === 'done' ? '✓ Pushed — push again' : 'Push to GitHub'}
         </button>

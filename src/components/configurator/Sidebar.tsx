@@ -1,7 +1,9 @@
 import { type ComponentType, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
+import { useTheme } from '../../lib/theme'
+import { readableAccent } from '../../lib/colorUtils'
 
-export type Tab = 'foundations' | 'components'
+export type Tab = 'foundations' | 'components' | 'docs'
 
 export interface RailFoundation {
   key: string
@@ -69,12 +71,15 @@ function RailItem({
   label,
   active,
   accent,
+  labelAccent,
   onClick,
 }: {
   Icon: ComponentType
   label: string
   active: boolean
   accent: string
+  /** Accent for the label text — pre-adjusted for contrast over the rail background. */
+  labelAccent: string
   onClick: () => void
 }) {
   return (
@@ -87,7 +92,7 @@ function RailItem({
         className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all ${
           active
             ? 'bg-white shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-            : 'bg-white/50 text-fg-muted group-hover:bg-white/80 group-hover:text-fg'
+            : 'bg-white/50 text-fg-muted group-hover:bg-white/80 group-hover:text-fg dark:bg-white/10 dark:group-hover:bg-white/20'
         }`}
         style={active ? { color: accent } : undefined}
       >
@@ -97,7 +102,7 @@ function RailItem({
         className={`text-[10px] leading-tight text-center transition-colors ${
           active ? 'font-medium' : 'text-fg-muted group-hover:text-fg'
         }`}
-        style={active ? { color: accent } : undefined}
+        style={active ? { color: labelAccent } : undefined}
       >
         {label}
       </span>
@@ -116,7 +121,11 @@ export default function Sidebar({
   saveActive,
 }: SidebarProps) {
   const { primaryScale, primaryColor, projectCreated } = useDesignStore()
-  const accent = primaryScale[9] ?? primaryScale[8] ?? primaryColor ?? '#0088FF'
+  const theme = useTheme()
+  const accent = primaryScale[9] ?? primaryScale[8] ?? primaryColor ?? '#111111'
+  // Labels sit directly on the rail gradient — near-black in dark mode, where
+  // tone 9 (tuned for white surfaces) can turn unreadable.
+  const labelAccent = theme === 'dark' ? readableAccent(accent, '#0a0a0a') : accent
   const [moreOpen, setMoreOpen] = useState(false)
 
   // Pre-creation the rail is empty. Once created, core foundations show always;
@@ -138,6 +147,7 @@ export default function Sidebar({
               label={f.short}
               active={activeFoundation === f.key}
               accent={accent}
+              labelAccent={labelAccent}
               onClick={() => onFoundationSelect(f.key)}
             />
           ))}
@@ -149,6 +159,7 @@ export default function Sidebar({
                 label={showSecondary ? 'Less' : 'More'}
                 active={false}
                 accent={accent}
+                labelAccent={labelAccent}
                 onClick={() => setMoreOpen((v) => !v)}
               />
               {showSecondary &&
@@ -159,6 +170,7 @@ export default function Sidebar({
                     label={f.short}
                     active={activeFoundation === f.key}
                     accent={accent}
+                    labelAccent={labelAccent}
                     onClick={() => onFoundationSelect(f.key)}
                   />
                 ))}
@@ -170,13 +182,14 @@ export default function Sidebar({
       {/* Connect + save block — "Save" stores the current tokens locally. */}
       <div className={`flex-shrink-0 w-full flex flex-col items-center gap-0.5 pt-2 mt-1 ${projectCreated ? 'border-t border-line/50' : ''}`}>
         {projectCreated && (
-          <RailItem Icon={FigmaGlyph} label="Bring to Figma" active={exportMode === 'figma'} accent={accent} onClick={onGetFigma} />
+          <RailItem Icon={FigmaGlyph} label="Bring to Figma" active={exportMode === 'figma'} accent={accent} labelAccent={labelAccent} onClick={onGetFigma} />
         )}
         <RailItem
           Icon={SaveIcon}
           label="Save"
           active={saveActive}
           accent={accent}
+          labelAccent={labelAccent}
           onClick={onSave}
         />
       </div>

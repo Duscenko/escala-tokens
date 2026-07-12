@@ -33,7 +33,7 @@ function ResetButton({ modified, onReset, title }: { modified: boolean; onReset:
       disabled={!modified}
       title={title}
       aria-label={title}
-      className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-[#0088FF] disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+      className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
     >
       <ResetIcon />
     </button>
@@ -47,7 +47,7 @@ function ValueInput({ value, onChange, mono = true }: { value: string; onChange:
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full bg-app text-[13px] ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-[#0088FF] px-2 py-1 outline-none transition-colors`}
+      className={`w-full bg-app text-[13px] ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors`}
     />
   )
 }
@@ -141,7 +141,7 @@ function FontPickerPopover({
               onClick={() => onSelect(f)}
               style={{ fontFamily: fontStack(f) }}
               className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[15px] transition-colors ${
-                active ? 'bg-[#0088FF]/10 text-[#0088FF]' : 'text-fg hover:bg-elevated/60'
+                active ? 'bg-fg/10 text-fg' : 'text-fg hover:bg-elevated/60'
               }`}
             >
               <span className="truncate">{f}</span>
@@ -259,7 +259,7 @@ export default function Step4_Typography() {
               <div className={`${valueCell} relative`}>
                 <button
                   onClick={() => setPickerRole(pickerRole === r.role ? null : r.role)}
-                  className="flex items-center gap-1.5 w-full text-left text-[13px] text-fg hover:text-[#0088FF] transition-colors"
+                  className="flex items-center gap-1.5 w-full text-left text-[13px] text-fg hover:text-fg transition-colors"
                 >
                   <span className="truncate" style={{ fontFamily: fontStack(family) }}>{family}</span>
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-fg-faint flex-shrink-0">

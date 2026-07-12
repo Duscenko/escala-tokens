@@ -1,341 +1,667 @@
-import { useState } from 'react'
+// Home — an introductory collage of the system's own components, rendered live
+// from the user's tokens (createui-style hub). Pick an accent/neutral right
+// here or jump into Foundations · Color to customize properly. Everything
+// about saving/connections/sharing moved to the Save hub (SaveView).
+
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { downloadTokenJSON } from '../../lib/tokenGenerator'
-import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
-import { getIconLibrary } from '../../lib/iconLibraries'
-import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
-import { OverviewChecklistPreview } from '../preview/atoms/OverviewChecklistPreview'
+import { usePreviewTokens, radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf } from '../../lib/previewTokens'
+import { withAlpha, NAMING_SCHEMES } from '../../lib/colorUtils'
+import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground } from '../../lib/colorActions'
+import {
+  ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
+  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, type OptionGroup,
+} from './colorControls'
+import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import { SPECIMENS, TokenIcon, type IconConcept } from './docs/specimens'
+import { SignUpCardPreview } from '../preview/atoms/SignUpCardPreview'
+import type { PreviewTokens } from '../preview/ButtonPreview'
 
 interface HomeViewProps {
-  /** Opens the Bring to Figma view (export mode lives in the shell). */
-  onOpenFigma: () => void
-  /** Opens the Save to GitHub view. */
-  onOpenGithub: () => void
   /** Navigates to a foundation section, or the catalogue for 'components'. */
   onOpenFoundation: (key: string) => void
-  /** Opens the code-export view (tokens.json · CSS · README). */
-  onOpenExport: () => void
+  /** Theme the collage renders in — driven by the Quick edit panel. */
+  previewTheme?: string
 }
 
+// ── Small token-driven helpers (collage-only micro specimens) ────────────────
 
-function timeAgo(iso: string): string {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins} min ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  return new Date(iso).toLocaleDateString()
+// Soft tint reads the Opacity foundation's 10 step (same rule as specimens.tsx),
+// so soft fills track the user's transparency scale.
+function soft(t: PreviewTokens, hex: string): string {
+  return tintOf(t, hex, '10', 0.12)
 }
 
-function StatusDot({ ok }: { ok: boolean }) {
+function Switch({ t, on, label }: { t: PreviewTokens; on: boolean; label: string }) {
   return (
     <span
-      className={`w-2 h-2 rounded-full flex-shrink-0 ${ok ? 'bg-emerald-500' : 'bg-line-strong'}`}
-      aria-hidden
-    />
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      style={{
+        width: 36, height: 20, borderRadius: 999, position: 'relative', flexShrink: 0,
+        background: on ? t.brandSolid : t.neutralFill,
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16,
+          borderRadius: 999, background: t.surface, boxShadow: shadowOf(t, 'xs', '0 1px 2px rgba(10,13,18,0.2)'),
+        }}
+      />
+    </span>
   )
 }
 
-function SummaryChip({ label, value, swatch }: { label: string; value: string; swatch?: string }) {
+function ToggleRow({ t, on, label }: { t: PreviewTokens; on: boolean; label: string }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
-      <span className="text-[10px] text-fg-faint uppercase tracking-wider">{label}</span>
-      <div className="flex items-center gap-1.5">
-        {swatch && <span className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0" style={{ backgroundColor: swatch }} />}
-        <span className="text-sm font-medium text-fg truncate">{value}</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ fontSize: 13, color: t.neutralText }}>{label}</span>
+      <Switch t={t} on={on} label={label} />
+    </div>
+  )
+}
+
+function UpgradeCard({ t }: { t: PreviewTokens }) {
+  const btn: CSSProperties = {
+    width: '100%', boxSizing: 'border-box', padding: '9px 14px', textAlign: 'center',
+    borderRadius: radiusOf(t, 'md', '8px'), fontSize: 13, fontWeight: weightOf(t, 'semibold', 600),
+    cursor: 'pointer',
+  }
+  return (
+    <div style={{ fontFamily: fontFamilyOf(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
+      <span
+        style={{
+          width: 44, height: 44, borderRadius: radiusOf(t, 'lg', '12px'),
+          background: soft(t, t.brandSolid), color: t.brandText,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <TokenIcon t={t} concept="zap" size={20} color={t.brandText} />
+      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontSize: 14, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>Upgrade to Pro</span>
+        <span style={{ fontSize: 12, color: t.fgMuted }}>Unlock advanced pro components.</span>
+      </div>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ ...btn, background: t.brandSolid, color: t.onBrand }}>Upgrade Now</span>
+        <span style={{ ...btn, background: soft(t, t.brandSolid), color: t.brandText }}>Compare Plans</span>
       </div>
     </div>
   )
 }
 
-// GitHub brand mark — monochrome, tracks currentColor.
-function GitHubGlyph() {
+function AvatarStack({ t }: { t: PreviewTokens }) {
+  const initials = ['MD', 'AK', 'JT', '+4']
   return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-    </svg>
-  )
-}
-
-// ── Saved systems list: open, remove (local only), or start a new one ───────
-function SavedSystemsList({ onAddNew }: { onAddNew: () => void }) {
-  const { savedSystems, loadSystem, removeSavedSystem } = useDesignStore()
-  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
-
-  return (
-    <div className="flex flex-col gap-3 max-w-3xl">
-      <h3 className="text-sm text-fg-muted uppercase tracking-wide">My design systems</h3>
-      <div className="grid sm:grid-cols-2 gap-3">
-        {savedSystems.map((sys) => (
-          <div key={sys.id} className="rounded-xl bg-surface border border-line p-4 flex flex-col gap-2">
-            <p className="text-sm font-semibold text-fg truncate">{sys.name}</p>
-            {sys.description && (
-              <p className="text-xs text-fg-faint leading-relaxed line-clamp-2">{sys.description}</p>
-            )}
-            <div className="flex items-center gap-1.5 text-[11px] text-fg-faint">
-              {sys.repo ? (
-                <>
-                  <GitHubGlyph />
-                  <span className="font-mono truncate">{sys.repo}</span>
-                </>
-              ) : (
-                <span className="truncate">Saved in this browser</span>
-              )}
-              <span className="ml-auto flex-shrink-0">saved {timeAgo(sys.savedAt)}</span>
-            </div>
-            {confirmingDelete === sys.id ? (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[11px] text-fg-faint flex-1">Remove from this browser? The repository is untouched.</span>
-                <button
-                  onClick={() => { removeSavedSystem(sys.id); setConfirmingDelete(null) }}
-                  className="text-[11px] font-medium text-red-500 hover:text-red-600 transition-colors"
-                >
-                  Remove
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(null)}
-                  className="text-[11px] text-fg-faint hover:text-fg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 mt-1">
-                <button
-                  onClick={() => loadSystem(sys.id)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] focus-visible:ring-offset-2 focus-visible:ring-offset-app"
-                >
-                  Open
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(sys.id)}
-                  className="text-[11px] text-fg-faint hover:text-red-500 transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Add new */}
-        <button
-          onClick={onAddNew}
-          className="rounded-xl border-2 border-dashed border-line-strong bg-surface/50 p-4 flex flex-col items-center justify-center gap-2 text-fg-muted hover:border-fg-faint hover:text-fg transition-colors min-h-28"
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      {initials.map((n, i) => (
+        <span
+          key={n}
+          style={{
+            width: 32, height: 32, borderRadius: 999, marginLeft: i === 0 ? 0 : -8,
+            background: i === initials.length - 1 ? t.neutralText : soft(t, t.brandSolid),
+            color: i === initials.length - 1 ? t.surface : t.brandText,
+            border: `2px solid ${t.surface}`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: weightOf(t, 'semibold', 600),
+            fontFamily: fontFamilyOf(t),
+          }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          <span className="text-sm font-medium">New Design System</span>
-        </button>
+          {n}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+// Blockquote text pattern — brand flavor colors the key words from text-brand;
+// muted flavor tones everything down and lets emphasis carry the hierarchy.
+function QuoteBlock({ t, muted = false }: { t: PreviewTokens; muted?: boolean }) {
+  const em: CSSProperties = muted
+    ? { color: t.neutralText }
+    : { color: t.brandText, fontWeight: weightOf(t, 'medium', 500) }
+  return (
+    <blockquote
+      style={{
+        margin: 0, paddingLeft: 14,
+        borderLeft: `3px solid ${muted ? (t.borderDefault ?? '#e9eaeb') : t.brandSolid}`,
+        fontSize: 13.5, lineHeight: 1.65, color: t.fgMuted, fontFamily: fontFamilyOf(t),
+      }}
+    >
+      Great systems live in the details — the <span style={em}>color</span>,{' '}
+      <span style={em}>type</span> and <span style={em}>spacing</span> decisions that compose
+      into every <span style={em}>component</span> you ship.
+    </blockquote>
+  )
+}
+
+function TodoItem({ t, done, children }: { t: PreviewTokens; done?: boolean; children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span
+        aria-hidden
+        style={{
+          width: 18, height: 18, flexShrink: 0, borderRadius: radiusOf(t, 'sm', '4px'),
+          background: done ? t.brandSolid : t.surface,
+          border: done ? `1px solid ${t.brandSolid}` : `1.5px solid ${t.border}`,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        {done && <TokenIcon t={t} concept="check" size={12} color={t.onBrand} />}
+      </span>
+      <span
+        style={{
+          fontSize: 13,
+          color: done ? t.fgMuted : t.neutralText,
+          textDecoration: done ? 'line-through' : 'none',
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  )
+}
+
+// Translucent panel demo — a glass card floating over a gradient of the accent,
+// showing how surfaces read with alpha + backdrop blur (Radix panelBackground).
+function GlassPanel({ t }: { t: PreviewTokens }) {
+  const glass: CSSProperties = {
+    background: withAlpha(t.surface, 0.6),
+    backdropFilter: 'blur(14px) saturate(1.4)',
+    WebkitBackdropFilter: 'blur(14px) saturate(1.4)',
+    border: `1px solid ${withAlpha(t.surface, 0.7)}`,
+  }
+  return (
+    <div
+      className="break-inside-avoid mb-4 overflow-hidden"
+      style={{
+        borderRadius: radiusOf(t, 'lg', '12px'),
+        border: `1px solid ${t.borderDefault ?? '#e9eaeb'}`,
+        padding: paddingOf(t),
+        background: `linear-gradient(135deg, ${withAlpha(t.brandSolid, 0.18)} 0%, ${withAlpha(t.brandSolid, 0.6)} 55%, ${t.brandSolid} 120%), ${t.surface}`,
+        display: 'flex', flexDirection: 'column', gap: 12,
+        fontFamily: fontFamilyOf(t),
+      }}
+    >
+      <div
+        style={{
+          ...glass,
+          borderRadius: radiusOf(t, 'md', '8px'),
+          boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'),
+          padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span
+            style={{
+              width: 34, height: 34, borderRadius: 999, flexShrink: 0,
+              background: soft(t, t.brandSolid), color: t.brandText,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <TokenIcon t={t} concept="zap" size={15} color={t.brandText} />
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 13.5, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>Tokens published</span>
+            <span style={{ fontSize: 12, color: t.fgMuted }}>2 min ago · synced to Figma</span>
+          </div>
+        </div>
+        <span
+          style={{
+            ...glass,
+            boxSizing: 'border-box', width: '100%', padding: '8px 12px', textAlign: 'center',
+            borderRadius: radiusOf(t, 'md', '8px'), fontSize: 12.5,
+            fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText, cursor: 'pointer',
+          }}
+        >
+          View in Figma
+        </span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {['24 colors', '9 foundations'].map((label) => (
+          <span
+            key={label}
+            style={{
+              ...glass, padding: '5px 12px', borderRadius: 999,
+              fontSize: 11.5, fontWeight: weightOf(t, 'medium', 500), color: t.neutralText,
+            }}
+          >
+            {label}
+          </span>
+        ))}
       </div>
     </div>
   )
 }
 
-// ── Dashboard strip: save / switch affordances for the active system ────────
-function SystemsStrip({ onOpenGithub }: { onOpenGithub: () => void }) {
-  const { savedSystems, githubRepo, startNewSystem } = useDesignStore()
-  const [confirmingLeave, setConfirmingLeave] = useState(false)
-
+// Layers panel cluster — search + submit, an info banner, and a tree list with
+// a soft-brand selected row (object-browser pattern). Glyphs resolve from the
+// Foundations · Icons library via TokenIcon.
+function LayerRow({ t, icon, label, selected, indent }: { t: PreviewTokens; icon: IconConcept; label: string; selected?: boolean; indent?: boolean }) {
   return (
-    <div className="rounded-xl bg-surface border border-line px-4 py-2.5 flex items-center gap-2 text-xs">
-      {confirmingLeave ? (
-        <>
-          <span className="text-fg-muted flex-1 min-w-0">
-            {githubRepo
-              ? `Leave this system? Anything changed since your last push to ${githubRepo} will be lost.`
-              : 'Leave this system? It was never saved to GitHub and will be lost.'}
-          </span>
-          <button
-            onClick={() => { setConfirmingLeave(false); startNewSystem() }}
-            className="font-medium text-red-500 hover:text-red-600 transition-colors flex-shrink-0"
-          >
-            Leave
-          </button>
-          <button
-            onClick={() => setConfirmingLeave(false)}
-            className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
-          >
-            Cancel
-          </button>
-        </>
-      ) : (
-        <>
-          <span className="text-fg-muted flex-1 min-w-0 truncate">
-            My design systems{savedSystems.length > 0 && <span className="text-fg-faint"> · {savedSystems.length} saved</span>}
-          </span>
-          <button
-            onClick={onOpenGithub}
-            className="font-medium text-[#0088FF] hover:text-[#0070d4] transition-colors flex-shrink-0"
-          >
-            {githubRepo ? 'Push to save' : 'Save to GitHub'}
-          </button>
-          <span className="text-line-strong">·</span>
-          <button
-            onClick={() => setConfirmingLeave(true)}
-            className="text-fg-muted hover:text-fg transition-colors flex-shrink-0"
-          >
-            Switch / Add new
-          </button>
-        </>
-      )}
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 9,
+        padding: '7px 10px', paddingLeft: indent ? 32 : 10,
+        borderRadius: radiusOf(t, 'sm', '4px'),
+        background: selected ? soft(t, t.brandSolid) : 'transparent',
+      }}
+    >
+      <TokenIcon t={t} concept={icon} size={15} color={selected ? t.brandText : (t.fgMuted ?? t.neutralText)} />
+      <span style={{ fontSize: 13, color: t.neutralText, fontWeight: selected ? weightOf(t, 'medium', 500) : 400 }}>{label}</span>
     </div>
   )
 }
 
+function SearchRow({ t }: { t: PreviewTokens }) {
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <span
+        style={{
+          flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: radiusOf(t, 'md', '8px'),
+          border: `1px solid ${t.border}`, background: t.surface,
+        }}
+      >
+        <TokenIcon t={t} concept="search" size={14} color={t.fgMuted ?? t.neutralText} />
+        <span style={{ fontSize: 13, color: t.placeholderText }}>Search</span>
+      </span>
+      <span
+        style={{
+          padding: '8px 16px', borderRadius: radiusOf(t, 'md', '8px'),
+          background: t.brandSolid, color: t.onBrand,
+          fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center',
+        }}
+      >
+        Submit
+      </span>
+    </div>
+  )
+}
 
-export default function HomeView({ onOpenFigma, onOpenGithub, onOpenExport }: HomeViewProps) {
+function InfoBanner({ t }: { t: PreviewTokens }) {
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px',
+        borderRadius: radiusOf(t, 'md', '8px'), background: soft(t, t.brandSolid), color: t.brandText,
+      }}
+    >
+      <TokenIcon t={t} concept="info" size={15} color={t.brandText} />
+      <span style={{ fontSize: 12.5, fontWeight: weightOf(t, 'medium', 500) }}>A new version is available.</span>
+    </div>
+  )
+}
+
+// Building blocks — outline pills, icon-button variants and round avatars in
+// solid / soft flavors, all from the same accent. Glyphs come from the
+// Foundations · Icons library via TokenIcon.
+function IconButton({ t, icon, variant }: { t: PreviewTokens; icon: IconConcept; variant: 'solid' | 'soft' | 'outline' }) {
+  const styles: Record<typeof variant, CSSProperties> = {
+    solid: { background: t.brandSolid, color: t.onBrand },
+    soft: { background: soft(t, t.brandSolid), color: t.brandText },
+    outline: { background: t.surface, color: t.brandText, border: `1px solid ${t.borderDefault ?? '#e9eaeb'}` },
+  }
+  return (
+    <span
+      style={{
+        width: 36, height: 36, borderRadius: radiusOf(t, 'md', '8px'), flexShrink: 0,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        ...styles[variant],
+      }}
+    >
+      <TokenIcon t={t} concept={icon} size={15} color={variant === 'solid' ? t.onBrand : t.brandText} />
+    </span>
+  )
+}
+
+function Pill({ t, children, outline }: { t: PreviewTokens; children: ReactNode; outline?: boolean }) {
+  return (
+    <span
+      style={{
+        padding: '4px 12px', borderRadius: 999, fontSize: 12,
+        fontWeight: weightOf(t, 'medium', 500), color: t.brandText, whiteSpace: 'nowrap',
+        background: outline ? 'transparent' : soft(t, t.brandSolid),
+        border: outline ? `1px solid ${withAlpha(t.brandSolid, alphaOf(t, '40', 0.45))}` : '1px solid transparent',
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+function AvatarRound({ t, flavor, children }: { t: PreviewTokens; flavor: 'solid' | 'soft'; children: ReactNode }) {
+  return (
+    <span
+      style={{
+        width: 40, height: 40, borderRadius: 999, flexShrink: 0,
+        background: flavor === 'solid' ? t.brandSolid : soft(t, t.brandSolid),
+        color: flavor === 'solid' ? t.onBrand : t.brandText,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 13, fontWeight: weightOf(t, 'semibold', 600),
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+function AvatarGridRow({ t, flavor }: { t: PreviewTokens; flavor: 'solid' | 'soft' }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <AvatarRound t={t} flavor={flavor}>V</AvatarRound>
+      <AvatarRound t={t} flavor={flavor}>BG</AvatarRound>
+      <AvatarRound t={t} flavor={flavor}>
+        <TokenIcon t={t} concept="user" size={16} color={flavor === 'solid' ? t.onBrand : t.brandText} />
+      </AvatarRound>
+      <AvatarRound t={t} flavor={flavor}>
+        <TokenIcon t={t} concept="users" size={16} color={flavor === 'solid' ? t.onBrand : t.brandText} />
+      </AvatarRound>
+    </div>
+  )
+}
+
+// One collage tile — a token-driven surface (not app chrome), so background,
+// border and padding come from the resolved tokens rather than the semantic
+// utilities.
+function Tile({ t, children }: { t: PreviewTokens; children: ReactNode }) {
+  return (
+    <div
+      className="break-inside-avoid mb-4 overflow-hidden"
+      style={{
+        background: t.surface,
+        border: `1px solid ${t.borderDefault ?? '#e9eaeb'}`,
+        borderRadius: radiusOf(t, 'lg', '12px'),
+        padding: paddingOf(t),
+        boxShadow: shadowOf(t, 'sm', 'none'),
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: HomeViewProps) {
   const {
-    projectName, setProjectName,
-    projectDescription, setProjectDescription,
-    savedSystems, startNewSystem,
-    primaryColor, themeOrder, selectedComponents, iconLibrary,
-    figmaLastPublishAt, githubRepo, githubLastPushAt,
+    projectName, setProjectName, githubRepo,
+    primaryColor, primaryScale, grayBaseColor, grayLightScale,
+    pageBackground,
+    customColors, removeCustomColor,
+    colorAlgorithm, colorNaming, contrastShift,
+    setColorAlgorithm, setColorNaming, setContrastShift,
   } = useDesignStore()
+  const t = usePreviewTokens(previewTheme)
+  const applyAccentColor = useApplyAccentColor()
+  const applyGrayColor = useApplyGrayColor()
+  // Background changes must re-anchor every ramp + resync semantics — never a
+  // bare setPageBackground (that leaves scales anchored to the old background).
+  const applyPageBackground = useApplyPageBackground()
 
-  const [copied, setCopied] = useState(false)
-  const isDeployed =
-    typeof window !== 'undefined' &&
-    !window.location.origin.includes('localhost') &&
-    !window.location.origin.includes('127.0.0.1')
-  const syncUrl = typeof window !== 'undefined' ? buildSyncUrl() : ''
+  // When ON, the neutral scale auto-derives from the accent. Default ON.
+  const [linked, setLinked] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
-  function copyShareUrl() {
-    navigator.clipboard.writeText(syncUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  // Saved customs surface in both dropdowns ahead of the Tested presets.
+  const savedGroup: OptionGroup | null = customColors.length
+    ? {
+        label: 'Saved',
+        options: customColors.map((c) => ({ label: c.label, hex: c.base })),
+        onRemove: (hex) => {
+          const match = customColors.find((c) => c.base.toLowerCase() === hex.toLowerCase())
+          if (match) removeCustomColor(match.key)
+        },
+      }
+    : null
+  const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
+  const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
+
+  const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
+
+  const changeAccent = (hex: string) => applyAccentColor(hex, linked, previewTheme)
+  const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
+  const toggleLink = () => {
+    const next = !linked
+    setLinked(next)
+    if (next) applyGrayColor(neutralFromBrand(primaryColor), previewTheme)
   }
 
+  const v = {} // default axis values for the registry specimens
+
   return (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="flex flex-col gap-8 max-w-3xl"
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="flex flex-col gap-6"
+    >
+      {/* ── Name + saved state — appears once the system is saved to GitHub ── */}
+      {githubRepo && (
+        <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-line bg-surface">
+          <input
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            placeholder="Name Design system"
+            aria-label="Design system name"
+            className="flex-1 min-w-0 bg-transparent text-lg font-semibold text-fg outline-none placeholder:text-fg-faint"
+          />
+          <span
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+            style={{ backgroundColor: t.brandSolid }}
+          >
+            Saved
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+              <path d="M17 21v-8H7v8M7 3v5h8" />
+            </svg>
+          </span>
+        </div>
+      )}
+
+      {/* ── Primitives quick bar: accent · link · neutral · background + ramps ── */}
+      <section className="flex flex-col gap-5 pb-6 border-b border-line">
+        <div className="grid grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
+          <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeAccent} allowCustom />
+          <div className="flex flex-col items-center gap-1.5 pb-1.5">
+            <InfoDot tip="Auto-matches the neutral scale to your accent color." />
+            <LinkToggle active={linked} onClick={toggleLink} />
+          </div>
+          <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={changeNeutral} allowCustom />
+          <ColorSelect label="Background" value={pageBackground} groups={BACKGROUND_GROUPS} onChange={applyPageBackground} allowCustom />
+          <div className="relative pb-0.5">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((o) => !o)}
+              aria-haspopup="dialog"
+              aria-expanded={settingsOpen}
+              aria-label="Scale settings — algorithm, naming, contrast shift"
+              title="Scale settings"
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+            </button>
+            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
+              <ColorControls
+                algorithm={colorAlgorithm}
+                naming={colorNaming}
+                contrastShift={contrastShift}
+                onAlgorithm={setColorAlgorithm}
+                onNaming={setColorNaming}
+                onShift={setContrastShift}
+              />
+            </ScaleSettingsModal>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <ScaleRow scale={primaryScale} labels={namingLabels} />
+          <ScaleRow scale={grayLightScale} showNumbers={false} />
+        </div>
+      </section>
+
+      {/* ── Collage — masonry of live, token-driven components ── */}
+      <div className="flex items-center justify-end -mt-2">
+        <button
+          onClick={() => onOpenFoundation('components')}
+          className="text-sm text-fg-muted hover:text-fg transition-colors"
         >
-          {/* ── Identity: name + description ── */}
-          <div className="flex flex-col gap-3">
-            <input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Name your design system"
-              aria-label="Design system name"
-              className="text-3xl font-bold text-fg bg-transparent outline-none border-b-2 border-transparent focus:border-line-strong transition-colors w-full pb-1"
-            />
-            <textarea
-              value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
-              placeholder="What is this design system for? Who uses it? (shown in your README)"
-              aria-label="Design system description"
-              rows={2}
-              className="text-sm text-fg-muted bg-transparent outline-none resize-none w-full placeholder:text-fg-faint border-b border-transparent focus:border-line transition-colors"
-            />
-          </div>
+          Browse components →
+        </button>
+      </div>
+      {/* Scaled down (zoom) — it's a preview: 4 columns show more of the
+          system at once; tiles/type shrink together so proportions hold. */}
+      <div className="columns-2 md:columns-3 xl:columns-4 gap-4" style={{ zoom: 0.7 }}>
+        {/* Sign-in card (hero) */}
+        <div className="break-inside-avoid mb-4">
+          <SignUpCardPreview tokens={t} />
+        </div>
 
-          {/* ── My design systems: save / switch + open a saved one ── */}
-          <SystemsStrip onOpenGithub={onOpenGithub} />
-          {savedSystems.length > 0 && <SavedSystemsList onAddNew={startNewSystem} />}
+        {/* Mail cluster: tabs + toast */}
+        <Tile t={t}>
+          {SPECIMENS.Tabs({ t, v })}
+          {SPECIMENS.Toast({ t, v })}
+        </Tile>
 
-          {/* ── Summary chips ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <SummaryChip label="Accent" value={primaryColor} swatch={primaryColor} />
-            <SummaryChip label="Themes" value={`${themeOrder.length} (${themeOrder.join(', ')})`} />
-            <SummaryChip label="Components" value={`${selectedComponents.length} of ${COMPONENT_KEYS.length}`} />
-            <SummaryChip label="Icons" value={getIconLibrary(iconLibrary)?.label ?? iconLibrary} />
-          </div>
-
-          {/* ── Overview checklist (rendered in the Preview panel on xl+) ── */}
-
-          {/* ── Connections ── */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm text-fg-muted uppercase tracking-wide">Connections</h3>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {/* Figma */}
-              <div className="rounded-xl bg-surface border border-line p-4 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <StatusDot ok={!!figmaLastPublishAt} />
-                  <p className="text-sm font-semibold text-fg">Figma</p>
-                  <span className="text-[11px] text-fg-faint ml-auto">
-                    {figmaLastPublishAt ? `Published ${timeAgo(figmaLastPublishAt)}` : 'Not published yet'}
-                  </span>
-                </div>
-                <p className="text-xs text-fg-faint leading-relaxed">
-                  Sync your tokens into Figma Variables with the companion plugin.
-                </p>
-                <button
-                  onClick={onOpenFigma}
-                  className="self-start px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors"
-                >
-                  Bring to Figma
-                </button>
-              </div>
-
-              {/* GitHub */}
-              <div className="rounded-xl bg-surface border border-line p-4 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <StatusDot ok={!!githubRepo} />
-                  <p className="text-sm font-semibold text-fg">GitHub</p>
-                  <span className="text-[11px] text-fg-faint ml-auto">
-                    {githubRepo
-                      ? `${githubRepo}${githubLastPushAt ? ` · pushed ${timeAgo(githubLastPushAt)}` : ''}`
-                      : 'Not connected'}
-                  </span>
-                </div>
-                <p className="text-xs text-fg-faint leading-relaxed">
-                  Version your design system in a repository — tokens, CSS and docs on every push.
-                </p>
-                <button
-                  onClick={onOpenGithub}
-                  className="self-start px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors"
-                >
-                  {githubRepo ? 'Manage connection' : 'Connect GitHub'}
-                </button>
-              </div>
+        {/* Layers panel: search + banner + tree list */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: fontFamilyOf(t) }}>
+            <SearchRow t={t} />
+            <InfoBanner t={t} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <LayerRow t={t} icon="box" label="Box" selected />
+              <LayerRow t={t} icon="grid" label="Grid" />
+              <LayerRow t={t} icon="image" label="Image" indent />
+              <LayerRow t={t} icon="image" label="Image" indent />
+              <LayerRow t={t} icon="text" label="Text" indent />
             </div>
           </div>
+        </Tile>
 
-          {/* ── Share ── */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm text-fg-muted uppercase tracking-wide">Share</h3>
-            <div className="rounded-xl bg-surface border border-line p-4 flex flex-col gap-3">
-              {isDeployed ? (
-                <>
-                  <p className="text-xs text-fg-faint leading-relaxed">
-                    Anyone (or any tool) can read your published tokens from this endpoint:
-                  </p>
-                  <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2">
-                    <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
-                    <button
-                      onClick={copyShareUrl}
-                      className="text-[10px] text-fg-faint hover:text-fg transition flex-shrink-0"
-                    >
-                      {copied ? '✓ Copied' : 'Copy'}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-fg-faint leading-relaxed">
-                  Deploy to a live URL to share your tokens via <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>. Meanwhile, download them:
-                </p>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={onOpenExport}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors"
-                >
-                  Export code (JSON · CSS · README)
-                </button>
-                <button
-                  onClick={downloadTokenJSON}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-elevated text-fg-muted hover:text-fg border border-line-strong transition-colors"
-                >
-                  Download tokens.json
-                </button>
-              </div>
+        {/* Translucent panel over the accent gradient */}
+        <GlassPanel t={t} />
+
+        {/* Team access: avatars + toggles + invite */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontFamily: fontFamilyOf(t) }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 14, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>Manage team access</span>
+              <span style={{ fontSize: 12, color: t.fgMuted }}>Who can join and what they can do.</span>
             </div>
+            <AvatarStack t={t} />
           </div>
-        </motion.div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: fontFamilyOf(t) }}>
+            <ToggleRow t={t} on label="Can edit content" />
+            <ToggleRow t={t} on label="Can invite others" />
+            <ToggleRow t={t} on={false} label="Admin access" />
+          </div>
+        </Tile>
+
+        {/* Form controls: input + select + checkbox */}
+        <Tile t={t}>
+          {SPECIMENS.Input({ t, v: { Type: 'E-Mail' } })}
+          {SPECIMENS.Select({ t, v })}
+          {SPECIMENS.Checkbox({ t, v })}
+        </Tile>
+
+        {/* Text patterns: heading + body + blockquotes */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span
+              style={{
+                fontSize: 18, lineHeight: 1.3, color: t.neutralText,
+                fontFamily: t.typography?.headingFontFamily || fontFamilyOf(t),
+                fontWeight: weightOf(t, 'bold', 700),
+              }}
+            >
+              Design once, ship everywhere.
+            </span>
+            <span style={{ fontSize: 13, lineHeight: 1.6, color: t.fgMuted, fontFamily: fontFamilyOf(t) }}>
+              Body text, links and quotes all resolve from your type and color tokens.
+            </span>
+          </div>
+          <QuoteBlock t={t} />
+          <QuoteBlock t={t} muted />
+        </Tile>
+
+        {/* Todo list: checked items strike through */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, fontFamily: fontFamilyOf(t) }}>
+            <span style={{ fontSize: 14, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>Today</span>
+            <span style={{ fontSize: 12, color: t.fgMuted }}>2 of 5 done</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: fontFamilyOf(t) }}>
+            <TodoItem t={t}>
+              Respond to comment <span style={{ color: t.brandText }}>#384</span> from Travis
+            </TodoItem>
+            <TodoItem t={t}>
+              Invite <span style={{ color: t.brandText }}>Acme Co.</span> team to Slack
+            </TodoItem>
+            <TodoItem t={t}>
+              Create a report <span style={{ color: t.brandText }}>requested</span> by Danilo
+            </TodoItem>
+            <TodoItem t={t} done>Close Q2 finances</TodoItem>
+            <TodoItem t={t} done>
+              Review invoice <span style={{ color: t.brandText }}>#3456</span>
+            </TodoItem>
+          </div>
+        </Tile>
+
+        {/* Upgrade card */}
+        <Tile t={t}>
+          <UpgradeCard t={t} />
+        </Tile>
+
+        {/* Status: badges + progress + breadcrumb */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {SPECIMENS.Badge({ t, v: { Color: 'Brand' } })}
+            {SPECIMENS.Badge({ t, v: { Color: 'Success' } })}
+            {SPECIMENS.Badge({ t, v: { Color: 'Error', Style: 'Outline' } })}
+            {SPECIMENS.Badge({ t, v: { Color: 'Neutral' } })}
+          </div>
+          {SPECIMENS.Progress({ t, v })}
+          {SPECIMENS.Breadcrumb({ t, v })}
+        </Tile>
+
+        {/* Building blocks: pills + icon buttons + avatar flavors */}
+        <Tile t={t}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontFamily: fontFamilyOf(t) }}>
+            <Pill t={t}>Token-driven</Pill>
+            <Pill t={t} outline>Light &amp; dark</Pill>
+            <Pill t={t} outline>Figma-ready</Pill>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <IconButton t={t} icon="star" variant="solid" />
+            <IconButton t={t} icon="bookmark" variant="solid" />
+            <IconButton t={t} icon="user" variant="soft" />
+            <IconButton t={t} icon="heart" variant="outline" />
+            <IconButton t={t} icon="share" variant="outline" />
+            <Switch t={t} on={false} label="Preview switch off" />
+            <Switch t={t} on label="Preview switch on" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontFamily: fontFamilyOf(t) }}>
+            <AvatarGridRow t={t} flavor="solid" />
+            <AvatarGridRow t={t} flavor="soft" />
+          </div>
+        </Tile>
+
+        {/* Content card */}
+        <div className="break-inside-avoid mb-4 [&>div]:w-full">
+          {SPECIMENS.Card({ t, v })}
+        </div>
+      </div>
+    </motion.div>
   )
 }

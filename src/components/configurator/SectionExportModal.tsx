@@ -96,7 +96,7 @@ export default function SectionExportModal({
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 h-14 border-b border-line flex-shrink-0">
-          <h2 className="text-sm font-semibold text-fg">Export <span className="text-[#0088FF]">{title}</span></h2>
+          <h2 className="text-sm font-semibold text-fg">Export <span className="text-fg">{title}</span></h2>
           <span className="text-[11px] text-fg-faint">copy as context for AI or code</span>
           <button
             onClick={onClose}

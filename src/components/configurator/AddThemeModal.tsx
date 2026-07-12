@@ -34,7 +34,7 @@ export default function AddThemeModal({
   const {
     themes, addTheme, customColors,
     primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor,
-    colorAlgorithm, contrastShift,
+    colorAlgorithm, contrastShift, pageBackground,
   } = useDesignStore()
   const reduce = useReducedMotion() ?? false
 
@@ -71,15 +71,15 @@ export default function AddThemeModal({
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  // Live scales (BASE = tone 6).
-  const scale = (hex: string) => { try { return generateColorScale(hex, colorAlgorithm, contrastShift) } catch { return {} } }
-  const brandScale = useMemo(() => scale(brand), [brand, colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
-  const neutralScale = useMemo(() => scale(neutral), [neutral, colorAlgorithm, contrastShift]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Live scales (BASE = tone 9, the Radix solid step).
+  const scale = (hex: string) => { try { return generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground) } catch { return {} } }
+  const brandScale = useMemo(() => scale(brand), [brand, colorAlgorithm, contrastShift, pageBackground]) // eslint-disable-line react-hooks/exhaustive-deps
+  const neutralScale = useMemo(() => scale(neutral), [neutral, colorAlgorithm, contrastShift, pageBackground]) // eslint-disable-line react-hooks/exhaustive-deps
   const semanticScales = {
-    error: useMemo(() => scale(error), [error, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
-    warning: useMemo(() => scale(warning), [warning, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
-    success: useMemo(() => scale(success), [success, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
-    info: useMemo(() => scale(info), [info, colorAlgorithm, contrastShift]), // eslint-disable-line react-hooks/exhaustive-deps
+    error: useMemo(() => scale(error), [error, colorAlgorithm, contrastShift, pageBackground]), // eslint-disable-line react-hooks/exhaustive-deps
+    warning: useMemo(() => scale(warning), [warning, colorAlgorithm, contrastShift, pageBackground]), // eslint-disable-line react-hooks/exhaustive-deps
+    success: useMemo(() => scale(success), [success, colorAlgorithm, contrastShift, pageBackground]), // eslint-disable-line react-hooks/exhaustive-deps
+    info: useMemo(() => scale(info), [info, colorAlgorithm, contrastShift, pageBackground]), // eslint-disable-line react-hooks/exhaustive-deps
   }
 
   // When linked, the neutral tracks the brand hue.
@@ -100,12 +100,12 @@ export default function AddThemeModal({
     if (themes[key]) { setErr(`"${key}" already exists.`); return }
     try {
       const palette: ThemePalette = {
-        brand: generateColorScale(brand, colorAlgorithm, contrastShift),
-        gray: generateColorScale(neutral, colorAlgorithm, contrastShift),
-        error: generateColorScale(error, colorAlgorithm, contrastShift),
-        warning: generateColorScale(warning, colorAlgorithm, contrastShift),
-        success: generateColorScale(success, colorAlgorithm, contrastShift),
-        info: generateColorScale(info, colorAlgorithm, contrastShift),
+        brand: generateColorScale(brand, colorAlgorithm, contrastShift, pageBackground),
+        gray: generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground),
+        error: generateColorScale(error, colorAlgorithm, contrastShift, pageBackground),
+        warning: generateColorScale(warning, colorAlgorithm, contrastShift, pageBackground),
+        success: generateColorScale(success, colorAlgorithm, contrastShift, pageBackground),
+        info: generateColorScale(info, colorAlgorithm, contrastShift, pageBackground),
       }
       addTheme(key, kind, palette)
       onClose()
@@ -166,7 +166,7 @@ export default function AddThemeModal({
                     onChange={(e) => { setName(e.target.value); setErr(null) }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                     placeholder="e.g. Ocean"
-                    className="bg-surface border border-line-strong focus:border-[#0088FF] rounded-full px-4 py-2 text-sm text-fg outline-none transition-colors"
+                    className="bg-surface border border-line-strong focus:border-fg rounded-full px-4 py-2 text-sm text-fg outline-none transition-colors"
                   />
                 </label>
                 <div className="flex flex-col gap-1">
@@ -177,7 +177,7 @@ export default function AddThemeModal({
                         key={k}
                         onClick={() => setKind(k)}
                         className={`px-4 py-2 text-xs font-medium capitalize transition-colors ${
-                          kind === k ? 'bg-[#0088FF] text-white' : 'bg-surface text-fg-muted hover:text-fg'
+                          kind === k ? 'bg-fg text-app' : 'bg-surface text-fg-muted hover:text-fg'
                         }`}
                       >
                         {k}
@@ -239,7 +239,7 @@ export default function AddThemeModal({
               </button>
               <button
                 onClick={handleCreate}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors"
+                className="px-4 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-colors"
               >
                 Create theme
               </button>

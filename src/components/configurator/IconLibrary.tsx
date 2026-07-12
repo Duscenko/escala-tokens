@@ -91,7 +91,7 @@ function IconBrowser({ libraryKey }: { libraryKey: string }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${lib?.count ?? ''} icons…`}
             aria-label="Search icons"
-            className="w-full bg-surface border border-line focus:border-[#0088FF] rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
+            className="w-full bg-surface border border-line focus:border-fg rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
           />
         </div>
       </div>
@@ -177,7 +177,7 @@ function CustomIcons() {
         />
         <button
           onClick={() => fileRef.current?.click()}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0088FF] text-white hover:bg-[#0070d4] transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-colors"
         >
           Upload SVGs
         </button>
@@ -238,9 +238,9 @@ function LibraryCard({ lib, selected, onSelect }: { lib: IconLibraryDef; selecte
     <button
       onClick={onSelect}
       aria-pressed={selected}
-      className={`text-left rounded-xl border p-3.5 flex flex-col gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+      className={`text-left rounded-xl border p-3.5 flex flex-col gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
         selected
-          ? 'border-[#0088FF] bg-[#0088FF]/5 shadow-sm'
+          ? 'border-fg bg-fg/5 shadow-sm'
           : 'border-line bg-surface/40 hover:border-line-strong hover:bg-surface'
       }`}
     >
@@ -255,12 +255,12 @@ function LibraryCard({ lib, selected, onSelect }: { lib: IconLibraryDef; selecte
         {/* Selected check */}
         <span
           className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-            selected ? 'bg-[#0088FF]' : 'border border-line-strong'
+            selected ? 'bg-fg text-app' : 'border border-line-strong'
           }`}
         >
           {selected && (
             <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-              <path d="M2 5.2 4 7.2 8 2.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 5.2 4 7.2 8 2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </span>

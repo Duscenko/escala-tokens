@@ -38,14 +38,23 @@ watch the right-hand preview update, then export.
   (`null`|`code`|`md`|`figma`|`github`), `semanticCategory`. None persisted — every reload
   lands on **Home**. Leaving a foundation marks it complete (`commitVisit()` →
   `markFoundationComplete`) for the Home overview checklist.
-- **Home is a hub with 3 states** (`HomeView`, keyed on `projectCreated` + `savedSystems`):
-  *intro* (no system, none saved → dashed "New Design System" create card + 4 intro
-  mini-cards), *list* (saved systems exist, none active → cards with Open/Remove + an
-  "Add new" dashed card), *dashboard* (active system → identity, "My design systems"
-  strip with Save-to-GitHub / Switch affordances, summary chips, overview checklist,
-  connections, share). **Pre-creation gating**: while `!projectCreated` the rail shows
-  only Home and TopNav shows only logo + theme toggle — a clear entry point, but NOT a
-  wizard once created.
+- **Home is the live hub** (`HomeView`): topped — only once the system is saved to
+  GitHub (`githubRepo` set) — by a "Name Design system" input with a Saved pill;
+  then the primitives quick bar (Accent · link toggle · Neutral · Background
+  `ColorSelect`s + the Scale-settings popover reused from Step2) over the two
+  `ScaleRow` ramps, a "Browse components →" link, and the masonry collage of the
+  system's own components rendered live from `usePreviewTokens(homeTheme)`
+  (sign-up card + `SPECIMENS` registry tiles + collage-only clusters). The right
+  panel here is **Quick edit** (`QuickEditPanel` — Theme · Accent swatches +
+  custom picker · Font Family · Radius · Panel background · More Foundations),
+  not the Components Preview; its sections (`QuickEditSections`) are shared with
+  the Components catalogue's quick-edit popover (`QuickFoundationsPanel`).
+  `homeTheme` is local `useState` in `Configurator`.
+- **Save is the persistence hub** (`SaveView`, rail bottom → `exportMode 'save'`):
+  everything the old Home dashboard had — identity (name/description), "Save design
+  system" (local registry via `saveCurrentSystem`) + "Download files", the
+  "My design systems" strip + saved-systems list, summary chips, connections
+  (Figma/GitHub) and the share endpoint.
 - **Multi design system**: `savedSystems` (persisted registry) — a system is *saved* only
   by a successful GitHub push (`GitHubConnectView` upserts `{ id: repo, name, description,
   repo, savedAt, snapshot }`). `loadSystem(id)` restores a deep-cloned `DesignSnapshot`;
@@ -59,7 +68,11 @@ watch the right-hand preview update, then export.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — `HomeView`, a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
-  the component docs (`ComponentDocPane` — interactive playground per component), `ExportView`
+  the component docs (`ComponentDocPane` — interactive playground per component), the
+  **Documentation tab** (`DocsView` — createui-style docs site: catalogue sidebar + per-component
+  article with hero Preview/Code, Description, Usage, per-axis Examples, Accessibility,
+  Ships-in-Figma, Related, API Reference, prev/next + "On this page" TOC; fully data-driven
+  from `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview like Components), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
   project name), `FigmaConnectView` (opened by Bring to Figma — download the plugin zip +
   live-sync guide), or `GitHubConnectView` (opened by the TopNav GitHub pill / Home's
@@ -95,7 +108,7 @@ src/
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge...)
 │   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 24)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 28)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
@@ -128,6 +141,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `projectName` | string (default `"DS.by.MD"`) | Home (hero input) + Export pane (editable pill) |
 | `projectDescription` | string (flows into the README intro) | Home |
 | `figmaLastPublishAt` / `githubRepo` / `githubLastPushAt` | string \| null — connection status shown on Home; written by the connect views | Home (read-only) |
+| `pageBackground` | string (hex, default `#ffffff`) — Radix custom-palette "background" input: anchors tone 1 of every generated ramp (`generateColorScale`'s 4th arg) and is the compositing base for the exported alpha ramps (`colors.primitiveAlpha` via `generateAlphaScale`) | Foundations · Color |
 | `primaryColor` | string (hex) | Foundations · Color |
 | `primaryScale` | Record<number, string> | Foundations · Color |
 | `grayLightScale` | ColorScale | Foundations · Color |
@@ -138,6 +152,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
 | `spacing` | Record<string, string> | Foundations · Spacing |
+| `padding` | Record<'top'\|'right'\|'bottom'\|'left', string> — per-side surface inset for padded surfaces (collage tiles, Card, sign-up card via `paddingOf()`); exported as `padding` in tokens.json + `--padding-*` CSS vars | Quick edit · Padding |
 | `radius` | Record<string, string> | Foundations · Border Radius |
 | `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
 | `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
@@ -156,7 +171,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 24`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 28`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
 
@@ -164,7 +179,9 @@ Store uses `persist` middleware with `version: 24`. If you add fields, bump the 
 
 ## Component Catalogue
 
-**The Figma plugin is the source of truth** (`../scalable-designs-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma (16 keys → 38 sets), and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
+**The Figma plugin is the source of truth** (`../scalable-designs-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma, and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
+
+The catalogue holds **58 components**. The original plugin families were split into standalone entries (Button Group, Input OTP, Radio, Chip, Alert Banner… each owns the plugin set its parent used to bundle), and ~20 entries are **catalogue-first**: `figmaSets: []` means the plugin gate doesn't exist yet — they document + preview in the app and export in `atoms`, and the doc pane shows a "not in the Figma library yet" note. When a set lands in the plugin, fill in its `figmaSets`. Display-name renames (keys stay stable for plugin gates + export): `Toggle`→"Switch", `Divider`→"Separator", `Breadcrumb`→"Breadcrumbs".
 
 `src/lib/componentCatalogue.ts` contains the `COMPONENTS` array (pure data — imported by the store, the catalogue list, and `ComponentDocPane`). Each definition has:
 

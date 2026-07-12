@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { resolvePx, type PreviewTokens } from '../ButtonPreview'
-import { radiusOf, fontFamilyOf, weightOf } from '../../../lib/previewTokens'
+import { radiusOf, fontFamilyOf, weightOf, paddingOf, shadowOf } from '../../../lib/previewTokens'
 import { InputPreview } from './InputPreview'
 
 // A composed sign-up card: title + two inputs + a full-width primary CTA. Every
@@ -30,9 +30,10 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
         width: '100%',
         boxSizing: 'border-box',
         background: tokens.surface,
-        border: `1px solid ${tokens.border || '#eaecf0'}`,
+        border: `1px solid ${tokens.borderDefault || tokens.border || '#eaecf0'}`,
         borderRadius: radiusOf(tokens, 'lg', '12px'),
-        padding: 20,
+        padding: paddingOf(tokens),
+        boxShadow: shadowOf(tokens, 'sm', 'none'),
         display: 'flex',
         flexDirection: 'column',
         gap: 14,

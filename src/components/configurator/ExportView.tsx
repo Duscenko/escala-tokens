@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
-import { slugify } from '../../lib/utils'
 import { syncUrl as buildSyncUrl } from '../../lib/figmaSync'
 
 type Tab = 'tokens' | 'css' | 'markdown'
@@ -13,20 +12,6 @@ interface ExportViewProps {
   initialTab?: Tab
   /** Optional back-to-editor affordance shown when rendered inside the shell. */
   onClose?: () => void
-  /** Shows the "Save to my systems" block (the Save hub entry point). */
-  showSave?: boolean
-}
-
-// ─── Relative-time helper for the "last saved" hint ──────────────────────────
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const min = Math.floor(diff / 60000)
-  if (min < 1) return 'just now'
-  if (min < 60) return `${min} min ago`
-  const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} hr ago`
-  return `${Math.floor(hr / 24)} d ago`
 }
 
 // ─── Download helpers ────────────────────────────────────────────────────────
@@ -59,19 +44,11 @@ function Pill({ label, value, color }: { label: string; value: string; color?: s
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export default function ExportView({ initialTab = 'tokens', onClose, showSave = false }: ExportViewProps = {}) {
-  const store = useDesignStore()
-  const { projectName, projectDescription, primaryColor, selectedComponents, setProjectName, setProjectDescription, saveCurrentSystem, savedSystems, githubRepo } = store
+export default function ExportView({ initialTab = 'tokens', onClose }: ExportViewProps = {}) {
+  const { projectName, primaryColor, selectedComponents, setProjectName } = useDesignStore()
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   const [copiedTab, setCopiedTab] = useState<Tab | null>(null)
   const [justDownloaded, setJustDownloaded] = useState<string | null>(null)
-  const [justSaved, setJustSaved] = useState(false)
-
-  function handleSave() {
-    saveCurrentSystem()
-    setJustSaved(true)
-    setTimeout(() => setJustSaved(false), 2200)
-  }
 
   const [isDeployed, setIsDeployed] = useState(false)
   useEffect(() => {
@@ -80,10 +57,6 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
   }, [])
 
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'scalable-designs'
-
-  // Reflect the matching registry entry (same id the store's saveCurrentSystem builds).
-  const savedId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
-  const savedEntry = savedSystems.find((s) => s.id === savedId)
 
   const tokenJSON = JSON.stringify(generateTokenJSON(), null, 2)
   const cssVars   = buildCSS(useDesignStore.getState())
@@ -140,88 +113,19 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
         </button>
       )}
 
-      {/* ── Save to my systems — naming + persist (Save hub only) ── */}
-      {showSave && (
-        <div className="rounded-2xl border border-line bg-surface/60 p-5 flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-base font-semibold text-fg">Save your design system</h2>
-            <p className="text-xs text-fg-faint leading-relaxed">
-              Name it, then save the current tokens to your systems — reopen or switch any time from Home.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] text-fg-faint uppercase tracking-wider">Name</span>
-              <input
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="DS.by.MD"
-                aria-label="Design system name"
-                className="text-sm font-medium text-fg bg-app border border-line rounded-lg px-3 py-2 outline-none focus:border-line-strong w-full transition-colors"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] text-fg-faint uppercase tracking-wider">Description <span className="normal-case opacity-70">(optional · shown in your README)</span></span>
-              <input
-                value={projectDescription}
-                onChange={(e) => setProjectDescription(e.target.value)}
-                placeholder="What is this design system for? Who uses it?"
-                aria-label="Design system description"
-                className="text-sm text-fg bg-app border border-line rounded-lg px-3 py-2 outline-none focus:border-line-strong w-full transition-colors"
-              />
-            </label>
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            <motion.button
-              onClick={handleSave}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
-              style={{ backgroundColor: justSaved ? '#10b981' : primaryColor, ['--tw-ring-color' as string]: primaryColor }}
-            >
-              {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save design system'}
-            </motion.button>
-            <motion.button
-              onClick={downloadAll}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
-              style={{ color: justDownloaded === 'all' ? '#10b981' : primaryColor, borderColor: (justDownloaded === 'all' ? '#10b981' : primaryColor) + '55' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden>
-                <path d="M9 2v10M5.5 8l3.5 4 3.5-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 13.5v1.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-              {justDownloaded === 'all' ? 'Downloaded' : 'Download files'}
-            </motion.button>
-            <span className="text-xs text-fg-faint">
-              {justSaved
-                ? 'Saved to your systems.'
-                : savedEntry
-                  ? `Last saved ${timeAgo(savedEntry.savedAt)}.`
-                  : 'Not saved yet.'}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* ── Summary ── */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {!showSave && (
-          /* Editable project name (used as the README title / token namespace) */
-          <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
-            <span className="text-[10px] text-fg-faint uppercase tracking-wider">Project</span>
-            <input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="DS.by.MD"
-              aria-label="Project name"
-              className="text-sm font-medium text-fg bg-transparent outline-none border-b border-transparent focus:border-line-strong w-full"
-            />
-          </div>
-        )}
+        {/* Editable project name (used as the README title / token namespace) */}
+        <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
+          <span className="text-[10px] text-fg-faint uppercase tracking-wider">Project</span>
+          <input
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            placeholder="DS.by.MD"
+            aria-label="Project name"
+            className="text-sm font-medium text-fg bg-transparent outline-none border-b border-transparent focus:border-line-strong w-full"
+          />
+        </div>
         <Pill label="Primary"   value={primaryColor}       color={primaryColor} />
         <Pill label="Components" value={`${selectedComponents.length} selected`} />
       </div>
@@ -236,7 +140,7 @@ export default function ExportView({ initialTab = 'tokens', onClose, showSave = 
                 onClick={() => setActiveTab(t.id)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono transition-all border-b-2 ${
                   activeTab === t.id
-                    ? 'text-fg border-[#0088FF]'
+                    ? 'text-fg border-fg'
                     : 'text-fg-faint border-transparent hover:text-fg-muted'
                 }`}
               >

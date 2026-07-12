@@ -351,6 +351,7 @@ export default function Step3_SemanticTokens({
     grayLightScale,
     themes, themeOrder, themeKinds, themePalettes,
     setThemeToken, removeTheme,
+    panelBackground, setPanelBackground,
   } = useDesignStore()
 
   const reduce = useReducedMotion() ?? false
@@ -479,6 +480,27 @@ export default function Step3_SemanticTokens({
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
             Theme
           </button>
+          {/* Panel background — Radix-style solid/translucent for surface-1
+              (cards, panels, sections). Only relevant while viewing Surface. */}
+          {activeCategory === 'surface' && (
+            <div className="flex items-center gap-2 ml-1">
+              <span className="text-[11px] text-fg-faint">Panel background</span>
+              <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
+                {(['solid', 'translucent'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setPanelBackground(v)}
+                    aria-pressed={panelBackground === v}
+                    className={`px-2 py-1 rounded text-[11px] font-medium capitalize transition-colors ${
+                      panelBackground === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">

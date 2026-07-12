@@ -109,6 +109,7 @@ export default function TopNav({ tab, exportMode, onTabChange, onGithub, onHome 
   const { projectCreated } = useDesignStore()
   const foundationsActive = !exportMode && tab === 'foundations'
   const componentsActive = !exportMode && tab === 'components'
+  const docsActive = !exportMode && tab === 'docs'
 
   return (
     <header className="relative z-20 flex items-center justify-between gap-2 h-14 px-2 sm:px-3 lg:px-5 flex-shrink-0">
@@ -132,6 +133,9 @@ export default function TopNav({ tab, exportMode, onTabChange, onGithub, onHome 
             </NavLink>
             <NavLink active={componentsActive} onClick={() => onTabChange('components')}>
               Components
+            </NavLink>
+            <NavLink active={docsActive} onClick={() => onTabChange('docs')}>
+              Documentation
             </NavLink>
             {isLiveEnvironment() && <FigmaSyncPill />}
             <button

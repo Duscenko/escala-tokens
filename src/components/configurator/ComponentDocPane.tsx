@@ -4,8 +4,9 @@ import { useDesignStore } from '../../store/useDesignStore'
 import type { ComponentDef, VariantAxis } from '../../lib/componentCatalogue'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { getIconLibrary } from '../../lib/iconLibraries'
+import { withAlpha } from '../../lib/colorUtils'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import { SPECIMENS, snippetFor, ICON_SLOTS, type AxisValues } from './docs/specimens'
+import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues } from './docs/specimens'
 
 // ─── Small controls ───────────────────────────────────────────────────────────
 
@@ -21,10 +22,10 @@ function AxisControl({ axis, value, onChange }: { axis: VariantAxis; value: stri
           aria-checked={value === 'True'}
           aria-label={axis.name}
           onClick={() => onChange(value === 'True' ? 'False' : 'True')}
-          className={`relative w-9 h-5 rounded-full transition-colors ${value === 'True' ? 'bg-[#0088FF]' : 'bg-line-strong'}`}
+          className={`relative w-9 h-5 rounded-full transition-colors ${value === 'True' ? 'bg-fg' : 'bg-line-strong'}`}
         >
           <span
-            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${value === 'True' ? 'left-[18px]' : 'left-0.5'}`}
+            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white dark:bg-app shadow transition-all ${value === 'True' ? 'left-[18px]' : 'left-0.5'}`}
           />
         </button>
       ) : (
@@ -62,9 +63,9 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`relative w-9 h-5 rounded-full transition-colors ${checked ? 'bg-[#0088FF]' : 'bg-line-strong'}`}
+        className={`relative w-9 h-5 rounded-full transition-colors ${checked ? 'bg-fg' : 'bg-line-strong'}`}
       >
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white dark:bg-app shadow transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
       </button>
     </div>
   )
@@ -94,6 +95,23 @@ function Playground({ component, tokens }: { component: ComponentDef; tokens: Pr
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
   const hasControls = component.axes.length > 0 || Boolean(slots)
 
+  // A colored blob backdrop so the translucent panel treatment (blur + alpha)
+  // has something behind it to visibly soften — a flat canvas can't show it.
+  // `backgroundColor`/`backgroundImage` (not the `background` shorthand) so
+  // toggling the pattern on/off never mixes shorthand and longhand styles.
+  const showPattern = tokens.panelBackground === 'translucent' && PANEL_COMPONENTS.has(component.key)
+  const canvasStyle = {
+    backgroundColor: tokens.surface,
+    backgroundImage: showPattern
+      ? [
+          `radial-gradient(circle at 15% 20%, ${withAlpha(tokens.brandSolid, 0.55)}, transparent 42%)`,
+          `radial-gradient(circle at 85% 15%, ${withAlpha(tokens.successColor ?? '#17b26a', 0.5)}, transparent 40%)`,
+          `radial-gradient(circle at 75% 85%, ${withAlpha(tokens.warningColor ?? '#f79009', 0.45)}, transparent 45%)`,
+          `radial-gradient(circle at 20% 85%, ${withAlpha(tokens.infoColor ?? '#2e90fa', 0.4)}, transparent 40%)`,
+        ].join(', ')
+      : 'none',
+  }
+
   async function copySnippet() {
     await navigator.clipboard.writeText(snippet)
     setCopied(true)
@@ -106,7 +124,7 @@ function Playground({ component, tokens }: { component: ComponentDef; tokens: Pr
       <div className="flex-1 min-w-0 flex flex-col gap-0">
         <div
           className="min-h-[300px] rounded-t-xl border border-line flex items-center justify-center p-10 relative overflow-hidden"
-          style={{ background: tokens.surface }}
+          style={canvasStyle}
         >
           {Specimen ? (
             <Specimen t={tokens} v={values} icons={icons} />
@@ -201,8 +219,26 @@ function PropTable({ component }: { component: ComponentDef }) {
   )
 }
 
-function FigmaShipList({ component }: { component: ComponentDef }) {
+export function FigmaShipList({ component }: { component: ComponentDef }) {
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
+  // Catalogue-first components — documented + exported, but their component set
+  // hasn't landed in the Figma plugin's CATALOG yet.
+  if (component.figmaSets.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
+        <svg width="10" height="14" viewBox="0 0 38 57" fill="currentColor" className="text-fg-faint flex-shrink-0" aria-hidden>
+          <path d="M9.5 57C14.7467 57 19 52.7467 19 47.5V38H9.5C4.25329 38 0 42.2533 0 47.5C0 52.7467 4.25329 57 9.5 57Z" />
+          <path d="M0 28.5C0 23.2533 4.25329 19 9.5 19H19V38H9.5C4.25329 38 0 33.7467 0 28.5Z" />
+          <path d="M0 9.5C0 4.25329 4.25329 0 9.5 0H19V19H9.5C4.25329 19 0 14.7467 0 9.5Z" />
+          <path d="M19 0H28.5C33.7467 0 38 4.25329 38 9.5C38 14.7467 33.7467 19 28.5 19H19V0Z" />
+          <path d="M38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5Z" />
+        </svg>
+        <p className="text-[11px] text-fg-faint leading-relaxed">
+          Not in the Figma library yet — it exports in <code className="font-mono">tokens.json</code> and documents here; its Figma component set is on the plugin roadmap.
+        </p>
+      </div>
+    )
+  }
   return (
     <div className="rounded-xl border border-line bg-surface/40 p-4 flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -235,9 +271,9 @@ function FigmaShipList({ component }: { component: ComponentDef }) {
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export default function ComponentDocPane({ component }: { component: ComponentDef | null }) {
+export default function ComponentDocPane({ component, previewTheme = 'light' }: { component: ComponentDef | null; previewTheme?: string }) {
   const { selectedComponents, toggleComponent } = useDesignStore()
-  const tokens = usePreviewTokens()
+  const tokens = usePreviewTokens(previewTheme)
 
   if (!component) {
     return (
@@ -273,7 +309,7 @@ export default function ComponentDocPane({ component }: { component: ComponentDe
           <button
             onClick={() => toggleComponent(component.key)}
             className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all shrink-0 whitespace-nowrap ${
-              selected ? 'bg-[#0088FF] text-white' : 'bg-elevated text-fg-muted border border-line-strong'
+              selected ? 'bg-fg text-app' : 'bg-elevated text-fg-muted border border-line-strong'
             }`}
           >
             {selected ? '✓ Added to system' : 'Add to system'}

@@ -42,7 +42,7 @@ function FigmaLogo({ size = 40 }: { size?: number }) {
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <div className="flex gap-3 rounded-xl border border-line bg-surface/50 p-5">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0088FF]/10 text-[#0088FF] text-xs font-semibold flex items-center justify-center">
+      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-fg/10 text-fg text-xs font-semibold flex items-center justify-center">
         {n}
       </span>
       <div className="flex flex-col gap-2 min-w-0 flex-1">
@@ -111,7 +111,7 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
           <FigmaLogo size={44} />
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-fg">
-              Bring <span className="text-[#0088FF]">{projectName}</span> to Figma
+              Bring <span className="text-fg">{projectName}</span> to Figma
             </h2>
             <p className="text-sm text-fg-faint">
               Install the sync plugin and your tokens land as Figma variables & styles.
@@ -135,7 +135,7 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
         <a
           href={PLUGIN_ZIP}
           download
-          className="self-start mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0088FF] hover:bg-[#006ECC] shadow-sm shadow-[#0088FF]/30 transition-all"
+          className="self-start mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-app bg-fg hover:opacity-90 shadow-sm transition-all"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />

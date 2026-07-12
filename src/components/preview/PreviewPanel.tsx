@@ -40,7 +40,7 @@ function Tile({ tokens, children }: { tokens: PreviewTokens; children: ReactNode
   return (
     <div
       className="p-4 flex flex-wrap items-center gap-3"
-      style={{ background: tokens.surface, border: `1px solid ${tokens.border || '#eaecf0'}`, borderRadius: 14 }}
+      style={{ background: tokens.surface, border: `1px solid ${tokens.borderDefault || tokens.border || '#eaecf0'}`, borderRadius: 14 }}
     >
       {children}
     </div>
@@ -54,6 +54,7 @@ export default function PreviewPanel({
   iconLibraryKey = null,
   showOverview = false,
   onNavigateFoundation,
+  onCollapse,
 }: {
   focus?: SemanticCategory | null
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
@@ -63,6 +64,8 @@ export default function PreviewPanel({
   /** When true (Home), the panel shows the foundations overview checklist. */
   showOverview?: boolean
   onNavigateFoundation?: (key: string) => void
+  /** When set, shows a header button to collapse the panel. */
+  onCollapse?: () => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const specimen = focus && focus !== 'all' ? focus : null
@@ -85,6 +88,19 @@ export default function PreviewPanel({
           <span className="px-1.5 py-0.5 rounded-md bg-elevated text-[10px] font-medium text-[#5AADFF] capitalize">
             {themeBadge}
           </span>
+        )}
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            aria-label="Collapse preview"
+            title="Collapse preview"
+            className="ml-auto flex-shrink-0 p-1.5 rounded-lg text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M15 4v16" />
+            </svg>
+          </button>
         )}
       </header>
 

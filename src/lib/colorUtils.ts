@@ -1,11 +1,15 @@
 import chroma from 'chroma-js'
 
 // ── Color-scale algorithms ───────────────────────────────────────────────────
-// Each algorithm builds a 12-tone ramp (light → dark) in OKLCH, anchored so that
-// tone 6 is exactly the base color. Lightness is interpolated in two monotonic
-// halves (light → base, base → dark) so the ramp never reverses around the
-// anchor regardless of the base color's own lightness. `contrastShift` (≈ −1…+1)
-// widens (or narrows) the lightness range — more separation between tones.
+// Each algorithm builds a 12-tone ramp (light → dark) in OKLCH following the
+// Radix Colors taxonomy: 1–2 backgrounds · 3–5 interactive fills · 6–8 borders
+// · 9–10 solid fills · 11–12 text. The base color anchors tone 9 (the solid),
+// and the light run (1–8) eases toward white so backgrounds and borders stay
+// pastel — that's what keeps borders soft. The dark run (10–12) eases in so 10
+// reads as the solid's hover and 11–12 reach text-grade darkness. Lightness is
+// interpolated in two monotonic halves so the ramp never reverses around the
+// anchor regardless of the base color's own lightness. `contrastShift`
+// (≈ −1…+1) widens (or narrows) the lightness range — more tone separation.
 
 export type ColorAlgorithm =
   | 'default'
@@ -30,41 +34,80 @@ type AlgoSpec = {
 }
 
 const TONES = 12
-const ANCHOR = 6 // tone pinned to the base color exactly
+/** Tone pinned to the base color exactly — the Radix "solid" step. */
+export const BASE_TONE = 9
+
+// Easing exponents for the two halves. The light run (1–8) uses a square-root
+// ease so tones rush toward white and the border band (6–8) stays pastel —
+// linear interpolation is what made borders look heavy. The dark run (10–12)
+// eases in gently so tone 10 sits just below the solid (its hover) while 11–12
+// still reach text-grade contrast.
+const LIGHT_EASE = 0.5
+const DARK_EASE = 1.4
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n))
 }
 
-function buildScale(baseHex: string, spec: AlgoSpec, shift: number): string[] {
+function buildScale(baseHex: string, spec: AlgoSpec, shift: number, background?: string): string[] {
   const [baseL, baseC, baseHraw] = chroma(baseHex).oklch()
   const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw
   // Widen/narrow each half-range by the contrast shift.
-  const lightL = clamp01(baseL + (spec.lightL - baseL) * (1 + shift))
+  let lightL = clamp01(baseL + (spec.lightL - baseL) * (1 + shift))
   const darkL = clamp01(baseL - (baseL - spec.darkL) * (1 + shift))
+
+  // Radix custom-palette behavior: every ramp grows out of the page background.
+  // When a background is provided, tone 1 anchors to its OKLCH lightness — a
+  // tinted/cream page pulls the whole light run down with it, so backgrounds
+  // and subtle fills sit ON the page instead of floating above it. Backgrounds
+  // lighter than the spec's own extreme (pure white) change nothing, and dark
+  // backgrounds are ignored (our ramps are light-appearance; dark themes read
+  // tones inverted via recDarkTone).
+  // The blend target for the surface band (tones 1–3): the page background
+  // when it's a light one, else plain white — so surface tones always read as
+  // subtle washes sitting on the page rather than saturated fills.
+  let surfaceAnchor = '#ffffff'
+  if (background) {
+    try {
+      const bgL = chroma(background).oklch()[0]
+      if (bgL > 0.5) {
+        lightL = Math.min(lightL, clamp01(bgL))
+        surfaceAnchor = chroma(background).hex()
+      }
+    } catch { /* invalid background — ignore */ }
+  }
 
   const out: string[] = []
   for (let i = 1; i <= TONES; i++) {
-    if (i === ANCHOR) {
+    if (i === BASE_TONE) {
       out.push(chroma(baseHex).hex())
       continue
     }
     let L: number
     let C: number
     let frac: number
-    if (i < ANCHOR) {
-      const f = (ANCHOR - i) / (ANCHOR - 1) // 0 → 1 toward the light end
+    if (i < BASE_TONE) {
+      const f = ((BASE_TONE - i) / (BASE_TONE - 1)) ** LIGHT_EASE // 0 → 1 toward the light end
       L = baseL + (lightL - baseL) * f
       C = baseC * (1 + (spec.lightCmul - 1) * f)
       frac = -f
     } else {
-      const f = (i - ANCHOR) / (TONES - ANCHOR) // 0 → 1 toward the dark end
+      const f = ((i - BASE_TONE) / (TONES - BASE_TONE)) ** DARK_EASE // 0 → 1 toward the dark end
       L = baseL + (darkL - baseL) * f
       C = baseC * (1 + (spec.darkCmul - 1) * f)
       frac = f
     }
     const H = baseH + (spec.hueShift?.(frac) ?? 0)
-    out.push(chroma.oklch(L, C, H).hex())
+    let color = chroma.oklch(L, C, H)
+    // Surface band (Radix taxonomy: 1–2 backgrounds, tapering into 3): ease
+    // the tone into the page background so surface-0/1 stay subtle regardless
+    // of the algorithm's own light-end chroma. Weights ≈ .85/.54/.27 → 0.
+    if (i < BASE_TONE) {
+      const f = ((BASE_TONE - i) / (BASE_TONE - 1)) ** LIGHT_EASE
+      const pull = Math.max(0, (f - 0.75) / 0.25)
+      if (pull > 0) color = chroma.mix(color, surfaceAnchor, Math.pow(pull, 1.5) * 0.85, 'oklab')
+    }
+    out.push(color.hex())
   }
   return out
 }
@@ -76,7 +119,9 @@ const SPECS: Record<ColorAlgorithm, AlgoSpec> = {
   monochromatic: { label: 'Monochromatic',   lightL: 0.97, darkL: 0.20, lightCmul: 0.45, darkCmul: 0.95 },
   // System-flavored ramps — distinct light/dark extremes + chroma feel.
   tailwind:      { label: 'Tailwind CSS',    lightL: 0.97, darkL: 0.18, lightCmul: 0.40, darkCmul: 1.00 },
-  radix:         { label: 'Radix UI',        lightL: 0.99, darkL: 0.24, lightCmul: 0.22, darkCmul: 0.85 },
+  // Radix's light steps 1–2 are near-white with almost no chroma (app/subtle
+  // backgrounds) — hence the very low light-end chroma multiplier.
+  radix:         { label: 'Radix UI',        lightL: 0.995, darkL: 0.24, lightCmul: 0.04, darkCmul: 0.85 },
   ant:           { label: 'Ant Design',      lightL: 0.96, darkL: 0.20, lightCmul: 0.45, darkCmul: 0.95 },
   // Chroma fans wide from pale tints to saturated shades.
   saturation:    { label: 'Saturation Scale', lightL: 0.92, darkL: 0.30, lightCmul: 0.15, darkCmul: 1.45 },
@@ -88,11 +133,11 @@ const SPECS: Record<ColorAlgorithm, AlgoSpec> = {
 }
 
 export const ALGORITHM_OPTIONS: { key: ColorAlgorithm; label: string }[] = (
-  ['lightness', 'tailwind', 'radix', 'ant', 'saturation', 'hueShift', 'monochromatic', 'analogous', 'complementary'] as ColorAlgorithm[]
+  ['radix', 'lightness', 'tailwind', 'ant', 'saturation', 'hueShift', 'monochromatic', 'analogous', 'complementary'] as ColorAlgorithm[]
 ).map((key) => ({ key, label: SPECS[key].label }))
 
 // The recommended (default) algorithm — surfaced with a badge in the UI.
-export const RECOMMENDED_ALGORITHM: ColorAlgorithm = 'lightness'
+export const RECOMMENDED_ALGORITHM: ColorAlgorithm = 'radix'
 
 // ── Token naming schemes ─────────────────────────────────────────────────────
 // How the 12 primitive tones are named in the export (tokens.json / CSS / README).
@@ -115,14 +160,47 @@ export function generateColorScale(
   baseHex: string,
   algorithm: ColorAlgorithm = 'default',
   contrastShift = 0,
+  background?: string,
 ): Record<number, string> {
   const spec = SPECS[algorithm] ?? SPECS.default
-  const colors = buildScale(baseHex, spec, contrastShift)
+  const colors = buildScale(baseHex, spec, contrastShift, background)
   const scale: Record<number, string> = {}
   colors.forEach((color, i) => {
     scale[i + 1] = color
   })
   return scale
+}
+
+// ── Alpha ramps (Radix custom-palette architecture) ─────────────────────────
+// Radix ships every scale twice: solid AND alpha, where each alpha step is the
+// most-transparent overlay that reproduces the solid when composited over the
+// page background — `solid = background×(1−α) + overlay×α`, solved for α and
+// the overlay channels. Alpha tokens are therefore background-DEPENDENT: they
+// only exist relative to a declared page background, which is why the
+// background is a primitive input here, not a cosmetic choice.
+
+/** Overlay color (#rrggbbaa) that reproduces `targetHex` over `backgroundHex`. */
+export function alphaColorOver(targetHex: string, backgroundHex: string, targetAlpha?: number): string {
+  const [tr, tg, tb] = chroma(targetHex).rgb()
+  const [br, bg, bb] = chroma(backgroundHex).rgb()
+  // Overlay toward white if any channel must lighten the background, else black.
+  const desired = tr > br || tg > bg || tb > bb ? 255 : 0
+  const alphaFor = (t: number, b: number) => (desired === b ? 0 : (t - b) / (desired - b))
+  const a = targetAlpha ?? Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb))
+  const A = Math.min(1, Math.max(0, Math.ceil(a * 255) / 255))
+  if (A === 0) return desired === 255 ? '#ffffff00' : '#00000000'
+  const ch = (t: number, b: number) => Math.min(255, Math.max(0, Math.round((t - b * (1 - A)) / A)))
+  return chroma.rgb(ch(tr, br), ch(tg, bg), ch(tb, bb)).alpha(A).hex()
+}
+
+/** Alpha twin of a 1–12 solid scale, derived against the page background. */
+export function generateAlphaScale(scale: Record<number, string>, backgroundHex: string): Record<number, string> {
+  const out: Record<number, string> = {}
+  for (const [k, hex] of Object.entries(scale)) {
+    if (!hex) continue
+    try { out[Number(k)] = alphaColorOver(hex, backgroundHex) } catch { out[Number(k)] = hex }
+  }
+  return out
 }
 
 // Canonical hues for the four state roles (recognizable red / amber / green /
@@ -162,11 +240,34 @@ export function isAccessible(fg: string, bg: string, level: 'AA' | 'AAA' = 'AA')
 
 // Lightest brand tone (>= start) whose WHITE text passes WCAG AA (4.5:1).
 // Keeps the solid brand button accessible even for bright hues where the design
-// system's default tone (8) is too light for white text. Falls back to 12.
-export function accessibleSolidTone(scale: Record<number, string>, start = 8): number {
+// system's solid tone (9) is too light for white text. Falls back to 12.
+export function accessibleSolidTone(scale: Record<number, string>, start = BASE_TONE): number {
   for (let t = start; t <= 12; t++) {
     const hex = scale[t]
     if (hex && checkContrast('#ffffff', hex) >= 4.5) return t
   }
   return 12
+}
+
+// Accent ink for app chrome (rail labels, section titles): brand tone 9 is tuned
+// for white surfaces, so over the dark theme it can dip below readable contrast.
+// Brightens the hue in steps until it clears 4.5:1 on the given background.
+export function readableAccent(hex: string, bg: string): string {
+  try {
+    let c = chroma(hex)
+    for (let i = 0; i < 8 && chroma.contrast(c, bg) < 4.5; i++) c = c.brighten(0.4)
+    return c.hex()
+  } catch {
+    return hex
+  }
+}
+
+// Applies alpha transparency to a hex color — used for the translucent panel
+// background treatment (Radix `panelBackground="translucent"` equivalent).
+export function withAlpha(hex: string, alpha: number): string {
+  try {
+    return chroma(hex).alpha(alpha).css()
+  } catch {
+    return hex
+  }
 }

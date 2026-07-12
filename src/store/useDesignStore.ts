@@ -194,6 +194,12 @@ export const SIZES_DEFAULT: Record<string, string> = {
   xs: '24px', sm: '32px', md: '40px', lg: '48px', xl: '56px', '2xl': '64px',
 }
 
+// Surface padding token — per-side inset for padded surfaces (cards, tiles,
+// panels) in the live previews and the export.
+export const PADDING_DEFAULT: Record<string, string> = {
+  top: '20px', right: '20px', bottom: '20px', left: '20px',
+}
+
 // ── Multi design system ──────────────────────────────────────────────────────
 // Everything needed to restore a design session. Excludes nav state,
 // `projectCreated`, `savedSystems` itself, and the GitHub token (which lives
@@ -204,6 +210,9 @@ export interface DesignSnapshot {
   colorAlgorithm: ColorAlgorithm
   contrastShift: number
   colorNaming: ColorNaming
+  // Page background primitive (Radix custom-palette input) — anchors tone 1 of
+  // every generated ramp and is the compositing base for derived alpha ramps.
+  pageBackground: string
   primaryColor: string
   primaryScale: ColorScale
   grayBaseColor: string
@@ -228,6 +237,12 @@ export interface DesignSnapshot {
   shadows: Record<string, string>
   grid: Record<string, string>
   sizes: Record<string, string>
+  // Per-side surface padding (top/right/bottom/left) for padded surfaces.
+  padding: Record<string, string>
+  // Radix-style `panelBackground` — whether raised surfaces (surface-1: cards,
+  // panels, sections) render solid, with alpha + backdrop blur, or reuse the
+  // primitives page background (`pageBackground`).
+  panelBackground: 'solid' | 'translucent' | 'page'
   selectedComponents: string[]
   completedFoundations: string[]
   iconLibrary: string
@@ -255,9 +270,10 @@ export function makeDesignDefaults(): DesignSnapshot {
   return {
     projectName: 'DS.by.MD',
     projectDescription: '',
-    colorAlgorithm: 'lightness',
+    colorAlgorithm: 'radix',
     contrastShift: 0,
     colorNaming: 'numeric',
+    pageBackground: '#ffffff',
     primaryColor: '#7f56d9',
     primaryScale: {},
     grayBaseColor: '#6c737f',
@@ -288,6 +304,8 @@ export function makeDesignDefaults(): DesignSnapshot {
     shadows: { ...SHADOW_DEFAULT },
     grid: { ...GRID_DEFAULT },
     sizes: { ...SIZES_DEFAULT },
+    padding: { ...PADDING_DEFAULT },
+    panelBackground: 'solid',
     selectedComponents: [...COMPONENT_KEYS],
     completedFoundations: [],
     iconLibrary: 'lucide',
@@ -345,6 +363,11 @@ interface DesignStore {
   setContrastShift: (n: number) => void
   setColorNaming: (n: ColorNaming) => void
 
+  // Page background primitive — the surface every ramp is generated against
+  // (tone-1 anchor) and the compositing base for the exported alpha ramps.
+  pageBackground: string
+  setPageBackground: (hex: string) => void
+
   // Step 2 — Brand / accent color (user-defined, generates 12-tone scale)
   primaryColor: string
   primaryScale: ColorScale
@@ -398,6 +421,9 @@ interface DesignStore {
   mergeThemeTokens: (theme: string, partial: Record<string, string>) => void
   addTheme: (key: string, kind: 'light' | 'dark', palette: ThemePalette) => void
   removeTheme: (key: string) => void
+  // Updates a custom theme's own palette (no-op for light/dark, which have no
+  // palette entry and draw from the global scales instead).
+  mergeThemePalette: (key: string, partial: Partial<ThemePalette>) => void
 
   // Step 4 — Typography
   typography: TypographyTokens
@@ -418,6 +444,15 @@ interface DesignStore {
   setShadows: (s: Record<string, string>) => void
   setGrid: (g: Record<string, string>) => void
   setSizes: (s: Record<string, string>) => void
+
+  // Surface padding token (top/right/bottom/left)
+  padding: Record<string, string>
+  setPadding: (p: Record<string, string>) => void
+
+  // Panel background — Radix-style treatment for raised surfaces (surface-1:
+  // cards, panels, sections): solid, translucent, or the page background.
+  panelBackground: 'solid' | 'translucent' | 'page'
+  setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
 
   // Components — every component ships selected by default (toggle = remove)
   selectedComponents: string[]
@@ -475,6 +510,7 @@ export const useDesignStore = create<DesignStore>()(
       setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
       setContrastShift: (n) => set({ contrastShift: n }),
       setColorNaming: (n) => set({ colorNaming: n }),
+      setPageBackground: (hex) => set({ pageBackground: hex }),
 
       // Brand
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
@@ -538,6 +574,11 @@ export const useDesignStore = create<DesignStore>()(
             themePalettes: { ...state.themePalettes, [key]: palette },
           }
         }),
+      mergeThemePalette: (key, partial) =>
+        set((state) => {
+          if (!state.themePalettes[key]) return state
+          return { themePalettes: { ...state.themePalettes, [key]: { ...state.themePalettes[key], ...partial } } }
+        }),
       removeTheme: (key) =>
         set((state) => {
           if (key === 'light' || key === 'dark' || !state.themes[key]) return state
@@ -559,8 +600,11 @@ export const useDesignStore = create<DesignStore>()(
 
       setOpacity: (o) => set({ opacity: o }),
       setShadows: (s) => set({ shadows: s }),
+      setPadding: (p) => set({ padding: p }),
       setGrid: (g) => set({ grid: g }),
       setSizes: (s) => set({ sizes: s }),
+
+      setPanelBackground: (v) => set({ panelBackground: v }),
 
       // Every component is included by default — the user removes what they don't want.
       toggleComponent: (key) =>
@@ -633,7 +677,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 24,
+      version: 28,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -789,6 +833,31 @@ export const useDesignStore = create<DesignStore>()(
               }
             }
           }
+          // v24→v25: Radix-style panel background (solid/translucent) for raised
+          // surfaces. Default 'solid' preserves the current look for every
+          // existing session until they opt into translucent.
+          if (!persisted.panelBackground) persisted.panelBackground = 'solid'
+          // v25→v26: page background primitive (Radix custom-palette input) —
+          // anchors tone 1 of every ramp + derives the alpha ramps. White is
+          // the previous implicit background, so existing output is unchanged.
+          if (!persisted.pageBackground) persisted.pageBackground = '#ffffff'
+          // v26→v27: the catalogue grew from 16 to 58 components. New keys ship
+          // included by default (same as a fresh system), so union them into the
+          // existing selection — anything the user removed stays removed.
+          if (Array.isArray(persisted.selectedComponents)) {
+            const have = new Set(persisted.selectedComponents)
+            // Only append keys that post-date the old 16-key catalogue.
+            const legacy = new Set([
+              'Button', 'Input', 'Select', 'Checkbox', 'Toggle', 'Badge', 'Progress', 'Spinner',
+              'Avatar', 'Card', 'Divider', 'Modal', 'Tooltip', 'Toast', 'Tabs', 'Breadcrumb',
+            ])
+            for (const key of COMPONENT_KEYS) {
+              if (!legacy.has(key) && !have.has(key)) persisted.selectedComponents.push(key)
+            }
+          }
+          // v27→v28: per-side surface padding token; 20px matches the previous
+          // hardcoded tile inset, so existing previews render identically.
+          if (!persisted.padding) persisted.padding = { ...PADDING_DEFAULT }
         }
         return persisted
       },

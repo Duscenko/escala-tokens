@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 
 // Radius presets — each defines the full none→full ramp, named by personality.
-const RADIUS_PRESETS = [
+export const RADIUS_PRESETS = [
   {
     label: 'Sharp',
     description: 'No rounding — sharp, precise',
@@ -26,14 +26,14 @@ const RADIUS_PRESETS = [
   },
 ]
 
-const RADIUS_STEPS = ['none', 'sm', 'md', 'lg', 'full'] as const
+export const RADIUS_STEPS = ['none', 'sm', 'md', 'lg', 'full'] as const
 
 function pxToNum(val: string): number {
   return parseFloat(val.replace('px', '')) || 0
 }
 
 // Which preset (if any) the current radius map exactly matches.
-function matchPreset(radius: Record<string, string>): string | null {
+export function matchRadiusPreset(radius: Record<string, string>): string | null {
   const hit = RADIUS_PRESETS.find((p) =>
     RADIUS_STEPS.every((s) => (radius[s] ?? '') === p.values[s]),
   )
@@ -42,7 +42,8 @@ function matchPreset(radius: Record<string, string>): string | null {
 
 export default function StepRadius() {
   const { radius, setRadius, primaryColor, themes } = useDesignStore()
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchPreset(radius) ?? 'Soft')
+  // No fallback: custom values show no preset selected, matching Quick edit.
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchRadiusPreset(radius))
 
   const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
 
@@ -54,7 +55,7 @@ export default function StepRadius() {
   function fineTune(step: string, raw: string) {
     const next = { ...radius, [step]: raw }
     setRadius(next)
-    setSelectedPreset(matchPreset(next))
+    setSelectedPreset(matchRadiusPreset(next))
   }
 
   // Grade the whole ramp from one handle: sm ≈ ⅓, md ≈ ⅔, lg = handle. `full`
@@ -67,7 +68,7 @@ export default function StepRadius() {
       lg: `${lg}px`,
     }
     setRadius(next)
-    setSelectedPreset(matchPreset(next))
+    setSelectedPreset(matchRadiusPreset(next))
   }
 
   // The lg radius drives the slider — the one buttons & cards actually use.
@@ -91,9 +92,9 @@ export default function StepRadius() {
               <button
                 key={preset.label}
                 onClick={() => applyPreset(preset)}
-                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0088FF] ${
+                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                   isSelected
-                    ? 'bg-elevated ring-2 ring-[#0088FF]/50 border border-[#0088FF]/30'
+                    ? 'bg-elevated ring-2 ring-fg/50 border border-fg/30'
                     : 'bg-surface border border-line hover:border-line-strong'
                 }`}
               >
@@ -149,7 +150,7 @@ export default function StepRadius() {
             step={1}
             value={Math.min(lgPx, 32)}
             onChange={(e) => scaleRoundness(Number(e.target.value))}
-            className="flex-1 accent-[#0088FF] cursor-pointer"
+            className="flex-1 accent-fg cursor-pointer"
             aria-label="Scale border radius"
           />
           {/* Live shape that grows with the slider */}
@@ -177,7 +178,7 @@ export default function StepRadius() {
                 type="text"
                 value={radius[step] ?? '0px'}
                 onChange={(e) => fineTune(step, e.target.value)}
-                className="bg-surface border border-line focus:border-[#0088FF] rounded-lg px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-center"
+                className="bg-surface border border-line focus:border-fg rounded-lg px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-center"
               />
               {/* Mini shape preview */}
               <div

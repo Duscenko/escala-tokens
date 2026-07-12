@@ -2,6 +2,7 @@ import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme } from '../lib/theme'
+import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import Sidebar, { type Tab } from '../components/configurator/Sidebar'
 import TopNav from '../components/configurator/TopNav'
@@ -12,6 +13,8 @@ import FigmaConnectView from '../components/configurator/FigmaConnectView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import HomeView from '../components/configurator/HomeView'
+import DocsView from '../components/configurator/DocsView'
+import SaveView from '../components/configurator/SaveView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
@@ -24,6 +27,7 @@ import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
+import QuickFoundationsPanel, { QuickEditPanel } from '../components/configurator/QuickFoundationsPanel'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
@@ -50,10 +54,10 @@ const FOUNDATIONS: FoundationSection[] = [
     key: 'home',
     label: 'Home',
     short: 'Home',
-    hint: 'Name, connections & sharing',
+    hint: 'Your components, live from your tokens',
     title: 'Home',
-    subtitle: 'Name your design system, check your connections and share it.',
-    // Rendered via a special case in the shell (needs the onOpenFigma callback).
+    subtitle: 'Your components, rendered live from your tokens — try an accent and make it yours.',
+    // Rendered via a special case in the shell (needs the onOpenFoundation callback).
     Component: () => null,
     Icon: ic('M3 10.5 12 3l9 7.5M5 9.5V20h4.5v-5.5h5V20H19V9.5', '1.8'),
   },
@@ -180,7 +184,7 @@ const GitHubIcon: ComponentType = () => (
 function CatalogueCheck() {
   return (
     <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-      <path d="M2 5.2 4 7.2 8 2.8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2 5.2 4 7.2 8 2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -188,7 +192,7 @@ function CatalogueCheck() {
 type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
-function CenterHeader({ Icon, title, subtitle, onExport, accentColor }: { Icon: ComponentType; title: string; subtitle: string; onExport?: () => void; accentColor?: string }) {
+function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot }: { Icon: ComponentType; title: string; subtitle: string; onExport?: () => void; accentColor?: string; rightSlot?: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[60px] border-b border-line/60 flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
@@ -197,15 +201,20 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor }: { Icon: 
       <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
       <p className="text-sm text-fg-faint truncate">{subtitle}</p>
-      {onExport && (
-        <button
-          onClick={onExport}
-          className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
-          title="Copy this section as CSS · Tailwind · Tokens · MD"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-          Export
-        </button>
+      {(rightSlot || onExport) && (
+        <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+          {rightSlot}
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+              title="Copy this section as CSS · Tailwind · Tokens · MD"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+              Export
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
@@ -217,7 +226,8 @@ export default function Configurator() {
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
   const [tab, setTab] = useState<Tab>('foundations')
-  const [activeFoundation, setActiveFoundation] = useState<string>('color')
+  // Every session lands on Home — the live collage + quick-edit hub.
+  const [activeFoundation, setActiveFoundation] = useState<string>('home')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -227,12 +237,24 @@ export default function Configurator() {
   const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
   // Sub-tab within the Color hub (Primitives ↔ Alias/Semantics). The preview
   // mirrors the semantic category only while the semantics tab is active.
-  const [colorTab, setColorTab] = useState<ColorTab>('primitives')
+  const [colorTab, setColorTab] = useState<ColorTab>('semantics')
   // Theme shown in the right-hand preview — toggled by the eye icons in the
   // Semantic table's column headers. Defaults to the built-in light theme.
   const [previewTheme, setPreviewTheme] = useState('light')
+  // Theme the Components catalogue's live playground renders in — its own
+  // picker in the center header, independent from the Semantic preview theme.
+  const [componentsPreviewTheme, setComponentsPreviewTheme] = useState('light')
+  // Theme Home's collage renders in — driven by the Quick edit panel's Theme row.
+  const [homeTheme, setHomeTheme] = useState('light')
+  // Right preview panel can be collapsed for more center width; re-expanded
+  // via the slim strip that replaces it while collapsed.
+  const [previewCollapsed, setPreviewCollapsed] = useState(false)
+  // Components catalogue — quick-edit popover for the Foundations you've already set.
+  const [quickPanelOpen, setQuickPanelOpen] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
   const [sectionExportOpen, setSectionExportOpen] = useState(false)
+  // Components catalogue — filters the master list by label/key.
+  const [componentSearch, setComponentSearch] = useState('')
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Foundation sections (not Home) can export their token slice.
@@ -286,6 +308,7 @@ export default function Configurator() {
   let header: { Icon: ComponentType; title: string; subtitle: string }
   let body: ReactNode
   let centerKey: string
+  let centerRightSlot: ReactNode = null
 
   if (exportMode === 'github') {
     header = { Icon: GitHubIcon, title: 'GitHub', subtitle: 'Version your design system in a repository.' }
@@ -320,10 +343,14 @@ export default function Configurator() {
     )
     centerKey = 'export-code'
   } else if (exportMode === 'save') {
-    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Name your system, save it, and export every file.' }
+    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Name your system, save it, check your connections and share it.' }
     body = (
-      <div className="h-full overflow-y-auto">
-        <ExportView showSave initialTab="markdown" onClose={() => setExportMode(null)} />
+      <div className="h-full overflow-y-auto p-8">
+        <SaveView
+          onOpenFigma={() => openExport('figma')}
+          onOpenGithub={() => openExport('github')}
+          onOpenExport={() => openExport('code')}
+        />
       </div>
     )
     centerKey = 'export-save'
@@ -352,30 +379,72 @@ export default function Configurator() {
     ) : (
       <div className="h-full overflow-y-auto p-8">
         {section.key === 'home' ? (
-          <HomeView
-            onOpenFigma={() => openExport('figma')}
-            onOpenGithub={() => openExport('github')}
-            onOpenFoundation={openFromHome}
-            onOpenExport={() => openExport('code')}
-          />
+          <HomeView onOpenFoundation={openFromHome} previewTheme={homeTheme} />
         ) : (
           <Active />
         )}
       </div>
     )
     centerKey = `f-${section.key}`
+  } else if (tab === 'docs') {
+    header = {
+      Icon: DocIcon,
+      title: 'Documentation',
+      subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
+    }
+    body = <DocsView previewTheme={componentsPreviewTheme} />
+    centerKey = 'docs'
   } else {
     header = {
       Icon: ComponentsIcon,
       title: 'Components',
       subtitle: 'Browse the catalogue — toggle any component to include or remove it.',
     }
+    centerRightSlot = (
+      <>
+        <div className="relative">
+          <button
+            onClick={() => setQuickPanelOpen((v) => !v)}
+            aria-label="Quick edit foundations"
+            aria-expanded={quickPanelOpen}
+            title="Quick edit — tweak your Foundations without leaving Components"
+            className={`flex-shrink-0 p-1.5 rounded-lg border transition-colors ${
+              quickPanelOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
+            }`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+          </button>
+          <QuickFoundationsPanel
+            open={quickPanelOpen}
+            onClose={() => setQuickPanelOpen(false)}
+            onOpenFoundations={() => selectFoundation('color')}
+            previewTheme={componentsPreviewTheme}
+            onThemeChange={setComponentsPreviewTheme}
+          />
+        </div>
+      </>
+    )
     body = (
       <div className="h-full flex min-h-0">
         {/* Master list (relocated from the old wide sidebar) */}
         <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
+          <input
+            value={componentSearch}
+            onChange={(e) => setComponentSearch(e.target.value)}
+            placeholder="Search components"
+            aria-label="Search components"
+            className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
+          />
           {CATEGORIES.map((cat) => {
-            const items = COMPONENTS.filter((c) => c.category === cat)
+            const q = componentSearch.trim().toLowerCase()
+            const items = COMPONENTS.filter(
+              (c) => c.category === cat && (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
+            )
             if (!items.length) return null
             return (
               <div key={cat} className="flex flex-col gap-0.5">
@@ -408,7 +477,7 @@ export default function Configurator() {
                           toggleComponent(comp.key)
                         }}
                         className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected ? 'bg-[#0088FF]' : 'bg-elevated border border-line-strong'
+                          isSelected ? 'bg-fg text-app' : 'bg-elevated border border-line-strong'
                         }`}
                         aria-label={isSelected ? `Remove ${comp.label}` : `Add ${comp.label}`}
                       >
@@ -424,7 +493,7 @@ export default function Configurator() {
 
         {/* Detail */}
         <div className="flex-1 min-w-0 overflow-y-auto p-6 lg:p-8">
-          <ComponentDocPane component={activeComponent} />
+          <ComponentDocPane component={activeComponent} previewTheme={componentsPreviewTheme} />
         </div>
       </div>
     )
@@ -433,7 +502,7 @@ export default function Configurator() {
 
   // Preview is hidden in the Components tab (docs go full-width) and in every
   // export/connect view (Code · Docs · Figma · GitHub) — those own the full panel.
-  const showPreview = tab !== 'components' && !exportMode
+  const showPreview = tab !== 'components' && tab !== 'docs' && !exportMode
   const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
   return (
@@ -476,7 +545,8 @@ export default function Configurator() {
               title={header.title}
               subtitle={header.subtitle}
               onExport={canExportSection ? () => setSectionExportOpen(true) : undefined}
-              accentColor={primaryScale[8] ?? primaryColor}
+              accentColor={theme === 'dark' ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a') : primaryScale[9] ?? primaryColor}
+              rightSlot={centerRightSlot}
             />
             <div className="flex-1 min-h-0">
               <AnimatePresence mode="wait">
@@ -495,20 +565,41 @@ export default function Configurator() {
           </main>
 
           {/* Right live preview (hidden in components tab — full width for docs) */}
-          {showPreview && (
+          {showPreview && (previewCollapsed ? (
+            <button
+              onClick={() => setPreviewCollapsed(false)}
+              aria-label="Expand preview"
+              title="Expand preview"
+              className="hidden xl:flex w-8 flex-shrink-0 items-center justify-center border-l border-line bg-app hover:bg-elevated/50 text-fg-faint hover:text-fg transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M15 6l-6 6 6 6" />
+              </svg>
+            </button>
+          ) : (
             <aside className="hidden xl:flex w-[400px] flex-shrink-0 overflow-hidden border-l border-line">
-              <PreviewPanel
-                focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticCategory : null}
-                previewTheme={previewTheme}
-                iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
-                showOverview={!exportMode && tab === 'foundations' && activeFoundation === 'home'}
-                onNavigateFoundation={(key) => {
-                  if (key === 'components') { setTab('components') }
-                  else { setTab('foundations'); setActiveFoundation(key) }
-                }}
-              />
+              {tab === 'foundations' && activeFoundation === 'home' ? (
+                // Home pairs the collage with the Quick edit panel instead of the preview.
+                <QuickEditPanel
+                  previewTheme={homeTheme}
+                  onThemeChange={setHomeTheme}
+                  onOpenFoundations={() => selectFoundation('color')}
+                  onCollapse={() => setPreviewCollapsed(true)}
+                />
+              ) : (
+                <PreviewPanel
+                  focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticCategory : null}
+                  previewTheme={previewTheme}
+                  iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
+                  onNavigateFoundation={(key) => {
+                    if (key === 'components') { setTab('components') }
+                    else { setTab('foundations'); setActiveFoundation(key) }
+                  }}
+                  onCollapse={() => setPreviewCollapsed(true)}
+                />
+              )}
             </aside>
-          )}
+          ))}
         </div>
       </div>
 

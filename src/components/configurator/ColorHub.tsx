@@ -4,8 +4,8 @@ import Step3_SemanticTokens, { type SemanticCategory } from './Step3_SemanticTok
 export type ColorTab = 'primitives' | 'semantics'
 
 const TABS: { key: ColorTab; label: string }[] = [
-  { key: 'primitives', label: 'Primitives' },
   { key: 'semantics', label: 'Alias / Semantics' },
+  { key: 'primitives', label: 'Primitives' },
 ]
 
 // The Color hub unifies the primitive scales (Step2) and the semantic alias
