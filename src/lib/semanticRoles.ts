@@ -227,7 +227,11 @@ export function recDarkTone(role: Role): number {
     role.key.startsWith('text-on-brand')
   if (holdsTone) return t
   if (t <= 3) return Math.min(12, t + 9)   // subtle tints deepen
-  return Math.max(6, t - 1)                // text / icon / border lift one step
+  // Text band (10–12): these are dark-on-light text tones — on a dark surface
+  // they vanish. Mirror onto the light half of the ramp, keeping the hierarchy
+  // (strongest text = lightest tone): 12→6 · 11→7 · 10→8.
+  if (t >= 10) return 18 - t
+  return Math.max(6, t - 1)                // icon / border lift one step
 }
 
 // ── Ramp resolution + recommended values ────────────────────────────────────
@@ -256,7 +260,12 @@ export function sourceScaleFor(
  * overrides its tone so white text always passes WCAG AA, even for bright hues.
  */
 export function recToneFor(role: Role, kind: 'light' | 'dark', scale: Record<number, string>): number {
-  if (kind === 'light' && (role.key === 'action-primary' || role.key === 'action-primary-hover')) {
+  // The solid brand fill anchors its tone (in BOTH light and dark) to the
+  // lightest tone whose white/near-white label still passes WCAG AA — a bright
+  // accent's base tone 9 is too light for readable ink, so we deepen it. Doing
+  // this in dark too keeps brand buttons legible for every accent, not just
+  // dark-enough ones.
+  if (role.key === 'action-primary' || role.key === 'action-primary-hover') {
     const solid = accessibleSolidTone(scale)
     return role.key === 'action-primary' ? solid : Math.min(solid + 1, 12)
   }

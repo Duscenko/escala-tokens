@@ -5,6 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, withAlpha } from './colorUtils'
+import { gradientToCss, gradientSlug } from './gradients'
 
 // Panel (surface-1: cards, panels, sections) tokens — translucent mode bakes
 // alpha into the color and pairs it with --panel-blur for backdrop-filter;
@@ -12,7 +13,7 @@ import { toneLabel, withAlpha } from './colorUtils'
 const PANEL_KEYS = ['surface-1', 'surface-1-alt']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, opacity, shadows, grid, sizes, colorNaming, panelBackground, pageBackground } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, opacity, shadows, grid, sizes, colorNaming, panelBackground, pageBackground, gradients } = store
   const semanticTokens = themes.light ?? {}
   const translucent = panelBackground === 'translucent'
   const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
@@ -77,6 +78,11 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
 
+  if (gradients.length) {
+    lines.push('\n  /* Gradients */')
+    gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g)};`))
+  }
+
   lines.push('}')
 
   // Non-default themes — semantic tokens only. Dark keeps the `.dark` class
@@ -96,7 +102,11 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 }
 
 export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, padding, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground } = store
+  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, padding, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground, gradients, gradientAssignments } = store
+  const gradientSlugById = (id: string | null) => {
+    const g = gradients.find((x) => x.id === id)
+    return g ? gradientSlug(g) : null
+  }
   const semanticTokens = themes.light ?? {}
   const themeCols = themeOrder.filter((t) => themes[t])
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -205,6 +215,21 @@ ${Object.entries(grid).map(([k,v])=>`| \`--grid-${k}\` | \`${v}\` |`).join('\n')
 | Token | Value |
 |-------|-------|
 ${Object.entries(sizes).map(([k,v])=>`| \`--size-${k}\` | \`${v}\` |`).join('\n')}
+
+---
+
+## Gradients
+
+${gradients.length
+  ? `| Token | Type | Value |
+|-------|------|-------|
+${gradients.map((g)=>`| \`--gradient-${gradientSlug(g)}\` | ${g.type} | \`${gradientToCss(g)}\` |`).join('\n')}
+
+Assigned surfaces: ${[
+    gradientSlugById(gradientAssignments.cover) ? `card cover → \`--gradient-${gradientSlugById(gradientAssignments.cover)}\`` : null,
+    gradientSlugById(gradientAssignments.avatar) ? `avatars → \`--gradient-${gradientSlugById(gradientAssignments.avatar)}\`` : null,
+  ].filter(Boolean).join(', ') || '_none_'}.`
+  : '_No gradients defined._'}
 
 ---
 

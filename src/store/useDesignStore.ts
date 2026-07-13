@@ -3,6 +3,11 @@ import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
 import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
+import { accessibleSolidTone } from '../lib/colorUtils'
+import {
+  type GradientDef, type GradientAssignments,
+  makeDefaultGradients, makeDefaultGradientAssignments,
+} from '../lib/gradients'
 import { slugify } from '../lib/utils'
 
 interface ColorScale {
@@ -243,6 +248,12 @@ export interface DesignSnapshot {
   // panels, sections) render solid, with alpha + backdrop blur, or reuse the
   // primitives page background (`pageBackground`).
   panelBackground: 'solid' | 'translucent' | 'page'
+  // Gradients foundation — named gradients + which one drives each preview
+  // surface. Exported in tokens.json (`gradients`) / variables.css / README.
+  gradients: GradientDef[]
+  gradientAssignments: GradientAssignments
+  // Scratch palette for the custom color picker's "Saved" swatches.
+  savedColors: string[]
   selectedComponents: string[]
   completedFoundations: string[]
   iconLibrary: string
@@ -306,6 +317,9 @@ export function makeDesignDefaults(): DesignSnapshot {
     sizes: { ...SIZES_DEFAULT },
     padding: { ...PADDING_DEFAULT },
     panelBackground: 'solid',
+    gradients: makeDefaultGradients(),
+    gradientAssignments: makeDefaultGradientAssignments(),
+    savedColors: [],
     selectedComponents: [...COMPONENT_KEYS],
     completedFoundations: [],
     iconLibrary: 'lucide',
@@ -453,6 +467,19 @@ interface DesignStore {
   // cards, panels, sections): solid, translucent, or the page background.
   panelBackground: 'solid' | 'translucent' | 'page'
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
+
+  // Gradients — named gradients + per-surface assignment (covers, avatars)
+  gradients: GradientDef[]
+  gradientAssignments: GradientAssignments
+  addGradient: (g: GradientDef) => void
+  updateGradient: (id: string, patch: Partial<Omit<GradientDef, 'id'>>) => void
+  removeGradient: (id: string) => void
+  setGradientAssignment: (target: keyof GradientAssignments, id: string | null) => void
+
+  // Custom color picker — user's saved swatch library
+  savedColors: string[]
+  addSavedColor: (hex: string) => void
+  removeSavedColor: (hex: string) => void
 
   // Components — every component ships selected by default (toggle = remove)
   selectedComponents: string[]
@@ -606,6 +633,33 @@ export const useDesignStore = create<DesignStore>()(
 
       setPanelBackground: (v) => set({ panelBackground: v }),
 
+      // Gradients — CRUD + per-surface assignment. Removing a gradient also
+      // clears any assignment pointing at it, so covers/avatars never dangle.
+      addGradient: (g) => set((state) => ({ gradients: [...state.gradients, g] })),
+      updateGradient: (id, patch) =>
+        set((state) => ({
+          gradients: state.gradients.map((g) => (g.id === id ? { ...g, ...patch } : g)),
+        })),
+      removeGradient: (id) =>
+        set((state) => ({
+          gradients: state.gradients.filter((g) => g.id !== id),
+          gradientAssignments: {
+            cover: state.gradientAssignments.cover === id ? null : state.gradientAssignments.cover,
+            avatar: state.gradientAssignments.avatar === id ? null : state.gradientAssignments.avatar,
+          },
+        })),
+      setGradientAssignment: (target, id) =>
+        set((state) => ({ gradientAssignments: { ...state.gradientAssignments, [target]: id } })),
+
+      addSavedColor: (hex) =>
+        set((state) =>
+          state.savedColors.some((c) => c.toLowerCase() === hex.toLowerCase())
+            ? state
+            : { savedColors: [...state.savedColors, hex] }
+        ),
+      removeSavedColor: (hex) =>
+        set((state) => ({ savedColors: state.savedColors.filter((c) => c.toLowerCase() !== hex.toLowerCase()) })),
+
       // Every component is included by default — the user removes what they don't want.
       toggleComponent: (key) =>
         set((state) => ({
@@ -677,7 +731,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 28,
+      version: 31,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -858,6 +912,112 @@ export const useDesignStore = create<DesignStore>()(
           // v27→v28: per-side surface padding token; 20px matches the previous
           // hardcoded tile inset, so existing previews render identically.
           if (!persisted.padding) persisted.padding = { ...PADDING_DEFAULT }
+          // v28→v29: dark-mode colored TEXT tokens now mirror onto the light
+          // half of their ramp (recDarkTone: 12→6 · 11→7 · 10→8) — the old
+          // seeds (tone−1) were dark-on-light tones, unreadable on dark
+          // surfaces. Reseed values still on the old recommendation (or empty);
+          // user-customised hexes are left untouched.
+          const DARK_TEXT_RESEED: { key: string; scale: string; old: number; next: number }[] = [
+            { key: 'text-brand',                 scale: 'brand',   old: 11, next: 6 },
+            { key: 'text-brand-secondary',       scale: 'brand',   old: 10, next: 7 },
+            { key: 'text-brand-secondary-hover', scale: 'brand',   old: 11, next: 6 },
+            { key: 'text-brand-tertiary',        scale: 'brand',   old: 9,  next: 8 },
+            { key: 'text-brand-tertiary-alt',    scale: 'brand',   old: 9,  next: 8 },
+            { key: 'text-error',                 scale: 'error',   old: 10, next: 7 },
+            { key: 'text-warning',               scale: 'warning', old: 10, next: 7 },
+            { key: 'text-success',               scale: 'success', old: 10, next: 7 },
+            { key: 'text-info',                  scale: 'info',    old: 10, next: 7 },
+          ]
+          const reseedDarkText = (state: any) => {
+            if (!state?.themes || typeof state.themes !== 'object') return
+            for (const t of Object.keys(state.themes)) {
+              if ((state.themeKinds?.[t] ?? 'light') !== 'dark') continue
+              const tokens = state.themes[t]
+              if (!tokens || typeof tokens !== 'object') continue
+              const pal = state.themePalettes?.[t]
+              for (const e of DARK_TEXT_RESEED) {
+                const ramp = pal?.[e.scale] ?? (e.scale === 'brand' ? state.primaryScale : state[`${e.scale}Scale`])
+                const nextHex = ramp?.[e.next]
+                if (!nextHex) continue
+                const cur = tokens[e.key]
+                const oldHex = ramp?.[e.old]
+                if (!cur || (oldHex && cur.toLowerCase() === oldHex.toLowerCase())) tokens[e.key] = nextHex
+              }
+            }
+          }
+          reseedDarkText(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) reseedDarkText(sys?.snapshot)
+          }
+          // v29→v30: brand-mapped tokens were re-derived on every accent change
+          // using the LIGHT tone for ALL themes (brandTokenUpdates ignored the
+          // theme kind), so dark themes got dark-on-light brand text/icons/
+          // borders — unreadable on dark surfaces. Reseed every dark theme's
+          // brand token that still sits on its light-only tone (lt) onto the
+          // recDarkTone tone (dt). Values matching neither are user choices.
+          const DARK_BRAND_RESEED: { key: string; lt: number; dt: number }[] = [
+            { key: 'surface-brand-subtle',       lt: 2,  dt: 11 },
+            { key: 'surface-brand-subtle-alt',   lt: 2,  dt: 11 },
+            { key: 'surface-brand-muted',        lt: 3,  dt: 12 },
+            { key: 'text-brand',                 lt: 12, dt: 6 },
+            { key: 'text-brand-secondary',       lt: 11, dt: 7 },
+            { key: 'text-brand-secondary-hover', lt: 12, dt: 6 },
+            { key: 'text-brand-tertiary',        lt: 10, dt: 8 },
+            { key: 'text-brand-tertiary-alt',    lt: 10, dt: 8 },
+            { key: 'icon-brand',                 lt: 9,  dt: 8 },
+            { key: 'icon-brand-alt',             lt: 9,  dt: 8 },
+            { key: 'icon-brand-secondary',       lt: 8,  dt: 7 },
+            { key: 'icon-brand-secondary-alt',   lt: 8,  dt: 7 },
+            { key: 'border-brand',               lt: 8,  dt: 7 },
+            { key: 'border-brand-alt',           lt: 9,  dt: 8 },
+          ]
+          const reseedDarkBrand = (state: any) => {
+            if (!state?.themes || typeof state.themes !== 'object') return
+            for (const t of Object.keys(state.themes)) {
+              if ((state.themeKinds?.[t] ?? 'light') !== 'dark') continue
+              const tokens = state.themes[t]
+              if (!tokens || typeof tokens !== 'object') continue
+              const ramp = state.themePalettes?.[t]?.brand ?? state.primaryScale
+              if (!ramp) continue
+              for (const e of DARK_BRAND_RESEED) {
+                const cur = tokens[e.key]
+                const ltHex = ramp[e.lt]
+                const dtHex = ramp[e.dt]
+                if (!dtHex) continue
+                if (!cur || (ltHex && cur.toLowerCase() === ltHex.toLowerCase())) tokens[e.key] = dtHex
+              }
+              // Solid brand fill: deepen to the accessible tone (like light mode)
+              // so a bright accent's button label passes WCAG. Only touch values
+              // still on the base tone 9/10 (or empty) — user picks are kept.
+              const solid = accessibleSolidTone(ramp)
+              const seedAction = (key: string, baseTone: number, tone: number) => {
+                const hex = ramp[tone]
+                const baseHex = ramp[baseTone]
+                if (!hex) return
+                const cur = tokens[key]
+                if (!cur || (baseHex && cur.toLowerCase() === baseHex.toLowerCase())) tokens[key] = hex
+              }
+              seedAction('action-primary', 9, solid)
+              seedAction('action-primary-hover', 10, Math.min(solid + 1, 12))
+            }
+          }
+          reseedDarkBrand(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) reseedDarkBrand(sys?.snapshot)
+          }
+          // v30→v31: Gradients foundation. Seed the default gradient set +
+          // assignments and an empty saved-colors library on any state (and every
+          // saved snapshot) that predates the feature.
+          const seedGradients = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients()
+            if (!state.gradientAssignments) state.gradientAssignments = makeDefaultGradientAssignments()
+            if (!Array.isArray(state.savedColors)) state.savedColors = []
+          }
+          seedGradients(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedGradients(sys?.snapshot)
+          }
         }
         return persisted
       },

@@ -10,23 +10,28 @@
 
 import { useCallback } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateColorScale, accessibleSolidTone } from './colorUtils'
-import { ALL_ROLES, BRAND_TOKEN_TONES, recDarkTone } from './semanticRoles'
+import { generateColorScale } from './colorUtils'
+import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { neutralFromBrand } from '../components/configurator/colorControls'
 
-// Recomputes the BRAND_TOKEN_TONES-mapped semantic tokens already present in
-// `targetTokens` from a freshly generated scale — keeps e.g. action-primary /
-// text-brand in sync with the brand color without touching unmapped roles.
-function brandTokenUpdates(scale: Record<number, string>, targetTokens: Record<string, string>): Record<string, string> {
-  const solid = accessibleSolidTone(scale)
+const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
+
+// Recomputes the brand-mapped semantic tokens already present in `targetTokens`
+// from a freshly generated scale — keeps e.g. action-primary / text-brand in
+// sync with the brand color without touching unmapped roles. Resolves each
+// role's tone through `recToneFor`, the SAME resolver the Semantic editor and
+// export use, so dark themes read their inverted tones (text-brand 12→6, …)
+// instead of the light-only tone that made brand text unreadable on dark.
+function brandTokenUpdates(
+  scale: Record<number, string>,
+  targetTokens: Record<string, string>,
+  kind: 'light' | 'dark' = 'light',
+): Record<string, string> {
   const updates: Record<string, string> = {}
-  for (const [key, tone] of Object.entries(BRAND_TOKEN_TONES)) {
-    if (!targetTokens[key]) continue
-    const t =
-      key === 'action-primary' ? solid
-      : key === 'action-primary-hover' ? Math.min(solid + 1, 12)
-      : tone
-    if (scale[t]) updates[key] = scale[t]
+  for (const role of BRAND_ROLES) {
+    if (!targetTokens[role.key]) continue
+    const t = recToneFor(role, kind, scale)
+    if (scale[t]) updates[role.key] = scale[t]
   }
   return updates
 }
@@ -70,7 +75,7 @@ export function useApplyAccentColor() {
       if (themePalettes[themeKey]) {
         // Custom style theme — independent palette, doesn't touch the globals.
         mergeThemePalette(themeKey, { brand: scale })
-        const updates = brandTokenUpdates(scale, themes[themeKey] ?? {})
+        const updates = brandTokenUpdates(scale, themes[themeKey] ?? {}, themeKinds[themeKey] ?? 'light')
         if (Object.keys(updates).length) mergeThemeTokens(themeKey, updates)
         if (linked) {
           const gScale = generateColorScale(neutralFromBrand(hex), colorAlgorithm, contrastShift, pageBackground)
@@ -86,7 +91,7 @@ export function useApplyAccentColor() {
       const gScale = linked ? generateColorScale(neutralFromBrand(hex), colorAlgorithm, contrastShift, pageBackground) : null
       for (const t of themeOrder) {
         if (themePalettes[t]) continue // custom themes keep their own palette
-        const updates = brandTokenUpdates(scale, themes[t] ?? {})
+        const updates = brandTokenUpdates(scale, themes[t] ?? {}, themeKinds[t] ?? 'light')
         // Built-in dark keeps its fixed achromatic ramp — only light-kind
         // themes re-tint their gray tokens from the linked neutral.
         if (gScale && (themeKinds[t] ?? 'light') === 'light') {
@@ -140,7 +145,7 @@ export function useApplyPageBackground() {
       // stale-detection resync on mount.
       for (const t of s.themeOrder) {
         if (s.themePalettes[t]) continue
-        const updates = brandTokenUpdates(brandScale, s.themes[t] ?? {})
+        const updates = brandTokenUpdates(brandScale, s.themes[t] ?? {}, s.themeKinds[t] ?? 'light')
         if ((s.themeKinds[t] ?? 'light') === 'light') {
           Object.assign(updates, grayTokenUpdates(grayScale, s.themes[t] ?? {}))
         }

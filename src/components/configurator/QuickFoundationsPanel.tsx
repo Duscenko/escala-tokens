@@ -9,6 +9,7 @@ import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_LIBRARIES } from '../../lib/iconLibraries'
 import { iconName, type IconConcept } from './docs/specimens'
+import ColorField from '../ui/ColorField'
 
 // Quick-edit foundations — shared by two hosts: the Components catalogue's
 // popover (default export) and Home's persistent right panel (QuickEditPanel).
@@ -285,38 +286,38 @@ export function QuickEditSections({
       )}
 
       {/* Accent color — each pick also relinks the matching neutral, so the
-          theme's surfaces/text/borders re-tint with it. */}
+          theme's surfaces/text/borders re-tint with it. Figma design (node
+          14:30): swatches are rounded squares with a soft drop shadow, held in
+          a bordered, elevated card. */}
       <div className="flex flex-col gap-1.5">
         <span className="text-xs text-fg-muted">Accent color</span>
-        <div className="flex flex-wrap gap-2">
-          {BRAND_PRESETS.map((hex) => (
-            <button
-              key={hex}
-              onClick={() => applyAccentColor(hex, true, previewTheme)}
-              aria-label={`Accent ${hex}`}
-              aria-pressed={hex.toLowerCase() === activeAccent.toLowerCase()}
-              className={`w-6 h-6 rounded-full flex-shrink-0 ring-1 ring-black/10 transition-transform hover:scale-110 ${
-                hex.toLowerCase() === activeAccent.toLowerCase() ? 'outline outline-2 outline-offset-2 outline-fg' : ''
-              }`}
-              style={{ backgroundColor: hex }}
-            />
-          ))}
-          {/* Custom pick — any hex, applied the same linked way */}
-          <label
-            className="relative w-6 h-6 rounded-full flex-shrink-0 ring-1 ring-black/10 border border-line-strong bg-surface flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-            title="Pick a custom accent"
-          >
-            <input
-              type="color"
-              value={/^#[0-9a-f]{6}$/i.test(activeAccent) ? activeAccent : '#7f56d9'}
-              onChange={(e) => applyAccentColor(e.target.value, true, previewTheme)}
-              aria-label="Custom accent color"
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-fg-muted" aria-hidden>
-              <path d="m2 22 1-1h3l9-9M3 21v-3l9-9M15 6l3-3a2.1 2.1 0 0 1 3 3l-3 3M15 6l3 3" />
-            </svg>
-          </label>
+        <div className="flex flex-wrap gap-2 p-2.5 rounded-xl border border-line bg-surface shadow-[0_2px_3px_0_rgba(0,0,0,0.06)]">
+          {BRAND_PRESETS.map((hex) => {
+            const active = hex.toLowerCase() === activeAccent.toLowerCase()
+            return (
+              <button
+                key={hex}
+                onClick={() => applyAccentColor(hex, true, previewTheme)}
+                aria-label={`Accent ${hex}`}
+                aria-pressed={active}
+                className={`w-6 h-6 rounded-md flex-shrink-0 shadow-[0_1px_1px_0_rgba(0,0,0,0.2)] transition-transform hover:scale-110 ${
+                  active ? 'ring-2 ring-fg ring-offset-2 ring-offset-surface' : 'ring-1 ring-black/10'
+                }`}
+                style={{ backgroundColor: hex }}
+              />
+            )
+          })}
+          {/* Custom pick — full HSV picker; alpha is dropped since accent scales
+              are solid. Square shape + shadow to match the swatch row. */}
+          <ColorField
+            value={/^#[0-9a-f]{6}$/i.test(activeAccent) ? activeAccent : '#7f56d9'}
+            onChange={(hex) => applyAccentColor(hex.slice(0, 7), true, previewTheme)}
+            ariaLabel="Custom accent color"
+            size={24}
+            align="right"
+            shape="square"
+            swatchClassName="shadow-[0_1px_1px_0_rgba(0,0,0,0.2)]"
+          />
         </div>
       </div>
 

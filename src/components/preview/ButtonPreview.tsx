@@ -57,6 +57,10 @@ export interface PreviewTokens {
   opacity?: Record<string, string>
   // Iconify prefix of the Foundations · Icons library (drives content glyphs).
   iconPrefix?: string
+  // Assigned gradients (CSS strings) from Foundations · Gradients — undefined
+  // when no gradient is assigned to that surface, so callers fall back to solids.
+  coverGradient?: string // card covers / brand hero strips
+  avatarGradient?: string // solid avatars / specimens
 }
 
 // ─── Static specs (shared with the doc's galleries & tables) ──────────────────

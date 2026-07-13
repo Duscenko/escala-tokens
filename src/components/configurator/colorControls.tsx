@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
+import { ColorPickerPanel } from '../ui/ColorField'
 
 // ── Gray flavor options for the neutral scale ──────────────────────────────
 export const GRAY_FLAVORS: { label: string; hex: string }[] = [
@@ -78,6 +79,7 @@ export function ColorSelect({
   const pill = variant === 'pill'
   const [open, setOpen] = useState(false)
   const [customDraft, setCustomDraft] = useState('')
+  const [customOpen, setCustomOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const selected = findOption(groups, value)
   const hexLabel = value.replace(/^#/, '').toUpperCase()
@@ -202,30 +204,45 @@ export function ColorSelect({
               className={`absolute z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${compact ? 'right-0 w-56' : 'w-full'}`}
             >
               {allowCustom && (
-                <div className="flex items-center gap-2.5 px-2 py-1.5 mb-1 border-b border-line">
-                  <label
-                    className="relative w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10 overflow-hidden cursor-pointer"
-                    style={{ background: 'conic-gradient(#f04438, #f79009, #17b26a, #06aed4, #2e90fa, #7a5af8, #f04438)' }}
-                    title="Pick a custom color"
-                  >
-                    <input
-                      type="color"
-                      value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#7f56d9'}
-                      onChange={(e) => { onChange(e.target.value); setCustomDraft(e.target.value.replace('#', '').toUpperCase()) }}
-                      aria-label={`Custom ${label ?? 'color'}`}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                <div className="mb-1 border-b border-line pb-1.5">
+                  {/* Header row — click the swatch/chevron to reveal the full HSV
+                      picker inline (the dropdown scrolls, so a nested popover would
+                      clip). Same ColorPickerPanel the Quick-edit accent swatch uses. */}
+                  <div className="flex items-center gap-2.5 px-2 py-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCustomOpen((v) => !v)}
+                      aria-label={`Toggle custom ${label ?? 'color'} picker`}
+                      aria-expanded={customOpen}
+                      className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10"
+                      style={{ backgroundColor: /^#[0-9a-f]{6,8}$/i.test(value) ? value : undefined, background: /^#[0-9a-f]{6,8}$/i.test(value) ? value : 'conic-gradient(#f04438, #f79009, #17b26a, #06aed4, #2e90fa, #7a5af8, #f04438)' }}
                     />
-                  </label>
-                  <span className="flex-1 text-sm text-fg">Custom</span>
-                  <span className="text-[11px] font-mono text-fg-faint">#</span>
-                  <input
-                    value={customDraft}
-                    onChange={(e) => handleCustomDraft(e.target.value)}
-                    placeholder="7F56D9"
-                    spellCheck={false}
-                    aria-label={`Custom ${label ?? 'color'} hex`}
-                    className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
-                  />
+                    <button type="button" onClick={() => setCustomOpen((v) => !v)} className="flex-1 text-left text-sm text-fg">Custom</button>
+                    <span className="text-[11px] font-mono text-fg-faint">#</span>
+                    <input
+                      value={customDraft}
+                      onChange={(e) => handleCustomDraft(e.target.value)}
+                      placeholder="7F56D9"
+                      spellCheck={false}
+                      aria-label={`Custom ${label ?? 'color'} hex`}
+                      className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomOpen((v) => !v)}
+                      aria-label={customOpen ? 'Hide picker' : 'Show picker'}
+                      className="flex-shrink-0 text-fg-faint hover:text-fg transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform ${customOpen ? 'rotate-180' : ''}`}>
+                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                  {customOpen && (
+                    <div className="px-2 pt-1">
+                      <ColorPickerPanel value={value} onChange={(hex) => { onChange(hex); setCustomDraft(hex.replace(/^#/, '').toUpperCase()) }} />
+                    </div>
+                  )}
                 </div>
               )}
               {groups.map((g) => (

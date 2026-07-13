@@ -180,7 +180,11 @@ function GlassPanel({ t }: { t: PreviewTokens }) {
         borderRadius: radiusOf(t, 'lg', '12px'),
         border: `1px solid ${t.borderDefault ?? '#e9eaeb'}`,
         padding: paddingOf(t),
-        background: `linear-gradient(135deg, ${withAlpha(t.brandSolid, 0.18)} 0%, ${withAlpha(t.brandSolid, 0.6)} 55%, ${t.brandSolid} 120%), ${t.surface}`,
+        // Cover surface — uses the gradient assigned in Foundations · Gradients
+        // when set, else the brand-derived wash.
+        background: t.coverGradient
+          ? `${t.coverGradient}, ${t.surface}`
+          : `linear-gradient(135deg, ${withAlpha(t.brandSolid, 0.18)} 0%, ${withAlpha(t.brandSolid, 0.6)} 55%, ${t.brandSolid} 120%), ${t.surface}`,
         display: 'flex', flexDirection: 'column', gap: 12,
         fontFamily: fontFamilyOf(t),
       }}
@@ -338,7 +342,7 @@ function AvatarRound({ t, flavor, children }: { t: PreviewTokens; flavor: 'solid
     <span
       style={{
         width: 40, height: 40, borderRadius: 999, flexShrink: 0,
-        background: flavor === 'solid' ? t.brandSolid : soft(t, t.brandSolid),
+        background: flavor === 'solid' ? (t.avatarGradient ?? t.brandSolid) : soft(t, t.brandSolid),
         color: flavor === 'solid' ? t.onBrand : t.brandText,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 13, fontWeight: weightOf(t, 'semibold', 600),

@@ -6,8 +6,9 @@
 import type { CSSProperties } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
-import { withAlpha } from './colorUtils'
+import { withAlpha, readableInk } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
+import { gradientToCss } from './gradients'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
 
@@ -20,13 +21,22 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // Fallback tones follow the Radix taxonomy (9 = solid, 6–8 borders, 11–12 text).
   const brandFallback = pal?.brand?.[9] || primaryColor
   const grayScale = pal?.gray ?? grayLightScale
+  const brandSolid = semanticTokens['action-primary'] || brandFallback || '#7f56d9'
+  // Resolve the gradient assigned to each preview surface into a CSS string.
+  const gradientCssFor = (id: string | null) => {
+    const g = id ? store.gradients.find((x) => x.id === id) : null
+    return g ? gradientToCss(g) : undefined
+  }
   return {
     // surface-0's source is gray tone 1 (semanticRoles), itself anchored to
     // `pageBackground` — fall back down that same chain, never to bare white.
     surface: semanticTokens['surface-0'] || grayScale[1] || store.pageBackground || '#ffffff',
-    brandSolid: semanticTokens['action-primary'] || brandFallback || '#7f56d9',
+    brandSolid,
     brandText: semanticTokens['text-brand'] || brandFallback || '#7f56d9',
-    onBrand: semanticTokens['text-on-inverse'] || '#ffffff',
+    // Label ink on the brand fill — contrast-driven so a bright accent (where
+    // white text fails WCAG) gets dark ink, in every theme. The stored
+    // text-on-brand token's tone can invert wrongly in dark, so resolve it live.
+    onBrand: readableInk(brandSolid, grayScale[12] || '#0a0d12', semanticTokens['text-on-inverse'] || '#ffffff'),
     neutralFill: semanticTokens['surface-1'] || grayScale[3] || '#f5f5f5',
     neutralText: semanticTokens['text-primary'] || grayScale[12] || '#101828',
     errorColor: (pal?.error?.[9]) || errorColor || '#f04438',
@@ -50,6 +60,8 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     shadows: store.shadows,
     opacity: store.opacity,
     iconPrefix: getIconLibrary(store.iconLibrary)?.iconifyPrefix ?? store.iconLibrary,
+    coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),
+    avatarGradient: gradientCssFor(store.gradientAssignments?.avatar ?? null),
   }
 }
 

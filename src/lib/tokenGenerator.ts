@@ -2,6 +2,7 @@ import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/use
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
+import { gradientToCss, gradientSlug } from './gradients'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
@@ -163,6 +164,15 @@ export function generateTokenJSON() {
     spacing: store.spacing,
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     padding: store.padding,
+    // Named gradients (slug → CSS) + which one drives each preview surface.
+    gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
+    gradientAssignments: (() => {
+      const slugOf = (id: string | null) => {
+        const g = store.gradients.find((x) => x.id === id)
+        return g ? gradientSlug(g) : null
+      }
+      return { cover: slugOf(store.gradientAssignments.cover), avatar: slugOf(store.gradientAssignments.avatar) }
+    })(),
     radius: store.radius,
     opacity: store.opacity,
     shadows: store.shadows,

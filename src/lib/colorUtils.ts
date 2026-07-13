@@ -262,6 +262,18 @@ export function readableAccent(hex: string, bg: string): string {
   }
 }
 
+// Ink (light or dark) that reads best ON a filled surface — picks whichever of
+// the two candidates has the higher WCAG contrast against `bg`. Used for labels
+// that sit on the brand/status solid fills, so a light accent gets dark ink and
+// a dark accent gets light ink automatically, in both light and dark themes.
+export function readableInk(bg: string, darkInk = '#0a0d12', lightInk = '#ffffff'): string {
+  try {
+    return chroma.contrast(lightInk, bg) >= chroma.contrast(darkInk, bg) ? lightInk : darkInk
+  } catch {
+    return lightInk
+  }
+}
+
 // Applies alpha transparency to a hex color — used for the translucent panel
 // background treatment (Radix `panelBackground="translucent"` equivalent).
 export function withAlpha(hex: string, alpha: number): string {

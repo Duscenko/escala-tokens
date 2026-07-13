@@ -104,8 +104,8 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← Sidebar, HomeView, ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, TokenTable (generic filterable token table) + Step2…Step9 (foundation sections)
-│   ├── ui/                 ← Shared primitives (Button, Input, Badge...)
+│   ├── configurator/       ← Sidebar, HomeView, ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, TokenTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
+│   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
 │   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 28)
@@ -114,6 +114,7 @@ src/
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
 │   ├── iconLibraries.ts       ← ICON_LIBRARIES (incl. iconifyPrefix for the live Iconify browser), getIconLibrary(), SAMPLE_GLYPHS (pure data)
 │   ├── previewTokens.ts       ← resolvePreviewTokens()/usePreviewTokens() — single source for live-preview tokens
+│   ├── gradients.ts           ← GradientDef/GradientAssignments types + gradientToCss()/gradientSlug()/makeDefaultGradients() (pure data)
 │   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
 │   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
 │   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
@@ -153,6 +154,9 @@ Key fields — always use the store, never local state for cross-view data:
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
 | `spacing` | Record<string, string> | Foundations · Spacing |
 | `padding` | Record<'top'\|'right'\|'bottom'\|'left', string> — per-side surface inset for padded surfaces (collage tiles, Card, sign-up card via `paddingOf()`); exported as `padding` in tokens.json + `--padding-*` CSS vars | Quick edit · Padding |
+| `gradients` | GradientDef[] (`{ id, name, type: 'linear'\|'radial', angle, stops: {color,pos}[] }`) — named gradients; `gradientToCss()` builds the CSS. Exported as `gradients` (slug→css) in tokens.json + `--gradient-*` CSS vars + README table | Foundations · Gradients |
+| `gradientAssignments` | `{ cover, avatar }` (gradient id or null) — which gradient drives each preview surface: HomeView's card cover (`GlassPanel`) + solid avatars (`AvatarRound`), resolved into `PreviewTokens.coverGradient`/`avatarGradient` | Foundations · Gradients |
+| `savedColors` | string[] — the custom `ColorField` picker's "Saved" swatch library (hex, alpha-aware) | any ColorField |
 | `radius` | Record<string, string> | Foundations · Border Radius |
 | `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
 | `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
@@ -171,7 +175,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 28`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 31`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
 
@@ -226,6 +230,8 @@ interface ComponentDef {
     "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
   },
   "spacing": { "1": "4px", "2": "8px", ... },
+  "gradients": { "brand-cover": "linear-gradient(135deg, #7f56d9 0%, #432e73 100%)", "aurora": "...", ... },
+  "gradientAssignments": { "cover": "brand-cover", "avatar": "aurora" },
   "radius": { "none": "0px", "sm": "4px", "md": "8px", "lg": "12px", "full": "9999px" },
   "opacity": { "0": "0%", "5": "5%", ... "100": "100%" },
   "shadows": { "xs": "0 1px 2px rgba(10,13,18,0.05)", ... "2xl": "..." },
@@ -326,9 +332,12 @@ npm run bundle:plugin  # → public/scalable-designs-figma-plugin.zip (commit it
 - [x] Semantic: multi-theme matrix (`themes`/`themeOrder`/`themeKinds`, "+ Theme" duplicates an existing one)
 - [x] Home: onboarding view — name/description, connection status, share endpoint
 - [x] Icons: live Iconify browser per library + sanitized custom SVG upload (`customIcons`)
+- [x] Gradients: `Foundations · Gradients` — named linear/radial gradients with a rich HSV `ColorField` picker (opacity + hex + saved swatches), assignable to card covers + avatars, exported as tokens (`gradients` + `--gradient-*` + README)
 - [ ] GitHub: OAuth App flow (popup + serverless token exchange) to replace the manual PAT
 - [ ] Semantic: surface custom color families as token sources (needs per-family role generation in Step3)
 - [ ] Plugin: import `icons.custom` SVGs as Figma components; import extra `colors.themes` as Variable modes
+- [ ] Plugin: consume the new `gradients` map (e.g. Figma gradient paint styles / variables) — the configurator emits it but the plugin ignores it for now
+- [ ] Gradients: surface the `ColorField` picker in `ColorSelect`'s custom row + more assignable targets (brand sections, page background)
 - [ ] Plugin: publish to Figma Community → replace the zip download with a one-click "Open in Figma" deep link
 - [ ] Preview: independent per-theme token preview (render atoms from any `themes[key]`) instead of driving the global theme
 - [ ] Components: "Copy usage snippet" button per component

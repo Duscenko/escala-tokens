@@ -1,7 +1,7 @@
 import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
-import { useTheme } from '../lib/theme'
+import { useTheme, setTheme } from '../lib/theme'
 import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import Sidebar, { type Tab } from '../components/configurator/Sidebar'
@@ -23,6 +23,7 @@ import { type SectionKey } from '../lib/sectionExport'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
+import StepGradients from '../components/configurator/StepGradients'
 import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
@@ -90,6 +91,16 @@ const FOUNDATIONS: FoundationSection[] = [
     subtitle: 'Choose the corner-radius personality of your system — from sharp to pill.',
     Component: StepRadius,
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
+  },
+  {
+    key: 'gradients',
+    label: 'Gradients',
+    short: 'Grad',
+    hint: 'Brand gradients for covers & avatars',
+    title: 'Gradients',
+    subtitle: 'Craft brand gradients and assign them to covers and avatars — exported as tokens.',
+    Component: StepGradients,
+    Icon: ic('M4 4h16v16H4zM4 14l4-4 4 4 4-4 4 4', '1.8'),
   },
   {
     key: 'icons',
@@ -221,7 +232,7 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
 }
 
 export default function Configurator() {
-  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary } = useDesignStore()
+  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
@@ -238,14 +249,17 @@ export default function Configurator() {
   // Sub-tab within the Color hub (Primitives ↔ Alias/Semantics). The preview
   // mirrors the semantic category only while the semantics tab is active.
   const [colorTab, setColorTab] = useState<ColorTab>('semantics')
-  // Theme shown in the right-hand preview — toggled by the eye icons in the
-  // Semantic table's column headers. Defaults to the built-in light theme.
+  // Single preview theme shared across the whole workspace — Home's Quick edit
+  // Theme row, the Semantic table's column eye toggles, the Components/Docs
+  // playground and the right-hand Components Preview all read and write the
+  // same state, so switching to Dark anywhere previews Dark everywhere.
   const [previewTheme, setPreviewTheme] = useState('light')
-  // Theme the Components catalogue's live playground renders in — its own
-  // picker in the center header, independent from the Semantic preview theme.
-  const [componentsPreviewTheme, setComponentsPreviewTheme] = useState('light')
-  // Theme Home's collage renders in — driven by the Quick edit panel's Theme row.
-  const [homeTheme, setHomeTheme] = useState('light')
+  // Picking a theme also flips the app chrome to that theme's kind, so a dark
+  // preview (built-in dark or any future dark-kind theme) reads on dark chrome.
+  const changePreviewTheme = (key: string) => {
+    setPreviewTheme(key)
+    setTheme((themeKinds[key] ?? 'light') === 'dark' ? 'dark' : 'light')
+  }
   // Right preview panel can be collapsed for more center width; re-expanded
   // via the slim strip that replaces it while collapsed.
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
@@ -367,7 +381,7 @@ export default function Configurator() {
           activeCategory={semanticCategory}
           onCategoryChange={setSemanticCategory}
           previewTheme={previewTheme}
-          onPreviewThemeChange={setPreviewTheme}
+          onPreviewThemeChange={changePreviewTheme}
         />
       </div>
     ) : section.key === 'typography' ? (
@@ -379,7 +393,7 @@ export default function Configurator() {
     ) : (
       <div className="h-full overflow-y-auto p-8">
         {section.key === 'home' ? (
-          <HomeView onOpenFoundation={openFromHome} previewTheme={homeTheme} />
+          <HomeView onOpenFoundation={openFromHome} previewTheme={previewTheme} />
         ) : (
           <Active />
         )}
@@ -392,7 +406,7 @@ export default function Configurator() {
       title: 'Documentation',
       subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
     }
-    body = <DocsView previewTheme={componentsPreviewTheme} />
+    body = <DocsView previewTheme={previewTheme} />
     centerKey = 'docs'
   } else {
     header = {
@@ -423,8 +437,8 @@ export default function Configurator() {
             open={quickPanelOpen}
             onClose={() => setQuickPanelOpen(false)}
             onOpenFoundations={() => selectFoundation('color')}
-            previewTheme={componentsPreviewTheme}
-            onThemeChange={setComponentsPreviewTheme}
+            previewTheme={previewTheme}
+            onThemeChange={changePreviewTheme}
           />
         </div>
       </>
@@ -493,7 +507,7 @@ export default function Configurator() {
 
         {/* Detail */}
         <div className="flex-1 min-w-0 overflow-y-auto p-6 lg:p-8">
-          <ComponentDocPane component={activeComponent} previewTheme={componentsPreviewTheme} />
+          <ComponentDocPane component={activeComponent} previewTheme={previewTheme} />
         </div>
       </div>
     )
@@ -581,8 +595,8 @@ export default function Configurator() {
               {tab === 'foundations' && activeFoundation === 'home' ? (
                 // Home pairs the collage with the Quick edit panel instead of the preview.
                 <QuickEditPanel
-                  previewTheme={homeTheme}
-                  onThemeChange={setHomeTheme}
+                  previewTheme={previewTheme}
+                  onThemeChange={changePreviewTheme}
                   onOpenFoundations={() => selectFoundation('color')}
                   onCollapse={() => setPreviewCollapsed(true)}
                 />
