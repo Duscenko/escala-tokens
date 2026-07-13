@@ -119,7 +119,7 @@ export default function TopNav({ tab, exportMode, onTabChange, onGithub, onHome 
         onClick={onHome}
         title="Home"
         aria-label="Home"
-        className="h-8 w-[34px] md:w-auto overflow-hidden flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30 transition-opacity hover:opacity-80"
+        className="h-8 w-10 md:w-auto overflow-hidden flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30 transition-opacity hover:opacity-80"
       >
         <Logo className="h-8 text-fg" />
       </button>
