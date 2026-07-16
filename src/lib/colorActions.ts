@@ -10,9 +10,24 @@
 
 import { useCallback } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateColorScale } from './colorUtils'
+import { generateColorScale, generateDarkColorScale } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
-import { neutralFromBrand } from '../components/configurator/colorControls'
+import { brandCoverStops, brandAvatarStops, stopsMatch } from './gradients'
+import { neutralFromBrand, darkBackgroundOptions } from '../components/configurator/colorControls'
+
+// The dark page background's presets are derived from the accent's hue, so when
+// the accent moves the background has to move with it — otherwise the dark
+// surfaces keep the OLD brand's tint and the dropdown shows an unlabeled hex.
+// We re-derive the same preset SLOT (Ink stays Ink, Midnight stays Midnight)
+// against the new accent. A background the user typed by hand matches no preset
+// and is therefore left exactly as they set it.
+function retintDarkBackground(current: string, prevAccent: string, nextAccent: string): string {
+  const slot = darkBackgroundOptions(prevAccent).findIndex(
+    (o) => o.hex.toLowerCase() === (current ?? '').toLowerCase(),
+  )
+  if (slot < 0) return current
+  return darkBackgroundOptions(nextAccent)[slot]?.hex ?? current
+}
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
@@ -65,7 +80,9 @@ export function useApplyAccentColor() {
   const {
     setPrimaryColor, setPrimaryScale, themes, themeOrder, themePalettes, themeKinds,
     mergeThemeTokens, mergeThemePalette,
-    setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift, pageBackground,
+    setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setDarkBackground,
+    gradients, updateGradient,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground, primaryColor,
   } = useDesignStore()
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
@@ -78,9 +95,15 @@ export function useApplyAccentColor() {
         const updates = brandTokenUpdates(scale, themes[themeKey] ?? {}, themeKinds[themeKey] ?? 'light')
         if (Object.keys(updates).length) mergeThemeTokens(themeKey, updates)
         if (linked) {
-          const gScale = generateColorScale(neutralFromBrand(hex), colorAlgorithm, contrastShift, pageBackground)
+          const kind = themeKinds[themeKey] ?? 'light'
+          const neutral = neutralFromBrand(hex)
+          // A dark-kind custom theme needs a dark-appearance gray ramp too,
+          // otherwise its palette's gray would be a light ramp read inverted.
+          const gScale = kind === 'dark'
+            ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, darkBackground)
+            : generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground)
           mergeThemePalette(themeKey, { gray: gScale })
-          const grayUpdates = grayTokenUpdates(gScale, themes[themeKey] ?? {}, themeKinds[themeKey] ?? 'light')
+          const grayUpdates = grayTokenUpdates(gScale, themes[themeKey] ?? {}, kind)
           if (Object.keys(grayUpdates).length) mergeThemeTokens(themeKey, grayUpdates)
         }
         return
@@ -88,25 +111,45 @@ export function useApplyAccentColor() {
 
       setPrimaryColor(hex)
       setPrimaryScale(scale)
-      const gScale = linked ? generateColorScale(neutralFromBrand(hex), colorAlgorithm, contrastShift, pageBackground) : null
+      // Move the dark page onto the new accent's hue before deriving the dark
+      // ramp from it, so background + ramp + brand all agree.
+      const nextDarkBg = retintDarkBackground(darkBackground, primaryColor, hex)
+      if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
+      const neutral = linked ? neutralFromBrand(hex) : null
+      const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground) : null
+      // The dark twin — same neutral (so it carries the accent's hue), but grown
+      // out of the dark page instead of the light one.
+      const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg) : null
       for (const t of themeOrder) {
         if (themePalettes[t]) continue // custom themes keep their own palette
-        const updates = brandTokenUpdates(scale, themes[t] ?? {}, themeKinds[t] ?? 'light')
-        // Built-in dark keeps its fixed achromatic ramp — only light-kind
-        // themes re-tint their gray tokens from the linked neutral.
-        if (gScale && (themeKinds[t] ?? 'light') === 'light') {
-          Object.assign(updates, grayTokenUpdates(gScale, themes[t] ?? {}))
-        }
+        const kind = themeKinds[t] ?? 'light'
+        const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind)
+        // Each theme kind re-tints its gray tokens from its own neutral ramp,
+        // so dark surfaces track the accent just like the light ones do.
+        const ramp = kind === 'dark' ? gDark : gScale
+        if (ramp) Object.assign(updates, grayTokenUpdates(ramp, themes[t] ?? {}, kind))
         if (Object.keys(updates).length) mergeThemeTokens(t, updates)
       }
-      if (gScale) {
-        setGrayBaseColor(neutralFromBrand(hex))
+      if (neutral && gScale && gDark) {
+        setGrayBaseColor(neutral)
         setGrayLightScale(gScale)
+        setGrayDarkScale(gDark)
+      }
+      // Keep the accent-linked gradients on-brand: retint only the ones that
+      // still match the derived signature for the OLD accent — a gradient the
+      // user hand-edited won't match and is preserved, same idea as the dark
+      // background above.
+      for (const g of gradients) {
+        if (g.id === 'brand-cover' && stopsMatch(g.stops, brandCoverStops(primaryColor))) {
+          updateGradient(g.id, { stops: brandCoverStops(hex) })
+        } else if (g.id === 'aurora' && stopsMatch(g.stops, brandAvatarStops(primaryColor))) {
+          updateGradient(g.id, { stops: brandAvatarStops(hex) })
+        }
       }
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, themes, themeOrder, themePalettes, themeKinds, mergeThemeTokens, mergeThemePalette, setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift, pageBackground])
+  }, [setPrimaryColor, setPrimaryScale, themes, themeOrder, themePalettes, themeKinds, mergeThemeTokens, mergeThemePalette, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, primaryColor])
 }
 
 // Applies a new page background. The background is the anchor every ramp is
@@ -163,26 +206,57 @@ export function useApplyPageBackground() {
 export function useApplyGrayColor() {
   const {
     themes, themeOrder, themePalettes, themeKinds, mergeThemePalette, mergeThemeTokens,
-    setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift, pageBackground,
+    setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground,
   } = useDesignStore()
   return useCallback((hex: string, themeKey = 'light') => {
     try {
       const scale = generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)
+      const dScale = generateDarkColorScale(hex, colorAlgorithm, contrastShift, darkBackground)
       if (themePalettes[themeKey]) {
-        mergeThemePalette(themeKey, { gray: scale })
-        const updates = grayTokenUpdates(scale, themes[themeKey] ?? {}, themeKinds[themeKey] ?? 'light')
+        const kind = themeKinds[themeKey] ?? 'light'
+        const own = kind === 'dark' ? dScale : scale
+        mergeThemePalette(themeKey, { gray: own })
+        const updates = grayTokenUpdates(own, themes[themeKey] ?? {}, kind)
         if (Object.keys(updates).length) mergeThemeTokens(themeKey, updates)
         return
       }
       setGrayBaseColor(hex)
       setGrayLightScale(scale)
+      setGrayDarkScale(dScale)
+      // Both kinds re-tint now — a dark theme reads the dark ramp, not the fixed
+      // achromatic one it used to be stuck with.
       for (const t of themeOrder) {
-        if (themePalettes[t] || (themeKinds[t] ?? 'light') !== 'light') continue
-        const updates = grayTokenUpdates(scale, themes[t] ?? {})
+        if (themePalettes[t]) continue
+        const kind = themeKinds[t] ?? 'light'
+        const updates = grayTokenUpdates(kind === 'dark' ? dScale : scale, themes[t] ?? {}, kind)
         if (Object.keys(updates).length) mergeThemeTokens(t, updates)
       }
     } catch {
       /* invalid hex — ignore */
     }
-  }, [themes, themeOrder, themePalettes, themeKinds, mergeThemePalette, mergeThemeTokens, setGrayBaseColor, setGrayLightScale, colorAlgorithm, contrastShift, pageBackground])
+  }, [themes, themeOrder, themePalettes, themeKinds, mergeThemePalette, mergeThemeTokens, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, colorAlgorithm, contrastShift, pageBackground, darkBackground])
+}
+
+// Applies a new DARK page background — the dark-theme twin of
+// useApplyPageBackground. It anchors tone 12 of the dark neutral ramp (what dark
+// themes read as surface-0), so changing it regenerates that ramp and resyncs
+// every dark theme's gray tokens. The light ramps are untouched: a dark page and
+// a light page are independent primitives.
+export function useApplyDarkBackground() {
+  return useCallback((hex: string) => {
+    const s = useDesignStore.getState()
+    try {
+      const gDark = generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex)
+      s.setDarkBackground(hex)
+      s.setGrayDarkScale(gDark)
+      for (const t of s.themeOrder) {
+        if (s.themePalettes[t] || (s.themeKinds[t] ?? 'light') !== 'dark') continue
+        const updates = grayTokenUpdates(gDark, s.themes[t] ?? {}, 'dark')
+        if (Object.keys(updates).length) s.mergeThemeTokens(t, updates)
+      }
+    } catch {
+      /* invalid hex — ignore */
+    }
+  }, [])
 }

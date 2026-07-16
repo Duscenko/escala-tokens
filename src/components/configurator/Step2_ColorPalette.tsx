@@ -6,10 +6,10 @@ import {
   ALGORITHM_OPTIONS, RECOMMENDED_ALGORITHM, NAMING_SCHEMES,
   type ColorAlgorithm, type ColorNaming,
 } from '../../lib/colorUtils'
-import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground } from '../../lib/colorActions'
+import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
-  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, type OptionGroup,
+  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
 } from './colorControls'
 
 // ── Generic outlined dropdown (Algorithm · Naming) ──────────────────────────
@@ -231,22 +231,27 @@ export function ScaleSettingsModal({
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function Step2_ColorPalette() {
+export default function Step2_ColorPalette({ previewTheme = 'light' }: { previewTheme?: string }) {
   const {
     primaryColor, primaryScale,
     errorColor,   errorScale,   setErrorColor,   setErrorScale,
     warningColor, warningScale, setWarningColor, setWarningScale,
     successColor, successScale, setSuccessColor, setSuccessScale,
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
-    grayBaseColor, grayLightScale,
+    grayBaseColor, grayLightScale, grayDarkScale,
     customColors, updateCustomColor, removeCustomColor,
     colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
-    pageBackground, setPageBackground,
+    pageBackground, setPageBackground, darkBackground, themeKinds,
   } = useDesignStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
   const applyPageBackground = useApplyPageBackground()
+  const applyDarkBackground = useApplyDarkBackground()
+
+  // Mirrors Home: previewing a dark theme means you're editing the DARK page
+  // background (accent-derived presets) and looking at the dark neutral ramp.
+  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
 
   // Saved customs surface in both dropdowns ahead of the Tested presets.
   const savedGroup: OptionGroup | null = customColors.length
@@ -403,12 +408,18 @@ export default function Step2_ColorPalette() {
             <LinkToggle active={linked} onClick={toggleLink} />
           </div>
           <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={regenerateGray} allowCustom />
-          <ColorSelect label="Background" value={pageBackground} groups={BACKGROUND_GROUPS} onChange={applyPageBackground} allowCustom />
+          <ColorSelect
+            label={darkPreview ? 'Background (dark)' : 'Background'}
+            value={darkPreview ? darkBackground : pageBackground}
+            groups={darkPreview ? darkBackgroundGroups(primaryColor) : BACKGROUND_GROUPS}
+            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
+            allowCustom
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <ScaleRow scale={primaryScale} labels={namingLabels} />
-          <ScaleRow scale={grayLightScale} showNumbers={false} />
+          <ScaleRow scale={darkPreview ? grayDarkScale : grayLightScale} showNumbers={false} />
         </div>
       </section>
 

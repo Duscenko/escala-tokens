@@ -46,6 +46,34 @@ export const BRAND_GROUPS: OptionGroup[] = PRESET_GROUPS.map((g) => ({
 export const NEUTRAL_GROUPS: OptionGroup[] = [{ label: 'Grays', badge: 'Tested', options: GRAY_FLAVORS }]
 export const BACKGROUND_GROUPS: OptionGroup[] = [{ label: 'Backgrounds', badge: 'Tested', options: BACKGROUND_OPTIONS }]
 
+// ── Dark page-background options ───────────────────────────────────────────
+// The dark twin of BACKGROUND_OPTIONS: it anchors tone 12 of the dark neutral
+// ramp (= surface-0 in dark). Unlike the light list these are DERIVED from the
+// accent — they hold its hue at near-black lightness with a rising chroma, so
+// the dark page reads as "your brand, at night" rather than a generic gray.
+// Ordered from neutral to tinted; L stays in the 0.17–0.24 band that keeps text
+// contrast comfortable.
+export function darkBackgroundOptions(accentHex: string): Option[] {
+  let hue = 0
+  try {
+    const h = chroma(accentHex).oklch()[2]
+    if (!Number.isNaN(h)) hue = h
+  } catch { /* invalid accent — fall back to a hueless near-black */ }
+  const at = (l: number, c: number) => chroma.oklch(l, c, hue).hex()
+  return [
+    { label: 'Pure Black', hex: '#000000' },
+    { label: 'Obsidian',   hex: at(0.17, 0.006) },
+    { label: 'Ink',        hex: at(0.20, 0.018) },
+    { label: 'Slate',      hex: at(0.24, 0.032) },
+    { label: 'Twilight',   hex: at(0.22, 0.055) },
+    { label: 'Midnight',   hex: at(0.19, 0.080) },
+  ]
+}
+
+export function darkBackgroundGroups(accentHex: string): OptionGroup[] {
+  return [{ label: 'Dark backgrounds', badge: 'From accent', options: darkBackgroundOptions(accentHex) }]
+}
+
 export function findOption(groups: OptionGroup[], hex: string): Option | null {
   const target = hex.toLowerCase()
   for (const g of groups) {
@@ -349,7 +377,7 @@ export function InfoDot({ tip }: { tip: string }) {
   return (
     <span className="relative group inline-flex">
       <span
-        className="w-4 h-4 rounded-full border border-line-strong text-fg-faint flex items-center justify-center text-[10px] font-semibold leading-none cursor-help"
+        className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-[10px] font-semibold leading-none cursor-help"
         aria-label={tip}
       >
         i

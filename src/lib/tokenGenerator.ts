@@ -48,14 +48,16 @@ export function generateTokenJSON() {
       : {}),
   }
 
-  // Dark-mode neutral ramp — dark-theme gray semantics are seeded from
-  // GRAY_DARK_SCALE (see Step3's scaleFor), so it must ship as primitives too,
-  // otherwise the Figma plugin has nothing to alias dark neutrals to.
+  // Dark-mode neutral ramp — dark-theme gray semantics resolve from it (see
+  // sourceScaleFor), so it must ship as primitives too, otherwise the Figma
+  // plugin has nothing to alias dark neutrals to. It's now generated from the
+  // neutral against `darkBackground` rather than a fixed constant.
+  const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
   const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
     ([t, kind]) => kind === 'dark' && store.themes[t] && !store.themePalettes[t],
   ) || Boolean(store.themes.dark)
   if (hasDarkTheme) {
-    Object.assign(primitive, flattenScale('neutral-dark', GRAY_DARK_SCALE, colorNaming))
+    Object.assign(primitive, flattenScale('neutral-dark', grayDarkScale, colorNaming))
   }
 
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12).
@@ -111,12 +113,13 @@ export function generateTokenJSON() {
   // export in lockstep with the primitives so the Figma plugin can alias every
   // semantic to a primitive variable instead of holding loose hex values.
   const globalScales: GlobalScales = {
-    gray:    store.grayLightScale,
-    brand:   store.primaryScale,
-    error:   store.errorScale,
-    warning: store.warningScale,
-    success: store.successScale,
-    info:    store.infoScale,
+    gray:     store.grayLightScale,
+    grayDark: grayDarkScale,
+    brand:    store.primaryScale,
+    error:    store.errorScale,
+    warning:  store.warningScale,
+    success:  store.successScale,
+    info:     store.infoScale,
   }
   const orderedThemes: Record<string, Record<string, string>> = {}
   for (const name of themeNames) {

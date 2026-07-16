@@ -52,7 +52,7 @@ export default function ColorHub({
 
       {colorTab === 'primitives' ? (
         <div className="flex-1 min-h-0 overflow-y-auto p-8">
-          <Step2_ColorPalette />
+          <Step2_ColorPalette previewTheme={previewTheme} />
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col p-8">

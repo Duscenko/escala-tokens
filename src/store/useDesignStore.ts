@@ -7,6 +7,7 @@ import { accessibleSolidTone } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
+  brandCoverStops, brandAvatarStops, stopsMatch,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
 
@@ -218,10 +219,18 @@ export interface DesignSnapshot {
   // Page background primitive (Radix custom-palette input) — anchors tone 1 of
   // every generated ramp and is the compositing base for derived alpha ramps.
   pageBackground: string
+  // Its dark-theme twin — anchors tone 12 of `grayDarkScale`, which dark themes
+  // read as surface-0 (recDarkTone inverts the gray hierarchy). Kept separate
+  // from `pageBackground` so a light page and a dark page can each be chosen.
+  darkBackground: string
   primaryColor: string
   primaryScale: ColorScale
   grayBaseColor: string
   grayLightScale: ColorScale
+  // Dark-appearance neutral ramp, generated from `grayBaseColor` (itself derived
+  // from the accent when linked) anchored to `darkBackground`. Gray roles in a
+  // dark theme resolve from this instead of `grayLightScale`.
+  grayDarkScale: ColorScale
   errorColor: string
   errorScale: ColorScale
   warningColor: string
@@ -285,10 +294,12 @@ export function makeDesignDefaults(): DesignSnapshot {
     contrastShift: 0,
     colorNaming: 'numeric',
     pageBackground: '#ffffff',
+    darkBackground: '#0c0e12',
     primaryColor: '#7f56d9',
     primaryScale: {},
     grayBaseColor: '#6c737f',
     grayLightScale: { ...GRAY_LIGHT_SCALE },
+    grayDarkScale: { ...GRAY_DARK_SCALE },
     errorColor: '#f04438',
     errorScale: {},
     warningColor: '#f79009',
@@ -382,17 +393,25 @@ interface DesignStore {
   pageBackground: string
   setPageBackground: (hex: string) => void
 
+  // Dark-theme page background — anchors tone 12 of `grayDarkScale` (= surface-0
+  // in dark). Its presets are derived from the accent, so the dark page carries
+  // the brand's hue.
+  darkBackground: string
+  setDarkBackground: (hex: string) => void
+
   // Step 2 — Brand / accent color (user-defined, generates 12-tone scale)
   primaryColor: string
   primaryScale: ColorScale
   setPrimaryColor: (hex: string) => void
   setPrimaryScale: (scale: ColorScale) => void
 
-  // Step 2 — Neutral gray (user-selectable flavor, generates light scale)
+  // Step 2 — Neutral gray (user-selectable flavor, generates light + dark scales)
   grayBaseColor: string
   grayLightScale: ColorScale
+  grayDarkScale: ColorScale
   setGrayBaseColor: (hex: string) => void
   setGrayLightScale: (scale: ColorScale) => void
+  setGrayDarkScale: (scale: ColorScale) => void
 
   // Step 2 — Semantic state scales (user-adjustable, default from Figma DS)
   errorColor: string
@@ -538,6 +557,7 @@ export const useDesignStore = create<DesignStore>()(
       setContrastShift: (n) => set({ contrastShift: n }),
       setColorNaming: (n) => set({ colorNaming: n }),
       setPageBackground: (hex) => set({ pageBackground: hex }),
+      setDarkBackground: (hex) => set({ darkBackground: hex }),
 
       // Brand
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
@@ -546,6 +566,7 @@ export const useDesignStore = create<DesignStore>()(
       // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
       setGrayBaseColor: (hex) => set({ grayBaseColor: hex }),
       setGrayLightScale: (scale) => set({ grayLightScale: scale }),
+      setGrayDarkScale: (scale) => set({ grayDarkScale: scale }),
 
       // Semantic state scales (defaults from the Figma DS)
       setErrorColor: (hex) => set({ errorColor: hex }),
@@ -731,7 +752,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 31,
+      version: 33,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1017,6 +1038,44 @@ export const useDesignStore = create<DesignStore>()(
           seedGradients(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedGradients(sys?.snapshot)
+          }
+          // v31→v32: dark themes gained their own page background + generated
+          // neutral ramp (they used to read the fixed GRAY_DARK_SCALE constant).
+          // Seed both with the legacy values so existing systems keep the exact
+          // dark they already had; picking a dark background regenerates them.
+          const seedDarkBackground = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (!state.darkBackground) state.darkBackground = '#0c0e12'
+            if (!state.grayDarkScale || typeof state.grayDarkScale !== 'object') {
+              state.grayDarkScale = { ...GRAY_DARK_SCALE }
+            }
+          }
+          seedDarkBackground(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedDarkBackground(sys?.snapshot)
+          }
+          // v32→v33: the Brand Cover / Aurora seed gradients now derive from the
+          // accent so they match the chosen brand instead of the old hardcoded
+          // violet→magenta. Only retint the untouched seeds — a hand-edited stop
+          // set won't match the legacy signature and is left exactly as-is.
+          const OLD_BRAND_COVER = [{ color: '#7f56d9', pos: 0 }, { color: '#432e73', pos: 100 }]
+          const OLD_AURORA = [{ color: '#7f56d9', pos: 0 }, { color: '#d444f1', pos: 50 }, { color: '#f63d68', pos: 100 }]
+          const retintBrandGradients = (state: any) => {
+            if (!state || !Array.isArray(state.gradients)) return
+            const accent = typeof state.primaryColor === 'string' && state.primaryColor ? state.primaryColor : '#7f56d9'
+            state.gradients = state.gradients.map((g: any) => {
+              if (g?.id === 'brand-cover' && Array.isArray(g.stops) && stopsMatch(g.stops, OLD_BRAND_COVER)) {
+                return { ...g, stops: brandCoverStops(accent) }
+              }
+              if (g?.id === 'aurora' && Array.isArray(g.stops) && stopsMatch(g.stops, OLD_AURORA)) {
+                return { ...g, stops: brandAvatarStops(accent) }
+              }
+              return g
+            })
+          }
+          retintBrandGradients(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) retintBrandGradients(sys?.snapshot)
           }
         }
         return persisted

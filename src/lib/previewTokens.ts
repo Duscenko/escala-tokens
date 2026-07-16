@@ -4,13 +4,18 @@
 // empty semantic tokens so previews never render with undefined colors.
 
 import type { CSSProperties } from 'react'
-import { useDesignStore } from '../store/useDesignStore'
+import { useDesignStore, GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { withAlpha, readableInk } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
+import { ALL_ROLES, sourceScaleFor, recHexFor, type GlobalScales } from './semanticRoles'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
+
+// Role lookup for the fallback resolver below.
+const ROLE_BY_KEY: Record<string, (typeof ALL_ROLES)[number]> =
+  Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]))
 
 export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): PreviewTokens {
   const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor, radius, spacing, typography, panelBackground } = store
@@ -18,34 +23,58 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // A custom "style theme" carries its own palette — use it for the fallbacks.
   const semanticTokens = store.themes[themeKey] ?? store.themes.light ?? {}
   const pal = store.themePalettes[themeKey]
-  // Fallback tones follow the Radix taxonomy (9 = solid, 6–8 borders, 11–12 text).
+  const kind = store.themeKinds?.[themeKey] ?? 'light'
+  // Fallback resolver — when a semantic token is empty (e.g. a dark theme the
+  // user hasn't opened in the Semantic editor yet), resolve it against the same
+  // source ramp + recommended tone the EXPORT uses (lib/semanticRoles), so the
+  // live preview matches tokens.json. Critically this makes a built-in dark
+  // theme fall back to GRAY_DARK_SCALE at inverted tones — never the light ramp,
+  // which is why dark surfaces used to render white.
+  const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
+  const globalScales: GlobalScales = {
+    gray: grayLightScale,
+    grayDark: grayDarkScale,
+    brand: store.primaryScale,
+    error: store.errorScale,
+    warning: store.warningScale,
+    success: store.successScale,
+    info: store.infoScale,
+  }
+  const rec = (key: string): string => {
+    const role = ROLE_BY_KEY[key]
+    if (!role) return ''
+    const scale = sourceScaleFor(role, kind, globalScales, pal)
+    return scale && Object.keys(scale).length ? recHexFor(role, kind, scale) : ''
+  }
   const brandFallback = pal?.brand?.[9] || primaryColor
-  const grayScale = pal?.gray ?? grayLightScale
-  const brandSolid = semanticTokens['action-primary'] || brandFallback || '#7f56d9'
+  // Dark ink option for readableInk — darkest gray of the active theme's ramp.
+  const grayScale = pal?.gray ?? (kind === 'dark' ? grayDarkScale : grayLightScale)
+  const brandSolid = semanticTokens['action-primary'] || rec('action-primary') || brandFallback || '#7f56d9'
   // Resolve the gradient assigned to each preview surface into a CSS string.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
     return g ? gradientToCss(g) : undefined
   }
   return {
-    // surface-0's source is gray tone 1 (semanticRoles), itself anchored to
-    // `pageBackground` — fall back down that same chain, never to bare white.
-    surface: semanticTokens['surface-0'] || grayScale[1] || store.pageBackground || '#ffffff',
+    // surface-0's source is gray tone 1 in light / tone 12 in dark (semanticRoles),
+    // itself anchored to `pageBackground` — fall back down that same chain, never
+    // to the light ramp (which rendered dark themes white).
+    surface: semanticTokens['surface-0'] || rec('surface-0') || store.pageBackground || '#ffffff',
     brandSolid,
-    brandText: semanticTokens['text-brand'] || brandFallback || '#7f56d9',
+    brandText: semanticTokens['text-brand'] || rec('text-brand') || brandFallback || '#7f56d9',
     // Label ink on the brand fill — contrast-driven so a bright accent (where
     // white text fails WCAG) gets dark ink, in every theme. The stored
     // text-on-brand token's tone can invert wrongly in dark, so resolve it live.
-    onBrand: readableInk(brandSolid, grayScale[12] || '#0a0d12', semanticTokens['text-on-inverse'] || '#ffffff'),
-    neutralFill: semanticTokens['surface-1'] || grayScale[3] || '#f5f5f5',
-    neutralText: semanticTokens['text-primary'] || grayScale[12] || '#101828',
+    onBrand: readableInk(brandSolid, grayScale[12] || '#0a0d12', semanticTokens['text-on-inverse'] || rec('text-on-inverse') || '#ffffff'),
+    neutralFill: semanticTokens['surface-1'] || rec('surface-1') || '#f5f5f5',
+    neutralText: semanticTokens['text-primary'] || rec('text-primary') || '#101828',
     errorColor: (pal?.error?.[9]) || errorColor || '#f04438',
-    disabledBg: semanticTokens['action-disabled'] || grayScale[3] || '#f5f5f5',
-    disabledText: semanticTokens['text-disabled'] || grayScale[8] || '#a4a7ae',
-    border: semanticTokens['border-strong'] || grayScale[8] || '#d0d5dd',
-    borderDefault: semanticTokens['border-default'] || grayScale[3] || '#e9eaeb',
-    fgMuted: semanticTokens['text-tertiary'] || grayScale[10] || '#717680',
-    placeholderText: semanticTokens['text-placeholder'] || grayScale[9] || '#a4a7ae',
+    disabledBg: semanticTokens['action-disabled'] || rec('action-disabled') || '#f5f5f5',
+    disabledText: semanticTokens['text-disabled'] || rec('text-disabled') || '#a4a7ae',
+    border: semanticTokens['border-strong'] || rec('border-strong') || '#d0d5dd',
+    borderDefault: semanticTokens['border-default'] || rec('border-default') || '#e9eaeb',
+    fgMuted: semanticTokens['text-tertiary'] || rec('text-tertiary') || '#717680',
+    placeholderText: semanticTokens['text-placeholder'] || rec('text-placeholder') || '#a4a7ae',
     successColor: (pal?.success?.[9]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[9]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[9]) || infoColor || '#2e90fa',

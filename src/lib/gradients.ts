@@ -3,6 +3,7 @@
 // tokens.json / variables.css / README. Kept dependency-free (pure data + CSS
 // string builders) so the store, the editor and the exporters share one source.
 
+import chroma from 'chroma-js'
 import { slugify } from './utils'
 
 export type GradientType = 'linear' | 'radial'
@@ -51,32 +52,76 @@ function clampPos(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)))
 }
 
+/** True when two stop lists are identical (position + case-insensitive color).
+ *  Used to tell an auto-derived brand gradient from a hand-edited one, so the
+ *  accent-retint and the migration only touch the untouched seeds. */
+export function stopsMatch(a: GradientStop[], b: GradientStop[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((s, i) => s.pos === b[i].pos && s.color.toLowerCase() === b[i].color.toLowerCase())
+}
+
+// ── Accent-derived brand gradients ───────────────────────────────────────────
+// The brand gradients track the chosen accent instead of a fixed violet — a
+// gradient-heavy "AI tool" purple on a green brand reads as unrelated chrome.
+// Both stay inside the accent's own hue family (quiet, credible), never a neon
+// rainbow.
+
+const DEFAULT_ACCENT = '#7f56d9'
+
+function hsl(hex: string): [number, number, number] {
+  const [h, s, l] = chroma(hex).hsl()
+  return [Number.isNaN(h) ? 0 : h, Number.isNaN(s) ? 0 : s, l]
+}
+
+/** Brand Cover — the accent, then a deeper, slightly calmer shade of the SAME
+ *  hue. A single-hue descent, so it always reads as "this brand." */
+export function brandCoverStops(accent: string): GradientStop[] {
+  try {
+    const [h, s, l] = hsl(accent)
+    const deep = chroma.hsl(h, Math.min(1, s * 0.92), Math.max(0.16, l * 0.42)).hex()
+    return [{ color: chroma(accent).hex(), pos: 0 }, { color: deep, pos: 100 }]
+  } catch {
+    return [{ color: accent, pos: 0 }, { color: accent, pos: 100 }]
+  }
+}
+
+/** Aurora — a quiet three-stop kept within ±22° of the accent's hue, with a
+ *  little tonal movement for life. On-brand, never a purple→magenta rainbow. */
+export function brandAvatarStops(accent: string): GradientStop[] {
+  try {
+    const [h, s, l] = hsl(accent)
+    const sat = Math.min(1, Math.max(0.45, s))
+    const mk = (dh: number, ll: number) => chroma.hsl((h + dh + 360) % 360, sat, ll).hex()
+    return [
+      { color: mk(-22, Math.min(0.68, Math.max(0.42, l + 0.08))), pos: 0 },
+      { color: chroma(accent).hex(), pos: 50 },
+      { color: mk(22, Math.max(0.28, l * 0.72)), pos: 100 },
+    ]
+  } catch {
+    return [{ color: accent, pos: 0 }, { color: accent, pos: 100 }]
+  }
+}
+
 // ── Defaults ─────────────────────────────────────────────────────────────────
 
-/** Fresh default gradient set — brand-flavored, static so they never depend on
- *  a generated scale being present. */
-export function makeDefaultGradients(): GradientDef[] {
+/** Fresh default gradient set. Brand Cover + Aurora are derived from `accent`
+ *  (defaults to the app's default violet) so a new system's gradients already
+ *  match its brand; Moss Glow stays a fixed example of a non-brand gradient. */
+export function makeDefaultGradients(accent: string = DEFAULT_ACCENT): GradientDef[] {
   return [
     {
       id: 'brand-cover',
       name: 'Brand Cover',
       type: 'linear',
       angle: 135,
-      stops: [
-        { color: '#7f56d9', pos: 0 },
-        { color: '#432e73', pos: 100 },
-      ],
+      stops: brandCoverStops(accent),
     },
     {
       id: 'aurora',
       name: 'Aurora',
       type: 'linear',
       angle: 120,
-      stops: [
-        { color: '#7f56d9', pos: 0 },
-        { color: '#d444f1', pos: 50 },
-        { color: '#f63d68', pos: 100 },
-      ],
+      stops: brandAvatarStops(accent),
     },
     {
       id: 'moss-glow',

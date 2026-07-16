@@ -8,10 +8,10 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { usePreviewTokens, radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf } from '../../lib/previewTokens'
 import { withAlpha, NAMING_SCHEMES } from '../../lib/colorUtils'
-import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground } from '../../lib/colorActions'
+import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
-  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, type OptionGroup,
+  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
 } from './colorControls'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import { SPECIMENS, TokenIcon, type IconConcept } from './docs/specimens'
@@ -394,8 +394,8 @@ function Tile({ t, children }: { t: PreviewTokens; children: ReactNode }) {
 export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: HomeViewProps) {
   const {
     projectName, setProjectName, githubRepo,
-    primaryColor, primaryScale, grayBaseColor, grayLightScale,
-    pageBackground,
+    primaryColor, primaryScale, grayBaseColor, grayLightScale, grayDarkScale,
+    pageBackground, darkBackground, themeKinds,
     customColors, removeCustomColor,
     colorAlgorithm, colorNaming, contrastShift,
     setColorAlgorithm, setColorNaming, setContrastShift,
@@ -406,6 +406,12 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
   // Background changes must re-anchor every ramp + resync semantics — never a
   // bare setPageBackground (that leaves scales anchored to the old background).
   const applyPageBackground = useApplyPageBackground()
+  const applyDarkBackground = useApplyDarkBackground()
+
+  // The Background control (and the neutral ramp strip) follow the previewed
+  // theme: in a dark theme you're picking the DARK page, whose presets derive
+  // from the accent — see darkBackgroundOptions.
+  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
 
   // When ON, the neutral scale auto-derives from the accent. Default ON.
   const [linked, setLinked] = useState(true)
@@ -473,10 +479,16 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
           <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeAccent} allowCustom />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
             <InfoDot tip="Auto-matches the neutral scale to your accent color." />
-            <LinkToggle active={linked} onClick={toggleLink} />
+            <LinkToggle active={linked} onClick={toggleLink} accentColor={t.brandSolid} />
           </div>
           <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={changeNeutral} allowCustom />
-          <ColorSelect label="Background" value={pageBackground} groups={BACKGROUND_GROUPS} onChange={applyPageBackground} allowCustom />
+          <ColorSelect
+            label={darkPreview ? 'Background (dark)' : 'Background'}
+            value={darkPreview ? darkBackground : pageBackground}
+            groups={darkPreview ? darkBackgroundGroups(primaryColor) : BACKGROUND_GROUPS}
+            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
+            allowCustom
+          />
           <div className="relative pb-0.5">
             <button
               type="button"
@@ -511,7 +523,7 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
 
         <div className="flex flex-col gap-1.5">
           <ScaleRow scale={primaryScale} labels={namingLabels} />
-          <ScaleRow scale={grayLightScale} showNumbers={false} />
+          <ScaleRow scale={darkPreview ? grayDarkScale : grayLightScale} showNumbers={false} />
         </div>
       </section>
 

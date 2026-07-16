@@ -37,6 +37,13 @@ const TONES = 12
 /** Tone pinned to the base color exactly — the Radix "solid" step. */
 export const BASE_TONE = 9
 
+/**
+ * Which END of the ramp the page background anchors. Both appearances keep the
+ * same 1→12 light-to-dark orientation; they differ only in which extreme grows
+ * out of the page. See `buildScale` for the full rationale.
+ */
+export type ScaleAppearance = 'light' | 'dark'
+
 // Easing exponents for the two halves. The light run (1–8) uses a square-root
 // ease so tones rush toward white and the border band (6–8) stays pastel —
 // linear interpolation is what made borders look heavy. The dark run (10–12)
@@ -49,28 +56,46 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n))
 }
 
-function buildScale(baseHex: string, spec: AlgoSpec, shift: number, background?: string): string[] {
+function buildScale(
+  baseHex: string,
+  spec: AlgoSpec,
+  shift: number,
+  background?: string,
+  appearance: ScaleAppearance = 'light',
+): string[] {
   const [baseL, baseC, baseHraw] = chroma(baseHex).oklch()
   const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw
   // Widen/narrow each half-range by the contrast shift.
   let lightL = clamp01(baseL + (spec.lightL - baseL) * (1 + shift))
-  const darkL = clamp01(baseL - (baseL - spec.darkL) * (1 + shift))
+  let darkL = clamp01(baseL - (baseL - spec.darkL) * (1 + shift))
 
   // Radix custom-palette behavior: every ramp grows out of the page background.
-  // When a background is provided, tone 1 anchors to its OKLCH lightness — a
-  // tinted/cream page pulls the whole light run down with it, so backgrounds
-  // and subtle fills sit ON the page instead of floating above it. Backgrounds
-  // lighter than the spec's own extreme (pure white) change nothing, and dark
-  // backgrounds are ignored (our ramps are light-appearance; dark themes read
-  // tones inverted via recDarkTone).
-  // The blend target for the surface band (tones 1–3): the page background
-  // when it's a light one, else plain white — so surface tones always read as
-  // subtle washes sitting on the page rather than saturated fills.
+  // Which END the background anchors depends on the ramp's appearance:
+  //
+  //  • 'light' (default) — tone 1 anchors to the background's OKLCH lightness.
+  //    A tinted/cream page pulls the whole light run down with it, so
+  //    backgrounds and subtle fills sit ON the page instead of floating above
+  //    it. Backgrounds lighter than the spec's own extreme (pure white) change
+  //    nothing, and dark backgrounds are ignored — this ramp is light-appearance.
+  //
+  //  • 'dark' — tone 12 anchors to the background instead. Dark themes read the
+  //    gray hierarchy inverted (recDarkTone: surface-0 → tone 12), so tone 12 IS
+  //    the dark page. Anchoring it here is what makes a dark background actually
+  //    drive the dark surfaces. A light hex is meaningless here, so it's ignored.
+  //
+  // The anchors double as blend targets for their band, so the tones nearest the
+  // page read as subtle washes sitting on it rather than saturated fills.
   let surfaceAnchor = '#ffffff'
+  let deepAnchor: string | null = null
   if (background) {
     try {
       const bgL = chroma(background).oklch()[0]
-      if (bgL > 0.5) {
+      if (appearance === 'dark') {
+        if (bgL <= 0.5) {
+          darkL = clamp01(bgL)
+          deepAnchor = chroma(background).hex()
+        }
+      } else if (bgL > 0.5) {
         lightL = Math.min(lightL, clamp01(bgL))
         surfaceAnchor = chroma(background).hex()
       }
@@ -106,6 +131,14 @@ function buildScale(baseHex: string, spec: AlgoSpec, shift: number, background?:
       const f = ((BASE_TONE - i) / (BASE_TONE - 1)) ** LIGHT_EASE
       const pull = Math.max(0, (f - 0.75) / 0.25)
       if (pull > 0) color = chroma.mix(color, surfaceAnchor, Math.pow(pull, 1.5) * 0.85, 'oklab')
+    }
+    // Deep band (tones 10–12) — the mirror of the surface band, for dark ramps.
+    // These are what a dark theme reads as its surfaces (12 = page, 11 = card,
+    // 10 = sunken), so ease them into the dark page background the same way.
+    if (i > BASE_TONE && deepAnchor) {
+      const f = ((i - BASE_TONE) / (TONES - BASE_TONE)) ** DARK_EASE
+      const pull = Math.max(0, (f - 0.4) / 0.6)
+      if (pull > 0) color = chroma.mix(color, deepAnchor, Math.pow(pull, 1.5) * 0.85, 'oklab')
     }
     out.push(color.hex())
   }
@@ -161,14 +194,51 @@ export function generateColorScale(
   algorithm: ColorAlgorithm = 'default',
   contrastShift = 0,
   background?: string,
+  appearance: ScaleAppearance = 'light',
 ): Record<number, string> {
   const spec = SPECS[algorithm] ?? SPECS.default
-  const colors = buildScale(baseHex, spec, contrastShift, background)
+  const colors = buildScale(baseHex, spec, contrastShift, background, appearance)
   const scale: Record<number, string> = {}
   colors.forEach((color, i) => {
     scale[i + 1] = color
   })
   return scale
+}
+
+/**
+ * Dark-appearance neutral ramp — the ramp gray roles resolve from in dark
+ * themes, where recDarkTone inverts the hierarchy (surface-0 → tone 12,
+ * surface-1 → 11, surface-2 → 10, text-primary → 1).
+ *
+ * Two things make this different from just calling `generateColorScale` with a
+ * dark background:
+ *
+ *  1. Tone 12 grows out of `darkBackground` (appearance: 'dark'), so the chosen
+ *     dark page IS the dark surface.
+ *  2. The ramp's BASE (tone 9) is re-derived as a *dark* neutral sitting just
+ *     above the page, instead of being pinned to `neutralHex` — a mid-gray base
+ *     would leave tones 9–10 (surface-3 / surface-2) as light grays, which in a
+ *     dark theme read as blown-out surfaces. It keeps the neutral's hue (which
+ *     itself derives from the accent), so the whole dark ramp carries the
+ *     accent's tint.
+ */
+export function generateDarkColorScale(
+  neutralHex: string,
+  algorithm: ColorAlgorithm = 'default',
+  contrastShift = 0,
+  darkBackground?: string,
+): Record<number, string> {
+  let base = neutralHex
+  try {
+    const [, nC, nHraw] = chroma(neutralHex).oklch()
+    const nH = Number.isNaN(nHraw) ? 0 : nHraw
+    const bgL = darkBackground ? chroma(darkBackground).oklch()[0] : 0.17
+    // Base sits ~0.17 L above the page — enough separation for the elevated
+    // surfaces (9–11) to step up from it without ever reaching mid-gray.
+    const baseL = Math.max(0.25, Math.min(0.45, bgL + 0.17))
+    base = chroma.oklch(baseL, nC * 0.5, nH).hex()
+  } catch { /* invalid neutral — fall back to the raw hex */ }
+  return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark')
 }
 
 // ── Alpha ramps (Radix custom-palette architecture) ─────────────────────────

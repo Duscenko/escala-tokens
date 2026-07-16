@@ -5,7 +5,7 @@
 // (already a dependency) for all color math, so grays keep their hue while the
 // saturation is zero.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -154,7 +154,7 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
 
       {/* Hex + opacity readout */}
       <div className="flex items-center gap-2">
-        <span className="w-7 h-7 rounded-md flex-shrink-0 ring-1 ring-black/10" style={{ background: `${hex}, ${CHECKER}` }} />
+        <span className="w-7 h-7 rounded-md flex-shrink-0 ring-1 ring-black/10" style={{ background: `linear-gradient(${hex},${hex}), ${CHECKER}` }} />
         <div className="flex-1 flex items-center gap-1 px-2 py-1.5 rounded-lg border border-line bg-surface">
           <span className="text-[11px] font-mono text-fg-faint">#</span>
           <input
@@ -203,7 +203,7 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
               onContextMenu={(e) => { e.preventDefault(); removeSavedColor(c) }}
               title={`${c} — right-click to remove`}
               className="w-5 h-5 rounded-full flex-shrink-0 ring-1 ring-black/10 transition-transform hover:scale-110"
-              style={{ background: `${c}, ${CHECKER}` }}
+              style={{ background: `linear-gradient(${c},${c}), ${CHECKER}` }}
             />
           ))}
         </div>
@@ -223,6 +223,7 @@ export default function ColorField({
   shape = 'circle',
   swatchClassName = '',
   className = '',
+  icon,
 }: {
   value: string
   onChange: (hex: string) => void
@@ -234,6 +235,10 @@ export default function ColorField({
   /** Extra classes on the trigger swatch (shadow, selected ring…). */
   swatchClassName?: string
   className?: string
+  /** When set, the trigger reads as an "add" affordance — a dashed neutral chip
+   *  showing this icon instead of a color fill (e.g. the "+" that adds a custom
+   *  accent). The picker still opens on the current `value`. */
+  icon?: ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -255,11 +260,22 @@ export default function ColorField({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={ariaLabel}
+        title={icon ? ariaLabel : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`${shape === 'square' ? 'rounded-md' : 'rounded-full'} flex-shrink-0 ring-1 ring-black/10 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${swatchClassName}`}
-        style={{ width: size, height: size, background: `${value}, ${CHECKER}` }}
-      />
+        className={`${shape === 'square' ? 'rounded-md' : 'rounded-full'} flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+          icon
+            ? 'border border-dashed border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg/40'
+            : 'ring-1 ring-black/10'
+        } ${swatchClassName}`}
+        style={
+          icon
+            ? { width: size, height: size }
+            : { width: size, height: size, background: `linear-gradient(${value},${value}), ${CHECKER}` }
+        }
+      >
+        {icon}
+      </button>
       <AnimatePresence>
         {open && (
           <motion.div

@@ -237,7 +237,14 @@ export function recDarkTone(role: Role): number {
 // ── Ramp resolution + recommended values ────────────────────────────────────
 
 /** The global (light) source ramps, one per ScaleSource. */
-export type GlobalScales = Record<ScaleSource, Record<number, string>>
+export type GlobalScales = Record<ScaleSource, Record<number, string>> & {
+  /**
+   * The dark-appearance neutral ramp (store `grayDarkScale`). Gray roles in a
+   * dark theme resolve from this instead of the light `gray` ramp. Optional so
+   * older callers keep working — they fall back to the GRAY_DARK_SCALE default.
+   */
+  grayDark?: Record<number, string>
+}
 
 /**
  * The ramp a role draws from in a given theme. Custom style themes carry their
@@ -251,7 +258,11 @@ export function sourceScaleFor(
   palette?: ThemePalette,
 ): Record<number, string> {
   if (palette) return palette[role.scale]
-  return role.scale === 'gray' && kind === 'dark' ? GRAY_DARK_SCALE : global[role.scale]
+  // Gray is the only ramp with a distinct dark twin: it's generated from the
+  // neutral against `darkBackground`, so the dark surfaces carry the accent's
+  // tint. Colored ramps keep their hue and just shift tone (see recDarkTone).
+  if (role.scale === 'gray' && kind === 'dark') return global.grayDark ?? GRAY_DARK_SCALE
+  return global[role.scale]
 }
 
 /**

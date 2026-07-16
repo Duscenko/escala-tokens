@@ -243,22 +243,25 @@ function MatrixRow({
   return (
     <div className={expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
       <div className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]" style={gridStyle}>
-        {/* Name · description · CSS-var syntax */}
-        <div className="flex items-start gap-3 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
-          <button onClick={onToggle} aria-label={`Edit ${role.label} scale`} className="flex items-start gap-3 min-w-0 text-left flex-1">
-            <span
-              className="w-6 h-6 rounded-md flex-shrink-0 mt-0.5 ring-1 ring-black/10 dark:ring-white/10 transition-colors duration-300"
-              style={{ backgroundColor: cols[0]?.value || 'var(--elevated)' }}
-            />
-            <span className="flex flex-col min-w-0 gap-0.5">
-              <span className="flex items-center gap-1.5 min-w-0">
-                <code className="font-mono text-[12px] text-fg-muted truncate">{role.label}</code>
-                {modified && <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified from recommended" />}
-              </span>
-              <span className="text-[11px] text-fg-faint leading-snug line-clamp-2" title={desc}>{desc}</span>
+        {/* Name only — description + copyable var move into the expanded editor
+            so each row stays a single, compact line. */}
+        <div className="flex items-center gap-3 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+          <button onClick={onToggle} aria-label={`Edit ${role.label} scale`} className="flex items-center gap-2.5 min-w-0 text-left flex-1">
+            {/* Color-token marker — a palette glyph, not a fill: the actual value
+                already shows in the Light/Dark columns, so a per-row swatch just
+                duplicated it. */}
+            <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+              </svg>
             </span>
+            <code className="font-mono text-[12px] text-fg-muted truncate" title={role.label}>{role.label}</code>
+            {modified && <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified from recommended" />}
           </button>
-          <span className="mt-0.5"><CssVarChip name={role.key} /></span>
         </div>
 
         {/* One value cell per theme */}
@@ -297,6 +300,12 @@ function MatrixRow({
             style={{ overflow: 'hidden' }}
           >
             <div className="flex flex-col gap-4 px-4 pt-2 pb-5">
+              {/* Description + copyable CSS var — moved out of the row so rows
+                  stay a single line; surfaced here on open. */}
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[11px] text-fg-muted leading-snug flex-1 min-w-0">{desc}</p>
+                <span className="flex-shrink-0"><CssVarChip name={role.key} /></span>
+              </div>
               {cols.map((col) => (
                 <div key={col.key} className="flex flex-col gap-2">
                   <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
@@ -348,7 +357,7 @@ export default function Step3_SemanticTokens({
 } = {}) {
   const {
     primaryScale, errorScale, warningScale, successScale, infoScale,
-    grayLightScale,
+    grayLightScale, grayDarkScale,
     themes, themeOrder, themeKinds, themePalettes,
     setThemeToken, removeTheme,
     panelBackground, setPanelBackground,
@@ -356,13 +365,18 @@ export default function Step3_SemanticTokens({
 
   const reduce = useReducedMotion() ?? false
 
+  // `grayDark` is what dark themes resolve their gray roles from. It MUST be
+  // passed: the resync effect below rewrites any token that isn't a tone of its
+  // source ramp, so omitting it would make every dark gray look stale and snap
+  // back to the legacy fixed ramp — wiping the accent-tinted dark scale.
   const scales: GlobalScales = {
-    gray:    grayLightScale,
-    brand:   primaryScale,
-    error:   errorScale,
-    warning: warningScale,
-    success: successScale,
-    info:    infoScale,
+    gray:     grayLightScale,
+    grayDark: grayDarkScale,
+    brand:    primaryScale,
+    error:    errorScale,
+    warning:  warningScale,
+    success:  successScale,
+    info:     infoScale,
   }
 
   // Ramp + recommended value resolution shared with the token export
@@ -434,7 +448,7 @@ export default function Step3_SemanticTokens({
       })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, grayLightScale, primaryScale, errorScale, warningScale, successScale, infoScale, themeOrder, themePalettes])
+  }, [ready, grayLightScale, grayDarkScale, primaryScale, errorScale, warningScale, successScale, infoScale, themeOrder, themePalettes])
 
   const q = query.trim().toLowerCase()
 
@@ -530,7 +544,7 @@ export default function Step3_SemanticTokens({
       {/* Body: category side-nav + token table */}
       <div className="flex items-stretch flex-1 min-h-0">
         {/* Internal category nav — icon-only, tooltip on hover */}
-        <nav aria-label="Token categories" className="w-12 flex-shrink-0 border-r border-line py-2 px-1.5 flex flex-col gap-0.5 bg-app overflow-y-auto">
+        <nav aria-label="Token categories" className="w-40 flex-shrink-0 border-r border-line py-2 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
           {NAV.map((item) => {
             const isActive = activeCategory === item.key
             const mod = item.roles.filter(isModified).length
@@ -540,21 +554,21 @@ export default function Step3_SemanticTokens({
                   onClick={() => selectCategory(item.key)}
                   aria-label={item.label}
                   aria-current={isActive}
-                  className={`relative w-full flex items-center justify-center p-2 rounded-lg transition-colors ${
-                    isActive ? 'bg-elevated text-[#5AADFF] shadow-sm' : 'text-fg-faint hover:bg-elevated/50 hover:text-fg-muted'
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                    isActive ? 'bg-elevated text-[#5AADFF] shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  {CATEGORY_ICON[item.key]}
+                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{CATEGORY_ICON[item.key]}</span>
+                  <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
                   {mod > 0 && (
-                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#5AADFF]" aria-hidden />
+                    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#5AADFF]" aria-hidden />
                   )}
                 </button>
-                {/* Hover tooltip — label + description, points right into the table */}
+                {/* Hover tooltip — the category's description; the label now shows inline */}
                 <span
                   role="tooltip"
                   className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 w-44 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-40 shadow-lg"
                 >
-                  <span className="font-semibold block mb-0.5">{item.label}</span>
                   {CATEGORY_DESC[item.key]}
                 </span>
               </div>

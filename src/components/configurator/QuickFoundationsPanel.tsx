@@ -225,6 +225,7 @@ export function QuickEditSections({
 }) {
   const {
     primaryColor, themes, themeOrder, themePalettes, themeKinds,
+    pageBackground, darkBackground,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
     iconLibrary, setIconLibrary,
@@ -251,12 +252,17 @@ export function QuickEditSections({
     )
   }
 
-  // Dot color that reads as the theme's look — dark themes show their surface,
-  // light ones their accent.
-  const themeDot = (t: string): string =>
-    (themeKinds[t] ?? 'light') === 'dark'
-      ? themes[t]?.['surface-0'] ?? '#111111'
-      : themePalettes[t]?.brand?.[BASE_TONE] ?? themes[t]?.['action-primary'] ?? primaryColor
+  // Swatch fill that reads as the theme itself — its page background, so the two
+  // chips look like "a light theme" and "a dark theme". Robust against the empty
+  // role strings a not-yet-visited theme carries (`??` alone passes "" through),
+  // falling back to the reliable page-background primitive for that appearance.
+  const isColor = (v?: string): v is string => !!v && v !== 'transparent'
+  const themeDot = (t: string): string => {
+    const kind = themeKinds[t] ?? 'light'
+    const surface = themes[t]?.['surface-0']
+    if (isColor(surface)) return surface
+    return kind === 'dark' ? darkBackground || '#0c0e12' : pageBackground || '#ffffff'
+  }
 
   return (
     <>
@@ -277,7 +283,11 @@ export function QuickEditSections({
                     : 'bg-surface border border-line text-fg-muted hover:text-fg hover:border-line-strong'
                 }`}
               >
-                <span className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0" style={{ backgroundColor: themeDot(t) }} aria-hidden />
+                <span
+                  className="w-3.5 h-3.5 rounded flex-shrink-0 ring-1 ring-black/10 dark:ring-white/20 shadow-[0_1px_1px_0_rgba(0,0,0,0.2)]"
+                  style={{ backgroundColor: themeDot(t) }}
+                  aria-hidden
+                />
                 {t}
               </button>
             ))}
@@ -307,16 +317,22 @@ export function QuickEditSections({
               />
             )
           })}
-          {/* Custom pick — full HSV picker; alpha is dropped since accent scales
-              are solid. Square shape + shadow to match the swatch row. */}
+          {/* Add a custom accent — reads as an "add" chip (dashed + "+"), not a
+              redundant colored swatch, so it's clear a new brand color starts
+              here. Opens the full HSV picker; alpha is dropped (accent scales
+              are solid). */}
           <ColorField
             value={/^#[0-9a-f]{6}$/i.test(activeAccent) ? activeAccent : '#7f56d9'}
             onChange={(hex) => applyAccentColor(hex.slice(0, 7), true, previewTheme)}
-            ariaLabel="Custom accent color"
+            ariaLabel="Add a custom accent color"
             size={24}
             align="right"
             shape="square"
-            swatchClassName="shadow-[0_1px_1px_0_rgba(0,0,0,0.2)]"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            }
           />
         </div>
       </div>
