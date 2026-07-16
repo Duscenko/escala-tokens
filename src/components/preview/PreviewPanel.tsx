@@ -85,7 +85,7 @@ export default function PreviewPanel({
       <header className="flex items-center gap-2 px-5 h-[60px] border-b border-line/60 flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg">{title}</h2>
         {themeBadge && (
-          <span className="px-1.5 py-0.5 rounded-md bg-elevated text-[10px] font-medium text-[#5AADFF] capitalize">
+          <span className="px-1.5 py-0.5 rounded-md bg-elevated text-[10px] font-medium text-accent-ui capitalize">
             {themeBadge}
           </span>
         )}

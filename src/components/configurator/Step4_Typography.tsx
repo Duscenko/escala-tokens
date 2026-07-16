@@ -254,7 +254,7 @@ export default function Step4_Typography() {
             <div key={r.key} className={rowClass(i)}>
               <div className={nameCell}>
                 <code className="font-mono text-[12px] text-fg-muted truncate">{r.label}</code>
-                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={`${valueCell} relative`}>
                 <button
@@ -299,7 +299,7 @@ export default function Step4_Typography() {
             <div key={r.name} className={rowClass(i)}>
               <div className={nameCell}>
                 <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
-                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
                 {r.italic ? (
@@ -339,7 +339,7 @@ export default function Step4_Typography() {
             <div key={key} className={rowClass(i)}>
               <div className={nameCell}>
                 <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
-                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
                 <ValueInput value={val} onChange={(v) => setSize(key, v)} />
@@ -369,7 +369,7 @@ export default function Step4_Typography() {
             <div key={key} className={rowClass(i)}>
               <div className={nameCell}>
                 <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
-                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified" />}
+                {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
                 <ValueInput value={val} onChange={(v) => setLineHeight(key, v)} />

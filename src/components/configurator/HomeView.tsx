@@ -3,14 +3,14 @@
 // here or jump into Foundations · Color to customize properly. Everything
 // about saving/connections/sharing moved to the Save hub (SaveView).
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { usePreviewTokens, radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf } from '../../lib/previewTokens'
-import { withAlpha, NAMING_SCHEMES } from '../../lib/colorUtils'
-import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
+import { withAlpha, NAMING_SCHEMES, recommendStateColors, BASE_TONE } from '../../lib/colorUtils'
+import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground, useApplyStateColor } from '../../lib/colorActions'
 import {
-  ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
+  ColorSelect, ScaleRow, InfoDot, LinkToggle, StateColorRows, neutralFromBrand,
   BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
 } from './colorControls'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
@@ -395,7 +395,8 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
   const {
     projectName, setProjectName, githubRepo,
     primaryColor, primaryScale, grayBaseColor, grayLightScale, grayDarkScale,
-    pageBackground, darkBackground, themeKinds,
+    pageBackground, darkBackground, themeKinds, themePalettes,
+    errorColor, successColor, warningColor, infoColor,
     customColors, removeCustomColor,
     colorAlgorithm, colorNaming, contrastShift,
     setColorAlgorithm, setColorNaming, setContrastShift,
@@ -407,11 +408,32 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
   // bare setPageBackground (that leaves scales anchored to the old background).
   const applyPageBackground = useApplyPageBackground()
   const applyDarkBackground = useApplyDarkBackground()
+  const applyStateColor = useApplyStateColor()
+
+  // "Match to accent" — re-harmonizes every status hue against the current
+  // brand (same recommendation Foundations · Color's states link uses).
+  const matchStatesToAccent = () => {
+    const rec = recommendStateColors(accentBase)
+    applyStateColor('error', rec.error)
+    applyStateColor('warning', rec.warning)
+    applyStateColor('success', rec.success)
+    applyStateColor('info', rec.info)
+  }
 
   // The Background control (and the neutral ramp strip) follow the previewed
   // theme: in a dark theme you're picking the DARK page, whose presets derive
   // from the accent — see darkBackgroundOptions.
   const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
+
+  // Custom "style themes" carry their own palette — while one is previewed the
+  // hero bar reads (and the ScaleRows render) THAT palette, matching where
+  // changeAccent/changeNeutral route their writes. Built-ins fall back to the
+  // global primary/gray, exactly as before.
+  const pal = themePalettes[previewTheme]
+  const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
+  const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
+  const brandRamp = pal?.brand ?? primaryScale
+  const neutralRamp = pal?.gray ?? (darkPreview ? grayDarkScale : grayLightScale)
 
   // When ON, the neutral scale auto-derives from the accent. Default ON.
   const [linked, setLinked] = useState(true)
@@ -433,12 +455,21 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
 
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
+  // The store ships `primaryScale` empty and Step2 only seeds it on ITS mount —
+  // but Home is the landing view, so without this the brand ramp is missing
+  // until you visit Foundations · Color. Seeded unlinked on purpose: the neutral
+  // already has its own default (Gray Neutral) and must not be re-derived from
+  // the accent behind the user's back on a plain page load.
+  useEffect(() => {
+    if (Object.keys(primaryScale).length === 0) applyAccentColor(primaryColor, false, previewTheme)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const changeAccent = (hex: string) => applyAccentColor(hex, linked, previewTheme)
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
   const toggleLink = () => {
     const next = !linked
     setLinked(next)
-    if (next) applyGrayColor(neutralFromBrand(primaryColor), previewTheme)
+    if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
   }
 
   const v = {} // default axis values for the registry specimens
@@ -474,20 +505,38 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
       )}
 
       {/* ── Primitives quick bar: accent · link · neutral · background + ramps ── */}
-      <section className="flex flex-col gap-5 pb-6 border-b border-line">
+      <section className="flex flex-col gap-[24px] rounded-[16px] border border-line bg-surface p-[24px] shadow-sm">
         <div className="grid grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Accent Color" value={primaryColor} groups={brandGroups} onChange={changeAccent} allowCustom />
+          <ColorSelect label="Color families" value={accentBase} groups={brandGroups} onChange={changeAccent} allowCustom />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
             <InfoDot tip="Auto-matches the neutral scale to your accent color." />
             <LinkToggle active={linked} onClick={toggleLink} accentColor={t.brandSolid} />
           </div>
-          <ColorSelect label="Neutral" value={grayBaseColor} groups={neutralGroups} onChange={changeNeutral} allowCustom />
+          <ColorSelect label="Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
           <ColorSelect
-            label={darkPreview ? 'Background (dark)' : 'Background'}
+            label="Background & State Colors"
             value={darkPreview ? darkBackground : pageBackground}
-            groups={darkPreview ? darkBackgroundGroups(primaryColor) : BACKGROUND_GROUPS}
+            groups={darkPreview ? darkBackgroundGroups(accentBase) : BACKGROUND_GROUPS}
             onChange={darkPreview ? applyDarkBackground : applyPageBackground}
             allowCustom
+            groupsLabel={darkPreview ? 'Background (dark)' : 'Background'}
+            panelClassName="right-0 w-[320px] max-h-[420px]"
+            previewSwatches={[
+              { hex: errorColor, label: 'Error' },
+              { hex: successColor, label: 'Success' },
+              { hex: warningColor, label: 'Warning' },
+              { hex: infoColor, label: 'Info' },
+            ]}
+            extras={
+              <StateColorRows
+                error={errorColor}
+                warning={warningColor}
+                success={successColor}
+                info={infoColor}
+                onChange={applyStateColor}
+                onMatchAccent={matchStatesToAccent}
+              />
+            }
           />
           <div className="relative pb-0.5">
             <button
@@ -497,7 +546,7 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
               aria-expanded={settingsOpen}
               aria-label="Scale settings — algorithm, naming, contrast shift"
               title="Scale settings"
-              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+              className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                 settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
               }`}
             >
@@ -522,8 +571,8 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <ScaleRow scale={primaryScale} labels={namingLabels} />
-          <ScaleRow scale={darkPreview ? grayDarkScale : grayLightScale} showNumbers={false} />
+          <ScaleRow scale={brandRamp} labels={namingLabels} />
+          <ScaleRow scale={neutralRamp} showNumbers={false} size="thin" />
         </div>
       </section>
 

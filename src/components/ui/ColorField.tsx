@@ -235,9 +235,9 @@ export default function ColorField({
   /** Extra classes on the trigger swatch (shadow, selected ring…). */
   swatchClassName?: string
   className?: string
-  /** When set, the trigger reads as an "add" affordance — a dashed neutral chip
-   *  showing this icon instead of a color fill (e.g. the "+" that adds a custom
-   *  accent). The picker still opens on the current `value`. */
+  /** When set, the trigger reads as an action button — a solid bordered chip
+   *  showing this icon instead of a color fill. The picker still opens on the
+   *  current `value`. */
   icon?: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -265,7 +265,7 @@ export default function ColorField({
         aria-expanded={open}
         className={`${shape === 'square' ? 'rounded-md' : 'rounded-full'} flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
           icon
-            ? 'border border-dashed border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg/40'
+            ? 'border border-line bg-surface text-fg-muted shadow-[0_2px_3px_0_rgba(0,0,0,0.06)] hover:text-fg hover:border-line-strong'
             : 'ring-1 ring-black/10'
         } ${swatchClassName}`}
         style={

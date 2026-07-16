@@ -1,21 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { useApplyAccentColor } from '../../lib/colorActions'
-import { BASE_TONE } from '../../lib/colorUtils'
-import { BRAND_PRESETS } from '../../lib/brandPalette'
 import { fontStack, loadGoogleFont, FONT_PRESETS } from '../../lib/fonts'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_LIBRARIES } from '../../lib/iconLibraries'
 import { iconName, type IconConcept } from './docs/specimens'
-import ColorField from '../ui/ColorField'
 
 // Quick-edit foundations — shared by two hosts: the Components catalogue's
 // popover (default export) and Home's persistent right panel (QuickEditPanel).
 // Everything writes straight to the same store fields as their Foundations
-// section, so changes show up back there too. Each accent comes linked with a
-// matching neutral, so there's no separate gray picker.
+// section, so changes show up back there too. Color has ONE entry point — the
+// family dropdown on Home's quick bar — so there's no accent picker here.
 
 // Families offered in the quick Font Family rows — the curated presets plus a
 // few popular Google families; the full picker lives in Foundations · Font.
@@ -48,7 +44,7 @@ function FontSelect({ value, onChange, ariaLabel }: { value: string; onChange: (
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-[13px] text-fg hover:bg-elevated/60 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg text-left text-[13px] text-fg hover:bg-elevated/60 transition-colors"
       >
         <span className="truncate" style={{ fontFamily: fontStack(value) }}>{value}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -133,7 +129,7 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: str
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Icon library"
-        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors"
+        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors ${ROW_H}`}
       >
         <LibGlyph prefix={current.iconifyPrefix} concept="star" />
         <span className="flex-1 truncate">{current.label}</span>
@@ -180,6 +176,10 @@ const PADDING_SIDES = [
   { key: 'left', label: 'L', name: 'Left' },
 ] as const
 
+// Every quick-edit control row shares this height, so the panel reads as an
+// even property sheet (SegRows, selects, padding inputs, font rows).
+const ROW_H = 'h-[30px]'
+
 // Compact one-row segmented picker — Figma-properties style, so every preset
 // control stays a single line and the panel reads as a dense property sheet.
 function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
@@ -189,7 +189,7 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
   ariaLabel: string
 }) {
   return (
-    <div role="group" aria-label={ariaLabel} className="flex gap-0.5 rounded-lg border border-line bg-surface p-0.5">
+    <div role="group" aria-label={ariaLabel} className={`flex gap-0.5 rounded-lg border border-line bg-surface p-0.5 ${ROW_H}`}>
       {options.map((o) => (
         <button
           key={o.key}
@@ -197,7 +197,7 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
           title={o.title}
           onClick={() => onChange(o.key)}
           aria-pressed={o.key === value}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] leading-none transition-colors ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 rounded-md text-[11px] leading-none transition-colors ${
             o.key === value ? 'bg-elevated text-fg font-semibold shadow-sm' : 'text-fg-muted hover:text-fg'
           }`}
         >
@@ -224,7 +224,7 @@ export function QuickEditSections({
   onThemeChange?: (theme: string) => void
 }) {
   const {
-    primaryColor, themes, themeOrder, themePalettes, themeKinds,
+    themes, themeOrder, themeKinds,
     pageBackground, darkBackground,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
@@ -232,15 +232,9 @@ export function QuickEditSections({
     padding, setPadding,
     shadows, setShadows,
   } = useDesignStore()
-  const applyAccentColor = useApplyAccentColor()
   const activeRadius = matchRadiusPreset(radius)
   const activeShadow = matchShadowPreset(shadows)
   const themeCols = themeOrder.filter((t) => themes[t])
-
-  // A custom theme carries its own palette — reflect *that* theme's current
-  // accent in the swatch selection, not the unrelated global scale.
-  const palette = themePalettes[previewTheme]
-  const activeAccent = palette?.brand?.[BASE_TONE] ?? primaryColor
 
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const setFont = (role: 'heading' | 'body', family: string) => {
@@ -295,60 +289,18 @@ export function QuickEditSections({
         </div>
       )}
 
-      {/* Accent color — each pick also relinks the matching neutral, so the
-          theme's surfaces/text/borders re-tint with it. Figma design (node
-          14:30): swatches are rounded squares with a soft drop shadow, held in
-          a bordered, elevated card. */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Accent color</span>
-        <div className="flex flex-wrap gap-2 p-2.5 rounded-xl border border-line bg-surface shadow-[0_2px_3px_0_rgba(0,0,0,0.06)]">
-          {BRAND_PRESETS.map((hex) => {
-            const active = hex.toLowerCase() === activeAccent.toLowerCase()
-            return (
-              <button
-                key={hex}
-                onClick={() => applyAccentColor(hex, true, previewTheme)}
-                aria-label={`Accent ${hex}`}
-                aria-pressed={active}
-                className={`w-6 h-6 rounded-md flex-shrink-0 shadow-[0_1px_1px_0_rgba(0,0,0,0.2)] transition-transform hover:scale-110 ${
-                  active ? 'ring-2 ring-fg ring-offset-2 ring-offset-surface' : 'ring-1 ring-black/10'
-                }`}
-                style={{ backgroundColor: hex }}
-              />
-            )
-          })}
-          {/* Add a custom accent — reads as an "add" chip (dashed + "+"), not a
-              redundant colored swatch, so it's clear a new brand color starts
-              here. Opens the full HSV picker; alpha is dropped (accent scales
-              are solid). */}
-          <ColorField
-            value={/^#[0-9a-f]{6}$/i.test(activeAccent) ? activeAccent : '#7f56d9'}
-            onChange={(hex) => applyAccentColor(hex.slice(0, 7), true, previewTheme)}
-            ariaLabel="Add a custom accent color"
-            size={24}
-            align="right"
-            shape="square"
-            icon={
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            }
-          />
-        </div>
-      </div>
-
       {/* Font Family — the two family tokens; full type scale in Foundations ·
           Font. No overflow-hidden on this box: it would clip the dropdowns. */}
       <div className="flex flex-col gap-1.5">
         <span className="text-xs text-fg-muted">Font Family</span>
         <div className="rounded-lg border border-line">
-          <div className="flex items-center justify-between gap-2 pl-3 pr-1 py-1 border-b border-line">
+          <div className={`flex items-center justify-between gap-2 pl-3 pr-1 border-b border-line ${ROW_H}`}>
             <span className="text-[11px] font-mono text-fg-muted truncate">font-family-heading</span>
             <div className="w-32 flex-shrink-0">
               <FontSelect value={headingFont} onChange={(f) => setFont('heading', f)} ariaLabel="Heading font family" />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-2 pl-3 pr-1 py-1">
+          <div className={`flex items-center justify-between gap-2 pl-3 pr-1 ${ROW_H}`}>
             <span className="text-[11px] font-mono text-fg-muted truncate">font-family-body</span>
             <div className="w-32 flex-shrink-0">
               <FontSelect value={typography.fontFamily} onChange={(f) => setFont('body', f)} ariaLabel="Body font family" />
@@ -424,7 +376,7 @@ export function QuickEditSections({
                     setPadding({ ...padding, [side.key]: `${n}px` })
                   }}
                   aria-label={`Padding ${side.name.toLowerCase()}`}
-                  className="w-full pl-5 pr-1 py-1.5 rounded-lg border border-line bg-surface text-xs text-fg text-center outline-none focus:border-line-strong [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className={`w-full pl-5 pr-1 rounded-lg border border-line bg-surface text-xs text-fg text-center outline-none focus:border-line-strong [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${ROW_H}`}
                 />
               </label>
             )

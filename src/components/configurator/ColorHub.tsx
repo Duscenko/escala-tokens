@@ -1,17 +1,18 @@
-import Step2_ColorPalette from './Step2_ColorPalette'
 import Step3_SemanticTokens, { type SemanticCategory } from './Step3_SemanticTokens'
+import StepGradients from './StepGradients'
 
-export type ColorTab = 'primitives' | 'semantics'
+export type ColorTab = 'gradients' | 'semantics'
 
 const TABS: { key: ColorTab; label: string }[] = [
   { key: 'semantics', label: 'Alias / Semantics' },
-  { key: 'primitives', label: 'Primitives' },
+  { key: 'gradients', label: 'Gradients' },
 ]
 
-// The Color hub unifies the primitive scales (Step2) and the semantic alias
-// matrix (Step3) under one foundation, switched by a two-tab header. Primitives
-// scrolls normally; the Alias tab self-manages its internal scroll, so it lives
-// in a bounded min-h-0 flex parent.
+// The Color hub unifies the semantic alias matrix (Step3) and the gradient
+// tokens (StepGradients) under one foundation, switched by a two-tab header —
+// primitive scales are edited from Home's quick bar. Gradients scrolls
+// normally; the Alias tab self-manages its internal scroll, so it lives in a
+// bounded min-h-0 flex parent.
 export default function ColorHub({
   colorTab,
   onColorTabChange,
@@ -50,9 +51,9 @@ export default function ColorHub({
         </div>
       </div>
 
-      {colorTab === 'primitives' ? (
+      {colorTab === 'gradients' ? (
         <div className="flex-1 min-h-0 overflow-y-auto p-8">
-          <Step2_ColorPalette previewTheme={previewTheme} />
+          <StepGradients />
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex flex-col p-8">

@@ -23,7 +23,6 @@ import { type SectionKey } from '../lib/sectionExport'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
-import StepGradients from '../components/configurator/StepGradients'
 import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
@@ -57,7 +56,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Home',
     hint: 'Your components, live from your tokens',
     title: 'Home',
-    subtitle: 'Your components, rendered live from your tokens — try an accent and make it yours.',
+    subtitle: 'Design Token Generator',
     // Rendered via a special case in the shell (needs the onOpenFoundation callback).
     Component: () => null,
     Icon: ic('M3 10.5 12 3l9 7.5M5 9.5V20h4.5v-5.5h5V20H19V9.5', '1.8'),
@@ -68,7 +67,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Color',
     hint: 'Brand, neutrals & state scales',
     title: 'Color',
-    subtitle: 'Choose from the curated palette, each hue is vetted to generate an accessible scale.',
+    subtitle: 'Map your semantic aliases and craft the gradients your system ships with.',
     Component: Step2_ColorPalette,
     Icon: ic('M12 22a7 7 0 0 0 7-7c0-3-7-12-7-12S5 12 5 15a7 7 0 0 0 7 7Z', '1.8'),
   },
@@ -91,16 +90,6 @@ const FOUNDATIONS: FoundationSection[] = [
     subtitle: 'Choose the corner-radius personality of your system — from sharp to pill.',
     Component: StepRadius,
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
-  },
-  {
-    key: 'gradients',
-    label: 'Gradients',
-    short: 'Grad',
-    hint: 'Brand gradients for covers & avatars',
-    title: 'Gradients',
-    subtitle: 'Craft brand gradients and assign them to covers and avatars — exported as tokens.',
-    Component: StepGradients,
-    Icon: ic('M4 4h16v16H4zM4 14l4-4 4 4 4-4 4 4', '1.8'),
   },
   {
     key: 'icons',
@@ -246,7 +235,7 @@ export default function Configurator() {
   // Active Semantic category — shared with the table (master nav) and the preview,
   // so the right panel mirrors whichever token group is being edited.
   const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
-  // Sub-tab within the Color hub (Primitives ↔ Alias/Semantics). The preview
+  // Sub-tab within the Color hub (Alias/Semantics ↔ Gradients). The preview
   // mirrors the semantic category only while the semantics tab is active.
   const [colorTab, setColorTab] = useState<ColorTab>('semantics')
   // Single preview theme shared across the whole workspace — Home's Quick edit
@@ -273,6 +262,17 @@ export default function Configurator() {
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Foundation sections (not Home) can export their token slice.
   const canExportSection = tab === 'foundations' && !exportMode && activeFoundation !== 'home'
+
+  // ── Chrome accent — the UI's own highlight color (table active states,
+  // modified dots, previewed-theme tints via `accent-ui`) tracks the system's
+  // primary, adjusted for readability on dark chrome like the header/rail.
+  const uiAccent =
+    theme === 'dark'
+      ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a')
+      : primaryScale[9] ?? primaryColor
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent-ui', uiAccent)
+  }, [uiAccent])
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = primaryScale
@@ -372,7 +372,7 @@ export default function Configurator() {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     const Active = section.Component
     body = section.key === 'color' ? (
-      // Color hub manages its own per-tab scroll (Primitives scrolls; the Alias
+      // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
       // table self-scrolls with pinned headers) — no outer overflow here.
       <div className="h-full min-h-0">
         <ColorHub
@@ -540,7 +540,11 @@ export default function Configurator() {
             key: f.key,
             short: f.short,
             Icon: f.Icon,
-            secondary: ['opacity', 'shadow', 'grid', 'sizes'].includes(f.key),
+            // Figma-style split: token tables are Variables; the rest are Styles.
+            group:
+              f.key === 'home'
+                ? undefined
+                : (['icons', 'opacity', 'shadow', 'grid'].includes(f.key) ? ('styles' as const) : ('variables' as const)),
           }))}
           activeFoundation={railActive}
           onFoundationSelect={selectFoundation}

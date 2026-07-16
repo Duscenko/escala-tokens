@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
-import TokenTable from './TokenTable'
+import { useDesignStore, SIZES_DEFAULT } from '../../store/useDesignStore'
+import VariablesTable from './VariablesTable'
 
 export default function Step9_Sizes() {
   const { sizes, setSizes, primaryColor, primaryScale } = useDesignStore()
@@ -15,6 +15,39 @@ export default function Step9_Sizes() {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-8"
     >
+      {/* ── Variables table — Figma-style token rows ── */}
+      <VariablesTable
+        title="Size tokens"
+        searchLabel="Filter size tokens"
+        groups={[
+          {
+            valueLabel: 'Height',
+            rows: Object.entries(sizes).map(([key, value]) => {
+              const px = parseFloat(value) || 0
+              const standard = SIZES_DEFAULT[key]
+              return {
+                name: `size-${key}`,
+                value,
+                modified: standard !== undefined && value !== standard,
+                onChange: (v: string) => setSizes({ ...sizes, [key]: v }),
+                onReset: () => setSizes({ ...sizes, [key]: standard ?? value }),
+                preview: (
+                  <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max((px / maxPx) * 100, 2)}%`,
+                        backgroundColor: accent + '88',
+                      }}
+                    />
+                  </div>
+                ),
+              }
+            }),
+          },
+        ]}
+      />
+
       {/* ── Height-bar preview: component sizes side by side ── */}
       <div className="flex flex-col gap-3">
         <label className="text-sm text-fg-muted uppercase tracking-wide">Component Sizes</label>
@@ -46,38 +79,6 @@ export default function Step9_Sizes() {
             )
           })}
         </div>
-      </div>
-
-      {/* ── Editable table ── */}
-      <TokenTable
-        tokens={sizes}
-        prefix="size"
-        onChange={(key, value) => setSizes({ ...sizes, [key]: value })}
-        searchPlaceholder="Filter size tokens…"
-        renderPreview={(_, value) => {
-          const px = parseFloat(value) || 0
-          return (
-            <div className="flex-1 h-2 bg-elevated rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.max((px / maxPx) * 100, 2)}%`,
-                  backgroundColor: accent + '88',
-                }}
-              />
-            </div>
-          )
-        }}
-      />
-
-      {/* ── Token preview ── */}
-      <div className="rounded-lg bg-surface border border-line p-4">
-        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
-{`:root {
-${Object.entries(sizes).map(([k, v]) => `  --size-${k}: ${v};`).join('\n')}
-}`}
-        </pre>
       </div>
     </motion.div>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
+import VariablesTable from './VariablesTable'
 
 // Base unit presets
 const BASE_PRESETS = [
@@ -10,6 +11,7 @@ const BASE_PRESETS = [
 ]
 
 const SPACING_STEPS = ['1', '2', '3', '4', '6', '8', '10', '12', '16'] as const
+const DEFAULT_BASE = 4
 
 function pxToNum(val: string): number {
   return parseFloat(val.replace('px', '')) || 0
@@ -30,43 +32,51 @@ const PADDING_SIDES = [
   { key: 'left', label: 'Left' },
 ] as const
 
+const PADDING_STANDARD = '20px'
+
+// Mini card showing which side the padding token insets.
+function PaddingPreview({ side, value }: { side: 'top' | 'right' | 'bottom' | 'left'; value: string }) {
+  const px = Math.max(2, Math.min(pxToNum(value) / 2, 12))
+  const pos =
+    side === 'top' ? { top: 0, left: 0, right: 0, height: px }
+    : side === 'bottom' ? { bottom: 0, left: 0, right: 0, height: px }
+    : side === 'left' ? { left: 0, top: 0, bottom: 0, width: px }
+    : { right: 0, top: 0, bottom: 0, width: px }
+  return (
+    <div className="relative w-12 h-7 rounded border border-line-strong bg-elevated overflow-hidden flex-shrink-0">
+      <div className="absolute bg-fg/25" style={pos} />
+    </div>
+  )
+}
+
 export default function Step5_Spacing() {
   const { spacing, setSpacing, padding, setPadding, primaryColor, themes } = useDesignStore()
 
-  const [baseUnit, setBaseUnit] = useState(4)
-  const [editingSpacing, setEditingSpacing] = useState<Record<string, string>>(spacing)
+  // Infer the active base from step 1 so the chips reflect a saved 8px scale.
+  const [baseUnit, setBaseUnit] = useState(() => pxToNum(spacing['1'] ?? '4px') || DEFAULT_BASE)
 
-  // Max bar width relative to largest value
-  const maxSpacingPx = Math.max(...Object.values(editingSpacing).map(pxToNum))
+  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
+
+  const valueOf = (step: string) => spacing[step] ?? `${Number(step) * baseUnit}px`
+  const maxSpacingPx = Math.max(...SPACING_STEPS.map((s) => pxToNum(valueOf(s))), 1)
 
   function applyBase(base: number) {
     setBaseUnit(base)
-    const next = buildSpacingFromBase(base)
-    setEditingSpacing(next)
-    setSpacing(next)
+    setSpacing(buildSpacingFromBase(base))
   }
-
-  function handleSpacingInput(step: string, raw: string) {
-    const next = { ...editingSpacing, [step]: raw }
-    setEditingSpacing(next)
-    setSpacing(next)
-  }
-
-  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-12"
+      className="flex flex-col gap-6"
     >
-      {/* ── Spacing ── */}
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-fg-muted uppercase tracking-wide">Spacing Scale</label>
-          {/* Base unit picker */}
-          <div className="flex items-center gap-2">
+      <VariablesTable
+        title="Spacing tokens"
+        searchLabel="Filter spacing tokens"
+        toolbar={
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs text-fg-faint">Base unit</span>
             <div className="flex gap-1">
               {BASE_PRESETS.map((p) => (
@@ -84,105 +94,54 @@ export default function Step5_Spacing() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Scale rows */}
-        <div className="flex flex-col gap-2">
-          {SPACING_STEPS.map((step, i) => {
-            const val = editingSpacing[step] ?? `${Number(step) * baseUnit}px`
-            const px = pxToNum(val)
-            const barW = maxSpacingPx > 0 ? (px / maxSpacingPx) * 100 : 0
-
-            return (
-              <motion.div
-                key={step}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3"
-              >
-                {/* Step label */}
-                <span className="text-xs font-mono text-fg-faint w-5 text-right flex-shrink-0">
-                  {step}
-                </span>
-
-                {/* Bar */}
-                <div className="flex-1 h-6 bg-surface rounded-md overflow-hidden relative">
-                  <motion.div
-                    layout
-                    className="h-full rounded-md"
-                    style={{
-                      width: `${Math.max(barW, 2)}%`,
-                      backgroundColor: accentColor + '55',
-                      borderRight: `2px solid ${accentColor}`,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                </div>
-
-                {/* Editable value */}
-                <div className="w-20 flex-shrink-0">
-                  <input
-                    type="text"
-                    value={val}
-                    onChange={(e) => handleSpacingInput(step, e.target.value)}
-                    className="w-full bg-surface border border-line focus:border-fg rounded px-2 py-1 text-xs font-mono text-fg outline-none transition-colors text-right"
-                  />
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Surface padding ── the per-side inset padded surfaces use (cards,
-          tiles, panels). Same `padding` token Quick edit's Padding row writes. */}
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-fg-muted uppercase tracking-wide">Surface padding</label>
-          <p className="text-xs text-fg-faint">Per-side inset for padded surfaces — cards, tiles, panels. Exported as <code className="font-mono">--padding-*</code>.</p>
-        </div>
-        <div className="grid grid-cols-4 gap-3 max-w-md">
-          {PADDING_SIDES.map((side) => {
-            const raw = padding?.[side.key] ?? '20px'
-            const value = parseInt(raw, 10)
-            return (
-              <label key={side.key} className="flex flex-col gap-1.5">
-                <span className="text-xs text-fg-faint">{side.label}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={99}
-                  value={Number.isFinite(value) ? value : 20}
-                  onChange={(e) => {
-                    const n = Math.max(0, Math.min(99, Number(e.target.value) || 0))
-                    setPadding({ ...padding, [side.key]: `${n}px` })
-                  }}
-                  aria-label={`Surface padding ${side.label.toLowerCase()}`}
-                  className="w-full bg-surface border border-line focus:border-fg rounded px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </label>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Token preview ── */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="rounded-lg bg-surface border border-line p-4"
-      >
-        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
-{`:root {
-${SPACING_STEPS.map(
-  (s) => `  --spacing-${s}: ${editingSpacing[s] ?? `${Number(s) * baseUnit}px`};`
-).join('\n')}
-}`}
-        </pre>
-      </motion.div>
+        }
+        groups={[
+          {
+            label: 'Spacing scale',
+            valueLabel: 'Value',
+            rows: SPACING_STEPS.map((step) => {
+              const value = valueOf(step)
+              const standard = `${Number(step) * DEFAULT_BASE}px`
+              const barW = (pxToNum(value) / maxSpacingPx) * 100
+              return {
+                name: `spacing-${step}`,
+                value,
+                modified: value !== standard,
+                onChange: (v: string) => setSpacing({ ...spacing, [step]: v }),
+                onReset: () => setSpacing({ ...spacing, [step]: standard }),
+                preview: (
+                  <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.max(barW, 2)}%`,
+                        backgroundColor: accentColor + '88',
+                      }}
+                    />
+                  </div>
+                ),
+              }
+            }),
+          },
+          {
+            // Per-side inset padded surfaces use (cards, tiles, panels) — the
+            // same `padding` token Quick edit's Padding row writes.
+            label: 'Surface padding',
+            valueLabel: 'Value',
+            rows: PADDING_SIDES.map((side) => {
+              const value = padding?.[side.key] ?? PADDING_STANDARD
+              return {
+                name: `padding-${side.key}`,
+                value,
+                modified: value !== PADDING_STANDARD,
+                onChange: (v: string) => setPadding({ ...padding, [side.key]: v }),
+                onReset: () => setPadding({ ...padding, [side.key]: PADDING_STANDARD }),
+                preview: <PaddingPreview side={side.key} value={value} />,
+              }
+            }),
+          },
+        ]}
+      />
     </motion.div>
   )
 }

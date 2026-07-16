@@ -3,7 +3,7 @@
 // strip, the brand↔neutral link toggle, and the info dot. Kept presentational
 // (no store writes) so callers own their own state.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -32,6 +32,28 @@ export const BACKGROUND_OPTIONS: { label: string; hex: string }[] = [
   { label: 'Cream',      hex: '#fdfbf7' },
   { label: 'Ivory',      hex: '#fffcf0' },
 ]
+
+// ── State-colour presets ───────────────────────────────────────────────────
+// The curated options per status role, shared by Foundations · Color's pills and
+// Home's Background & State Colors panel so both offer the same swatches.
+export const STATE_PRESETS: Record<'error' | 'warning' | 'success' | 'info', { label: string; hex: string }[]> = {
+  error: [
+    { hex: '#f04438', label: 'Red 500' }, { hex: '#d92d20', label: 'Red 600' },
+    { hex: '#ef4444', label: 'Tailwind Red' }, { hex: '#e11d48', label: 'Rose' },
+  ],
+  success: [
+    { hex: '#17b26a', label: 'Green 500' }, { hex: '#079455', label: 'Green 600' },
+    { hex: '#10b981', label: 'Emerald' }, { hex: '#22c55e', label: 'Green 400' },
+  ],
+  warning: [
+    { hex: '#f79009', label: 'Amber 500' }, { hex: '#f59e0b', label: 'Amber' },
+    { hex: '#dc6803', label: 'Orange 600' }, { hex: '#f97316', label: 'Orange' },
+  ],
+  info: [
+    { hex: '#2e90fa', label: 'Blue 400' }, { hex: '#3b82f6', label: 'Blue' },
+    { hex: '#0ea5e9', label: 'Sky' }, { hex: '#06b6d4', label: 'Cyan' },
+  ],
+}
 
 export type Option = { label: string; hex: string }
 // `badge` marks a group's provenance in the dropdown — 'Tested' for the
@@ -93,6 +115,10 @@ export function ColorSelect({
   variant = 'full',
   accentColor,
   allowCustom = false,
+  previewSwatches,
+  extras,
+  panelClassName,
+  groupsLabel,
 }: {
   label?: string
   value: string
@@ -102,6 +128,18 @@ export function ColorSelect({
   accentColor?: string
   /** Renders a "Custom" row (native picker + hex field) as the dropdown's first option. */
   allowCustom?: boolean
+  /** Extra content appended below the option groups (e.g. the state-colour editors). */
+  extras?: ReactNode
+  /** Overrides the dropdown panel's width/height — for panels carrying `extras`. */
+  panelClassName?: string
+  /** Heading shown above the preset groups when the panel holds more than one section. */
+  groupsLabel?: string
+  /**
+   * Read-only companion swatches shown next to `value` on the trigger button
+   * (e.g. the status colors alongside Background) — decorative preview only,
+   * the dropdown still edits `value` alone. Replaces the hex/label text.
+   */
+  previewSwatches?: { hex: string; label: string }[]
 }) {
   const compact = variant === 'compact'
   const pill = variant === 'pill'
@@ -206,15 +244,26 @@ export function ColorSelect({
           className={
             compact
               ? 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors'
-              : 'w-full flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left'
+              : 'w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left'
           }
         >
-          <span className={`${compact ? 'w-5 h-5' : 'w-4 h-4'} rounded-full flex-shrink-0 ring-1 ring-black/10`} style={{ backgroundColor: value }} />
-          {!compact && (
-            <span className="flex-1 min-w-0 truncate text-sm text-fg font-mono">
-              {value}
-              {selected && <span className="text-fg-faint font-sans"> ({selected.label})</span>}
+          {previewSwatches ? (
+            <span className="flex-1 min-w-0 flex items-center gap-1.5">
+              <span className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: value }} title={`Background — ${value}`} />
+              {previewSwatches.map((s) => (
+                <span key={s.label} className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: s.hex }} title={`${s.label} — ${s.hex}`} />
+              ))}
             </span>
+          ) : (
+            <>
+              <span className={`${compact ? 'w-5 h-5 rounded-full' : 'w-[18px] h-[18px] rounded-[4px]'} flex-shrink-0 ring-1 ring-black/10`} style={{ backgroundColor: value }} />
+              {!compact && (
+                <span className="flex-1 min-w-0 truncate text-sm text-fg font-mono">
+                  {value}
+                  {selected && <span className="text-fg-faint font-sans"> ({selected.label})</span>}
+                </span>
+              )}
+            </>
           )}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
             <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -229,7 +278,7 @@ export function ColorSelect({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.12 }}
               role="listbox"
-              className={`absolute z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${compact ? 'right-0 w-56' : 'w-full'}`}
+              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? (compact ? 'right-0 w-56 max-h-72' : 'w-full max-h-72')}`}
             >
               {allowCustom && (
                 <div className="mb-1 border-b border-line pb-1.5">
@@ -272,6 +321,9 @@ export function ColorSelect({
                     </div>
                   )}
                 </div>
+              )}
+              {groupsLabel && (
+                <div className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-fg">{groupsLabel}</div>
               )}
               {groups.map((g) => (
                 <div key={g.label || 'all'}>
@@ -319,6 +371,7 @@ export function ColorSelect({
                   })}
                 </div>
               ))}
+              {extras}
             </motion.div>
           )}
         </AnimatePresence>
@@ -327,11 +380,121 @@ export function ColorSelect({
   )
 }
 
+// ── State-colour editors (the Background & State Colors panel's lower half) ──
+// One row per status role: a swatch that expands the full HSV picker inline, a
+// live hex field, and the curated presets. Rendered INSIDE ColorSelect's
+// scrolling dropdown, so everything expands in place — a nested popover would
+// clip against the panel's overflow.
+
+function StateColorRow({ role, label, value, onChange }: { role: string; label: string; value: string; onChange: (hex: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(value.replace(/^#/, '').toUpperCase())
+
+  // Keep the field in step when the value changes from outside (preset click,
+  // "match to accent"), but never fight the user mid-type.
+  useEffect(() => { if (!open) setDraft(value.replace(/^#/, '').toUpperCase()) }, [value, open])
+
+  function handleDraft(raw: string) {
+    const cleaned = raw.replace(/[^0-9a-fA-F]/g, '').slice(0, 6)
+    setDraft(cleaned.toUpperCase())
+    if (cleaned.length === 6) onChange(`#${cleaned.toLowerCase()}`)
+  }
+
+  return (
+    <div className="px-2 py-1">
+      <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={`Toggle ${label} picker`}
+          aria-expanded={open}
+          className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10"
+          style={{ backgroundColor: value }}
+        />
+        <span className="flex-1 text-sm text-fg">{label}</span>
+        <span className="text-[11px] font-mono text-fg-faint">#</span>
+        <input
+          value={draft}
+          onChange={(e) => handleDraft(e.target.value)}
+          spellCheck={false}
+          aria-label={`${label} hex`}
+          className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
+        />
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? `Hide ${label} picker` : `Show ${label} picker`}
+          className="flex-shrink-0 text-fg-faint hover:text-fg transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+      {open && (
+        <div className="pt-2 flex flex-col gap-2">
+          <div className="flex items-center gap-1.5">
+            {STATE_PRESETS[role as keyof typeof STATE_PRESETS].map((p) => (
+              <button
+                key={p.hex}
+                type="button"
+                onClick={() => onChange(p.hex)}
+                title={`${p.label} — ${p.hex}`}
+                aria-label={`${label}: ${p.label}`}
+                className={`w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 transition-shadow ${
+                  p.hex.toLowerCase() === value.toLowerCase() ? 'ring-fg ring-offset-1 ring-offset-app' : 'ring-black/10'
+                }`}
+                style={{ backgroundColor: p.hex }}
+              />
+            ))}
+          </div>
+          <ColorPickerPanel value={value} onChange={onChange} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function StateColorRows({
+  error, warning, success, info, onChange, onMatchAccent,
+}: {
+  error: string; warning: string; success: string; info: string
+  onChange: (role: 'error' | 'warning' | 'success' | 'info', hex: string) => void
+  onMatchAccent?: () => void
+}) {
+  const rows: { role: 'error' | 'warning' | 'success' | 'info'; label: string; value: string }[] = [
+    { role: 'error',   label: 'Error',   value: error },
+    { role: 'success', label: 'Success', value: success },
+    { role: 'warning', label: 'Warning', value: warning },
+    { role: 'info',    label: 'Info',    value: info },
+  ]
+  return (
+    <div className="mt-1 border-t border-line pt-1.5">
+      <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1">
+        <span className="text-[11px] font-semibold text-fg">State colors</span>
+        {onMatchAccent && (
+          <button
+            type="button"
+            onClick={onMatchAccent}
+            className="text-[11px] text-fg-muted hover:text-fg underline underline-offset-2 transition-colors"
+          >
+            Match to accent
+          </button>
+        )}
+      </div>
+      {rows.map((r) => (
+        <StateColorRow key={r.role} role={r.role} label={r.label} value={r.value} onChange={(hex) => onChange(r.role, hex)} />
+      ))}
+    </div>
+  )
+}
+
 // ── Scale row (12 tones, BASE marker) ──────────────────────────────────────
 
-export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, labels }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[] }) {
+export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default' }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[]; size?: 'default' | 'thin' }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
+  const thin = size === 'thin'
   return (
     <div className="grid grid-cols-12 gap-1.5">
       {entries.map(([key, color], i) => {
@@ -344,7 +507,7 @@ export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, lab
               <span className="text-[9px] text-fg-faint text-center font-mono tabular-nums leading-none truncate">{labels?.[i] ?? key}</span>
             )}
             <div
-              className={`h-11 rounded-lg flex items-center justify-center ${isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''}`}
+              className={`${thin ? 'h-[19px]' : 'h-11'} rounded-lg flex items-center justify-center ${isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''}`}
               style={{ backgroundColor: color }}
               title={`Tone ${key} — ${color}`}
             >

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
+import VariablesTable from './VariablesTable'
 
 // Radius presets — each defines the full none→full ramp, named by personality.
 export const RADIUS_PRESETS = [
@@ -28,6 +29,10 @@ export const RADIUS_PRESETS = [
 
 export const RADIUS_STEPS = ['none', 'sm', 'md', 'lg', 'full'] as const
 
+// The system standard the per-token reset returns to (the Soft preset — the
+// same ramp makeDesignDefaults seeds).
+const RADIUS_STANDARD: Record<string, string> = RADIUS_PRESETS[1].values
+
 function pxToNum(val: string): number {
   return parseFloat(val.replace('px', '')) || 0
 }
@@ -52,7 +57,7 @@ export default function StepRadius() {
     setRadius(preset.values)
   }
 
-  function fineTune(step: string, raw: string) {
+  function setStep(step: string, raw: string) {
     const next = { ...radius, [step]: raw }
     setRadius(next)
     setSelectedPreset(matchRadiusPreset(next))
@@ -79,63 +84,8 @@ export default function StepRadius() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-12"
+      className="flex flex-col gap-6"
     >
-      {/* ── Preset personalities ── */}
-      <div className="flex flex-col gap-5">
-        <label className="text-sm text-fg-muted uppercase tracking-wide">Border Radius</label>
-
-        <div className="grid grid-cols-2 gap-3">
-          {RADIUS_PRESETS.map((preset) => {
-            const isSelected = selectedPreset === preset.label
-            return (
-              <button
-                key={preset.label}
-                onClick={() => applyPreset(preset)}
-                className={`p-4 rounded-xl text-left transition-all flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                  isSelected
-                    ? 'bg-elevated ring-2 ring-fg/50 border border-fg/30'
-                    : 'bg-surface border border-line hover:border-line-strong'
-                }`}
-              >
-                {/* Shape previews */}
-                <div className="flex items-end gap-2">
-                  {(['sm', 'md', 'lg', 'full'] as const).map((step) => {
-                    const r = preset.values[step]
-                    const size = step === 'sm' ? 20 : step === 'md' ? 28 : step === 'lg' ? 36 : 28
-                    return (
-                      <div
-                        key={step}
-                        style={{
-                          width: size,
-                          height: size,
-                          borderRadius: r,
-                          backgroundColor: isSelected ? accentColor + '33' : 'var(--elevated)',
-                          border: `1.5px solid ${isSelected ? accentColor + '88' : 'var(--line-strong)'}`,
-                        }}
-                      />
-                    )
-                  })}
-                </div>
-                <div>
-                  <p className={`text-sm font-medium ${isSelected ? 'text-fg' : 'text-fg-muted'}`}>
-                    {preset.label}
-                  </p>
-                  <p className="text-xs text-fg-faint mt-0.5">{preset.description}</p>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {Object.entries(preset.values).map(([k, v]) => (
-                    <span key={k} className="text-[10px] font-mono text-fg-faint">
-                      {k}: {v}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       {/* ── Scale slider — grade the overall roundness in one move ── */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -167,49 +117,59 @@ export default function StepRadius() {
         </div>
       </div>
 
-      {/* ── Per-step fine-tune ── */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs text-fg-faint uppercase tracking-wider">Fine-tune</span>
-        <div className="grid grid-cols-5 gap-2">
-          {RADIUS_STEPS.map((step) => (
-            <div key={step} className="flex flex-col gap-1">
-              <label className="text-[11px] text-fg-faint font-mono text-center">{step}</label>
-              <input
-                type="text"
-                value={radius[step] ?? '0px'}
-                onChange={(e) => fineTune(step, e.target.value)}
-                className="bg-surface border border-line focus:border-fg rounded-lg px-2 py-1.5 text-xs font-mono text-fg outline-none transition-colors text-center"
-              />
-              {/* Mini shape preview */}
-              <div
-                className="mx-auto mt-1"
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: radius[step] ?? '0px',
-                  backgroundColor: accentColor + '22',
-                  border: `1.5px solid ${accentColor}55`,
-                }}
-              />
+      {/* ── Variables table — Figma-style token rows ── */}
+      <VariablesTable
+        title="Radius tokens"
+        searchLabel="Filter radius tokens"
+        toolbar={
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-fg-faint">Preset</span>
+            <div className="flex gap-1">
+              {RADIUS_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => applyPreset(preset)}
+                  title={preset.description}
+                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                    selectedPreset === preset.label
+                      ? 'bg-fg text-app'
+                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Token preview ── */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="rounded-lg bg-surface border border-line p-4"
-      >
-        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
-{`:root {
-${RADIUS_STEPS.map((s) => `  --radius-${s}: ${radius[s] ?? '0px'};`).join('\n')}
-}`}
-        </pre>
-      </motion.div>
+          </div>
+        }
+        groups={[
+          {
+            valueLabel: 'Radius',
+            rows: RADIUS_STEPS.map((step) => {
+              const value = radius[step] ?? '0px'
+              return {
+                name: `radius-${step}`,
+                value,
+                modified: value !== RADIUS_STANDARD[step],
+                onChange: (v: string) => setStep(step, v),
+                onReset: () => setStep(step, RADIUS_STANDARD[step]),
+                preview: (
+                  <div
+                    className="flex-shrink-0"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: value,
+                      backgroundColor: accentColor + '22',
+                      border: `1.5px solid ${accentColor}55`,
+                    }}
+                  />
+                ),
+              }
+            }),
+          },
+        ]}
+      />
     </motion.div>
   )
 }

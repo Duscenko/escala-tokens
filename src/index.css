@@ -14,6 +14,10 @@
   --color-fg-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  /* Chrome accent — tracks the system's primary color (set at runtime by the
+     Configurator shell; adjusted per theme for readability). Used by table
+     active states, modified dots and previewed-theme highlights. */
+  --color-accent-ui: var(--accent-ui);
 }
 
 :root {
@@ -26,6 +30,8 @@
   --fg-faint: #737373;
   --line: #e5e5e5;
   --line-strong: #d4d4d4;
+  /* Fallback until the shell derives it from the primary scale. */
+  --accent-ui: #7f56d9;
 
   font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0.18px;

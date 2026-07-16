@@ -7,6 +7,8 @@ import {
   type Role, type ScaleSource, type GlobalScales,
 } from '../../lib/semanticRoles'
 import AddThemeModal from './AddThemeModal'
+import { useEnsureColorScales } from '../../lib/colorActions'
+import { BRAND_GROUPS, findOption } from './colorControls'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -109,7 +111,7 @@ function SlidersIcon({ active }: { active: boolean }) {
     <svg
       width="15" height="15" viewBox="0 0 14 14" fill="none"
       stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"
-      className={`transition-colors ${active ? 'text-[#5AADFF]' : 'text-fg-faint group-hover:text-fg-muted'}`}
+      className={`transition-colors ${active ? 'text-accent-ui' : 'text-fg-faint group-hover:text-fg-muted'}`}
     >
       <line x1="3" y1="2" x2="3" y2="12" />
       <line x1="7" y1="2" x2="7" y2="12" />
@@ -146,7 +148,7 @@ function TonePicker({
           <div key={key} className="flex flex-col items-center gap-0.5">
             <div className="h-2 flex items-end justify-center">
               {isSelected && (
-                <svg width="6" height="4" viewBox="0 0 6 4" className="text-[#5AADFF] flex-shrink-0">
+                <svg width="6" height="4" viewBox="0 0 6 4" className="text-accent-ui flex-shrink-0">
                   <path d="M3 4L0 0h6L3 4z" fill="currentColor" />
                 </svg>
               )}
@@ -156,7 +158,7 @@ function TonePicker({
               title={`Tone ${key} — ${color}${isRecommended ? ' · recommended' : ''}`}
               className={`${size} rounded-md transition-all duration-150 ${
                 isSelected
-                  ? 'ring-2 ring-[#5AADFF] ring-offset-[3px] ring-offset-app scale-125 shadow-[0_0_8px_rgba(0,136,255,0.35)]'
+                  ? 'ring-2 ring-accent-ui ring-offset-[3px] ring-offset-app scale-125 shadow-[0_0_8px_rgba(0,136,255,0.35)]'
                   : 'ring-1 ring-black/10 dark:ring-white/10 hover:scale-110 hover:ring-black/20 dark:hover:ring-white/20'
               }`}
               style={{ backgroundColor: color }}
@@ -164,9 +166,9 @@ function TonePicker({
             />
             <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${
               isSelected
-                ? 'text-[#5AADFF] font-semibold'
+                ? 'text-accent-ui font-semibold'
                 : isRecommended
-                ? 'text-[#5AADFF]/70'
+                ? 'text-accent-ui/70'
                 : 'text-fg-faint'
             }`}>
               {key}
@@ -187,6 +189,8 @@ type ThemeCol = {
   scale: Record<number, string>
   value: string
   recTone: number
+  /** This theme is the one shown in the live preview — its column is tinted. */
+  previewed?: boolean
 }
 
 /** Eye glyph — open (active = previewed theme) vs. struck-through (inactive). */
@@ -260,18 +264,20 @@ function MatrixRow({
               </svg>
             </span>
             <code className="font-mono text-[12px] text-fg-muted truncate" title={role.label}>{role.label}</code>
-            {modified && <span className="w-1.5 h-1.5 rounded-full bg-[#5AADFF] flex-shrink-0" title="Modified from recommended" />}
+            {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from recommended" />}
           </button>
         </div>
 
-        {/* One value cell per theme */}
+        {/* One value cell per theme — the previewed theme's column is tinted */}
         {cols.map((col) => {
           const tone = toneIndexOf(col.scale, col.value)
           return (
             <button
               key={col.key}
               onClick={onToggle}
-              className="flex items-center min-w-0 px-3 py-3 text-left border-r border-line"
+              className={`flex items-center min-w-0 px-3 py-3 text-left border-r border-line ${
+                col.previewed ? 'bg-accent-ui/[0.06]' : ''
+              }`}
               aria-label={`${col.key} value ${SCALE_META[role.scale].label}-${tone ?? '?'}`}
             >
               <AliasBadge scale={role.scale} tone={tone} color={col.value} />
@@ -326,7 +332,7 @@ function MatrixRow({
                 <button
                   onClick={onReset}
                   disabled={!modified}
-                  className="text-[10px] text-fg-faint hover:text-[#5AADFF] disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
+                  className="text-[10px] text-fg-faint hover:text-accent-ui disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
                   title="Reset every theme to recommended"
                 >
                   Reset to recommended
@@ -356,14 +362,19 @@ export default function Step3_SemanticTokens({
   onPreviewThemeChange?: (theme: string) => void
 } = {}) {
   const {
-    primaryScale, errorScale, warningScale, successScale, infoScale,
-    grayLightScale, grayDarkScale,
+    primaryColor, primaryScale, errorScale, warningScale, successScale, infoScale,
+    grayLightScale, grayDarkScale, customColors,
     themes, themeOrder, themeKinds, themePalettes,
     setThemeToken, removeTheme,
     panelBackground, setPanelBackground,
   } = useDesignStore()
 
   const reduce = useReducedMotion() ?? false
+
+  // Self-seed any ramp that's still empty (state scales on a system built from
+  // Home, which only generates brand + neutral) so the matrix never dead-ends
+  // on the "pick an accent first" gate while Home is already showing primitives.
+  useEnsureColorScales()
 
   // `grayDark` is what dark themes resolve their gray roles from. It MUST be
   // passed: the resync effect below rewrites any token that isn't a tone of its
@@ -400,6 +411,20 @@ export default function Step3_SemanticTokens({
     recHexFor(role, kind, scaleFor(theme, role, kind))
 
   const kindOf = (theme: string): 'light' | 'dark' => themeKinds[theme] ?? 'light'
+
+  // Column display name — built-in themes carry the chosen color family's name
+  // in front ("Purple light" / "Purple dark") so the matrix reads as *this*
+  // system's themes, matching Home's family dropdown. Custom themes keep the
+  // name the user gave them; an off-catalogue accent falls back to plain
+  // light/dark.
+  const themeDisplayName = (t: string): string => {
+    if (t !== 'light' && t !== 'dark') return t
+    const accent = primaryColor.toLowerCase()
+    const family =
+      findOption(BRAND_GROUPS, accent)?.label ??
+      customColors.find((c) => c.base.toLowerCase() === accent)?.label
+    return family ? `${family} ${t}` : t
+  }
 
   const isModified = (role: Role) =>
     themeCols.some((t) => {
@@ -555,13 +580,13 @@ export default function Step3_SemanticTokens({
                   aria-label={item.label}
                   aria-current={isActive}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                    isActive ? 'bg-elevated text-[#5AADFF] shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
                   <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{CATEGORY_ICON[item.key]}</span>
                   <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
                   {mod > 0 && (
-                    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#5AADFF]" aria-hidden />
+                    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" aria-hidden />
                   )}
                 </button>
                 {/* Hover tooltip — the category's description; the label now shows inline */}
@@ -584,20 +609,30 @@ export default function Step3_SemanticTokens({
               <span className="pl-4 py-3 border-r border-line">Token name</span>
               {themeCols.map((t) => {
                 const isPreviewed = previewTheme === t
+                const displayName = themeDisplayName(t)
                 return (
-                  <span key={t} className="flex items-center gap-1 px-2 py-3 border-r border-line min-w-0">
+                  <span
+                    key={t}
+                    className={`flex items-center gap-1 px-1.5 py-2 border-r border-line min-w-0 ${
+                      isPreviewed ? 'bg-accent-ui/[0.06]' : ''
+                    }`}
+                  >
+                    {/* Whole name is the toggle — the active theme reads as a
+                        highlighted pill (same language as the category rail). */}
                     <button
                       onClick={() => onPreviewThemeChange?.(t)}
-                      aria-label={isPreviewed ? `${t} is shown in preview` : `Preview theme ${t}`}
+                      aria-label={isPreviewed ? `${displayName} is shown in preview` : `Preview theme ${displayName}`}
                       aria-pressed={isPreviewed}
-                      title={isPreviewed ? `${t} — shown in preview` : `Show ${t} in the preview`}
-                      className={`flex-shrink-0 transition-colors ${
-                        isPreviewed ? 'text-[#5AADFF]' : 'text-fg-faint hover:text-fg-muted'
+                      title={isPreviewed ? `${displayName} — shown in preview` : `Show ${displayName} in the preview`}
+                      className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
+                        isPreviewed
+                          ? 'bg-elevated text-accent-ui shadow-sm'
+                          : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
                       }`}
                     >
                       <EyeIcon active={isPreviewed} />
+                      <span className="truncate">{displayName}</span>
                     </button>
-                    <span className="truncate">{t}</span>
                     {t !== 'light' && t !== 'dark' && (
                       <button
                         onClick={() => removeTheme(t)}
@@ -634,6 +669,7 @@ export default function Step3_SemanticTokens({
                       scale: scaleFor(t, role, kind),
                       value: themes[t]?.[role.key] ?? '',
                       recTone: recToneFor(role, kind, scaleFor(t, role, kind)),
+                      previewed: previewTheme === t,
                     }
                   })}
                   modified={isModified(role)}

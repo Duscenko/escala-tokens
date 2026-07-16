@@ -8,7 +8,7 @@ import {
 } from '../../lib/colorUtils'
 import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
-  ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand,
+  ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
   BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
 } from './colorControls'
 
@@ -429,18 +429,10 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
         <div className="flex items-center gap-3">
           <LinkToggle active={statesLinked} onClick={toggleStatesLink} accentColor={primaryScale[7] ?? primaryColor} />
           <div className="grid grid-cols-2 gap-2.5 flex-1">
-            <ColorSelect variant="pill" label="Error" value={errorColor} onChange={regenerateError} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
-              { hex: '#f04438', label: 'Red 500' }, { hex: '#d92d20', label: 'Red 600' }, { hex: '#ef4444', label: 'Tailwind Red' }, { hex: '#e11d48', label: 'Rose' },
-            ] }]} />
-            <ColorSelect variant="pill" label="Success" value={successColor} onChange={regenerateSuccess} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
-              { hex: '#17b26a', label: 'Green 500' }, { hex: '#079455', label: 'Green 600' }, { hex: '#10b981', label: 'Emerald' }, { hex: '#22c55e', label: 'Green 400' },
-            ] }]} />
-            <ColorSelect variant="pill" label="Warning" value={warningColor} onChange={regenerateWarning} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
-              { hex: '#f79009', label: 'Amber 500' }, { hex: '#f59e0b', label: 'Amber' }, { hex: '#dc6803', label: 'Orange 600' }, { hex: '#f97316', label: 'Orange' },
-            ] }]} />
-            <ColorSelect variant="pill" label="Info" value={infoColor} onChange={regenerateInfo} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: [
-              { hex: '#2e90fa', label: 'Blue 400' }, { hex: '#3b82f6', label: 'Blue' }, { hex: '#0ea5e9', label: 'Sky' }, { hex: '#06b6d4', label: 'Cyan' },
-            ] }]} />
+            <ColorSelect variant="pill" label="Error" value={errorColor} onChange={regenerateError} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: STATE_PRESETS.error }]} />
+            <ColorSelect variant="pill" label="Success" value={successColor} onChange={regenerateSuccess} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: STATE_PRESETS.success }]} />
+            <ColorSelect variant="pill" label="Warning" value={warningColor} onChange={regenerateWarning} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: STATE_PRESETS.warning }]} />
+            <ColorSelect variant="pill" label="Info" value={infoColor} onChange={regenerateInfo} accentColor={primaryScale[7] ?? primaryColor} groups={[{ label: '', options: STATE_PRESETS.info }]} />
           </div>
         </div>
       </div>

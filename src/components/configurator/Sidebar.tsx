@@ -1,4 +1,4 @@
-import { type ComponentType, useState } from 'react'
+import { type ComponentType } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
 import { readableAccent } from '../../lib/colorUtils'
@@ -9,8 +9,12 @@ export interface RailFoundation {
   key: string
   short: string
   Icon: ComponentType
-  /** Secondary foundations collapse under the rail's "More" toggle. */
-  secondary?: boolean
+  /**
+   * Rail group, mirroring Figma's split: 'variables' (token tables — color,
+   * font, radius, spacing, sizes) vs 'styles' (icons, shadow, opacity, grid).
+   * Ungrouped items (Home) render above both groups.
+   */
+  group?: 'variables' | 'styles'
 }
 
 interface SidebarProps {
@@ -50,16 +54,13 @@ function SaveIcon() {
 }
 
 
-// Chevron that rotates when the "More" group is expanded.
-function MoreIcon({ open }: { open: boolean }) {
+// Tiny group caption — divides the rail into Variables / Styles, like Figma.
+function RailGroupLabel({ label }: { label: string }) {
   return (
-    <svg
-      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
-      className={`transition-transform ${open ? 'rotate-180' : ''}`}
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
+    <div className="w-full flex flex-col items-center gap-1 pt-2.5 pb-1" aria-hidden>
+      <span className="w-8 h-px bg-line" />
+      <span className="text-[9px] font-semibold uppercase tracking-widest text-fg-faint">{label}</span>
+    </div>
   )
 }
 
@@ -126,54 +127,42 @@ export default function Sidebar({
   // Labels sit directly on the rail gradient — near-black in dark mode, where
   // tone 9 (tuned for white surfaces) can turn unreadable.
   const labelAccent = theme === 'dark' ? readableAccent(accent, '#0a0a0a') : accent
-  const [moreOpen, setMoreOpen] = useState(false)
 
-  // Pre-creation the rail is empty. Once created, core foundations show always;
-  // secondary ones collapse under More.
-  const core = projectCreated ? foundations.filter((f) => !f.secondary) : []
-  const secondary = projectCreated ? foundations.filter((f) => f.secondary) : []
-  // Keep More open while one of its items is active, so the highlight is visible.
-  const secondaryActive = secondary.some((f) => f.key === activeFoundation)
-  const showSecondary = moreOpen || secondaryActive
+  // Pre-creation the rail is empty. Once created, ungrouped items (Home) sit
+  // on top, then the two labeled groups — Variables and Styles — like Figma's
+  // variables/styles split.
+  const ungrouped = projectCreated ? foundations.filter((f) => !f.group) : []
+  const variables = projectCreated ? foundations.filter((f) => f.group === 'variables') : []
+  const styles = projectCreated ? foundations.filter((f) => f.group === 'styles') : []
+
+  const renderItems = (items: RailFoundation[]) =>
+    items.map((f) => (
+      <RailItem
+        key={f.key}
+        Icon={f.Icon}
+        label={f.short}
+        active={activeFoundation === f.key}
+        accent={accent}
+        labelAccent={labelAccent}
+        onClick={() => onFoundationSelect(f.key)}
+      />
+    ))
 
   return (
     <nav className="w-20 flex-shrink-0 flex flex-col items-center px-1.5 pt-2 pb-3 min-h-0">
       <div className="flex-1 min-h-0 w-full overflow-y-auto">
         <div className="flex flex-col items-center gap-0.5 w-full">
-          {core.map((f) => (
-            <RailItem
-              key={f.key}
-              Icon={f.Icon}
-              label={f.short}
-              active={activeFoundation === f.key}
-              accent={accent}
-              labelAccent={labelAccent}
-              onClick={() => onFoundationSelect(f.key)}
-            />
-          ))}
-
-          {secondary.length > 0 && (
+          {renderItems(ungrouped)}
+          {variables.length > 0 && (
             <>
-              <RailItem
-                Icon={() => <MoreIcon open={showSecondary} />}
-                label={showSecondary ? 'Less' : 'More'}
-                active={false}
-                accent={accent}
-                labelAccent={labelAccent}
-                onClick={() => setMoreOpen((v) => !v)}
-              />
-              {showSecondary &&
-                secondary.map((f) => (
-                  <RailItem
-                    key={f.key}
-                    Icon={f.Icon}
-                    label={f.short}
-                    active={activeFoundation === f.key}
-                    accent={accent}
-                    labelAccent={labelAccent}
-                    onClick={() => onFoundationSelect(f.key)}
-                  />
-                ))}
+              <RailGroupLabel label="Variables" />
+              {renderItems(variables)}
+            </>
+          )}
+          {styles.length > 0 && (
+            <>
+              <RailGroupLabel label="Styles" />
+              {renderItems(styles)}
             </>
           )}
         </div>
