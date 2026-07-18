@@ -1,12 +1,15 @@
 import { useState, type ReactNode } from 'react'
 
-// Framed, filterable variables table shared by the Radius / Spacing / Sizes
-// foundations — the same Figma-like shell Typography and Color use: a top bar
-// (title · count · search), pinned column headers and zebra rows of
-// Token name · Value · Preview, with a per-row reset when the value drifts
-// from the standard.
+// Framed, filterable variables table shared by every token foundation (Radius ·
+// Spacing · Sizes · Opacity · Shadow · Grid) — the same Figma-like shell
+// Typography and Color use: a top bar (title · count · search), pinned column
+// headers and zebra rows of Token name · Value · Preview, with a per-row reset
+// when the value drifts from the standard.
 
 const GRID = 'grid grid-cols-[minmax(9rem,1fr)_7.5rem_minmax(8rem,1.5fr)_3rem]'
+// `wideValues` — for long CSS values (shadow ramps): the value column takes the
+// room and the preview shrinks to its swatch.
+const GRID_WIDE = 'grid grid-cols-[minmax(8rem,0.8fr)_minmax(14rem,2.5fr)_5rem_3rem]'
 
 export interface VariableRow {
   /** Full token name, rendered as code — e.g. `radius-md`. */
@@ -34,9 +37,9 @@ function ResetIcon() {
   )
 }
 
-function TableHeader({ valueLabel, stacked }: { valueLabel: string; stacked: boolean }) {
+function TableHeader({ valueLabel, stacked, grid }: { valueLabel: string; stacked: boolean; grid: string }) {
   return (
-    <div className={`${GRID} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10 ${stacked ? 'top-[34px]' : 'top-0'}`}>
+    <div className={`${grid} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10 ${stacked ? 'top-[34px]' : 'top-0'}`}>
       <span className="pl-4 py-3 border-r border-line">Token name</span>
       <span className="px-3 py-3 border-r border-line">{valueLabel}</span>
       <span className="px-3 py-3 border-r border-line">Preview</span>
@@ -54,9 +57,9 @@ function GroupLabel({ label, count }: { label: string; count: number }) {
   )
 }
 
-function rowClass(index: number) {
+function rowClass(index: number, grid: string) {
   const isEven = index % 2 === 1
-  return `${GRID} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+  return `${grid} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
     isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
   }`
 }
@@ -66,15 +69,19 @@ export default function VariablesTable({
   groups,
   toolbar,
   searchLabel = 'Filter tokens',
+  wideValues = false,
 }: {
   title: string
   groups: VariableGroup[]
   /** Rendered in the top bar between the title and the search box. */
   toolbar?: ReactNode
   searchLabel?: string
+  /** Give the value column the room (long CSS values, e.g. shadow ramps). */
+  wideValues?: boolean
 }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
+  const grid = wideValues ? GRID_WIDE : GRID
 
   const total = groups.reduce((n, g) => n + g.rows.length, 0)
   const filtered = groups
@@ -119,9 +126,9 @@ export default function VariablesTable({
         filtered.map((g) => (
           <div key={g.label ?? 'tokens'}>
             {stacked && g.label && <GroupLabel label={g.label} count={g.rows.length} />}
-            <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} />
+            <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} grid={grid} />
             {g.rows.map((r, i) => (
-              <div key={r.name} className={rowClass(i)}>
+              <div key={r.name} className={rowClass(i, grid)}>
                 <div className="flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line">
                   <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
                   {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}

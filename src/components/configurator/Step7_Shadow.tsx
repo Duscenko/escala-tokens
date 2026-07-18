@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
-import TokenTable from './TokenTable'
+import { useDesignStore, SHADOW_DEFAULT } from '../../store/useDesignStore'
+import VariablesTable from './VariablesTable'
 
 // Shadow presets — each defines the full xs→2xl elevation ramp, named by
 // intensity. Mirrors the Radius foundation's preset pattern (StepRadius.tsx)
@@ -61,15 +61,67 @@ export function matchShadowPreset(shadows: Record<string, string>): string | nul
 
 export default function Step7_Shadow() {
   const { shadows, setShadows } = useDesignStore()
+  const activePreset = matchShadowPreset(shadows)
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-8"
+      className="flex flex-col gap-6"
     >
-      {/* ── Elevation cards: one per level ── */}
+      {/* ── Variables table — Figma-style token rows ── */}
+      <VariablesTable
+        title="Shadow tokens"
+        searchLabel="Filter shadow tokens"
+        wideValues
+        toolbar={
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-fg-faint">Preset</span>
+            <div className="flex gap-1">
+              {SHADOW_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => setShadows(preset.values)}
+                  title={preset.description}
+                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                    activePreset === preset.label
+                      ? 'bg-fg text-app'
+                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        }
+        groups={[
+          {
+            valueLabel: 'Shadow',
+            rows: SHADOW_STEPS.map((step) => {
+              const value = shadows[step] ?? 'none'
+              const standard = SHADOW_DEFAULT[step]
+              return {
+                name: `shadow-${step}`,
+                value,
+                modified: standard !== undefined && value !== standard,
+                onChange: (v: string) => setShadows({ ...shadows, [step]: v }),
+                onReset: () => setShadows({ ...shadows, [step]: standard ?? value }),
+                preview: (
+                  <div
+                    className="w-9 h-9 rounded-lg bg-surface border border-line/40 flex-shrink-0"
+                    style={{ boxShadow: value }}
+                  />
+                ),
+              }
+            }),
+          },
+        ]}
+      />
+
+      {/* ── Elevation cards: one per level — the visual specimen sits below the
+          editable table, so you tune values first, then see the ramp. ── */}
       <div className="flex flex-col gap-3">
         <label className="text-sm text-fg-muted uppercase tracking-wide">Elevation</label>
         <div className="grid grid-cols-3 gap-4 rounded-xl border border-line bg-app p-6">
@@ -91,30 +143,6 @@ export default function Step7_Shadow() {
         </div>
       </div>
 
-      {/* ── Editable table ── */}
-      <TokenTable
-        tokens={shadows}
-        prefix="shadow"
-        onChange={(key, value) => setShadows({ ...shadows, [key]: value })}
-        searchPlaceholder="Filter shadow tokens…"
-        wideValues
-        renderPreview={(_, value) => (
-          <div
-            className="w-9 h-9 rounded-lg bg-surface border border-line/40 flex-shrink-0"
-            style={{ boxShadow: value }}
-          />
-        )}
-      />
-
-      {/* ── Token preview ── */}
-      <div className="rounded-lg bg-surface border border-line p-4">
-        <p className="text-xs text-fg-faint uppercase tracking-wider mb-3">Token preview</p>
-        <pre className="text-xs font-mono leading-relaxed text-fg-muted overflow-x-auto">
-{`:root {
-${Object.entries(shadows).map(([k, v]) => `  --shadow-${k}: ${v};`).join('\n')}
-}`}
-        </pre>
-      </div>
     </motion.div>
   )
 }

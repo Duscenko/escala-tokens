@@ -288,7 +288,7 @@ export interface SavedSystem {
 // reset never aliases a saved snapshot's nested objects.
 export function makeDesignDefaults(): DesignSnapshot {
   return {
-    projectName: 'DS.by.MD',
+    projectName: 'Escala',
     projectDescription: '',
     colorAlgorithm: 'radix',
     contrastShift: 0,
@@ -752,7 +752,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 33,
+      version: 34,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1076,6 +1076,18 @@ export const useDesignStore = create<DesignStore>()(
           retintBrandGradients(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) retintBrandGradients(sys?.snapshot)
+          }
+          // v33→v34: rebrand — the app + default design-system name became
+          // "Escala". Rename anyone still on the old "DS.by.MD" default (and any
+          // saved system that kept it) so exports don't carry the stale brand.
+          // A hand-picked project name never matched the default, so it's left
+          // untouched.
+          if (persisted.projectName === 'DS.by.MD') persisted.projectName = 'Escala'
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys?.name === 'DS.by.MD') sys.name = 'Escala'
+              if (sys?.snapshot?.projectName === 'DS.by.MD') sys.snapshot.projectName = 'Escala'
+            }
           }
         }
         return persisted

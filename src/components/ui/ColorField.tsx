@@ -220,7 +220,6 @@ export default function ColorField({
   ariaLabel = 'Pick a color',
   size = 24,
   align = 'left',
-  shape = 'circle',
   swatchClassName = '',
   className = '',
   icon,
@@ -230,8 +229,6 @@ export default function ColorField({
   ariaLabel?: string
   size?: number
   align?: 'left' | 'right'
-  /** Trigger swatch shape — 'square' matches the Figma accent-swatch card. */
-  shape?: 'circle' | 'square'
   /** Extra classes on the trigger swatch (shadow, selected ring…). */
   swatchClassName?: string
   className?: string
@@ -263,7 +260,9 @@ export default function ColorField({
         title={icon ? ariaLabel : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`${shape === 'square' ? 'rounded-md' : 'rounded-full'} flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+        // Rounded square, like every other color chip in the app (colorControls'
+        // SWATCH) — a color swatch is never a dot here.
+        className={`rounded-md flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
           icon
             ? 'border border-line bg-surface text-fg-muted shadow-[0_2px_3px_0_rgba(0,0,0,0.06)] hover:text-fg hover:border-line-strong'
             : 'ring-1 ring-black/10'

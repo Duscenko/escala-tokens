@@ -1,9 +1,14 @@
 import { type ReactNode } from 'react'
-import { fontFamilyOf } from '../../../lib/previewTokens'
+import { fontFamilyOf, radiusOf, weightOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 
 // Live specimen for the **Border** semantic category — real bordered elements
 // (inputs, a card, a divider) each stroked by its `border-*` token, captioned.
+//
+// The fields mirror the catalogue's InputSpecimen (Size MD) exactly — same 40px
+// height, `radius-md`, 1px stroke, `accent`26 focus glow, disabled fill and
+// 12/13/11px type — so a token previewed here reads identical to the Input page
+// in Components/Documentation. Only the caption column is extra.
 export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
@@ -20,21 +25,36 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   }
 
   function Field({
-    token, fb, width = 2, placeholderText, note, noteColor,
-  }: { token: string; fb: string; width?: number; placeholderText: string; note?: string; noteColor?: string }) {
+    token, fb, placeholderText, note, noteColor, glow = false, disabled = false,
+  }: {
+    token: string
+    fb: string
+    placeholderText: string
+    note?: string
+    noteColor?: string
+    /** Focus ring, as the Input specimen paints its Focused state. */
+    glow?: boolean
+    disabled?: boolean
+  }) {
+    const stroke = v(token, fb)
     return (
-      <div className="flex flex-col gap-1.5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div className="flex items-center justify-between gap-3">
-          <span style={{ fontSize: 12, fontWeight: 500, color: label }}>Email</span>
+          <span style={{ fontSize: 12, fontWeight: weightOf(tokens, 'medium', 500), color: disabled ? tokens.disabledText : label }}>
+            Email
+          </span>
           <Caption token={token} />
         </div>
         <div
           style={{
-            height: 40, borderRadius: 9, display: 'flex', alignItems: 'center', padding: '0 12px',
-            background: tokens.surface, border: `${width}px solid ${v(token, fb)}`,
+            height: 40, display: 'flex', alignItems: 'center', padding: '0 12px',
+            borderRadius: radiusOf(tokens, 'md', '8px'),
+            background: disabled ? tokens.disabledBg : tokens.surface,
+            border: `1px solid ${stroke}`,
+            boxShadow: glow ? `0 0 0 3px ${stroke}26` : undefined,
           }}
         >
-          <span style={{ fontSize: 13, color: placeholder }}>{placeholderText}</span>
+          <span style={{ fontSize: 13, color: disabled ? tokens.disabledText : placeholder }}>{placeholderText}</span>
         </div>
         {note && <span style={{ fontSize: 11, color: noteColor || muted }}>{note}</span>}
       </div>
@@ -43,11 +63,9 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
 
   function Row({ children, token }: { children: ReactNode; token: string }) {
     return (
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-3">
-          {children}
-          <Caption token={token} />
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        {children}
+        <Caption token={token} />
       </div>
     )
   }
@@ -57,14 +75,17 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       style={{ background: tokens.surface, border: `1px solid ${surfaceBorder}`, borderRadius: 14, fontFamily }}
       className="p-5 flex flex-col gap-4"
     >
-      <Field token="border-strong" fb="#d5d7da" width={1} placeholderText="you@company.com" />
+      <Field token="border-strong" fb="#d5d7da" placeholderText="you@company.com" />
 
-      {/* Card — border-default */}
+      {/* Card — border-default; radius + title match the catalogue's Card */}
       <Row token="border-default">
         <div
-          style={{ flex: 1, borderRadius: 10, padding: 12, background: tokens.surface, border: `1px solid ${v('border-default', '#e9eaeb')}` }}
+          style={{
+            flex: 1, borderRadius: radiusOf(tokens, 'lg', '12px'), padding: 12,
+            background: tokens.surface, border: `1px solid ${v('border-default', '#e9eaeb')}`,
+          }}
         >
-          <span style={{ fontSize: 13, fontWeight: 600, color: tokens.neutralText }}>Card surface</span>
+          <span style={{ fontSize: 14, fontWeight: weightOf(tokens, 'semibold', 600), color: tokens.neutralText }}>Card surface</span>
         </div>
       </Row>
 
@@ -73,9 +94,15 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
         <div style={{ flex: 1, height: 1, background: v('border-subtle', '#f5f5f5') }} />
       </Row>
 
-      <Field token="border-brand" fb={tokens.brandSolid} width={2} placeholderText="Focused field" />
-      <Field token="border-error" fb="#fd6f6f" width={2} placeholderText="bad-email" note="Enter a valid email address" noteColor={sem['text-error'] || '#d92d20'} />
-      <Field token="border-disabled" fb="#d5d7da" width={1} placeholderText="Disabled field" />
+      <Field token="border-brand" fb={tokens.brandSolid} placeholderText="Focused field" glow />
+      <Field
+        token="border-error"
+        fb="#fd6f6f"
+        placeholderText="bad-email"
+        note="This field is required."
+        noteColor={sem['text-error'] || tokens.errorColor}
+      />
+      <Field token="border-disabled" fb="#d5d7da" placeholderText="Disabled field" disabled />
     </div>
   )
 }

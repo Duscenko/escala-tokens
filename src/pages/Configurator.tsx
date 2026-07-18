@@ -14,7 +14,7 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import HomeView from '../components/configurator/HomeView'
 import DocsView from '../components/configurator/DocsView'
-import SaveView from '../components/configurator/SaveView'
+import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
@@ -56,7 +56,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Home',
     hint: 'Your components, live from your tokens',
     title: 'Home',
-    subtitle: 'Design Token Generator',
+    subtitle: 'AI Design Tokens Generator',
     // Rendered via a special case in the shell (needs the onOpenFoundation callback).
     Component: () => null,
     Icon: ic('M3 10.5 12 3l9 7.5M5 9.5V20h4.5v-5.5h5V20H19V9.5', '1.8'),
@@ -235,9 +235,9 @@ export default function Configurator() {
   // Active Semantic category — shared with the table (master nav) and the preview,
   // so the right panel mirrors whichever token group is being edited.
   const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
-  // Sub-tab within the Color hub (Alias/Semantics ↔ Gradients). The preview
-  // mirrors the semantic category only while the semantics tab is active.
-  const [colorTab, setColorTab] = useState<ColorTab>('semantics')
+  // Sub-tab within the Color hub (Primary ↔ Alias/Semantics ↔ Gradients). The
+  // preview mirrors the semantic category only while the semantics tab is active.
+  const [colorTab, setColorTab] = useState<ColorTab>('primary')
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
@@ -357,11 +357,10 @@ export default function Configurator() {
     )
     centerKey = 'export-code'
   } else if (exportMode === 'save') {
-    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Name your system, save it, check your connections and share it.' }
+    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Share your system as portable context — copy the files, sync them, or save it.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
         <SaveView
-          onOpenFigma={() => openExport('figma')}
           onOpenGithub={() => openExport('github')}
           onOpenExport={() => openExport('code')}
         />
@@ -515,8 +514,9 @@ export default function Configurator() {
   }
 
   // Preview is hidden in the Components tab (docs go full-width) and in every
-  // export/connect view (Code · Docs · Figma · GitHub) — those own the full panel.
-  const showPreview = tab !== 'components' && tab !== 'docs' && !exportMode
+  // export/connect view (Code · Docs · Figma · GitHub) — those own the full
+  // panel. Save keeps the aside: it hosts the Overview + Connections panel.
+  const showPreview = (tab !== 'components' && tab !== 'docs' && !exportMode) || exportMode === 'save'
   const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
   return (
@@ -596,7 +596,14 @@ export default function Configurator() {
             </button>
           ) : (
             <aside className="hidden xl:flex w-[400px] flex-shrink-0 overflow-hidden border-l border-line">
-              {tab === 'foundations' && activeFoundation === 'home' ? (
+              {exportMode === 'save' ? (
+                // Save pairs the share/identity center with the system overview.
+                <SaveSidePanel
+                  onOpenFigma={() => openExport('figma')}
+                  onOpenGithub={() => openExport('github')}
+                  onCollapse={() => setPreviewCollapsed(true)}
+                />
+              ) : tab === 'foundations' && activeFoundation === 'home' ? (
                 // Home pairs the collage with the Quick edit panel instead of the preview.
                 <QuickEditPanel
                   previewTheme={previewTheme}

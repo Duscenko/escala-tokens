@@ -1,9 +1,7 @@
 import { type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
-import { ButtonPreview, type PreviewTokens } from './ButtonPreview'
-import { InputPreview } from './atoms/InputPreview'
-import { BadgePreview } from './atoms/BadgePreview'
-import { TogglePreview } from './atoms/TogglePreview'
+import { type PreviewTokens } from './ButtonPreview'
+import { SPECIMENS } from '../configurator/docs/specimens'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { TextSpecimenPreview } from './atoms/TextSpecimenPreview'
 import { BackgroundSpecimenPreview } from './atoms/BackgroundSpecimenPreview'
@@ -13,6 +11,12 @@ import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
+
+// Catalogue renderers reused verbatim — keys are plugin gates ('Toggle' ships
+// with the display name "Switch").
+const ButtonSpec = SPECIMENS.Button
+const BadgeSpec = SPECIMENS.Badge
+const SwitchSpec = SPECIMENS.Toggle
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
 const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
@@ -120,25 +124,31 @@ export default function PreviewPanel({
           <ForegroundSpecimenPreview tokens={tokens} />
         ) : (
           <>
-            <Group title="Buttons">
+            {/* The exact catalogue specimens (SPECIMENS — the same renderers the
+                Components playground uses), so this panel can never drift from
+                what the plugin ships: same heights (Sizes foundation), radius
+                token, type scale and variant axes. */}
+            <Group title="Button">
               <Tile tokens={tokens}>
-                <ButtonPreview variant="primary" size="md" labelType="text" label="Get started" tokens={tokens} />
-                <ButtonPreview variant="secondary" size="md" labelType="text" label="Cancel" tokens={tokens} />
-                <ButtonPreview variant="tinted" size="md" labelType="text" label="Learn more" tokens={tokens} />
-                <ButtonPreview variant="primary" size="md" labelType="icon" label="Play" tokens={tokens} />
+                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Ghost' }} />
               </Tile>
             </Group>
 
-            <Group title="Badges">
+            <Group title="Badge">
               <Tile tokens={tokens}>
-                <BadgePreview tokens={tokens} />
+                <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
               </Tile>
             </Group>
 
-            <Group title="Toggle">
+            <Group title="Switch">
               <Tile tokens={tokens}>
-                <TogglePreview tokens={tokens} defaultOn />
-                <TogglePreview tokens={tokens} defaultOn={false} />
+                <SwitchSpec t={tokens} v={{ On: 'True' }} />
+                <SwitchSpec t={tokens} v={{ On: 'False' }} />
               </Tile>
             </Group>
 

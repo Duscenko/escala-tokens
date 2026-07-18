@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, FONT_PRESETS } from '../../lib/fonts'
+import { withAlpha, BASE_TONE } from '../../lib/colorUtils'
+import { useApplyAccentColor } from '../../lib/colorActions'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_LIBRARIES } from '../../lib/iconLibraries'
@@ -10,8 +12,9 @@ import { iconName, type IconConcept } from './docs/specimens'
 // Quick-edit foundations — shared by two hosts: the Components catalogue's
 // popover (default export) and Home's persistent right panel (QuickEditPanel).
 // Everything writes straight to the same store fields as their Foundations
-// section, so changes show up back there too. Color has ONE entry point — the
-// family dropdown on Home's quick bar — so there's no accent picker here.
+// section, so changes show up back there too. The Color Family row applies an
+// accent preset with the linked neutral (same path as the Primary Color tab);
+// the full family dropdown lives in Foundations · Color.
 
 // Families offered in the quick Font Family rows — the curated presets plus a
 // few popular Google families; the full picker lives in Foundations · Font.
@@ -209,6 +212,86 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
   )
 }
 
+// ── Color Family — accent preset strip (pixel-matched to the Figma spec) ─────
+// A 28px-cell rail on a 2px-padded pill: the current accent leads as a raised
+// chip (white cell + soft shadow + 10%-accent halo), the presets follow as
+// 10px dots with a white keyline. Picking one applies the accent with the
+// linked neutral — the same path the Primary Color tab's dropdown uses.
+
+const COLOR_FAMILY_PRESETS: { label: string; hex: string }[] = [
+  { label: 'Violet',  hex: '#875bf7' },
+  { label: 'Yellow',  hex: '#f7e30b' },
+  { label: 'Lime',    hex: '#7ccf00' },
+  { label: 'Green',   hex: '#00c950' },
+  { label: 'Red',     hex: '#fb2c36' },
+  { label: 'Orange',  hex: '#ff6900' },
+  { label: 'Amber',   hex: '#f0b100' },
+  { label: 'Cyan',    hex: '#00b8db' },
+  { label: 'Blue',    hex: '#2b7fff' },
+  { label: 'Fuchsia', hex: '#d444f1' },
+]
+
+function ColorFamilyRow({
+  accent,
+  onPick,
+  onOpenFoundations,
+}: {
+  accent: string
+  onPick: (hex: string) => void
+  /** Clicking the already-selected chip jumps to Foundations · Color. */
+  onOpenFoundations: () => void
+}) {
+  const reduce = useReducedMotion() ?? false
+  // Segmented picker with FIXED slots (like an effort selector): every preset
+  // keeps its position and the raised white thumb slides to the pick, whose
+  // dot grows in place. An off-preset (custom) accent takes a leading slot.
+  const match = COLOR_FAMILY_PRESETS.find((p) => p.hex.toLowerCase() === accent.toLowerCase())
+  const cells = match ? COLOR_FAMILY_PRESETS : [{ label: 'Custom', hex: accent }, ...COLOR_FAMILY_PRESETS]
+  const glide = { duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] as const }
+  return (
+    <div className="flex items-center w-full p-[2px] rounded-[8px] bg-surface border border-line">
+      {cells.map((p) => {
+        const selected = p.hex.toLowerCase() === accent.toLowerCase()
+        return (
+          <button
+            key={p.label}
+            onClick={() => (selected ? onOpenFoundations() : onPick(p.hex))}
+            aria-pressed={selected}
+            aria-label={selected ? `${p.label} accent selected — edit in Foundations · Color` : `Set accent to ${p.label}`}
+            title={selected ? `${p.label} — ${p.hex} · edit in Foundations · Color` : `${p.label} — ${p.hex}`}
+            className={`relative size-[28px] flex-shrink-0 flex items-center justify-center rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40 ${
+              selected ? '' : 'hover:bg-app/70'
+            }`}
+          >
+            {selected && (
+              <motion.span
+                layoutId="color-family-thumb"
+                transition={glide}
+                aria-hidden
+                className="absolute inset-0 rounded-[6px] bg-app shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_2px_4px_-2px_rgba(0,0,0,0.08)]"
+              />
+            )}
+            <motion.span
+              aria-hidden
+              className="relative"
+              initial={false}
+              animate={{
+                width: selected ? 20 : 10,
+                height: selected ? 20 : 10,
+                borderRadius: selected ? 4 : 3,
+                // The white keyline crossfades into the 10% accent halo as it grows.
+                boxShadow: selected ? `0 0 0 3px ${withAlpha(p.hex, 0.1)}` : '0 0 0 1.7px #ffffff',
+              }}
+              transition={glide}
+              style={{ backgroundColor: p.hex }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Shared quick-edit sections ───────────────────────────────────────────────
 
 export function QuickEditSections({
@@ -224,7 +307,7 @@ export function QuickEditSections({
   onThemeChange?: (theme: string) => void
 }) {
   const {
-    themes, themeOrder, themeKinds,
+    themes, themeOrder, themeKinds, themePalettes, primaryColor,
     pageBackground, darkBackground,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
@@ -232,9 +315,14 @@ export function QuickEditSections({
     padding, setPadding,
     shadows, setShadows,
   } = useDesignStore()
+  const applyAccentColor = useApplyAccentColor()
   const activeRadius = matchRadiusPreset(radius)
   const activeShadow = matchShadowPreset(shadows)
   const themeCols = themeOrder.filter((t) => themes[t])
+
+  // While a custom style theme is previewed, the accent chip reads (and the
+  // preset clicks write) THAT theme's palette — same routing as the Color hub.
+  const accentBase = themePalettes[previewTheme]?.brand?.[BASE_TONE] ?? primaryColor
 
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const setFont = (role: 'heading' | 'body', family: string) => {
@@ -260,6 +348,16 @@ export function QuickEditSections({
 
   return (
     <>
+      {/* Color Family — accent presets; the full editor lives in Foundations · Color */}
+      <div className="flex flex-col gap-[8px]">
+        <span className="text-xs text-fg-muted">Color Family</span>
+        <ColorFamilyRow
+          accent={accentBase}
+          onPick={(hex) => applyAccentColor(hex, true, previewTheme)}
+          onOpenFoundations={onOpenFoundations}
+        />
+      </div>
+
       {/* Theme — mirrors the host's theme picker, so edits and preview stay
           pointed at the same DS theme. */}
       {onThemeChange && themeCols.length > 1 && (
@@ -440,7 +538,10 @@ export function QuickEditPanel({
           </button>
         )}
       </header>
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
+      {/* p-5 (not p-4): the body's right inset must match the panel header, the
+          Components Preview body and the TopNav's px-5 — one shared 22.5px edge
+          from the theme switch down to the last control. */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-4">
         <QuickEditSections
           onOpenFoundations={onOpenFoundations}
           previewTheme={previewTheme}

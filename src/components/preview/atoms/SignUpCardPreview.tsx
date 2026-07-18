@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { resolvePx, type PreviewTokens } from '../ButtonPreview'
-import { radiusOf, fontFamilyOf, weightOf, paddingOf, shadowOf } from '../../../lib/previewTokens'
+import { radiusOf, fontFamilyOf, weightOf, paddingOf, shadowOf, sizeOf } from '../../../lib/previewTokens'
 import { InputPreview } from './InputPreview'
 
 // A composed sign-up card: title + two inputs + a full-width primary CTA. Every
@@ -10,14 +10,20 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
   const family = fontFamilyOf(tokens)
   const fgMuted = tokens.fgMuted || '#717680'
 
+  // Mirrors the catalogue's ButtonSpecimen (Solid · MD): height from the Sizes
+  // foundation, 18px inset, radius-md, 14px semibold — the CTA is that button.
   const cta: CSSProperties = {
     width: '100%',
     boxSizing: 'border-box',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: sizeOf(tokens, 'md', 40),
     background: tokens.brandSolid,
     color: tokens.onBrand,
     border: 'none',
     borderRadius: radiusOf(tokens, 'md', '8px'),
-    padding: '10px 16px',
+    padding: '0 18px',
     fontFamily: family,
     fontSize: resolvePx(tokens.typography?.sizes, 'text-sm', 14),
     fontWeight: weightOf(tokens, 'semibold', 600),
@@ -60,7 +66,7 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
 
       <div className="flex flex-col gap-1.5">
         <InputPreview tokens={tokens} label="Password" placeholder="Create a password" type="password" />
-        <span style={{ fontSize: 12, color: fgMuted }}>Must be at least 8 characters.</span>
+        <span style={{ fontSize: 11, color: fgMuted }}>Must be at least 8 characters.</span>
       </div>
 
       <button type="button" style={cta}>

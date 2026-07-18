@@ -1,5 +1,4 @@
 import { useState, type CSSProperties } from 'react'
-import chroma from 'chroma-js'
 import { resolvePx, type PreviewTokens } from '../ButtonPreview'
 import { radiusOf, fontFamilyOf, weightOf } from '../../../lib/previewTokens'
 
@@ -19,25 +18,29 @@ export function InputPreview({ tokens, label, placeholder, type = 'text' }: Inpu
   const fontSize = resolvePx(tokens.typography?.sizes, 'text-sm', 14)
   const border = tokens.border || '#d0d5dd'
 
+  // Metrics mirror the catalogue's InputSpecimen (MD): 40px control height,
+  // 12px horizontal inset, 12px medium label, `accent`26 focus glow — so the
+  // fields in the sign-up card read identical to the Input component page.
   const field: CSSProperties = {
     width: '100%',
     boxSizing: 'border-box',
+    height: 40,
     fontFamily: family,
     fontSize,
     color: tokens.neutralText,
     background: tokens.surface,
     border: `1px solid ${focused ? tokens.brandSolid : border}`,
     borderRadius: radiusOf(tokens, 'md', '8px'),
-    padding: '9px 12px',
+    padding: '0 12px',
     outline: 'none',
-    boxShadow: focused ? `0 0 0 3px ${chroma(tokens.brandSolid).alpha(0.18).css()}` : 'none',
+    boxShadow: focused ? `0 0 0 3px ${tokens.brandSolid}26` : 'none',
     transition: 'box-shadow .15s, border-color .15s',
   }
 
   return (
     <label className="flex flex-col gap-1.5 w-full">
       {label && (
-        <span style={{ fontFamily: family, fontSize: 13, fontWeight: weightOf(tokens, 'medium', 500), color: tokens.neutralText }}>
+        <span style={{ fontFamily: family, fontSize: 12, fontWeight: weightOf(tokens, 'medium', 500), color: tokens.neutralText }}>
           {label}
         </span>
       )}

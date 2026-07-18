@@ -1,4 +1,4 @@
-# Scalable Designs — Project Context for Claude Code
+# Escala — Project Context for Claude Code
 
 This file is the source of truth for Claude Code CLI. Read it before making any change.
 
@@ -13,7 +13,7 @@ A web configurator that lets product designers build a minimal, custom design to
 
 ---
 
-## Navigation model — 3-column workspace ("DS.by.MD")
+## Navigation model — 3-column workspace ("Escala")
 
 The app is a **3-column workspace** (Claude Code–style), **not a wizard**. Designers
 **configure tokens and see them live at the same time**: pick foundations in the center,
@@ -38,18 +38,33 @@ watch the right-hand preview update, then export.
   (`null`|`code`|`md`|`figma`|`github`), `semanticCategory`. None persisted — every reload
   lands on **Home**. Leaving a foundation marks it complete (`commitVisit()` →
   `markFoundationComplete`) for the Home overview checklist.
-- **Home is the live hub** (`HomeView`): topped — only once the system is saved to
-  GitHub (`githubRepo` set) — by a "Name Design system" input with a Saved pill;
-  then the primitives quick bar (Accent · link toggle · Neutral · Background
-  `ColorSelect`s + the Scale-settings popover reused from Step2) over the two
-  `ScaleRow` ramps, a "Browse components →" link, and the masonry collage of the
-  system's own components rendered live from `usePreviewTokens(homeTheme)`
-  (sign-up card + `SPECIMENS` registry tiles + collage-only clusters). The right
-  panel here is **Quick edit** (`QuickEditPanel` — Theme · Accent swatches +
-  custom picker · Font Family · Radius · Panel background · More Foundations),
-  not the Components Preview; its sections (`QuickEditSections`) are shared with
-  the Components catalogue's quick-edit popover (`QuickFoundationsPanel`).
-  `homeTheme` is local `useState` in `Configurator`.
+- **Home is the info hub** (`HomeView`): a hero — the "AI Design Tokens Generator
+  & React Component Library." title, a description that reads `projectDescription`
+  or falls back to live counts (COMPONENTS + token totals from the store), and two
+  CTAs ("Start setting tokens" → Foundations · Color, "View Components" → the
+  catalogue) — over the masonry collage of the system's own components rendered
+  live from `usePreviewTokens(homeTheme)` (sign-up card + `SPECIMENS` registry
+  tiles + collage-only clusters). **Primitive editing does NOT live here** — it
+  moved to the Color hub's Primary Color tab. The right panel here is **Quick
+  edit** (`QuickEditPanel` — Theme · Accent swatches + custom picker · Font
+  Family · Radius · Panel background · More Foundations), not the Components
+  Preview; its sections (`QuickEditSections`) are shared with the Components
+  catalogue's quick-edit popover (`QuickFoundationsPanel`). `homeTheme` is local
+  `useState` in `Configurator`.
+- **Color is a three-tab hub** (`ColorHub`, default tab `primary`): **Primary
+  Color** (`ColorPrimitives` — the accent · link · neutral · Background & State
+  Colors quick bar + Scale-settings popover over the two `ScaleRow` ramps, then a
+  Figma-style families table: Accent/Neutral/Error/Success/Warning/Info + custom
+  families in a side nav, 12 tone rows each with editable **light/dark** hex
+  cells (row names are the EXACT exported token names — `accent-1`…, matching
+  tokenGenerator's flattenScale prefixes and the semantic sources' "accent"
+  label), eye toggles on the column headers driving `previewTheme`, a per-row
+  inline `ColorPickerPanel`, and "+ Add" creating a `customColors` family — only
+  Neutral has a real dark twin (`grayDarkScale`), colored ramps share one scale;
+  the **dark column shows the dark-theme READING of the ramp** (inverted, row N
+  ↔ tone 13−N, matching how `recDarkTone` resolves Alias/Semantics' dark
+  column) · **Alias / Semantics** (`Step3_SemanticTokens`) · **Gradients**
+  (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the persistence hub** (`SaveView`, rail bottom → `exportMode 'save'`):
   everything the old Home dashboard had — identity (name/description), "Save design
   system" (local registry via `saveCurrentSystem`) + "Download files", the
@@ -104,7 +119,7 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← Sidebar, HomeView, ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, TokenTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
+│   ├── configurator/       ← Sidebar, TopNav, HomeView, ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
@@ -139,7 +154,7 @@ Key fields — always use the store, never local state for cross-view data:
 
 | Field | Type | Edited in |
 |-------|------|-----------|
-| `projectName` | string (default `"DS.by.MD"`) | Home (hero input) + Export pane (editable pill) |
+| `projectName` | string (default `"Escala"`) | Home (hero input) + Export pane (editable pill) |
 | `projectDescription` | string (flows into the README intro) | Home |
 | `figmaLastPublishAt` / `githubRepo` / `githubLastPushAt` | string \| null — connection status shown on Home; written by the connect views | Home (read-only) |
 | `pageBackground` | string (hex, default `#ffffff`) — Radix custom-palette "background" input: anchors tone 1 of every generated **light** ramp (`generateColorScale`'s 4th arg) and is the compositing base for the exported alpha ramps (`colors.primitiveAlpha` via `generateAlphaScale`) | Foundations · Color |
@@ -317,7 +332,7 @@ npx vercel --prod      # deploy
 # Plugin (after code changes)
 cd ~/sync-ds-platform/scalable-designs-figma-plugin
 npm run build          # outputs dist/code.js + dist/ui.html
-# Reload in Figma: Plugins → Development → Scalable Designs Sync → ⟳
+# Reload in Figma: Plugins → Development → Escala DS → ⟳
 
 # Refresh the downloadable plugin zip served by "Bring to Figma"
 cd ~/sync-ds-platform/scalable-designs

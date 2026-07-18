@@ -256,7 +256,7 @@ function InputSpecimen({ t, v, icons }: SpecimenProps) {
         {meta.prefix && <span style={{ fontSize: 13, color: t.fgMuted, borderRight: `1px solid ${t.border}`, paddingRight: 8 }}>{meta.prefix}</span>}
         {!icons?.leading && meta.lead && <span style={{ fontSize: 14, color: t.placeholderText }}>{meta.lead}</span>}
         <span style={{ fontSize: 13, flex: 1, color: state === 'Filled' ? t.neutralText : (disabled ? t.disabledText : t.placeholderText) }}>
-          {state === 'Filled' ? (v.Type === 'E-Mail' ? 'maya@scala.ds' : 'Maya Duscenko') : meta.placeholder}
+          {state === 'Filled' ? (v.Type === 'E-Mail' ? 'maya@escala.ds' : 'Maya Duscenko') : meta.placeholder}
         </span>
         {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={16} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
@@ -734,7 +734,7 @@ function InputGroupSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', width: 300, height: 40, borderRadius: radiusOf(t, 'md', '8px'), border: `1px solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
       <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, color: t.fgMuted, background: t.neutralFill, borderRight: `1px solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, background: t.surface, color: t.neutralText }}>scala.design</span>
+      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, background: t.surface, color: t.neutralText }}>escala.design</span>
       <span style={{ display: 'flex', alignItems: 'center', padding: '0 14px', fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), background: t.surface, color: t.brandText, borderLeft: `1px solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
     </div>
   )
@@ -1675,7 +1675,7 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
       return `<AppStoreBadge store="${low(v.Store) || 'app-store'}" href={storeUrl} />`
     // Form Controls
     case 'InputGroup':
-      return `<InputGroup prefix="https://" suffix={<Button>Copy</Button>}>\n  <Input value="scala.design" />\n</InputGroup>`
+      return `<InputGroup prefix="https://" suffix={<Button>Copy</Button>}>\n  <Input value="escala.design" />\n</InputGroup>`
     case 'Textarea':
       return `<Textarea\n  label="Description"\n  rows={4}\n  maxLength={200}${v.State === 'Error' ? '\n  error="Description is required."' : ''}${v.State === 'Disabled' ? '\n  disabled' : ''}\n/>`
     case 'InputOTP':

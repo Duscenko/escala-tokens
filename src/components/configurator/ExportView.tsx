@@ -121,7 +121,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
           <input
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
-            placeholder="DS.by.MD"
+            placeholder="Escala"
             aria-label="Project name"
             className="text-sm font-medium text-fg bg-transparent outline-none border-b border-transparent focus:border-line-strong w-full"
           />

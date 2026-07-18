@@ -151,7 +151,7 @@ export default function FigmaConnectView({ onClose }: FigmaConnectViewProps = {}
           <li>Unzip the download.</li>
           <li>In the Figma desktop app: <span className="text-fg-muted">Plugins → Development → Import plugin from manifest…</span></li>
           <li>Select the unzipped <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code>.</li>
-          <li>Run it from <span className="text-fg-muted">Plugins → Development → Scalable Designs Sync</span>.</li>
+          <li>Run it from <span className="text-fg-muted">Plugins → Development → Escala DS</span>.</li>
         </ol>
       </Step>
 

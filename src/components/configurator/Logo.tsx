@@ -1,4 +1,4 @@
-// Scalable Designs brand mark — icon badge + wordmark.
+// Escala brand mark — icon badge + wordmark.
 // The badge (dark square + white sunburst) keeps its fixed brand colors in
 // both themes. The wordmark tracks currentColor so it stays readable — the
 // source lockup ships it as fixed #18181B, which disappears on the dark
@@ -10,7 +10,7 @@ export default function Logo({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Scala DS"
+      aria-label="Escala DS"
       className={className}
     >
       <rect x="2" y="0.5" width="40" height="35" rx="17.5" fill="#18181B" />

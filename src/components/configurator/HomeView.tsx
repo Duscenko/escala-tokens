@@ -1,19 +1,16 @@
-// Home — an introductory collage of the system's own components, rendered live
-// from the user's tokens (createui-style hub). Pick an accent/neutral right
-// here or jump into Foundations · Color to customize properly. Everything
+// Home — the system's info hub: a hero (title · live-count description · CTAs
+// into Color and the catalogue) over an introductory collage of the system's
+// own components, rendered live from the user's tokens (createui-style hub).
+// Primitive editing lives in Foundations · Color → Primary Color; everything
 // about saving/connections/sharing moved to the Save hub (SaveView).
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { usePreviewTokens, radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf } from '../../lib/previewTokens'
-import { withAlpha, NAMING_SCHEMES, recommendStateColors, BASE_TONE } from '../../lib/colorUtils'
-import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground, useApplyStateColor } from '../../lib/colorActions'
-import {
-  ColorSelect, ScaleRow, InfoDot, LinkToggle, StateColorRows, neutralFromBrand,
-  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
-} from './colorControls'
-import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import { withAlpha } from '../../lib/colorUtils'
+import { useApplyAccentColor } from '../../lib/colorActions'
+import { COMPONENTS } from '../../lib/componentCatalogue'
 import { SPECIMENS, TokenIcon, type IconConcept } from './docs/specimens'
 import { SignUpCardPreview } from '../preview/atoms/SignUpCardPreview'
 import type { PreviewTokens } from '../preview/ButtonPreview'
@@ -393,84 +390,39 @@ function Tile({ t, children }: { t: PreviewTokens; children: ReactNode }) {
 
 export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: HomeViewProps) {
   const {
-    projectName, setProjectName, githubRepo,
-    primaryColor, primaryScale, grayBaseColor, grayLightScale, grayDarkScale,
-    pageBackground, darkBackground, themeKinds, themePalettes,
-    errorColor, successColor, warningColor, infoColor,
-    customColors, removeCustomColor,
-    colorAlgorithm, colorNaming, contrastShift,
-    setColorAlgorithm, setColorNaming, setContrastShift,
+    projectName, projectDescription,
+    primaryColor, primaryScale,
+    customColors, themes, themeOrder, gradients,
+    typography, spacing, radius, opacity, shadows, grid, sizes,
   } = useDesignStore()
   const t = usePreviewTokens(previewTheme)
   const applyAccentColor = useApplyAccentColor()
-  const applyGrayColor = useApplyGrayColor()
-  // Background changes must re-anchor every ramp + resync semantics — never a
-  // bare setPageBackground (that leaves scales anchored to the old background).
-  const applyPageBackground = useApplyPageBackground()
-  const applyDarkBackground = useApplyDarkBackground()
-  const applyStateColor = useApplyStateColor()
 
-  // "Match to accent" — re-harmonizes every status hue against the current
-  // brand (same recommendation Foundations · Color's states link uses).
-  const matchStatesToAccent = () => {
-    const rec = recommendStateColors(accentBase)
-    applyStateColor('error', rec.error)
-    applyStateColor('warning', rec.warning)
-    applyStateColor('success', rec.success)
-    applyStateColor('info', rec.info)
-  }
-
-  // The Background control (and the neutral ramp strip) follow the previewed
-  // theme: in a dark theme you're picking the DARK page, whose presets derive
-  // from the accent — see darkBackgroundOptions.
-  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
-
-  // Custom "style themes" carry their own palette — while one is previewed the
-  // hero bar reads (and the ScaleRows render) THAT palette, matching where
-  // changeAccent/changeNeutral route their writes. Built-ins fall back to the
-  // global primary/gray, exactly as before.
-  const pal = themePalettes[previewTheme]
-  const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
-  const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
-  const brandRamp = pal?.brand ?? primaryScale
-  const neutralRamp = pal?.gray ?? (darkPreview ? grayDarkScale : grayLightScale)
-
-  // When ON, the neutral scale auto-derives from the accent. Default ON.
-  const [linked, setLinked] = useState(true)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
-  // Saved customs surface in both dropdowns ahead of the Tested presets.
-  const savedGroup: OptionGroup | null = customColors.length
-    ? {
-        label: 'Saved',
-        options: customColors.map((c) => ({ label: c.label, hex: c.base })),
-        onRemove: (hex) => {
-          const match = customColors.find((c) => c.base.toLowerCase() === hex.toLowerCase())
-          if (match) removeCustomColor(match.key)
-        },
-      }
-    : null
-  const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
-  const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
-
-  const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
-
-  // The store ships `primaryScale` empty and Step2 only seeds it on ITS mount —
-  // but Home is the landing view, so without this the brand ramp is missing
-  // until you visit Foundations · Color. Seeded unlinked on purpose: the neutral
-  // already has its own default (Gray Neutral) and must not be re-derived from
-  // the accent behind the user's back on a plain page load.
+  // The store ships `primaryScale` empty and the Color hub only seeds it on ITS
+  // mount — but Home is the landing view, so without this the collage colors are
+  // missing until you visit Foundations · Color. Seeded unlinked on purpose: the
+  // neutral already has its own default (Gray Neutral) and must not be re-derived
+  // from the accent behind the user's back on a plain page load.
   useEffect(() => {
     if (Object.keys(primaryScale).length === 0) applyAccentColor(primaryColor, false, previewTheme)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const changeAccent = (hex: string) => applyAccentColor(hex, linked, previewTheme)
-  const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
-  const toggleLink = () => {
-    const next = !linked
-    setLinked(next)
-    if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
-  }
+  // Live hero counts — everything the system currently ships.
+  const tokenCount =
+    (6 + customColors.length) * 12 + // color families × 12 tones
+    Object.keys(themes.light ?? {}).length * themeOrder.length +
+    gradients.length +
+    Object.keys(typography.sizes).length +
+    Object.keys(typography.weights).length +
+    Object.keys(spacing).length +
+    Object.keys(radius).length +
+    Object.keys(opacity).length +
+    Object.keys(shadows).length +
+    Object.keys(grid).length +
+    Object.keys(sizes).length
+  const description = projectDescription.trim().length
+    ? projectDescription
+    : `${projectName} is a design token system and React component library, with ${COMPONENTS.length}+ components and ${tokenCount}+ design tokens. Designers and developers, working from one source.`
 
   const v = {} // default axis values for the registry specimens
 
@@ -481,110 +433,34 @@ export default function HomeView({ onOpenFoundation, previewTheme = 'light' }: H
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-6"
     >
-      {/* ── Name + saved state — appears once the system is saved to GitHub ── */}
-      {githubRepo && (
-        <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl border border-line bg-surface">
-          <input
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            placeholder="Name Design system"
-            aria-label="Design system name"
-            className="flex-1 min-w-0 bg-transparent text-lg font-semibold text-fg outline-none placeholder:text-fg-faint"
-          />
-          <span
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
-            style={{ backgroundColor: t.brandSolid }}
+      {/* ── Hero — the info title, live-count description and entry CTAs ── */}
+      <section className="flex flex-col gap-6 pt-6 pb-4 max-w-3xl">
+        <h2 className="text-[40px] leading-[1.12] font-bold tracking-tight text-fg">
+          AI Design Tokens Generator
+          <br />
+          &amp; React Component Library.
+        </h2>
+        <p className="text-[17px] leading-relaxed text-fg-muted">{description}</p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => onOpenFoundation('color')}
+            className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-fg text-app text-[15px] font-semibold transition-opacity hover:opacity-90"
           >
-            Saved
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
-              <path d="M17 21v-8H7v8M7 3v5h8" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
             </svg>
-          </span>
-        </div>
-      )}
-
-      {/* ── Primitives quick bar: accent · link · neutral · background + ramps ── */}
-      <section className="flex flex-col gap-[24px] rounded-[16px] border border-line bg-surface p-[24px] shadow-sm">
-        <div className="grid grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Color families" value={accentBase} groups={brandGroups} onChange={changeAccent} allowCustom />
-          <div className="flex flex-col items-center gap-1.5 pb-1.5">
-            <InfoDot tip="Auto-matches the neutral scale to your accent color." />
-            <LinkToggle active={linked} onClick={toggleLink} accentColor={t.brandSolid} />
-          </div>
-          <ColorSelect label="Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
-          <ColorSelect
-            label="Background & State Colors"
-            value={darkPreview ? darkBackground : pageBackground}
-            groups={darkPreview ? darkBackgroundGroups(accentBase) : BACKGROUND_GROUPS}
-            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
-            allowCustom
-            groupsLabel={darkPreview ? 'Background (dark)' : 'Background'}
-            panelClassName="right-0 w-[320px] max-h-[420px]"
-            previewSwatches={[
-              { hex: errorColor, label: 'Error' },
-              { hex: successColor, label: 'Success' },
-              { hex: warningColor, label: 'Warning' },
-              { hex: infoColor, label: 'Info' },
-            ]}
-            extras={
-              <StateColorRows
-                error={errorColor}
-                warning={warningColor}
-                success={successColor}
-                info={infoColor}
-                onChange={applyStateColor}
-                onMatchAccent={matchStatesToAccent}
-              />
-            }
-          />
-          <div className="relative pb-0.5">
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((o) => !o)}
-              aria-haspopup="dialog"
-              aria-expanded={settingsOpen}
-              aria-label="Scale settings — algorithm, naming, contrast shift"
-              title="Scale settings"
-              className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
-              }`}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-            </button>
-            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-              <ColorControls
-                algorithm={colorAlgorithm}
-                naming={colorNaming}
-                contrastShift={contrastShift}
-                onAlgorithm={setColorAlgorithm}
-                onNaming={setColorNaming}
-                onShift={setContrastShift}
-              />
-            </ScaleSettingsModal>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <ScaleRow scale={brandRamp} labels={namingLabels} />
-          <ScaleRow scale={neutralRamp} showNumbers={false} size="thin" />
+            Start setting tokens
+          </button>
+          <button
+            onClick={() => onOpenFoundation('components')}
+            className="inline-flex items-center px-5 py-3 rounded-full bg-elevated/70 text-fg text-[15px] font-semibold border border-line hover:border-line-strong transition-colors"
+          >
+            View Components
+          </button>
         </div>
       </section>
 
       {/* ── Collage — masonry of live, token-driven components ── */}
-      <div className="flex items-center justify-end -mt-2">
-        <button
-          onClick={() => onOpenFoundation('components')}
-          className="text-sm text-fg-muted hover:text-fg transition-colors"
-        >
-          Browse components →
-        </button>
-      </div>
       {/* Scaled down (zoom) — it's a preview: 4 columns show more of the
           system at once; tiles/type shrink together so proportions hold. */}
       <div className="columns-2 md:columns-3 xl:columns-4 gap-4" style={{ zoom: 0.7 }}>

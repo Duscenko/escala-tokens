@@ -55,6 +55,11 @@ export const STATE_PRESETS: Record<'error' | 'warning' | 'success' | 'info', { l
   ],
 }
 
+// The system's color chip — a rounded SQUARE, never a dot. Every swatch in
+// these controls (trigger · dropdown option · custom row · state row) shares it,
+// so the shape can't drift apart again.
+export const SWATCH = 'w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10'
+
 export type Option = { label: string; hex: string }
 // `badge` marks a group's provenance in the dropdown — 'Tested' for the
 // curated presets vs the user's own 'Saved' customs.
@@ -187,7 +192,7 @@ export function ColorSelect({
           style={{ ['--tw-ring-color' as string]: accentColor ?? '#111111' }}
         >
           {label && <span className="text-[13px] text-fg">{label}</span>}
-          <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: value }} />
+          <span className={SWATCH} style={{ backgroundColor: value }} />
           <span className="text-[13px] font-mono text-fg-muted tabular-nums">{hexLabel}</span>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`ml-auto text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
             <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -216,7 +221,7 @@ export function ColorSelect({
                         onClick={() => { onChange(o.hex); setOpen(false) }}
                         className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left transition-colors ${isSel ? 'bg-elevated' : 'hover:bg-surface'}`}
                       >
-                        <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: o.hex }} />
+                        <span className={SWATCH} style={{ backgroundColor: o.hex }} />
                         <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
                         <span className="text-[11px] font-mono text-fg-faint">{o.hex}</span>
                       </button>
@@ -249,14 +254,14 @@ export function ColorSelect({
         >
           {previewSwatches ? (
             <span className="flex-1 min-w-0 flex items-center gap-1.5">
-              <span className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: value }} title={`Background — ${value}`} />
+              <span className={SWATCH} style={{ backgroundColor: value }} title={`Background — ${value}`} />
               {previewSwatches.map((s) => (
-                <span key={s.label} className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: s.hex }} title={`${s.label} — ${s.hex}`} />
+                <span key={s.label} className={SWATCH} style={{ backgroundColor: s.hex }} title={`${s.label} — ${s.hex}`} />
               ))}
             </span>
           ) : (
             <>
-              <span className={`${compact ? 'w-5 h-5 rounded-full' : 'w-[18px] h-[18px] rounded-[4px]'} flex-shrink-0 ring-1 ring-black/10`} style={{ backgroundColor: value }} />
+              <span className={SWATCH} style={{ backgroundColor: value }} />
               {!compact && (
                 <span className="flex-1 min-w-0 truncate text-sm text-fg font-mono">
                   {value}
@@ -278,7 +283,12 @@ export function ColorSelect({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.12 }}
               role="listbox"
-              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? (compact ? 'right-0 w-56 max-h-72' : 'w-full max-h-72')}`}
+              // min-w-[17rem]: the panel matches the trigger's width, but the
+              // Custom row (swatch · label · # · hex field · chevron) needs more
+              // than a narrow trigger gives — and `overflow-y-auto` computes
+              // overflow-x to auto, which CLIPPED the hex field. The panel is
+              // absolutely positioned, so it just grows past the trigger.
+              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? (compact ? 'right-0 w-56 max-h-72' : 'w-full min-w-[17rem] max-h-72')}`}
             >
               {allowCustom && (
                 <div className="mb-1 border-b border-line pb-1.5">
@@ -291,18 +301,18 @@ export function ColorSelect({
                       onClick={() => setCustomOpen((v) => !v)}
                       aria-label={`Toggle custom ${label ?? 'color'} picker`}
                       aria-expanded={customOpen}
-                      className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10"
+                      className={SWATCH}
                       style={{ backgroundColor: /^#[0-9a-f]{6,8}$/i.test(value) ? value : undefined, background: /^#[0-9a-f]{6,8}$/i.test(value) ? value : 'conic-gradient(#f04438, #f79009, #17b26a, #06aed4, #2e90fa, #7a5af8, #f04438)' }}
                     />
-                    <button type="button" onClick={() => setCustomOpen((v) => !v)} className="flex-1 text-left text-sm text-fg">Custom</button>
-                    <span className="text-[11px] font-mono text-fg-faint">#</span>
+                    <button type="button" onClick={() => setCustomOpen((v) => !v)} className="flex-1 min-w-0 truncate text-left text-sm text-fg">Custom</button>
+                    <span className="text-[11px] font-mono text-fg-faint flex-shrink-0">#</span>
                     <input
                       value={customDraft}
                       onChange={(e) => handleCustomDraft(e.target.value)}
                       placeholder="7F56D9"
                       spellCheck={false}
                       aria-label={`Custom ${label ?? 'color'} hex`}
-                      className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
+                      className="w-[4.5rem] flex-shrink-0 text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
                     />
                     <button
                       type="button"
@@ -350,9 +360,9 @@ export function ColorSelect({
                             isSel ? 'bg-elevated' : 'hover:bg-surface'
                           }`}
                         >
-                          <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ backgroundColor: o.hex }} />
+                          <span className={SWATCH} style={{ backgroundColor: o.hex }} />
                           <span className="flex-1 min-w-0 truncate text-sm text-fg">{o.label}</span>
-                          <span className="text-[11px] font-mono text-fg-faint">{o.hex}</span>
+                          <span className="text-[11px] font-mono text-fg-faint flex-shrink-0">{o.hex}</span>
                         </button>
                         {g.onRemove && (
                           <button
@@ -408,17 +418,17 @@ function StateColorRow({ role, label, value, onChange }: { role: string; label: 
           onClick={() => setOpen((v) => !v)}
           aria-label={`Toggle ${label} picker`}
           aria-expanded={open}
-          className="w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10"
+          className={SWATCH}
           style={{ backgroundColor: value }}
         />
-        <span className="flex-1 text-sm text-fg">{label}</span>
-        <span className="text-[11px] font-mono text-fg-faint">#</span>
+        <span className="flex-1 min-w-0 truncate text-sm text-fg">{label}</span>
+        <span className="text-[11px] font-mono text-fg-faint flex-shrink-0">#</span>
         <input
           value={draft}
           onChange={(e) => handleDraft(e.target.value)}
           spellCheck={false}
           aria-label={`${label} hex`}
-          className="w-[4.5rem] text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
+          className="w-[4.5rem] flex-shrink-0 text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
         />
         <button
           type="button"
