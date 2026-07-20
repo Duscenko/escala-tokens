@@ -35,6 +35,15 @@ interface Ctx {
   page: string       // frame page background
   heading: string    // heading font family
   body: string       // body font family
+  // Resolved copies of PreviewTokens' optional fields (typed possibly-undefined
+  // upstream for backward compat) — always populated by resolvePreviewTokens at
+  // runtime, but every call site here needs the guaranteed `string`.
+  muted: string
+  line: string
+  placeholder: string
+  success: string
+  warning: string
+  info: string
 }
 
 function makeCtx(t: PreviewTokens): Ctx {
@@ -45,6 +54,12 @@ function makeCtx(t: PreviewTokens): Ctx {
     card: elevate(page, dark),
     heading: t.typography?.headingFontFamily || fontFamilyOf(t),
     body: fontFamilyOf(t),
+    muted: t.fgMuted ?? '#717680',
+    line: t.borderDefault ?? '#e0e1e6',
+    placeholder: t.placeholderText ?? '#a4a7ae',
+    success: t.successColor ?? '#17b26a',
+    warning: t.warningColor ?? '#f79009',
+    info: t.infoColor ?? '#2e90fa',
   }
 }
 
@@ -64,7 +79,7 @@ function Card({ c, children, style }: { c: Ctx; children: ReactNode; style?: CSS
     <div
       style={{
         background: c.card,
-        border: `1px solid ${c.t.borderDefault ?? '#e0e1e6'}`,
+        border: `1px solid ${c.line}`,
         borderRadius: radiusOf(c.t, 'md', '6px'),
         boxShadow: shadowOf(c.t, 'xs', '0 1px 1px rgba(10,13,18,0.06)'),
         ...style,
@@ -96,7 +111,7 @@ function Hero({ c }: { c: Ctx }) {
         <h3 style={{ margin: 0, fontFamily: c.heading, fontWeight: weightOf(t, 'bold', 700), fontSize: 23, lineHeight: '26.5px', letterSpacing: '-0.46px', color: t.neutralText }}>
           Ship a consistent<br />UI faster
         </h3>
-        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: t.fgMuted }}>
+        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: c.muted }}>
           A single token source for color, type, spacing, and shape, everywhere.
         </p>
       </div>
@@ -117,7 +132,7 @@ function Stat({ c, label, value, delta, tone }: { c: Ctx; label: string; value: 
   const { t } = c
   return (
     <Card c={c} style={{ flex: 1, minWidth: 0, padding: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: t.fgMuted }}>{label}</span>
+      <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>{label}</span>
       <span style={{ fontFamily: c.heading, fontSize: 26, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText, lineHeight: 1.15 }}>{value}</span>
       <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), color: ink(tone, c.dark) }}>{delta}</span>
     </Card>
@@ -129,7 +144,7 @@ function ChartCard({ c }: { c: Ctx }) {
   const { t } = c
   const tab = (label: string, active: boolean) => (
     <div style={{ position: 'relative', padding: '8px 12px' }}>
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: active ? t.neutralText : t.fgMuted }}>{label}</span>
+      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: active ? t.neutralText : c.muted }}>{label}</span>
       {active && <span style={{ position: 'absolute', left: 12, right: 12, bottom: -1, height: 2, background: t.brandSolid }} />}
     </div>
   )
@@ -139,13 +154,13 @@ function ChartCard({ c }: { c: Ctx }) {
   const path = pts.map((p, i) => `${(i / (pts.length - 1)) * w},${h - (p / max) * h}`).join(' ')
   return (
     <Card c={c} style={{ width: '100%', boxSizing: 'border-box' }}>
-      <div style={{ borderBottom: `1px solid ${t.borderDefault ?? '#e0e1e6'}`, display: 'flex', gap: 4, padding: '8px 16px 0' }}>
+      <div style={{ borderBottom: `1px solid ${c.line}`, display: 'flex', gap: 4, padding: '8px 16px 0' }}>
         {tab('Overview', true)}{tab('Performance', false)}{tab('Errors', false)}
       </div>
       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: t.fgMuted }}>Overview · Last 12 weeks</span>
+            <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Overview · Last 12 weeks</span>
             <span style={{ fontFamily: c.heading, fontSize: 32, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText, lineHeight: 1.1 }}>1,284</span>
           </div>
           <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ maxWidth: '55%', flexShrink: 1 }} preserveAspectRatio="none" aria-hidden>
@@ -153,7 +168,7 @@ function ChartCard({ c }: { c: Ctx }) {
             <polyline points={path} fill="none" stroke={t.brandSolid} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: t.fgMuted }}>
+        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: c.muted }}>
           Sustained week-over-week growth, accelerating in the last sprint.
         </p>
       </div>
@@ -172,20 +187,20 @@ function StatusBadge({ c, label, tone }: { c: Ctx; label: string; tone: string }
 function InvoicesCard({ c }: { c: Ctx }) {
   const { t } = c
   const rows = [
-    { id: 'INV-1842', cust: 'Acme Robotics', amt: '$2,400.00', st: 'PAID', tone: t.successColor },
-    { id: 'INV-1841', cust: 'Helix Labs', amt: '$840.00', st: 'PENDING', tone: t.warningColor },
-    { id: 'INV-1840', cust: 'Northwind', amt: '$1,200.00', st: 'PAID', tone: t.successColor },
+    { id: 'INV-1842', cust: 'Acme Robotics', amt: '$2,400.00', st: 'PAID', tone: c.success },
+    { id: 'INV-1841', cust: 'Helix Labs', amt: '$840.00', st: 'PENDING', tone: c.warning },
+    { id: 'INV-1840', cust: 'Northwind', amt: '$1,200.00', st: 'PAID', tone: c.success },
     { id: 'INV-1839', cust: 'Linear Stage', amt: '$320.00', st: 'OVERDUE', tone: t.errorColor },
   ]
-  const th: CSSProperties = { fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: t.fgMuted, padding: '8px 16px' }
+  const th: CSSProperties = { fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted, padding: '8px 16px' }
   return (
     <Card c={c} style={{ width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div style={{ borderBottom: `1px solid ${t.borderDefault ?? '#e0e1e6'}`, padding: '12px 20px' }}>
-        <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: t.fgMuted }}>Recent invoices</span>
+      <div style={{ borderBottom: `1px solid ${c.line}`, padding: '12px 20px' }}>
+        <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Recent invoices</span>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <thead>
-          <tr style={{ background: withAlpha(t.fgMuted, c.dark ? 0.12 : 0.06) }}>
+          <tr style={{ background: withAlpha(c.muted, c.dark ? 0.12 : 0.06) }}>
             <th style={{ ...th, textAlign: 'left', width: '20%' }}>Invoice</th>
             <th style={{ ...th, textAlign: 'left', width: '28%' }}>Customer</th>
             <th style={{ ...th, textAlign: 'right', width: '24%' }}>Amount</th>
@@ -194,7 +209,7 @@ function InvoicesCard({ c }: { c: Ctx }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.id} style={{ borderTop: i === 0 ? 'none' : `1px solid ${t.borderDefault ?? '#e0e1e6'}` }}>
+            <tr key={r.id} style={{ borderTop: i === 0 ? 'none' : `1px solid ${c.line}` }}>
               <td style={{ padding: '13px 16px', fontFamily: MONO, fontSize: 11, color: t.neutralText }}>{r.id}</td>
               <td style={{ padding: '13px 16px', fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'medium', 500), color: t.neutralText }}>{r.cust}</td>
               <td style={{ padding: '13px 16px', fontFamily: MONO, fontSize: 13, fontWeight: 700, color: t.neutralText, textAlign: 'right' }}>{r.amt}</td>
@@ -211,7 +226,7 @@ function InvoicesCard({ c }: { c: Ctx }) {
 function Toggle({ c, on }: { c: Ctx; on: boolean }) {
   const { t } = c
   return (
-    <span style={{ width: 44, height: 24, borderRadius: 999, background: on ? t.brandSolid : withAlpha(t.fgMuted, 0.4), position: 'relative', flexShrink: 0, display: 'inline-block' }}>
+    <span style={{ width: 44, height: 24, borderRadius: 999, background: on ? t.brandSolid : withAlpha(c.muted, 0.4), position: 'relative', flexShrink: 0, display: 'inline-block' }}>
       <span style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 20, height: 20, borderRadius: 999, background: '#ffffff', boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
     </span>
   )
@@ -219,7 +234,7 @@ function Toggle({ c, on }: { c: Ctx; on: boolean }) {
 function CheckBox({ c, on }: { c: Ctx; on: boolean }) {
   const { t } = c
   return (
-    <span style={{ width: 18, height: 18, flexShrink: 0, borderRadius: radiusOf(t, 'sm', '2px'), background: on ? t.brandSolid : 'transparent', border: `1px solid ${on ? t.brandSolid : withAlpha(t.fgMuted, 0.5)}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+    <span style={{ width: 18, height: 18, flexShrink: 0, borderRadius: radiusOf(t, 'sm', '2px'), background: on ? t.brandSolid : 'transparent', border: `1px solid ${on ? t.brandSolid : withAlpha(c.muted, 0.5)}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       {on && (
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={t.onBrand} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
       )}
@@ -232,7 +247,7 @@ function SettingRow({ c, title, desc, on }: { c: Ctx; title: string; desc: strin
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>{title}</span>
-        <span style={{ fontFamily: c.body, fontSize: 11, color: t.fgMuted }}>{desc}</span>
+        <span style={{ fontFamily: c.body, fontSize: 11, color: c.muted }}>{desc}</span>
       </div>
       <Toggle c={c} on={on} />
     </div>
@@ -248,7 +263,7 @@ function SettingsCard({ c }: { c: Ctx }) {
         <SettingRow c={c} title="Email digests" desc="Weekly summary every Monday." on />
         <SettingRow c={c} title="Slack notifications" desc="Real-time alerts for incidents above P2." on={false} />
       </div>
-      <div style={{ height: 1, background: t.borderDefault ?? '#e0e1e6', width: '100%' }} />
+      <div style={{ height: 1, background: c.line, width: '100%' }} />
       <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText, paddingTop: 4 }}>Notify me when</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {checks.map(([label, on]) => (
@@ -258,7 +273,7 @@ function SettingsCard({ c }: { c: Ctx }) {
           </label>
         ))}
       </div>
-      <span style={{ fontFamily: c.body, fontSize: 11, color: t.fgMuted, paddingTop: 4 }}>Changes save automatically.</span>
+      <span style={{ fontFamily: c.body, fontSize: 11, color: c.muted, paddingTop: 4 }}>Changes save automatically.</span>
     </Card>
   )
 }
@@ -269,8 +284,8 @@ function SubscribeCard({ c }: { c: Ctx }) {
   return (
     <Card c={c} style={{ flex: 1, minWidth: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <span style={{ fontFamily: c.heading, fontSize: 19, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText }}>Subscribe</span>
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'medium', 500), color: t.fgMuted, marginTop: 8 }}>Email address</span>
-      <span style={{ boxSizing: 'border-box', width: '100%', padding: '11px 13px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(t.fgMuted, 0.5)}`, background: c.page, fontFamily: c.body, fontSize: 13, color: t.placeholderText }}>
+      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'medium', 500), color: c.muted, marginTop: 8 }}>Email address</span>
+      <span style={{ boxSizing: 'border-box', width: '100%', padding: '11px 13px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(c.muted, 0.5)}`, background: c.page, fontFamily: c.body, fontSize: 13, color: c.placeholder }}>
         you@company.com
       </span>
       <span style={{ boxSizing: 'border-box', width: '100%', textAlign: 'center', marginTop: 4, padding: '9px 16px', borderRadius: radiusOf(t, 'sm', '4px'), background: t.brandSolid, color: t.onBrand, fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), cursor: 'pointer' }}>
@@ -293,8 +308,8 @@ function StatusCard({ c, title, body, tone }: { c: Ctx; title: string; body: Rea
 function Chips({ c }: { c: Ctx }) {
   const { t } = c
   const chips: [string, string][] = [
-    ['primary', t.brandSolid], ['accent', t.brandSolid], ['success', t.successColor],
-    ['warning', t.warningColor], ['danger', t.errorColor], ['info', t.infoColor], ['neutral', t.fgMuted],
+    ['primary', t.brandSolid], ['accent', t.brandSolid], ['success', c.success],
+    ['warning', c.warning], ['danger', t.errorColor], ['info', c.info], ['neutral', c.muted],
   ]
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: '100%' }}>
@@ -325,27 +340,27 @@ export default function DashboardPreview({ tokens }: { tokens: PreviewTokens }) 
     <div
       style={{
         flex: 1, minWidth: 0, background: c.page,
-        border: `1px solid ${t.borderDefault ?? '#e0e1e6'}`,
+        border: `1px solid ${c.line}`,
         borderRadius: 18, overflow: 'hidden',
         fontFamily: c.body,
       }}
     >
       {/* Frame header — theme label + page→ink hex trail */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${t.borderDefault ?? '#e0e1e6'}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${c.line}` }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <ThemeGlyph dark={c.dark} color={t.fgMuted} />
-          <span style={{ fontFamily: c.body, fontSize: 10, fontWeight: weightOf(t, 'semibold', 600), color: t.fgMuted }}>{c.dark ? 'dark' : 'light'}</span>
+          <ThemeGlyph dark={c.dark} color={c.muted} />
+          <span style={{ fontFamily: c.body, fontSize: 10, fontWeight: weightOf(t, 'semibold', 600), color: c.muted }}>{c.dark ? 'dark' : 'light'}</span>
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 10, color: t.fgMuted, textTransform: 'uppercase' }}>{safe(t.surface).toUpperCase()} → {safe(t.neutralText).toUpperCase()}</span>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: c.muted, textTransform: 'uppercase' }}>{safe(t.surface).toUpperCase()} → {safe(t.neutralText).toUpperCase()}</span>
       </div>
 
       {/* Body */}
       <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Hero c={c} />
         <div style={{ display: 'flex', gap: 12, width: '100%' }}>
-          <Stat c={c} label="Active users" value="12,438" delta="+8.2% vs last week" tone={t.successColor} />
+          <Stat c={c} label="Active users" value="12,438" delta="+8.2% vs last week" tone={c.success} />
           <Stat c={c} label="Errors" value="23" delta="−12% vs last week" tone={t.errorColor} />
-          <Stat c={c} label="Avg latency" value="184 ms" delta="−4ms vs last week" tone={t.infoColor} />
+          <Stat c={c} label="Avg latency" value="184 ms" delta="−4ms vs last week" tone={c.info} />
         </div>
         <ChartCard c={c} />
         <InvoicesCard c={c} />
@@ -353,8 +368,8 @@ export default function DashboardPreview({ tokens }: { tokens: PreviewTokens }) 
         <div style={{ display: 'flex', gap: 20, width: '100%', alignItems: 'stretch' }}>
           <SubscribeCard c={c} />
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <StatusCard c={c} title="Saved" tone={t.successColor} body={<>Your changes are live across all channels.</>} />
-            <StatusCard c={c} title="Heads up" tone={t.warningColor} body={<>Two tokens reference deprecated values.</>} />
+            <StatusCard c={c} title="Saved" tone={c.success} body={<>Your changes are live across all channels.</>} />
+            <StatusCard c={c} title="Heads up" tone={c.warning} body={<>Two tokens reference deprecated values.</>} />
             <StatusCard c={c} title="Build failed" tone={t.errorColor} body={<>Color contrast below AA on 3 surfaces.</>} />
           </div>
         </div>
