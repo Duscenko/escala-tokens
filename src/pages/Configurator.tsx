@@ -15,6 +15,7 @@ import IconLibrary from '../components/configurator/IconLibrary'
 import HomeView from '../components/configurator/HomeView'
 import DocsView from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
+import HomeActions, { ShareModal, ResetConfirmModal } from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
@@ -264,6 +265,10 @@ export default function Configurator() {
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
+  // Home header actions — Share recycles the file-preview card; Reset confirms
+  // before restoring the design defaults.
+  const [shareOpen, setShareOpen] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
   // Components catalogue — filters the master list by label/key.
   const [componentSearch, setComponentSearch] = useState('')
 
@@ -375,6 +380,17 @@ export default function Configurator() {
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     const Active = section.Component
+    // Home carries the pill row from the header design (New · Import · Share · Kits · Reset).
+    if (section.key === 'home') {
+      centerRightSlot = (
+        <HomeActions
+          onNew={() => setNewSystemOpen(true)}
+          onImport={() => setImportOpen(true)}
+          onShare={() => setShareOpen(true)}
+          onReset={() => setResetOpen(true)}
+        />
+      )
+    }
     body = section.key === 'color' ? (
       // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
       // table self-scrolls with pinned headers) — no outer overflow here.
@@ -616,8 +632,6 @@ export default function Configurator() {
                   onThemeChange={changePreviewTheme}
                   onOpenFoundations={() => selectFoundation('color')}
                   onCollapse={() => setPreviewCollapsed(true)}
-                  onNewSystem={() => setNewSystemOpen(true)}
-                  onImport={() => setImportOpen(true)}
                   onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
                 />
               ) : (
@@ -662,6 +676,16 @@ export default function Configurator() {
             }}
           />
         )}
+      </AnimatePresence>
+
+      {/* Share window — the file-preview card (tokens.json · css · README) */}
+      <AnimatePresence>
+        {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
+      </AnimatePresence>
+
+      {/* Reset confirm — restore the design defaults */}
+      <AnimatePresence>
+        {resetOpen && <ResetConfirmModal onClose={() => setResetOpen(false)} />}
       </AnimatePresence>
 
       {/* New-design-system window — name + accent, then straight into Foundations */}

@@ -174,7 +174,10 @@ function download(content: string, filename: string, mime: string) {
 
 type FileTab = 'tokens' | 'css' | 'markdown'
 
-export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
+// ── The portable-context card — tabbed file preview (tokens.json · variables.css
+// · README.md) with Copy / Download / Export-all and the live endpoint footer.
+// Shared by the Save & Share hub and the header Share modal. ──────────────────
+export function FilePreviewCard() {
   const { projectName, primaryColor } = useDesignStore()
 
   const [activeTab, setActiveTab] = useState<FileTab>('tokens')
@@ -224,6 +227,113 @@ export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
   }
 
   return (
+    <div className="rounded-2xl border border-line bg-surface overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-line pr-3">
+        <div className="flex min-w-0 overflow-x-auto">
+          {FILES.map((f) => {
+            const active = f.id === activeTab
+            return (
+              <button
+                key={f.id}
+                onClick={() => setActiveTab(f.id)}
+                className={`flex items-center gap-1.5 px-4 py-3 text-[13px] font-mono whitespace-nowrap transition-all border-b-2 -mb-px ${
+                  active ? 'text-fg font-semibold' : 'text-fg-faint border-transparent hover:text-fg-muted'
+                }`}
+                style={active ? { borderColor: primaryColor } : undefined}
+              >
+                {f.label}
+                {f.badge && (
+                  <span
+                    className={`text-[9px] font-sans px-1.5 py-px rounded-full whitespace-nowrap ${
+                      active ? 'text-white' : 'bg-elevated text-fg-faint border border-line'
+                    }`}
+                    style={active ? { backgroundColor: primaryColor } : undefined}
+                  >
+                    {f.badge}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+          {/* Export all — an action styled as the last tab, like the design */}
+          <button
+            onClick={downloadAll}
+            className="px-4 py-3 text-[13px] font-mono whitespace-nowrap text-fg-faint hover:text-fg-muted transition-colors border-b-2 border-transparent -mb-px"
+          >
+            {justDownloaded === 'all' ? '✓ Downloaded' : 'Export all files'}
+          </button>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={copyActive}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-fg text-app hover:opacity-90 transition-opacity"
+          >
+            {copiedTab === activeTab ? (
+              <>✓ Copied</>
+            ) : (
+              <>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2"/></svg>
+                Copy
+              </>
+            )}
+          </button>
+          <button
+            onClick={downloadActive}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-elevated text-fg-muted border border-line hover:text-fg hover:border-line-strong transition-colors"
+          >
+            {justDownloaded === activeTab ? (
+              <>✓ Saved</>
+            ) : (
+              <>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 8.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                Download
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="overflow-auto h-80 bg-surface"
+        >
+          <pre className="p-5 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
+            {activeFile.content()}
+          </pre>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Live endpoint — the URL any tool can read the tokens from */}
+      <div className="px-5 py-3 border-t border-line bg-app/60">
+        {isDeployed ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-fg-faint flex-shrink-0">Live endpoint</span>
+            <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
+            <button
+              onClick={copyShareUrl}
+              className="text-[11px] font-medium text-fg-muted hover:text-fg transition flex-shrink-0"
+            >
+              {copiedUrl ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-fg-faint leading-relaxed">
+            Deploy to a live URL and any tool can read your tokens from{' '}
+            <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
+  return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -231,108 +341,7 @@ export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
       className="flex flex-col gap-9 max-w-6xl"
     >
       {/* ── The portable context — tabbed file preview with Copy / Download ── */}
-      <div className="rounded-2xl border border-line bg-surface overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-line pr-3">
-          <div className="flex min-w-0 overflow-x-auto">
-            {FILES.map((f) => {
-              const active = f.id === activeTab
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveTab(f.id)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-[13px] font-mono whitespace-nowrap transition-all border-b-2 -mb-px ${
-                    active ? 'text-fg font-semibold' : 'text-fg-faint border-transparent hover:text-fg-muted'
-                  }`}
-                  style={active ? { borderColor: primaryColor } : undefined}
-                >
-                  {f.label}
-                  {f.badge && (
-                    <span
-                      className={`text-[9px] font-sans px-1.5 py-px rounded-full whitespace-nowrap ${
-                        active ? 'text-white' : 'bg-elevated text-fg-faint border border-line'
-                      }`}
-                      style={active ? { backgroundColor: primaryColor } : undefined}
-                    >
-                      {f.badge}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-            {/* Export all — an action styled as the last tab, like the design */}
-            <button
-              onClick={downloadAll}
-              className="px-4 py-3 text-[13px] font-mono whitespace-nowrap text-fg-faint hover:text-fg-muted transition-colors border-b-2 border-transparent -mb-px"
-            >
-              {justDownloaded === 'all' ? '✓ Downloaded' : 'Export all files'}
-            </button>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={copyActive}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-fg text-app hover:opacity-90 transition-opacity"
-            >
-              {copiedTab === activeTab ? (
-                <>✓ Copied</>
-              ) : (
-                <>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2"/></svg>
-                  Copy
-                </>
-              )}
-            </button>
-            <button
-              onClick={downloadActive}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-elevated text-fg-muted border border-line hover:text-fg hover:border-line-strong transition-colors"
-            >
-              {justDownloaded === activeTab ? (
-                <>✓ Saved</>
-              ) : (
-                <>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 8.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                  Download
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-auto h-80 bg-surface"
-          >
-            <pre className="p-5 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
-              {activeFile.content()}
-            </pre>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Live endpoint — the URL any tool can read the tokens from */}
-        <div className="px-5 py-3 border-t border-line bg-app/60">
-          {isDeployed ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-fg-faint flex-shrink-0">Live endpoint</span>
-              <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
-              <button
-                onClick={copyShareUrl}
-                className="text-[11px] font-medium text-fg-muted hover:text-fg transition flex-shrink-0"
-              >
-                {copiedUrl ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-          ) : (
-            <p className="text-xs text-fg-faint leading-relaxed">
-              Deploy to a live URL and any tool can read your tokens from{' '}
-              <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>.
-            </p>
-          )}
-        </div>
-      </div>
+      <FilePreviewCard />
 
       {/* ── My design systems: open a saved one, create or import ── */}
       <SavedSystemsList onAddNew={onNewSystem} onImport={onImport} />

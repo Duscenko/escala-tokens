@@ -2,8 +2,18 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, FONT_PRESETS } from '../../lib/fonts'
-import { withAlpha, BASE_TONE } from '../../lib/colorUtils'
-import { useApplyAccentColor } from '../../lib/colorActions'
+import { withAlpha, BASE_TONE, recommendStateColors } from '../../lib/colorUtils'
+import {
+  useApplyAccentColor, useApplyGrayColor, useApplyPageBackground,
+  useApplyDarkBackground, useApplyStateColor, useEnsureColorScales,
+} from '../../lib/colorActions'
+import {
+  ColorSelect, StateColorRows, LinkToggle, neutralFromBrand,
+  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups,
+  type OptionGroup,
+} from './colorControls'
+import { ARCHITECTURE_OPTIONS, type SemanticArchitecture } from '../../lib/semanticArchitectures'
+import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_LIBRARIES } from '../../lib/iconLibraries'
@@ -218,16 +228,18 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
 // 10px dots with a white keyline. Picking one applies the accent with the
 // linked neutral — the same path the Primary Color tab's dropdown uses.
 
+// The accessible accent set from the Figma header spec — deeper, higher-contrast
+// tones (no near-white yellow), so any pick reads well as a solid brand fill.
 export const COLOR_FAMILY_PRESETS: { label: string; hex: string }[] = [
-  { label: 'Violet',  hex: '#875bf7' },
-  { label: 'Yellow',  hex: '#f7e30b' },
-  { label: 'Lime',    hex: '#7ccf00' },
-  { label: 'Green',   hex: '#00c950' },
-  { label: 'Red',     hex: '#fb2c36' },
-  { label: 'Orange',  hex: '#ff6900' },
-  { label: 'Amber',   hex: '#f0b100' },
-  { label: 'Cyan',    hex: '#00b8db' },
+  { label: 'Indigo',  hex: '#4f46e6' },
   { label: 'Blue',    hex: '#2b7fff' },
+  { label: 'Red',     hex: '#f33f5d' },
+  { label: 'Amber',   hex: '#f59d0c' },
+  { label: 'Slate',   hex: '#475468' },
+  { label: 'Violet',  hex: '#7c3aec' },
+  { label: 'Cyan',    hex: '#04b6d5' },
+  { label: 'Green',   hex: '#09b980' },
+  { label: 'Lime',    hex: '#84cb15' },
   { label: 'Fuchsia', hex: '#d444f1' },
 ]
 
@@ -292,6 +304,129 @@ function ColorFamilyRow({
   )
 }
 
+// ── Generic label dropdown (Type scale · Token Architecture) — same open/close
+// pattern as FontSelect, styled as a compact pill. ───────────────────────────
+function Combo<T extends string>({ value, options, onChange, ariaLabel, leading }: {
+  value: T
+  options: { key: T; label: string }[]
+  onChange: (key: T) => void
+  ariaLabel: string
+  leading?: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  const current = options.find((o) => o.key === value) ?? options[0]
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors ${ROW_H}`}
+      >
+        {leading}
+        <span className="flex-1 truncate">{current?.label}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            role="listbox"
+            className="absolute z-40 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1"
+          >
+            {options.map((o) => (
+              <button
+                key={o.key}
+                type="button"
+                role="option"
+                aria-selected={o.key === value}
+                onClick={() => { onChange(o.key); setOpen(false) }}
+                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
+                  o.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// A tinted foundation card — the Figma groups Color Family and Typography into
+// bordered cards. Uses the semantic surface so it stays theme-aware.
+function Card({ icon, title, action, children }: { icon: ReactNode; title: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-4 flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-fg-muted flex-shrink-0">{icon}</span>
+        <span className="text-xs text-fg-muted flex-1">{title}</span>
+        {action}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+const PaletteGlyph = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <circle cx="13.5" cy="6.5" r="1" /><circle cx="17.5" cy="10.5" r="1" /><circle cx="8.5" cy="7.5" r="1" /><circle cx="6.5" cy="12.5" r="1" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2Z" />
+  </svg>
+)
+const TypeGlyph = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 7V5h16v2M9 20h6M12 5v15" />
+  </svg>
+)
+const SurpriseGlyph = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+  </svg>
+)
+
+// ── Type scale — regenerate font sizes from a base size × modular ratio ──────
+const TYPE_SCALES: { key: string; label: string; ratio: number }[] = [
+  { key: 'majorSecond',   label: 'Major Second',   ratio: 1.125 },
+  { key: 'minorThird',    label: 'Minor Third',    ratio: 1.2 },
+  { key: 'majorThird',    label: 'Major Third',    ratio: 1.25 },
+  { key: 'perfectFourth', label: 'Perfect Fourth', ratio: 1.333 },
+  { key: 'golden',        label: 'Golden Ratio',   ratio: 1.618 },
+]
+
+// Step of each token relative to the base (text-md = 0), in TYPE_SCALE_KEYS order.
+const SCALE_STEPS = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+function buildTypeScale(base: number, ratio: number): { sizes: Record<string, string>; lineHeights: Record<string, string> } {
+  const sizes: Record<string, string> = {}
+  const lineHeights: Record<string, string> = {}
+  TYPE_SCALE_KEYS.forEach((key, i) => {
+    const px = Math.round(base * ratio ** (SCALE_STEPS[i] ?? 0))
+    sizes[key] = `${px}px`
+    // Display sizes sit tighter; body copy gets more air.
+    lineHeights[key] = `${Math.round(px * (px >= 30 ? 1.18 : 1.45))}px`
+  })
+  return { sizes, lineHeights }
+}
+
 // ── Shared quick-edit sections ───────────────────────────────────────────────
 
 export function QuickEditSections({
@@ -299,6 +434,7 @@ export function QuickEditSections({
   previewTheme = 'light',
   onThemeChange,
   onAddTheme,
+  showPresets = true,
 }: {
   onOpenFoundations: () => void
   /** Theme currently shown in the host preview — swatch clicks apply to this
@@ -308,10 +444,16 @@ export function QuickEditSections({
   onThemeChange?: (theme: string) => void
   /** Opens the theme manager (Alias/Semantics' "+ Theme"). Shows the + cell. */
   onAddTheme?: () => void
+  /** When false the inline Presets row is hidden — the host renders it elsewhere
+   *  (Home's panel puts it in the header). Default true (Components popover). */
+  showPresets?: boolean
 }) {
   const {
-    themes, themeOrder, themeKinds, themePalettes, primaryColor,
-    pageBackground, darkBackground,
+    themeKinds, themePalettes, primaryColor,
+    grayBaseColor, pageBackground, darkBackground,
+    errorColor, warningColor, successColor, infoColor,
+    customColors, removeCustomColor,
+    semanticArchitecture, setSemanticArchitecture,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
     iconLibrary, setIconLibrary,
@@ -319,15 +461,58 @@ export function QuickEditSections({
     shadows, setShadows,
   } = useDesignStore()
   const applyAccentColor = useApplyAccentColor()
+  const applyGrayColor = useApplyGrayColor()
+  const applyPageBackground = useApplyPageBackground()
+  const applyDarkBackground = useApplyDarkBackground()
+  const applyStateColor = useApplyStateColor()
+  useEnsureColorScales()
   const activeRadius = matchRadiusPreset(radius)
   const activeShadow = matchShadowPreset(shadows)
-  const themeCols = themeOrder.filter((t) => themes[t])
-  const reduceMotion = useReducedMotion() ?? false
-  const themeGlide = { duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] as const }
 
-  // While a custom style theme is previewed, the accent chip reads (and the
-  // preset clicks write) THAT theme's palette — same routing as the Color hub.
-  const accentBase = themePalettes[previewTheme]?.brand?.[BASE_TONE] ?? primaryColor
+  // While a custom style theme is previewed, the accent/neutral chips read (and
+  // the preset clicks write) THAT theme's palette — same routing as the Color hub.
+  const pal = themePalettes[previewTheme]
+  const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
+  const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
+  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
+
+  // Neutral auto-derives from the accent while linked (default on) — same
+  // contract as Foundations · Color's quick bar.
+  const [linked, setLinked] = useState(true)
+  const changeAccent = (hex: string) => applyAccentColor(hex, linked, previewTheme)
+  const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
+  const toggleLink = () => {
+    const next = !linked
+    setLinked(next)
+    if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
+  }
+  const matchStatesToAccent = () => {
+    const rec = recommendStateColors(accentBase)
+    applyStateColor('error', rec.error)
+    applyStateColor('warning', rec.warning)
+    applyStateColor('success', rec.success)
+    applyStateColor('info', rec.info)
+  }
+  // Surprise — jump to a random preset accent (never the current one).
+  const surprise = () => {
+    const pool = COLOR_FAMILY_PRESETS.filter((p) => p.hex.toLowerCase() !== accentBase.toLowerCase())
+    const pick = pool[Math.floor(Math.random() * pool.length)] ?? COLOR_FAMILY_PRESETS[0]
+    changeAccent(pick.hex)
+  }
+
+  // Saved custom families lead both color dropdowns, ahead of the tested presets.
+  const savedGroup: OptionGroup | null = customColors.length
+    ? {
+        label: 'Saved',
+        options: customColors.map((c) => ({ label: c.label, hex: c.base })),
+        onRemove: (hex) => {
+          const match = customColors.find((c) => c.base.toLowerCase() === hex.toLowerCase())
+          if (match) removeCustomColor(match.key)
+        },
+      }
+    : null
+  const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
+  const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
 
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const setFont = (role: 'heading' | 'body', family: string) => {
@@ -339,113 +524,134 @@ export function QuickEditSections({
     )
   }
 
-  // Swatch fill that reads as the theme itself — its page background, so the two
-  // chips look like "a light theme" and "a dark theme". Robust against the empty
-  // role strings a not-yet-visited theme carries (`??` alone passes "" through),
-  // falling back to the reliable page-background primitive for that appearance.
-  const isColor = (v?: string): v is string => !!v && v !== 'transparent'
-  const themeDot = (t: string): string => {
-    const kind = themeKinds[t] ?? 'light'
-    const surface = themes[t]?.['surface-0']
-    if (isColor(surface)) return surface
-    return kind === 'dark' ? darkBackground || '#0c0e12' : pageBackground || '#ffffff'
+  // Base size + type scale drive the whole size ramp. Base reads from text-md;
+  // the ratio is remembered locally (it can't be reversed from sizes alone).
+  const baseSize = parseInt(typography.sizes?.['text-md'] ?? '16', 10) || 16
+  const [typeScaleKey, setTypeScaleKey] = useState('minorThird')
+  const applyScale = (base: number, ratioKey: string) => {
+    const ratio = TYPE_SCALES.find((s) => s.key === ratioKey)?.ratio ?? 1.2
+    const { sizes, lineHeights } = buildTypeScale(base, ratio)
+    setTypography({ ...typography, sizes, lineHeights })
   }
 
   return (
     <>
-      {/* Color Family — accent presets; the full editor lives in Foundations · Color */}
-      <div className="flex flex-col gap-[8px]">
-        <span className="text-xs text-fg-muted">Color Family</span>
-        <ColorFamilyRow
-          accent={accentBase}
-          onPick={(hex) => applyAccentColor(hex, true, previewTheme)}
-          onOpenFoundations={onOpenFoundations}
-        />
-      </div>
-
-      {/* Variable Theme — swatch-only segmented picker (Figma spec 3475:64866):
-          same visual language as Color Family. The previewed theme leads as a
-          raised chip filled with THAT theme's accent; the others sit as 10px
-          page-background dots. The trailing + opens the theme manager. */}
-      {onThemeChange && themeCols.length > 1 && (
+      {/* Presets — one-click accent swap; the current accent leads as a raised chip */}
+      {showPresets && (
         <div className="flex flex-col gap-[8px]">
-          <span className="text-xs text-fg-muted">Variable Theme</span>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center p-[2px] rounded-[8px] bg-surface border border-line">
-              {themeCols.map((t) => {
-                const selected = t === previewTheme
-                const accent = themePalettes[t]?.brand?.[BASE_TONE] ?? primaryColor
-                return (
-                  <button
-                    key={t}
-                    onClick={() => onThemeChange(t)}
-                    aria-pressed={selected}
-                    aria-label={`${t} theme`}
-                    title={t.charAt(0).toUpperCase() + t.slice(1)}
-                    className={`relative size-[28px] flex-shrink-0 flex items-center justify-center rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40 ${
-                      selected ? '' : 'hover:bg-app/70'
-                    }`}
-                  >
-                    {selected && (
-                      <motion.span
-                        layoutId="variable-theme-thumb"
-                        transition={themeGlide}
-                        aria-hidden
-                        className="absolute inset-0 rounded-[6px] bg-app shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_2px_4px_-2px_rgba(0,0,0,0.08)]"
-                      />
-                    )}
-                    <motion.span
-                      aria-hidden
-                      className="relative"
-                      initial={false}
-                      animate={{
-                        width: selected ? 20 : 10,
-                        height: selected ? 20 : 10,
-                        borderRadius: selected ? 4 : 3,
-                        boxShadow: selected ? `0 0 0 3px ${withAlpha(accent, 0.1)}` : '0 0 0 1.7px #ffffff',
-                      }}
-                      transition={themeGlide}
-                      style={{ backgroundColor: selected ? accent : themeDot(t) }}
-                    />
-                  </button>
-                )
-              })}
-            </div>
-            {onAddTheme && (
-              <button
-                onClick={onAddTheme}
-                aria-label="Add a theme"
-                title="Add a theme — opens the Alias/Semantics matrix"
-                className="size-[28px] flex-shrink-0 flex items-center justify-center rounded-[6px] text-fg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
-              >
-                <span className="size-[20px] flex items-center justify-center rounded-[4px] bg-app border-[3px] border-elevated" aria-hidden>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-                </span>
-              </button>
-            )}
-          </div>
+          <span className="text-xs text-fg-muted">Presets</span>
+          <ColorFamilyRow
+            accent={accentBase}
+            onPick={changeAccent}
+            onOpenFoundations={onOpenFoundations}
+          />
         </div>
       )}
 
-      {/* Font Family — the two family tokens; full type scale in Foundations ·
-          Font. No overflow-hidden on this box: it would clip the dropdowns. */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Font Family</span>
-        <div className="rounded-lg border border-line">
-          <div className={`flex items-center justify-between gap-2 pl-3 pr-1 border-b border-line ${ROW_H}`}>
-            <span className="text-[11px] font-mono text-fg-muted truncate">font-family-heading</span>
-            <div className="w-32 flex-shrink-0">
-              <FontSelect value={headingFont} onChange={(f) => setFont('heading', f)} ariaLabel="Heading font family" />
-            </div>
+      {/* Color Family card — Surprise · Primary + Neutral (linked) · Background &
+          State Colors · Token Architecture. Recycles Foundations · Color's
+          ColorSelect / StateColorRows / LinkToggle so writes land in one place. */}
+      <Card
+        icon={PaletteGlyph}
+        title="Color Family"
+        action={
+          <button
+            type="button"
+            onClick={surprise}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] text-fg bg-elevated hover:bg-elevated/70 transition-colors"
+          >
+            {SurpriseGlyph}
+            Surprise
+          </button>
+        }
+      >
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+          <ColorSelect label="Primary" value={accentBase} groups={brandGroups} onChange={changeAccent} allowCustom panelClassName="left-0 w-[240px] max-h-72" />
+          <div className="pb-0.5">
+            <LinkToggle active={linked} onClick={toggleLink} accentColor={accentBase} />
           </div>
-          <div className={`flex items-center justify-between gap-2 pl-3 pr-1 ${ROW_H}`}>
-            <span className="text-[11px] font-mono text-fg-muted truncate">font-family-body</span>
-            <div className="w-32 flex-shrink-0">
-              <FontSelect value={typography.fontFamily} onChange={(f) => setFont('body', f)} ariaLabel="Body font family" />
-            </div>
+          <ColorSelect label="Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom panelClassName="right-0 w-[240px] max-h-72" />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-fg-faint">Background &amp; State Colors</span>
+          <ColorSelect
+            value={darkPreview ? darkBackground : pageBackground}
+            groups={darkPreview ? darkBackgroundGroups(accentBase) : BACKGROUND_GROUPS}
+            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
+            allowCustom
+            groupsLabel={darkPreview ? 'Background (dark)' : 'Background'}
+            panelClassName="left-0 right-0 max-h-[360px]"
+            previewSwatches={[
+              { hex: errorColor, label: 'Error' },
+              { hex: successColor, label: 'Success' },
+              { hex: warningColor, label: 'Warning' },
+              { hex: infoColor, label: 'Info' },
+            ]}
+            extras={
+              <StateColorRows
+                error={errorColor}
+                warning={warningColor}
+                success={successColor}
+                info={infoColor}
+                onChange={applyStateColor}
+                onMatchAccent={matchStatesToAccent}
+              />
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-fg-faint">Token Architecture</span>
+          <Combo<SemanticArchitecture>
+            value={semanticArchitecture}
+            options={ARCHITECTURE_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
+            onChange={setSemanticArchitecture}
+            ariaLabel="Token architecture"
+          />
+        </div>
+      </Card>
+
+      {/* Typography card — heading & body family · base size · modular type scale */}
+      <Card icon={TypeGlyph} title="Typography">
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-fg-faint">Font-family-heading</span>
+          <div className={`flex items-center rounded-lg border border-line bg-surface px-1 ${ROW_H}`}>
+            <FontSelect value={headingFont} onChange={(f) => setFont('heading', f)} ariaLabel="Heading font family" />
           </div>
         </div>
-      </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-fg-faint">Body font</span>
+          <div className={`flex items-center rounded-lg border border-line bg-surface px-1 ${ROW_H}`}>
+            <FontSelect value={typography.fontFamily} onChange={(f) => setFont('body', f)} ariaLabel="Body font family" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-medium text-fg">Base size</span>
+            <span className="text-[12px] text-fg-faint">{baseSize}px</span>
+          </div>
+          <input
+            type="range"
+            min={12}
+            max={20}
+            step={1}
+            value={baseSize}
+            onChange={(e) => applyScale(Number(e.target.value), typeScaleKey)}
+            aria-label="Base font size"
+            className="w-full accent-fg cursor-pointer"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[12px] font-medium text-fg">Type scale</span>
+          <Combo
+            value={typeScaleKey}
+            options={TYPE_SCALES.map((s) => ({ key: s.key, label: s.label }))}
+            onChange={(key) => { setTypeScaleKey(key); applyScale(baseSize, key) }}
+            ariaLabel="Type scale"
+          />
+        </div>
+      </Card>
 
       {/* Shadow — elevation ramp presets; full xs–2xl table in Foundations · Shadow */}
       <div className="flex flex-col gap-1.5">
@@ -547,69 +753,73 @@ export function QuickEditSections({
   )
 }
 
-// ── Home's persistent right panel ────────────────────────────────────────────
-
-// The dashed create/import tile that leads Home's Quick edit — the same tile
-// the Save hub's "My design systems" grid uses, so both entry points read as
-// one affordance.
-function CreateImportTile({ onNew, onImport }: { onNew: () => void; onImport: () => void }) {
+// ── Header presets — the accent swatch rail that replaces the panel title
+// (Figma spec 3538:7234). A "Presets" label + the accessible accent dots inside
+// a rounded pill; clicking one applies that accent (linked neutral). ──────────
+function HeaderPresets({ previewTheme = 'light' }: { previewTheme?: string }) {
+  const { primaryColor, themePalettes } = useDesignStore()
+  const applyAccentColor = useApplyAccentColor()
+  const accentBase = themePalettes[previewTheme]?.brand?.[BASE_TONE] ?? primaryColor
   return (
-    <div className="rounded-xl border-2 border-dashed border-line-strong bg-surface/50 p-4 flex flex-col items-center justify-center gap-3 text-fg-muted min-h-28">
-      <span className="text-sm font-medium text-center">Create or import a design system</span>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onNew}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          New
-        </button>
-        <button
-          onClick={onImport}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
-          </svg>
-          Import JSON
-        </button>
+    <div className="flex-1 min-w-0 flex items-center justify-between gap-2 h-9 pl-3 pr-1 rounded-[9px] bg-surface border border-line">
+      <span className="text-[10px] text-fg-faint flex-shrink-0">Presets</span>
+      <div className="flex items-center">
+        {COLOR_FAMILY_PRESETS.map((p) => {
+          const selected = p.hex.toLowerCase() === accentBase.toLowerCase()
+          return (
+            <button
+              key={p.hex}
+              onClick={() => applyAccentColor(p.hex, true, previewTheme)}
+              aria-pressed={selected}
+              aria-label={selected ? `${p.label} accent selected` : `Set accent to ${p.label}`}
+              title={`${p.label} — ${p.hex}`}
+              className="w-[19px] h-7 flex-shrink-0 flex items-center justify-center rounded-md transition-colors hover:bg-app/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
+            >
+              <span
+                aria-hidden
+                style={{
+                  backgroundColor: p.hex,
+                  width: selected ? 13 : 10,
+                  height: selected ? 13 : 10,
+                  borderRadius: selected ? 4 : 3,
+                  boxShadow: selected ? `0 0 0 2.5px ${withAlpha(p.hex, 0.25)}` : '0 0 0 1.7px #ffffff',
+                  transition: 'width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease',
+                }}
+              />
+            </button>
+          )
+        })}
       </div>
     </div>
   )
 }
+
+// ── Home's persistent right panel ────────────────────────────────────────────
 
 export function QuickEditPanel({
   onOpenFoundations,
   previewTheme = 'light',
   onThemeChange,
   onCollapse,
-  onNewSystem,
-  onImport,
   onAddTheme,
 }: {
   onOpenFoundations: () => void
   previewTheme?: string
   onThemeChange?: (theme: string) => void
   onCollapse?: () => void
-  /** Starts a fresh system — renders the create/import tile when provided with onImport. */
-  onNewSystem?: () => void
-  /** Opens the Import-your-design-system modal (owned by the shell). */
-  onImport?: () => void
   /** Opens the theme manager (Alias/Semantics) — shows Variable Theme's + cell. */
   onAddTheme?: () => void
 }) {
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
       <header className="flex items-center gap-2 px-5 h-[60px] border-b border-line/60 flex-shrink-0">
-        <h2 className="text-sm font-semibold text-fg">Quick edit</h2>
+        <HeaderPresets previewTheme={previewTheme} />
         {onCollapse && (
           <button
             onClick={onCollapse}
             aria-label="Collapse quick edit"
             title="Collapse quick edit"
-            className="ml-auto flex-shrink-0 p-1.5 rounded-lg text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
+            className="flex-shrink-0 p-1.5 rounded-lg text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -622,12 +832,12 @@ export function QuickEditPanel({
           Components Preview body and the TopNav's px-5 — one shared 22.5px edge
           from the theme switch down to the last control. */}
       <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-4">
-        {onNewSystem && onImport && <CreateImportTile onNew={onNewSystem} onImport={onImport} />}
         <QuickEditSections
           onOpenFoundations={onOpenFoundations}
           previewTheme={previewTheme}
           onThemeChange={onThemeChange}
           onAddTheme={onAddTheme}
+          showPresets={false}
         />
       </div>
     </div>
