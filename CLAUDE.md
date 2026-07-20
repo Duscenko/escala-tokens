@@ -63,13 +63,22 @@ watch the right-hand preview update, then export.
   Neutral has a real dark twin (`grayDarkScale`), colored ramps share one scale;
   the **dark column shows the dark-theme READING of the ramp** (inverted, row N
   ↔ tone 13−N, matching how `recDarkTone` resolves Alias/Semantics' dark
-  column) · **Alias / Semantics** (`Step3_SemanticTokens`) · **Gradients**
-  (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
-- **Save is the persistence hub** (`SaveView`, rail bottom → `exportMode 'save'`):
-  everything the old Home dashboard had — identity (name/description), "Save design
-  system" (local registry via `saveCurrentSystem`) + "Download files", the
-  "My design systems" strip + saved-systems list, summary chips, connections
-  (Figma/GitHub) and the share endpoint.
+  column) · **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
+  **architecture picker** — `ArchitecturePicker`: radio cards for Flat /
+  Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
+  the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
+  view from its projection via `buildArchitectureView` — sidebar groups,
+  counts and a read-only light/dark table mirror the exported schema exactly,
+  and switching architectures resets category/search state) ·
+  **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
+- **Save is the "Save & Share" hub** (`SaveView`, rail bottom → `exportMode 'save'`):
+  the center IS the export surface — a tabbed file-preview card (tokens.json with a
+  "Figma plugin" badge · variables.css · README.md, accent-colored active tab, plus an
+  "Export all files" action tab) with Copy / Download per file and the live-endpoint
+  footer, over the "My design systems" saved-systems grid (+ create/import tile). The
+  right aside is `SaveSidePanel` ("Current Design System"): identity (name/description),
+  Bring to Figma / Connect-with-GitHub pills with status dots, summary chips and "Save
+  design system" (local registry via `saveCurrentSystem`).
 - **Multi design system**: `savedSystems` (persisted registry) — a system is *saved* only
   by a successful GitHub push (`GitHubConnectView` upserts `{ id: repo, name, description,
   repo, savedAt, snapshot }`). `loadSystem(id)` restores a deep-cloned `DesignSnapshot`;
@@ -132,6 +141,7 @@ src/
 │   ├── gradients.ts           ← GradientDef/GradientAssignments types + gradientToCss()/gradientSlug()/makeDefaultGradients() (pure data)
 │   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
 │   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
+│   ├── semanticArchitectures.ts ← the 4 semantic token architectures: metadata (labels/tooltips) + pure projections of the flat role catalogue — projectCategorical() (DTCG-style grouped tree), projectVibrancy() (Apple HIG alpha roles + opaque fallbacks), projectTonal() (M3 0–100 tonal palettes + paired on-color scheme), projectArchitecture() dispatcher used by the export
 │   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
 │   ├── exporters.ts           ← buildCSS()/buildMarkdown() — shared by ExportView + GitHubConnectView
 │   ├── github.ts              ← GitHub REST client (PAT in localStorage 'sd-github-token', NEVER in the store): validateToken, listRepos, createRepo, pushFiles (Contents API, sequential)
@@ -165,13 +175,14 @@ Key fields — always use the store, never local state for cross-view data:
 | `grayLightScale` | ColorScale | Foundations · Color |
 | `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | Foundations · Color |
 | `customColors` | CustomColor[] (`{ key, label, base, scale }` — named families with auto 1–12 scales; keys in `RESERVED_COLOR_KEYS` are blocked) | Foundations · Color |
+| `semanticArchitecture` | `'flat' \| 'categorical' \| 'vibrancy' \| 'tonal'` — which shape the export projects the 89-role catalogue into (`lib/semanticArchitectures.ts`). The flat matrix is ALWAYS the editing surface; non-flat choices ship additively as `colors.architecture` in tokens.json (plugin contract untouched) | Color · Alias/Semantics (ArchitecturePicker) |
 | `themes` | Record<theme, Record<role, hex>> — `light`/`dark` always exist (protected); user themes via `addTheme(key, base)` duplicate an existing one. Role keys use the **readable taxonomy**: `surface-*` (page/card levels), `action-*` (button/control fills), `status-*` (feedback fills), `text-*`, `icon-*`, `border-*`. Defined once in `ROLE_GROUPS` (`Step3_SemanticTokens.tsx`); `SEMANTIC_KEY_RENAME` (store) migrates old v23 keys | Foundations · Semantic |
 | `themeOrder` | string[] (column order, default `['light','dark']`) | Foundations · Semantic |
 | `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
 | `spacing` | Record<string, string> | Foundations · Spacing |
 | `padding` | Record<'top'\|'right'\|'bottom'\|'left', string> — per-side surface inset for padded surfaces (collage tiles, Card, sign-up card via `paddingOf()`); exported as `padding` in tokens.json + `--padding-*` CSS vars | Quick edit · Padding |
-| `gradients` | GradientDef[] (`{ id, name, type: 'linear'\|'radial', angle, stops: {color,pos}[] }`) — named gradients; `gradientToCss()` builds the CSS. Exported as `gradients` (slug→css) in tokens.json + `--gradient-*` CSS vars + README table | Foundations · Gradients |
+| `gradients` | GradientDef[] (`{ id, name, type: 'linear'\|'radial', angle, stops: {color,pos}[], linked? }`) — named gradients; `gradientToCss()` builds the CSS. `linked` is an explicit accent lock (Brand Cover/Aurora default true): while on, `useApplyAccentColor` re-derives the stops via `derivedStopsFor(id, accent)` and the editor disables stop editing; the lock chip in StepGradients unlocks (free editing) / re-locks (re-derives from the current accent). Exported as `gradients` (slug→css) in tokens.json + `--gradient-*` CSS vars + README table | Foundations · Gradients |
 | `gradientAssignments` | `{ cover, avatar }` (gradient id or null) — which gradient drives each preview surface: HomeView's card cover (`GlassPanel`) + solid avatars (`AvatarRound`), resolved into `PreviewTokens.coverGradient`/`avatarGradient` | Foundations · Gradients |
 | `savedColors` | string[] — the custom `ColorField` picker's "Saved" swatch library (hex, alpha-aware) | any ColorField |
 | `radius` | Record<string, string> | Foundations · Border Radius |
@@ -192,7 +203,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 32`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 37`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Light vs dark ramps.** A ramp always runs 1 (lightest) → 12 (darkest); what differs is **which end grows out of the page**. `generateColorScale(…, appearance: 'light')` anchors tone 1 to `pageBackground`; `generateDarkColorScale()` anchors tone **12** to `darkBackground` *and* re-derives the ramp's base (tone 9) as a dark neutral, so tones 9–12 are the dark surfaces instead of mid-grays. Gray is the **only** ramp with a dark twin — colored ramps (brand/status) keep their hue and just shift tone via `recDarkTone`. Anything that builds a `GlobalScales` **must pass `grayDark`**: it's optional in the type, and omitting it silently falls back to the legacy constant — which would make Step3's resync treat every dark gray as stale and overwrite the generated ramp.
 

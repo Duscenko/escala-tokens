@@ -10,6 +10,7 @@ import { withAlpha, readableInk } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
 import { ALL_ROLES, sourceScaleFor, recHexFor, type GlobalScales } from './semanticRoles'
+import { tonalPalettes } from './semanticArchitectures'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
 
@@ -55,7 +56,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     const g = id ? store.gradients.find((x) => x.id === id) : null
     return g ? gradientToCss(g) : undefined
   }
-  return {
+  const tokens: PreviewTokens = {
     // surface-0's source is gray tone 1 in light / tone 12 in dark (semanticRoles),
     // itself anchored to `pageBackground` — fall back down that same chain, never
     // to the light ramp (which rendered dark themes white).
@@ -92,6 +93,50 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),
     avatarGradient: gradientCssFor(store.gradientAssignments?.avatar ?? null),
   }
+
+  // ── Architecture overlay ──────────────────────────────────────────────────
+  // The preview renders the semantic system the user actually chose: a
+  // non-flat architecture re-maps the resolved roles onto ITS scheme, so the
+  // atoms (right panel, Home collage, docs) visibly follow the selection.
+  const arch = store.semanticArchitecture ?? 'flat'
+  const dark = kind === 'dark'
+
+  if (arch === 'tonal') {
+    // Material 3: the exact scheme the export ships — primary 40↔80 with paired
+    // on-colors, neutral surfaces (98↔6) + containers, neutral-variant outlines.
+    const pals = tonalPalettes(primaryColor, errorColor)
+    const P = pals.primary, N = pals.neutral, NV = pals['neutral-variant'], E = pals.error
+    tokens.surface = (dark ? N[6] : N[98]) ?? tokens.surface
+    tokens.neutralFill = (dark ? N[12] : N[94]) ?? tokens.neutralFill        // surface-container
+    tokens.brandSolid = (dark ? P[80] : P[40]) ?? tokens.brandSolid
+    tokens.onBrand = (dark ? P[20] : P[100]) ?? tokens.onBrand               // on-primary
+    tokens.brandText = (dark ? P[80] : P[40]) ?? tokens.brandText
+    tokens.neutralText = (dark ? N[90] : N[10]) ?? tokens.neutralText        // on-surface
+    tokens.fgMuted = (dark ? NV[80] : NV[30]) ?? tokens.fgMuted              // on-surface-variant
+    tokens.placeholderText = (dark ? NV[60] : NV[50]) ?? tokens.placeholderText
+    tokens.border = (dark ? NV[60] : NV[50]) ?? tokens.border                // outline
+    tokens.borderDefault = (dark ? NV[30] : NV[80]) ?? tokens.borderDefault  // outline-variant
+    tokens.errorColor = (dark ? E[80] : E[40]) ?? tokens.errorColor
+    tokens.disabledBg = (dark ? N[17] : N[92]) ?? tokens.disabledBg
+    tokens.disabledText = (dark ? N[60] : N[50]) ?? tokens.disabledText
+  } else if (arch === 'vibrancy') {
+    // Apple HIG: one ink at graded opacities instead of separate gray tones,
+    // thin alpha fills for controls, hairline alpha separators.
+    const ink = tokens.neutralText
+    const sepBase = grayScale[6] ?? tokens.border
+    const fillBase = grayScale[8] ?? tokens.border
+    tokens.fgMuted = withAlpha(ink, 0.6)            // secondary label
+    tokens.placeholderText = withAlpha(ink, 0.3)    // tertiary label
+    tokens.disabledText = withAlpha(ink, 0.3)
+    tokens.border = withAlpha(sepBase, 0.55)        // separator (strong)
+    tokens.borderDefault = withAlpha(sepBase, 0.36) // separator
+    tokens.neutralFill = withAlpha(fillBase, 0.12)  // tertiary fill
+    tokens.disabledBg = withAlpha(fillBase, 0.08)   // quaternary fill
+  }
+  // 'flat' and 'categorical' share the same resolved values — categorical is a
+  // curated regrouping of the identical tone math, so the render matches.
+
+  return tokens
 }
 
 /** Hook variant — re-renders whenever any token in the store changes. */

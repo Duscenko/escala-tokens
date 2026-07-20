@@ -23,6 +23,7 @@ import {
 } from './colorControls'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import { ColorPickerPanel } from '../ui/ColorField'
+import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { slugify } from '../../lib/utils'
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
@@ -40,27 +41,6 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-function SlidersIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-      <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-      <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-    </svg>
-  )
-}
-
-function PaletteIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 22a10 10 0 1 1 10-10c0 2.2-1.8 3-3 3h-2.6a2.4 2.4 0 0 0-1.8 4 1.5 1.5 0 0 1-1.1 2.5" />
-      <circle cx="7.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="11" cy="7.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="9.5" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
 
 // ── Editable hex cell (swatch + live hex field, draft pattern) ───────────────
 
@@ -502,7 +482,7 @@ export default function ColorPrimitives({
                         style={gridStyle}
                       >
                         <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
-                          <PaletteIcon />
+                          <PaletteIcon size={14} />
                           <code className="font-mono text-[12px] text-fg-muted truncate">{name}</code>
                           {tone === BASE_TONE && (
                             <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">base</span>

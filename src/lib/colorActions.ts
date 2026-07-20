@@ -12,7 +12,7 @@ import { useCallback, useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { generateColorScale, generateDarkColorScale } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
-import { brandCoverStops, brandAvatarStops, stopsMatch } from './gradients'
+import { derivedStopsFor } from './gradients'
 import { neutralFromBrand, darkBackgroundOptions } from '../components/configurator/colorControls'
 
 // The dark page background's presets are derived from the accent's hue, so when
@@ -135,16 +135,13 @@ export function useApplyAccentColor() {
         setGrayLightScale(gScale)
         setGrayDarkScale(gDark)
       }
-      // Keep the accent-linked gradients on-brand: retint only the ones that
-      // still match the derived signature for the OLD accent — a gradient the
-      // user hand-edited won't match and is preserved, same idea as the dark
-      // background above.
+      // Keep the accent-linked gradients on-brand. The link is an explicit
+      // per-gradient lock (`linked`, toggled in the Gradients editor) — an
+      // unlocked gradient is the user's to keep, whatever its colors.
       for (const g of gradients) {
-        if (g.id === 'brand-cover' && stopsMatch(g.stops, brandCoverStops(primaryColor))) {
-          updateGradient(g.id, { stops: brandCoverStops(hex) })
-        } else if (g.id === 'aurora' && stopsMatch(g.stops, brandAvatarStops(primaryColor))) {
-          updateGradient(g.id, { stops: brandAvatarStops(hex) })
-        }
+        if (!g.linked) continue
+        const stops = derivedStopsFor(g.id, hex)
+        if (stops) updateGradient(g.id, { stops })
       }
     } catch {
       /* invalid hex — ignore */

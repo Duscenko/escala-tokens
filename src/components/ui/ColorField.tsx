@@ -40,8 +40,19 @@ function ratioIn(el: HTMLElement, clientX: number, clientY: number) {
   }
 }
 
+/** Tones of a ramp in 1→12 order, skipping holes (ungenerated scales). */
+function rampSwatches(scale: Record<number, string> | undefined): { tone: number; hex: string }[] {
+  if (!scale) return []
+  return Object.keys(scale)
+    .map(Number)
+    .filter((t) => !Number.isNaN(t))
+    .sort((a, b) => a - b)
+    .map((tone) => ({ tone, hex: scale[tone] }))
+}
+
 export function ColorPickerPanel({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
   const { savedColors, addSavedColor, removeSavedColor } = useDesignStore()
+  const { primaryScale, grayLightScale, errorColor, warningColor, successColor, infoColor, customColors } = useDesignStore()
   const [hsva, setHsva] = useState<HSVA>(() => toHsva(value))
   const [hexDraft, setHexDraft] = useState('')
 
@@ -179,6 +190,91 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
           <span className="text-[10px] text-fg-faint flex-shrink-0">%</span>
         </div>
       </div>
+
+      {/* System palette — a compact token table, structured like the primitive
+          scale rows: one row per ramp, one shared tone axis, then the state
+          bases. Each cell is a real token — the tooltip carries its name and
+          hex, and the cell matching the current value shows the selected ring. */}
+      {(() => {
+        const accentRow = rampSwatches(primaryScale)
+        const neutralRow = rampSwatches(grayLightScale)
+        const bases = [
+          { label: 'error', hex: errorColor },
+          { label: 'warning', hex: warningColor },
+          { label: 'success', hex: successColor },
+          { label: 'info', hex: infoColor },
+          ...customColors.map((c) => ({ label: c.label, hex: c.base })),
+        ].filter((b) => b.hex)
+        if (!accentRow.length && !neutralRow.length && !bases.length) return null
+        const current = hex.replace(/^#/, '').slice(0, 6).toLowerCase()
+        const isCurrent = (c: string) => c.replace(/^#/, '').slice(0, 6).toLowerCase() === current
+        const cellClass = (selected: boolean) =>
+          `h-4 w-full min-w-0 rounded-[4px] transition-all ${
+            selected
+              ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'
+              : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/25 dark:hover:ring-white/25'
+          }`
+        const axisRow = (accentRow.length ? 1 : 0) + (neutralRow.length ? 1 : 0) + 1
+        const statesRow = axisRow + 1
+        const rampRow = (name: string, swatches: { tone: number; hex: string }[]) => (
+          <>
+            <span className="text-[9px] font-mono text-fg-faint truncate pr-0.5">{name}</span>
+            {swatches.map((s) => (
+              <button
+                key={`${name}-${s.tone}`}
+                type="button"
+                onClick={() => apply(toHsva(s.hex))}
+                title={`${name}-${s.tone} — ${s.hex}`}
+                aria-label={`Use ${name}-${s.tone}`}
+                className={cellClass(isCurrent(s.hex))}
+                style={{ background: s.hex, gridColumn: s.tone + 1 }}
+              />
+            ))}
+          </>
+        )
+        return (
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
+            <span className="text-[11px] text-fg-muted">Palette</span>
+            <p className="text-[10px] text-fg-faint leading-snug -mt-1">
+              Your system's ramps — click to apply.
+            </p>
+            <div
+              className="grid items-center"
+              style={{ gridTemplateColumns: '3rem repeat(12, minmax(0, 1fr))', columnGap: 3, rowGap: 4 }}
+            >
+              {accentRow.length > 0 && rampRow('accent', accentRow)}
+              {neutralRow.length > 0 && rampRow('neutral', neutralRow)}
+              {/* Shared tone axis — the same 1–12 the scale editors number */}
+              {Array.from({ length: 12 }, (_, i) => (
+                <span
+                  key={`axis-${i + 1}`}
+                  className="text-[8px] font-mono tabular-nums leading-none text-center text-fg-faint"
+                  style={{ gridColumn: i + 2, gridRow: axisRow }}
+                  aria-hidden
+                >
+                  {i + 1}
+                </span>
+              ))}
+              {bases.length > 0 && (
+                <>
+                  <span className="text-[9px] font-mono text-fg-faint truncate pr-0.5" style={{ gridRow: statesRow }}>states</span>
+                  {bases.map((b, i) => (
+                    <button
+                      key={b.label}
+                      type="button"
+                      onClick={() => apply(toHsva(b.hex))}
+                      title={`${b.label} — ${b.hex}`}
+                      aria-label={`Use ${b.label}`}
+                      className={cellClass(isCurrent(b.hex))}
+                      style={{ background: b.hex, gridColumn: (i % 12) + 2, gridRow: statesRow + Math.floor(i / 12) }}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Saved swatches */}
       <div className="flex flex-col gap-1.5 pt-1 border-t border-line">

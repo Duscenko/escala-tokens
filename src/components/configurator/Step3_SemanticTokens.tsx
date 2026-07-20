@@ -1,14 +1,20 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
+import {
+  architectureLabel, buildArchitectureView,
+  type ArchTokenValue, type SemanticArchitecture,
+} from '../../lib/semanticArchitectures'
 import {
   SCALE_META, ROLE_GROUPS, ALL_ROLES, BRAND_TOKEN_TONES,
   toneIndexOf, sourceScaleFor, recToneFor, recHexFor,
   type Role, type ScaleSource, type GlobalScales,
 } from '../../lib/semanticRoles'
 import AddThemeModal from './AddThemeModal'
+import ArchitecturePicker from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import { BRAND_GROUPS, findOption } from './colorControls'
+import { SlidersIcon, PaletteIcon } from '../ui/icons'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -47,6 +53,69 @@ const CATEGORY_DESC: Record<SemanticCategory, string> = {
     Exclude<SemanticCategory, 'all'>,
     string
   >),
+}
+
+// Non-flat architecture groups reuse the closest flat category glyph.
+const ARCH_ICON_ALIAS: Record<string, SemanticCategory> = {
+  content: 'text', labels: 'text', fallbacks: 'status', backgrounds: 'surface',
+  fills: 'surface', separators: 'border', materials: 'surface', tint: 'icon',
+  core: 'icon', secondary: 'icon', tertiary: 'icon', error: 'status',
+  surfaces: 'surface', outlines: 'border',
+}
+const archIconFor = (key: string): ReactNode =>
+  CATEGORY_ICON[(key in CATEGORY_ICON ? key : ARCH_ICON_ALIAS[key] ?? 'all') as SemanticCategory]
+
+// Checkerboard under alpha swatches so transparency reads visually (vibrancy).
+const CHECKER_STYLE: React.CSSProperties = {
+  backgroundImage: 'repeating-conic-gradient(rgba(127,127,127,0.35) 0% 25%, transparent 0% 50%)',
+  backgroundSize: '8px 8px',
+}
+
+/** Dynamic read-only value cell for projected architectures. Adapts to the
+ *  active `architecture.kind`:
+ *   · vibrancy — alpha values render on a checkerboard swatch; label tokens
+ *     carry a badge revealing their opaque WCAG fallback alias.
+ *   · tonal — emphasizes the tonal reference ({primary.40} ↔ {primary.80}),
+ *     not the raw hex, so the light↔dark tone inversion stays legible. */
+function TokenCell({
+  v,
+  kind,
+  fallback,
+}: {
+  v: ArchTokenValue
+  kind: SemanticArchitecture
+  fallback?: ArchTokenValue
+}) {
+  const hasAlpha = /\/\s*0\./.test(v.css)
+  const tonal = kind === 'tonal' ? /^([a-z-]+)\.(\d+)$/.exec(v.label) : null
+  return (
+    <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
+      <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-[11px] font-mono text-fg-muted max-w-full">
+        <span className="relative w-3.5 h-3.5 rounded-[3px] flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
+          {hasAlpha && <span className="absolute inset-0" style={CHECKER_STYLE} aria-hidden />}
+          <span className="absolute inset-0" style={{ background: v.css }} />
+        </span>
+        {tonal ? (
+          <span className="truncate tabular-nums" title={`${v.css} — tone ${tonal[2]} (inverts between themes)`}>
+            {'{'}{tonal[1]}.<span className="text-accent-ui font-semibold">{tonal[2]}</span>{'}'}
+          </span>
+        ) : (
+          <span className="truncate tabular-nums" title={v.label}>{v.label}</span>
+        )}
+      </span>
+      {fallback && (
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-elevated/70 border border-line text-[9.5px] font-mono text-fg-faint max-w-full"
+          title={`Opaque WCAG fallback (${fallback.css}) — applied when backdrop-filter / vibrancy is unavailable`}
+        >
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" className="flex-shrink-0 opacity-70" aria-hidden>
+            <path d="M6 1l4 1.6v2.9c0 2.6-1.7 4.5-4 5.5-2.3-1-4-2.9-4-5.5V2.6L6 1z" />
+          </svg>
+          <span className="truncate">fallback {'{'}{fallback.label}{'}'}</span>
+        </span>
+      )}
+    </span>
+  )
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -105,21 +174,14 @@ function AliasBadge({ scale, tone, color }: { scale: ScaleSource; tone: number |
   )
 }
 
-/** Sliders / "tune" icon — opens the per-mode scale editor. */
-function SlidersIcon({ active }: { active: boolean }) {
+/** Per-mode scale editor trigger — the shared official sliders icon with the
+ *  matrix's active/hover coloring. */
+function TuneIcon({ active }: { active: boolean }) {
   return (
-    <svg
-      width="15" height="15" viewBox="0 0 14 14" fill="none"
-      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"
+    <SlidersIcon
+      size={15}
       className={`transition-colors ${active ? 'text-accent-ui' : 'text-fg-faint group-hover:text-fg-muted'}`}
-    >
-      <line x1="3" y1="2" x2="3" y2="12" />
-      <line x1="7" y1="2" x2="7" y2="12" />
-      <line x1="11" y1="2" x2="11" y2="12" />
-      <circle cx="3" cy="5" r="1.7" fill="var(--app)" />
-      <circle cx="7" cy="9" r="1.7" fill="var(--app)" />
-      <circle cx="11" cy="4" r="1.7" fill="var(--app)" />
-    </svg>
+    />
   )
 }
 
@@ -255,13 +317,7 @@ function MatrixRow({
                 already shows in the Light/Dark columns, so a per-row swatch just
                 duplicated it. */}
             <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-              </svg>
+              <PaletteIcon size={16} />
             </span>
             <code className="font-mono text-[12px] text-fg-muted truncate" title={role.label}>{role.label}</code>
             {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from recommended" />}
@@ -292,7 +348,7 @@ function MatrixRow({
           aria-label={expanded ? 'Close scale editor' : 'Edit scale'}
           className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors"
         >
-          <SlidersIcon active={expanded} />
+          <TuneIcon active={expanded} />
         </button>
       </div>
 
@@ -362,11 +418,12 @@ export default function Step3_SemanticTokens({
   onPreviewThemeChange?: (theme: string) => void
 } = {}) {
   const {
-    primaryColor, primaryScale, errorScale, warningScale, successScale, infoScale,
+    primaryColor, errorColor, primaryScale, errorScale, warningScale, successScale, infoScale,
     grayLightScale, grayDarkScale, customColors,
     themes, themeOrder, themeKinds, themePalettes,
     setThemeToken, removeTheme,
     panelBackground, setPanelBackground,
+    semanticArchitecture,
   } = useDesignStore()
 
   const reduce = useReducedMotion() ?? false
@@ -442,6 +499,37 @@ export default function Step3_SemanticTokens({
   // "+ Theme" modal state
   const [addThemeOpen, setAddThemeOpen] = useState(false)
 
+  // ── Architecture-driven view ──────────────────────────────────────────────
+  // For a NON-flat architecture the sidebar categories, counts and table rows
+  // all derive from the projection itself (buildArchitectureView), so the UI
+  // always mirrors the exact schema the export emits. The flat matrix keeps
+  // its full editing behavior.
+  const isFlat = semanticArchitecture === 'flat'
+  const archView = useMemo(
+    () =>
+      isFlat
+        ? null
+        : buildArchitectureView(
+            semanticArchitecture,
+            { themes, themeKinds, themePalettes, scales, accent: primaryColor },
+            errorColor,
+          ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, themePalettes],
+  )
+  // Sidebar selection for non-flat architectures ('all' + the schema's groups).
+  const [archCategory, setArchCategory] = useState<string>('all')
+
+  // Architecture switch resets the view state: first nav option, cleared
+  // search/expansion, and the right-hand preview back to the generic overview.
+  useEffect(() => {
+    setArchCategory('all')
+    setExpandedRole(null)
+    setQuery('')
+    if (semanticArchitecture !== 'flat') onCategoryChange?.('all')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semanticArchitecture])
+
   function selectCategory(c: SemanticCategory) {
     onCategoryChange?.(c)
     if (controlledCategory === undefined) setInternalCategory(c)
@@ -488,7 +576,67 @@ export default function Step3_SemanticTokens({
   const visibleRoles = q
     ? baseRoles.filter((r) => r.label.toLowerCase().includes(q) || cleanDescription(r.description).toLowerCase().includes(q))
     : baseRoles
-  const activeLabel = NAV.find((n) => n.key === activeCategory)?.label ?? 'All tokens'
+
+  // Unified nav model — flat reads the role catalogue; other architectures read
+  // the projection's own groups, so sidebar + counts mirror the exported schema.
+  type NavItem = { key: string; label: string; count: number; description: string; icon: ReactNode; modified: number }
+  const navItems: NavItem[] = isFlat
+    ? NAV.map((item) => ({
+        key: item.key,
+        label: item.label,
+        count: item.roles.length,
+        description: CATEGORY_DESC[item.key],
+        icon: CATEGORY_ICON[item.key],
+        modified: item.roles.filter(isModified).length,
+      }))
+    : [
+        {
+          key: 'all',
+          label: 'All tokens',
+          count: archView?.total ?? 0,
+          description: `Every role in the ${architectureLabel(semanticArchitecture)} schema`,
+          icon: CATEGORY_ICON.all,
+          modified: 0,
+        },
+        ...(archView?.categories ?? []).map((c) => ({
+          key: c.key,
+          label: c.label,
+          count: c.tokens.length,
+          description: c.description,
+          icon: archIconFor(c.key),
+          modified: 0,
+        })),
+      ]
+  const activeKey = isFlat ? (activeCategory as string) : archCategory
+  const activeItem = navItems.find((n) => n.key === activeKey) ?? navItems[0]
+
+  function selectNavItem(key: string) {
+    if (isFlat) {
+      selectCategory(key as SemanticCategory)
+    } else {
+      setArchCategory(key)
+      setExpandedRole(null)
+    }
+  }
+
+  // Non-flat table rows — straight from the projection, filtered by search.
+  // Keys repeat across groups (content.primary vs action.primary), so rows are
+  // group-qualified: unique React keys AND unambiguous names in the All view.
+  const archTokens = !isFlat && archView
+    ? (archCategory === 'all'
+        ? archView.categories.flatMap((c) =>
+            c.tokens.map((t) => ({ ...t, id: `${c.key}.${t.key}`, name: `${c.key}.${t.key}` })),
+          )
+        : (archView.categories.find((c) => c.key === archCategory)?.tokens ?? []).map((t) => ({
+            ...t, id: `${archCategory}.${t.key}`, name: t.key,
+          }))
+      ).filter((t) => !q || t.name.toLowerCase().includes(q))
+    : []
+  // Name column keeps a real minimum — with two flexible value columns it
+  // would otherwise collapse to 0 on narrow panes (overflow-auto scrolls).
+  const archGridStyle: React.CSSProperties = {
+    gridTemplateColumns: 'minmax(11rem,1.4fr) minmax(8.5rem,1fr) minmax(8.5rem,1fr)',
+  }
 
   if (!ready) {
     return (
@@ -499,6 +647,10 @@ export default function Step3_SemanticTokens({
   }
 
   return (
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
+    {/* Architecture picker — which projection the export emits; the matrix
+        below is the editing surface for all of them. */}
+    <ArchitecturePicker />
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -508,9 +660,11 @@ export default function Step3_SemanticTokens({
       {/* Top bar: active category title + count + search — pinned */}
       <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-sm text-fg truncate">{activeLabel}</span>
-          <span className="text-[11px] font-mono tabular-nums text-fg-faint">{baseRoles.length}</span>
-          {/* + Theme — opens a modal to pick the new theme's brand/neutral/semantic palette */}
+          <span className="text-sm text-fg truncate">{activeItem.label}</span>
+          <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeItem.count}</span>
+          {/* + Theme — flat only: extra themes are columns of the flat matrix;
+              the other architectures are two-mode (light/dark) by contract. */}
+          {isFlat && (
           <button
             onClick={() => setAddThemeOpen(true)}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-fg-faint hover:text-fg border border-line hover:border-line-strong transition-colors"
@@ -519,9 +673,10 @@ export default function Step3_SemanticTokens({
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
             Theme
           </button>
+          )}
           {/* Panel background — Radix-style solid/translucent for surface-1
               (cards, panels, sections). Only relevant while viewing Surface. */}
-          {activeCategory === 'surface' && (
+          {isFlat && activeCategory === 'surface' && (
             <div className="flex items-center gap-2 ml-1">
               <span className="text-[11px] text-fg-faint">Panel background</span>
               <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
@@ -570,22 +725,21 @@ export default function Step3_SemanticTokens({
       <div className="flex items-stretch flex-1 min-h-0">
         {/* Internal category nav — icon-only, tooltip on hover */}
         <nav aria-label="Token categories" className="w-40 flex-shrink-0 border-r border-line py-2 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
-          {NAV.map((item) => {
-            const isActive = activeCategory === item.key
-            const mod = item.roles.filter(isModified).length
+          {navItems.map((item) => {
+            const isActive = activeKey === item.key
             return (
               <div key={item.key} className="relative group">
                 <button
-                  onClick={() => selectCategory(item.key)}
+                  onClick={() => selectNavItem(item.key)}
                   aria-label={item.label}
                   aria-current={isActive}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
                     isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{CATEGORY_ICON[item.key]}</span>
+                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>
                   <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
-                  {mod > 0 && (
+                  {item.modified > 0 && (
                     <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" aria-hidden />
                   )}
                 </button>
@@ -594,7 +748,7 @@ export default function Step3_SemanticTokens({
                   role="tooltip"
                   className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 w-44 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-40 shadow-lg"
                 >
-                  {CATEGORY_DESC[item.key]}
+                  {item.description}
                 </span>
               </div>
             )
@@ -603,6 +757,48 @@ export default function Step3_SemanticTokens({
 
         {/* Token table — scrolls internally; column header stays pinned */}
         <div className="flex-1 min-w-0 overflow-auto">
+          {!isFlat && archView ? (
+            // ── Architecture table — read-only, schema-faithful: rows and
+            // values come straight from the projection the export emits. ──
+            <div className="min-w-[28rem]">
+              <div
+                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
+                style={archGridStyle}
+              >
+                <span className="pl-4 py-3 border-r border-line">Token name</span>
+                <span className="flex items-center gap-1.5 px-3 py-3 border-r border-line"><KindIcon kind="light" /> light</span>
+                <span className="flex items-center gap-1.5 px-3 py-3"><KindIcon kind="dark" /> dark</span>
+              </div>
+              {archTokens.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-fg-faint">
+                  No tokens match “{query}”.
+                </div>
+              ) : (
+                archTokens.map((t, idx) => (
+                  <div
+                    key={t.id}
+                    className={`grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+                      idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+                    }`}
+                    style={archGridStyle}
+                  >
+                    <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                      <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
+                        <PaletteIcon size={16} />
+                      </span>
+                      <code className="font-mono text-[12px] text-fg-muted truncate" title={t.name}>{t.name}</code>
+                    </div>
+                    <div className="px-3 py-3 border-r border-line min-w-0">
+                      <TokenCell v={t.light} kind={semanticArchitecture} fallback={t.fallback?.light} />
+                    </div>
+                    <div className="px-3 py-3 min-w-0">
+                      <TokenCell v={t.dark} kind={semanticArchitecture} fallback={t.fallback?.dark} />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
           <div className="min-w-[26rem]">
             {/* Column header — one column per theme; custom themes are removable */}
             <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10" style={gridStyle}>
@@ -647,7 +843,7 @@ export default function Step3_SemanticTokens({
                 )
               })}
               <span className="flex items-center justify-center py-3" aria-hidden>
-                <SlidersIcon active={false} />
+                <TuneIcon active={false} />
               </span>
             </div>
 
@@ -683,10 +879,12 @@ export default function Step3_SemanticTokens({
               ))
             )}
           </div>
+          )}
         </div>
       </div>
 
       <AddThemeModal open={addThemeOpen} onClose={() => setAddThemeOpen(false)} />
     </motion.div>
+    </div>
   )
 }

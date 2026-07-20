@@ -5,6 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, withAlpha } from './colorUtils'
+import { architectureLabel } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
 
 // Panel (surface-1: cards, panels, sections) tokens — translucent mode bakes
@@ -122,6 +123,7 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 
 - **Primary color:** \`${primaryColor}\`
 - **Themes:** ${themeCols.map(cap).join(', ')}
+- **Semantic architecture:** ${architectureLabel(store.semanticArchitecture)}
 - **Panel background:** ${cap(panelBackground)}
 - **Heading font:** ${headingFont}
 - **Body font:** ${typography.fontFamily}

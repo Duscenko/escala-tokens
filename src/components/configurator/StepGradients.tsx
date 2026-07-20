@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { gradientToCss, gradientSlug, makeGradient, type GradientDef, type GradientType } from '../../lib/gradients'
+import { gradientToCss, gradientSlug, makeGradient, derivedStopsFor, type GradientDef, type GradientType } from '../../lib/gradients'
 import ColorField from '../ui/ColorField'
 
 const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
@@ -45,7 +45,7 @@ function AssignSelect({ label, value, onChange, gradients }: {
 
 export default function StepGradients() {
   const {
-    gradients, gradientAssignments,
+    gradients, gradientAssignments, primaryColor,
     addGradient, updateGradient, removeGradient, setGradientAssignment,
   } = useDesignStore()
 
@@ -198,17 +198,56 @@ export default function StepGradients() {
             )}
 
             {/* Stops */}
+            {(() => {
+              const linkable = derivedStopsFor(selected.id, primaryColor) !== null
+              const locked = linkable && selected.linked === true
+              return (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-fg-muted">Stops</span>
-                <button type="button" onClick={addStop} className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-fg-muted">Stops</span>
+                  {linkable && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (locked) patch({ linked: false })
+                        else patch({ linked: true, stops: derivedStopsFor(selected.id, primaryColor) ?? selected.stops })
+                      }}
+                      aria-pressed={locked}
+                      title={locked
+                        ? 'Colors follow the accent. Unlock to edit the stops by hand.'
+                        : 'Relink to the accent — replaces the stops with accent-derived colors.'}
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                        locked ? 'bg-elevated text-fg ring-1 ring-line' : 'text-fg-faint hover:text-fg'
+                      }`}
+                    >
+                      {locked ? (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      ) : (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+                      )}
+                      {locked ? 'Linked to accent' : 'Link to accent'}
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={addStop}
+                  disabled={locked}
+                  className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors disabled:opacity-30 disabled:hover:text-fg-muted"
+                >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
                   Add stop
                 </button>
               </div>
+              {locked && (
+                <p className="text-[11px] text-fg-faint">
+                  These stops are derived from your accent color, so the gradient stays on-brand when the accent changes. Unlock to pick custom colors.
+                </p>
+              )}
               <div className="flex flex-col gap-2">
                 {selected.stops.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
+                  <div key={i} className={`flex items-center gap-2.5 ${locked ? 'opacity-60 pointer-events-none' : ''}`} aria-disabled={locked || undefined}>
                     <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={26} />
                     <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
                     <div className="flex items-center w-16 px-2 py-1.5 rounded-lg border border-line bg-surface">
@@ -217,6 +256,7 @@ export default function StepGradients() {
                         min={0}
                         max={100}
                         value={s.pos}
+                        disabled={locked}
                         onChange={(e) => updateStop(i, 'pos', Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                         aria-label={`Stop ${i + 1} position`}
                         className="w-full bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -226,7 +266,7 @@ export default function StepGradients() {
                     <button
                       type="button"
                       onClick={() => removeStop(i)}
-                      disabled={selected.stops.length <= 2}
+                      disabled={locked || selected.stops.length <= 2}
                       aria-label={`Remove stop ${i + 1}`}
                       className="w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
                     >
@@ -236,6 +276,8 @@ export default function StepGradients() {
                 ))}
               </div>
             </div>
+              )
+            })()}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-sm text-fg-faint">

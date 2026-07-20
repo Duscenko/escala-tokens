@@ -218,7 +218,7 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
 // 10px dots with a white keyline. Picking one applies the accent with the
 // linked neutral — the same path the Primary Color tab's dropdown uses.
 
-const COLOR_FAMILY_PRESETS: { label: string; hex: string }[] = [
+export const COLOR_FAMILY_PRESETS: { label: string; hex: string }[] = [
   { label: 'Violet',  hex: '#875bf7' },
   { label: 'Yellow',  hex: '#f7e30b' },
   { label: 'Lime',    hex: '#7ccf00' },
@@ -298,6 +298,7 @@ export function QuickEditSections({
   onOpenFoundations,
   previewTheme = 'light',
   onThemeChange,
+  onAddTheme,
 }: {
   onOpenFoundations: () => void
   /** Theme currently shown in the host preview — swatch clicks apply to this
@@ -305,6 +306,8 @@ export function QuickEditSections({
   previewTheme?: string
   /** Switches the previewed theme. Omit to hide the Theme section. */
   onThemeChange?: (theme: string) => void
+  /** Opens the theme manager (Alias/Semantics' "+ Theme"). Shows the + cell. */
+  onAddTheme?: () => void
 }) {
   const {
     themes, themeOrder, themeKinds, themePalettes, primaryColor,
@@ -319,6 +322,8 @@ export function QuickEditSections({
   const activeRadius = matchRadiusPreset(radius)
   const activeShadow = matchShadowPreset(shadows)
   const themeCols = themeOrder.filter((t) => themes[t])
+  const reduceMotion = useReducedMotion() ?? false
+  const themeGlide = { duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] as const }
 
   // While a custom style theme is previewed, the accent chip reads (and the
   // preset clicks write) THAT theme's palette — same routing as the Color hub.
@@ -358,31 +363,66 @@ export function QuickEditSections({
         />
       </div>
 
-      {/* Theme — mirrors the host's theme picker, so edits and preview stay
-          pointed at the same DS theme. */}
+      {/* Variable Theme — swatch-only segmented picker (Figma spec 3475:64866):
+          same visual language as Color Family. The previewed theme leads as a
+          raised chip filled with THAT theme's accent; the others sit as 10px
+          page-background dots. The trailing + opens the theme manager. */}
       {onThemeChange && themeCols.length > 1 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-fg-muted">Theme</span>
-          <div className="flex flex-wrap gap-1.5">
-            {themeCols.map((t) => (
+        <div className="flex flex-col gap-[8px]">
+          <span className="text-xs text-fg-muted">Variable Theme</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center p-[2px] rounded-[8px] bg-surface border border-line">
+              {themeCols.map((t) => {
+                const selected = t === previewTheme
+                const accent = themePalettes[t]?.brand?.[BASE_TONE] ?? primaryColor
+                return (
+                  <button
+                    key={t}
+                    onClick={() => onThemeChange(t)}
+                    aria-pressed={selected}
+                    aria-label={`${t} theme`}
+                    title={t.charAt(0).toUpperCase() + t.slice(1)}
+                    className={`relative size-[28px] flex-shrink-0 flex items-center justify-center rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40 ${
+                      selected ? '' : 'hover:bg-app/70'
+                    }`}
+                  >
+                    {selected && (
+                      <motion.span
+                        layoutId="variable-theme-thumb"
+                        transition={themeGlide}
+                        aria-hidden
+                        className="absolute inset-0 rounded-[6px] bg-app shadow-[0_4px_6px_-1px_rgba(0,0,0,0.08),0_2px_4px_-2px_rgba(0,0,0,0.08)]"
+                      />
+                    )}
+                    <motion.span
+                      aria-hidden
+                      className="relative"
+                      initial={false}
+                      animate={{
+                        width: selected ? 20 : 10,
+                        height: selected ? 20 : 10,
+                        borderRadius: selected ? 4 : 3,
+                        boxShadow: selected ? `0 0 0 3px ${withAlpha(accent, 0.1)}` : '0 0 0 1.7px #ffffff',
+                      }}
+                      transition={themeGlide}
+                      style={{ backgroundColor: selected ? accent : themeDot(t) }}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+            {onAddTheme && (
               <button
-                key={t}
-                onClick={() => onThemeChange(t)}
-                aria-pressed={t === previewTheme}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                  t === previewTheme
-                    ? 'bg-elevated ring-2 ring-fg/40 text-fg'
-                    : 'bg-surface border border-line text-fg-muted hover:text-fg hover:border-line-strong'
-                }`}
+                onClick={onAddTheme}
+                aria-label="Add a theme"
+                title="Add a theme — opens the Alias/Semantics matrix"
+                className="size-[28px] flex-shrink-0 flex items-center justify-center rounded-[6px] text-fg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
               >
-                <span
-                  className="w-3.5 h-3.5 rounded flex-shrink-0 ring-1 ring-black/10 dark:ring-white/20 shadow-[0_1px_1px_0_rgba(0,0,0,0.2)]"
-                  style={{ backgroundColor: themeDot(t) }}
-                  aria-hidden
-                />
-                {t}
+                <span className="size-[20px] flex items-center justify-center rounded-[4px] bg-app border-[3px] border-elevated" aria-hidden>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                </span>
               </button>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -509,16 +549,56 @@ export function QuickEditSections({
 
 // ── Home's persistent right panel ────────────────────────────────────────────
 
+// The dashed create/import tile that leads Home's Quick edit — the same tile
+// the Save hub's "My design systems" grid uses, so both entry points read as
+// one affordance.
+function CreateImportTile({ onNew, onImport }: { onNew: () => void; onImport: () => void }) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-line-strong bg-surface/50 p-4 flex flex-col items-center justify-center gap-3 text-fg-muted min-h-28">
+      <span className="text-sm font-medium text-center">Create or import a design system</span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onNew}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          New
+        </button>
+        <button
+          onClick={onImport}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+          </svg>
+          Import JSON
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function QuickEditPanel({
   onOpenFoundations,
   previewTheme = 'light',
   onThemeChange,
   onCollapse,
+  onNewSystem,
+  onImport,
+  onAddTheme,
 }: {
   onOpenFoundations: () => void
   previewTheme?: string
   onThemeChange?: (theme: string) => void
   onCollapse?: () => void
+  /** Starts a fresh system — renders the create/import tile when provided with onImport. */
+  onNewSystem?: () => void
+  /** Opens the Import-your-design-system modal (owned by the shell). */
+  onImport?: () => void
+  /** Opens the theme manager (Alias/Semantics) — shows Variable Theme's + cell. */
+  onAddTheme?: () => void
 }) {
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
@@ -542,10 +622,12 @@ export function QuickEditPanel({
           Components Preview body and the TopNav's px-5 — one shared 22.5px edge
           from the theme switch down to the last control. */}
       <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-4">
+        {onNewSystem && onImport && <CreateImportTile onNew={onNewSystem} onImport={onImport} />}
         <QuickEditSections
           onOpenFoundations={onOpenFoundations}
           previewTheme={previewTheme}
           onThemeChange={onThemeChange}
+          onAddTheme={onAddTheme}
         />
       </div>
     </div>
@@ -560,6 +642,7 @@ export default function QuickFoundationsPanel({
   onOpenFoundations,
   previewTheme = 'light',
   onThemeChange,
+  onAddTheme,
 }: {
   open: boolean
   onClose: () => void
@@ -568,6 +651,8 @@ export default function QuickFoundationsPanel({
   previewTheme?: string
   /** Switches the playground theme — mirrors the header's Theme dropdown. */
   onThemeChange?: (theme: string) => void
+  /** Opens the theme manager (Alias/Semantics) — shows Variable Theme's + cell. */
+  onAddTheme?: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -619,6 +704,7 @@ export default function QuickFoundationsPanel({
             onOpenFoundations={() => { onOpenFoundations(); onClose() }}
             previewTheme={previewTheme}
             onThemeChange={onThemeChange}
+            onAddTheme={onAddTheme ? () => { onAddTheme(); onClose() } : undefined}
           />
         </motion.div>
       )}

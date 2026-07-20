@@ -22,6 +22,10 @@ export interface GradientDef {
   /** Linear angle in degrees (ignored for radial). */
   angle: number
   stops: GradientStop[]
+  /** True while the stops derive from the accent color (only meaningful for
+   *  gradients with a derivation — see `derivedStopsFor`). Unlocking frees the
+   *  stops for hand-editing; re-locking re-derives them from the current accent. */
+  linked?: boolean
 }
 
 /** Which preview surfaces a gradient can drive. Extend as more targets land. */
@@ -102,6 +106,16 @@ export function brandAvatarStops(accent: string): GradientStop[] {
   }
 }
 
+/** The accent-derived stop signature for a gradient, or null when the gradient
+ *  has no derivation (custom gradients can't be accent-linked). One resolver so
+ *  the editor's lock, the accent retint and the migration all agree on what
+ *  "linked" produces. */
+export function derivedStopsFor(id: string, accent: string): GradientStop[] | null {
+  if (id === 'brand-cover') return brandCoverStops(accent)
+  if (id === 'aurora') return brandAvatarStops(accent)
+  return null
+}
+
 // ── Defaults ─────────────────────────────────────────────────────────────────
 
 /** Fresh default gradient set. Brand Cover + Aurora are derived from `accent`
@@ -115,6 +129,7 @@ export function makeDefaultGradients(accent: string = DEFAULT_ACCENT): GradientD
       type: 'linear',
       angle: 135,
       stops: brandCoverStops(accent),
+      linked: true,
     },
     {
       id: 'aurora',
@@ -122,6 +137,7 @@ export function makeDefaultGradients(accent: string = DEFAULT_ACCENT): GradientD
       type: 'linear',
       angle: 120,
       stops: brandAvatarStops(accent),
+      linked: true,
     },
     {
       id: 'moss-glow',

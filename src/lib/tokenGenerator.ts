@@ -2,6 +2,7 @@ import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/use
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
+import { projectArchitecture } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
@@ -135,6 +136,21 @@ export function generateTokenJSON() {
     orderedThemes[name] = normalized
   }
 
+  // Semantic architecture projection (Alias/Semantics picker). Additive: the
+  // flat shape above always ships (plugin contract, schemaVersion 3); a
+  // non-flat choice ships its projection alongside under colors.architecture.
+  const architecture = projectArchitecture(
+    store.semanticArchitecture,
+    {
+      themes: orderedThemes,
+      themeKinds: store.themeKinds,
+      themePalettes: store.themePalettes,
+      scales: globalScales,
+      accent: store.primaryColor,
+    },
+    store.errorColor,
+  )
+
   return {
     // Contract version the Figma plugin checks on import. Bump only on a
     // breaking change to the payload shape; the plugin warns on a mismatch.
@@ -156,6 +172,10 @@ export function generateTokenJSON() {
       themeOrder: themeNames,
       // Radix-style panel treatment for surface-1 (cards, panels, sections).
       panelBackground: store.panelBackground,
+      // Which semantic architecture the system standardizes on, plus the
+      // projected token structure when it isn't the flat default.
+      semanticArchitecture: store.semanticArchitecture,
+      ...(architecture ? { architecture } : {}),
     },
     typography: {
       fontFamily: typography.fontFamily,

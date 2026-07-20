@@ -19,6 +19,8 @@ import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
 import SectionExportModal from '../components/configurator/SectionExportModal'
+import ImportSystemModal from '../components/configurator/ImportSystemModal'
+import NewSystemModal from '../components/configurator/NewSystemModal'
 import { type SectionKey } from '../lib/sectionExport'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
@@ -29,6 +31,7 @@ import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
 import QuickFoundationsPanel, { QuickEditPanel } from '../components/configurator/QuickFoundationsPanel'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
+import { PaletteIcon } from '../components/ui/icons'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 const ic = (d: string, sw = '2'): ComponentType => () => (
@@ -69,7 +72,9 @@ const FOUNDATIONS: FoundationSection[] = [
     title: 'Color',
     subtitle: 'Map your semantic aliases and craft the gradients your system ships with.',
     Component: Step2_ColorPalette,
-    Icon: ic('M12 22a7 7 0 0 0 7-7c0-3-7-12-7-12S5 12 5 15a7 7 0 0 0 7 7Z', '1.8'),
+    // The same palette mark the token tables use for color rows — one official
+    // "color" glyph across rail, header and tables.
+    Icon: () => <PaletteIcon size={16} />,
   },
   {
     key: 'typography',
@@ -256,6 +261,9 @@ export default function Configurator() {
   const [quickPanelOpen, setQuickPanelOpen] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
   const [sectionExportOpen, setSectionExportOpen] = useState(false)
+  // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
+  const [importOpen, setImportOpen] = useState(false)
+  const [newSystemOpen, setNewSystemOpen] = useState(false)
   // Components catalogue — filters the master list by label/key.
   const [componentSearch, setComponentSearch] = useState('')
 
@@ -357,13 +365,10 @@ export default function Configurator() {
     )
     centerKey = 'export-code'
   } else if (exportMode === 'save') {
-    header = { Icon: SaveIcon, title: 'Save', subtitle: 'Share your system as portable context — copy the files, sync them, or save it.' }
+    header = { Icon: SaveIcon, title: 'Save & Share', subtitle: 'Copy the README or the CSS into Stitch, Claude or Codex or any IDE context!' }
     body = (
       <div className="h-full overflow-y-auto p-8">
-        <SaveView
-          onOpenGithub={() => openExport('github')}
-          onOpenExport={() => openExport('code')}
-        />
+        <SaveView onImport={() => setImportOpen(true)} onNewSystem={() => setNewSystemOpen(true)} />
       </div>
     )
     centerKey = 'export-save'
@@ -438,6 +443,7 @@ export default function Configurator() {
             onOpenFoundations={() => selectFoundation('color')}
             previewTheme={previewTheme}
             onThemeChange={changePreviewTheme}
+            onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
           />
         </div>
       </>
@@ -610,6 +616,9 @@ export default function Configurator() {
                   onThemeChange={changePreviewTheme}
                   onOpenFoundations={() => selectFoundation('color')}
                   onCollapse={() => setPreviewCollapsed(true)}
+                  onNewSystem={() => setNewSystemOpen(true)}
+                  onImport={() => setImportOpen(true)}
+                  onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
                 />
               ) : (
                 <PreviewPanel
@@ -635,6 +644,39 @@ export default function Configurator() {
             section={activeFoundation as SectionKey}
             title={section.title}
             onClose={() => setSectionExportOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Import-your-design-system window */}
+      <AnimatePresence>
+        {importOpen && (
+          <ImportSystemModal
+            onClose={() => setImportOpen(false)}
+            onImported={() => {
+              setImportOpen(false)
+              // Land on Home so the collage renders the freshly imported system.
+              setExportMode(null)
+              setTab('foundations')
+              setActiveFoundation('home')
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* New-design-system window — name + accent, then straight into Foundations */}
+      <AnimatePresence>
+        {newSystemOpen && (
+          <NewSystemModal
+            onClose={() => setNewSystemOpen(false)}
+            onCreated={() => {
+              setNewSystemOpen(false)
+              // Land on Foundations · Color so the guided flow continues into tokens.
+              setExportMode(null)
+              setTab('foundations')
+              setActiveFoundation('color')
+              setColorTab('primary')
+            }}
           />
         )}
       </AnimatePresence>

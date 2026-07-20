@@ -125,6 +125,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
         repo: githubRepo,
         savedAt: new Date().toISOString(),
         snapshot: captureSnapshot(s),
+        source: 'github',
       })
       setPushState('done')
     } catch (e) {

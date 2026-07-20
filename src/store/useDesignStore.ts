@@ -7,9 +7,12 @@ import { accessibleSolidTone } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
-  brandCoverStops, brandAvatarStops, stopsMatch,
+  brandCoverStops, brandAvatarStops, stopsMatch, derivedStopsFor,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
+// Type-only: semanticArchitectures imports semanticRoles (which imports this
+// store's constants), so a value import here would create a runtime cycle.
+import type { SemanticArchitecture } from '../lib/semanticArchitectures'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -66,7 +69,7 @@ export const GRAY_DARK_SCALE: ColorScale = {
 // Old (v23) → new (v24) semantic-token key map. Single source of truth for the
 // readable-taxonomy rename: the v23→v24 migration relabels persisted theme
 // values without losing any user customisation. Append-only — never reorder.
-const SEMANTIC_KEY_RENAME: Record<string, string> = {
+export const SEMANTIC_KEY_RENAME: Record<string, string> = {
   // ── Surface (was bg-* neutral surfaces + states) ──
   'bg-primary': 'surface-0', 'bg-primary_alt': 'surface-0-alt', 'bg-primary_hover': 'surface-0-hover',
   'bg-secondary': 'surface-1', 'bg-secondary_alt': 'surface-1-alt', 'bg-secondary_hover': 'surface-1-hover',
@@ -257,6 +260,10 @@ export interface DesignSnapshot {
   // panels, sections) render solid, with alpha + backdrop blur, or reuse the
   // primitives page background (`pageBackground`).
   panelBackground: 'solid' | 'translucent' | 'page'
+  // Which semantic token architecture the export projects the 89-role catalogue
+  // into (Alias/Semantics picker). 'flat' = the classic shape; the others are
+  // additive projections (see lib/semanticArchitectures.ts).
+  semanticArchitecture: SemanticArchitecture
   // Gradients foundation — named gradients + which one drives each preview
   // surface. Exported in tokens.json (`gradients`) / variables.css / README.
   gradients: GradientDef[]
@@ -282,6 +289,10 @@ export interface SavedSystem {
   repo: string
   savedAt: string // ISO of the last successful push
   snapshot: DesignSnapshot
+  // How the entry got here — 'github' (push), 'local' (Save button), or
+  // 'imported' (the Import-your-design-system flow). Optional: entries saved
+  // before v35 are backfilled by the migration.
+  source?: 'github' | 'local' | 'imported'
 }
 
 // Factory (not a const): every call returns fresh object references, so a
@@ -328,6 +339,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     sizes: { ...SIZES_DEFAULT },
     padding: { ...PADDING_DEFAULT },
     panelBackground: 'solid',
+    semanticArchitecture: 'flat',
     gradients: makeDefaultGradients(),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
@@ -487,6 +499,11 @@ interface DesignStore {
   panelBackground: 'solid' | 'translucent' | 'page'
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
 
+  // Semantic token architecture — which shape the export projects the flat
+  // role catalogue into (Alias/Semantics picker).
+  semanticArchitecture: SemanticArchitecture
+  setSemanticArchitecture: (v: SemanticArchitecture) => void
+
   // Gradients — named gradients + per-surface assignment (covers, avatars)
   gradients: GradientDef[]
   gradientAssignments: GradientAssignments
@@ -530,6 +547,9 @@ interface DesignStore {
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
   saveCurrentSystem: () => void
+  // Adopt an imported snapshot as the active system AND register it in the
+  // local registry with 'imported' provenance (Import your design system flow).
+  applyImportedSystem: (snapshot: DesignSnapshot) => void
 }
 
 export const useDesignStore = create<DesignStore>()(
@@ -653,6 +673,7 @@ export const useDesignStore = create<DesignStore>()(
       setSizes: (s) => set({ sizes: s }),
 
       setPanelBackground: (v) => set({ panelBackground: v }),
+      setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
 
       // Gradients — CRUD + per-surface assignment. Removing a gradient also
       // clears any assignment pointing at it, so covers/avatars never dangle.
@@ -742,8 +763,30 @@ export const useDesignStore = create<DesignStore>()(
             repo: state.githubRepo ?? '',
             savedAt: new Date().toISOString(),
             snapshot,
+            source: state.githubRepo ? 'github' : 'local',
           }
           return {
+            savedSystems: state.savedSystems.some((s) => s.id === id)
+              ? state.savedSystems.map((s) => (s.id === id ? entry : s))
+              : [...state.savedSystems, entry],
+          }
+        }),
+      applyImportedSystem: (snapshot) =>
+        set((state) => {
+          const id = `imported:${slugify(snapshot.projectName) || 'imported-system'}`
+          const entry: SavedSystem = {
+            id,
+            name: snapshot.projectName,
+            description: snapshot.projectDescription,
+            repo: '',
+            savedAt: new Date().toISOString(),
+            snapshot: deepClone(snapshot),
+            source: 'imported',
+          }
+          // Clone again for the live state so edits never mutate the registry entry.
+          return {
+            ...deepClone(snapshot),
+            projectCreated: true,
             savedSystems: state.savedSystems.some((s) => s.id === id)
               ? state.savedSystems.map((s) => (s.id === id ? entry : s))
               : [...state.savedSystems, entry],
@@ -752,7 +795,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 34,
+      version: 37,
       migrate: (persisted: any) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1087,6 +1130,40 @@ export const useDesignStore = create<DesignStore>()(
             for (const sys of persisted.savedSystems) {
               if (sys?.name === 'DS.by.MD') sys.name = 'Escala'
               if (sys?.snapshot?.projectName === 'DS.by.MD') sys.snapshot.projectName = 'Escala'
+            }
+          }
+          // v34→v35: SavedSystem gained provenance ('github' | 'local' |
+          // 'imported'). Backfill existing entries from whether they carry a repo.
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys && sys.source === undefined) sys.source = sys.repo ? 'github' : 'local'
+            }
+          }
+          // v35→v36: the accent link on the brand gradients became an explicit
+          // per-gradient lock (`linked`). Backfill it from the old implicit rule:
+          // stops that still match the accent-derived signature were linked,
+          // hand-edited ones were not.
+          const backfillGradientLinks = (state: any) => {
+            if (!state || !Array.isArray(state.gradients)) return
+            const accent = typeof state.primaryColor === 'string' && state.primaryColor ? state.primaryColor : '#7f56d9'
+            state.gradients = state.gradients.map((g: any) => {
+              if (!g || g.linked !== undefined) return g
+              const derived = derivedStopsFor(g.id, accent)
+              if (!derived) return g
+              return { ...g, linked: Array.isArray(g.stops) && stopsMatch(g.stops, derived) }
+            })
+          }
+          backfillGradientLinks(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) backfillGradientLinks(sys?.snapshot)
+          }
+          // v36→v37: semantic architecture picker (Alias/Semantics). 'flat' is
+          // the shape every existing system already exports, so nothing changes
+          // until the user picks a projection.
+          if (!persisted.semanticArchitecture) persisted.semanticArchitecture = 'flat'
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys?.snapshot && !sys.snapshot.semanticArchitecture) sys.snapshot.semanticArchitecture = 'flat'
             }
           }
         }
