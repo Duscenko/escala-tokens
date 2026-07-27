@@ -41,6 +41,26 @@ height too. Their actions use the shared `ui/HeaderPill` (Generator's New · Imp
 Share · Kits · Reset AND Variables' Export are the same component — don't hand-roll
 another pill).
 
+> **Export is a guided flow, not a dump — and there is only ONE of it.** Variables' Export
+> pill AND the Generator's Share pill both open `ExportWizard` (Source → Format → Export),
+> backed by `lib/exportWizard.ts`; sharing IS exporting, so they must not diverge into two
+> flows. They differ only in what's pre-checked: Export scopes to the section you opened it
+> from (`COLLECTIONS_OF`), Share opens whole-system (`ALL_WIZARD_COLLECTIONS`). Step 1 picks **collections**
+> (primitives · semantics · typography · spacing · radius · opacity · shadow · grid ·
+> sizes · icons) and, for semantics, which **theme modes** ship; step 2 picks the format
+> (W3C DTCG · Escala JSON · CSS · SCSS · Tailwind · Markdown) and single-vs-per-collection
+> files; step 3 summarizes and downloads. Rules that keep it honest:
+> - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
+>   disagree with `tokens.json`. Counts on screen are counts in the file.
+> - **W3C ships real aliases**: a semantic value sitting on a primitive tone exports as
+>   `{color.neutral.900}`, not a loose hex. That's the point of the format — don't
+>   "simplify" it back to hex.
+> - **Escala JSON is single-file by contract** (it's the plugin payload), so the structure
+>   choice is locked there.
+> - Tailwind and Markdown delegate to `sectionExport`'s builders — one renderer per format,
+>   not two. Both `SectionExportModal` and `ShareModal` were retired into this flow
+>   (`FilePreviewCard` lives on in `SaveView`).
+
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
   every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
   `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|

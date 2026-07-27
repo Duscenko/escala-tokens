@@ -16,14 +16,14 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import DocsView from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
-import HomeActions, { ShareModal, ResetConfirmModal } from '../components/configurator/HomeActions'
+import HomeActions, { ResetConfirmModal } from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
-import SectionExportModal from '../components/configurator/SectionExportModal'
+import ExportWizard from '../components/configurator/ExportWizard'
+import { ALL_WIZARD_COLLECTIONS, type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
-import { type SectionKey } from '../lib/sectionExport'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
@@ -180,6 +180,20 @@ const CATEGORY_ICONS: Record<string, ComponentType> = {
   'Content & Surfaces':  ic('M4 5h16v14H4z|M4 10h16', '1.8'),
   'Feedback':            ic('M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z', '1.8'),
   'Navigation':          ic('M4 6h16|M4 12h9|M4 18h16', '1.8'),
+}
+
+// Which export-wizard collections a foundation opens pre-checked, so "Export"
+// starts scoped to the section you're looking at (still fully re-selectable).
+const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
+  color: ['primitives', 'semantics'],
+  typography: ['typography'],
+  spacing: ['spacing'],
+  radius: ['radius'],
+  opacity: ['opacity'],
+  shadow: ['shadow'],
+  grid: ['grid'],
+  sizes: ['sizes'],
+  icons: ['icons'],
 }
 
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
@@ -722,12 +736,11 @@ export default function Configurator() {
       )}
       </div>
 
-      {/* Per-section export window */}
+      {/* Guided export — Source → Format → Export */}
       <AnimatePresence>
         {sectionExportOpen && canExportSection && (
-          <SectionExportModal
-            section={activeFoundation as SectionKey}
-            title={section.title}
+          <ExportWizard
+            initialCollections={COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']}
             onClose={() => setSectionExportOpen(false)}
           />
         )}
@@ -749,9 +762,15 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
-      {/* Share window — the file-preview card (tokens.json · css · README) */}
+      {/* Share — the same guided export as Variables, opened whole-system:
+          sharing IS exporting, so it shouldn't be a second, different flow. */}
       <AnimatePresence>
-        {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
+        {shareOpen && (
+          <ExportWizard
+            initialCollections={ALL_WIZARD_COLLECTIONS}
+            onClose={() => setShareOpen(false)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Reset confirm — restore the design defaults */}

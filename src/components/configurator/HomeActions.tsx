@@ -1,7 +1,7 @@
 // Home header actions — the pill row from the Figma header design:
 //   + New · ⬆ Import JSON · ⋯ Share · ▸ Kits · ↩ Reset
-// New/Import reuse the shell's existing modals; Share recycles the SaveView
-// file-preview card in a modal; Kits is a self-contained "save current as +
+// New/Import reuse the shell's existing modals; Share opens the ExportWizard
+// (same guided flow as Variables' Export); Kits is a self-contained "save current as +
 // previous kits" popover over the local savedSystems registry; Reset restores
 // the design defaults (startNewSystem) behind a confirm.
 
@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { slugify } from '../../lib/utils'
 import HeaderPill from '../ui/HeaderPill'
-import { FilePreviewCard } from './SaveView'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
 const PlusIcon: ComponentType = () => (
@@ -169,52 +168,6 @@ function KitsPopover({ onClose }: { onClose: () => void }) {
           Active: <code className="font-mono text-fg-muted">{primaryColor}</code>
         </span>
       </div>
-    </motion.div>
-  )
-}
-
-// ── Share modal — recycles the Save & Share file-preview card ────────────────
-export function ShareModal({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.div
-        className="w-full max-w-3xl"
-        initial={{ opacity: 0, scale: 0.97, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97, y: 8 }}
-        transition={{ duration: 0.18 }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label="Share design system"
-        aria-modal="true"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-base font-semibold text-white">Share design system</h2>
-            <p className="text-xs text-white/70">Copy or download tokens.json, variables.css and README.md.</p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <FilePreviewCard />
-      </motion.div>
     </motion.div>
   )
 }
