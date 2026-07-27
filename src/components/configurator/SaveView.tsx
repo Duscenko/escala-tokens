@@ -383,7 +383,7 @@ export function SaveSidePanel({
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
-      <header className="flex items-center gap-2 px-5 h-[60px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg">Current Design System</h2>
         {onCollapse && (
           <button

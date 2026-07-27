@@ -33,6 +33,10 @@ export const RESERVED_COLOR_KEYS = ['accent', 'neutral', 'error', 'warning', 'su
 // Per-theme primitive palette — a custom "style theme" carries its own 1–12
 // scales (brand/neutral/semantic) instead of drawing from the global ones. The
 // built-in light/dark themes have NO entry here and fall back to the globals.
+/**
+ * A theme's RESOLVED ramps — what `sourceScaleFor` reads. Always derived, never
+ * persisted: see `ThemeSources`.
+ */
 export interface ThemePalette {
   brand: ColorScale
   gray: ColorScale
@@ -40,6 +44,31 @@ export interface ThemePalette {
   warning: ColorScale
   success: ColorScale
   info: ColorScale
+}
+
+/**
+ * A theme's colour SOURCES — which primitive family each slot resolves through.
+ * Values are family KEYS ('accent' | 'neutral' | 'error' | 'success' |
+ * 'warning' | 'info' | a `customColors` key), never raw scales.
+ *
+ * This is the "a theme is a reading of the primitives" rule enforced at the data
+ * model: a theme cannot hold a colour of its own, so it can't drift from the
+ * family it points at — retint the family and every theme referencing it moves
+ * with it. Creating a theme with a new colour therefore CREATES that family in
+ * Primitives (see `AddThemeModal`), and a family in use can't be deleted.
+ */
+export interface ThemeSources {
+  brand: string
+  gray: string
+  error: string
+  warning: string
+  success: string
+  info: string
+}
+
+export const DEFAULT_THEME_SOURCES: ThemeSources = {
+  brand: 'accent', gray: 'neutral', error: 'error',
+  warning: 'warning', success: 'success', info: 'info',
 }
 
 interface TypographyTokens {
@@ -246,7 +275,7 @@ export interface DesignSnapshot {
   themes: Record<string, Record<string, string>>
   themeOrder: string[]
   themeKinds: Record<string, 'light' | 'dark'>
-  themePalettes: Record<string, ThemePalette>
+  themeSources: Record<string, ThemeSources>
   typography: TypographyTokens
   spacing: Record<string, string>
   radius: Record<string, string>
@@ -303,7 +332,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     projectDescription: '',
     colorAlgorithm: 'radix',
     contrastShift: 0,
-    colorNaming: 'numeric',
+    colorNaming: 'hundreds',
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: '#7f56d9',
@@ -323,7 +352,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     themes: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
     themeOrder: ['light', 'dark'],
     themeKinds: { light: 'light', dark: 'dark' },
-    themePalettes: {},
+    themeSources: {},
     typography: {
       fontFamily: 'Inter',
       headingFontFamily: 'Inter',
@@ -461,14 +490,24 @@ interface DesignStore {
   themeKinds: Record<string, 'light' | 'dark'>
   // Per-theme primitive palettes — only custom "style themes" have an entry;
   // light/dark fall back to the global scales.
-  themePalettes: Record<string, ThemePalette>
+  themeSources: Record<string, ThemeSources>
   setThemeToken: (theme: string, key: string, value: string) => void
   mergeThemeTokens: (theme: string, partial: Record<string, string>) => void
-  addTheme: (key: string, kind: 'light' | 'dark', palette: ThemePalette) => void
+  addTheme: (key: string, kind: 'light' | 'dark', sources: ThemeSources) => void
   removeTheme: (key: string) => void
+  // Reorder the theme columns (drag-to-reorder in the Semantic matrix).
+  setThemeOrder: (order: string[]) => void
+  // Rename a custom theme — re-keys its entry across themes/kinds/palettes and
+  // preserves column order. No-op for the protected light/dark keys or on a
+  // collision with an existing key.
+  renameTheme: (oldKey: string, newKey: string) => void
+  // Update a theme's mode + palette in place, keeping its token overrides. Works
+  // for light/dark too — giving them a palette entry decouples them from the
+  // global scales (they then read their own frozen ramps via sourceScaleFor).
+  updateTheme: (key: string, kind: 'light' | 'dark', sources: ThemeSources) => void
   // Updates a custom theme's own palette (no-op for light/dark, which have no
   // palette entry and draw from the global scales instead).
-  mergeThemePalette: (key: string, partial: Partial<ThemePalette>) => void
+  mergeThemeSources: (key: string, partial: Partial<ThemeSources>) => void
 
   // Step 4 — Typography
   typography: TypographyTokens
@@ -610,10 +649,18 @@ export const useDesignStore = create<DesignStore>()(
             c.key === key ? { ...c, ...updates } : c
           ),
         })),
+      // Refuses while a theme still references the family: a theme resolves
+      // THROUGH its families, so deleting one out from under it would leave a
+      // dangling reference. Callers surface the blocked state (see the family
+      // nav's "in use by N themes").
       removeCustomColor: (key) =>
-        set((state) => ({
-          customColors: state.customColors.filter((c) => c.key !== key),
-        })),
+        set((state) => {
+          const used = Object.values(state.themeSources).some((refs) =>
+            (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === key),
+          )
+          if (used) return state
+          return { customColors: state.customColors.filter((c) => c.key !== key) }
+        }),
 
       setThemeToken: (theme, key, value) =>
         set((state) => ({
@@ -632,32 +679,69 @@ export const useDesignStore = create<DesignStore>()(
       // Add a custom "style theme" with its own primitive palette. The token
       // map starts empty ({}) — Step3's auto-populate effect seeds every role
       // from the palette's recommended tones on the next render.
-      addTheme: (key, kind, palette) =>
+      addTheme: (key, kind, sources) =>
         set((state) => {
           if (state.themes[key]) return state
           return {
             themes: { ...state.themes, [key]: { ...EMPTY_SEMANTIC } },
             themeOrder: [...state.themeOrder, key],
             themeKinds: { ...state.themeKinds, [key]: kind },
-            themePalettes: { ...state.themePalettes, [key]: palette },
+            themeSources: { ...state.themeSources, [key]: sources },
           }
         }),
-      mergeThemePalette: (key, partial) =>
+      mergeThemeSources: (key, partial) =>
         set((state) => {
-          if (!state.themePalettes[key]) return state
-          return { themePalettes: { ...state.themePalettes, [key]: { ...state.themePalettes[key], ...partial } } }
+          if (!state.themeSources[key]) return state
+          return { themeSources: { ...state.themeSources, [key]: { ...state.themeSources[key], ...partial } } }
         }),
       removeTheme: (key) =>
         set((state) => {
-          if (key === 'light' || key === 'dark' || !state.themes[key]) return state
+          if (!state.themes[key]) return state
+          // Keep at least one column — an empty matrix has nothing to edit or
+          // export. Any single theme (including light/dark) may be removed.
+          if (Object.keys(state.themes).length <= 1) return state
           const { [key]: _, ...themes } = state.themes
           const { [key]: __, ...themeKinds } = state.themeKinds
-          const { [key]: ___, ...themePalettes } = state.themePalettes
+          const { [key]: ___, ...themeSources } = state.themeSources
           return {
             themes,
             themeKinds,
-            themePalettes,
+            themeSources,
             themeOrder: state.themeOrder.filter((t) => t !== key),
+          }
+        }),
+      setThemeOrder: (order) =>
+        set((state) => ({
+          // Only reorder known themes; append any stragglers so nothing is lost.
+          themeOrder: [
+            ...order.filter((t) => state.themes[t]),
+            ...state.themeOrder.filter((t) => state.themes[t] && !order.includes(t)),
+          ],
+        })),
+      renameTheme: (oldKey, newKey) =>
+        set((state) => {
+          if (oldKey === 'light' || oldKey === 'dark') return state
+          if (!state.themes[oldKey]) return state
+          if (oldKey === newKey || !newKey) return state
+          if (state.themes[newKey]) return state // collision — keep as-is
+          const { [oldKey]: tokens, ...restThemes } = state.themes
+          const { [oldKey]: kind, ...restKinds } = state.themeKinds
+          const { [oldKey]: sources, ...restSources } = state.themeSources
+          return {
+            themes: { ...restThemes, [newKey]: tokens },
+            themeKinds: { ...restKinds, [newKey]: kind },
+            themeSources: sources
+              ? { ...restSources, [newKey]: sources }
+              : restSources,
+            themeOrder: state.themeOrder.map((t) => (t === oldKey ? newKey : t)),
+          }
+        }),
+      updateTheme: (key, kind, sources) =>
+        set((state) => {
+          if (!state.themes[key]) return state
+          return {
+            themeKinds: { ...state.themeKinds, [key]: kind },
+            themeSources: { ...state.themeSources, [key]: sources },
           }
         }),
 
@@ -795,8 +879,8 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 37,
-      migrate: (persisted: any) => {
+      version: 39,
+      migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
           delete persisted.styleDirection
@@ -1165,6 +1249,79 @@ export const useDesignStore = create<DesignStore>()(
             for (const sys of persisted.savedSystems) {
               if (sys?.snapshot && !sys.snapshot.semanticArchitecture) sys.snapshot.semanticArchitecture = 'flat'
             }
+          }
+          // v37→v38: the flat semantic layer was replaced by the Untitled-UI
+          // canonical Content/Background/Border catalogue (surface-*/action-*/
+          // text-*/icon-* → content-*/background-*/border-*). The old keys don't
+          // map cleanly, so clear every theme's role map — Step3's auto-seed
+          // repopulates the new roles from each theme's ramps on next render, and
+          // the export fills any still-empty role with its recommended tone.
+          const clearSemantics = (state: any) => {
+            if (!state?.themes || typeof state.themes !== 'object') return
+            for (const t of Object.keys(state.themes)) state.themes[t] = {}
+          }
+          clearSemantics(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) clearSemantics(sys?.snapshot)
+          }
+          // Primitives now default to the 50–950 naming the new references use.
+          // Move anyone still on the old numeric default; a deliberate 'tens'
+          // pick is left alone.
+          if (persisted.colorNaming === 'numeric' || !persisted.colorNaming) {
+            persisted.colorNaming = 'hundreds'
+          }
+        }
+        if (version < 39) {
+          // v38→v39: a theme no longer OWNS ramps, it REFERENCES primitive
+          // families (`themePalettes` scales → `themeSources` keys). Every ramp
+          // a theme was hiding becomes a real family in Primitives, so the
+          // connection the model now guarantees is visible where colour is
+          // edited. Slots matching a global ramp reference it instead of
+          // duplicating it.
+          const toSources = (state: any) => {
+            if (!state) return
+            const palettes = state.themePalettes ?? {}
+            const sources: Record<string, any> = {}
+            state.customColors = Array.isArray(state.customColors) ? state.customColors : []
+            const globals: Record<string, any> = {
+              brand: state.primaryScale, gray: state.grayLightScale, error: state.errorScale,
+              warning: state.warningScale, success: state.successScale, info: state.infoScale,
+            }
+            const globalKey: Record<string, string> = {
+              brand: 'accent', gray: 'neutral', error: 'error',
+              warning: 'warning', success: 'success', info: 'info',
+            }
+            const same = (a: any, b: any) =>
+              a && b && (a[9] ?? '').toLowerCase() === (b[9] ?? '').toLowerCase()
+            for (const [theme, pal] of Object.entries<any>(palettes)) {
+              const refs: Record<string, string> = { ...DEFAULT_THEME_SOURCES }
+              for (const slot of ['brand', 'gray', 'error', 'warning', 'success', 'info']) {
+                const scale = pal?.[slot]
+                if (!scale) continue
+                if (same(scale, globals[slot])) { refs[slot] = globalKey[slot]; continue }
+                // Reuse a family that already carries this ramp, else mint one.
+                const base = scale[9] ?? scale[1]
+                const hit = state.customColors.find((c: any) => (c.base ?? '').toLowerCase() === (base ?? '').toLowerCase())
+                if (hit) { refs[slot] = hit.key; continue }
+                const key = slot === 'brand' ? theme : `${theme}-${slot}`
+                if (!RESERVED_COLOR_KEYS.includes(key) && !state.customColors.some((c: any) => c.key === key)) {
+                  state.customColors.push({
+                    key,
+                    label: key.replace(/-/g, ' ').replace(/\b\w/g, (m: string) => m.toUpperCase()),
+                    base,
+                    scale,
+                  })
+                  refs[slot] = key
+                }
+              }
+              sources[theme] = refs
+            }
+            state.themeSources = sources
+            delete state.themePalettes
+          }
+          toSources(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) toSources(sys?.snapshot)
           }
         }
         return persisted

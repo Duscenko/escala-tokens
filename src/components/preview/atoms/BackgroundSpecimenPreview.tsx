@@ -53,26 +53,22 @@ export function BackgroundSpecimenPreview({ tokens }: { tokens: PreviewTokens })
       className="p-5 flex flex-col gap-5"
     >
       <Section title="Surfaces">
-        <Swatch token="surface-0" fb="#ffffff" />
-        <Swatch token="surface-1" fb="#fafafa" isPanel />
-        <Swatch token="surface-2" fb="#f5f5f5" />
-        <Swatch token="surface-3" fb="#e9eaeb" />
+        <Swatch token="background-primary" fb="#ffffff" />
+        <Swatch token="background-secondary" fb="#fafafa" isPanel />
+        <Swatch token="background-tertiary" fb="#f5f5f5" />
+        <Swatch token="background-quaternary" fb="#e9eaeb" />
       </Section>
       <Section title="Brand">
-        <Swatch token="surface-brand-subtle" fb="#f4f3ff" />
-        <Swatch token="surface-brand-muted" fb="#ebe9fe" />
-        <Swatch token="surface-brand-strong" fb={tokens.brandSolid} />
+        <Swatch token="background-brand-primary" fb="#f4f3ff" />
+        <Swatch token="background-brand-secondary" fb="#ebe9fe" />
+        <Swatch token="background-brand-solid" fb={tokens.brandSolid} />
       </Section>
-      <Section title="Action">
-        <Swatch token="action-primary" fb={tokens.brandSolid} />
-        <Swatch token="action-disabled" fb="#f5f5f5" />
-      </Section>
-      <Section title="Status">
-        <Swatch token="status-error-subtle" fb="#fef3f2" />
-        <Swatch token="status-error" fb="#d92d20" />
-        <Swatch token="status-warning-subtle" fb="#fffaeb" />
-        <Swatch token="status-success-subtle" fb="#ecfdf3" />
-        <Swatch token="status-info-subtle" fb="#eff8ff" />
+      <Section title="States">
+        <Swatch token="background-disabled" fb="#f5f5f5" />
+        <Swatch token="background-error-primary" fb="#fef3f2" />
+        <Swatch token="background-error-solid" fb="#d92d20" />
+        <Swatch token="background-warning-primary" fb="#fffaeb" />
+        <Swatch token="background-success-primary" fb="#ecfdf3" />
       </Section>
     </div>
   )

@@ -8,10 +8,10 @@ import { toneLabel, withAlpha } from './colorUtils'
 import { architectureLabel } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
 
-// Panel (surface-1: cards, panels, sections) tokens — translucent mode bakes
-// alpha into the color and pairs it with --panel-blur for backdrop-filter;
-// page mode swaps in the primitives page background (light themes only).
-const PANEL_KEYS = ['surface-1', 'surface-1-alt']
+// Panel (background-secondary: cards, panels, sections) tokens — translucent
+// mode bakes alpha into the color and pairs it with --panel-blur for backdrop-
+// filter; page mode swaps in the primitives page background (light themes only).
+const PANEL_KEYS = ['background-secondary']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
   const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, opacity, shadows, grid, sizes, colorNaming, panelBackground, pageBackground, gradients } = store

@@ -1,33 +1,19 @@
 // Shared brand/neutral color-apply logic — used by Foundations · Color and the
 // Components quick-edit panel so both pick a swatch the same way.
 //
-// A theme is either "built-in" (light/dark — no `themePalettes` entry, draws
-// its brand scale from the global `primaryScale`) or a "custom style theme"
-// (has its own `themePalettes[key]`, entirely independent of the global
-// scale). Applying a color always targets one specific `themeKey` (the theme
-// currently being previewed) so a swatch click visibly updates what's on
-// screen, whichever theme that happens to be.
+// Every theme resolves its ramps through primitive FAMILIES (`themeSources`),
+// so "apply a colour to theme X" means: retint the family X reads for that
+// slot. A theme pointing at a global family ('accent' / 'neutral') therefore
+// edits the system's own primitive; one pointing at a custom family edits that
+// family. Applying always targets a specific `themeKey` (the previewed one) so
+// a swatch click visibly updates what's on screen.
 
 import { useCallback, useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateColorScale, generateDarkColorScale } from './colorUtils'
+import { generateColorScale, generateDarkColorScale, backgroundFromBase } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { derivedStopsFor } from './gradients'
-import { neutralFromBrand, darkBackgroundOptions } from '../components/configurator/colorControls'
-
-// The dark page background's presets are derived from the accent's hue, so when
-// the accent moves the background has to move with it — otherwise the dark
-// surfaces keep the OLD brand's tint and the dropdown shows an unlabeled hex.
-// We re-derive the same preset SLOT (Ink stays Ink, Midnight stays Midnight)
-// against the new accent. A background the user typed by hand matches no preset
-// and is therefore left exactly as they set it.
-function retintDarkBackground(current: string, prevAccent: string, nextAccent: string): string {
-  const slot = darkBackgroundOptions(prevAccent).findIndex(
-    (o) => o.hex.toLowerCase() === (current ?? '').toLowerCase(),
-  )
-  if (slot < 0) return current
-  return darkBackgroundOptions(nextAccent)[slot]?.hex ?? current
-}
+import { neutralFromBrand } from '../components/configurator/colorControls'
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
@@ -74,54 +60,70 @@ function grayTokenUpdates(
 // Applies a new accent (brand) hex to `themeKey`. Built-in themes (light/dark)
 // share the global scale, so updating one refreshes every built-in theme's
 // already-mapped tokens together — otherwise switching themes would show a
-// stale brand color. A custom theme instead gets its own palette updated,
-// leaving the global scale and every other theme untouched.
+// stale brand color. A theme that reads a CUSTOM family instead retints that
+// family: the theme owns no colour, so editing "its" accent means editing the
+// primitive it points at (which every other theme on that family sees too).
 export function useApplyAccentColor() {
   const {
-    setPrimaryColor, setPrimaryScale, themes, themeOrder, themePalettes, themeKinds,
-    mergeThemeTokens, mergeThemePalette,
-    setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setDarkBackground,
+    setPrimaryColor, setPrimaryScale, themes, themeOrder, themeSources, themeKinds,
+    mergeThemeTokens, updateCustomColor,
+    setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
+    setPageBackground, setDarkBackground,
     gradients, updateGradient,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground, primaryColor,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground,
   } = useDesignStore()
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
     try {
-      const scale = generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)
-
-      if (themePalettes[themeKey]) {
-        // Custom style theme — independent palette, doesn't touch the globals.
-        mergeThemePalette(themeKey, { brand: scale })
-        const updates = brandTokenUpdates(scale, themes[themeKey] ?? {}, themeKinds[themeKey] ?? 'light')
-        if (Object.keys(updates).length) mergeThemeTokens(themeKey, updates)
-        if (linked) {
+      const refs = themeSources[themeKey]
+      if (refs && refs.brand !== 'accent') {
+        // Retint the family this theme reads. No token resync needed here: the
+        // theme resolves through the family, so it follows automatically.
+        const scale = generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)
+        updateCustomColor(refs.brand, { base: hex, scale })
+        if (linked && refs.gray !== 'neutral') {
           const kind = themeKinds[themeKey] ?? 'light'
           const neutral = neutralFromBrand(hex)
-          // A dark-kind custom theme needs a dark-appearance gray ramp too,
-          // otherwise its palette's gray would be a light ramp read inverted.
           const gScale = kind === 'dark'
             ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, darkBackground)
             : generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground)
-          mergeThemePalette(themeKey, { gray: gScale })
-          const grayUpdates = grayTokenUpdates(gScale, themes[themeKey] ?? {}, kind)
-          if (Object.keys(grayUpdates).length) mergeThemeTokens(themeKey, grayUpdates)
+          updateCustomColor(refs.gray, { base: neutral, scale: gScale })
         }
         return
       }
 
-      setPrimaryColor(hex)
-      setPrimaryScale(scale)
-      // Move the dark page onto the new accent's hue before deriving the dark
-      // ramp from it, so background + ramp + brand all agree.
-      const nextDarkBg = retintDarkBackground(darkBackground, primaryColor, hex)
-      if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
+      // The page follows the BASE, not the accent — so it only moves when the
+      // base does, i.e. while the link is on. Unlinked, the user's base (and the
+      // page computed from it) is theirs to keep.
       const neutral = linked ? neutralFromBrand(hex) : null
-      const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground) : null
+      const nextBg = neutral ? backgroundFromBase(neutral, 'light') : pageBackground
+      const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark') : darkBackground
+      const pageMoved = nextBg !== pageBackground
+      // Every ramp is re-anchored to whatever page we land on — tone 1 grows
+      // out of it, so a moved page that only rebuilt the brand would leave the
+      // status ramps anchored to the old one.
+      const gen = (base: string) => generateColorScale(base, colorAlgorithm, contrastShift, nextBg)
+      const scale = gen(hex)
+      const gScale = neutral ? gen(neutral) : null
       // The dark twin — same neutral (so it carries the accent's hue), but grown
       // out of the dark page instead of the light one.
       const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg) : null
+
+      if (pageMoved) setPageBackground(nextBg)
+      if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
+      setPrimaryColor(hex)
+      setPrimaryScale(scale)
+      if (pageMoved) {
+        const s = useDesignStore.getState()
+        s.setErrorScale(gen(s.errorColor))
+        s.setWarningScale(gen(s.warningColor))
+        s.setSuccessScale(gen(s.successColor))
+        s.setInfoScale(gen(s.infoColor))
+        s.customColors.forEach((c) => s.updateCustomColor(c.key, { scale: gen(c.base) }))
+      }
       for (const t of themeOrder) {
-        if (themePalettes[t]) continue // custom themes keep their own palette
+        // Only themes reading the GLOBAL accent follow this change.
+        if ((themeSources[t]?.brand ?? 'accent') !== 'accent') continue
         const kind = themeKinds[t] ?? 'light'
         const updates = brandTokenUpdates(scale, themes[t] ?? {}, kind)
         // Each theme kind re-tints its gray tokens from its own neutral ramp,
@@ -146,7 +148,7 @@ export function useApplyAccentColor() {
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, themes, themeOrder, themePalettes, themeKinds, mergeThemeTokens, mergeThemePalette, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, primaryColor])
+  }, [setPrimaryColor, setPrimaryScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives
@@ -207,7 +209,7 @@ export function useApplyPageBackground() {
       // their own palettes). Unmapped status-* tokens self-repair via Step3's
       // stale-detection resync on mount.
       for (const t of s.themeOrder) {
-        if (s.themePalettes[t]) continue
+        if ((s.themeSources[t]?.brand ?? 'accent') !== 'accent') continue
         const updates = brandTokenUpdates(brandScale, s.themes[t] ?? {}, s.themeKinds[t] ?? 'light')
         if ((s.themeKinds[t] ?? 'light') === 'light') {
           Object.assign(updates, grayTokenUpdates(grayScale, s.themes[t] ?? {}))
@@ -220,42 +222,65 @@ export function useApplyPageBackground() {
   }, [])
 }
 
-// Applies a new neutral/gray hex to `themeKey`. Built-in light draws its gray
-// scale from the global `grayLightScale` (dark uses a fixed achromatic ramp,
-// unaffected by this); a custom theme gets its own palette updated instead.
+// Applies a new BASE hex — the neutral every surface is computed from. Since
+// HeroUI's model landed, the base is also what the page background derives from
+// (`backgroundFromBase`), so a base change is a page change: both backgrounds
+// are rewritten and EVERY ramp is re-anchored to the new light page, because
+// `pageBackground` is what tone 1 of each ramp grows out of. A theme reading a
+// CUSTOM neutral family retints that family instead and leaves the globals (and
+// the page) alone — only the system's own Base moves the page.
 export function useApplyGrayColor() {
-  const {
-    themes, themeOrder, themePalettes, themeKinds, mergeThemePalette, mergeThemeTokens,
-    setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground,
-  } = useDesignStore()
   return useCallback((hex: string, themeKey = 'light') => {
+    const s = useDesignStore.getState()
     try {
-      const scale = generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)
-      const dScale = generateDarkColorScale(hex, colorAlgorithm, contrastShift, darkBackground)
-      if (themePalettes[themeKey]) {
-        const kind = themeKinds[themeKey] ?? 'light'
-        const own = kind === 'dark' ? dScale : scale
-        mergeThemePalette(themeKey, { gray: own })
-        const updates = grayTokenUpdates(own, themes[themeKey] ?? {}, kind)
-        if (Object.keys(updates).length) mergeThemeTokens(themeKey, updates)
+      const refs = s.themeSources[themeKey]
+      if (refs && refs.gray !== 'neutral') {
+        const kind = s.themeKinds[themeKey] ?? 'light'
+        const own = kind === 'dark'
+          ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
+          : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+        s.updateCustomColor(refs.gray, { base: hex, scale: own })
         return
       }
-      setGrayBaseColor(hex)
-      setGrayLightScale(scale)
-      setGrayDarkScale(dScale)
-      // Both kinds re-tint now — a dark theme reads the dark ramp, not the fixed
-      // achromatic one it used to be stuck with.
-      for (const t of themeOrder) {
-        if (themePalettes[t]) continue
-        const kind = themeKinds[t] ?? 'light'
-        const updates = grayTokenUpdates(kind === 'dark' ? dScale : scale, themes[t] ?? {}, kind)
-        if (Object.keys(updates).length) mergeThemeTokens(t, updates)
+
+      const bg = backgroundFromBase(hex, 'light')
+      const darkBg = backgroundFromBase(hex, 'dark')
+      const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, bg)
+      // Generate everything first — an invalid base throws before any write.
+      const scale = gen(hex)
+      const dScale = generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg)
+      const brandScale = gen(s.primaryColor)
+      const errorScale = gen(s.errorColor)
+      const warningScale = gen(s.warningColor)
+      const successScale = gen(s.successColor)
+      const infoScale = gen(s.infoColor)
+      const customScales = s.customColors.map((c) => [c.key, gen(c.base)] as const)
+
+      s.setGrayBaseColor(hex)
+      s.setPageBackground(bg)
+      s.setDarkBackground(darkBg)
+      s.setGrayLightScale(scale)
+      s.setGrayDarkScale(dScale)
+      s.setPrimaryScale(brandScale)
+      s.setErrorScale(errorScale)
+      s.setWarningScale(warningScale)
+      s.setSuccessScale(successScale)
+      s.setInfoScale(infoScale)
+      customScales.forEach(([key, sc]) => s.updateCustomColor(key, { scale: sc }))
+
+      // Both kinds re-tint: a dark theme reads the dark ramp, and every theme's
+      // brand tokens move too since their ramp was re-anchored to the new page.
+      for (const t of s.themeOrder) {
+        if ((s.themeSources[t]?.gray ?? 'neutral') !== 'neutral') continue
+        const kind = s.themeKinds[t] ?? 'light'
+        const updates = brandTokenUpdates(brandScale, s.themes[t] ?? {}, kind)
+        Object.assign(updates, grayTokenUpdates(kind === 'dark' ? dScale : scale, s.themes[t] ?? {}, kind))
+        if (Object.keys(updates).length) s.mergeThemeTokens(t, updates)
       }
     } catch {
       /* invalid hex — ignore */
     }
-  }, [themes, themeOrder, themePalettes, themeKinds, mergeThemePalette, mergeThemeTokens, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, colorAlgorithm, contrastShift, pageBackground, darkBackground])
+  }, [])
 }
 
 // Applies a new DARK page background — the dark-theme twin of
@@ -271,7 +296,7 @@ export function useApplyDarkBackground() {
       s.setDarkBackground(hex)
       s.setGrayDarkScale(gDark)
       for (const t of s.themeOrder) {
-        if (s.themePalettes[t] || (s.themeKinds[t] ?? 'light') !== 'dark') continue
+        if ((s.themeSources[t]?.gray ?? 'neutral') !== 'neutral' || (s.themeKinds[t] ?? 'light') !== 'dark') continue
         const updates = grayTokenUpdates(gDark, s.themes[t] ?? {}, 'dark')
         if (Object.keys(updates).length) s.mergeThemeTokens(t, updates)
       }

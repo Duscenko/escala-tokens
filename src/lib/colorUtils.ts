@@ -179,7 +179,10 @@ export type ColorNaming = 'numeric' | 'hundreds' | 'tens'
 
 export const NAMING_SCHEMES: { key: ColorNaming; label: string; labels: string[] }[] = [
   { key: 'numeric',  label: '1, 2, 3…',     labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-  { key: 'hundreds', label: '50, 100, 200…', labels: ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950', '1000'] },
+  // Canonical Untitled-UI / Tailwind ramp: 25 (lightest) … 950 (darkest). The
+  // semantic catalogue's tone→label mapping is built against this (tone 11 = 900,
+  // tone 12 = 950), so exported references read gray.900 / gray.950 etc.
+  { key: 'hundreds', label: '25, 50, 100…', labels: ['25', '50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'] },
   { key: 'tens',     label: '10, 20, 30…',  labels: ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120'] },
 ]
 
@@ -203,6 +206,29 @@ export function generateColorScale(
     scale[i + 1] = color
   })
   return scale
+}
+
+/**
+ * The page background DERIVED from the base neutral — HeroUI's model: you pick
+ * one base and the surfaces every element sits on are computed from it, instead
+ * of the page being a second, independent choice that can drift out of step
+ * with the ramps grown against it.
+ *
+ * It keeps the base's hue and a trace of its chroma, so the page carries the
+ * same tint as the neutral ramp. Light lands just under pure white; dark lands
+ * at L 0.17 — the same lightness `generateDarkColorScale` assumes when no dark
+ * page is given, so the derived page and its ramp agree by construction.
+ */
+export function backgroundFromBase(baseHex: string, appearance: ScaleAppearance = 'light'): string {
+  try {
+    const [, c, hRaw] = chroma(baseHex).oklch()
+    const h = Number.isNaN(hRaw) ? 0 : hRaw
+    return appearance === 'dark'
+      ? chroma.oklch(0.17, Math.min(c * 0.35, 0.022), h).hex()
+      : chroma.oklch(0.995, Math.min(c * 0.12, 0.006), h).hex()
+  } catch {
+    return appearance === 'dark' ? '#0c0e12' : '#ffffff'
+  }
 }
 
 /**

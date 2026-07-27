@@ -13,9 +13,9 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const sem = tokens.semanticMap ?? {}
   const v = (k: string, fb: string) => sem[k] || fb
   const fontFamily = fontFamilyOf(tokens)
-  // The card/container shell uses border-default — the general-purpose surface
+  // The card/container shell uses border-secondary — the general-purpose surface
   // stroke — not the stronger input border.
-  const surfaceBorder = v('border-default', tokens.border || '#eaecf0')
+  const surfaceBorder = v('border-secondary', tokens.border || '#eaecf0')
   const muted = tokens.fgMuted || '#717680'
   const placeholder = tokens.placeholderText || '#a4a7ae'
   const label = tokens.neutralText || '#414651'
@@ -75,23 +75,23 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       style={{ background: tokens.surface, border: `1px solid ${surfaceBorder}`, borderRadius: 14, fontFamily }}
       className="p-5 flex flex-col gap-4"
     >
-      <Field token="border-strong" fb="#d5d7da" placeholderText="you@company.com" />
+      <Field token="border-primary" fb="#d5d7da" placeholderText="you@company.com" />
 
-      {/* Card — border-default; radius + title match the catalogue's Card */}
-      <Row token="border-default">
+      {/* Card — border-secondary; radius + title match the catalogue's Card */}
+      <Row token="border-secondary">
         <div
           style={{
             flex: 1, borderRadius: radiusOf(tokens, 'lg', '12px'), padding: 12,
-            background: tokens.surface, border: `1px solid ${v('border-default', '#e9eaeb')}`,
+            background: tokens.surface, border: `1px solid ${v('border-secondary', '#e9eaeb')}`,
           }}
         >
           <span style={{ fontSize: 14, fontWeight: weightOf(tokens, 'semibold', 600), color: tokens.neutralText }}>Card surface</span>
         </div>
       </Row>
 
-      {/* Divider — border-subtle */}
-      <Row token="border-subtle">
-        <div style={{ flex: 1, height: 1, background: v('border-subtle', '#f5f5f5') }} />
+      {/* Divider — border-tertiary */}
+      <Row token="border-tertiary">
+        <div style={{ flex: 1, height: 1, background: v('border-tertiary', '#f5f5f5') }} />
       </Row>
 
       <Field token="border-brand" fb={tokens.brandSolid} placeholderText="Focused field" glow />
@@ -100,7 +100,7 @@ export function BorderSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
         fb="#fd6f6f"
         placeholderText="bad-email"
         note="This field is required."
-        noteColor={sem['text-error'] || tokens.errorColor}
+        noteColor={sem['content-error'] || tokens.errorColor}
       />
       <Field token="border-disabled" fb="#d5d7da" placeholderText="Disabled field" disabled />
     </div>

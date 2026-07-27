@@ -8,22 +8,23 @@
 // flattenScale prefixes: accent/neutral/error/success/warning/info/<slug>), so
 // the table, the semantic sources and tokens.json never disagree.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import { NAMING_SCHEMES, BASE_TONE, recommendStateColors, generateColorScale } from '../../lib/colorUtils'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground,
-  useApplyStateColor, useEnsureColorScales,
+  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
 import {
-  ColorSelect, ScaleRow, InfoDot, LinkToggle, StateColorRows, neutralFromBrand, SWATCH,
-  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
+  ColorSelect, ScaleRow, InfoDot, LinkToggle, StateColorsSelect, neutralFromBrand, SWATCH,
+  usePopoverPlacement, type IntentRole,
+  BRAND_GROUPS, NEUTRAL_GROUPS, type OptionGroup,
 } from './colorControls'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
+import { resolveThemePalette, themesUsingFamily, familySlotFor } from '../../lib/themeSources'
 import { slugify } from '../../lib/utils'
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
@@ -92,10 +93,15 @@ interface Family {
 export default function ColorPrimitives({
   previewTheme = 'light',
   onPreviewThemeChange,
+  tabsSlot,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
+  /** The Color hub's tab pills — rendered between the quick bar and the
+   *  families table so the switcher sits right on top of the tokens. */
+  tabsSlot?: ReactNode
 }) {
+  const store = useDesignStore()
   const {
     primaryColor, primaryScale, setPrimaryScale,
     grayBaseColor, grayLightScale, grayDarkScale, setGrayLightScale, setGrayDarkScale,
@@ -104,14 +110,12 @@ export default function ColorPrimitives({
     successColor, successScale, setSuccessScale,
     infoColor, infoScale, setInfoScale,
     customColors, addCustomColor, updateCustomColor, removeCustomColor,
-    pageBackground, darkBackground, themeKinds, themePalettes,
+    pageBackground, themeKinds, themeSources,
     colorAlgorithm, colorNaming, contrastShift,
     setColorAlgorithm, setColorNaming, setContrastShift,
-  } = useDesignStore()
+  } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
-  const applyPageBackground = useApplyPageBackground()
-  const applyDarkBackground = useApplyDarkBackground()
   const applyStateColor = useApplyStateColor()
 
   // Seed any ramp that's still empty (a fresh system may land here straight
@@ -123,7 +127,7 @@ export default function ColorPrimitives({
   // Custom "style themes" carry their own palette — while one is previewed the
   // quick bar reads (and the ScaleRows render) THAT palette, matching where
   // changeAccent/changeNeutral route their writes.
-  const pal = themePalettes[previewTheme]
+  const pal = resolveThemePalette(themeSources[previewTheme], darkPreview ? 'dark' : 'light', store)
   const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
   const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
   const brandRamp = pal?.brand ?? primaryScale
@@ -156,6 +160,11 @@ export default function ColorPrimitives({
     setLinked(next)
     if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
   }
+
+  // Neutral is an intent like the others, but it has no primitive of its own —
+  // it IS the Base, so its row writes through the Base applier.
+  const changeIntent = (role: IntentRole, hex: string) =>
+    role === 'neutral' ? changeNeutral(hex) : applyStateColor(role, hex)
 
   // "Match to accent" — re-harmonizes every status hue against the current brand.
   const matchStatesToAccent = () => {
@@ -203,6 +212,29 @@ export default function ColorPrimitives({
   const family = families.find((f) => f.key === activeFamily) ?? families[0]
   const totalTokens = families.length * 12
 
+  // ── Folders (Figma-style collections) ──
+  // The nav groups families by the ROLE they serve, not by insertion order:
+  // Accents (the brand + every custom family a theme reads as its accent),
+  // Neutrals (base + theme neutrals), States (the four intents + custom status
+  // families) and Custom for free-standing families no theme references yet.
+  // Derived from `themeSources`, so a family minted by "Add theme" files itself
+  // under the right folder with zero bookkeeping.
+  const famGroups = useMemo(() => {
+    const groupOf = (f: Family): 'Accents' | 'Neutrals' | 'States' | 'Custom' => {
+      if (f.key === 'accent') return 'Accents'
+      if (f.key === 'neutral') return 'Neutrals'
+      if (!f.customKey) return 'States'
+      const slot = familySlotFor(f.customKey, themeSources)
+      if (slot === 'brand') return 'Accents'
+      if (slot === 'gray') return 'Neutrals'
+      if (slot) return 'States'
+      return 'Custom'
+    }
+    return (['Accents', 'Neutrals', 'States', 'Custom'] as const)
+      .map((label) => ({ label, items: families.filter((f) => groupOf(f) === label) }))
+      .filter((g) => g.items.length > 0)
+  }, [families, themeSources])
+
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
   const rowName = (tone: number) => `${family.tokenPrefix}-${namingLabels[tone - 1] ?? tone}`
@@ -225,6 +257,39 @@ export default function ColorPrimitives({
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [addOpen])
+
+  const addPlace = usePopoverPlacement(addRef, addOpen)
+
+  // ── Per-family colour editing ──
+  // The nav used to be selection-only: to retint a family you had to go back up
+  // to the quick bar and know which control owned it. Each row now carries a
+  // pencil that opens the picker for THAT family, routed to whichever applier
+  // owns it.
+  const [editFamily, setEditFamily] = useState<string | null>(null)
+  const editRef = useRef<HTMLDivElement>(null)
+  const editPlace = usePopoverPlacement(editRef, editFamily)
+  useEffect(() => {
+    if (!editFamily) return
+    function onDown(e: MouseEvent) {
+      if (editRef.current && !editRef.current.contains(e.target as Node)) setEditFamily(null)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setEditFamily(null) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [editFamily])
+
+  const changeFamilyBase = (f: Family, hex: string) => {
+    if (f.customKey) {
+      try {
+        updateCustomColor(f.customKey, { base: hex, scale: generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground) })
+      } catch { /* invalid hex — ignore */ }
+      return
+    }
+    if (f.key === 'accent') return changeAccent(hex)
+    if (f.key === 'neutral') return changeNeutral(hex)
+    applyStateColor(f.key as 'error' | 'warning' | 'success' | 'info', hex)
+  }
 
   const addSlug = slugify(addName)
   const addTaken = RESERVED_COLOR_KEYS.includes(addSlug) || customColors.some((c) => c.key === addSlug)
@@ -259,31 +324,17 @@ export default function ColorPrimitives({
             <InfoDot tip="Auto-matches the neutral scale to your accent color." />
             <LinkToggle active={linked} onClick={toggleLink} accentColor={brandRamp[BASE_TONE] ?? primaryColor} />
           </div>
-          <ColorSelect label="Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
-          <ColorSelect
-            label="Background & State Colors"
-            value={darkPreview ? darkBackground : pageBackground}
-            groups={darkPreview ? darkBackgroundGroups(accentBase) : BACKGROUND_GROUPS}
-            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
-            allowCustom
-            groupsLabel={darkPreview ? 'Background (dark)' : 'Background'}
+          <ColorSelect label="Base" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
+          <StateColorsSelect
+            label="State Colors"
+            neutral={neutralBase}
+            error={errorColor}
+            warning={warningColor}
+            success={successColor}
+            info={infoColor}
+            onChange={changeIntent}
+            onMatchAccent={matchStatesToAccent}
             panelClassName="right-0 w-[320px] max-h-[420px]"
-            previewSwatches={[
-              { hex: errorColor, label: 'Error' },
-              { hex: successColor, label: 'Success' },
-              { hex: warningColor, label: 'Warning' },
-              { hex: infoColor, label: 'Info' },
-            ]}
-            extras={
-              <StateColorRows
-                error={errorColor}
-                warning={warningColor}
-                success={successColor}
-                info={infoColor}
-                onChange={applyStateColor}
-                onMatchAccent={matchStatesToAccent}
-              />
-            }
           />
           <div className="relative pb-0.5">
             <button
@@ -318,6 +369,9 @@ export default function ColorPrimitives({
         </div>
       </section>
 
+      {/* Hub tab switcher — right on top of the token table it switches. */}
+      {tabsSlot}
+
       {/* ── Families table — every primitive ramp as token rows ── */}
       <div className="flex flex-col bg-app border border-line rounded-xl overflow-hidden">
         {/* Top bar: active family + add + count + search */}
@@ -344,29 +398,41 @@ export default function ColorPrimitives({
                     transition={{ duration: 0.14, ease: 'easeOut' }}
                     role="dialog"
                     aria-label="Add color family"
-                    className="absolute left-0 top-full mt-2 z-30 w-72 rounded-2xl border border-line bg-app shadow-xl p-4 flex flex-col gap-3"
+                    // Capped and split into three bands: the name and the CTA are
+                    // pinned, only the picker scrolls. Unbounded, the panel ran
+                    // past the viewport and "Add family" became unreachable.
+                    style={{ maxHeight: addPlace.max }}
+                    className={`absolute left-0 z-30 w-72 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                      addPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
+                    }`}
                   >
-                    <span className="text-sm font-semibold text-fg">Add color family</span>
-                    <input
-                      value={addName}
-                      onChange={(e) => setAddName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') submitAdd() }}
-                      placeholder="Family name — e.g. Teal"
-                      aria-label="Family name"
-                      autoFocus
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
-                    />
-                    {addTaken && (
-                      <span className="text-[11px] text-red-500">That name is already in use.</span>
-                    )}
-                    <ColorPickerPanel value={addHex} onChange={setAddHex} />
-                    <button
-                      onClick={submitAdd}
-                      disabled={!canAdd}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] font-semibold bg-fg text-app disabled:opacity-30 transition-opacity"
-                    >
-                      Add family
-                    </button>
+                    <div className="flex flex-col gap-3 px-4 pt-4 pb-3 flex-shrink-0">
+                      <span className="text-sm font-semibold text-fg">Add color family</span>
+                      <input
+                        value={addName}
+                        onChange={(e) => setAddName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') submitAdd() }}
+                        placeholder="Family name — e.g. Teal"
+                        aria-label="Family name"
+                        autoFocus
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
+                      />
+                      {addTaken && (
+                        <span className="text-[11px] text-red-500">That name is already in use.</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-1">
+                      <ColorPickerPanel value={addHex} onChange={setAddHex} />
+                    </div>
+                    <div className="px-4 pt-3 pb-4 flex-shrink-0 border-t border-line">
+                      <button
+                        onClick={submitAdd}
+                        disabled={!canAdd}
+                        className="w-full px-3 py-2 rounded-lg text-[13px] font-semibold bg-fg text-app disabled:opacity-30 transition-opacity"
+                      >
+                        Add family
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -394,36 +460,107 @@ export default function ColorPrimitives({
 
         {/* Body: family nav + tone table */}
         <div className="flex items-stretch">
-          <nav aria-label="Color families" className="w-40 flex-shrink-0 border-r border-line py-2 px-2 flex flex-col gap-0.5 bg-app">
-            {families.map((f) => {
+          <nav aria-label="Color families" className="w-44 flex-shrink-0 border-r border-line py-1.5 px-2 flex flex-col bg-app">
+            {famGroups.map((group) => (
+            <div key={group.label} className="flex flex-col gap-0.5">
+            <span className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+              {group.label}
+            </span>
+            {group.items.map((f) => {
               const isActive = family.key === f.key
               return (
-                <div key={f.key} className="relative group/fam">
+                <div key={f.key} className="relative group/fam" ref={editFamily === f.key ? editRef : undefined}>
                   <button
                     onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
                     aria-current={isActive}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${f.customKey ? 'pr-7' : ''} ${
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
                       isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                     }`}
                   >
                     <span className={SWATCH} style={{ backgroundColor: f.base }} />
                     <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{f.label}</span>
                   </button>
-                  {f.customKey && (
-                    <button
-                      onClick={() => {
-                        removeCustomColor(f.customKey!)
-                        if (isActive) setActiveFamily('accent')
-                      }}
-                      aria-label={`Remove ${f.label}`}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/fam:opacity-100 transition-all"
-                    >
-                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8" /></svg>
-                    </button>
-                  )}
+                  {/* Edit — stays visible on the active row so the affordance is
+                      findable without hunting for it on hover. */}
+                  <button
+                    onClick={() => { setActiveFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
+                    aria-haspopup="dialog"
+                    aria-expanded={editFamily === f.key}
+                    aria-label={`Edit ${f.label} color`}
+                    title={`Edit ${f.label} — ${f.base}`}
+                    className={`absolute ${f.customKey ? 'right-7' : 'right-1.5'} top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-elevated transition-all ${
+                      isActive || editFamily === f.key ? 'opacity-100' : 'opacity-0 group-hover/fam:opacity-100 focus-visible:opacity-100'
+                    }`}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                  {f.customKey && (() => {
+                    // A theme resolves THROUGH its families, so one in use can't
+                    // be deleted — say so on the control instead of leaving a
+                    // button that silently does nothing.
+                    const usedBy = themesUsingFamily(f.customKey, themeSources)
+                    return (
+                      <button
+                        onClick={() => {
+                          if (usedBy.length) return
+                          removeCustomColor(f.customKey!)
+                          if (isActive) setActiveFamily('accent')
+                        }}
+                        disabled={usedBy.length > 0}
+                        aria-label={usedBy.length ? `${f.label} is used by ${usedBy.join(', ')}` : `Remove ${f.label}`}
+                        title={
+                          usedBy.length
+                            ? `In use by ${usedBy.length === 1 ? 'theme' : 'themes'} ${usedBy.join(', ')} — remove the ${usedBy.length === 1 ? 'theme' : 'themes'} first`
+                            : `Remove ${f.label}`
+                        }
+                        className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-all ${
+                          usedBy.length
+                            ? 'text-fg-faint opacity-0 group-hover/fam:opacity-60 cursor-not-allowed'
+                            : 'text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/fam:opacity-100'
+                        }`}
+                      >
+                        {usedBy.length ? (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                          </svg>
+                        ) : (
+                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8" /></svg>
+                        )}
+                      </button>
+                    )
+                  })()}
+                  <AnimatePresence>
+                    {editFamily === f.key && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.14, ease: 'easeOut' }}
+                        role="dialog"
+                        aria-label={`Edit ${f.label} color`}
+                        style={{ maxHeight: editPlace.max }}
+                        className={`absolute left-0 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                          editPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-shrink-0">
+                          <span className={SWATCH} style={{ backgroundColor: f.base }} />
+                          <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{f.label}</span>
+                          <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{f.base.toUpperCase()}</span>
+                        </div>
+                        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+                          <ColorPickerPanel value={f.base} onChange={(hex) => changeFamilyBase(f, hex)} />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )
             })}
+            </div>
+            ))}
           </nav>
 
           <div className="flex-1 min-w-0 overflow-x-auto">

@@ -444,7 +444,7 @@ function DocArticle({
 
 // ── Shell: catalogue sidebar · article · TOC ──────────────────────────────────
 
-export default function DocsView({ previewTheme = 'light' }: { previewTheme?: string }) {
+export default function DocsView({ previewTheme = 'light', category }: { previewTheme?: string; category?: string }) {
   const tokens = usePreviewTokens(previewTheme)
   const [activeKey, setActiveKey] = useState('Button')
   const [search, setSearch] = useState('')
@@ -456,6 +456,17 @@ export default function DocsView({ previewTheme = 'light' }: { previewTheme?: st
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
   }, [activeKey])
+
+  // Follow the shared category rail: when it changes, open that category's first
+  // component (unless the current article already belongs to it). Keeps the
+  // Documentation catalogue in sync with the Components filter for consistency.
+  useEffect(() => {
+    if (!category) return
+    const cur = COMPONENTS.find((c) => c.key === activeKey)
+    if (cur && cur.category === category) return
+    const first = COMPONENTS.find((c) => c.category === category)
+    if (first) setActiveKey(first.key)
+  }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = search.trim().toLowerCase()
   const matches = (c: ComponentDef) => !q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)
@@ -471,7 +482,11 @@ export default function DocsView({ previewTheme = 'light' }: { previewTheme?: st
           aria-label="Search components"
           className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
         />
-        {CATEGORIES.map((cat) => {
+        {CATEGORIES
+          // No search → only the category picked in the shared rail; searching
+          // spans every category (mirrors the Components master list).
+          .filter((cat) => q || !category ? true : cat === category)
+          .map((cat) => {
           const items = COMPONENTS.filter((c) => c.category === cat && matches(c))
           if (!items.length) return null
           return (

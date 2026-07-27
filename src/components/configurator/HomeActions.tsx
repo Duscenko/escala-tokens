@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { slugify } from '../../lib/utils'
+import HeaderPill from '../ui/HeaderPill'
 import { FilePreviewCard } from './SaveView'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
@@ -39,32 +40,8 @@ const ResetIcon: ComponentType = () => (
   </svg>
 )
 
-// A header pill — solid (bordered) or ghost (Reset), matching the Figma spec.
-function Pill({ Icon, label, onClick, ghost, buttonRef, ...aria }: {
-  Icon: ComponentType
-  label: string
-  onClick: () => void
-  ghost?: boolean
-  buttonRef?: React.Ref<HTMLButtonElement>
-  'aria-haspopup'?: boolean
-  'aria-expanded'?: boolean
-}) {
-  return (
-    <button
-      ref={buttonRef}
-      onClick={onClick}
-      {...aria}
-      className={`flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[12px] font-medium text-fg whitespace-nowrap transition-colors ${
-        ghost
-          ? 'hover:bg-elevated'
-          : 'bg-surface border border-line hover:border-line-strong hover:bg-elevated/60'
-      }`}
-    >
-      <span className="text-fg-muted flex-shrink-0"><Icon /></span>
-      {label}
-    </button>
-  )
-}
+// The pill itself is shared with every other section header (ui/HeaderPill).
+const Pill = HeaderPill
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)

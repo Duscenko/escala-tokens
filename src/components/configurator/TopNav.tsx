@@ -1,17 +1,41 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
-import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
-import type { Tab } from './Sidebar'
+
+// ── The global top bar (row 1 of the shell) ──────────────────────────────────
+// Section switching lives HERE — there is no left icon rail. The bar is split
+// by a vertical divider that continues down the workspace: the brand block on
+// the left sits over the token-controls column, the nav + actions on the right
+// sit over the canvas.
+
+export type TopNavKey = 'generator' | 'variables' | 'documentation' | 'components'
+
+const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
+  { key: 'generator', label: 'Generator' },
+  { key: 'variables', label: 'Variables' },
+  { key: 'documentation', label: 'Documentation' },
+  { key: 'components', label: 'Components' },
+]
 
 interface TopNavProps {
-  tab: Tab
+  /** Lit nav item, or null in the export/connect views. */
+  nav: TopNavKey | null
+  onNav: (key: TopNavKey) => void
   exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
-  onTabChange: (t: Tab) => void
   onGithub: () => void
-  /** Logo click → the Home hub (saved systems live there). */
-  onHome: () => void
+  onGetFigma: () => void
+  /** "Full editor" — jumps from the quick controls into the deep token editors. */
+  onOpenFoundations: () => void
+  /** Width of the left column below, so the brand block's right border extends
+   *  it and the divider runs unbroken from the very top. null = no column
+   *  (export/connect views), so the block sizes to its content and drops the
+   *  border rather than leaving a rule that leads nowhere. */
+  brandWidth?: number | null
+  /** Only the Generator's controls column needs the shortcut to the editors. */
+  showFullEditor?: boolean
+  previewTheme: string
+  onThemeChange: (theme: string) => void
 }
 
 // GitHub brand mark — monochrome, tracks currentColor.
@@ -64,7 +88,7 @@ function FigmaSyncPill() {
       onClick={sync}
       title={autoSyncFigma ? 'Auto-sync is on — click to force a publish now' : 'Publish your tokens to Figma now'}
       aria-label="Sync tokens to Figma"
-      className={`ml-1 sm:ml-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-semibold transition-all whitespace-nowrap inline-flex items-center gap-1.5 border ${
+      className={`px-3 sm:px-3.5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-semibold transition-all whitespace-nowrap inline-flex items-center gap-1.5 border ${
         state === 'error'
           ? 'border-red-400/60 text-red-500 bg-red-500/5'
           : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
@@ -90,67 +114,100 @@ function FigmaSyncPill() {
   )
 }
 
-// Top-nav text link — bold/fg when active, muted otherwise.
-function NavLink({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+// Escala mark — a neutral chip that reads on either theme.
+function BrandMark() {
   return (
-    <button
-      onClick={onClick}
-      className={`px-2 sm:px-3 py-1.5 rounded-lg text-[12px] sm:text-[13px] whitespace-nowrap transition-colors ${
-        active ? 'text-fg font-semibold' : 'text-fg-muted hover:text-fg'
-      }`}
+    <span
+      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-elevated border border-line text-fg"
+      aria-hidden
     >
-      {children}
-    </button>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+        <path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" />
+        <path d="M12 7.5 16 10v4l-4 2.5-4-2.5v-4z" />
+      </svg>
+    </span>
   )
 }
 
-// ── Transparent top navigation, layered over the brand gradient (layer 0) ─────
-export default function TopNav({ tab, exportMode, onTabChange, onGithub, onHome }: TopNavProps) {
-  const { projectCreated } = useDesignStore()
-  const foundationsActive = !exportMode && tab === 'foundations'
-  const componentsActive = !exportMode && tab === 'components'
-  const docsActive = !exportMode && tab === 'docs'
+export default function TopNav({
+  nav, onNav, exportMode, onGithub, onGetFigma, onOpenFoundations,
+  brandWidth = null, showFullEditor = false, previewTheme, onThemeChange,
+}: TopNavProps) {
+  const { projectCreated, projectName } = useDesignStore()
 
   return (
-    <header className="relative z-20 flex items-center justify-between gap-2 h-14 px-2 sm:px-3 lg:px-5 flex-shrink-0">
-      {/* Logo — icon mark only on phones, full wordmark from md up. Click → Home. */}
-      <button
-        type="button"
-        onClick={onHome}
-        title="Home"
-        aria-label="Home"
-        className="h-8 w-10 md:w-auto overflow-hidden flex-shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30 transition-opacity hover:opacity-80"
+    <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
+      {/* Brand block — spans the left column below, so its right border and the
+          column divider read as one rule from the very top. */}
+      <div
+        className={`flex items-center gap-3 px-4 lg:px-5 flex-shrink-0 ${brandWidth ? 'border-r border-line' : ''}`}
+        style={brandWidth ? { width: brandWidth } : undefined}
       >
-        <Logo className="h-8 text-fg" />
-      </button>
-
-      <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
-        {/* Pre-creation the nav is just logo + theme — Home is the entry point. */}
-        {projectCreated && (
-          <>
-            <NavLink active={foundationsActive} onClick={() => onTabChange('foundations')}>
-              Foundations
-            </NavLink>
-            <NavLink active={componentsActive} onClick={() => onTabChange('components')}>
-              Components
-            </NavLink>
-            <NavLink active={docsActive} onClick={() => onTabChange('docs')}>
-              Documentation
-            </NavLink>
-            {isLiveEnvironment() && <FigmaSyncPill />}
-            <button
-              onClick={onGithub}
-              className={`ml-1 sm:ml-1.5 px-3 sm:px-4 py-1.5 rounded-full text-[12px] sm:text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
-                exportMode === 'github' ? 'ring-2 ring-fg/30' : ''
-              }`}
-            >
-              <GitHubGlyph />
-              <span className="hidden sm:inline">Connect</span>
-            </button>
-          </>
+        <BrandMark />
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold text-fg truncate leading-tight">{projectName}</div>
+          <div className="text-[11.5px] text-fg-faint leading-tight">Token controls</div>
+        </div>
+        {showFullEditor && (
+          <button
+            onClick={onOpenFoundations}
+            className="ml-auto flex-shrink-0 text-[12px] font-medium text-fg-muted hover:text-fg px-2 py-1 rounded-md hover:bg-elevated transition-colors"
+          >
+            Full editor
+          </button>
         )}
-        <div className="ml-1 sm:ml-2 flex-shrink-0">
-          <ThemeToggle />
+      </div>
+
+      {/* Nav + actions */}
+      <div className="flex-1 min-w-0 flex items-center justify-end gap-4 lg:gap-8 px-4 lg:px-8">
+        {projectCreated && (
+          <nav aria-label="Sections" className="hidden md:flex items-center gap-6 lg:gap-8 min-w-0">
+            {NAV_ITEMS.map(({ key, label }) => {
+              const on = nav === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => onNav(key)}
+                  aria-current={on ? 'page' : undefined}
+                  className={`text-[14px] whitespace-nowrap transition-colors ${
+                    on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </nav>
+        )}
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {projectCreated && (
+            <>
+              {isLiveEnvironment() && <FigmaSyncPill />}
+              <button
+                onClick={onGetFigma}
+                aria-label="Bring to Figma"
+                title="Bring to Figma — install the sync plugin"
+                className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
+                  exportMode === 'figma'
+                    ? 'border-line-strong bg-elevated text-fg'
+                    : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
+                }`}
+              >
+                <FigmaGlyph />
+              </button>
+              <button
+                onClick={onGithub}
+                className={`px-4 h-9 rounded-full text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
+                  exportMode === 'github' ? 'ring-2 ring-fg/30' : ''
+                }`}
+              >
+                <GitHubGlyph />
+                <span className="hidden sm:inline">Connect</span>
+              </button>
+            </>
+          )}
+          <ThemeToggle previewTheme={previewTheme} onThemeChange={onThemeChange} />
         </div>
       </div>
     </header>

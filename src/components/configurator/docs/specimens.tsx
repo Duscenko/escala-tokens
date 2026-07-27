@@ -431,7 +431,7 @@ function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 function ToastSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const c = statusColor(t, v.Status ?? 'Success')
-  const inverse = t.semanticMap?.['surface-inverse'] || t.neutralText
+  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
   return (
     <div
       style={{
@@ -476,7 +476,7 @@ function CardSpecimen({ t }: { t: PreviewTokens }) {
       style={{
         ...baseFont(t), width: 280, padding: paddingOf(t),
         borderRadius: radiusOf(t, 'lg', '12px'),
-        ...panelStyle(t, t.semanticMap?.['surface-1'] || t.surface),
+        ...panelStyle(t, t.semanticMap?.['background-secondary'] || t.surface),
         border: `1px solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: shadowOf(t, 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
         display: 'flex', flexDirection: 'column', gap: 8,
@@ -516,7 +516,7 @@ function ModalSpecimen({ t }: { t: PreviewTokens }) {
 }
 
 function TooltipSpecimen({ t }: { t: PreviewTokens }) {
-  const inverse = t.semanticMap?.['surface-inverse'] || t.neutralText
+  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <span style={{ fontSize: 12, padding: '6px 10px', borderRadius: radiusOf(t, 'md', '8px'), background: inverse, color: t.surface }}>
@@ -1208,7 +1208,7 @@ function PopoverSpecimen({ t }: { t: PreviewTokens }) {
 }
 
 function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
-  const inverse = t.semanticMap?.['surface-inverse'] || t.neutralText
+  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       <span style={{ fontSize: 12, padding: '6px 10px', borderRadius: radiusOf(t, 'md', '8px'), background: inverse, color: t.surface }}>

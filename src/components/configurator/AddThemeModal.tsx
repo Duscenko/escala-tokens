@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
+import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
+import { resolveThemePalette, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import { generateColorScale } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
 import {
@@ -27,16 +28,28 @@ const SEMANTIC_FIELDS: { key: 'error' | 'warning' | 'success' | 'info'; label: s
 export default function AddThemeModal({
   open,
   onClose,
+  editKey = null,
+  onRenamed,
 }: {
   open: boolean
   onClose: () => void
+  // When set, the modal edits this existing theme instead of creating a new one.
+  editKey?: string | null
+  // Fired after a successful rename so callers can re-point their preview state.
+  onRenamed?: (oldKey: string, newKey: string) => void
 }) {
+  const store = useDesignStore()
   const {
-    themes, addTheme, customColors,
+    themes, addTheme, renameTheme, updateTheme, customColors, addCustomColor,
+    themeKinds, themeSources,
     primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor,
     colorAlgorithm, contrastShift, pageBackground,
-  } = useDesignStore()
+  } = store
   const reduce = useReducedMotion() ?? false
+  const isEdit = !!editKey
+  // light/dark are the export's reserved keys (semantic / semanticDark) — their
+  // palette + mode are editable, but the key itself must stay stable.
+  const nameLocked = editKey === 'light' || editKey === 'dark'
 
   const [name, setName] = useState('')
   const [kind, setKind] = useState<'light' | 'dark'>('light')
@@ -56,13 +69,26 @@ export default function AddThemeModal({
   const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
   const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
 
-  // Reset to the current global colors each time the modal opens.
+  // On open: seed from the edited theme's palette (base = tone 9), or fall back
+  // to the current global colors for a fresh theme.
   useEffect(() => {
     if (!open) return
-    setName(''); setKind('light'); setLinked(true); setErr(null)
-    setBrand(primaryColor); setNeutral(grayBaseColor)
-    setError(errorColor); setWarning(warningColor); setSuccess(successColor); setInfo(infoColor)
-  }, [open, primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor])
+    setErr(null); setLinked(false)
+    if (editKey) {
+      const pal = resolveThemePalette(themeSources[editKey], themeKinds[editKey] ?? 'light', store)
+      const base = (s: ThemePalette[keyof ThemePalette] | undefined, fb: string) =>
+        (s?.[9] as string | undefined) ?? fb
+      setName(editKey)
+      setKind(themeKinds[editKey] ?? 'light')
+      setBrand(base(pal?.brand, primaryColor)); setNeutral(base(pal?.gray, grayBaseColor))
+      setError(base(pal?.error, errorColor)); setWarning(base(pal?.warning, warningColor))
+      setSuccess(base(pal?.success, successColor)); setInfo(base(pal?.info, infoColor))
+    } else {
+      setName(''); setKind('light'); setLinked(true)
+      setBrand(primaryColor); setNeutral(grayBaseColor)
+      setError(errorColor); setWarning(warningColor); setSuccess(successColor); setInfo(infoColor)
+    }
+  }, [open, editKey, themeKinds, themeSources, primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor])
 
   useEffect(() => {
     if (!open) return
@@ -97,17 +123,55 @@ export default function AddThemeModal({
     const label = name.trim()
     const key = slugify(label)
     if (!key) { setErr('Name the theme first.'); return }
-    if (themes[key]) { setErr(`"${key}" already exists.`); return }
+    // On edit, the key only collides if it points at a *different* theme.
+    if (themes[key] && key !== editKey) { setErr(`"${key}" already exists.`); return }
     try {
-      const palette: ThemePalette = {
-        brand: generateColorScale(brand, colorAlgorithm, contrastShift, pageBackground),
-        gray: generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground),
-        error: generateColorScale(error, colorAlgorithm, contrastShift, pageBackground),
-        warning: generateColorScale(warning, colorAlgorithm, contrastShift, pageBackground),
-        success: generateColorScale(success, colorAlgorithm, contrastShift, pageBackground),
-        info: generateColorScale(info, colorAlgorithm, contrastShift, pageBackground),
+      // A theme never holds colour — it REFERENCES a primitive family. So each
+      // slot resolves to a family key: the matching global when the hex is the
+      // system's own, an existing family when one already carries that hex, and
+      // otherwise a NEW family minted here so the colour shows up in Primitives
+      // where colour is edited. That's what keeps a theme connected.
+      const globals: Record<FamilySlot, { key: string; hex: string }> = {
+        brand:   { key: 'accent',  hex: primaryColor },
+        gray:    { key: 'neutral', hex: grayBaseColor },
+        error:   { key: 'error',   hex: errorColor },
+        warning: { key: 'warning', hex: warningColor },
+        success: { key: 'success', hex: successColor },
+        info:    { key: 'info',    hex: infoColor },
       }
-      addTheme(key, kind, palette)
+      const chosen: Record<FamilySlot, string> = {
+        brand, gray: neutral, error, warning, success, info,
+      }
+      const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
+      const minted: { key: string; label: string; base: string; scale: ReturnType<typeof generateColorScale> }[] = []
+      const taken = new Set(customColors.map((c) => c.key))
+      const refs = {} as ThemeSources
+      for (const slot of FAMILY_SLOTS) {
+        const hex = chosen[slot]
+        const g = globals[slot]
+        if (eq(hex, g.hex)) { refs[slot] = g.key; continue }
+        const existing = customColors.find((c) => eq(c.base, hex)) ?? minted.find((m) => eq(m.base, hex))
+        if (existing) { refs[slot] = existing.key; continue }
+        const wanted = slot === 'brand' ? key : `${key}-${slot}`
+        let familyKey = wanted
+        let n = 2
+        while (RESERVED_COLOR_KEYS.includes(familyKey) || taken.has(familyKey)) familyKey = `${wanted}-${n++}`
+        taken.add(familyKey)
+        minted.push({
+          key: familyKey,
+          label: familyKey.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()),
+          base: hex,
+          scale: generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground),
+        })
+        refs[slot] = familyKey
+      }
+      minted.forEach((m) => addCustomColor({ key: m.key, label: m.label, base: m.base, scale: m.scale }))
+      if (editKey) {
+        if (key !== editKey) { renameTheme(editKey, key); onRenamed?.(editKey, key) }
+        updateTheme(key, kind, refs)
+      } else {
+        addTheme(key, kind, refs)
+      }
       onClose()
     } catch {
       setErr('One of the colors is invalid.')
@@ -131,7 +195,7 @@ export default function AddThemeModal({
           onMouseDown={onClose}
           role="dialog"
           aria-modal="true"
-          aria-label="Add a theme"
+          aria-label={isEdit ? 'Edit theme' : 'Add a theme'}
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -143,7 +207,7 @@ export default function AddThemeModal({
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 h-14 border-b border-line flex-shrink-0">
-              <h2 className="text-sm font-semibold text-fg">Add a theme</h2>
+              <h2 className="text-sm font-semibold text-fg">{isEdit ? 'Edit theme' : 'Add a theme'}</h2>
               <button
                 onClick={onClose}
                 aria-label="Close"
@@ -158,15 +222,18 @@ export default function AddThemeModal({
               {/* Name + mode */}
               <div className="flex items-end gap-3">
                 <label className="flex flex-col gap-1 flex-1 min-w-0">
-                  <span className="text-xs text-fg-muted">Theme name</span>
+                  <span className="text-xs text-fg-muted">
+                    Theme name{nameLocked && <span className="text-fg-faint"> · locked (reserved export key)</span>}
+                  </span>
                   <input
-                    autoFocus
+                    autoFocus={!nameLocked}
                     type="text"
                     value={name}
+                    disabled={nameLocked}
                     onChange={(e) => { setName(e.target.value); setErr(null) }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                     placeholder="e.g. Ocean"
-                    className="bg-surface border border-line-strong focus:border-fg rounded-full px-4 py-2 text-sm text-fg outline-none transition-colors"
+                    className="bg-surface border border-line-strong focus:border-fg rounded-full px-4 py-2 text-sm text-fg outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </label>
                 <div className="flex flex-col gap-1">
@@ -241,7 +308,7 @@ export default function AddThemeModal({
                 onClick={handleCreate}
                 className="px-4 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-colors"
               >
-                Create theme
+                {isEdit ? 'Save changes' : 'Create theme'}
               </button>
             </div>
           </motion.div>

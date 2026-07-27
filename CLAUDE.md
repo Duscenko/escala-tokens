@@ -13,49 +13,73 @@ A web configurator that lets product designers build a minimal, custom design to
 
 ---
 
-## Navigation model — 3-column workspace ("Escala")
+## Navigation model — top-nav workspace ("Escala")
 
-The app is a **3-column workspace** (Claude Code–style), **not a wizard**. Designers
-**configure tokens and see them live at the same time**: pick foundations in the center,
-watch the right-hand preview update, then export.
+The app is a **top-nav workspace**, **not a wizard**. Designers **configure tokens and see
+them live at the same time**: tweak the controls on the left, watch the canvas repaint,
+then export. **There is no left icon rail** — section switching lives in the top bar.
 
 ```
-┌── LEFT RAIL ────────┬── CENTER (active editor) ──┬── RIGHT (persistent) ──┐
-│ (80px icon rail)    │  ✦ <section> | <subtitle>  │ Components Preview  ☀︎☾ │
-│ Home · Color ·      │                            │  live token-driven     │
-│ Semantic · Font ·   │  active foundation section │  atoms: buttons ·      │
-│ Icons · Spacing ·   │  / component doc / export  │  input · badge ·       │
-│ Opacity · Shadow ·  │                            │  toggle · sign-up card │
-│ Grid · Sizes        │                            │                        │
-│ ───── (sticky) ──── │  TopNav: Foundations ·     │                        │
-│ Bring to Figma ·    │  Components · Docs ·       │                        │
-│ Get MD              │  [Export] [GitHub] pills   │                        │
-└─────────────────────┴────────────────────────────┴────────────────────────┘
+┌ row 1 — TopNav (global, every view) ───────────────────────────────────────┐
+│ ◆ Escala          │  Generator · Variables · Documentation · Components    │
+│   Token controls  │              [Figma] [◆ Connect] [☾/☀]                 │
+│      Full editor  │                                                        │
+├── LEFT COLUMN ────┼── CANVAS ──────────────────────────────────────────────┤
+│ Preset│Quick edit │ Preview │ Quick edit   New · Import JSON · Share · Kits │  ← row 2
+│ Presets           │ BUTTON & ACTIONS                                       │
+│ Color Family      │  every included component, rendered across its         │
+│ Typography        │  variants from the live tokens                         │
+│ Shadow · Radius   │                                                        │
+└───────────────────┴────────────────────────────────────────────────────────┘
 ```
 
-- **Shell = `Configurator.tsx`** (3-column flex). All nav state is **local** there:
-  `tab` (`foundations`|`components`), `activeFoundation`, `activeComponent`, `exportMode`
-  (`null`|`code`|`md`|`figma`|`github`), `semanticCategory`. None persisted — every reload
-  lands on **Home**. Leaving a foundation marks it complete (`commitVisit()` →
-  `markFoundationComplete`) for the Home overview checklist.
-- **Home is the info hub** (`HomeView`): a hero — the "AI Design Tokens Generator
-  & React Component Library." title, a description that reads `projectDescription`
-  or falls back to live counts (COMPONENTS + token totals from the store), and two
-  CTAs ("Start setting tokens" → Foundations · Color, "View Components" → the
-  catalogue) — over the masonry collage of the system's own components rendered
-  live from `usePreviewTokens(homeTheme)` (sign-up card + `SPECIMENS` registry
-  tiles + collage-only clusters). **Primitive editing does NOT live here** — it
-  moved to the Color hub's Primary Color tab. The right panel here is **Quick
-  edit** (`QuickEditPanel` — Theme · Accent swatches + custom picker · Font
-  Family · Radius · Panel background · More Foundations), not the Components
-  Preview; its sections (`QuickEditSections`) are shared with the Components
-  catalogue's quick-edit popover (`QuickFoundationsPanel`). `homeTheme` is local
-  `useState` in `Configurator`.
-- **Color is a three-tab hub** (`ColorHub`, default tab `primary`): **Primary
-  Color** (`ColorPrimitives` — the accent · link · neutral · Background & State
+The brand block's right border is the same divider as the left column's, so it runs
+unbroken from the very top. **Every row-2 header is `h-[52px]`** — `CenterHeader`,
+`WorkbenchLayout`'s `ColumnHeader`, `PreviewPanel`, `SaveSidePanel`, `QuickEditPanel` —
+so they line up across every column of every section. Any new panel header uses that
+height too. Their actions use the shared `ui/HeaderPill` (Generator's New · Import JSON ·
+Share · Kits · Reset AND Variables' Export are the same component — don't hand-roll
+another pill).
+
+- **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
+  every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
+  `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|
+  `github`|`save`), `semanticCategory`. None persisted — every reload lands on
+  **Generator**. Leaving a foundation marks it complete (`commitVisit()` →
+  `markFoundationComplete`).
+- **The four top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
+  `handleNav`): **Generator** = the workbench (`activeFoundation === 'home'` →
+  `WorkbenchLayout`) · **Variables** = the deep token editors (`tab 'foundations'`,
+  entering at Color) · **Documentation** (`DocsView`) · **Components** (the catalogue).
+  Export/connect views (Figma · GitHub · Export · Save) unlight every item.
+- **Generator = `WorkbenchLayout`** — the live workbench and the app's landing view.
+  Left column (356px): `QuickEditSections accordion` — Presets swatch row, then Color
+  Family · Typography · Shadow · Radius … It is **controls, not nav**, but it speaks
+  `SectionRail`'s grammar so it reads as a wide rail: same 10px uppercase captions
+  (PRESETS · QUICK EDIT), same `h-9 · rounded-xl · 13px · icon + label` rows and hover,
+  and the same transparent-over-gradient backdrop (only the canvas is `bg-app`). Keep the
+  two in sync — restyling one means restyling the other. **A group's two states do
+  different jobs**: collapsed = a bare rail row; open = a `bg-surface` card that WRAPS its
+  settings (header, hairline, then the controls). The card is load-bearing, not decoration
+  — without it Color Family's controls and Typography's below run together and neither
+  group owns its settings. The canvas is the design system's living
+  documentation: every selected component rendered across its first axis, grouped by
+  catalogue category, painted from `usePreviewTokens(previewTheme)`. Its row-2 header
+  carries `HomeActions` (New · Import JSON · Share · Kits · Reset).
+- **`HomeView` is retired** — the old hero/collage hub is unreachable (the file is kept
+  for reference only). Don't wire it back up; the Generator replaced it.
+- **Color is a three-tab hub** (`ColorHub`, default tab `primary`). The tab pill bar's
+  position is per-tab: on **Primary Color** it renders BELOW the quick bar, directly above
+  the families table (passed into `ColorPrimitives` as `tabsSlot`); Alias/Gradients keep it
+  pinned on top. **Primary Color** (`ColorPrimitives` — the accent · link · Base · State
   Colors quick bar + Scale-settings popover over the two `ScaleRow` ramps, then a
-  Figma-style families table: Accent/Neutral/Error/Success/Warning/Info + custom
-  families in a side nav, 12 tone rows each with editable **light/dark** hex
+  Figma-style families table. The family nav is **foldered by ROLE, not insertion order**:
+  `Accents` / `Neutrals` / `States` / `Custom`, derived via `familySlotFor()`
+  (`lib/themeSources.ts`) from which theme slot references each family — a family minted
+  by "Add theme" files itself under the right folder with zero bookkeeping; `Custom` holds
+  free-standing families no theme references. Families table: Accent/Neutral/Error/
+  Success/Warning/Info + custom families in that side nav, 12 tone rows each with editable
+  **light/dark** hex
   cells (row names are the EXACT exported token names — `accent-1`…, matching
   tokenGenerator's flattenScale prefixes and the semantic sources' "accent"
   label), eye toggles on the column headers driving `previewTheme`, a per-row
@@ -71,7 +95,9 @@ watch the right-hand preview update, then export.
   counts and a read-only light/dark table mirror the exported schema exactly,
   and switching architectures resets category/search state) ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
-- **Save is the "Save & Share" hub** (`SaveView`, rail bottom → `exportMode 'save'`):
+- **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
+  since the rail was removed — Share + Kits in the Generator header cover the same
+  ground, so re-add an entry point before relying on it):
   the center IS the export surface — a tabbed file-preview card (tokens.json with a
   "Figma plugin" badge · variables.css · README.md, accent-colored active tab, plus an
   "Export all files" action tab) with Copy / Download per file and the live-endpoint
@@ -84,13 +110,20 @@ watch the right-hand preview update, then export.
   repo, savedAt, snapshot }`). `loadSystem(id)` restores a deep-cloned `DesignSnapshot`;
   `startNewSystem()` resets to `makeDesignDefaults()`. GitHub (PAT identity) is "the
   account" — no separate auth backend. Removing an entry is local-only.
-- **Left rail = `Sidebar.tsx`**: an 80px icon rail — scrollable foundations list (Home,
-  Color, Semantic, Font, Icons, Spacing, Opacity, Shadow, Grid, Sizes) over a sticky
-  bottom block with **Bring to Figma** (→ `FigmaConnectView`) and **Get MD** (→ the
-  didactic README). **GitHub lives in `TopNav`** as a black pill next to Export
-  (→ `GitHubConnectView`: PAT connect → pick/create repo → push tokens.json/variables.css/README.md).
+- **Section sub-rail = `SectionRail.tsx`** — ONE component for all three sections, so the
+  second column is identical everywhere: 200px, transparent over the brand gradient,
+  uppercase group caption + `icon · label` rows (active = raised white row in the UI
+  accent). Variables feeds it the foundations split into Figma-style **Variables** /
+  **Styles** groups; Components and Documentation feed it the catalogue **Categories**
+  (icons from `CATEGORY_ICONS` in `Configurator`). Don't fork it per section — pass a
+  different `groups` array. It carries **no** global nav and no action block — those live
+  in `TopNav`: **Bring to Figma** (icon button → `FigmaConnectView`) and **Connect**
+  (black GitHub pill → `GitHubConnectView`: PAT connect → pick/create repo → push
+  tokens.json/variables.css/README.md). Below the rail, Components and Documentation each
+  add the same 208px master list (search + grouped component list) — keep those two in
+  sync too.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
-  body — `HomeView`, a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
+  body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
   the component docs (`ComponentDocPane` — interactive playground per component), the
   **Documentation tab** (`DocsView` — createui-style docs site: catalogue sidebar + per-component
@@ -101,8 +134,14 @@ watch the right-hand preview update, then export.
   project name), `FigmaConnectView` (opened by Bring to Figma — download the plugin zip +
   live-sync guide), or `GitHubConnectView` (opened by the TopNav GitHub pill / Home's
   Connect; a successful push also upserts the system into `savedSystems`).
-- **Right = `PreviewPanel.tsx`**: "Components Preview" + a light/dark toggle (drives the global
-  theme). Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview`) from
+- **Theme = one control**: the top bar's single icon button (`ThemeToggle`) shows the
+  theme you'd switch TO — a **moon while light**, a **sun while dark**. It calls
+  `changePreviewTheme`, so the previewed theme and the app chrome flip together. There is
+  no segmented sun|moon pill any more.
+- **Right = `PreviewPanel.tsx`**: **collapsed by default** (`previewCollapsed` starts
+  `true`) — Variables is a token-editing view, so the tables get the width and the
+  preview is opt-in via the slim expand strip. "Components Preview" + a light/dark toggle
+  (drives the global theme). Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview`) from
   `usePreviewTokens()`, so editing any foundation updates them **live**. **Context-aware in
   Semantic**: it takes a `focus` prop (the active token category) and swaps to a matching live
   specimen — `text`→`TextSpecimenPreview`, `surface`/`action`/`status`→`BackgroundSpecimenPreview`,
@@ -128,7 +167,7 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← Sidebar, TopNav, HomeView, ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
+│   ├── configurator/       ← TopNav (global nav), WorkbenchLayout (Generator), SectionRail (the one left rail), HomeActions, ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
@@ -149,7 +188,7 @@ src/
 ├── types/
 │   └── tokens.ts           ← TypeScript types for DesignTokens, ColorScale, etc.
 └── pages/
-    └── Configurator.tsx    ← 3-column shell: Sidebar | center editor | PreviewPanel
+    └── Configurator.tsx    ← shell: TopNav over (WorkbenchLayout | sub-rail + center editor + PreviewPanel)
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
 scripts/
@@ -167,8 +206,8 @@ Key fields — always use the store, never local state for cross-view data:
 | `projectName` | string (default `"Escala"`) | Home (hero input) + Export pane (editable pill) |
 | `projectDescription` | string (flows into the README intro) | Home |
 | `figmaLastPublishAt` / `githubRepo` / `githubLastPushAt` | string \| null — connection status shown on Home; written by the connect views | Home (read-only) |
-| `pageBackground` | string (hex, default `#ffffff`) — Radix custom-palette "background" input: anchors tone 1 of every generated **light** ramp (`generateColorScale`'s 4th arg) and is the compositing base for the exported alpha ramps (`colors.primitiveAlpha` via `generateAlphaScale`) | Foundations · Color |
-| `darkBackground` | string (hex, default `#0c0e12`) — the dark-theme page. Anchors **tone 12** of `grayDarkScale` (dark themes read the gray hierarchy inverted, so `surface-0` → tone 12). Its presets are **derived from the accent** (`darkBackgroundOptions()` in `colorControls`), and `useApplyAccentColor` re-derives the same preset *slot* when the accent changes (Ink stays Ink) — a hand-typed hex is left alone | Foundations · Color / Home (shown when the previewed theme is dark) |
+| `pageBackground` | string (hex, default `#ffffff`) — anchors tone 1 of every generated **light** ramp (`generateColorScale`'s 4th arg) and is the compositing base for the exported alpha ramps (`colors.primitiveAlpha` via `generateAlphaScale`). **DERIVED, never picked** — `backgroundFromBase(grayBaseColor, 'light')`, HeroUI's model: one Base drives every surface | derived (Base) |
+| `darkBackground` | string (hex, default `#0c0e12`) — the dark-theme page. Anchors **tone 12** of `grayDarkScale` (dark themes read the gray hierarchy inverted, so `surface-0` → tone 12). Also **DERIVED** — `backgroundFromBase(grayBaseColor, 'dark')` | derived (Base) |
 | `grayDarkScale` | ColorScale — dark-appearance neutral ramp, generated by `generateDarkColorScale(grayBaseColor, …, darkBackground)`. Gray roles in a dark theme resolve from **this**, not `grayLightScale` (`sourceScaleFor` → `GlobalScales.grayDark`). Replaces the old fixed `GRAY_DARK_SCALE` constant, which is now only the default seed + fallback | derived (accent · neutral · dark background) |
 | `primaryColor` | string (hex) | Foundations · Color |
 | `primaryScale` | Record<number, string> | Foundations · Color |
@@ -203,7 +242,62 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 37`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 39`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+
+> **Tall popovers → `usePopoverPlacement`** (`colorControls`). A popover carrying
+> `ColorPickerPanel` (HSV + hue + alpha + Palette + Saved) is ~540px — taller than the room
+> under a trigger sitting low on the page. The hook measures on open, flips above the
+> trigger when there's more room there, and returns `{ up, max }` to cap `maxHeight` to the
+> space that actually exists. Pair it with pinned header · scrolling body · pinned footer
+> so the primary action can never scroll out of reach. Used by the "+ Add" family popover
+> and the per-family edit popover; use it for any new one rather than a fixed max-height.
+
+> **Editing a family's color.** Each row of the Color-families nav carries a pencil that
+> opens `ColorPickerPanel` for THAT family, routed by `changeFamilyBase()` to whichever
+> applier owns it — accent → `useApplyAccentColor`, neutral → `useApplyGrayColor` (so it
+> moves the page, see below), status → `useApplyStateColor`, custom → `updateCustomColor`
+> with a regenerated ramp. The nav is no longer selection-only; keep new families routed
+> there instead of sending users back to the quick bar.
+
+> **Popovers inside the Quick-edit accordion.** `Group`'s content wrapper needs
+> `overflow-hidden` for its height animation, and that CLIPS any dropdown opened inside
+> it. It therefore clips **only while animating** (`onAnimationStart`/`onAnimationComplete`
+> toggle the class); once settled, popovers can escape the group. Keep that pattern for any
+> new animated-height container that can hold a popover.
+
+> **Neutral is an intent.** The State Colors control carries **Neutral · Error · Success ·
+> Warning · Info** (`IntentRole`). Neutral has no primitive of its own — it IS the Base, so
+> its row writes through the Base applier and therefore moves the page with it. Don't add a
+> separate `neutralColor` field to "fix" that; one value, two entry points is the point.
+
+> **A theme is a READING of the primitives, never a place to set color.** The Figma model:
+> modes reference variables, they don't hold their own values. Enforced at the data model,
+> not by discipline: `themeSources[theme]` stores a **family KEY per slot** (`{ brand:
+> 'teal', gray: 'teal-gray', error: 'error', … }`) — never a ramp. Everything that needs a
+> theme's actual ramps calls `resolveThemePalette()` (`lib/themeSources.ts`), so retinting
+> a family in Primitives moves every theme pointing at it; a theme can't drift because it
+> never held a copy to drift with.
+>
+> Consequences to preserve:
+> - **Creating a theme creates its families.** `AddThemeModal` mints a `customColors` entry
+>   for any slot whose hex isn't already a family (`teal` for the brand, `teal-gray` for the
+>   linked neutral) and stores references. A slot matching a global reuses `accent` /
+>   `neutral` / `error` / … instead of duplicating it.
+> - **A family in use can't be deleted.** `removeCustomColor` refuses while any theme
+>   references it (`themesUsingFamily`), and the family nav shows a lock with the list.
+> - **The Alias/Semantics columns have an eye and a ✕ — no pencil.** Color is edited in
+>   Primary Color; the table only maps roles onto it.
+> - **The export ships no per-theme namespaced ramps.** A theme's ramps ARE families,
+>   already exported under their own key, so its semantics alias those primitives.
+
+> **Base drives the page (HeroUI model).** There is no background picker. `grayBaseColor`
+> — labelled **Base** in the UI, still exported as the `neutral-*` family — is the single
+> input the page is computed from: `useApplyGrayColor` writes `pageBackground` +
+> `darkBackground` via `backgroundFromBase()` and then **re-anchors every ramp** (brand,
+> status, customs) to the new light page, because tone 1 grows out of it. While the
+> accent↔base link is on, an accent change moves the base and therefore the page too;
+> unlinked, the accent leaves the page alone. Don't reintroduce an independent background
+> input — that's what let the page and the ramps grown against it drift apart.
 
 > **Light vs dark ramps.** A ramp always runs 1 (lightest) → 12 (darkest); what differs is **which end grows out of the page**. `generateColorScale(…, appearance: 'light')` anchors tone 1 to `pageBackground`; `generateDarkColorScale()` anchors tone **12** to `darkBackground` *and* re-derives the ramp's base (tone 9) as a dark neutral, so tones 9–12 are the dark surfaces instead of mid-grays. Gray is the **only** ramp with a dark twin — colored ramps (brand/status) keep their hue and just shift tone via `recDarkTone`. Anything that builds a `GlobalScales` **must pass `grayDark`**: it's optional in the type, and omitting it silently falls back to the legacy constant — which would make Step3's resync treat every dark gray as stale and overwrite the generated ramp.
 
@@ -313,7 +407,7 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
 1. **No bloat** — every feature should earn its place. If it doesn't help the designer configure tokens, it doesn't belong.
 2. **Tokens first** — all visual choices (colors, radius, spacing) come from the store. Never hardcode design values in components. Live previews resolve tokens via `usePreviewTokens()`.
-3. **Workspace, not wizard** — the 3-column shell (rail · center · preview) has no linear step counter, progress bar, or Continue/Back nav between Foundations/Components/Export (see Navigation model).
+3. **Workspace, not wizard** — the shell (top nav · controls · canvas) has no linear step counter, progress bar, or Continue/Back nav between sections (see Navigation model).
 4. **Accessibility** — all interactive elements need keyboard support and ARIA. The component docs we generate should model this.
 5. **Light & dark** — both themes are supported; **light is the default**. Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the **preview panel header**, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills; the user's token colors/previews are theme-independent (atoms render on `tokens.surface`).
 
@@ -364,6 +458,8 @@ npm run bundle:plugin  # → public/scalable-designs-figma-plugin.zip (commit it
 - [x] Icons: live Iconify browser per library + sanitized custom SVG upload (`customIcons`)
 - [x] Gradients: `Foundations · Gradients` — named linear/radial gradients with a rich HSV `ColorField` picker (opacity + hex + saved swatches), assignable to card covers + avatars, exported as tokens (`gradients` + `--gradient-*` + README)
 - [ ] GitHub: OAuth App flow (popup + serverless token exchange) to replace the manual PAT
+- [x] Semantic: `themePalettes` (per-theme ramps) retired for `themeSources` (per-theme
+      family references) — store v39 migrates old palettes into real Primitives families
 - [ ] Semantic: surface custom color families as token sources (needs per-family role generation in Step3)
 - [ ] Plugin: import `icons.custom` SVGs as Figma components; import extra `colors.themes` as Variable modes
 - [ ] Plugin: consume the new `gradients` map (e.g. Figma gradient paint styles / variables) — the configurator emits it but the plugin ignores it for now

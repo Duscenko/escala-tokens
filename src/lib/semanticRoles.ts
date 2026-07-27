@@ -10,21 +10,44 @@ import { accessibleSolidTone } from './colorUtils'
 // ── Source palettes a token can draw from ──────────────────────────────────
 export type ScaleSource = 'gray' | 'brand' | 'error' | 'warning' | 'success' | 'info'
 
-export const SCALE_META: Record<ScaleSource, { label: string }> = {
+// A role can also point at the theme-independent `base` primitives (pure
+// white / black). It's not one of the 12-tone ramps, so it stays out of
+// GlobalScales / ThemePalette and resolves from BASE_SCALE below.
+export type RoleScale = ScaleSource | 'base'
+
+export const SCALE_META: Record<RoleScale, { label: string }> = {
   gray:    { label: 'neutral' },
   brand:   { label: 'accent' },
   error:   { label: 'error' },
   warning: { label: 'warning' },
   success: { label: 'success' },
   info:    { label: 'info' },
+  base:    { label: 'base' },
 }
+
+// The `base` primitive family — theme-independent pure white / black. Only
+// tone 1 (white) and tone 12 (black) are meaningful; the in-between slots exist
+// so it satisfies the Record<number,string> ramp shape the resolver expects.
+export const BASE_SCALE: Record<number, string> = {
+  1: '#ffffff', 2: '#ffffff', 3: '#ffffff', 4: '#ffffff', 5: '#ffffff', 6: '#ffffff',
+  7: '#000000', 8: '#000000', 9: '#000000', 10: '#000000', 11: '#000000', 12: '#000000',
+}
+/** Primitive reference label for a `base` tone (1 → white, 12 → black). */
+export const baseLabelForTone = (tone: number): 'white' | 'black' => (tone <= 6 ? 'white' : 'black')
 
 export type Role = {
   key: string
   label: string
   description: string
-  scale: ScaleSource
+  // Light-mode source ramp + tone.
+  scale: RoleScale
   tone: number
+  // Optional explicit dark-mode spec. When present the resolver uses these
+  // verbatim instead of deriving dark from light via recDarkTone — the
+  // Content/Background/Border catalogue pins dark tones that don't follow a
+  // uniform inversion (e.g. content-primary 900↔50, border-brand-alt brand↔gray).
+  darkScale?: RoleScale
+  darkTone?: number
   contrastAgainst: string | null
   isVariant: boolean
 }
@@ -35,92 +58,54 @@ export type RoleGroup = {
   description: string
   roles: Role[]
 }
-// Tones follow the Radix Colors taxonomy against the 12-step ramps:
-// 1–2 backgrounds · 3–5 interactive fills · 6–8 borders · 9–10 solids
-// (9 = the base color) · 11–12 text.
+// Untitled-UI canonical semantic layer: Content (text/icon foregrounds),
+// Background (surfaces + solid fills) and Border. Each role pins an explicit
+// light + dark primitive — dark tones don't follow a uniform inversion — so the
+// export can emit them as DTCG references verbatim.
 export const ROLE_GROUPS: RoleGroup[] = [
   {
-    category: 'surface',
-    label: 'Surface',
-    description: 'Page and container backgrounds — elevation levels',
+    category: 'content',
+    label: 'Content',
+    description: 'Text and icon foreground colors across light and dark modes',
     roles: [
-      { key: 'surface-0',                label: 'surface-0',                description: 'Page background — the base canvas behind everything.',        scale: 'gray',    tone: 1,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-0-alt',            label: 'surface-0-alt',            description: 'Page background; swaps to surface-1 in dark mode.',           scale: 'gray',    tone: 1,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-0-hover',          label: 'surface-0-hover',          description: 'Hover state for surface-0 rows — menu items.',                scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-1',                label: 'surface-1',                description: 'Raised surface — cards, panels, sections.',                   scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-1-alt',            label: 'surface-1-alt',            description: 'Raised surface; swaps to surface-0 in dark mode.',            scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-1-hover',          label: 'surface-1-hover',          description: 'Hover state for surface-1 rows — nav, date pickers.',         scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-1-subtle',         label: 'surface-1-subtle',         description: 'Subtle raised surface — banners.',                            scale: 'gray',    tone: 1,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-2',                label: 'surface-2',                description: 'Sunken / nested surface — wells, table headers.',             scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-3',                label: 'surface-3',                description: 'Deepest nested surface — sliders, tracks.',                   scale: 'gray',    tone: 4,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-selected',         label: 'surface-selected',         description: 'Selected item surface — active dropdown rows.',               scale: 'gray',    tone: 5,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-inverse',          label: 'surface-inverse',          description: 'Inverse (dark-on-light) surface — tooltips.',                 scale: 'gray',    tone: 12, contrastAgainst: null, isVariant: false },
-      { key: 'surface-inverse-muted',    label: 'surface-inverse-muted',    description: 'Muted inverse surface — featured icons.',                     scale: 'gray',    tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-overlay',          label: 'surface-overlay',          description: 'Modal scrim behind dialogs.',                                scale: 'gray',    tone: 12, contrastAgainst: null, isVariant: false },
-      { key: 'surface-brand-subtle',     label: 'surface-brand-subtle',     description: 'Subtle brand-tinted surface — check / selected backgrounds.', scale: 'brand',   tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-brand-subtle-alt', label: 'surface-brand-subtle-alt', description: 'Brand tint; turns gray in dark mode.',                        scale: 'brand',   tone: 2,  contrastAgainst: null, isVariant: true  },
-      { key: 'surface-brand-muted',      label: 'surface-brand-muted',      description: 'Stronger brand tint — featured icon backgrounds.',            scale: 'brand',   tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-brand-strong',     label: 'surface-brand-strong',     description: 'Strong brand section — CTA, testimonials.',                   scale: 'brand',   tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'surface-brand-strong-alt', label: 'surface-brand-strong-alt', description: 'Strong brand section — FAQ sections.',                        scale: 'brand',   tone: 10, contrastAgainst: null, isVariant: true  },
+      { key: 'content-primary',       label: 'content-primary',       description: 'Primary text — headings, body.',                scale: 'gray',    tone: 11, darkTone: 2,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-secondary',     label: 'content-secondary',     description: 'Secondary text — labels, section headings.',    scale: 'gray',    tone: 9,  darkTone: 5,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-tertiary',      label: 'content-tertiary',      description: 'Tertiary text — supporting / paragraph text.',  scale: 'gray',    tone: 8,  darkTone: 6,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-quaternary',    label: 'content-quaternary',    description: 'Quaternary text — captions, footnotes.',        scale: 'gray',    tone: 7,  darkTone: 7,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-inverse',       label: 'content-inverse',       description: 'Text on inverse / solid surfaces.',             scale: 'base',    tone: 1,  darkScale: 'gray', darkTone: 11, contrastAgainst: null, isVariant: false },
+      { key: 'content-disabled',      label: 'content-disabled',      description: 'Disabled text.',                                scale: 'gray',    tone: 6,  darkTone: 8,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-brand',         label: 'content-brand',         description: 'Brand text — links, emphasis.',                 scale: 'brand',   tone: 8,  darkTone: 6,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-brand-hover',   label: 'content-brand-hover',   description: 'Brand text hover state.',                       scale: 'brand',   tone: 9,  darkTone: 5,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-error',         label: 'content-error',         description: 'Error text.',                                   scale: 'error',   tone: 8,  darkTone: 6,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-warning',       label: 'content-warning',       description: 'Warning text.',                                 scale: 'warning', tone: 8,  darkTone: 6,  contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-success',       label: 'content-success',       description: 'Success text.',                                 scale: 'success', tone: 8,  darkTone: 6,  contrastAgainst: 'background-primary', isVariant: false },
     ],
   },
   {
-    category: 'action',
-    label: 'Action',
-    description: 'Interactive element fills — buttons, toggles, inputs',
+    category: 'background',
+    label: 'Background',
+    description: 'Surface and fill colors — page, containers and solid actions',
     roles: [
-      { key: 'action-primary',          label: 'action-primary',          description: 'Primary action fill — buttons, toggles (brand).',            scale: 'brand',   tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'action-primary-hover',    label: 'action-primary-hover',    description: 'Primary action hover state.',                                scale: 'brand',   tone: 10, contrastAgainst: null, isVariant: true  },
-      { key: 'action-disabled',         label: 'action-disabled',         description: 'Disabled control fill — buttons, toggles.',                   scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'action-disabled-subtle',  label: 'action-disabled-subtle',  description: 'Subtle disabled fill — inputs, checkboxes.',                  scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: true  },
-    ],
-  },
-  {
-    category: 'status',
-    label: 'Status',
-    description: 'Feedback fills — badges, alerts, banners',
-    roles: [
-      { key: 'status-error-subtle',     label: 'status-error-subtle',     description: 'Subtle error background.',                                    scale: 'error',   tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'status-error-muted',      label: 'status-error-muted',      description: 'Muted error background — featured icons.',                    scale: 'error',   tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'status-error',            label: 'status-error',            description: 'Solid error fill — buttons, icons.',                          scale: 'error',   tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'status-warning-subtle',   label: 'status-warning-subtle',   description: 'Subtle warning background.',                                  scale: 'warning', tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'status-warning-muted',    label: 'status-warning-muted',    description: 'Muted warning background — featured icons.',                  scale: 'warning', tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'status-warning',          label: 'status-warning',          description: 'Solid warning fill — featured icons.',                        scale: 'warning', tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'status-success-subtle',   label: 'status-success-subtle',   description: 'Subtle success background.',                                  scale: 'success', tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'status-success-muted',    label: 'status-success-muted',    description: 'Muted success background — featured icons.',                  scale: 'success', tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'status-success',          label: 'status-success',          description: 'Solid success fill — icons, metrics.',                        scale: 'success', tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'status-info-subtle',      label: 'status-info-subtle',      description: 'Subtle info background.',                                     scale: 'info',    tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'status-info-muted',       label: 'status-info-muted',       description: 'Muted info background — featured icons.',                     scale: 'info',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'status-info',             label: 'status-info',             description: 'Solid info fill — icons, badges.',                            scale: 'info',    tone: 9,  contrastAgainst: null, isVariant: false },
-    ],
-  },
-  {
-    category: 'icon',
-    label: 'Icon',
-    description: 'Icon and non-text foreground colors',
-    roles: [
-      { key: 'icon-primary',           label: 'icon-primary',           description: 'Highest-contrast icons.',                                     scale: 'gray',    tone: 12, contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-secondary',         label: 'icon-secondary',         description: 'High-contrast icons.',                                        scale: 'gray',    tone: 11,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-secondary-hover',   label: 'icon-secondary-hover',   description: 'Secondary icon in hover state.',                              scale: 'gray',    tone: 12, contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-tertiary',          label: 'icon-tertiary',          description: 'Medium-contrast icons.',                                      scale: 'gray',    tone: 10,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-tertiary-hover',    label: 'icon-tertiary-hover',    description: 'Tertiary icon in hover state.',                               scale: 'gray',    tone: 11,  contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-quaternary',        label: 'icon-quaternary',        description: 'Low-contrast icons — buttons, help, inputs.',                 scale: 'gray',    tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-quaternary-hover',  label: 'icon-quaternary-hover',  description: 'Quaternary icon in hover state.',                             scale: 'gray',    tone: 10,  contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-on-inverse',        label: 'icon-on-inverse',        description: 'Icon on inverse / dark surfaces — always light.',             scale: 'gray',    tone: 1,  contrastAgainst: null,        isVariant: false },
-      { key: 'icon-disabled',          label: 'icon-disabled',          description: 'Disabled icons — button groups, dropdowns.',                  scale: 'gray',    tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-disabled-subtle',   label: 'icon-disabled-subtle',   description: 'Subtle disabled icons — active checkboxes.',                  scale: 'gray',    tone: 7,  contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-brand',             label: 'icon-brand',             description: 'Primary brand icons — featured icons, bars.',                 scale: 'brand',   tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-brand-alt',         label: 'icon-brand-alt',         description: 'Brand icon; turns gray in dark mode.',                        scale: 'brand',   tone: 9,  contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-brand-secondary',   label: 'icon-brand-secondary',   description: 'Secondary brand icons — section accents.',                    scale: 'brand',   tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-brand-secondary-alt', label: 'icon-brand-secondary-alt', description: 'Secondary brand icon; gray in dark mode.',                scale: 'brand',   tone: 8,  contrastAgainst: 'surface-0', isVariant: true  },
-      { key: 'icon-error',             label: 'icon-error',             description: 'Primary error icons — featured icons.',                       scale: 'error',   tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-error-secondary',   label: 'icon-error-secondary',   description: 'Secondary error icons — error input icons.',                  scale: 'error',   tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-warning',           label: 'icon-warning',           description: 'Primary warning icons — featured icons.',                     scale: 'warning', tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-warning-secondary', label: 'icon-warning-secondary', description: 'Secondary warning icons.',                                    scale: 'warning', tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-success',           label: 'icon-success',           description: 'Primary success icons — featured icons.',                     scale: 'success', tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-success-secondary', label: 'icon-success-secondary', description: 'Secondary success icons — dots, indicators.',                 scale: 'success', tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-info',              label: 'icon-info',              description: 'Primary info icons — featured icons.',                        scale: 'info',    tone: 9,  contrastAgainst: 'surface-0', isVariant: false },
-      { key: 'icon-info-secondary',    label: 'icon-info-secondary',    description: 'Secondary info icons.',                                       scale: 'info',    tone: 8,  contrastAgainst: 'surface-0', isVariant: false },
+      { key: 'background-primary',           label: 'background-primary',           description: 'Page background — the base canvas.',      scale: 'base',    tone: 1,  darkScale: 'gray', darkTone: 12, contrastAgainst: null, isVariant: false },
+      { key: 'background-primary-hover',     label: 'background-primary-hover',     description: 'Hover state for the primary background.', scale: 'gray',    tone: 2,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-secondary',         label: 'background-secondary',         description: 'Raised / secondary surface — cards.',     scale: 'gray',    tone: 2,  darkTone: 11, contrastAgainst: null, isVariant: false },
+      { key: 'background-secondary-hover',   label: 'background-secondary-hover',   description: 'Hover state for the secondary surface.',  scale: 'gray',    tone: 3,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-tertiary',          label: 'background-tertiary',          description: 'Sunken / nested surface.',                scale: 'gray',    tone: 3,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-quaternary',        label: 'background-quaternary',        description: 'Deepest nested surface.',                 scale: 'gray',    tone: 4,  darkTone: 9,  contrastAgainst: null, isVariant: false },
+      { key: 'background-active',            label: 'background-active',            description: 'Active / selected row surface.',          scale: 'gray',    tone: 2,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-disabled',          label: 'background-disabled',          description: 'Disabled control fill.',                  scale: 'gray',    tone: 3,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-disabled-subtle',   label: 'background-disabled-subtle',   description: 'Subtle disabled fill.',                   scale: 'gray',    tone: 2,  darkTone: 11, contrastAgainst: null, isVariant: false },
+      { key: 'background-overlay',           label: 'background-overlay',           description: 'Modal scrim behind dialogs.',            scale: 'gray',    tone: 12, darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-primary',     label: 'background-brand-primary',     description: 'Subtle brand-tinted surface.',            scale: 'brand',   tone: 2,  darkTone: 12, contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-secondary',   label: 'background-brand-secondary',   description: 'Stronger brand-tinted surface.',          scale: 'brand',   tone: 3,  darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-solid',       label: 'background-brand-solid',       description: 'Solid brand fill — primary buttons.',     scale: 'brand',   tone: 8,  darkTone: 8,  contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-solid-hover', label: 'background-brand-solid-hover', description: 'Solid brand fill hover state.',           scale: 'brand',   tone: 9,  darkTone: 7,  contrastAgainst: null, isVariant: false },
+      { key: 'background-error-primary',     label: 'background-error-primary',     description: 'Subtle error surface.',                   scale: 'error',   tone: 2,  darkTone: 12, contrastAgainst: null, isVariant: false },
+      { key: 'background-error-solid',       label: 'background-error-solid',       description: 'Solid error fill.',                       scale: 'error',   tone: 8,  darkTone: 8,  contrastAgainst: null, isVariant: false },
+      { key: 'background-warning-primary',   label: 'background-warning-primary',   description: 'Subtle warning surface.',                 scale: 'warning', tone: 2,  darkTone: 12, contrastAgainst: null, isVariant: false },
+      { key: 'background-warning-solid',     label: 'background-warning-solid',     description: 'Solid warning fill.',                     scale: 'warning', tone: 8,  darkTone: 8,  contrastAgainst: null, isVariant: false },
+      { key: 'background-success-primary',   label: 'background-success-primary',   description: 'Subtle success surface.',                 scale: 'success', tone: 2,  darkTone: 12, contrastAgainst: null, isVariant: false },
+      { key: 'background-success-solid',     label: 'background-success-solid',     description: 'Solid success fill.',                     scale: 'success', tone: 8,  darkTone: 8,  contrastAgainst: null, isVariant: false },
     ],
   },
   {
@@ -128,46 +113,14 @@ export const ROLE_GROUPS: RoleGroup[] = [
     label: 'Border',
     description: 'Stroke colors for borders, dividers and separators',
     roles: [
-      { key: 'border-strong',           label: 'border-strong',           description: 'High-contrast border — inputs, button groups, checkboxes.', scale: 'gray',  tone: 7, contrastAgainst: null, isVariant: false },
-      { key: 'border-default',          label: 'border-default',          description: 'Default border — cards, tables, dividers.',                 scale: 'gray',  tone: 3, contrastAgainst: null, isVariant: false },
-      { key: 'border-default-alt',      label: 'border-default-alt',      description: 'Alpha alternative for floating menus.',                     scale: 'gray',  tone: 6, contrastAgainst: null, isVariant: true  },
-      { key: 'border-subtle',           label: 'border-subtle',           description: 'Subtle border — dividers, chart axes.',                     scale: 'gray',  tone: 5, contrastAgainst: null, isVariant: false },
-      { key: 'border-disabled',         label: 'border-disabled',         description: 'Disabled border — inputs, checkboxes.',                     scale: 'gray',  tone: 6, contrastAgainst: null, isVariant: false },
-      { key: 'border-disabled-subtle',  label: 'border-disabled-subtle',  description: 'Subtle disabled border — disabled buttons.',                scale: 'gray',  tone: 5, contrastAgainst: null, isVariant: true  },
-      { key: 'border-brand',            label: 'border-brand',            description: 'Brand border — active / focus input states.',               scale: 'brand', tone: 8, contrastAgainst: null, isVariant: false },
-      { key: 'border-brand-alt',        label: 'border-brand-alt',        description: 'Brand border; turns gray in dark mode.',                    scale: 'brand', tone: 9, contrastAgainst: null, isVariant: true  },
-      { key: 'border-error',            label: 'border-error',            description: 'Error state border — inputs, file uploaders.',              scale: 'error', tone: 8, contrastAgainst: null, isVariant: false },
-      { key: 'border-error-subtle',     label: 'border-error-subtle',     description: 'Subtle error border — error state inputs.',                 scale: 'error', tone: 6, contrastAgainst: null, isVariant: true  },
-    ],
-  },
-  {
-    category: 'text',
-    label: 'Text',
-    description: 'Text fill colors across light and dark modes',
-    roles: [
-      { key: 'text-primary',               label: 'text-primary',               description: 'Primary text — page headings.',                              scale: 'gray',    tone: 12, contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-on-brand',              label: 'text-on-brand',              description: 'Primary text on brand fills.',                               scale: 'gray',    tone: 1,  contrastAgainst: 'action-primary', isVariant: true  },
-      { key: 'text-secondary',             label: 'text-secondary',             description: 'Secondary text — labels, section headings.',                 scale: 'gray',    tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-secondary-hover',       label: 'text-secondary-hover',       description: 'Secondary text in hover state.',                             scale: 'gray',    tone: 12, contrastAgainst: 'surface-0',       isVariant: true  },
-      { key: 'text-on-brand-secondary',    label: 'text-on-brand-secondary',    description: 'Secondary text on brand fills.',                             scale: 'brand',   tone: 4,  contrastAgainst: 'action-primary', isVariant: true  },
-      { key: 'text-tertiary',              label: 'text-tertiary',              description: 'Tertiary text — supporting / paragraph text.',               scale: 'gray',    tone: 10,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-tertiary-hover',        label: 'text-tertiary-hover',        description: 'Tertiary text in hover state.',                              scale: 'gray',    tone: 11,  contrastAgainst: 'surface-0',       isVariant: true  },
-      { key: 'text-on-brand-tertiary',     label: 'text-on-brand-tertiary',     description: 'Tertiary text on brand fills.',                              scale: 'brand',   tone: 4,  contrastAgainst: 'action-primary', isVariant: true  },
-      { key: 'text-quaternary',            label: 'text-quaternary',            description: 'Quaternary text — footer headings.',                         scale: 'gray',    tone: 9,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-on-brand-quaternary',   label: 'text-on-brand-quaternary',   description: 'Quaternary text on brand fills.',                            scale: 'brand',   tone: 5,  contrastAgainst: 'action-primary', isVariant: true  },
-      { key: 'text-on-inverse',            label: 'text-on-inverse',            description: 'Text on inverse / dark surfaces — always light.',            scale: 'gray',    tone: 1,  contrastAgainst: null,              isVariant: false },
-      { key: 'text-disabled',              label: 'text-disabled',              description: 'Disabled text — inputs, buttons.',                           scale: 'gray',    tone: 8,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-placeholder',           label: 'text-placeholder',           description: 'Input placeholder text.',                                    scale: 'gray',    tone: 9,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-placeholder-subtle',    label: 'text-placeholder-subtle',    description: 'Subtle placeholder — verification code inputs.',             scale: 'gray',    tone: 7,  contrastAgainst: 'surface-0',       isVariant: true  },
-      { key: 'text-brand',                 label: 'text-brand',                 description: 'Primary brand text — pricing headers.',                      scale: 'brand',   tone: 12, contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-brand-secondary',       label: 'text-brand-secondary',       description: 'Secondary brand text — buttons, highlights.',                scale: 'brand',   tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-brand-secondary-hover', label: 'text-brand-secondary-hover', description: 'Secondary brand text in hover state.',                       scale: 'brand',   tone: 12, contrastAgainst: 'surface-0',       isVariant: true  },
-      { key: 'text-brand-tertiary',        label: 'text-brand-tertiary',        description: 'Tertiary brand text — metric card numbers.',                 scale: 'brand',   tone: 10,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-brand-tertiary-alt',    label: 'text-brand-tertiary-alt',    description: 'Tertiary brand text; lighter in dark mode.',                 scale: 'brand',   tone: 10,  contrastAgainst: 'surface-0',       isVariant: true  },
-      { key: 'text-error',                 label: 'text-error',                 description: 'Error state text — input error states.',                     scale: 'error',   tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-warning',               label: 'text-warning',               description: 'Warning state semantic text.',                               scale: 'warning', tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-success',               label: 'text-success',               description: 'Success state semantic text.',                               scale: 'success', tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
-      { key: 'text-info',                  label: 'text-info',                  description: 'Info state semantic text.',                                  scale: 'info',    tone: 11,  contrastAgainst: 'surface-0',       isVariant: false },
+      { key: 'border-primary',        label: 'border-primary',        description: 'Default border — inputs, cards.',        scale: 'gray',  tone: 5, darkTone: 9,  contrastAgainst: null, isVariant: false },
+      { key: 'border-secondary',      label: 'border-secondary',      description: 'Subtle border — dividers.',              scale: 'gray',  tone: 4, darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'border-tertiary',       label: 'border-tertiary',       description: 'Faint border — nested dividers.',        scale: 'gray',  tone: 3, darkTone: 10, contrastAgainst: null, isVariant: false },
+      { key: 'border-disabled',       label: 'border-disabled',       description: 'Disabled border.',                       scale: 'gray',  tone: 5, darkTone: 9,  contrastAgainst: null, isVariant: false },
+      { key: 'border-brand',          label: 'border-brand',          description: 'Brand border — focus / active states.',  scale: 'brand', tone: 7, darkTone: 6,  contrastAgainst: null, isVariant: false },
+      { key: 'border-brand-alt',      label: 'border-brand-alt',      description: 'Brand border; turns gray in dark mode.', scale: 'brand', tone: 8, darkScale: 'gray', darkTone: 9, contrastAgainst: null, isVariant: false },
+      { key: 'border-error',          label: 'border-error',          description: 'Error border — invalid inputs.',         scale: 'error', tone: 7, darkTone: 6,  contrastAgainst: null, isVariant: false },
+      { key: 'border-error-subtle',   label: 'border-error-subtle',   description: 'Subtle error border.',                   scale: 'error', tone: 5, darkTone: 7,  contrastAgainst: null, isVariant: false },
     ],
   },
 ]
@@ -257,12 +210,17 @@ export function sourceScaleFor(
   global: GlobalScales,
   palette?: ThemePalette,
 ): Record<number, string> {
-  if (palette) return palette[role.scale]
+  // A role can point at a different ramp in dark mode (e.g. content-inverse:
+  // base(white) → gray, border-brand-alt: brand → gray).
+  const eff: RoleScale = kind === 'dark' && role.darkScale ? role.darkScale : role.scale
+  // The theme-independent base primitives (pure white / black).
+  if (eff === 'base') return BASE_SCALE
+  if (palette) return palette[eff]
   // Gray is the only ramp with a distinct dark twin: it's generated from the
   // neutral against `darkBackground`, so the dark surfaces carry the accent's
   // tint. Colored ramps keep their hue and just shift tone (see recDarkTone).
-  if (role.scale === 'gray' && kind === 'dark') return global.grayDark ?? GRAY_DARK_SCALE
-  return global[role.scale]
+  if (eff === 'gray' && kind === 'dark') return global.grayDark ?? GRAY_DARK_SCALE
+  return global[eff]
 }
 
 /**
@@ -280,7 +238,12 @@ export function recToneFor(role: Role, kind: 'light' | 'dark', scale: Record<num
     const solid = accessibleSolidTone(scale)
     return role.key === 'action-primary' ? solid : Math.min(solid + 1, 12)
   }
-  return kind === 'light' ? role.tone : recDarkTone(role)
+  if (kind === 'dark') {
+    // Explicit dark tone wins (the Content/Background/Border catalogue pins it);
+    // legacy roles without one fall back to the derived inversion.
+    return role.darkTone ?? recDarkTone(role)
+  }
+  return role.tone
 }
 
 export function recHexFor(role: Role, kind: 'light' | 'dark', scale: Record<number, string>): string {

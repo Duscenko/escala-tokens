@@ -4,14 +4,14 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, FONT_PRESETS } from '../../lib/fonts'
 import { withAlpha, BASE_TONE, recommendStateColors } from '../../lib/colorUtils'
 import {
-  useApplyAccentColor, useApplyGrayColor, useApplyPageBackground,
-  useApplyDarkBackground, useApplyStateColor, useEnsureColorScales,
+  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
 import {
-  ColorSelect, StateColorRows, LinkToggle, neutralFromBrand,
-  BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups,
+  ColorSelect, StateColorsSelect, LinkToggle, neutralFromBrand, type IntentRole,
+  BRAND_GROUPS, NEUTRAL_GROUPS,
   type OptionGroup,
 } from './colorControls'
+import { resolveThemePalette } from '../../lib/themeSources'
 import { ARCHITECTURE_OPTIONS, type SemanticArchitecture } from '../../lib/semanticArchitectures'
 import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
@@ -386,6 +386,102 @@ function Card({ icon, title, action, children }: { icon: ReactNode; title: strin
   )
 }
 
+// One control group. In the shared hosts (Home panel, Components popover) it
+// renders FLAT — either a bordered Card (Color Family / Typography) or a plain
+// labelled block — exactly as before. In the Workbench's Column 2 it renders as
+// a collapsible accordion item so the token controls stack into a tidy stack.
+function Group({
+  title, icon, action, children, accordion = false, flat = 'plain', defaultOpen = true,
+}: {
+  title: string
+  icon?: ReactNode
+  action?: ReactNode
+  children: ReactNode
+  accordion?: boolean
+  flat?: 'card' | 'plain'
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  // `overflow-hidden` is what makes the height animation work — and what CLIPPED
+  // every dropdown inside the group (State Colors, the color selects…). Clip
+  // only WHILE animating; once the group has settled at its natural height the
+  // wrapper stops clipping so popovers can escape it.
+  const [animating, setAnimating] = useState(false)
+  const reduce = useReducedMotion() ?? false
+  if (!accordion) {
+    if (flat === 'card') return <Card icon={icon} title={title} action={action}>{children}</Card>
+    return (
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs text-fg-muted">{title}</span>
+        {children}
+      </div>
+    )
+  }
+  // Two states, two jobs. COLLAPSED borrows SectionRail's row grammar (h-9 ·
+  // rounded-xl · 13px · icon + label · same hover), so the stack reads as a
+  // wide version of the left rail. OPEN becomes a card that wraps the group's
+  // settings — without it, Color Family's controls and Typography's below run
+  // together and you can't tell which setting belongs to which group.
+  return (
+    <div
+      className={`flex flex-col rounded-xl transition-all ${
+        open ? 'my-1.5 bg-surface border border-line shadow-[0_2px_10px_-2px_rgba(0,0,0,0.08)] dark:shadow-none' : ''
+      }`}
+    >
+      <div
+        className={`flex items-center gap-2 h-9 px-2.5 rounded-xl ${
+          open ? '' : 'hover:bg-white/60 dark:hover:bg-white/10 transition-colors'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left group/acc"
+        >
+          {icon && <span className={`flex-shrink-0 ${open ? 'text-fg-muted' : 'text-fg-faint'}`}>{icon}</span>}
+          <span className={`text-[13px] flex-1 truncate ${open ? 'font-medium text-fg' : 'text-fg-muted group-hover/acc:text-fg'}`}>{title}</span>
+        </button>
+        {action}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
+          className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
+            onAnimationStart={() => setAnimating(true)}
+            onAnimationComplete={() => setAnimating(false)}
+            className={animating ? 'overflow-hidden' : ''}
+          >
+            <div className="px-3 pt-3.5 pb-4 flex flex-col gap-4 border-t border-line/60">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// The rail's group caption — 10px uppercase, same as VARIABLES / CATEGORIES.
+function RailCaption({ label }: { label: string }) {
+  return (
+    <span className="px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+      {label}
+    </span>
+  )
+}
+
 const PaletteGlyph = (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <circle cx="13.5" cy="6.5" r="1" /><circle cx="17.5" cy="10.5" r="1" /><circle cx="8.5" cy="7.5" r="1" /><circle cx="6.5" cy="12.5" r="1" />
@@ -402,6 +498,15 @@ const SurpriseGlyph = (
     <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
   </svg>
 )
+// Accordion glyphs for the remaining quick-edit groups (13px, matching above).
+const ig = (d: string) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{d.split('|').map((p, i) => <path key={i} d={p} />)}</svg>
+)
+const ShadowGlyph = ig('M3 3h13v13H3z|M8 8h13v13H8')
+const RadiusGlyph = ig('M4 20v-8a8 8 0 0 1 8-8h8')
+const IconsGlyph = ig('M12 3l2.5 6 6 2.5-6 2.5L12 20l-2.5-6-6-2.5 6-2.5z')
+const PaddingGlyph = ig('M4 4h16v16H4z|M8 8h8v8H8z')
+const PanelGlyph = ig('M3 4h18v16H3z|M3 9h18')
 
 // ── Type scale — regenerate font sizes from a base size × modular ratio ──────
 const TYPE_SCALES: { key: string; label: string; ratio: number }[] = [
@@ -435,6 +540,7 @@ export function QuickEditSections({
   onThemeChange,
   onAddTheme,
   showPresets = true,
+  accordion = false,
 }: {
   onOpenFoundations: () => void
   /** Theme currently shown in the host preview — swatch clicks apply to this
@@ -447,10 +553,14 @@ export function QuickEditSections({
   /** When false the inline Presets row is hidden — the host renders it elsewhere
    *  (Home's panel puts it in the header). Default true (Components popover). */
   showPresets?: boolean
+  /** Renders each group as a collapsible accordion item (Workbench Column 2).
+   *  Default false keeps the flat card/label layout the popover + Home use. */
+  accordion?: boolean
 }) {
+  const store = useDesignStore()
   const {
-    themeKinds, themePalettes, primaryColor,
-    grayBaseColor, pageBackground, darkBackground,
+    themeKinds, themeSources, primaryColor,
+    grayBaseColor,
     errorColor, warningColor, successColor, infoColor,
     customColors, removeCustomColor,
     semanticArchitecture, setSemanticArchitecture,
@@ -459,11 +569,9 @@ export function QuickEditSections({
     iconLibrary, setIconLibrary,
     padding, setPadding,
     shadows, setShadows,
-  } = useDesignStore()
+  } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
-  const applyPageBackground = useApplyPageBackground()
-  const applyDarkBackground = useApplyDarkBackground()
   const applyStateColor = useApplyStateColor()
   useEnsureColorScales()
   const activeRadius = matchRadiusPreset(radius)
@@ -471,10 +579,10 @@ export function QuickEditSections({
 
   // While a custom style theme is previewed, the accent/neutral chips read (and
   // the preset clicks write) THAT theme's palette — same routing as the Color hub.
-  const pal = themePalettes[previewTheme]
+  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
+  const pal = resolveThemePalette(themeSources[previewTheme], darkPreview ? 'dark' : 'light', store)
   const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
   const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
-  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
 
   // Neutral auto-derives from the accent while linked (default on) — same
   // contract as Foundations · Color's quick bar.
@@ -486,6 +594,10 @@ export function QuickEditSections({
     setLinked(next)
     if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
   }
+  // Neutral is an intent like the others, but it has no primitive of its own —
+  // it IS the Base, so its row writes through the Base applier.
+  const changeIntent = (role: IntentRole, hex: string) =>
+    role === 'neutral' ? changeNeutral(hex) : applyStateColor(role, hex)
   const matchStatesToAccent = () => {
     const rec = recommendStateColors(accentBase)
     applyStateColor('error', rec.error)
@@ -538,8 +650,10 @@ export function QuickEditSections({
     <>
       {/* Presets — one-click accent swap; the current accent leads as a raised chip */}
       {showPresets && (
-        <div className="flex flex-col gap-[8px]">
-          <span className="text-xs text-fg-muted">Presets</span>
+        <div className={accordion ? 'flex flex-col' : 'flex flex-col gap-[8px]'}>
+          {accordion
+            ? <RailCaption label="Presets" />
+            : <span className="text-xs text-fg-muted">Presets</span>}
           <ColorFamilyRow
             accent={accentBase}
             onPick={changeAccent}
@@ -548,10 +662,14 @@ export function QuickEditSections({
         </div>
       )}
 
+      {accordion && <RailCaption label="Quick edit" />}
+
       {/* Color Family card — Surprise · Primary + Neutral (linked) · Background &
           State Colors · Token Architecture. Recycles Foundations · Color's
           ColorSelect / StateColorRows / LinkToggle so writes land in one place. */}
-      <Card
+      <Group
+        accordion={accordion}
+        flat="card"
         icon={PaletteGlyph}
         title="Color Family"
         action={
@@ -570,34 +688,20 @@ export function QuickEditSections({
           <div className="pb-0.5">
             <LinkToggle active={linked} onClick={toggleLink} accentColor={accentBase} />
           </div>
-          <ColorSelect label="Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom panelClassName="right-0 w-[240px] max-h-72" />
+          <ColorSelect label="Base" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom panelClassName="right-0 w-[240px] max-h-72" />
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-faint">Background &amp; State Colors</span>
-          <ColorSelect
-            value={darkPreview ? darkBackground : pageBackground}
-            groups={darkPreview ? darkBackgroundGroups(accentBase) : BACKGROUND_GROUPS}
-            onChange={darkPreview ? applyDarkBackground : applyPageBackground}
-            allowCustom
-            groupsLabel={darkPreview ? 'Background (dark)' : 'Background'}
+          <span className="text-[10px] text-fg-faint">State Colors</span>
+          <StateColorsSelect
+            neutral={neutralBase}
+            error={errorColor}
+            warning={warningColor}
+            success={successColor}
+            info={infoColor}
+            onChange={changeIntent}
+            onMatchAccent={matchStatesToAccent}
             panelClassName="left-0 right-0 max-h-[360px]"
-            previewSwatches={[
-              { hex: errorColor, label: 'Error' },
-              { hex: successColor, label: 'Success' },
-              { hex: warningColor, label: 'Warning' },
-              { hex: infoColor, label: 'Info' },
-            ]}
-            extras={
-              <StateColorRows
-                error={errorColor}
-                warning={warningColor}
-                success={successColor}
-                info={infoColor}
-                onChange={applyStateColor}
-                onMatchAccent={matchStatesToAccent}
-              />
-            }
           />
         </div>
 
@@ -610,10 +714,12 @@ export function QuickEditSections({
             ariaLabel="Token architecture"
           />
         </div>
-      </Card>
+      </Group>
 
       {/* Typography card — heading & body family · base size · modular type scale */}
-      <Card icon={TypeGlyph} title="Typography">
+      {/* Only Color Family opens by default — one open card keeps every other
+          group visible in the stack instead of pushing them below the fold. */}
+      <Group accordion={accordion} flat="card" defaultOpen={false} icon={TypeGlyph} title="Typography">
         <div className="flex flex-col gap-1">
           <span className="text-[10px] text-fg-faint">Font-family-heading</span>
           <div className={`flex items-center rounded-lg border border-line bg-surface px-1 ${ROW_H}`}>
@@ -651,11 +757,10 @@ export function QuickEditSections({
             ariaLabel="Type scale"
           />
         </div>
-      </Card>
+      </Group>
 
       {/* Shadow — elevation ramp presets; full xs–2xl table in Foundations · Shadow */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Shadow</span>
+      <Group accordion={accordion} defaultOpen={false} title="Shadow" icon={ShadowGlyph}>
         <SegRow
           ariaLabel="Shadow preset"
           value={activeShadow}
@@ -665,11 +770,10 @@ export function QuickEditSections({
           }}
           options={SHADOW_PRESETS.map((p) => ({ key: p.label, label: p.label, title: p.description }))}
         />
-      </div>
+      </Group>
 
       {/* Radius — same presets as Foundations · Radius */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Radius</span>
+      <Group accordion={accordion} defaultOpen={false} title="Radius" icon={RadiusGlyph}>
         <SegRow
           ariaLabel="Radius preset"
           value={activeRadius}
@@ -690,19 +794,17 @@ export function QuickEditSections({
             ),
           }))}
         />
-      </div>
+      </Group>
 
       {/* Icons — the library every content glyph resolves from; full browser
           in Foundations · Icons */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Icons</span>
+      <Group accordion={accordion} defaultOpen={false} title="Icons" icon={IconsGlyph}>
         <IconLibSelect value={iconLibrary} onChange={setIconLibrary} />
-      </div>
+      </Group>
 
       {/* Padding — per-side surface inset (cards, tiles, panels); also editable
           in Foundations · Spacing */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Padding</span>
+      <Group accordion={accordion} defaultOpen={false} title="Padding" icon={PaddingGlyph}>
         <div className="grid grid-cols-4 gap-1.5">
           {PADDING_SIDES.map((side) => {
             const raw = padding?.[side.key] ?? '20px'
@@ -726,11 +828,10 @@ export function QuickEditSections({
             )
           })}
         </div>
-      </div>
+      </Group>
 
       {/* Panel background — Radix-style solid/translucent/page for surface-1 */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-fg-muted">Panel background</span>
+      <Group accordion={accordion} defaultOpen={false} title="Panel background" icon={PanelGlyph}>
         <SegRow
           ariaLabel="Panel background"
           value={panelBackground}
@@ -741,7 +842,7 @@ export function QuickEditSections({
             { key: 'page', label: 'Page', title: 'Cards & panels reuse the primitives page background' },
           ] as { key: 'solid' | 'translucent' | 'page'; label: string; title: string }[]}
         />
-      </div>
+      </Group>
 
       <button
         onClick={onOpenFoundations}
@@ -757,9 +858,10 @@ export function QuickEditSections({
 // (Figma spec 3538:7234). A "Presets" label + the accessible accent dots inside
 // a rounded pill; clicking one applies that accent (linked neutral). ──────────
 function HeaderPresets({ previewTheme = 'light' }: { previewTheme?: string }) {
-  const { primaryColor, themePalettes } = useDesignStore()
+  const store = useDesignStore()
+  const { primaryColor, themeSources, themeKinds } = store
   const applyAccentColor = useApplyAccentColor()
-  const accentBase = themePalettes[previewTheme]?.brand?.[BASE_TONE] ?? primaryColor
+  const accentBase = resolveThemePalette(themeSources[previewTheme], (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light', store)?.brand?.[BASE_TONE] ?? primaryColor
   return (
     <div className="flex-1 min-w-0 flex items-center justify-between gap-2 h-9 pl-3 pr-1 rounded-[9px] bg-surface border border-line">
       <span className="text-[10px] text-fg-faint flex-shrink-0">Presets</span>
@@ -812,7 +914,7 @@ export function QuickEditPanel({
 }) {
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
-      <header className="flex items-center gap-2 px-5 h-[60px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
         <HeaderPresets previewTheme={previewTheme} />
         {onCollapse && (
           <button

@@ -28,10 +28,9 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
   const rule = <div style={{ height: 1, background: border }} />
 
   const states: [string, string][] = [
-    ['text-error', 'Could not save your changes'],
-    ['text-warning', 'Your free trial ends soon'],
-    ['text-success', 'Payment confirmed'],
-    ['text-info', 'A new version is available'],
+    ['content-error', 'Could not save your changes'],
+    ['content-warning', 'Your free trial ends soon'],
+    ['content-success', 'Payment confirmed'],
   ]
 
   return (
@@ -39,11 +38,11 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       style={{ background: tokens.surface, border: `1px solid ${border}`, borderRadius: 14, fontFamily }}
       className="p-5 flex flex-col gap-3.5"
     >
-      <Line token="text-primary" size={23} weight={700} color={v('text-primary', '#101828')}>Build your design system</Line>
-      <Line token="text-secondary" size={15} weight={600} color={v('text-secondary', '#414651')}>Foundations that scale</Line>
-      <Line token="text-tertiary" size={14} weight={400} color={v('text-tertiary', '#535862')}>Tokens keep color, type and spacing consistent.</Line>
-      <Line token="text-quaternary" size={12} weight={400} color={v('text-quaternary', '#717680')}>Last updated a few seconds ago</Line>
-      <Line token="text-brand" size={14} weight={600} color={v('text-brand', tokens.brandText)}>Learn more →</Line>
+      <Line token="content-primary" size={23} weight={700} color={v('content-primary', '#101828')}>Build your design system</Line>
+      <Line token="content-secondary" size={15} weight={600} color={v('content-secondary', '#414651')}>Foundations that scale</Line>
+      <Line token="content-tertiary" size={14} weight={400} color={v('content-tertiary', '#535862')}>Tokens keep color, type and spacing consistent.</Line>
+      <Line token="content-quaternary" size={12} weight={400} color={v('content-quaternary', '#717680')}>Last updated a few seconds ago</Line>
+      <Line token="content-brand" size={14} weight={600} color={v('content-brand', tokens.brandText)}>Learn more →</Line>
 
       {rule}
       {states.map(([token, label]) => (
@@ -51,15 +50,14 @@ export function TextSpecimenPreview({ tokens }: { tokens: PreviewTokens }) {
       ))}
 
       {rule}
-      <Line token="text-placeholder" size={14} weight={400} italic color={v('text-placeholder', '#a4a7ae')}>Search…</Line>
-      <Line token="text-disabled" size={14} weight={400} color={v('text-disabled', '#a4a7ae')}>Unavailable option</Line>
+      <Line token="content-disabled" size={14} weight={400} color={v('content-disabled', '#a4a7ae')}>Unavailable option</Line>
 
       <div
         className="flex items-center justify-between gap-3"
-        style={{ marginTop: 2, padding: '9px 12px', borderRadius: 10, background: v('action-primary', tokens.brandSolid) }}
+        style={{ marginTop: 2, padding: '9px 12px', borderRadius: 10, background: v('background-brand-solid', tokens.brandSolid) }}
       >
-        <span style={{ color: v('text-on-brand', '#ffffff'), fontSize: 13, fontWeight: 600 }}>Text on a brand fill</span>
-        <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: v('text-on-brand', '#ffffff'), opacity: 0.85 }}>text-on-brand</code>
+        <span style={{ color: v('content-inverse', '#ffffff'), fontSize: 13, fontWeight: 600 }}>Text on a brand fill</span>
+        <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color: v('content-inverse', '#ffffff'), opacity: 0.85 }}>content-inverse</code>
       </div>
     </div>
   )

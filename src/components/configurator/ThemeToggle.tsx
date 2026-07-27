@@ -17,38 +17,33 @@ function MoonIcon() {
   )
 }
 
-export default function ThemeToggle() {
+// ── One control, one job ─────────────────────────────────────────────────────
+// The icon shows the theme you'd switch TO: a moon while light, a sun while
+// dark. When wired to the workspace it flips the PREVIEWED theme, and the app
+// chrome follows (changePreviewTheme) — so a single click repaints both.
+export default function ThemeToggle({
+  previewTheme, onThemeChange,
+}: {
+  previewTheme?: string
+  onThemeChange?: (theme: string) => void
+} = {}) {
   const theme = useTheme()
-  return (
-    <>
-      {/* Phones: single compact toggle */}
-      <button
-        onClick={toggleTheme}
-        aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-        className="sm:hidden p-1.5 rounded-full border border-line bg-app/70 backdrop-blur-sm text-fg-muted hover:text-fg transition-colors"
-      >
-        {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
-      </button>
+  const isDark = theme === 'dark'
 
-      {/* sm+: segmented sun | moon pill */}
-      <div className="hidden sm:flex items-center gap-0.5 p-1 rounded-full border border-line bg-app/70 backdrop-blur-sm">
-        <button
-          onClick={() => theme === 'dark' && toggleTheme()}
-          aria-label="Light theme"
-          aria-pressed={theme === 'light'}
-          className={`p-1.5 rounded-full transition-all ${theme === 'light' ? 'bg-elevated shadow-sm text-fg' : 'text-fg-faint hover:text-fg-muted'}`}
-        >
-          <SunIcon />
-        </button>
-        <button
-          onClick={() => theme === 'light' && toggleTheme()}
-          aria-label="Dark theme"
-          aria-pressed={theme === 'dark'}
-          className={`p-1.5 rounded-full transition-all ${theme === 'dark' ? 'bg-elevated shadow-sm text-fg' : 'text-fg-faint hover:text-fg-muted'}`}
-        >
-          <MoonIcon />
-        </button>
-      </div>
-    </>
+  const flip = () => {
+    if (onThemeChange) onThemeChange(isDark ? 'light' : 'dark')
+    else toggleTheme()
+  }
+
+  return (
+    <button
+      onClick={flip}
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      data-preview-theme={previewTheme}
+      className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full border border-line bg-app/70 backdrop-blur-sm text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+    >
+      {isDark ? <SunIcon /> : <MoonIcon />}
+    </button>
   )
 }

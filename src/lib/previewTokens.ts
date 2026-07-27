@@ -9,6 +9,7 @@ import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { withAlpha, readableInk } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
+import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, recHexFor, type GlobalScales } from './semanticRoles'
 import { tonalPalettes } from './semanticArchitectures'
 
@@ -23,8 +24,10 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // Render the requested theme (driven by the Semantic table's eye toggle).
   // A custom "style theme" carries its own palette — use it for the fallbacks.
   const semanticTokens = store.themes[themeKey] ?? store.themes.light ?? {}
-  const pal = store.themePalettes[themeKey]
   const kind = store.themeKinds?.[themeKey] ?? 'light'
+  // A theme references primitive FAMILIES — resolve them now so the preview
+  // tracks whatever those families currently are.
+  const pal = resolveThemePalette(store.themeSources?.[themeKey], kind, store)
   // Fallback resolver — when a semantic token is empty (e.g. a dark theme the
   // user hasn't opened in the Semantic editor yet), resolve it against the same
   // source ramp + recommended tone the EXPORT uses (lib/semanticRoles), so the
@@ -50,32 +53,32 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   const brandFallback = pal?.brand?.[9] || primaryColor
   // Dark ink option for readableInk — darkest gray of the active theme's ramp.
   const grayScale = pal?.gray ?? (kind === 'dark' ? grayDarkScale : grayLightScale)
-  const brandSolid = semanticTokens['action-primary'] || rec('action-primary') || brandFallback || '#7f56d9'
+  const brandSolid = semanticTokens['background-brand-solid'] || rec('background-brand-solid') || brandFallback || '#7f56d9'
   // Resolve the gradient assigned to each preview surface into a CSS string.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
     return g ? gradientToCss(g) : undefined
   }
   const tokens: PreviewTokens = {
-    // surface-0's source is gray tone 1 in light / tone 12 in dark (semanticRoles),
-    // itself anchored to `pageBackground` — fall back down that same chain, never
-    // to the light ramp (which rendered dark themes white).
-    surface: semanticTokens['surface-0'] || rec('surface-0') || store.pageBackground || '#ffffff',
+    // background-primary is base.white in light / gray tone 12 in dark
+    // (semanticRoles) — fall back to pageBackground, never the light ramp
+    // (which rendered dark themes white).
+    surface: semanticTokens['background-primary'] || rec('background-primary') || store.pageBackground || '#ffffff',
     brandSolid,
-    brandText: semanticTokens['text-brand'] || rec('text-brand') || brandFallback || '#7f56d9',
+    brandText: semanticTokens['content-brand'] || rec('content-brand') || brandFallback || '#7f56d9',
     // Label ink on the brand fill — contrast-driven so a bright accent (where
-    // white text fails WCAG) gets dark ink, in every theme. The stored
-    // text-on-brand token's tone can invert wrongly in dark, so resolve it live.
-    onBrand: readableInk(brandSolid, grayScale[12] || '#0a0d12', semanticTokens['text-on-inverse'] || rec('text-on-inverse') || '#ffffff'),
-    neutralFill: semanticTokens['surface-1'] || rec('surface-1') || '#f5f5f5',
-    neutralText: semanticTokens['text-primary'] || rec('text-primary') || '#101828',
+    // white text fails WCAG) gets dark ink, in every theme. content-inverse's
+    // tone can invert wrongly in dark, so resolve it live against the fill.
+    onBrand: readableInk(brandSolid, grayScale[12] || '#0a0d12', semanticTokens['content-inverse'] || rec('content-inverse') || '#ffffff'),
+    neutralFill: semanticTokens['background-secondary'] || rec('background-secondary') || '#f5f5f5',
+    neutralText: semanticTokens['content-primary'] || rec('content-primary') || '#101828',
     errorColor: (pal?.error?.[9]) || errorColor || '#f04438',
-    disabledBg: semanticTokens['action-disabled'] || rec('action-disabled') || '#f5f5f5',
-    disabledText: semanticTokens['text-disabled'] || rec('text-disabled') || '#a4a7ae',
-    border: semanticTokens['border-strong'] || rec('border-strong') || '#d0d5dd',
-    borderDefault: semanticTokens['border-default'] || rec('border-default') || '#e9eaeb',
-    fgMuted: semanticTokens['text-tertiary'] || rec('text-tertiary') || '#717680',
-    placeholderText: semanticTokens['text-placeholder'] || rec('text-placeholder') || '#a4a7ae',
+    disabledBg: semanticTokens['background-disabled'] || rec('background-disabled') || '#f5f5f5',
+    disabledText: semanticTokens['content-disabled'] || rec('content-disabled') || '#a4a7ae',
+    border: semanticTokens['border-primary'] || rec('border-primary') || '#d0d5dd',
+    borderDefault: semanticTokens['border-secondary'] || rec('border-secondary') || '#e9eaeb',
+    fgMuted: semanticTokens['content-tertiary'] || rec('content-tertiary') || '#717680',
+    placeholderText: semanticTokens['content-quaternary'] || rec('content-quaternary') || '#a4a7ae',
     successColor: (pal?.success?.[9]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[9]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[9]) || infoColor || '#2e90fa',

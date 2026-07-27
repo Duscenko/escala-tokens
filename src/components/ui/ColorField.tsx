@@ -276,31 +276,55 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
         )
       })()}
 
-      {/* Saved swatches */}
+      {/* Saved swatches — the user's own reusable colors. The action reads
+          "Save current" and carries the live swatch: a bare "Add" collided with
+          the two other Adds this panel can sit inside (add family / add row),
+          and never said WHAT it added. */}
       <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-fg-muted">Saved</span>
           <button
             type="button"
             onClick={() => addSavedColor(hex)}
-            className="flex items-center gap-1 text-[11px] text-fg-muted hover:text-fg transition-colors"
+            disabled={savedColors.includes(hex)}
+            title={savedColors.includes(hex) ? `${hex} is already saved` : `Save ${hex} to your swatches`}
+            className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full border border-line text-[11px] text-fg-muted hover:text-fg hover:border-line-strong disabled:opacity-40 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-            Add
+            <span
+              aria-hidden
+              className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0"
+              style={{ background: `linear-gradient(${hex},${hex}), ${CHECKER}` }}
+            />
+            {savedColors.includes(hex) ? 'Saved' : 'Save current'}
           </button>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {savedColors.length === 0 && <span className="text-[11px] text-fg-faint">No saved colors yet.</span>}
+          {savedColors.length === 0 && (
+            <span className="text-[11px] text-fg-faint leading-snug">
+              Save a color to reuse it across families.
+            </span>
+          )}
           {savedColors.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => apply(toHsva(c))}
-              onContextMenu={(e) => { e.preventDefault(); removeSavedColor(c) }}
-              title={`${c} — right-click to remove`}
-              className="w-5 h-5 rounded-full flex-shrink-0 ring-1 ring-black/10 transition-transform hover:scale-110"
-              style={{ background: `linear-gradient(${c},${c}), ${CHECKER}` }}
-            />
+            <span key={c} className="relative group/sw">
+              <button
+                type="button"
+                onClick={() => apply(toHsva(c))}
+                onContextMenu={(e) => { e.preventDefault(); removeSavedColor(c) }}
+                title={c}
+                aria-label={`Use ${c}`}
+                className="w-5 h-5 rounded-full block flex-shrink-0 ring-1 ring-black/10 transition-transform hover:scale-110"
+                style={{ background: `linear-gradient(${c},${c}), ${CHECKER}` }}
+              />
+              <button
+                type="button"
+                onClick={() => removeSavedColor(c)}
+                aria-label={`Remove ${c}`}
+                title={`Remove ${c}`}
+                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-fg text-app text-[9px] leading-none flex items-center justify-center opacity-0 group-hover/sw:opacity-100 focus:opacity-100 transition-opacity"
+              >
+                ✕
+              </button>
+            </span>
           ))}
         </div>
       </div>

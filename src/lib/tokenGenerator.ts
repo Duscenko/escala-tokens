@@ -1,6 +1,7 @@
 import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
+import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
@@ -55,7 +56,7 @@ export function generateTokenJSON() {
   // neutral against `darkBackground` rather than a fixed constant.
   const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
   const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
-    ([t, kind]) => kind === 'dark' && store.themes[t] && !store.themePalettes[t],
+    ([t, kind]) => kind === 'dark' && store.themes[t] && (store.themeSources[t]?.gray ?? 'neutral') === 'neutral',
   ) || Boolean(store.themes.dark)
   if (hasDarkTheme) {
     Object.assign(primitive, flattenScale('neutral-dark', grayDarkScale, colorNaming))
@@ -83,22 +84,9 @@ export function generateTokenJSON() {
   alphaOf('info', store.infoScale)
   store.customColors.forEach((c) => alphaOf(c.key, c.scale))
 
-  // Custom style themes carry their own source ramps (themePalettes). Export
-  // each ramp namespaced by theme ("ocean/accent-7") so that theme's semantic
-  // values can alias primitives in Figma instead of holding loose hex values.
-  const PALETTE_FAMILY: Record<keyof ThemePalette, string> = {
-    brand: 'accent', gray: 'neutral',
-    error: 'error', warning: 'warning', success: 'success', info: 'info',
-  }
-  for (const [theme, pal] of Object.entries(store.themePalettes)) {
-    if (!store.themes[theme]) continue
-    for (const [src, family] of Object.entries(PALETTE_FAMILY) as [keyof ThemePalette, string][]) {
-      const scale = pal[src]
-      if (scale && Object.keys(scale).length) {
-        Object.assign(primitive, flattenScale(`${theme}/${family}`, scale, colorNaming))
-      }
-    }
-  }
+  // No per-theme namespaced ramps any more: a theme REFERENCES a family, and
+  // every family already shipped above under its own key. The theme's semantics
+  // therefore alias the same primitive variables the families export.
 
   // Themes in the user's column order (themeOrder), with any stragglers appended.
   // The plugin maps each theme to one variable-collection mode (column), so this
@@ -122,11 +110,18 @@ export function generateTokenJSON() {
     success:  store.successScale,
     info:     store.infoScale,
   }
+  const resolvedPalettes: Record<string, NonNullable<ReturnType<typeof resolveThemePalette>>> = {}
+  for (const name of themeNames) {
+    const p = resolveThemePalette(store.themeSources[name], store.themeKinds[name] ?? 'light', store)
+    if (p) resolvedPalettes[name] = p
+  }
   const orderedThemes: Record<string, Record<string, string>> = {}
   for (const name of themeNames) {
     const kind = store.themeKinds[name] ?? 'light'
-    const palette = store.themePalettes[name]
-    const normalized = { ...store.themes[name] }
+    const palette = resolveThemePalette(store.themeSources[name], kind, store)
+    // Build from scratch (not a spread of the stored map) so only current
+    // catalogue roles ship — stale keys from a prior architecture never leak.
+    const normalized: Record<string, string> = {}
     for (const role of ALL_ROLES) {
       const scale = sourceScaleFor(role, kind, globalScales, palette)
       if (!scale || Object.keys(scale).length === 0) continue
@@ -144,7 +139,7 @@ export function generateTokenJSON() {
     {
       themes: orderedThemes,
       themeKinds: store.themeKinds,
-      themePalettes: store.themePalettes,
+      themePalettes: resolvedPalettes,
       scales: globalScales,
       accent: store.primaryColor,
     },

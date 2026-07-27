@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
@@ -6,10 +6,12 @@ import {
   type ArchTokenValue, type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 import {
-  SCALE_META, ROLE_GROUPS, ALL_ROLES, BRAND_TOKEN_TONES,
+  SCALE_META, ROLE_GROUPS, ALL_ROLES, BRAND_TOKEN_TONES, baseLabelForTone,
   toneIndexOf, sourceScaleFor, recToneFor, recHexFor,
-  type Role, type ScaleSource, type GlobalScales,
+  type Role, type RoleScale, type GlobalScales,
 } from '../../lib/semanticRoles'
+import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
+import { resolveThemePalette } from '../../lib/themeSources'
 import AddThemeModal from './AddThemeModal'
 import ArchitecturePicker from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
@@ -23,7 +25,7 @@ export { BRAND_TOKEN_TONES }
 
 // Shared category id — the table's side-nav and the right-hand preview both key
 // off this, so editing a category's tokens shows a matching live specimen.
-export type SemanticCategory = 'all' | 'surface' | 'action' | 'status' | 'text' | 'icon' | 'border'
+export type SemanticCategory = 'all' | 'content' | 'background' | 'border'
 
 // ── Category nav metadata: icon + one-line description (tooltip) ─────────────
 const catIc = (d: string, filled = false): ReactNode => (
@@ -38,13 +40,10 @@ const catIc = (d: string, filled = false): ReactNode => (
 )
 
 const CATEGORY_ICON: Record<SemanticCategory, ReactNode> = {
-  all:     catIc('M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'),
-  surface: catIc('M3 3h18v18H3z', true),
-  action:  catIc('M13 2L3 14h7l-1 8 10-12h-7l1-8z', true),
-  status:  catIc('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 8v4M12 16h.01'),
-  text:    catIc('M4 7V4h16v3M9 20h6M12 4v16'),
-  icon:    catIc('M12 3l2.5 6 6 2.5-6 2.5L12 20l-2.5-6-6-2.5 6-2.5z'),
-  border:  catIc('M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'),
+  all:        catIc('M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'),
+  content:    catIc('M4 7V4h16v3M9 20h6M12 4v16'),
+  background: catIc('M3 3h18v18H3z', true),
+  border:     catIc('M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'),
 }
 
 const CATEGORY_DESC: Record<SemanticCategory, string> = {
@@ -57,10 +56,11 @@ const CATEGORY_DESC: Record<SemanticCategory, string> = {
 
 // Non-flat architecture groups reuse the closest flat category glyph.
 const ARCH_ICON_ALIAS: Record<string, SemanticCategory> = {
-  content: 'text', labels: 'text', fallbacks: 'status', backgrounds: 'surface',
-  fills: 'surface', separators: 'border', materials: 'surface', tint: 'icon',
-  core: 'icon', secondary: 'icon', tertiary: 'icon', error: 'status',
-  surfaces: 'surface', outlines: 'border',
+  labels: 'content', text: 'content', fallbacks: 'background',
+  backgrounds: 'background', surface: 'background', surfaces: 'background',
+  fills: 'background', materials: 'background', tint: 'content',
+  core: 'content', secondary: 'content', tertiary: 'content', error: 'background',
+  separators: 'border', outlines: 'border',
 }
 const archIconFor = (key: string): ReactNode =>
   CATEGORY_ICON[(key in CATEGORY_ICON ? key : ARCH_ICON_ALIAS[key] ?? 'all') as SemanticCategory]
@@ -160,7 +160,12 @@ function CssVarChip({ name }: { name: string }) {
 }
 
 /** Aliased reference badge — mirrors how Figma shows a variable bound to a primitive. */
-function AliasBadge({ scale, tone, color }: { scale: ScaleSource; tone: number | null; color: string }) {
+function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: number | null; color: string; naming: ColorNaming }) {
+  // The `base` family labels by white/black; the numbered ramps use the active
+  // naming scheme (50–950) so the badge matches the exported primitive name.
+  const label = scale === 'base'
+    ? (tone != null ? baseLabelForTone(tone) : '—')
+    : (tone != null ? toneLabel(naming, tone) : '—')
   return (
     <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-[11px] font-mono text-fg-muted max-w-full">
       <span
@@ -168,7 +173,7 @@ function AliasBadge({ scale, tone, color }: { scale: ScaleSource; tone: number |
         style={{ backgroundColor: color || 'var(--elevated)' }}
       />
       <span className="truncate tabular-nums">
-        {SCALE_META[scale].label}<span className="text-fg-faint">-</span>{tone ?? '—'}
+        {SCALE_META[scale].label}<span className="text-fg-faint">-</span>{label}
       </span>
     </span>
   )
@@ -288,6 +293,7 @@ function MatrixRow({
   expanded,
   reduce,
   gridStyle,
+  naming,
   onToggle,
   onPick,
   onReset,
@@ -299,6 +305,7 @@ function MatrixRow({
   expanded: boolean
   reduce: boolean
   gridStyle: React.CSSProperties
+  naming: ColorNaming
   onToggle: () => void
   onPick: (theme: string, hex: string) => void
   onReset: () => void
@@ -327,6 +334,9 @@ function MatrixRow({
         {/* One value cell per theme — the previewed theme's column is tinted */}
         {cols.map((col) => {
           const tone = toneIndexOf(col.scale, col.value)
+          // A role can draw from a different family in dark mode (content-inverse,
+          // border-brand-alt) — badge the family that actually resolved this cell.
+          const effScale: RoleScale = col.kind === 'dark' && role.darkScale ? role.darkScale : role.scale
           return (
             <button
               key={col.key}
@@ -334,9 +344,9 @@ function MatrixRow({
               className={`flex items-center min-w-0 px-3 py-3 text-left border-r border-line ${
                 col.previewed ? 'bg-accent-ui/[0.06]' : ''
               }`}
-              aria-label={`${col.key} value ${SCALE_META[role.scale].label}-${tone ?? '?'}`}
+              aria-label={`${col.key} value ${SCALE_META[effScale].label}-${tone ?? '?'}`}
             >
-              <AliasBadge scale={role.scale} tone={tone} color={col.value} />
+              <AliasBadge scale={effScale} tone={tone} color={col.value} naming={naming} />
             </button>
           )
         })}
@@ -417,14 +427,15 @@ export default function Step3_SemanticTokens({
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
 } = {}) {
+  const store = useDesignStore()
   const {
     primaryColor, errorColor, primaryScale, errorScale, warningScale, successScale, infoScale,
     grayLightScale, grayDarkScale, customColors,
-    themes, themeOrder, themeKinds, themePalettes,
-    setThemeToken, removeTheme,
+    themes, themeOrder, themeKinds, themeSources, colorNaming,
+    setThemeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
     semanticArchitecture,
-  } = useDesignStore()
+  } = store
 
   const reduce = useReducedMotion() ?? false
 
@@ -450,11 +461,85 @@ export default function Step3_SemanticTokens({
   // Ramp + recommended value resolution shared with the token export
   // (lib/semanticRoles.ts) so the editor and exports never disagree.
   const scaleFor = (theme: string, role: Role, kind: 'light' | 'dark') =>
-    sourceScaleFor(role, kind, scales, themePalettes[theme])
+    sourceScaleFor(role, kind, scales, resolveThemePalette(themeSources[theme], kind, store))
 
   const themeCols = themeOrder.filter((t) => themes[t])
+  // Per-column widths (px) — a view preference, kept local (not a token). Drag a
+  // column's right edge to resize. The default fits the longest source name a
+  // cell shows (`neutral-900` wants 75px next to its swatch) without truncating;
+  // at the old 112 every neutral row read "neutr…".
+  const DEFAULT_COL_W = 160
+  const MIN_COL_W = 76
+  const MAX_COL_W = 260
+  const [colWidths, setColWidths] = useState<Record<string, number>>({})
+  const widthOf = (t: string) => colWidths[t] ?? DEFAULT_COL_W
+  // The "Token name" column is resizable too. It fills the row by default (null
+  // → a 1fr track, the original behavior); once dragged it becomes a fixed width
+  // and a trailing flexible spacer absorbs the freed slack so the table still
+  // spans the full width.
+  const MIN_NAME_W = 150
+  const MAX_NAME_W = 520
+  const DEFAULT_NAME_W = 288
+  const [nameWidth, setNameWidth] = useState<number | null>(null)
+  const themeTracks = `${themeCols.map((t) => `${widthOf(t)}px`).join(' ')} 2.75rem`
   const gridStyle: React.CSSProperties = {
-    gridTemplateColumns: `minmax(0,1fr) repeat(${themeCols.length}, 7rem) 2.75rem`,
+    gridTemplateColumns: nameWidth == null
+      ? `minmax(0,1fr) ${themeTracks}`
+      : `${nameWidth}px ${themeTracks} minmax(0,1fr)`,
+  }
+
+  // Drag-to-reorder columns (HTML5 DnD). `dragTheme` is the grabbed column;
+  // `dropTarget` highlights the column it will land before. A ref mirrors the
+  // grabbed column so `onDrop` reads it synchronously, independent of render
+  // timing (state may not have flushed between dragstart and drop).
+  const [dragTheme, setDragTheme] = useState<string | null>(null)
+  const dragThemeRef = useRef<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const reorderColumns = (from: string, to: string) => {
+    if (from === to) return
+    const next = themeCols.filter((t) => t !== from)
+    const at = next.indexOf(to)
+    next.splice(at < 0 ? next.length : at, 0, from)
+    setThemeOrder(next)
+  }
+
+  // Pointer-drag column resize — bound to the right edge of each header cell.
+  // `resizingRef` suppresses the parent cell's reorder-drag while resizing.
+  const resizingRef = useRef(false)
+  const startResize = (
+    startW: number,
+    onChange: (w: number) => void,
+    e: React.PointerEvent,
+    min = MIN_COL_W,
+    max = MAX_COL_W,
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    resizingRef.current = true
+    const startX = e.clientX
+    const onMove = (ev: PointerEvent) => {
+      onChange(Math.max(min, Math.min(max, startW + (ev.clientX - startX))))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      // Defer clearing so the trailing dragstart (if any) is still suppressed.
+      setTimeout(() => { resizingRef.current = false }, 0)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+  const resizeTheme = (t: string, e: React.PointerEvent) =>
+    startResize(widthOf(t), (w) => setColWidths((prev) => ({ ...prev, [t]: w })), e)
+
+  // Delete a column, re-pointing the live preview if it was the one shown.
+  const deleteTheme = (t: string) => {
+    if (Object.keys(themes).length <= 1) return
+    if (previewTheme === t) {
+      const next = themeCols.find((c) => c !== t)
+      if (next) onPreviewThemeChange?.(next)
+    }
+    removeTheme(t)
   }
 
   const ready =
@@ -496,7 +581,8 @@ export default function Step3_SemanticTokens({
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
-  // "+ Theme" modal state
+  // Theme modal state. Add-only: a theme is created against the primitives and
+  // then reads through them, so there is no edit mode to open.
   const [addThemeOpen, setAddThemeOpen] = useState(false)
 
   // ── Architecture-driven view ──────────────────────────────────────────────
@@ -505,17 +591,29 @@ export default function Step3_SemanticTokens({
   // always mirrors the exact schema the export emits. The flat matrix keeps
   // its full editing behavior.
   const isFlat = semanticArchitecture === 'flat'
+  // Every theme's ramps, resolved from the families it references. Recomputed
+  // whenever a family moves, so the architecture projections track Primitives.
+  const resolvedPalettes = useMemo(() => {
+    const out: Record<string, NonNullable<ReturnType<typeof resolveThemePalette>>> = {}
+    for (const t of Object.keys(themeSources)) {
+      const p = resolveThemePalette(themeSources[t], themeKinds[t] ?? 'light', store)
+      if (p) out[t] = p
+    }
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeSources, themeKinds, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, customColors])
+
   const archView = useMemo(
     () =>
       isFlat
         ? null
         : buildArchitectureView(
             semanticArchitecture,
-            { themes, themeKinds, themePalettes, scales, accent: primaryColor },
+            { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor },
             errorColor,
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, themePalettes],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes],
   )
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')
@@ -561,7 +659,7 @@ export default function Step3_SemanticTokens({
       })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, grayLightScale, grayDarkScale, primaryScale, errorScale, warningScale, successScale, infoScale, themeOrder, themePalettes])
+  }, [ready, grayLightScale, grayDarkScale, primaryScale, errorScale, warningScale, successScale, infoScale, themeOrder, themeSources])
 
   const q = query.trim().toLowerCase()
 
@@ -668,15 +766,15 @@ export default function Step3_SemanticTokens({
           <button
             onClick={() => setAddThemeOpen(true)}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-fg-faint hover:text-fg border border-line hover:border-line-strong transition-colors"
-            title="Add a theme with its own color palette"
+            title="Add a theme — its roles resolve through the primary colors"
           >
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
             Theme
           </button>
           )}
-          {/* Panel background — Radix-style solid/translucent for surface-1
-              (cards, panels, sections). Only relevant while viewing Surface. */}
-          {isFlat && activeCategory === 'surface' && (
+          {/* Panel background — Radix-style solid/translucent for raised
+              surfaces (cards, panels). Only relevant while viewing Background. */}
+          {isFlat && activeCategory === 'background' && (
             <div className="flex items-center gap-2 ml-1">
               <span className="text-[11px] text-fg-faint">Panel background</span>
               <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
@@ -802,17 +900,46 @@ export default function Step3_SemanticTokens({
           <div className="min-w-[26rem]">
             {/* Column header — one column per theme; custom themes are removable */}
             <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10" style={gridStyle}>
-              <span className="pl-4 py-3 border-r border-line">Token name</span>
+              <span className="group relative pl-4 py-3 border-r border-line">
+                Token name
+                <span
+                  onPointerDown={(e) => {
+                    // Seed from the column's current rendered width so switching
+                    // from the 1fr default to a fixed width doesn't jump.
+                    const startW = (e.currentTarget as HTMLElement).parentElement?.offsetWidth ?? nameWidth ?? DEFAULT_NAME_W
+                    startResize(startW, setNameWidth, e, MIN_NAME_W, MAX_NAME_W)
+                  }}
+                  onDragStart={(e) => e.preventDefault()}
+                  draggable={false}
+                  role="separator"
+                  aria-label="Resize Token name column"
+                  title="Drag to resize column"
+                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize opacity-0 group-hover:opacity-100 hover:bg-accent-ui/40 transition-opacity"
+                />
+              </span>
               {themeCols.map((t) => {
                 const isPreviewed = previewTheme === t
                 const displayName = themeDisplayName(t)
+                const canDelete = themeCols.length > 1
                 return (
                   <span
                     key={t}
-                    className={`flex items-center gap-1 px-1.5 py-2 border-r border-line min-w-0 ${
+                    draggable
+                    onDragStart={(e) => {
+                      if (resizingRef.current) { e.preventDefault(); return }
+                      dragThemeRef.current = t; setDragTheme(t); e.dataTransfer.effectAllowed = 'move'
+                    }}
+                    onDragOver={(e) => { e.preventDefault(); if (dragThemeRef.current && dragThemeRef.current !== t) setDropTarget(t) }}
+                    onDragLeave={() => setDropTarget((cur) => (cur === t ? null : cur))}
+                    onDrop={(e) => { e.preventDefault(); if (dragThemeRef.current) reorderColumns(dragThemeRef.current, t); dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
+                    onDragEnd={() => { dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
+                    className={`group relative flex items-center gap-1 px-1.5 py-2 border-r border-line min-w-0 cursor-grab active:cursor-grabbing transition-colors ${
                       isPreviewed ? 'bg-accent-ui/[0.06]' : ''
-                    }`}
+                    } ${dragTheme === t ? 'opacity-40' : ''}`}
                   >
+                    {dropTarget === t && (
+                      <span className="absolute inset-y-0 left-0 w-0.5 bg-accent-ui z-20" aria-hidden />
+                    )}
                     {/* Whole name is the toggle — the active theme reads as a
                         highlighted pill (same language as the category rail). */}
                     <button
@@ -829,16 +956,33 @@ export default function Step3_SemanticTokens({
                       <EyeIcon active={isPreviewed} />
                       <span className="truncate">{displayName}</span>
                     </button>
-                    {t !== 'light' && t !== 'dark' && (
+                    {/* No per-theme colour editing here, by design: a theme is a
+                        READING of the primitives, never a place to set colour.
+                        Editing a theme's accent in isolation would fork it from
+                        the primary it resolves through — the Figma model, where
+                        modes reference variables instead of holding their own
+                        values. Colour is edited in Primary Color; this table
+                        only maps roles to it. */}
+                    {canDelete && (
                       <button
-                        onClick={() => removeTheme(t)}
-                        aria-label={`Remove theme ${t}`}
-                        title={`Remove theme ${t}`}
+                        onClick={() => deleteTheme(t)}
+                        aria-label={`Remove theme ${displayName}`}
+                        title={`Remove theme ${displayName}`}
                         className="text-fg-faint hover:text-red-500 transition-colors flex-shrink-0"
                       >
                         <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
                       </button>
                     )}
+                    {/* Right-edge resize grip — drag to set this column's width. */}
+                    <span
+                      onPointerDown={(e) => resizeTheme(t, e)}
+                      onDragStart={(e) => e.preventDefault()}
+                      draggable={false}
+                      role="separator"
+                      aria-label={`Resize ${displayName} column`}
+                      title="Drag to resize column"
+                      className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize opacity-0 group-hover:opacity-100 hover:bg-accent-ui/40 transition-opacity"
+                    />
                   </span>
                 )
               })}
@@ -872,6 +1016,7 @@ export default function Step3_SemanticTokens({
                   expanded={expandedRole === role.key}
                   reduce={reduce}
                   gridStyle={gridStyle}
+                  naming={colorNaming}
                   onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}
                   onPick={(theme, hex) => setThemeToken(theme, role.key, hex)}
                   onReset={() => resetRole(role)}
@@ -883,7 +1028,13 @@ export default function Step3_SemanticTokens({
         </div>
       </div>
 
-      <AddThemeModal open={addThemeOpen} onClose={() => setAddThemeOpen(false)} />
+      <AddThemeModal
+        open={addThemeOpen}
+        onClose={() => setAddThemeOpen(false)}
+        onRenamed={(oldKey, newKey) => {
+          if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
+        }}
+      />
     </motion.div>
     </div>
   )

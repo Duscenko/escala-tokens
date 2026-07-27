@@ -4,15 +4,16 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
-import Sidebar, { type Tab } from '../components/configurator/Sidebar'
-import TopNav from '../components/configurator/TopNav'
+import SectionRail, { RAIL_WIDTH } from '../components/configurator/SectionRail'
+import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+
+type Tab = 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ComponentDocPane from '../components/configurator/ComponentDocPane'
 import ExportView from '../components/configurator/ExportView'
 import FigmaConnectView from '../components/configurator/FigmaConnectView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
-import HomeView from '../components/configurator/HomeView'
 import DocsView from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions, { ShareModal, ResetConfirmModal } from '../components/configurator/HomeActions'
@@ -31,13 +32,24 @@ import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
 import QuickFoundationsPanel, { QuickEditPanel } from '../components/configurator/QuickFoundationsPanel'
+import WorkbenchLayout from '../components/configurator/WorkbenchLayout'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
+import HeaderPill from '../components/ui/HeaderPill'
+
+// Copy-to-clipboard mark for the section Export pill.
+const ExportIcon: ComponentType = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+)
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
+// Multiple subpaths: separate them with "|".
 const ic = (d: string, sw = '2'): ComponentType => () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d={d} />
+    {d.split('|').map((p, i) => <path key={i} d={p} />)}
   </svg>
 )
 
@@ -159,6 +171,17 @@ const FOUNDATIONS: FoundationSection[] = [
   },
 ]
 
+// Component categories get icons too, so the Components/Documentation rail
+// reads exactly like the Variables one (same row shape, icon + label).
+const CATEGORY_ICONS: Record<string, ComponentType> = {
+  'Button & Actions':    ic('M9 3v11l2.5-2.5L14 17l2.5-1-2.5-5.5H18z', '1.8'),
+  'Form Controls':       ic('M3 7.5h18|M3 16.5h18|M8 5v5|M16 14v5', '1.8'),
+  'Indicators':          ic('M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z|M12 8v4.5|M12 16h.01', '1.8'),
+  'Content & Surfaces':  ic('M4 5h16v14H4z|M4 10h16', '1.8'),
+  'Feedback':            ic('M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z', '1.8'),
+  'Navigation':          ic('M4 6h16|M4 12h9|M4 18h16', '1.8'),
+}
+
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
@@ -200,7 +223,7 @@ type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
 function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot }: { Icon: ComponentType; title: string; subtitle: string; onExport?: () => void; accentColor?: string; rightSlot?: ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[60px] border-b border-line/60 flex-shrink-0">
+    <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line/60 flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
         <Icon />
       </span>
@@ -211,14 +234,12 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
         <div className="ml-auto flex-shrink-0 flex items-center gap-2">
           {rightSlot}
           {onExport && (
-            <button
+            <HeaderPill
+              Icon={ExportIcon}
+              label="Export"
               onClick={onExport}
-              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
               title="Copy this section as CSS · Tailwind · Tokens · MD"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-              Export
-            </button>
+            />
           )}
         </div>
       )}
@@ -227,7 +248,7 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
 }
 
 export default function Configurator() {
-  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds } = useDesignStore()
+  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
@@ -256,8 +277,10 @@ export default function Configurator() {
     setTheme((themeKinds[key] ?? 'light') === 'dark' ? 'dark' : 'light')
   }
   // Right preview panel can be collapsed for more center width; re-expanded
-  // via the slim strip that replaces it while collapsed.
-  const [previewCollapsed, setPreviewCollapsed] = useState(false)
+  // via the slim strip that replaces it while collapsed. Starts COLLAPSED:
+  // Variables is a token-editing view, so the tables get the width by default
+  // and the preview is opt-in.
+  const [previewCollapsed, setPreviewCollapsed] = useState(true)
   // Components catalogue — quick-edit popover for the Foundations you've already set.
   const [quickPanelOpen, setQuickPanelOpen] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
@@ -271,6 +294,8 @@ export default function Configurator() {
   const [resetOpen, setResetOpen] = useState(false)
   // Components catalogue — filters the master list by label/key.
   const [componentSearch, setComponentSearch] = useState('')
+  // Active component category (Components section sub-nav) — filters the list.
+  const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Foundation sections (not Home) can export their token slice.
@@ -325,12 +350,6 @@ export default function Configurator() {
     commitVisit()
     setExportMode(mode)
   }
-  // Home overview checklist navigation — 'components' opens the catalogue tab.
-  const openFromHome = (key: string) => {
-    if (key === 'components') changeTab('components')
-    else selectFoundation(key)
-  }
-
   // ── Resolve center header + body for the current mode ──
   let header: { Icon: ComponentType; title: string; subtitle: string }
   let body: ReactNode
@@ -380,17 +399,6 @@ export default function Configurator() {
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     const Active = section.Component
-    // Home carries the pill row from the header design (New · Import · Share · Kits · Reset).
-    if (section.key === 'home') {
-      centerRightSlot = (
-        <HomeActions
-          onNew={() => setNewSystemOpen(true)}
-          onImport={() => setImportOpen(true)}
-          onShare={() => setShareOpen(true)}
-          onReset={() => setResetOpen(true)}
-        />
-      )
-    }
     body = section.key === 'color' ? (
       // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
       // table self-scrolls with pinned headers) — no outer overflow here.
@@ -412,11 +420,7 @@ export default function Configurator() {
       </div>
     ) : (
       <div className="h-full overflow-y-auto p-8">
-        {section.key === 'home' ? (
-          <HomeView onOpenFoundation={openFromHome} previewTheme={previewTheme} />
-        ) : (
-          <Active />
-        )}
+        <Active />
       </div>
     )
     centerKey = `f-${section.key}`
@@ -426,7 +430,7 @@ export default function Configurator() {
       title: 'Documentation',
       subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
     }
-    body = <DocsView previewTheme={previewTheme} />
+    body = <DocsView previewTheme={previewTheme} category={componentCategory} />
     centerKey = 'docs'
   } else {
     header = {
@@ -475,8 +479,11 @@ export default function Configurator() {
             aria-label="Search components"
             className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
           />
-          {CATEGORIES.map((cat) => {
-            const q = componentSearch.trim().toLowerCase()
+          {(() => { const q = componentSearch.trim().toLowerCase(); return CATEGORIES
+            // No search → just the category picked in the sub-rail; searching
+            // spans every category so nothing is hidden behind the filter.
+            .filter((cat) => q ? true : cat === componentCategory)
+            .map((cat) => {
             const items = COMPONENTS.filter(
               (c) => c.category === cat && (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
             )
@@ -523,7 +530,8 @@ export default function Configurator() {
                 })}
               </div>
             )
-          })}
+            })
+          })()}
         </div>
 
         {/* Detail */}
@@ -541,43 +549,103 @@ export default function Configurator() {
   const showPreview = (tab !== 'components' && tab !== 'docs' && !exportMode) || exportMode === 'save'
   const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
+  // Layout F — the live workbench is the primary Home experience. Deep foundation
+  // editors, Components, Docs and export all fall back to the classic shell.
+  const showWorkbench = tab === 'foundations' && activeFoundation === 'home' && !exportMode
+  // The section rail shows in every editing view and in none of the export /
+  // connect views — those own the full width, in every section alike.
+  const railVisible = projectCreated && !exportMode && !showWorkbench
+
+  // The global TopNav is mounted in EVERY view; this maps the current shell
+  // state to its lit section.
+  const navActive: TopNavKey | null =
+    showWorkbench ? 'generator'
+    : (!exportMode && tab === 'components') ? 'components'
+    : (!exportMode && tab === 'docs') ? 'documentation'
+    : (!exportMode && tab === 'foundations') ? 'variables'
+    : null
+  const handleNav = (key: TopNavKey) => {
+    if (key === 'generator') selectFoundation('home')
+    else if (key === 'variables') selectFoundation('color')
+    else if (key === 'components') changeTab('components')
+    else changeTab('docs')
+  }
+
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 
-      {/* ── Top navigation (transparent over the gradient) ── */}
+      {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav
-        tab={tab}
+        nav={navActive}
+        onNav={handleNav}
         exportMode={exportMode}
-        onTabChange={changeTab}
         onGithub={() => openExport('github')}
-        onHome={() => selectFoundation('home')}
+        onGetFigma={() => openExport('figma')}
+        onOpenFoundations={() => selectFoundation('color')}
+        brandWidth={showWorkbench ? 356 : railVisible ? RAIL_WIDTH : null}
+        showFullEditor={showWorkbench}
+        previewTheme={previewTheme}
+        onThemeChange={changePreviewTheme}
       />
 
-      {/* ── Body: 80px rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
-        <Sidebar
-          foundations={FOUNDATIONS.map((f) => ({
-            key: f.key,
-            short: f.short,
-            Icon: f.Icon,
-            // Figma-style split: token tables are Variables; the rest are Styles.
-            group:
-              f.key === 'home'
-                ? undefined
-                : (['icons', 'opacity', 'shadow', 'grid'].includes(f.key) ? ('styles' as const) : ('variables' as const)),
-          }))}
-          activeFoundation={railActive}
-          onFoundationSelect={selectFoundation}
-          exportMode={exportMode}
-          onGetFigma={() => openExport('figma')}
-          onSave={() => openExport('save')}
-          saveActive={exportMode === 'save'}
+      {showWorkbench ? (
+        <WorkbenchLayout
+          previewTheme={previewTheme}
+          onThemeChange={changePreviewTheme}
+          onOpenFoundations={() => selectFoundation('color')}
+          onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
+          actions={
+            <HomeActions
+              onNew={() => setNewSystemOpen(true)}
+              onImport={() => setImportOpen(true)}
+              onShare={() => setShareOpen(true)}
+              onReset={() => setResetOpen(true)}
+            />
+          }
         />
+      ) : (
+      <div className="flex-1 min-w-0 flex flex-col min-h-0">
+      {/* ── Body: section sub-rail + floating white panel ── */}
+      <div className="flex-1 min-h-0 flex">
+        {/* The second column is section-specific: the foundation rail on
+            Foundations, the category rail on Components. Documentation carries
+            its own catalogue sidebar (DocsView), so no rail there. */}
+        {railVisible && tab === 'foundations' && (
+          <SectionRail
+            ariaLabel="Foundations"
+            active={railActive}
+            onSelect={selectFoundation}
+            // Figma-style split: token tables are Variables; the rest are Styles.
+            groups={(['variables', 'styles'] as const).map((g) => ({
+              label: g === 'variables' ? 'Variables' : 'Styles',
+              items: FOUNDATIONS.filter(
+                (f) => f.key !== 'home' &&
+                  (['icons', 'opacity', 'shadow', 'grid'].includes(f.key) ? 'styles' : 'variables') === g,
+              ).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })),
+            }))}
+          />
+        )}
+        {railVisible && (tab === 'components' || tab === 'docs') && (
+          <SectionRail
+            ariaLabel="Component categories"
+            active={componentCategory}
+            onSelect={setComponentCategory}
+            groups={[{
+              label: 'Categories',
+              items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
+            }]}
+          />
+        )}
 
-        {/* ── Layer 1: white panel (rounded top, flush right & bottom) ── */}
-        <div className="flex-1 min-w-0 flex mt-2 rounded-t-2xl overflow-hidden bg-app ring-1 ring-line/70 shadow-[0_-1px_28px_-8px_rgba(0,0,0,0.18)]">
+        {/* ── Layer 1: the content surface, flush under the top bar ──
+            No gap/rounding/lift here: the rail is separated by a single hairline,
+            the exact seam the Generator uses between its own two columns. That
+            also puts CenterHeader's title on the same line as the rail's group
+            caption. */}
+        <div className="flex-1 min-w-0 flex overflow-hidden bg-app border-l border-line">
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
             <CenterHeader
@@ -649,6 +717,9 @@ export default function Configurator() {
             </aside>
           ))}
         </div>
+      </div>
+      </div>
+      )}
       </div>
 
       {/* Per-section export window */}

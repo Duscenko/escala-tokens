@@ -6,7 +6,6 @@ import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { TextSpecimenPreview } from './atoms/TextSpecimenPreview'
 import { BackgroundSpecimenPreview } from './atoms/BackgroundSpecimenPreview'
 import { BorderSpecimenPreview } from './atoms/BorderSpecimenPreview'
-import { ForegroundSpecimenPreview } from './atoms/ForegroundSpecimenPreview'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
@@ -20,11 +19,8 @@ const SwitchSpec = SPECIMENS.Toggle
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
 const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
-  surface: 'Surface preview',
-  action: 'Action preview',
-  status: 'Status preview',
-  text: 'Text preview',
-  icon: 'Icon preview',
+  content: 'Content preview',
+  background: 'Background preview',
   border: 'Border preview',
 }
 
@@ -86,7 +82,7 @@ export default function PreviewPanel({
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
       {/* Header */}
-      <header className="flex items-center gap-2 px-5 h-[60px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg">{title}</h2>
         {themeBadge && (
           <span className="px-1.5 py-0.5 rounded-md bg-elevated text-[10px] font-medium text-accent-ui capitalize">
@@ -114,14 +110,12 @@ export default function PreviewPanel({
           <OverviewChecklistPreview onOpenFoundation={onNavigateFoundation ?? (() => {})} />
         ) : iconLibraryKey ? (
           <IconSpecimenPreview libraryKey={iconLibraryKey} />
-        ) : specimen === 'text' ? (
+        ) : specimen === 'content' ? (
           <TextSpecimenPreview tokens={tokens} />
-        ) : specimen === 'surface' || specimen === 'action' || specimen === 'status' ? (
+        ) : specimen === 'background' ? (
           <BackgroundSpecimenPreview tokens={tokens} />
         ) : specimen === 'border' ? (
           <BorderSpecimenPreview tokens={tokens} />
-        ) : specimen === 'icon' ? (
-          <ForegroundSpecimenPreview tokens={tokens} />
         ) : (
           <>
             {/* The exact catalogue specimens (SPECIMENS — the same renderers the

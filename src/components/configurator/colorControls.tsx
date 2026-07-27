@@ -3,7 +3,7 @@
 // strip, the brand↔neutral link toggle, and the info dot. Kept presentational
 // (no store writes) so callers own their own state.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -36,7 +36,14 @@ export const BACKGROUND_OPTIONS: { label: string; hex: string }[] = [
 // ── State-colour presets ───────────────────────────────────────────────────
 // The curated options per status role, shared by Foundations · Color's pills and
 // Home's Background & State Colors panel so both offer the same swatches.
-export const STATE_PRESETS: Record<'error' | 'warning' | 'success' | 'info', { label: string; hex: string }[]> = {
+/** The status/intent set components render against — neutral included, because
+ *  a neutral badge/alert is as much an intent as a destructive one. Neutral's
+ *  value IS the Base (there is no separate neutral primitive), so its presets
+ *  are the gray flavors and editing it routes to the Base applier. */
+export type IntentRole = 'neutral' | 'error' | 'warning' | 'success' | 'info'
+
+export const STATE_PRESETS: Record<IntentRole, { label: string; hex: string }[]> = {
+  neutral: GRAY_FLAVORS,
   error: [
     { hex: '#f04438', label: 'Red 500' }, { hex: '#d92d20', label: 'Red 600' },
     { hex: '#ef4444', label: 'Tailwind Red' }, { hex: '#e11d48', label: 'Rose' },
@@ -466,20 +473,26 @@ function StateColorRow({ role, label, value, onChange }: { role: string; label: 
 }
 
 export function StateColorRows({
-  error, warning, success, info, onChange, onMatchAccent,
+  neutral, error, warning, success, info, onChange, onMatchAccent, bare = false,
 }: {
+  /** The Base hex. Omit to hide the Neutral row (hosts that don't own the Base). */
+  neutral?: string
   error: string; warning: string; success: string; info: string
-  onChange: (role: 'error' | 'warning' | 'success' | 'info', hex: string) => void
+  onChange: (role: IntentRole, hex: string) => void
   onMatchAccent?: () => void
+  /** Drops the divider that separates these rows from content above them —
+   *  set when the rows ARE the whole panel (StateColorsSelect). */
+  bare?: boolean
 }) {
-  const rows: { role: 'error' | 'warning' | 'success' | 'info'; label: string; value: string }[] = [
+  const rows: { role: IntentRole; label: string; value: string }[] = [
+    ...(neutral ? [{ role: 'neutral' as const, label: 'Neutral', value: neutral }] : []),
     { role: 'error',   label: 'Error',   value: error },
     { role: 'success', label: 'Success', value: success },
     { role: 'warning', label: 'Warning', value: warning },
     { role: 'info',    label: 'Info',    value: info },
   ]
   return (
-    <div className="mt-1 border-t border-line pt-1.5">
+    <div className={bare ? '' : 'mt-1 border-t border-line pt-1.5'}>
       <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1">
         <span className="text-[11px] font-semibold text-fg">State colors</span>
         {onMatchAccent && (
@@ -495,6 +508,120 @@ export function StateColorRows({
       {rows.map((r) => (
         <StateColorRow key={r.role} role={r.role} label={r.label} value={r.value} onChange={(hex) => onChange(r.role, hex)} />
       ))}
+    </div>
+  )
+}
+
+// ── Popover placement ───────────────────────────────────────────────────────
+// Panels carrying a ColorPickerPanel are ~540px — taller than the room under a
+// trigger sitting low on the page, which is how "Add color family" ended up
+// with its primary button below the fold. Measure on open, flip above when
+// there's more room there, and cap the panel to the space that actually exists
+// (the caller scrolls its body inside the remainder).
+export function usePopoverPlacement(
+  anchor: RefObject<HTMLElement | null>,
+  open: unknown,
+  { min = 240, max = 520, prefer = 320 }: { min?: number; max?: number; prefer?: number } = {},
+) {
+  const [place, setPlace] = useState<{ up: boolean; max: number }>({ up: false, max })
+  useEffect(() => {
+    if (!open) return
+    const measure = () => {
+      const r = anchor.current?.getBoundingClientRect()
+      if (!r) return
+      const below = window.innerHeight - r.bottom - 16
+      const above = r.top - 16
+      const up = below < prefer && above > below
+      setPlace({ up, max: Math.max(min, Math.min(max, up ? above : below)) })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+  return place
+}
+
+// ── State Colors select ─────────────────────────────────────────────────────
+// A ColorSelect-shaped trigger that owns FOUR values instead of one, so it
+// can't reuse ColorSelect (which edits a single hex). It used to be the
+// "Background & State Colors" control, but the page background is now DERIVED
+// from the base (see `backgroundFromBase`) — so the background swatch is gone
+// and what's left is exactly the four status colors.
+export function StateColorsSelect({
+  neutral, error, warning, success, info, onChange, onMatchAccent, label, panelClassName,
+}: {
+  neutral?: string
+  error: string; warning: string; success: string; info: string
+  onChange: (role: IntentRole, hex: string) => void
+  onMatchAccent?: () => void
+  label?: string
+  panelClassName?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const swatches = [
+    ...(neutral ? [{ hex: neutral, label: 'Neutral' }] : []),
+    { hex: error, label: 'Error' },
+    { hex: success, label: 'Success' },
+    { hex: warning, label: 'Warning' },
+    { hex: info, label: 'Info' },
+  ]
+
+  return (
+    <div className="flex flex-col gap-1.5 min-w-0">
+      {label && <span className="text-xs text-fg-muted">{label}</span>}
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label="State colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left"
+        >
+          <span className="flex-1 min-w-0 flex items-center gap-1.5">
+            {swatches.map((s) => (
+              <span key={s.label} className={SWATCH} style={{ backgroundColor: s.hex }} title={`${s.label} — ${s.hex}`} />
+            ))}
+          </span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.12 }}
+              className={`absolute z-30 mt-1.5 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1.5 ${panelClassName ?? 'w-full min-w-[17rem] max-h-[360px]'}`}
+            >
+              <StateColorRows
+                bare
+                neutral={neutral}
+                error={error}
+                warning={warning}
+                success={success}
+                info={info}
+                onChange={onChange}
+                onMatchAccent={onMatchAccent}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
