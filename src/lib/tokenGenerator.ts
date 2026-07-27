@@ -11,7 +11,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 // v2: primitive color families renamed brand→accent, gray→neutral.
 // v3: semantic token KEYS renamed to a readable taxonomy (bg-primary → surface-0,
 //     bg-accent-solid → action-primary, fg-* → icon-*, text-*_on-accent → text-on-brand-*).
-export const TOKEN_SCHEMA_VERSION = 3
+export const TOKEN_SCHEMA_VERSION = 4
 
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
@@ -50,39 +50,59 @@ export function generateTokenJSON() {
       : {}),
   }
 
-  // Dark-mode neutral ramp — dark-theme gray semantics resolve from it (see
-  // sourceScaleFor), so it must ship as primitives too, otherwise the Figma
-  // plugin has nothing to alias dark neutrals to. It's now generated from the
-  // neutral against `darkBackground` rather than a fixed constant.
+  // Dark-appearance ramps — EVERY family ships both scales (the Radix model),
+  // because dark-theme semantics resolve from the dark twin (see
+  // sourceScaleFor). Without them the plugin has nothing to alias a dark brand
+  // tint to and would fall back to a loose hex.
   const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
   const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
-    ([t, kind]) => kind === 'dark' && store.themes[t] && (store.themeSources[t]?.gray ?? 'neutral') === 'neutral',
+    ([t, kind]) => kind === 'dark' && store.themes[t],
   ) || Boolean(store.themes.dark)
   if (hasDarkTheme) {
-    Object.assign(primitive, flattenScale('neutral-dark', grayDarkScale, colorNaming))
+    const dark: [string, Record<number, string> | undefined][] = [
+      ['neutral-dark', grayDarkScale],
+      ['accent-dark', store.primaryDarkScale],
+      ['error-dark', store.errorDarkScale],
+      ['warning-dark', store.warningDarkScale],
+      ['success-dark', store.successDarkScale],
+      ['info-dark', store.infoDarkScale],
+    ]
+    for (const [name, scale] of dark) {
+      if (scale && Object.keys(scale).length) Object.assign(primitive, flattenScale(name, scale, colorNaming))
+    }
   }
 
-  // Custom color families adopt the same prefixed structure (teal-1 … teal-12).
+  // Custom color families adopt the same prefixed structure (teal-1 … teal-12),
+  // dark twin included.
   store.customColors.forEach((c) => {
     Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
+    if (hasDarkTheme && c.darkScale && Object.keys(c.darkScale).length) {
+      Object.assign(primitive, flattenScale(`${c.key}-dark`, c.darkScale, colorNaming))
+    }
   })
 
-  // Alpha twins (Radix custom-palette architecture): for every light-appearance
-  // ramp, the overlay color that reproduces each solid step when composited
-  // over the page background (#rrggbbaa). Background-dependent by construction
-  // — which is why `pageBackground` ships alongside as `colors.background`.
+  // Alpha twins (Radix custom-palette architecture): the overlay colour that
+  // reproduces each solid step when composited over its page — solved from
+  // `solid = α·overlay + (1−α)·page` and verified to rebuild the solid exactly.
+  // Background-dependent by construction, and therefore per appearance: a light
+  // ramp layers black over the light page, a dark ramp layers white over the
+  // dark one. Hence both `*-a*` and `*-dark-a*`.
   const primitiveAlpha: Record<string, string> = {}
   const alphaOf = (name: string, scale: Record<number, string>) => {
     if (!Object.keys(scale).length) return
-    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground), colorNaming))
+    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground, 'light'), colorNaming))
   }
-  alphaOf('accent', store.primaryScale)
-  alphaOf('neutral', store.grayLightScale)
-  alphaOf('error', store.errorScale)
-  alphaOf('warning', store.warningScale)
-  alphaOf('success', store.successScale)
-  alphaOf('info', store.infoScale)
-  store.customColors.forEach((c) => alphaOf(c.key, c.scale))
+  const alphaDarkOf = (name: string, scale?: Record<number, string>) => {
+    if (!hasDarkTheme || !scale || !Object.keys(scale).length) return
+    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, store.darkBackground, 'dark'), colorNaming))
+  }
+  alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
+  alphaOf('neutral', store.grayLightScale); alphaDarkOf('neutral', grayDarkScale)
+  alphaOf('error', store.errorScale);      alphaDarkOf('error', store.errorDarkScale)
+  alphaOf('warning', store.warningScale);  alphaDarkOf('warning', store.warningDarkScale)
+  alphaOf('success', store.successScale);  alphaDarkOf('success', store.successDarkScale)
+  alphaOf('info', store.infoScale);        alphaDarkOf('info', store.infoDarkScale)
+  store.customColors.forEach((c) => { alphaOf(c.key, c.scale); alphaDarkOf(c.key, c.darkScale) })
 
   // No per-theme namespaced ramps any more: a theme REFERENCES a family, and
   // every family already shipped above under its own key. The theme's semantics
@@ -104,6 +124,15 @@ export function generateTokenJSON() {
   const globalScales: GlobalScales = {
     gray:     store.grayLightScale,
     grayDark: grayDarkScale,
+    // Dark twins — a dark theme resolves every family from these.
+    dark: {
+      gray:    grayDarkScale,
+      brand:   store.primaryDarkScale,
+      error:   store.errorDarkScale,
+      warning: store.warningDarkScale,
+      success: store.successDarkScale,
+      info:    store.infoDarkScale,
+    },
     brand:    store.primaryScale,
     error:    store.errorScale,
     warning:  store.warningScale,

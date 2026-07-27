@@ -307,6 +307,8 @@ export type ArchTokenView = {
   key: string
   light: ArchTokenValue
   dark: ArchTokenValue
+  /** Which modes the user re-pointed — drives the "edited" affordance. */
+  edited?: { light: boolean; dark: boolean }
   /** Vibrancy labels only: the opaque WCAG fallback alias, per mode — shown as
    *  a badge so the safety net for missing backdrop-filter stays visible. */
   fallback?: { light: ArchTokenValue; dark: ArchTokenValue }
@@ -346,10 +348,41 @@ const pairViews = (
     dark: refToView(dark[key] ?? '', look),
   }))
 
+/** Edits applied over a projection: `category.token` → mode → primitive ref. */
+export type ArchOverrides = Record<string, { light?: string; dark?: string }>
+
+/**
+ * Re-points a projected token at whatever primitive the user chose. The value
+ * is still a REF, so an edited token resolves through the ramps exactly like an
+ * unedited one — the projection defines the schema, the override only says
+ * which primitive a slot reads.
+ */
+function applyOverrides(
+  categories: ArchCategoryView[],
+  overrides: ArchOverrides,
+  look: (fam: string, tone: number) => string | undefined,
+): ArchCategoryView[] {
+  if (!Object.keys(overrides).length) return categories
+  return categories.map((c) => ({
+    ...c,
+    tokens: c.tokens.map((tk) => {
+      const ov = overrides[`${c.key}.${tk.key}`]
+      if (!ov) return tk
+      return {
+        ...tk,
+        light: ov.light ? refToView(ov.light, look) : tk.light,
+        dark: ov.dark ? refToView(ov.dark, look) : tk.dark,
+        edited: { light: Boolean(ov.light), dark: Boolean(ov.dark) },
+      }
+    }),
+  }))
+}
+
 export function buildArchitectureView(
   kind: SemanticArchitecture,
   input: ProjectionInput,
   errorSeed: string,
+  overrides: ArchOverrides = {},
 ): ArchitectureView | null {
   if (kind === 'flat') return null
 
@@ -373,7 +406,8 @@ export function buildArchitectureView(
         dark: refToView(v.dark, look),
       })),
     }))
-    return { categories, total: categories.reduce((n, c) => n + c.tokens.length, 0) }
+    const edited = applyOverrides(categories, overrides, look)
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0) }
   }
 
   if (kind === 'vibrancy') {
@@ -397,7 +431,8 @@ export function buildArchitectureView(
       { key: 'separators', label: 'Separators', description: 'Hairlines — alpha default + opaque twin', tokens: pairViews(Object.keys(v.light.separators), v.light.separators, v.dark.separators, look) },
       { key: 'materials', label: 'Materials', description: 'Translucent panels — pair with backdrop blur', tokens: pairViews(Object.keys(v.light.materials), v.light.materials, v.dark.materials, look) },
     ]
-    return { categories, total: categories.reduce((n, c) => n + c.tokens.length, 0) }
+    const edited = applyOverrides(categories, overrides, look)
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0) }
   }
 
   // tonal
@@ -421,7 +456,8 @@ export function buildArchitectureView(
       dark: refToView(v.dark, look),
     })),
   }))
-  return { categories, total: categories.reduce((n, c) => n + c.tokens.length, 0) }
+  const editedTonal = applyOverrides(categories, overrides, look)
+  return { categories: editedTonal, total: editedTonal.reduce((n, c) => n + c.tokens.length, 0) }
 }
 
 // ── Export dispatcher ────────────────────────────────────────────────────────
@@ -431,10 +467,21 @@ export function projectArchitecture(
   kind: SemanticArchitecture,
   input: ProjectionInput,
   errorSeed: string,
+  overrides: ArchOverrides = {},
 ): Record<string, unknown> | null {
   switch (kind) {
-    case 'categorical':
-      return { kind, tokens: projectCategorical(input) }
+    case 'categorical': {
+      const tokens = projectCategorical(input)
+      // Re-point any edited slot so tokens.json matches what the table shows.
+      for (const [id, ov] of Object.entries(overrides)) {
+        const [group, key] = id.split('.')
+        const slot = tokens[group]?.[key]
+        if (!slot) continue
+        if (ov.light) slot.light = ov.light
+        if (ov.dark) slot.dark = ov.dark
+      }
+      return { kind, tokens }
+    }
     case 'vibrancy':
       return { kind, tokens: projectVibrancy(input) }
     case 'tonal':

@@ -103,17 +103,25 @@ another pill).
   cells (row names are the EXACT exported token names — `accent-1`…, matching
   tokenGenerator's flattenScale prefixes and the semantic sources' "accent"
   label), eye toggles on the column headers driving `previewTheme`, a per-row
-  inline `ColorPickerPanel`, and "+ Add" creating a `customColors` family — only
-  Neutral has a real dark twin (`grayDarkScale`), colored ramps share one scale;
-  the **dark column shows the dark-theme READING of the ramp** (inverted, row N
-  ↔ tone 13−N, matching how `recDarkTone` resolves Alias/Semantics' dark
-  column) · **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
+  inline `ColorPickerPanel`, and "+ Add" creating a `customColors` family — EVERY
+  family carries both a light ramp and a dark twin (Radix two-scale model), and
+  each column edits its own; **no inversion anywhere**, step N means the same
+  role in both · **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
   **architecture picker** — `ArchitecturePicker`: radio cards for Flat /
   Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
   the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
   view from its projection via `buildArchitectureView` — sidebar groups,
-  counts and a read-only light/dark table mirror the exported schema exactly,
-  and switching architectures resets category/search state) ·
+  counts and a light/dark table mirror the exported schema exactly. The table is
+  **editable in every architecture**, not just Flat, and through the SAME
+  affordance: the row's sliders icon expands it (description + CSS var + a ramp
+  per mode with the current tone ringed), exactly like the flat matrix — one
+  interaction to learn, not two. A family row above each ramp re-points the slot
+  to another family. Edits are stored as REFs in
+  `architectureOverrides[arch]['category.token'][mode]` so an edited token still
+  resolves through the ramps. "Reset to schema" clears it; the export applies the
+  same overrides, so tokens.json can't disagree with the table. Cells whose value
+  isn't a ref (vibrancy alphas, blur) stay read-only — there's no primitive to
+  swap. Switching architectures resets category/search state) ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Share + Kits in the Generator header cover the same
@@ -262,7 +270,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 39`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 40`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Tall popovers → `usePopoverPlacement`** (`colorControls`). A popover carrying
 > `ColorPickerPanel` (HSV + hue + alpha + Palette + Saved) is ~540px — taller than the room
@@ -318,6 +326,44 @@ Store uses `persist` middleware with `version: 39`. If you add fields, bump the 
 > accent↔base link is on, an accent change moves the base and therefore the page too;
 > unlinked, the accent leaves the page alone. Don't reintroduce an independent background
 > input — that's what let the page and the ramps grown against it drift apart.
+
+> **Alpha twins are solved, not eyeballed.** `alphaColorOver` inverts alpha compositing
+> — `α = (solid − page)/(overlay − page)`, max across channels, then the overlay is
+> re-solved per channel at that α so the TINT survives (pure white/black would wash the
+> hue out). The overlay is fixed by appearance: white over a dark page, black over a light
+> one. Two gotchas the implementation handles and a rewrite must keep:
+> - **α rounds UP** to 2 decimals. Rounding down demands an overlay outside 0–255, which
+>   clamps and silently breaks the reconstruction.
+> - **α climbs until every channel is in gamut.** A solid whose blue dips BELOW a dark page
+>   can't be reached by white at the max-channel α; the loop raises α (α = 1 always works).
+>   Without it, red ramps on a blue-ish dark page rebuilt 6/255 off.
+> Both appearances ship (`accent-a*` and `accent-dark-a*`) because an alpha value only
+> means anything relative to the page it was solved against.
+
+> **Ask what a colour IS, don't assume.** "+ Add family" carries a Light · Dark · Alpha
+> choice (`SeedKind`), preselected by `detectSeedKind` and overridable. A **dark** seed
+> anchors the dark ramp; an **alpha** seed is composited back to the solid it renders as
+> (`solidFromSeed`) before any ramp is built. The detection threshold is deliberately near
+> the dark page (`darkL + 0.18`), not the midpoint between pages — a brand solid is
+> mid-lightness by nature and the midpoint misreads it as dark.
+
+> **Radix two-scale model — every family ships light AND dark.** Steps are ordered by
+> ROLE, not lightness, and mean the same thing in both appearances:
+> `1–2` app background · `3–5` component (normal/hover/active) · `6–8` border
+> (subtle/normal/hover) · `9` **SOLID = the base hex verbatim, the one hard value** ·
+> `10` solid hover · `11` low-contrast text (≈4.5:1, WCAG AA) · `12` high-contrast text.
+> The two appearances are mirror images: light runs page→base→dark text, dark runs
+> page→base→light text. Consequences:
+> - **Step 1 IS the page**, emitted verbatim — a brand background like `#111522` round-trips
+>   into `neutral-1` (dark) exactly.
+> - **Steps 11–12 are defined by CONTRAST**, not a lightness offset (`lightnessForContrast`
+>   binary-searches OKLCH L, then nudges until the 8-bit hex itself clears the target).
+> - **`recDarkTone` is the IDENTITY** now: a role reads the same step in both themes and
+>   gets the value tuned for that page. Only deliberately-inverted roles (`*-inverse`,
+>   `surface-overlay`) mirror. The old tone-remapping was faking a dark ramp that didn't
+>   exist — don't reintroduce it.
+> - **Nothing inverts for display.** The families table and quick-bar ramps read the dark
+>   ramp at the SAME step. An inversion here means a dark ramp is missing somewhere.
 
 > **Light vs dark ramps.** A ramp always runs 1 (lightest) → 12 (darkest); what differs is **which end grows out of the page**. `generateColorScale(…, appearance: 'light')` anchors tone 1 to `pageBackground`; `generateDarkColorScale()` anchors tone **12** to `darkBackground` *and* re-derives the ramp's base (tone 9) as a dark neutral, so tones 9–12 are the dark surfaces instead of mid-grays. Gray is the **only** ramp with a dark twin — colored ramps (brand/status) keep their hue and just shift tone via `recDarkTone`. Anything that builds a `GlobalScales` **must pass `grayDark`**: it's optional in the type, and omitting it silently falls back to the legacy constant — which would make Step3's resync treat every dark gray as stale and overwrite the generated ramp.
 
@@ -386,7 +432,7 @@ interface ComponentDef {
 }
 ```
 
-`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`) versions the contract the plugin checks — bump it only on a breaking payload change. The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **4**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
 
 ---
 

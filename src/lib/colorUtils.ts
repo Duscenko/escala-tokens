@@ -44,6 +44,50 @@ export const BASE_TONE = 9
  */
 export type ScaleAppearance = 'light' | 'dark'
 
+/**
+ * What a colour the user hands us actually IS, so the generator knows how to
+ * build from it rather than assuming light-mode solid:
+ *
+ *  · 'light' — the light-theme solid (step 9 of the light ramp). Dark derived.
+ *  · 'dark'  — the dark-theme solid. The light ramp is derived from it instead.
+ *  · 'alpha' — a translucent value, not a solid. It's composited over the page
+ *              first to recover the solid it renders as, then treated normally.
+ */
+export type SeedKind = 'light' | 'dark' | 'alpha'
+
+/**
+ * Best guess at what a pasted colour is, used to preselect the choice rather
+ * than assume. An 8-digit hex carrying real transparency is an alpha value; a
+ * hex darker than the midpoint between the two pages reads as a dark-theme
+ * value; otherwise light.
+ */
+export function detectSeedKind(hex: string, lightBg = '#ffffff', darkBg = '#111111'): SeedKind {
+  try {
+    const c = chroma(hex)
+    if (c.alpha() < 0.99) return 'alpha'
+    const l = c.oklch()[0]
+    // Only a value sitting NEAR the dark page reads as a dark-theme seed. The
+    // midpoint between the two pages is far too eager — a brand solid is
+    // mid-lightness by nature (#7f56d9 is L .52) and would be misread as dark.
+    return l < chroma(darkBg).oklch()[0] + 0.18 ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
+/** The solid a seed represents, resolving an alpha value against its page. */
+export function solidFromSeed(hex: string, kind: SeedKind, lightBg: string, darkBg: string): string {
+  if (kind !== 'alpha') return hex
+  try {
+    const c = chroma(hex)
+    // Composite over whichever page the overlay was sampled against.
+    const page = c.oklch()[0] < 0.5 ? darkBg : lightBg
+    return compositeOver(hex, page)
+  } catch {
+    return hex
+  }
+}
+
 // Easing exponents for the two halves. The light run (1–8) uses a square-root
 // ease so tones rush toward white and the border band (6–8) stays pastel —
 // linear interpolation is what made borders look heavy. The dark run (10–12)
@@ -56,6 +100,72 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n))
 }
 
+// ── Radix role model ─────────────────────────────────────────────────────────
+// Radix scales are ordered by ROLE, not by lightness. Every step has a fixed
+// job and the colour is tuned to satisfy it — which is why a scale is never a
+// linear white→base→black sweep:
+//
+//   1–2   app background        (near-page, hue kept, chroma a whisper)
+//   3–5   component background  (normal / hover / active)
+//   6–8   border               (subtle / normal / hover)
+//   9     SOLID — the base hex, verbatim. The one hard value.
+//   10    solid hover          (a step further from the page than 9)
+//   11    low-contrast text    (≈4.5:1 on the page — WCAG AA)
+//   12    high-contrast text   (near-max contrast)
+//
+// The two appearances are mirror images: light runs page(light)→base→dark text,
+// dark runs page(dark)→base→light text. Both keep step numbers meaning the same
+// thing, so a semantic role reads the SAME step in either theme and simply gets
+// the value tuned for that page.
+export const STEP_ROLES: string[] = [
+  'App background', 'Subtle background',
+  'Component background', 'Component hover', 'Component active',
+  'Subtle border', 'Border', 'Border hover',
+  'Solid', 'Solid hover',
+  'Low-contrast text', 'High-contrast text',
+]
+
+// How far each of steps 1–8 sits between the page and the solid. Front-loaded
+// so 1–2 hug the page (backgrounds must read as "the page, tinted") and the
+// border band 6–8 lands mid-way rather than nearly at the solid.
+const BG_WEIGHTS = [0, 0.03, 0.08, 0.16, 0.25, 0.35, 0.49, 0.63, 0.79]
+
+/**
+ * Lightness (OKLCH) that hits `target` WCAG contrast against `bg`, searched in
+ * the direction that moves AWAY from the page: darker for a light theme,
+ * lighter for a dark one. Steps 11–12 are defined by their contrast, not by an
+ * arbitrary lightness offset — that's what makes text legible on a tinted or
+ * near-black page instead of only on pure white.
+ */
+function lightnessForContrast(target: number, hue: number, chromaC: number, bg: string, towardDark: boolean): string {
+  const bgL = chroma(bg).oklch()[0]
+  let lo = towardDark ? 0 : bgL
+  let hi = towardDark ? bgL : 1
+  let best = chroma.oklch(towardDark ? 0 : 1, chromaC, hue).hex()
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2
+    const candidate = chroma.oklch(mid, chromaC, hue)
+    const ratio = chroma.contrast(candidate, bg)
+    if (ratio >= target) {
+      best = candidate.hex()
+      // Enough contrast — ease back toward the page for the subtler value.
+      if (towardDark) lo = mid
+      else hi = mid
+    } else if (towardDark) hi = mid
+    else lo = mid
+  }
+  // The search runs in continuous OKLCH but the result is quantised to an 8-bit
+  // hex, which can shave the ratio just under target (4.49 instead of 4.50).
+  // Nudge until the ACTUAL exported value clears it — the token has to pass,
+  // not the float behind it.
+  let guardL = chroma(best).oklch()[0]
+  for (let i = 0; i < 12 && chroma.contrast(best, bg) < target; i++) {
+    guardL = clamp01(guardL + (towardDark ? -0.01 : 0.01))
+    best = chroma.oklch(guardL, chromaC, hue).hex()
+  }
+  return best
+}
+
 function buildScale(
   baseHex: string,
   spec: AlgoSpec,
@@ -65,82 +175,60 @@ function buildScale(
 ): string[] {
   const [baseL, baseC, baseHraw] = chroma(baseHex).oklch()
   const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw
-  // Widen/narrow each half-range by the contrast shift.
-  let lightL = clamp01(baseL + (spec.lightL - baseL) * (1 + shift))
-  let darkL = clamp01(baseL - (baseL - spec.darkL) * (1 + shift))
 
-  // Radix custom-palette behavior: every ramp grows out of the page background.
-  // Which END the background anchors depends on the ramp's appearance:
-  //
-  //  • 'light' (default) — tone 1 anchors to the background's OKLCH lightness.
-  //    A tinted/cream page pulls the whole light run down with it, so
-  //    backgrounds and subtle fills sit ON the page instead of floating above
-  //    it. Backgrounds lighter than the spec's own extreme (pure white) change
-  //    nothing, and dark backgrounds are ignored — this ramp is light-appearance.
-  //
-  //  • 'dark' — tone 12 anchors to the background instead. Dark themes read the
-  //    gray hierarchy inverted (recDarkTone: surface-0 → tone 12), so tone 12 IS
-  //    the dark page. Anchoring it here is what makes a dark background actually
-  //    drive the dark surfaces. A light hex is meaningless here, so it's ignored.
-  //
-  // The anchors double as blend targets for their band, so the tones nearest the
-  // page read as subtle washes sitting on it rather than saturated fills.
-  let surfaceAnchor = '#ffffff'
-  let deepAnchor: string | null = null
+  // The page this ramp is built to sit on. Steps 1–8 grow OUT of it and steps
+  // 11–12 are contrast-tuned AGAINST it, so it anchors both ends of the scale.
+  const fallbackBg = appearance === 'dark' ? '#111111' : '#ffffff'
+  let page = fallbackBg
   if (background) {
     try {
       const bgL = chroma(background).oklch()[0]
-      if (appearance === 'dark') {
-        if (bgL <= 0.5) {
-          darkL = clamp01(bgL)
-          deepAnchor = chroma(background).hex()
-        }
-      } else if (bgL > 0.5) {
-        lightL = Math.min(lightL, clamp01(bgL))
-        surfaceAnchor = chroma(background).hex()
-      }
-    } catch { /* invalid background — ignore */ }
+      // Ignore a page that contradicts the appearance (a white "dark" page).
+      if (appearance === 'dark' ? bgL <= 0.5 : bgL > 0.5) page = chroma(background).hex()
+    } catch { /* invalid background — keep the fallback */ }
   }
+  const pageL = chroma(page).oklch()[0]
+  // Light themes put text BELOW the page in lightness; dark themes above it.
+  const towardDark = appearance === 'light'
+  const dir = towardDark ? -1 : 1
 
   const out: string[] = []
   for (let i = 1; i <= TONES; i++) {
-    if (i === BASE_TONE) {
-      out.push(chroma(baseHex).hex())
+    // ── 9: the solid. The base hex verbatim — the one hard value in the scale.
+    if (i === BASE_TONE) { out.push(chroma(baseHex).hex()); continue }
+
+    // ── 1–8: backgrounds, component fills and borders. Interpolate from the
+    // page toward the solid, keeping the hue and letting chroma climb from a
+    // whisper (1–2 must read as the page, tinted) to nearly the solid at 8.
+    if (i < BASE_TONE) {
+      // Step 1 IS the app background — the page hex verbatim, so a brand
+      // background like #111522 round-trips into --neutral-1 exactly.
+      if (i === 1) { out.push(page); continue }
+      const w = BG_WEIGHTS[i]
+      const L = pageL + (baseL - pageL) * w
+      // `lightCmul` keeps each algorithm's feel at the page end: Radix wants
+      // almost no chroma in 1–2, saturation-led ramps want more.
+      const C = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15))
+      const H = baseH + (spec.hueShift?.(-(1 - w)) ?? 0)
+      out.push(chroma.oklch(clamp01(L), Math.max(0, C), H).hex())
       continue
     }
-    let L: number
-    let C: number
-    let frac: number
-    if (i < BASE_TONE) {
-      const f = ((BASE_TONE - i) / (BASE_TONE - 1)) ** LIGHT_EASE // 0 → 1 toward the light end
-      L = baseL + (lightL - baseL) * f
-      C = baseC * (1 + (spec.lightCmul - 1) * f)
-      frac = -f
-    } else {
-      const f = ((i - BASE_TONE) / (TONES - BASE_TONE)) ** DARK_EASE // 0 → 1 toward the dark end
-      L = baseL + (darkL - baseL) * f
-      C = baseC * (1 + (spec.darkCmul - 1) * f)
-      frac = f
+
+    // ── 10: solid hover — one step further from the page than the solid.
+    if (i === BASE_TONE + 1) {
+      const step = 0.045 * (1 + shift)
+      const H = baseH + (spec.hueShift?.(0.2) ?? 0)
+      out.push(chroma.oklch(clamp01(baseL + dir * step), baseC * spec.darkCmul, H).hex())
+      continue
     }
-    const H = baseH + (spec.hueShift?.(frac) ?? 0)
-    let color = chroma.oklch(L, C, H)
-    // Surface band (Radix taxonomy: 1–2 backgrounds, tapering into 3): ease
-    // the tone into the page background so surface-0/1 stay subtle regardless
-    // of the algorithm's own light-end chroma. Weights ≈ .85/.54/.27 → 0.
-    if (i < BASE_TONE) {
-      const f = ((BASE_TONE - i) / (BASE_TONE - 1)) ** LIGHT_EASE
-      const pull = Math.max(0, (f - 0.75) / 0.25)
-      if (pull > 0) color = chroma.mix(color, surfaceAnchor, Math.pow(pull, 1.5) * 0.85, 'oklab')
-    }
-    // Deep band (tones 10–12) — the mirror of the surface band, for dark ramps.
-    // These are what a dark theme reads as its surfaces (12 = page, 11 = card,
-    // 10 = sunken), so ease them into the dark page background the same way.
-    if (i > BASE_TONE && deepAnchor) {
-      const f = ((i - BASE_TONE) / (TONES - BASE_TONE)) ** DARK_EASE
-      const pull = Math.max(0, (f - 0.4) / 0.6)
-      if (pull > 0) color = chroma.mix(color, deepAnchor, Math.pow(pull, 1.5) * 0.85, 'oklab')
-    }
-    out.push(color.hex())
+
+    // ── 11–12: text, defined by CONTRAST rather than a lightness offset, so it
+    // stays legible on a tinted or near-black page instead of only on white.
+    // 11 targets WCAG AA (4.5:1); 12 goes near-max for high-contrast copy.
+    const target = (i === TONES ? 12 : 4.5) * (1 + shift * 0.25)
+    const C = baseC * (i === TONES ? 0.42 : 0.72)
+    const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0)
+    out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark))
   }
   return out
 }
@@ -232,6 +320,32 @@ export function backgroundFromBase(baseHex: string, appearance: ScaleAppearance 
 }
 
 /**
+ * Dark-appearance ramp for a COLOURED family (brand / status / custom) — the
+ * Radix model: every colour ships two scales, and the dark one is its own set
+ * of values rather than the light ramp re-read. Same step meanings in both
+ * (`accent-25` is the subtlest background either way), so the base stays pinned
+ * at tone 9 and only the ends move: tones 10–12 grow out of `darkBackground`
+ * instead of easing toward a light page.
+ *
+ * Why it matters: a role like `surface-brand-subtle` resolves to tone 11 in
+ * dark (recDarkTone: subtle tints deepen). Read from the LIGHT ramp that's a
+ * dark brand tone mixed toward white; read from this one it's the same hue
+ * sitting on the actual dark page — which is what the theme renders on.
+ *
+ * Unlike `generateDarkColorScale` the base is NOT re-derived: a neutral needs
+ * its mid-gray pulled dark or tones 9–10 read as blown-out surfaces, but a
+ * brand colour must stay recognisably itself.
+ */
+export function generateFamilyDarkScale(
+  baseHex: string,
+  algorithm: ColorAlgorithm = 'default',
+  contrastShift = 0,
+  darkBackground?: string,
+): Record<number, string> {
+  return generateColorScale(baseHex, algorithm, contrastShift, darkBackground, 'dark')
+}
+
+/**
  * Dark-appearance neutral ramp — the ramp gray roles resolve from in dark
  * themes, where recDarkTone inverts the hierarchy (surface-0 → tone 12,
  * surface-1 → 11, surface-2 → 10, text-primary → 1).
@@ -258,10 +372,11 @@ export function generateDarkColorScale(
   try {
     const [, nC, nHraw] = chroma(neutralHex).oklch()
     const nH = Number.isNaN(nHraw) ? 0 : nHraw
-    const bgL = darkBackground ? chroma(darkBackground).oklch()[0] : 0.17
-    // Base sits ~0.17 L above the page — enough separation for the elevated
-    // surfaces (9–11) to step up from it without ever reaching mid-gray.
-    const baseL = Math.max(0.25, Math.min(0.45, bgL + 0.17))
+    // Step 9 is the SOLID, so a dark neutral needs a MID gray there — steps
+    // 10–12 climb to light text above it and 1–8 descend to the page below.
+    // Deriving it near the page (the old behaviour) left the solid unusable
+    // and squashed the whole upper half of the ramp.
+    const baseL = 0.5
     base = chroma.oklch(baseL, nC * 0.5, nH).hex()
   } catch { /* invalid neutral — fall back to the raw hex */ }
   return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark')
@@ -275,26 +390,77 @@ export function generateDarkColorScale(
 // only exist relative to a declared page background, which is why the
 // background is a primitive input here, not a cosmetic choice.
 
-/** Overlay color (#rrggbbaa) that reproduces `targetHex` over `backgroundHex`. */
-export function alphaColorOver(targetHex: string, backgroundHex: string, targetAlpha?: number): string {
+/**
+ * The translucent overlay that reproduces `targetHex` when composited over
+ * `backgroundHex` — alpha compositing solved for the overlay:
+ *
+ *     solid = α·overlay + (1−α)·background          (per channel)
+ *     α     = (solid − background) / (overlay − background)
+ *
+ * The overlay direction is fixed BY APPEARANCE, not per colour: a dark theme
+ * layers white over its page, a light theme layers black over its page. α is the
+ * MAX of the three channel solutions so no channel overshoots, then the overlay
+ * is re-solved per channel at that α:
+ *
+ *     overlay = (solid − (1−α)·background) / α
+ *
+ * That last step is what preserves the tint — pure white/black at the same α
+ * would wash the hue out. Step 1 of a scale IS the page, so it lands on α = 0.
+ */
+export function alphaColorOver(
+  targetHex: string,
+  backgroundHex: string,
+  appearance: ScaleAppearance = 'light',
+): string {
   const [tr, tg, tb] = chroma(targetHex).rgb()
   const [br, bg, bb] = chroma(backgroundHex).rgb()
-  // Overlay toward white if any channel must lighten the background, else black.
-  const desired = tr > br || tg > bg || tb > bb ? 255 : 0
-  const alphaFor = (t: number, b: number) => (desired === b ? 0 : (t - b) / (desired - b))
-  const a = targetAlpha ?? Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb))
-  const A = Math.min(1, Math.max(0, Math.ceil(a * 255) / 255))
-  if (A === 0) return desired === 255 ? '#ffffff00' : '#00000000'
-  const ch = (t: number, b: number) => Math.min(255, Math.max(0, Math.round((t - b * (1 - A)) / A)))
-  return chroma.rgb(ch(tr, br), ch(tg, bg), ch(tb, bb)).alpha(A).hex()
+  // Dark themes lighten with white; light themes darken with black.
+  const overlay = appearance === 'dark' ? 255 : 0
+
+  const alphaFor = (t: number, b: number) => (overlay === b ? 0 : (t - b) / (overlay - b))
+  const raw = Math.max(alphaFor(tr, br), alphaFor(tg, bg), alphaFor(tb, bb))
+  // Two decimals, rounded UP: rounding down would demand an overlay outside
+  // 0–255 to hit the target, which then clamps and breaks the reconstruction.
+  let a = Math.min(1, Math.max(0, Math.ceil(raw * 100) / 100))
+  if (a <= 0) return chroma.rgb(overlay, overlay, overlay).alpha(0).hex()
+
+  const exact = (t: number, b: number, alpha: number) => (t - (1 - alpha) * b) / alpha
+  const channels: [number, number][] = [[tr, br], [tg, bg], [tb, bb]]
+  // A channel sitting on the far side of the page from the overlay (a solid
+  // whose blue dips BELOW a dark page, layered with white) can't be reached at
+  // the max-channel α — the exact overlay would fall outside 0–255 and clamp,
+  // which is what silently broke the reconstruction. Raise α until every
+  // channel is solvable in gamut; α = 1 always is, so this terminates.
+  while (a < 1 && channels.some(([c, b]) => { const v = exact(c, b, a); return v < -0.5 || v > 255.5 })) {
+    a = Math.min(1, Math.round((a + 0.01) * 100) / 100)
+  }
+  const solve = (c: number, b: number) => Math.min(255, Math.max(0, Math.round(exact(c, b, a))))
+  return chroma.rgb(solve(tr, br), solve(tg, bg), solve(tb, bb)).alpha(a).hex()
 }
 
-/** Alpha twin of a 1–12 solid scale, derived against the page background. */
-export function generateAlphaScale(scale: Record<number, string>, backgroundHex: string): Record<number, string> {
+/**
+ * Composites an overlay back over a background — the inverse of
+ * `alphaColorOver`, used to verify a derived alpha reproduces its solid.
+ */
+export function compositeOver(overlayHex: string, backgroundHex: string): string {
+  const c = chroma(overlayHex)
+  const a = c.alpha()
+  const [orr, og, ob] = c.rgb()
+  const [br, bg, bb] = chroma(backgroundHex).rgb()
+  const mix = (o: number, b: number) => Math.round(a * o + (1 - a) * b)
+  return chroma.rgb(mix(orr, br), mix(og, bg), mix(ob, bb)).hex()
+}
+
+/** Alpha twin of a 1–12 solid scale, derived against its own page. */
+export function generateAlphaScale(
+  scale: Record<number, string>,
+  backgroundHex: string,
+  appearance: ScaleAppearance = 'light',
+): Record<number, string> {
   const out: Record<number, string> = {}
   for (const [k, hex] of Object.entries(scale)) {
     if (!hex) continue
-    try { out[Number(k)] = alphaColorOver(hex, backgroundHex) } catch { out[Number(k)] = hex }
+    try { out[Number(k)] = alphaColorOver(hex, backgroundHex, appearance) } catch { out[Number(k)] = hex }
   }
   return out
 }

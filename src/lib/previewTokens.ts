@@ -38,6 +38,15 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   const globalScales: GlobalScales = {
     gray: grayLightScale,
     grayDark: grayDarkScale,
+    // Dark twins — a dark theme resolves every family from these.
+    dark: {
+      gray:    grayDarkScale,
+      brand:   store.primaryDarkScale,
+      error:   store.errorDarkScale,
+      warning: store.warningDarkScale,
+      success: store.successDarkScale,
+      info:    store.infoDarkScale,
+    },
     brand: store.primaryScale,
     error: store.errorScale,
     warning: store.warningScale,

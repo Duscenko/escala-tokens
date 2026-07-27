@@ -12,7 +12,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
-import { NAMING_SCHEMES, BASE_TONE, recommendStateColors, generateColorScale } from '../../lib/colorUtils'
+import {
+  NAMING_SCHEMES, BASE_TONE, recommendStateColors, generateColorScale,
+  generateFamilyDarkScale, detectSeedKind, solidFromSeed, type SeedKind,
+} from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
@@ -104,13 +107,14 @@ export default function ColorPrimitives({
   const store = useDesignStore()
   const {
     primaryColor, primaryScale, setPrimaryScale,
+    primaryDarkScale, setPrimaryDarkScale,
     grayBaseColor, grayLightScale, grayDarkScale, setGrayLightScale, setGrayDarkScale,
-    errorColor, errorScale, setErrorScale,
-    warningColor, warningScale, setWarningScale,
-    successColor, successScale, setSuccessScale,
-    infoColor, infoScale, setInfoScale,
+    errorColor, errorScale, errorDarkScale, setErrorScale, setErrorDarkScale,
+    warningColor, warningScale, warningDarkScale, setWarningScale, setWarningDarkScale,
+    successColor, successScale, successDarkScale, setSuccessScale, setSuccessDarkScale,
+    infoColor, infoScale, infoDarkScale, setInfoScale, setInfoDarkScale,
     customColors, addCustomColor, updateCustomColor, removeCustomColor,
-    pageBackground, themeKinds, themeSources,
+    pageBackground, darkBackground, themeKinds, themeSources,
     colorAlgorithm, colorNaming, contrastShift,
     setColorAlgorithm, setColorNaming, setContrastShift,
   } = store
@@ -130,7 +134,9 @@ export default function ColorPrimitives({
   const pal = resolveThemePalette(themeSources[previewTheme], darkPreview ? 'dark' : 'light', store)
   const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
   const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
-  const brandRamp = pal?.brand ?? primaryScale
+  // Previewing dark shows each family's DARK ramp directly — role-ordered, so
+  // step 9 is the solid in both appearances and needs no re-indexing.
+  const brandRamp = pal?.brand ?? (darkPreview ? primaryDarkScale : primaryScale)
   const neutralRamp = pal?.gray ?? (darkPreview ? grayDarkScale : grayLightScale)
 
   // When ON, the neutral scale auto-derives from the accent. Default ON.
@@ -181,31 +187,35 @@ export default function ColorPrimitives({
   const [expandedTone, setExpandedTone] = useState<number | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
-  // Only the neutral ramp has a dark twin — colored ramps keep their hue across
-  // appearances, so both columns edit the shared scale (the honest model).
+  // EVERY family carries both scales (the Radix two-scale model) — the light
+  // column edits the light ramp, the dark column its own dark twin.
   const families: Family[] = useMemo(() => [
-    { key: 'accent',  label: 'Accent',  tokenPrefix: 'accent',  base: primaryColor,  light: primaryScale,   dark: primaryScale,   setLight: setPrimaryScale,   setDark: setPrimaryScale },
-    { key: 'neutral', label: 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,  setLight: setGrayLightScale, setDark: setGrayDarkScale },
-    { key: 'error',   label: 'Error',   tokenPrefix: 'error',   base: errorColor,    light: errorScale,     dark: errorScale,     setLight: setErrorScale,     setDark: setErrorScale },
-    { key: 'success', label: 'Success', tokenPrefix: 'success', base: successColor,  light: successScale,   dark: successScale,   setLight: setSuccessScale,   setDark: setSuccessScale },
-    { key: 'warning', label: 'Warning', tokenPrefix: 'warning', base: warningColor,  light: warningScale,   dark: warningScale,   setLight: setWarningScale,   setDark: setWarningScale },
-    { key: 'info',    label: 'Info',    tokenPrefix: 'info',    base: infoColor,     light: infoScale,      dark: infoScale,      setLight: setInfoScale,      setDark: setInfoScale },
+    { key: 'accent',  label: 'Accent',  tokenPrefix: 'accent',  base: primaryColor,  light: primaryScale,   dark: primaryDarkScale, setLight: setPrimaryScale,   setDark: setPrimaryDarkScale },
+    { key: 'neutral', label: 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,    setLight: setGrayLightScale, setDark: setGrayDarkScale },
+    { key: 'error',   label: 'Error',   tokenPrefix: 'error',   base: errorColor,    light: errorScale,     dark: errorDarkScale,   setLight: setErrorScale,     setDark: setErrorDarkScale },
+    { key: 'success', label: 'Success', tokenPrefix: 'success', base: successColor,  light: successScale,   dark: successDarkScale, setLight: setSuccessScale,   setDark: setSuccessDarkScale },
+    { key: 'warning', label: 'Warning', tokenPrefix: 'warning', base: warningColor,  light: warningScale,   dark: warningDarkScale, setLight: setWarningScale,   setDark: setWarningDarkScale },
+    { key: 'info',    label: 'Info',    tokenPrefix: 'info',    base: infoColor,     light: infoScale,      dark: infoDarkScale,    setLight: setInfoScale,      setDark: setInfoDarkScale },
     ...customColors.map((c) => ({
       key: `custom-${c.key}`,
       label: c.label,
       tokenPrefix: c.key,
       base: c.base,
       light: c.scale,
-      dark: c.scale,
+      dark: c.darkScale ?? c.scale,
       setLight: (s: ColorScale) => updateCustomColor(c.key, { scale: s }),
-      setDark: (s: ColorScale) => updateCustomColor(c.key, { scale: s }),
+      setDark: (s: ColorScale) => updateCustomColor(c.key, { darkScale: s }),
       customKey: c.key,
     })),
   ], [
     primaryColor, primaryScale, setPrimaryScale,
+    primaryDarkScale, setPrimaryDarkScale,
     grayBaseColor, grayLightScale, grayDarkScale, setGrayLightScale, setGrayDarkScale,
-    errorColor, errorScale, setErrorScale, successColor, successScale, setSuccessScale,
-    warningColor, warningScale, setWarningScale, infoColor, infoScale, setInfoScale,
+    primaryDarkScale, setPrimaryDarkScale,
+    errorColor, errorScale, errorDarkScale, setErrorScale, setErrorDarkScale,
+    successColor, successScale, successDarkScale, setSuccessScale, setSuccessDarkScale,
+    warningColor, warningScale, warningDarkScale, setWarningScale, setWarningDarkScale,
+    infoColor, infoScale, infoDarkScale, setInfoScale, setInfoDarkScale,
     customColors, updateCustomColor,
   ])
 
@@ -295,13 +305,35 @@ export default function ColorPrimitives({
   const addTaken = RESERVED_COLOR_KEYS.includes(addSlug) || customColors.some((c) => c.key === addSlug)
   const canAdd = addName.trim().length > 0 && !addTaken
 
+  // What the pasted colour IS decides how the family is built — see SeedKind.
+  // Detected from the value, but the user owns the call.
+  const detectedKind = useMemo(
+    () => detectSeedKind(addHex, pageBackground, darkBackground),
+    [addHex, pageBackground, darkBackground],
+  )
+  const [seedKind, setSeedKind] = useState<SeedKind | null>(null)
+  const activeSeedKind: SeedKind = seedKind ?? detectedKind
+
   function submitAdd() {
     if (!canAdd) return
+    // An alpha seed is composited back to the solid it renders as; a dark seed
+    // anchors the DARK ramp (step 9) and the light one is derived from it.
+    const solid = solidFromSeed(addHex, activeSeedKind, pageBackground, darkBackground)
     let scale: ColorScale
-    try { scale = generateColorScale(addHex, colorAlgorithm, contrastShift, pageBackground) } catch { return }
-    addCustomColor({ key: addSlug, label: addName.trim(), base: addHex, scale })
+    let darkScale: ColorScale
+    try {
+      if (activeSeedKind === 'dark') {
+        darkScale = generateFamilyDarkScale(solid, colorAlgorithm, contrastShift, darkBackground)
+        scale = generateColorScale(solid, colorAlgorithm, contrastShift, pageBackground)
+      } else {
+        scale = generateColorScale(solid, colorAlgorithm, contrastShift, pageBackground)
+        darkScale = generateFamilyDarkScale(solid, colorAlgorithm, contrastShift, darkBackground)
+      }
+    } catch { return }
+    addCustomColor({ key: addSlug, label: addName.trim(), base: solid, scale, darkScale })
     setActiveFamily(`custom-${addSlug}`)
     setAddName('')
+    setSeedKind(null)
     setAddOpen(false)
   }
 
@@ -420,6 +452,32 @@ export default function ColorPrimitives({
                       {addTaken && (
                         <span className="text-[11px] text-red-500">That name is already in use.</span>
                       )}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[11px] text-fg-muted">This color is my…</span>
+                        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
+                          {(['light', 'dark', 'alpha'] as SeedKind[]).map((k) => (
+                            <button
+                              key={k}
+                              type="button"
+                              onClick={() => setSeedKind(k)}
+                              aria-pressed={activeSeedKind === k}
+                              title={
+                                k === 'light' ? 'Light-theme solid — the dark ramp is derived from it'
+                                : k === 'dark' ? 'Dark-theme solid — anchors the dark ramp instead'
+                                : 'A translucent value — composited over the page to recover its solid'
+                              }
+                              className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium capitalize transition-colors ${
+                                activeSeedKind === k ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
+                              }`}
+                            >
+                              {k}
+                            </button>
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-fg-faint leading-snug">
+                          {seedKind === null ? 'Detected from the value — change it if that\'s not what you meant.' : null}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-1">
                       <ColorPickerPanel value={addHex} onChange={setAddHex} />
@@ -598,14 +656,13 @@ export default function ColorPrimitives({
                   const name = rowName(tone)
                   const expanded = expandedTone === tone
                   const isEven = i % 2 === 1
-                  // The dark column shows the value the DARK theme resolves at
-                  // this position — matching the Alias/Semantics dark column.
-                  // Dark themes read every ramp inverted (recDarkTone: position
-                  // 1 → tone 12), so row N displays (and edits) tone 13−N of
-                  // the family's dark ramp: grayDarkScale for Neutral, the
-                  // shared ramp for colored families. accent-1 light is the
-                  // near-white page tint; accent-1 dark is the near-black one.
-                  const darkTone = 13 - tone
+                  // Radix role-ordering: a step means the same thing in both
+                  // appearances (1–2 app background … 9 solid … 11–12 text), so
+                  // the dark column reads the SAME step of the family's dark
+                  // ramp. `accent-25` is the subtlest background either way —
+                  // near-white in light, near-black in dark. No inversion: that
+                  // was the workaround for colours not having a dark ramp.
+                  const darkTone = tone
                   // The inline picker edits the column being previewed.
                   const pickTarget = darkPreview
                     ? { value: family.dark[darkTone] ?? '#000000', set: (hex: string) => setTone(family.dark, family.setDark, darkTone, hex) }

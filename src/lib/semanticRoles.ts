@@ -157,34 +157,31 @@ const BORDER_DARK_TONES: Record<string, number> = {
 }
 
 /**
- * Recommended dark-mode tone for a role. Gray hierarchy inverts (dark text in
- * light mode → light text in dark mode); colored scales keep their hue but
- * shift to read well on dark surfaces. These are editable seeds, not fixed.
+ * Recommended dark-mode tone for a role.
+ *
+ * With Radix role-ordered ramps this is essentially the IDENTITY: step numbers
+ * mean the same thing in both appearances (1–2 app background, 3–5 component,
+ * 6–8 border, 9 solid, 10 solid hover, 11–12 text), so a role reads the same
+ * step and simply gets the value tuned for that page. The dark ramp does the
+ * work the old tone-remapping used to fake.
+ *
+ * The only exceptions are roles that deliberately INVERT against the theme —
+ * an inverse surface is dark in a light theme and light in a dark one — so they
+ * mirror across the ramp instead of holding their step.
  */
 export function recDarkTone(role: Role): number {
   const t = role.tone
-  if (role.key === 'text-on-inverse' || role.key === 'icon-on-inverse') return 1
-  if (role.key in BORDER_DARK_TONES) return BORDER_DARK_TONES[role.key]
-  if (role.scale === 'gray') {
-    // Inverse / overlay surfaces stay dark in dark mode — don't invert them.
-    if (role.key === 'surface-overlay' || role.key === 'surface-inverse' || role.key === 'surface-inverse-muted') return t
-    return Math.min(12, Math.max(1, 13 - t))
-  }
-  // Colored (brand / error / warning / success / info) — keep the hue.
-  // Solid brand fills, strong brand sections, solid status fills, and text that
-  // sits on a constant brand fill all hold their tone in dark mode.
-  const holdsTone =
-    role.key.startsWith('action-') ||
-    role.key.startsWith('surface-brand-strong') ||
-    /^status-(error|warning|success|info)$/.test(role.key) ||
-    role.key.startsWith('text-on-brand')
-  if (holdsTone) return t
-  if (t <= 3) return Math.min(12, t + 9)   // subtle tints deepen
-  // Text band (10–12): these are dark-on-light text tones — on a dark surface
-  // they vanish. Mirror onto the light half of the ramp, keeping the hierarchy
-  // (strongest text = lightest tone): 12→6 · 11→7 · 10→8.
-  if (t >= 10) return 18 - t
-  return Math.max(6, t - 1)                // icon / border lift one step
+  // Deliberately-inverted roles: they sit on the opposite polarity by design,
+  // so in dark they mirror (13−t) rather than keeping their step.
+  const inverts =
+    role.key === 'text-on-inverse' ||
+    role.key === 'icon-on-inverse' ||
+    role.key === 'surface-overlay' ||
+    role.key === 'surface-inverse' ||
+    role.key === 'surface-inverse-muted' ||
+    role.key === 'content-inverse'
+  if (inverts) return Math.min(12, Math.max(1, 13 - t))
+  return t
 }
 
 // ── Ramp resolution + recommended values ────────────────────────────────────
@@ -192,17 +189,21 @@ export function recDarkTone(role: Role): number {
 /** The global (light) source ramps, one per ScaleSource. */
 export type GlobalScales = Record<ScaleSource, Record<number, string>> & {
   /**
-   * The dark-appearance neutral ramp (store `grayDarkScale`). Gray roles in a
-   * dark theme resolve from this instead of the light `gray` ramp. Optional so
-   * older callers keep working — they fall back to the GRAY_DARK_SCALE default.
+   * The dark-appearance ramps — one per family, the Radix two-scale model.
+   * A dark theme resolves EVERY coloured scale from its dark twin, not just
+   * gray: read from the light ramp, a deepened brand tint (recDarkTone sends
+   * subtle tints to tones 10–12) is a colour eased toward a WHITE page, then
+   * painted on a dark one. Optional so older callers keep working — they fall
+   * back to the light ramp (and GRAY_DARK_SCALE for gray).
    */
   grayDark?: Record<number, string>
+  dark?: Partial<Record<ScaleSource, Record<number, string>>>
 }
 
 /**
  * The ramp a role draws from in a given theme. Custom style themes carry their
- * own palette; built-in light/dark use the global scales — only gray has a
- * distinct dark ramp (GRAY_DARK_SCALE).
+ * own palette; built-in light/dark use the global scales, and in dark EVERY
+ * family resolves from its own dark ramp (see `GlobalScales.dark`).
  */
 export function sourceScaleFor(
   role: Role,
@@ -219,7 +220,11 @@ export function sourceScaleFor(
   // Gray is the only ramp with a distinct dark twin: it's generated from the
   // neutral against `darkBackground`, so the dark surfaces carry the accent's
   // tint. Colored ramps keep their hue and just shift tone (see recDarkTone).
-  if (eff === 'gray' && kind === 'dark') return global.grayDark ?? GRAY_DARK_SCALE
+  if (kind === 'dark') {
+    if (eff === 'gray') return global.grayDark ?? GRAY_DARK_SCALE
+    const twin = global.dark?.[eff]
+    if (twin && Object.keys(twin).length) return twin
+  }
   return global[eff]
 }
 

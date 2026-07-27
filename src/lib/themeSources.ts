@@ -19,33 +19,43 @@ export const GLOBAL_FAMILY: Record<FamilySlot, string> = {
 /** The primitives a resolution reads — the store's ramps, structurally. */
 export interface PrimitiveScales {
   primaryScale: ColorScale
+  primaryDarkScale?: ColorScale
   grayLightScale: ColorScale
   grayDarkScale?: ColorScale
   errorScale: ColorScale
+  errorDarkScale?: ColorScale
   warningScale: ColorScale
+  warningDarkScale?: ColorScale
   successScale: ColorScale
+  successDarkScale?: ColorScale
   infoScale: ColorScale
-  customColors: { key: string; scale: ColorScale }[]
+  infoDarkScale?: ColorScale
+  customColors: { key: string; scale: ColorScale; darkScale?: ColorScale }[]
 }
 
 /**
- * The ramp a family key resolves to. Neutral is the only family with a dark
- * twin (colored ramps keep their hue and shift tone instead), so `kind` only
- * changes the answer for it.
+ * The ramp a family key resolves to. EVERY family has a dark twin (the Radix
+ * two-scale model), so `kind` picks between them for all of them — not just
+ * the neutral. Falls back to the light ramp for pre-v40 data.
  */
 export function scaleForFamily(
   key: string,
   kind: 'light' | 'dark',
   p: PrimitiveScales,
 ): ColorScale | undefined {
+  const pick = (light: ColorScale, dark?: ColorScale) =>
+    kind === 'dark' && dark && Object.keys(dark).length ? dark : light
   switch (key) {
-    case 'accent':  return p.primaryScale
-    case 'neutral': return (kind === 'dark' ? p.grayDarkScale : p.grayLightScale) ?? p.grayLightScale
-    case 'error':   return p.errorScale
-    case 'warning': return p.warningScale
-    case 'success': return p.successScale
-    case 'info':    return p.infoScale
-    default:        return p.customColors.find((c) => c.key === key)?.scale
+    case 'accent':  return pick(p.primaryScale, p.primaryDarkScale)
+    case 'neutral': return pick(p.grayLightScale, p.grayDarkScale)
+    case 'error':   return pick(p.errorScale, p.errorDarkScale)
+    case 'warning': return pick(p.warningScale, p.warningDarkScale)
+    case 'success': return pick(p.successScale, p.successDarkScale)
+    case 'info':    return pick(p.infoScale, p.infoDarkScale)
+    default: {
+      const fam = p.customColors.find((c) => c.key === key)
+      return fam ? pick(fam.scale, fam.darkScale) : undefined
+    }
   }
 }
 

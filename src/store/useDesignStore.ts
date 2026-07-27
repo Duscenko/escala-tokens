@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
 import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
-import { accessibleSolidTone } from '../lib/colorUtils'
+import { accessibleSolidTone, generateFamilyDarkScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
@@ -25,6 +25,10 @@ export interface CustomColor {
   label: string // display name
   base: string // hex the scale derives from (tone 6)
   scale: ColorScale
+  /** Dark-appearance twin, anchored to `darkBackground` (Radix ships every
+   *  colour as two scales). Optional only for forward-compat with pre-v40
+   *  snapshots — `useEnsureColorScales` backfills it. */
+  darkScale?: ColorScale
 }
 
 // Family names reserved by the built-in scales — custom colors can't use them.
@@ -257,6 +261,10 @@ export interface DesignSnapshot {
   darkBackground: string
   primaryColor: string
   primaryScale: ColorScale
+  // Dark-appearance twin of every COLOURED family — the Radix two-scale model.
+  // A dark theme resolves brand/status tones from these, not from the light
+  // ramps, so tints deepen onto the dark page instead of a light one.
+  primaryDarkScale: ColorScale
   grayBaseColor: string
   grayLightScale: ColorScale
   // Dark-appearance neutral ramp, generated from `grayBaseColor` (itself derived
@@ -265,12 +273,16 @@ export interface DesignSnapshot {
   grayDarkScale: ColorScale
   errorColor: string
   errorScale: ColorScale
+  errorDarkScale: ColorScale
   warningColor: string
   warningScale: ColorScale
+  warningDarkScale: ColorScale
   successColor: string
   successScale: ColorScale
+  successDarkScale: ColorScale
   infoColor: string
   infoScale: ColorScale
+  infoDarkScale: ColorScale
   customColors: CustomColor[]
   themes: Record<string, Record<string, string>>
   themeOrder: string[]
@@ -293,6 +305,13 @@ export interface DesignSnapshot {
   // into (Alias/Semantics picker). 'flat' = the classic shape; the others are
   // additive projections (see lib/semanticArchitectures.ts).
   semanticArchitecture: SemanticArchitecture
+  /**
+   * Per-architecture edits to the projected semantic tokens, as PRIMITIVE REFS
+   * (`{accent.9}`) — never loose hex, so a non-flat architecture keeps the same
+   * "resolve through a primitive" contract the flat matrix has. Keyed
+   * architecture → `category.token` → mode. Absent = the projection's own value.
+   */
+  architectureOverrides: Record<string, Record<string, { light?: string; dark?: string }>>
   // Gradients foundation — named gradients + which one drives each preview
   // surface. Exported in tokens.json (`gradients`) / variables.css / README.
   gradients: GradientDef[]
@@ -337,17 +356,22 @@ export function makeDesignDefaults(): DesignSnapshot {
     darkBackground: '#0c0e12',
     primaryColor: '#7f56d9',
     primaryScale: {},
+    primaryDarkScale: {},
     grayBaseColor: '#6c737f',
     grayLightScale: { ...GRAY_LIGHT_SCALE },
     grayDarkScale: { ...GRAY_DARK_SCALE },
     errorColor: '#f04438',
     errorScale: {},
+    errorDarkScale: {},
     warningColor: '#f79009',
     warningScale: {},
+    warningDarkScale: {},
     successColor: '#17b26a',
     successScale: {},
+    successDarkScale: {},
     infoColor: '#2e90fa',
     infoScale: {},
+    infoDarkScale: {},
     customColors: [],
     themes: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
     themeOrder: ['light', 'dark'],
@@ -369,6 +393,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     padding: { ...PADDING_DEFAULT },
     panelBackground: 'solid',
     semanticArchitecture: 'flat',
+    architectureOverrides: {},
     gradients: makeDefaultGradients(),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
@@ -443,8 +468,10 @@ interface DesignStore {
   // Step 2 — Brand / accent color (user-defined, generates 12-tone scale)
   primaryColor: string
   primaryScale: ColorScale
+  primaryDarkScale: ColorScale
   setPrimaryColor: (hex: string) => void
   setPrimaryScale: (scale: ColorScale) => void
+  setPrimaryDarkScale: (scale: ColorScale) => void
 
   // Step 2 — Neutral gray (user-selectable flavor, generates light + dark scales)
   grayBaseColor: string
@@ -457,23 +484,31 @@ interface DesignStore {
   // Step 2 — Semantic state scales (user-adjustable, default from Figma DS)
   errorColor: string
   errorScale: ColorScale
+  errorDarkScale: ColorScale
   setErrorColor: (hex: string) => void
   setErrorScale: (scale: ColorScale) => void
+  setErrorDarkScale: (scale: ColorScale) => void
 
   warningColor: string
   warningScale: ColorScale
+  warningDarkScale: ColorScale
   setWarningColor: (hex: string) => void
   setWarningScale: (scale: ColorScale) => void
+  setWarningDarkScale: (scale: ColorScale) => void
 
   successColor: string
   successScale: ColorScale
+  successDarkScale: ColorScale
   setSuccessColor: (hex: string) => void
   setSuccessScale: (scale: ColorScale) => void
+  setSuccessDarkScale: (scale: ColorScale) => void
 
   infoColor: string
   infoScale: ColorScale
+  infoDarkScale: ColorScale
   setInfoColor: (hex: string) => void
   setInfoScale: (scale: ColorScale) => void
+  setInfoDarkScale: (scale: ColorScale) => void
 
   // Step 2 — Custom color families (name + auto-generated 1–12 scale)
   customColors: CustomColor[]
@@ -542,6 +577,11 @@ interface DesignStore {
   // role catalogue into (Alias/Semantics picker).
   semanticArchitecture: SemanticArchitecture
   setSemanticArchitecture: (v: SemanticArchitecture) => void
+  // Edits to a non-flat architecture's projected tokens, stored as primitive
+  // refs so they keep resolving through the ramps (see the snapshot field).
+  architectureOverrides: Record<string, Record<string, { light?: string; dark?: string }>>
+  setArchitectureOverride: (arch: string, tokenId: string, mode: 'light' | 'dark', ref: string | null) => void
+  resetArchitectureOverrides: (arch: string) => void
 
   // Gradients — named gradients + per-surface assignment (covers, avatars)
   gradients: GradientDef[]
@@ -621,6 +661,7 @@ export const useDesignStore = create<DesignStore>()(
       // Brand
       setPrimaryColor: (hex) => set({ primaryColor: hex }),
       setPrimaryScale: (scale) => set({ primaryScale: scale }),
+      setPrimaryDarkScale: (scale) => set({ primaryDarkScale: scale }),
 
       // Neutral gray (default: Gray Neutral — closest to Figma's neutral gray)
       setGrayBaseColor: (hex) => set({ grayBaseColor: hex }),
@@ -630,12 +671,16 @@ export const useDesignStore = create<DesignStore>()(
       // Semantic state scales (defaults from the Figma DS)
       setErrorColor: (hex) => set({ errorColor: hex }),
       setErrorScale: (scale) => set({ errorScale: scale }),
+      setErrorDarkScale: (scale) => set({ errorDarkScale: scale }),
       setWarningColor: (hex) => set({ warningColor: hex }),
       setWarningScale: (scale) => set({ warningScale: scale }),
+      setWarningDarkScale: (scale) => set({ warningDarkScale: scale }),
       setSuccessColor: (hex) => set({ successColor: hex }),
       setSuccessScale: (scale) => set({ successScale: scale }),
+      setSuccessDarkScale: (scale) => set({ successDarkScale: scale }),
       setInfoColor: (hex) => set({ infoColor: hex }),
       setInfoScale: (scale) => set({ infoScale: scale }),
+      setInfoDarkScale: (scale) => set({ infoDarkScale: scale }),
 
       addCustomColor: (c) =>
         set((state) =>
@@ -758,6 +803,23 @@ export const useDesignStore = create<DesignStore>()(
 
       setPanelBackground: (v) => set({ panelBackground: v }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
+      // `ref === null` clears the edit, so the token falls back to the
+      // projection's own value — the schema stays the source of truth.
+      setArchitectureOverride: (arch, tokenId, mode, ref) =>
+        set((state) => {
+          const forArch = { ...(state.architectureOverrides[arch] ?? {}) }
+          const entry = { ...(forArch[tokenId] ?? {}) }
+          if (ref === null) delete entry[mode]
+          else entry[mode] = ref
+          if (Object.keys(entry).length) forArch[tokenId] = entry
+          else delete forArch[tokenId]
+          return { architectureOverrides: { ...state.architectureOverrides, [arch]: forArch } }
+        }),
+      resetArchitectureOverrides: (arch) =>
+        set((state) => {
+          const { [arch]: _drop, ...rest } = state.architectureOverrides
+          return { architectureOverrides: rest }
+        }),
 
       // Gradients — CRUD + per-surface assignment. Removing a gradient also
       // clears any assignment pointing at it, so covers/avatars never dangle.
@@ -879,7 +941,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 39,
+      version: 41,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1322,6 +1384,54 @@ export const useDesignStore = create<DesignStore>()(
           toSources(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) toSources(sys?.snapshot)
+          }
+        }
+        if (version < 41) {
+          // v40→v41: non-flat architectures became editable — projected tokens
+          // can be re-pointed at another primitive, stored as refs.
+          if (!persisted.architectureOverrides) persisted.architectureOverrides = {}
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys?.snapshot && !sys.snapshot.architectureOverrides) sys.snapshot.architectureOverrides = {}
+            }
+          }
+        }
+        if (version < 40) {
+          // v39→v40: every COLOURED family gains its own dark ramp (Radix ships
+          // each colour as two scales). Until now only the neutral had one, so a
+          // dark theme resolved brand/status tints from the LIGHT ramp — tones
+          // eased toward a white page and then read on a dark one.
+          //
+          // Dark semantic values were authored against that approximation, so
+          // they no longer correspond: clear the dark themes' role maps and let
+          // Step3's auto-seed repopulate them from the new ramps (same approach
+          // the v37→v38 catalogue swap took).
+          const addDarkRamps = (state: any) => {
+            if (!state) return
+            const algo = state.colorAlgorithm ?? 'default'
+            const shift = state.contrastShift ?? 0
+            const darkBg = state.darkBackground
+            const gen = (hex?: string) => {
+              if (!hex) return {}
+              try { return generateFamilyDarkScale(hex, algo, shift, darkBg) } catch { return {} }
+            }
+            state.primaryDarkScale = gen(state.primaryColor)
+            state.errorDarkScale = gen(state.errorColor)
+            state.warningDarkScale = gen(state.warningColor)
+            state.successDarkScale = gen(state.successColor)
+            state.infoDarkScale = gen(state.infoColor)
+            if (Array.isArray(state.customColors)) {
+              for (const c of state.customColors) c.darkScale = gen(c.base)
+            }
+            if (state.themes && typeof state.themes === 'object') {
+              for (const t of Object.keys(state.themes)) {
+                if ((state.themeKinds?.[t] ?? 'light') === 'dark') state.themes[t] = {}
+              }
+            }
+          }
+          addDarkRamps(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) addDarkRamps(sys?.snapshot)
           }
         }
         return persisted

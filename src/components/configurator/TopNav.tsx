@@ -114,18 +114,21 @@ function FigmaSyncPill() {
   )
 }
 
-// Escala mark — a neutral chip that reads on either theme.
+// Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
+// #18181B) so the lockup inverts with the theme instead of going invisible on
+// the dark chrome; the middle ring keeps its 0.3 opacity, which reads on both.
+// No chip behind it — this is a finished badge, not a glyph needing a frame.
 function BrandMark() {
   return (
-    <span
-      className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-elevated border border-line text-fg"
-      aria-hidden
+    <svg
+      width="32" height="32" viewBox="0 0 32 32" fill="none"
+      className="flex-shrink-0 text-fg"
+      role="img" aria-label="Escala Tokens"
     >
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
-        <path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" />
-        <path d="M12 7.5 16 10v4l-4 2.5-4-2.5v-4z" />
-      </svg>
-    </span>
+      <path d="M28 9.01611V22.9839L15.9033 29.9683L3.80664 22.9839V9.01611L15.9033 2.03174L28 9.01611ZM5.80664 10.1704V21.8286L15.9033 27.6587L26 21.8286V10.1704L15.9033 4.34033L5.80664 10.1704Z" fill="currentColor" />
+      <path opacity="0.3" d="M23.7306 12.6007L22.7083 15.8562L23.727 19.1045L20.7177 20.7013L19.128 23.7221L15.8695 22.7003L12.619 23.7168L11.0204 20.7102L8.0067 19.1284L9.0187 15.8655L8 12.6172L11.0195 11.028L12.5985 8L15.8571 9.02182L19.108 8.0049L20.7065 11.0115L23.7306 12.6007V12.6007" fill="currentColor" />
+      <path d="M22.1184 18.3505C19.9936 17.9805 18.1552 19.834 18.5165 21.9544C17.2684 20.1965 14.6559 20.1915 13.4192 21.9581C13.7868 19.8321 11.9326 17.9918 9.81349 18.3512C11.5695 17.1044 11.5714 14.4913 9.80469 13.2521C11.9301 13.6221 13.7679 11.7686 13.4066 9.64823C14.6546 11.4061 17.2672 11.4105 18.5039 9.64453C18.1364 11.7699 19.9912 13.6107 22.1096 13.2514C20.3542 14.4982 20.3517 17.1113 22.1184 18.3505V18.3505" fill="currentColor" />
+    </svg>
   )
 }
 
@@ -133,7 +136,7 @@ export default function TopNav({
   nav, onNav, exportMode, onGithub, onGetFigma, onOpenFoundations,
   brandWidth = null, showFullEditor = false, previewTheme, onThemeChange,
 }: TopNavProps) {
-  const { projectCreated, projectName } = useDesignStore()
+  const { projectCreated } = useDesignStore()
 
   return (
     <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
@@ -145,8 +148,8 @@ export default function TopNav({
       >
         <BrandMark />
         <div className="min-w-0">
-          <div className="text-[14px] font-semibold text-fg truncate leading-tight">{projectName}</div>
-          <div className="text-[11.5px] text-fg-faint leading-tight">Token controls</div>
+          <div className="text-[14px] font-semibold text-fg truncate leading-tight">Escala Tokens</div>
+          <div className="text-[11.5px] text-fg-faint leading-tight">Token generator</div>
         </div>
         {showFullEditor && (
           <button

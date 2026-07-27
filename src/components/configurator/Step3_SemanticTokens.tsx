@@ -77,20 +77,119 @@ const CHECKER_STYLE: React.CSSProperties = {
  *     carry a badge revealing their opaque WCAG fallback alias.
  *   · tonal — emphasizes the tonal reference ({primary.40} ↔ {primary.80}),
  *     not the raw hex, so the light↔dark tone inversion stays legible. */
+
+// ── Inline scale editor for an architecture token ───────────────────────────
+// Deliberately the SAME shape as the flat matrix's expanded row: the sliders
+// icon opens the row, the description + CSS var surface, and each mode shows a
+// full ramp with the current tone selected. A popover on the value chip did the
+// same job but taught a second interaction for the same task — and hid the
+// role's description, which is half of why you open the editor at all.
+const PICKABLE_FAMILIES = ['accent', 'neutral', 'neutral-dark', 'error', 'warning', 'success', 'info'] as const
+
+function rampsOf(scales: GlobalScales): Record<string, Record<number, string> | undefined> {
+  return {
+    accent: scales.brand, neutral: scales.gray, 'neutral-dark': scales.grayDark ?? scales.gray,
+    error: scales.error, warning: scales.warning, success: scales.success, info: scales.info,
+  }
+}
+
+/** `neutral.12` → ['neutral', 12]; null for raw CSS (vibrancy alphas, blur). */
+function parseRef(label: string): [string, number] | null {
+  const m = /^([a-z-]+)\.(\d+)$/.exec(label)
+  return m ? [m[1], Number(m[2])] : null
+}
+
+function ArchModeEditor({
+  mode, value, scales, onPick,
+}: {
+  mode: 'light' | 'dark'
+  value: ArchTokenValue
+  scales: GlobalScales
+  onPick: (ref: string) => void
+}) {
+  const parsed = parseRef(value.label)
+  const ramps = rampsOf(scales)
+  // Which family this mode reads. Switching family re-points the same slot, so
+  // the family row doubles as the "read from" control the popover used to be.
+  const family = parsed?.[0] ?? 'accent'
+  const tone = parsed?.[1] ?? null
+  const ramp = ramps[family] ?? scales.brand
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+        <KindIcon kind={mode} />
+        {mode}
+      </span>
+      <div className="flex items-center gap-1 flex-wrap">
+        {PICKABLE_FAMILIES.map((fam) => {
+          if (!ramps[fam] || !Object.keys(ramps[fam]!).length) return null
+          const on = fam === family
+          return (
+            <button
+              key={fam}
+              onClick={() => onPick(`{${fam}.${tone ?? 9}}`)}
+              aria-pressed={on}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition-colors ${
+                on ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg-muted'
+              }`}
+            >
+              {fam}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+          const hex = ramp?.[n]
+          if (!hex) return null
+          const on = n === tone
+          return (
+            <div key={n} className="flex flex-col items-center gap-0.5">
+              <button
+                onClick={() => onPick(`{${family}.${n}}`)}
+                title={`${family}.${n} — ${hex}`}
+                aria-label={`Use ${family}.${n}`}
+                aria-pressed={on}
+                className={`w-7 h-7 rounded-md transition-all duration-150 hover:scale-110 ${
+                  on ? 'ring-2 ring-accent-ui ring-offset-2 ring-offset-app' : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/20 dark:hover:ring-white/20'
+                }`}
+                style={{ backgroundColor: hex }}
+              />
+              <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${on ? 'text-accent-ui font-semibold' : 'text-fg-faint'}`}>{n}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function TokenCell({
   v,
   kind,
   fallback,
+  onEdit,
+  edited,
 }: {
   v: ArchTokenValue
   kind: SemanticArchitecture
   fallback?: ArchTokenValue
+  /** Present when the value is a primitive ref and can therefore be re-pointed. */
+  onEdit?: () => void
+  edited?: boolean
 }) {
   const hasAlpha = /\/\s*0\./.test(v.css)
   const tonal = kind === 'tonal' ? /^([a-z-]+)\.(\d+)$/.exec(v.label) : null
+  const Chip = onEdit ? 'button' : 'span'
   return (
     <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
-      <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-[11px] font-mono text-fg-muted max-w-full">
+      <Chip
+        {...(onEdit ? { onClick: onEdit, type: 'button' as const, title: `${v.label} — click to read from another primitive` } : {})}
+        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border text-[11px] font-mono text-fg-muted max-w-full ${
+          edited ? 'border-accent-ui' : 'border-line'
+        } ${onEdit ? 'hover:border-line-strong hover:text-fg transition-colors cursor-pointer' : ''}`}
+      >
         <span className="relative w-3.5 h-3.5 rounded-[3px] flex-shrink-0 overflow-hidden ring-1 ring-black/10 dark:ring-white/10">
           {hasAlpha && <span className="absolute inset-0" style={CHECKER_STYLE} aria-hidden />}
           <span className="absolute inset-0" style={{ background: v.css }} />
@@ -102,7 +201,7 @@ function TokenCell({
         ) : (
           <span className="truncate tabular-nums" title={v.label}>{v.label}</span>
         )}
-      </span>
+      </Chip>
       {fallback && (
         <span
           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-elevated/70 border border-line text-[9.5px] font-mono text-fg-faint max-w-full"
@@ -430,11 +529,13 @@ export default function Step3_SemanticTokens({
   const store = useDesignStore()
   const {
     primaryColor, errorColor, primaryScale, errorScale, warningScale, successScale, infoScale,
+    primaryDarkScale, errorDarkScale, warningDarkScale, successDarkScale, infoDarkScale,
     grayLightScale, grayDarkScale, customColors,
     themes, themeOrder, themeKinds, themeSources, colorNaming,
     setThemeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
-    semanticArchitecture,
+    semanticArchitecture, architectureOverrides,
+    setArchitectureOverride, resetArchitectureOverrides,
   } = store
 
   const reduce = useReducedMotion() ?? false
@@ -451,6 +552,15 @@ export default function Step3_SemanticTokens({
   const scales: GlobalScales = {
     gray:     grayLightScale,
     grayDark: grayDarkScale,
+    // Dark twins — a dark theme resolves every family from these.
+    dark: {
+      gray:    grayDarkScale,
+      brand:   primaryDarkScale,
+      error:   errorDarkScale,
+      warning: warningDarkScale,
+      success: successDarkScale,
+      info:    infoDarkScale,
+    },
     brand:    primaryScale,
     error:    errorScale,
     warning:  warningScale,
@@ -584,6 +694,8 @@ export default function Step3_SemanticTokens({
   // Theme modal state. Add-only: a theme is created against the primitives and
   // then reads through them, so there is no edit mode to open.
   const [addThemeOpen, setAddThemeOpen] = useState(false)
+  // Which architecture cell has its primitive picker open (`tokenId:mode`).
+  const [archEditing, setArchEditing] = useState<string | null>(null)
 
   // ── Architecture-driven view ──────────────────────────────────────────────
   // For a NON-flat architecture the sidebar categories, counts and table rows
@@ -611,9 +723,10 @@ export default function Step3_SemanticTokens({
             semanticArchitecture,
             { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor },
             errorColor,
+            architectureOverrides[semanticArchitecture] ?? {},
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides],
   )
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')
@@ -723,17 +836,21 @@ export default function Step3_SemanticTokens({
   const archTokens = !isFlat && archView
     ? (archCategory === 'all'
         ? archView.categories.flatMap((c) =>
-            c.tokens.map((t) => ({ ...t, id: `${c.key}.${t.key}`, name: `${c.key}.${t.key}` })),
+            c.tokens.map((t) => ({ ...t, id: `${c.key}.${t.key}`, name: `${c.key}.${t.key}`, description: c.description })),
           )
-        : (archView.categories.find((c) => c.key === archCategory)?.tokens ?? []).map((t) => ({
-            ...t, id: `${archCategory}.${t.key}`, name: t.key,
-          }))
+        : (() => {
+            const cat = archView.categories.find((c) => c.key === archCategory)
+            return (cat?.tokens ?? []).map((t) => ({
+              ...t, id: `${archCategory}.${t.key}`, name: t.key, description: cat?.description ?? '',
+            }))
+          })()
       ).filter((t) => !q || t.name.toLowerCase().includes(q))
     : []
   // Name column keeps a real minimum — with two flexible value columns it
   // would otherwise collapse to 0 on narrow panes (overflow-auto scrolls).
   const archGridStyle: React.CSSProperties = {
-    gridTemplateColumns: 'minmax(11rem,1.4fr) minmax(8.5rem,1fr) minmax(8.5rem,1fr)',
+    // 4th track = the edit toggle, mirroring the flat matrix's trailing column.
+    gridTemplateColumns: 'minmax(11rem,1.4fr) minmax(8.5rem,1fr) minmax(8.5rem,1fr) 2.75rem',
   }
 
   if (!ready) {
@@ -865,35 +982,111 @@ export default function Step3_SemanticTokens({
               >
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
                 <span className="flex items-center gap-1.5 px-3 py-3 border-r border-line"><KindIcon kind="light" /> light</span>
-                <span className="flex items-center gap-1.5 px-3 py-3"><KindIcon kind="dark" /> dark</span>
+                <span className="flex items-center gap-1.5 px-3 py-3 border-r border-line"><KindIcon kind="dark" /> dark</span>
+                <span className="flex items-center justify-center py-3" aria-hidden><TuneIcon active={false} /></span>
               </div>
               {archTokens.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">
                   No tokens match “{query}”.
                 </div>
               ) : (
-                archTokens.map((t, idx) => (
-                  <div
-                    key={t.id}
-                    className={`grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-                      idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-                    }`}
-                    style={archGridStyle}
-                  >
-                    <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
-                      <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
-                        <PaletteIcon size={16} />
-                      </span>
-                      <code className="font-mono text-[12px] text-fg-muted truncate" title={t.name}>{t.name}</code>
+                archTokens.map((t, idx) => {
+                  const isOpen = archEditing === t.id
+                  // Raw CSS (vibrancy alphas, blur) has no primitive to swap,
+                  // so those rows stay display-only.
+                  const editable = Boolean(parseRef(t.light.label) || parseRef(t.dark.label))
+                  return (
+                  <div key={t.id} className={isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
+                    <div
+                      className="grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]"
+                      style={archGridStyle}
+                    >
+                      <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                        <button
+                          onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
+                          className="flex items-center gap-2.5 min-w-0 text-left flex-1"
+                          aria-label={`Edit ${t.name} scale`}
+                        >
+                          <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
+                            <PaletteIcon size={16} />
+                          </span>
+                          <code className="font-mono text-[12px] text-fg-muted truncate" title={t.name}>{t.name}</code>
+                          {(t.edited?.light || t.edited?.dark) && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from the schema" />
+                          )}
+                        </button>
+                      </div>
+                      {(['light', 'dark'] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
+                          className={`flex items-center min-w-0 px-3 py-3 text-left ${mode === 'light' ? 'border-r border-line' : ''}`}
+                        >
+                          <TokenCell
+                            v={mode === 'light' ? t.light : t.dark}
+                            kind={semanticArchitecture}
+                            fallback={mode === 'light' ? t.fallback?.light : t.fallback?.dark}
+                            edited={Boolean(t.edited?.[mode])}
+                          />
+                        </button>
+                      ))}
+                      {/* Filter / edit toggle — same affordance as the flat matrix */}
+                      <button
+                        onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
+                        aria-expanded={isOpen}
+                        aria-label={isOpen ? 'Close scale editor' : 'Edit scale'}
+                        disabled={!editable}
+                        className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors"
+                      >
+                        <TuneIcon active={isOpen} />
+                      </button>
                     </div>
-                    <div className="px-3 py-3 border-r border-line min-w-0">
-                      <TokenCell v={t.light} kind={semanticArchitecture} fallback={t.fallback?.light} />
-                    </div>
-                    <div className="px-3 py-3 min-w-0">
-                      <TokenCell v={t.dark} kind={semanticArchitecture} fallback={t.fallback?.dark} />
-                    </div>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: reduce ? 0 : 0.2, ease: 'easeOut' }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className="flex flex-col gap-4 px-4 pt-2 pb-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-[11px] text-fg-muted leading-snug flex-1 min-w-0">{t.description}</p>
+                              <span className="flex-shrink-0"><CssVarChip name={t.name.replace(/\./g, '-')} /></span>
+                            </div>
+                            {(['light', 'dark'] as const).map((mode) => (
+                              parseRef((mode === 'light' ? t.light : t.dark).label) ? (
+                                <ArchModeEditor
+                                  key={mode}
+                                  mode={mode}
+                                  value={mode === 'light' ? t.light : t.dark}
+                                  scales={scales}
+                                  onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
+                                />
+                              ) : null
+                            ))}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setArchitectureOverride(semanticArchitecture, t.id, 'light', null)
+                                  setArchitectureOverride(semanticArchitecture, t.id, 'dark', null)
+                                }}
+                                disabled={!t.edited?.light && !t.edited?.dark}
+                                className="text-[10px] text-fg-faint hover:text-accent-ui disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
+                                title="Reset both modes to the architecture's own value"
+                              >
+                                Reset to schema
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                ))
+                  )
+                })
               )}
             </div>
           ) : (
