@@ -1,9 +1,10 @@
-// Home header actions — the pill row from the Figma header design:
-//   + New · ⬆ Import JSON · ⋯ Share · ▸ Kits · ↩ Reset
-// New/Import reuse the shell's existing modals; Share opens the ExportWizard
-// (same guided flow as Variables' Export); Kits is a self-contained "save current as +
-// previous kits" popover over the local savedSystems registry; Reset restores
-// the design defaults (startNewSystem) behind a confirm.
+// Header actions — the pill row from the Figma header design:
+//   + New · ⬆ Import JSON · ⋯ Share · ▸ Kits
+// New opens a category menu (Color/Font/Radius/Spacing/Sizes, matching the
+// Variables rail) → NewTokenWizard, a guided 2–3 step flow, in Configurator;
+// Import reuses the shell's existing modal; Share opens the ExportWizard (same
+// guided flow as Variables' Export); Kits is a self-contained "save current as
+// + previous kits" popover over the local savedSystems registry.
 
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -31,11 +32,6 @@ const ShareIcon: ComponentType = () => (
 const FolderIcon: ComponentType = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-  </svg>
-)
-const ResetIcon: ComponentType = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5H9" />
   </svg>
 )
 
@@ -172,72 +168,91 @@ function KitsPopover({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Reset confirm — restores the design defaults (startNewSystem) ────────────
-export function ResetConfirmModal({ onClose }: { onClose: () => void }) {
-  const startNewSystem = useDesignStore((s) => s.startNewSystem)
+// ── New-token menu — the categories match SectionRail's Variables group
+// exactly (same array, passed down from Configurator), so picking one and
+// scanning the rail always agree. ─────────────────────────────────────────────
+function NewTokenMenu({ categories, onSelect, onClose }: {
+  categories: { key: string; label: string; Icon: ComponentType }[]
+  onSelect: (key: string) => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [onClose])
 
   return (
     <motion.div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
+      ref={ref}
+      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+      transition={{ duration: 0.14, ease: 'easeOut' }}
+      role="dialog"
+      aria-label="New token"
+      className="absolute left-0 top-full mt-2 z-30 w-56 rounded-2xl border border-line bg-app shadow-xl p-2"
     >
-      <motion.div
-        className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 flex flex-col gap-4"
-        initial={{ opacity: 0, scale: 0.97, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97, y: 8 }}
-        transition={{ duration: 0.18 }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-label="Reset design system"
-        aria-modal="true"
-      >
-        <div className="flex flex-col gap-1.5">
-          <h2 className="text-base font-semibold text-fg">Reset to defaults?</h2>
-          <p className="text-sm text-fg-muted leading-relaxed">
-            This clears every foundation and starts a fresh system. Your saved kits are kept — save the current one first if you want to keep it.
-          </p>
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3.5 py-2 rounded-lg text-sm font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => { startNewSystem(); onClose() }}
-            className="px-3.5 py-2 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-      </motion.div>
+      <span className="block px-2.5 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+        New token
+      </span>
+      {categories.map(({ key, label, Icon }) => (
+        <button
+          key={key}
+          onClick={() => onSelect(key)}
+          className="w-full flex items-center gap-2.5 h-9 px-2.5 rounded-xl text-[13px] text-left text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+        >
+          <span className="flex-shrink-0 text-fg-faint"><Icon /></span>
+          <span className="truncate">{label}</span>
+        </button>
+      ))}
     </motion.div>
   )
 }
 
 // ── The pill row itself (header rightSlot on Home) ───────────────────────────
-export default function HomeActions({ onNew, onImport, onShare, onReset }: {
-  onNew: () => void
+export default function HomeActions({ onNew, onImport, onShare, tokenCategories }: {
+  /** Called with the picked category key (`color`|`typography`|`radius`|`spacing`|`sizes`). */
+  onNew: (category: string) => void
   onImport: () => void
   onShare: () => void
-  onReset: () => void
+  tokenCategories: { key: string; label: string; Icon: ComponentType }[]
 }) {
   const [kitsOpen, setKitsOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
   const kitsBtn = useRef<HTMLButtonElement>(null)
+  const newBtn = useRef<HTMLButtonElement>(null)
 
   return (
     <div className="flex items-center gap-2">
-      <Pill Icon={PlusIcon} label="New" onClick={onNew} />
+      <div className="relative">
+        <Pill
+          Icon={PlusIcon}
+          label="New"
+          onClick={() => setNewOpen((v) => !v)}
+          buttonRef={newBtn}
+          aria-haspopup
+          aria-expanded={newOpen}
+        />
+        <AnimatePresence>
+          {newOpen && (
+            <NewTokenMenu
+              categories={tokenCategories}
+              onSelect={(key) => { setNewOpen(false); onNew(key) }}
+              onClose={() => setNewOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
       <Pill Icon={UploadIcon} label="Import JSON" onClick={onImport} />
       <Pill Icon={ShareIcon} label="Share" onClick={onShare} />
       <div className="relative">
@@ -253,7 +268,6 @@ export default function HomeActions({ onNew, onImport, onShare, onReset }: {
           {kitsOpen && <KitsPopover onClose={() => setKitsOpen(false)} />}
         </AnimatePresence>
       </div>
-      <Pill Icon={ResetIcon} label="Reset" onClick={onReset} ghost />
     </div>
   )
 }

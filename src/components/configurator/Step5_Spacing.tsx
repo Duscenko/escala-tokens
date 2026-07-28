@@ -3,21 +3,21 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import VariablesTable from './VariablesTable'
 
-// Base unit presets
-const BASE_PRESETS = [
+// Base unit presets — also used by NewTokenWizard's Spacing step.
+export const BASE_PRESETS = [
   { label: '4px  (default)', value: 4 },
   { label: '8px  (spacious)', value: 8 },
   { label: '5px  (5-grid)',   value: 5 },
 ]
 
-const SPACING_STEPS = ['1', '2', '3', '4', '6', '8', '10', '12', '16'] as const
+export const SPACING_STEPS = ['1', '2', '3', '4', '6', '8', '10', '12', '16'] as const
 const DEFAULT_BASE = 4
 
 function pxToNum(val: string): number {
   return parseFloat(val.replace('px', '')) || 0
 }
 
-function buildSpacingFromBase(base: number): Record<string, string> {
+export function buildSpacingFromBase(base: number): Record<string, string> {
   const result: Record<string, string> = {}
   SPACING_STEPS.forEach((step) => {
     result[step] = `${Number(step) * base}px`

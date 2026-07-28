@@ -626,7 +626,9 @@ export function StateColorsSelect({
   )
 }
 
-// ── Scale row (12 tones, BASE marker) ──────────────────────────────────────
+// ── Scale row (12 tones, ANCHOR marker — the tone pinned to the input color,
+// always tone 9/BASE_TONE by construction; "anchor" names what the badge
+// shows without colliding with `grayBaseColor`'s "Base" label) ─────────────
 
 export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default' }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[]; size?: 'default' | 'thin' }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
@@ -646,12 +648,14 @@ export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, lab
             <div
               className={`${thin ? 'h-[19px]' : 'h-11'} rounded-lg flex items-center justify-center ${isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''}`}
               style={{ backgroundColor: color }}
-              title={`Tone ${key} — ${color}`}
+              title={isBase ? `Anchor — tone ${key} — ${color}` : `Tone ${key} — ${color}`}
             >
-              {isBase && (
-                <span className="text-[8px] font-bold uppercase tracking-widest" style={{ color: onLight }}>
-                  base
-                </span>
+              {/* No text here — "anchor" doesn't fit any of the 12 cells at any
+                  screen size (tried it; clips even truncated). The ring above
+                  IS the persistent marker; the word itself lives in the title
+                  tooltip and in the token table's row badge, which has room. */}
+              {isBase && !thin && (
+                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: onLight }} aria-hidden />
               )}
             </div>
           </div>

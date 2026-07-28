@@ -16,7 +16,7 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import DocsView from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
-import HomeActions, { ResetConfirmModal } from '../components/configurator/HomeActions'
+import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
@@ -24,6 +24,7 @@ import ExportWizard from '../components/configurator/ExportWizard'
 import { ALL_WIZARD_COLLECTIONS, type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
+import NewTokenWizard, { type TokenCategory } from '../components/configurator/NewTokenWizard'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
@@ -31,8 +32,7 @@ import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
-import QuickFoundationsPanel, { QuickEditPanel } from '../components/configurator/QuickFoundationsPanel'
-import WorkbenchLayout from '../components/configurator/WorkbenchLayout'
+import QuickFoundationsPanel from '../components/configurator/QuickFoundationsPanel'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import HeaderPill from '../components/ui/HeaderPill'
@@ -66,17 +66,6 @@ interface FoundationSection {
 }
 
 const FOUNDATIONS: FoundationSection[] = [
-  {
-    key: 'home',
-    label: 'Home',
-    short: 'Home',
-    hint: 'Your components, live from your tokens',
-    title: 'Home',
-    subtitle: 'AI Design Tokens Generator',
-    // Rendered via a special case in the shell (needs the onOpenFoundation callback).
-    Component: () => null,
-    Icon: ic('M3 10.5 12 3l9 7.5M5 9.5V20h4.5v-5.5h5V20H19V9.5', '1.8'),
-  },
   {
     key: 'color',
     label: 'Color',
@@ -171,6 +160,11 @@ const FOUNDATIONS: FoundationSection[] = [
   },
 ]
 
+// The "Variables" half of the rail (Styles = icons/opacity/shadow/grid) —
+// also the exact category list HomeActions' "New" menu offers, so the two
+// can never drift apart.
+const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'opacity', 'shadow', 'grid'].includes(f.key))
+
 // Component categories get icons too, so the Components/Documentation rail
 // reads exactly like the Variables one (same row shape, icon + label).
 const CATEGORY_ICONS: Record<string, ComponentType> = {
@@ -261,14 +255,59 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
   )
 }
 
+// ── Quick-edit trigger — a compact icon button that opens the shared
+// QuickFoundationsPanel popover (Presets swatch row + the full accordion of
+// quick controls). Shared by Variables and Components so "Quick edit" reads
+// identically wherever it's parked in the header. ────────────────────────────
+function QuickEditTrigger({
+  open, onToggle, onClose, onOpenFoundations, previewTheme, onThemeChange, onAddTheme,
+}: {
+  open: boolean
+  onToggle: () => void
+  onClose: () => void
+  onOpenFoundations: () => void
+  previewTheme: string
+  onThemeChange: (theme: string) => void
+  onAddTheme: () => void
+}) {
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        aria-label="Quick edit foundations"
+        aria-expanded={open}
+        title="Quick edit — presets and foundations without leaving this view"
+        className={`flex-shrink-0 p-1.5 rounded-lg border transition-colors ${
+          open ? 'bg-elevated border-line-strong text-fg' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
+        }`}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+          <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+          <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+        </svg>
+      </button>
+      <QuickFoundationsPanel
+        open={open}
+        onClose={onClose}
+        onOpenFoundations={onOpenFoundations}
+        previewTheme={previewTheme}
+        onThemeChange={onThemeChange}
+        onAddTheme={onAddTheme}
+      />
+    </div>
+  )
+}
+
 export default function Configurator() {
   const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
   const [tab, setTab] = useState<Tab>('foundations')
-  // Every session lands on Home — the live collage + quick-edit hub.
-  const [activeFoundation, setActiveFoundation] = useState<string>('home')
+  // Every session lands on Variables · Color — no separate landing screen.
+  const [activeFoundation, setActiveFoundation] = useState<string>('color')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -291,10 +330,10 @@ export default function Configurator() {
     setTheme((themeKinds[key] ?? 'light') === 'dark' ? 'dark' : 'light')
   }
   // Right preview panel can be collapsed for more center width; re-expanded
-  // via the slim strip that replaces it while collapsed. Starts COLLAPSED:
-  // Variables is a token-editing view, so the tables get the width by default
-  // and the preview is opt-in.
-  const [previewCollapsed, setPreviewCollapsed] = useState(true)
+  // via the slim strip that replaces it while collapsed. Starts EXPANDED: it's
+  // a persistent, always-visible specimen of the category being edited, not an
+  // opt-in extra — collapsing is still available for anyone who wants the width.
+  const [previewCollapsed, setPreviewCollapsed] = useState(false)
   // Components catalogue — quick-edit popover for the Foundations you've already set.
   const [quickPanelOpen, setQuickPanelOpen] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
@@ -302,18 +341,22 @@ export default function Configurator() {
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
-  // Home header actions — Share recycles the file-preview card; Reset confirms
-  // before restoring the design defaults.
+  // "New" in Variables — picking a category from HomeActions' menu opens the
+  // guided NewTokenWizard scoped to it.
+  const [newTokenCategory, setNewTokenCategory] = useState<TokenCategory | null>(null)
+  // A color family the wizard just created — ColorPrimitives switches its
+  // active family to this so the table actually shows what was just made.
+  const [focusColorFamily, setFocusColorFamily] = useState<string | null>(null)
+  // Header actions — Share recycles the file-preview card.
   const [shareOpen, setShareOpen] = useState(false)
-  const [resetOpen, setResetOpen] = useState(false)
   // Components catalogue — filters the master list by label/key.
   const [componentSearch, setComponentSearch] = useState('')
   // Active component category (Components section sub-nav) — filters the list.
   const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
-  // Foundation sections (not Home) can export their token slice.
-  const canExportSection = tab === 'foundations' && !exportMode && activeFoundation !== 'home'
+  // Every foundation section can export its token slice.
+  const canExportSection = tab === 'foundations' && !exportMode
 
   // ── Chrome accent — the UI's own highlight color (table active states,
   // modified dots, previewed-theme tints via `accent-ui`) tracks the system's
@@ -334,10 +377,10 @@ export default function Configurator() {
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
-  // Marking happens on *leave*: a foundation counts as visited for the Home
-  // overview checklist once the user navigates away from it.
+  // Marking happens on *leave*: a foundation counts as visited for the
+  // progress checklist once the user navigates away from it.
   const commitVisit = () => {
-    if (!exportMode && tab === 'foundations' && activeFoundation !== 'home') {
+    if (!exportMode && tab === 'foundations') {
       markFoundationComplete(activeFoundation)
     }
   }
@@ -412,6 +455,25 @@ export default function Configurator() {
     centerKey = 'export-save'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
+    centerRightSlot = (
+      <>
+        <QuickEditTrigger
+          open={quickPanelOpen}
+          onToggle={() => setQuickPanelOpen((v) => !v)}
+          onClose={() => setQuickPanelOpen(false)}
+          onOpenFoundations={() => selectFoundation('color')}
+          previewTheme={previewTheme}
+          onThemeChange={changePreviewTheme}
+          onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
+        />
+        <HomeActions
+          onNew={(key) => setNewTokenCategory(key as TokenCategory)}
+          onImport={() => setImportOpen(true)}
+          onShare={() => setShareOpen(true)}
+          tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
+        />
+      </>
+    )
     const Active = section.Component
     body = section.key === 'color' ? (
       // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
@@ -424,6 +486,7 @@ export default function Configurator() {
           onCategoryChange={setSemanticCategory}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
+          focusFamilyKey={focusColorFamily}
         />
       </div>
     ) : section.key === 'typography' ? (
@@ -453,34 +516,15 @@ export default function Configurator() {
       subtitle: 'Browse the catalogue — toggle any component to include or remove it.',
     }
     centerRightSlot = (
-      <>
-        <div className="relative">
-          <button
-            onClick={() => setQuickPanelOpen((v) => !v)}
-            aria-label="Quick edit foundations"
-            aria-expanded={quickPanelOpen}
-            title="Quick edit — tweak your Foundations without leaving Components"
-            className={`flex-shrink-0 p-1.5 rounded-lg border transition-colors ${
-              quickPanelOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
-            }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-              <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-              <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-            </svg>
-          </button>
-          <QuickFoundationsPanel
-            open={quickPanelOpen}
-            onClose={() => setQuickPanelOpen(false)}
-            onOpenFoundations={() => selectFoundation('color')}
-            previewTheme={previewTheme}
-            onThemeChange={changePreviewTheme}
-            onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
-          />
-        </div>
-      </>
+      <QuickEditTrigger
+        open={quickPanelOpen}
+        onToggle={() => setQuickPanelOpen((v) => !v)}
+        onClose={() => setQuickPanelOpen(false)}
+        onOpenFoundations={() => selectFoundation('color')}
+        previewTheme={previewTheme}
+        onThemeChange={changePreviewTheme}
+        onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
+      />
     )
     body = (
       <div className="h-full flex min-h-0">
@@ -563,24 +607,19 @@ export default function Configurator() {
   const showPreview = (tab !== 'components' && tab !== 'docs' && !exportMode) || exportMode === 'save'
   const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
-  // Layout F — the live workbench is the primary Home experience. Deep foundation
-  // editors, Components, Docs and export all fall back to the classic shell.
-  const showWorkbench = tab === 'foundations' && activeFoundation === 'home' && !exportMode
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
-  const railVisible = projectCreated && !exportMode && !showWorkbench
+  const railVisible = projectCreated && !exportMode
 
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
   const navActive: TopNavKey | null =
-    showWorkbench ? 'generator'
-    : (!exportMode && tab === 'components') ? 'components'
+    (!exportMode && tab === 'components') ? 'components'
     : (!exportMode && tab === 'docs') ? 'documentation'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   const handleNav = (key: TopNavKey) => {
-    if (key === 'generator') selectFoundation('home')
-    else if (key === 'variables') selectFoundation('color')
+    if (key === 'variables') selectFoundation('color')
     else if (key === 'components') changeTab('components')
     else changeTab('docs')
   }
@@ -597,30 +636,12 @@ export default function Configurator() {
         exportMode={exportMode}
         onGithub={() => openExport('github')}
         onGetFigma={() => openExport('figma')}
-        onOpenFoundations={() => selectFoundation('color')}
-        brandWidth={showWorkbench ? 356 : railVisible ? RAIL_WIDTH : null}
-        showFullEditor={showWorkbench}
+        brandWidth={railVisible ? RAIL_WIDTH : null}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
       />
 
       <div className="flex-1 min-h-0 flex">
-      {showWorkbench ? (
-        <WorkbenchLayout
-          previewTheme={previewTheme}
-          onThemeChange={changePreviewTheme}
-          onOpenFoundations={() => selectFoundation('color')}
-          onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
-          actions={
-            <HomeActions
-              onNew={() => setNewSystemOpen(true)}
-              onImport={() => setImportOpen(true)}
-              onShare={() => setShareOpen(true)}
-              onReset={() => setResetOpen(true)}
-            />
-          }
-        />
-      ) : (
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
       {/* ── Body: section sub-rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
@@ -633,13 +654,10 @@ export default function Configurator() {
             active={railActive}
             onSelect={selectFoundation}
             // Figma-style split: token tables are Variables; the rest are Styles.
-            groups={(['variables', 'styles'] as const).map((g) => ({
-              label: g === 'variables' ? 'Variables' : 'Styles',
-              items: FOUNDATIONS.filter(
-                (f) => f.key !== 'home' &&
-                  (['icons', 'opacity', 'shadow', 'grid'].includes(f.key) ? 'styles' : 'variables') === g,
-              ).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })),
-            }))}
+            groups={[
+              { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+              { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+            ]}
           />
         )}
         {railVisible && (tab === 'components' || tab === 'docs') && (
@@ -671,18 +689,20 @@ export default function Configurator() {
               rightSlot={centerRightSlot}
             />
             <div className="flex-1 min-h-0">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={centerKey}
-                  className="h-full"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {body}
-                </motion.div>
-              </AnimatePresence>
+              {/* No `exit` animation and no AnimatePresence: the header (above)
+                  and this body both derive from `activeFoundation` in the same
+                  render, so they must swap in the same commit. An exit-then-enter
+                  sequence (mode="wait") would hold the OLD body on screen under the
+                  NEW header for the fade-out duration — a title/content mismatch. */}
+              <motion.div
+                key={centerKey}
+                className="h-full"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
+              >
+                {body}
+              </motion.div>
             </div>
           </main>
 
@@ -707,18 +727,10 @@ export default function Configurator() {
                   onOpenGithub={() => openExport('github')}
                   onCollapse={() => setPreviewCollapsed(true)}
                 />
-              ) : tab === 'foundations' && activeFoundation === 'home' ? (
-                // Home pairs the collage with the Quick edit panel instead of the preview.
-                <QuickEditPanel
-                  previewTheme={previewTheme}
-                  onThemeChange={changePreviewTheme}
-                  onOpenFoundations={() => selectFoundation('color')}
-                  onCollapse={() => setPreviewCollapsed(true)}
-                  onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
-                />
               ) : (
                 <PreviewPanel
                   focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticCategory : null}
+                  categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onNavigateFoundation={(key) => {
@@ -733,7 +745,6 @@ export default function Configurator() {
         </div>
       </div>
       </div>
-      )}
       </div>
 
       {/* Guided export — Source → Format → Export */}
@@ -753,10 +764,10 @@ export default function Configurator() {
             onClose={() => setImportOpen(false)}
             onImported={() => {
               setImportOpen(false)
-              // Land on Home so the collage renders the freshly imported system.
+              // Land on Variables · Color so the tables render the freshly imported system.
               setExportMode(null)
               setTab('foundations')
-              setActiveFoundation('home')
+              setActiveFoundation('color')
             }}
           />
         )}
@@ -773,11 +784,6 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
-      {/* Reset confirm — restore the design defaults */}
-      <AnimatePresence>
-        {resetOpen && <ResetConfirmModal onClose={() => setResetOpen(false)} />}
-      </AnimatePresence>
-
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>
         {newSystemOpen && (
@@ -790,6 +796,29 @@ export default function Configurator() {
               setTab('foundations')
               setActiveFoundation('color')
               setColorTab('primary')
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Guided token creation — Name/Target → Value/Scale → Confirm, so "New"
+          never lands straight on the full table. */}
+      <AnimatePresence>
+        {newTokenCategory && (
+          <NewTokenWizard
+            category={newTokenCategory}
+            Icon={FOUNDATIONS.find((f) => f.key === newTokenCategory)?.Icon ?? FOUNDATIONS[0].Icon}
+            onClose={() => setNewTokenCategory(null)}
+            onDone={(focusKey) => {
+              const category = newTokenCategory
+              setNewTokenCategory(null)
+              selectFoundation(category)
+              if (category === 'color' && focusKey) {
+                // Land on the family the wizard just created (or the Accent it
+                // just replaced), on the tab that renders the families table.
+                setColorTab('primary')
+                setFocusColorFamily(focusKey)
+              }
             }}
           />
         )}

@@ -9,10 +9,9 @@ import ThemeToggle from './ThemeToggle'
 // the left sits over the token-controls column, the nav + actions on the right
 // sit over the canvas.
 
-export type TopNavKey = 'generator' | 'variables' | 'documentation' | 'components'
+export type TopNavKey = 'variables' | 'documentation' | 'components'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
-  { key: 'generator', label: 'Generator' },
   { key: 'variables', label: 'Variables' },
   { key: 'documentation', label: 'Documentation' },
   { key: 'components', label: 'Components' },
@@ -25,15 +24,11 @@ interface TopNavProps {
   exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
   onGithub: () => void
   onGetFigma: () => void
-  /** "Full editor" — jumps from the quick controls into the deep token editors. */
-  onOpenFoundations: () => void
   /** Width of the left column below, so the brand block's right border extends
    *  it and the divider runs unbroken from the very top. null = no column
    *  (export/connect views), so the block sizes to its content and drops the
    *  border rather than leaving a rule that leads nowhere. */
   brandWidth?: number | null
-  /** Only the Generator's controls column needs the shortcut to the editors. */
-  showFullEditor?: boolean
   previewTheme: string
   onThemeChange: (theme: string) => void
 }
@@ -133,8 +128,8 @@ function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onGithub, onGetFigma, onOpenFoundations,
-  brandWidth = null, showFullEditor = false, previewTheme, onThemeChange,
+  nav, onNav, exportMode, onGithub, onGetFigma,
+  brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
   const { projectCreated } = useDesignStore()
 
@@ -151,14 +146,6 @@ export default function TopNav({
           <div className="text-[14px] font-semibold text-fg truncate leading-tight">Escala Tokens</div>
           <div className="text-[11.5px] text-fg-faint leading-tight">Token generator</div>
         </div>
-        {showFullEditor && (
-          <button
-            onClick={onOpenFoundations}
-            className="ml-auto flex-shrink-0 text-[12px] font-medium text-fg-muted hover:text-fg px-2 py-1 rounded-md hover:bg-elevated transition-colors"
-          >
-            Full editor
-          </button>
-        )}
       </div>
 
       {/* Nav + actions */}

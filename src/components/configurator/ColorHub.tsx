@@ -24,6 +24,7 @@ export default function ColorHub({
   onCategoryChange,
   previewTheme,
   onPreviewThemeChange,
+  focusFamilyKey,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -31,6 +32,9 @@ export default function ColorHub({
   onCategoryChange?: (c: SemanticCategory) => void
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
+  /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
+   *  NewTokenWizard just created). */
+  focusFamilyKey?: string | null
 }) {
   const tabBar = (
     <div className="flex items-center gap-1 p-1 rounded-full bg-elevated/60 border border-line w-full">
@@ -60,6 +64,7 @@ export default function ColorHub({
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             tabsSlot={tabBar}
+            focusFamilyKey={focusFamilyKey}
           />
         </div>
       ) : colorTab === 'gradients' ? (

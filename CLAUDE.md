@@ -21,28 +21,25 @@ then export. **There is no left icon rail** — section switching lives in the t
 
 ```
 ┌ row 1 — TopNav (global, every view) ───────────────────────────────────────┐
-│ ◆ Escala          │  Generator · Variables · Documentation · Components    │
+│ ◆ Escala          │  Variables · Documentation · Components               │
 │   Token controls  │              [Figma] [◆ Connect] [☾/☀]                 │
-│      Full editor  │                                                        │
 ├── LEFT COLUMN ────┼── CANVAS ──────────────────────────────────────────────┤
-│ Preset│Quick edit │ Preview │ Quick edit   New · Import JSON · Share · Kits │  ← row 2
-│ Presets           │ BUTTON & ACTIONS                                       │
-│ Color Family      │  every included component, rendered across its         │
-│ Typography        │  variants from the live tokens                         │
-│ Shadow · Radius   │                                                        │
+│  Variables rail   │ Color │ Quick edit · New · Import JSON · Share · Kits  │  ← row 2
+│ Color · Font      │  · Export                                             │
+│ Radius · Spacing  │  the active foundation's editable token table         │
+│ Sizes · Icons …   │                                                       │
 └───────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 The brand block's right border is the same divider as the left column's, so it runs
 unbroken from the very top. **Every row-2 header is `h-[52px]`** — `CenterHeader`,
-`WorkbenchLayout`'s `ColumnHeader`, `PreviewPanel`, `SaveSidePanel`, `QuickEditPanel` —
-so they line up across every column of every section. Any new panel header uses that
-height too. Their actions use the shared `ui/HeaderPill` (Generator's New · Import JSON ·
-Share · Kits · Reset AND Variables' Export are the same component — don't hand-roll
-another pill).
+`PreviewPanel`, `SaveSidePanel` — so they line up across every column of every section.
+Any new panel header uses that height too. Their actions use the shared `ui/HeaderPill`
+(Variables' New · Import JSON · Share · Kits AND Export are the same component — don't
+hand-roll another pill).
 
 > **Export is a guided flow, not a dump — and there is only ONE of it.** Variables' Export
-> pill AND the Generator's Share pill both open `ExportWizard` (Source → Format → Export),
+> pill AND its Share pill both open `ExportWizard` (Source → Format → Export),
 > backed by `lib/exportWizard.ts`; sharing IS exporting, so they must not diverge into two
 > flows. They differ only in what's pre-checked: Export scopes to the section you opened it
 > from (`COLLECTIONS_OF`), Share opens whole-system (`ALL_WIZARD_COLLECTIONS`). Step 1 picks **collections**
@@ -65,29 +62,65 @@ another pill).
   every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
   `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|
   `github`|`save`), `semanticCategory`. None persisted — every reload lands on
-  **Generator**. Leaving a foundation marks it complete (`commitVisit()` →
+  **Variables · Color** (`activeFoundation` defaults to `'color'`) — there is no separate
+  landing screen. Leaving a foundation marks it complete (`commitVisit()` →
   `markFoundationComplete`).
-- **The four top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
-  `handleNav`): **Generator** = the workbench (`activeFoundation === 'home'` →
-  `WorkbenchLayout`) · **Variables** = the deep token editors (`tab 'foundations'`,
-  entering at Color) · **Documentation** (`DocsView`) · **Components** (the catalogue).
-  Export/connect views (Figma · GitHub · Export · Save) unlight every item.
-- **Generator = `WorkbenchLayout`** — the live workbench and the app's landing view.
-  Left column (356px): `QuickEditSections accordion` — Presets swatch row, then Color
-  Family · Typography · Shadow · Radius … It is **controls, not nav**, but it speaks
-  `SectionRail`'s grammar so it reads as a wide rail: same 10px uppercase captions
-  (PRESETS · QUICK EDIT), same `h-9 · rounded-xl · 13px · icon + label` rows and hover,
-  and the same transparent-over-gradient backdrop (only the canvas is `bg-app`). Keep the
-  two in sync — restyling one means restyling the other. **A group's two states do
-  different jobs**: collapsed = a bare rail row; open = a `bg-surface` card that WRAPS its
-  settings (header, hairline, then the controls). The card is load-bearing, not decoration
-  — without it Color Family's controls and Typography's below run together and neither
-  group owns its settings. The canvas is the design system's living
-  documentation: every selected component rendered across its first axis, grouped by
-  catalogue category, painted from `usePreviewTokens(previewTheme)`. Its row-2 header
-  carries `HomeActions` (New · Import JSON · Share · Kits · Reset).
+- **The three top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
+  `handleNav`): **Variables** = the deep token editors (`tab 'foundations'`, entering at
+  Color) · **Documentation** (`DocsView`) · **Components** (the catalogue). Export/connect
+  views (Figma · GitHub · Export · Save) unlight every item.
+- **Generator/Preset is retired** — the old `WorkbenchLayout` workbench (a left "Preset ·
+  Quick edit" accordion beside a live component playground) was the former landing view
+  and is now unreachable as its own screen (the file is kept for reference only; don't wire
+  it back up). Its Presets swatch row + the full quick-edit accordion (Color Family ·
+  Typography · Shadow · Radius · Icons · Padding · Panel background) survive as a
+  **secondary popover**, not a view: the sliders icon in `CenterHeader`'s rightSlot
+  (`QuickEditTrigger` in `Configurator.tsx`) opens `QuickFoundationsPanel` — the same
+  popover the Components tab already used. Variables' `CenterHeader` also carries
+  `HomeActions` (New · Import JSON · Share · Kits — **no Reset**; the "reset the whole
+  system to defaults" action was removed from the UI entirely. Per-token "reset to
+  standard" icons in the token tables are unrelated and stay).
+- **"New" creates a TOKEN, not a design system** — clicking it opens `NewTokenMenu`
+  (`HomeActions.tsx`), a category popover fed by `VARIABLE_FOUNDATIONS` in
+  `Configurator.tsx` (`FOUNDATIONS` minus Icons/Opacity/Shadow/Grid — the exact same
+  array `SectionRail`'s Variables group renders from, so the menu and the rail can never
+  disagree). Picking a category opens `NewTokenWizard.tsx`: a **guided 2–4 step flow**
+  (Name/Target → Value/Scale → Confirm[ → Role, Color only]) that owns the full-screen
+  modal for every step, so the long token table is never visible until the flow closes.
+  Each category writes through the SAME store actions the Foundations editors use — no
+  parallel data model: **Color** mints a real new entity (`addCustomColor`, reusing the
+  exact scale-building logic — `detectSeedKind`/`solidFromSeed`/`generateColorScale`/
+  `generateFamilyDarkScale` — as `ColorPrimitives`' own "+ Add" popover), memoized once
+  as `colorScalePreview` so Confirm's swatch preview and the actual write can never
+  disagree, and a color that fails to scale (rare, but the generators can throw)
+  disables Confirm instead of silently no-op'ing; **Typography**/**Radius**/**Spacing**/
+  **Sizes** are fixed-key foundations, so their "Name" step means picking WHICH existing
+  slot you're setting (heading/body font · a named radius personality from
+  `RADIUS_PRESETS` · a base unit from `BASE_PRESETS` · which `xs`–`2xl` size token) and
+  the wizard writes the whole foundation via `setTypography`/`setRadius`/`setSpacing`/
+  `setSizes` on Confirm. "Start a new DESIGN SYSTEM" is a different, unrelated action —
+  still reachable via `NewSystemModal`, now only from `SaveView`'s saved-systems grid.
+- **Color's 4th step — Role — is Radix's aliasing split, made explicit**: generating a
+  scale (Confirm) and giving it a ROLE are two different decisions, so the wizard asks.
+  The Primitives nav folders a family by role via `familySlotFor()` (`themeSources.ts`):
+  a family only reads as **Accents** once some theme's `brand` slot references it — the
+  fixed `accent` family is hardcoded there; nothing else is, by default, which is exactly
+  the "new color did nothing" bug this step fixes. Three choices, `ROLE_OPTIONS`:
+  **Replace the active Accent** — no new family at all, just `useApplyAccentColor()`
+  retinting the global `accent` primitive (same path Quick Edit/Primary Color's dropdown
+  use) — updates every semantic token and the sticky preview live, no reload;
+  **Add as a secondary accent** — `addCustomColor` THEN `addTheme(key, 'light', { ...
+  DEFAULT_THEME_SOURCES, brand: colorSlug })`, i.e. a full theme identical to the
+  defaults except its brand slot — multi-brand/multi-tenant is modeled as "another
+  theme" here, so this is the minimal honest way to earn an Accents-folder entry;
+  **Save as a standalone palette** (default) — today's behavior unchanged, `addCustomColor`
+  only, files under Custom until a theme (or a later role assignment) claims it. Whichever
+  branch runs, `onDone` passes back the exact family key to focus (`'accent'` or
+  `` `custom-${slug}` ``) so `ColorPrimitives.focusFamilyKey` (a `useEffect` keyed on that
+  prop) switches the table to show it — the wizard closing was previously silent about
+  which family "won," which read as "nothing happened" even though the scale WAS created.
 - **`HomeView` is retired** — the old hero/collage hub is unreachable (the file is kept
-  for reference only). Don't wire it back up; the Generator replaced it.
+  for reference only). Don't wire it back up.
 - **Color is a three-tab hub** (`ColorHub`, default tab `primary`). The tab pill bar's
   position is per-tab: on **Primary Color** it renders BELOW the quick bar, directly above
   the families table (passed into `ColorPrimitives` as `tabsSlot`); Alias/Gradients keep it
@@ -124,7 +157,7 @@ another pill).
   swap. Switching architectures resets category/search state) ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
-  since the rail was removed — Share + Kits in the Generator header cover the same
+  since the rail was removed — Share + Kits in Variables' header cover the same
   ground, so re-add an entry point before relying on it):
   the center IS the export surface — a tabbed file-preview card (tokens.json with a
   "Figma plugin" badge · variables.css · README.md, accent-colored active tab, plus an
@@ -166,18 +199,35 @@ another pill).
   theme you'd switch TO — a **moon while light**, a **sun while dark**. It calls
   `changePreviewTheme`, so the previewed theme and the app chrome flip together. There is
   no segmented sun|moon pill any more.
-- **Right = `PreviewPanel.tsx`**: **collapsed by default** (`previewCollapsed` starts
-  `true`) — Variables is a token-editing view, so the tables get the width and the
-  preview is opt-in via the slim expand strip. "Components Preview" + a light/dark toggle
-  (drives the global theme). Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview`) from
-  `usePreviewTokens()`, so editing any foundation updates them **live**. **Context-aware in
-  Semantic**: it takes a `focus` prop (the active token category) and swaps to a matching live
-  specimen — `text`→`TextSpecimenPreview`, `surface`/`action`/`status`→`BackgroundSpecimenPreview`,
-  `border`→`BorderSpecimenPreview`, `icon`→`ForegroundSpecimenPreview` (header reads "Text
-  preview"… ); `all` and every other foundation show the generic overview. The category comes
-  from `Step3_SemanticTokens` (a **controlled** `activeCategory`/`onCategoryChange`, owned as
-  `semanticCategory` state in `Configurator`). **Hidden in the Components tab** (docs go
-  full-width) and below `xl`; the rail becomes a drawer below `md`.
+- **Right = `PreviewPanel.tsx`**: a **persistent, sticky specimen** of whatever foundation
+  is being edited — **expanded by default** (`previewCollapsed` starts `false`; the slim
+  strip still lets anyone collapse it for width). It's a separate tree from the center
+  column's `AnimatePresence`/`motion.div` swap, so switching foundations or editing a token
+  never unmounts or closes it — no stale-content risk of the kind the center body's swap
+  had (see the FASE 1 desync fix above). A light/dark toggle drives the global theme.
+  Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview` + the catalogue's
+  `SPECIMENS`) from `usePreviewTokens()`, so editing any foundation updates them **live**.
+  Two independent axes of context-awareness, checked in priority order:
+  1. **`focus`** (Semantic sub-category, `Step3_SemanticTokens`'s controlled
+     `activeCategory`/`onCategoryChange`, owned as `semanticCategory` state in
+     `Configurator`) — swaps to `text`→`TextSpecimenPreview`,
+     `surface`/`action`/`status`→`BackgroundSpecimenPreview`, `border`→`BorderSpecimenPreview`,
+     `icon`→`ForegroundSpecimenPreview`. Only set while `colorTab === 'semantics'`.
+  2. **`categoryKey`** (the active Variables foundation key, passed straight from
+     `activeFoundation`) — when `focus` isn't set, tailors the panel to a live component
+     set for that foundation: **color** → Button · Badge · Checkbox & Switch · Slider ·
+     Status badge · Toaster · a dedicated Semantic-states group (Error/Success/Warning/Info
+     badges) · **typography** → Button + `FontFamilyPreview` (a trigger that opens a modal
+     listing Heading/Body family with a "Copy family" clipboard action per row) ·
+     **radius** → Button · Card · Input · Modal (the catalogue's `ModalSpecimen`, which
+     renders inline — not a real floating dialog) · **spacing**/**sizes** → Button at every
+     `Size` (SM–XL, so it reads the `sizes` tokens live) + Card (reads `padding` live) —
+     these sit ALONGSIDE the token tables' own comparative bars (`VariablesTable`'s
+     `preview` column + Sizes' "Component Sizes" bar block), not replacing them. Any other
+     foundation (Icons — which instead swaps via `iconLibraryKey`; Opacity, Shadow, Grid)
+     falls back to the original generic Button/Badge/Switch/Form set. **Hidden in the
+     Components tab** (docs go full-width) and below `xl`; the rail becomes a drawer below
+     `md`.
 - **Components ship complete**: `selectedComponents` defaults to every key; a checkbox *removes* one.
 - **Foundation progress** (`completedFoundations`) persists; "visited = done" — shown as ✓
   in the Home overview checklist.
@@ -195,9 +245,9 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), WorkbenchLayout (Generator), SectionRail (the one left rail), HomeActions, ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (the one left rail), HomeActions (incl. the "New" token-category menu), NewTokenWizard (guided token creation), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout is retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
-│   └── preview/            ← PreviewPanel, ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
+│   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
 │   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 28)
 ├── lib/
@@ -216,7 +266,7 @@ src/
 ├── types/
 │   └── tokens.ts           ← TypeScript types for DesignTokens, ColorScale, etc.
 └── pages/
-    └── Configurator.tsx    ← shell: TopNav over (WorkbenchLayout | sub-rail + center editor + PreviewPanel)
+    └── Configurator.tsx    ← shell: TopNav over (sub-rail + center editor + PreviewPanel)
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
 scripts/
@@ -318,14 +368,18 @@ Store uses `persist` middleware with `version: 40`. If you add fields, bump the 
 > - **The export ships no per-theme namespaced ramps.** A theme's ramps ARE families,
 >   already exported under their own key, so its semantics alias those primitives.
 
-> **Base drives the page (HeroUI model).** There is no background picker. `grayBaseColor`
-> — labelled **Base** in the UI, still exported as the `neutral-*` family — is the single
-> input the page is computed from: `useApplyGrayColor` writes `pageBackground` +
-> `darkBackground` via `backgroundFromBase()` and then **re-anchors every ramp** (brand,
-> status, customs) to the new light page, because tone 1 grows out of it. While the
-> accent↔base link is on, an accent change moves the base and therefore the page too;
-> unlinked, the accent leaves the page alone. Don't reintroduce an independent background
-> input — that's what let the page and the ramps grown against it drift apart.
+> **Base drives the page (HeroUI model).** There is still no background PICKER.
+> `grayBaseColor` — labelled **Gray / Neutral** in the UI (renamed from "Base", which
+> collided with the sidebar's own "Neutral" family and with the per-tone "anchor" concept
+> below — nothing should say "Base" for two different things) — is the single input the
+> page is computed from: `useApplyGrayColor` writes `pageBackground` + `darkBackground` via
+> `backgroundFromBase()` and then **re-anchors every ramp** (brand, status, customs) to the
+> new light page, because tone 1 grows out of it. While the accent↔base link is on, an
+> accent change moves the base and therefore the page too; unlinked, the accent leaves the
+> page alone. `ColorPrimitives`' quick bar DOES show a **Background** field now
+> (`DerivedBackgroundField`) — but it's a read-only calibration READOUT (no `onChange`,
+> `cursor-default`), not a second input: still don't reintroduce an independently-editable
+> background — that's what let the page and the ramps grown against it drift apart before.
 
 > **Alpha twins are solved, not eyeballed.** `alphaColorOver` inverts alpha compositing
 > — `α = (solid − page)/(overlay − page)`, max across channels, then the overlay is
@@ -364,6 +418,32 @@ Store uses `persist` middleware with `version: 40`. If you add fields, bump the 
 >   exist — don't reintroduce it.
 > - **Nothing inverts for display.** The families table and quick-bar ramps read the dark
 >   ramp at the SAME step. An inversion here means a dark ramp is missing somewhere.
+
+> **Tone 9 is ALWAYS the anchor — pinned, not detected.** `BASE_TONE = 9` (`colorUtils.ts`)
+> is a hardcoded constant: `generateColorScale` writes the input hex to tone 9 verbatim
+> (`if (i === BASE_TONE) { out.push(chroma(baseHex).hex()); continue }`) every time, for
+> every algorithm. This is Radix's own model too (their Custom Palette tool does the same).
+> The ring/badge marking it in the UI is called **"Anchor"**, not "Base" — that text
+> collided with `grayBaseColor`'s "Base" label (see above) and implied a per-color
+> computation that doesn't exist; renaming it didn't change the math, tone 9 was always
+> where the input color landed. `ScaleRow`'s compact 12-cell strip (`colorControls.tsx`)
+> marks it with a ring + a tiny dot only — "anchor" as text doesn't fit any of the 12 cells
+> at 7–8px, tried it, it clips; the full word lives in the cell's `title` tooltip and in
+> the families table's row badge, which has room.
+>
+> **On-screen labels default to Radix numeric (1–12), not Tailwind hundreds (25–950) —
+> for NEW systems only.** Every ramp is stored 1–12 internally regardless of naming scheme
+> (nothing to migrate); `colorNaming` (`'numeric' | 'hundreds' | 'tens'`, `NAMING_SCHEMES`
+> in `colorUtils.ts`) only relabels the swatch-strip numbers, the families table's row
+> names (`accent-25` vs `accent-1`) AND the exported token names — one scheme drives all
+> three, deliberately, so what's on screen is never a lie about what ships. `
+> makeDesignDefaults()` seeds `colorNaming: 'numeric'`; **existing persisted/saved systems
+> keep whatever they already have** (a store default only ever applies to fresh state, so
+> this doesn't silently rename anyone's already-exported `accent-25`-style tokens or break
+> a live Figma/JSON integration pointed at them). The families table also captions its 12
+> rows into Radix's 5 role bands (`TONE_BANDS` in `ColorPrimitives.tsx`: 1–2 Backgrounds ·
+> 3–5 Interactive components · 6–8 Borders · 9–10 Solid colors · 11–12 Accessible text) —
+> keyed off the tone NUMBER, so the grouping holds under either naming scheme.
 
 > **Light vs dark ramps.** A ramp always runs 1 (lightest) → 12 (darkest); what differs is **which end grows out of the page**. `generateColorScale(…, appearance: 'light')` anchors tone 1 to `pageBackground`; `generateDarkColorScale()` anchors tone **12** to `darkBackground` *and* re-derives the ramp's base (tone 9) as a dark neutral, so tones 9–12 are the dark surfaces instead of mid-grays. Gray is the **only** ramp with a dark twin — colored ramps (brand/status) keep their hue and just shift tone via `recDarkTone`. Anything that builds a `GlobalScales` **must pass `grayDark`**: it's optional in the type, and omitting it silently falls back to the legacy constant — which would make Step3's resync treat every dark gray as stale and overwrite the generated ramp.
 

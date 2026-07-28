@@ -45,6 +45,41 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
+// A calibration READOUT, not a picker: shows what tones 1–2 of Accent and Gray
+// are anchored to. No onChange — the background is DERIVED from Gray/Neutral
+// (see `backgroundFromBase`); an independently-editable field here is what let
+// the page and the ramps grown against it drift apart before. Same visual
+// weight as the ColorSelect triggers beside it, but inert (cursor-default, no
+// chevron) so it doesn't read as another dropdown.
+function DerivedBackgroundField({ label, hex }: { label: string; hex: string }) {
+  return (
+    <div className="flex flex-col gap-1.5 min-w-0">
+      <span className="text-xs text-fg-muted">{label}</span>
+      <div
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-elevated/50 border border-line text-left cursor-default"
+        title="Derived from Gray / Neutral — calibrates tones 1–2 of Accent and Gray. Not independently editable."
+      >
+        <span className={SWATCH} style={{ backgroundColor: hex }} />
+        <span className="flex-1 min-w-0 truncate text-sm text-fg-muted font-mono">{hex}</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Radix role bands — which tones (1-12) serve which purpose. Drives the
+// families table's group captions; the tone NUMBER always means this,
+// independent of whatever the active naming scheme displays for it. ────────
+const TONE_BANDS: { max: number; label: string }[] = [
+  { max: 2, label: 'Backgrounds' },
+  { max: 5, label: 'Interactive components' },
+  { max: 8, label: 'Borders' },
+  { max: 10, label: 'Solid colors' },
+  { max: 12, label: 'Accessible text' },
+]
+function toneBand(tone: number): string {
+  return TONE_BANDS.find((b) => tone <= b.max)?.label ?? ''
+}
+
 
 // ── Editable hex cell (swatch + live hex field, draft pattern) ───────────────
 
@@ -97,12 +132,17 @@ export default function ColorPrimitives({
   previewTheme = 'light',
   onPreviewThemeChange,
   tabsSlot,
+  focusFamilyKey,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
   /** The Color hub's tab pills — rendered between the quick bar and the
    *  families table so the switcher sits right on top of the tokens. */
   tabsSlot?: ReactNode
+  /** External request to switch the active family (e.g. NewTokenWizard just
+   *  created it) — a family key (`custom-<slug>`), re-applied whenever it
+   *  changes to a new value. */
+  focusFamilyKey?: string | null
 }) {
   const store = useDesignStore()
   const {
@@ -186,6 +226,13 @@ export default function ColorPrimitives({
   const [query, setQuery] = useState('')
   const [expandedTone, setExpandedTone] = useState<number | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+
+  // A family created elsewhere (NewTokenWizard) requests focus — switch to it
+  // so the table actually shows the family + names the user just picked,
+  // instead of silently staying on whatever was active before.
+  useEffect(() => {
+    if (focusFamilyKey) setActiveFamily(focusFamilyKey)
+  }, [focusFamilyKey])
 
   // EVERY family carries both scales (the Radix two-scale model) — the light
   // column edits the light ramp, the dark column its own dark twin.
@@ -348,15 +395,20 @@ export default function ColorPrimitives({
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-6"
     >
-      {/* ── Quick bar: accent · link · neutral · background + ramps ── */}
+      {/* ── Quick bar: accent · link · gray/neutral · background (derived,
+          read-only) · state colors + ramps ── */}
       <section className="flex flex-col gap-[24px] rounded-[16px] border border-line p-[24px] shadow-sm">
-        <div className="grid grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
+        <div className="grid grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-end">
           <ColorSelect label="Color families" value={accentBase} groups={brandGroups} onChange={changeAccent} allowCustom />
           <div className="flex flex-col items-center gap-1.5 pb-1.5">
             <InfoDot tip="Auto-matches the neutral scale to your accent color." />
             <LinkToggle active={linked} onClick={toggleLink} accentColor={brandRamp[BASE_TONE] ?? primaryColor} />
           </div>
-          <ColorSelect label="Base" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
+          <ColorSelect label="Gray / Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
+          <DerivedBackgroundField
+            label={darkPreview ? 'Background (dark)' : 'Background'}
+            hex={darkPreview ? darkBackground : pageBackground}
+          />
           <StateColorsSelect
             label="State Colors"
             neutral={neutralBase}
@@ -667,19 +719,31 @@ export default function ColorPrimitives({
                   const pickTarget = darkPreview
                     ? { value: family.dark[darkTone] ?? '#000000', set: (hex: string) => setTone(family.dark, family.setDark, darkTone, hex) }
                     : { value: family.light[tone] ?? '#ffffff', set: (hex: string) => setTone(family.light, family.setLight, tone, hex) }
+                  // A new role band starts here — caption it, so the 12 rows
+                  // read as 5 grouped ranges (Radix's own breakdown) instead of
+                  // an undifferentiated list. Keyed off the TONE, not the
+                  // active naming scheme's label, so it holds regardless of
+                  // whether the row name reads accent-9 or accent-700.
+                  const band = toneBand(tone)
+                  const newBand = i === 0 || band !== toneBand(visibleTones[i - 1])
                   return (
                     <div key={tone}>
+                      {newBand && (
+                        <div className="px-4 pt-3 pb-1 border-t border-line/40 bg-surface/60">
+                          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{band}</span>
+                        </div>
+                      )}
                       <div
-                        className={`grid items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-                          isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-                        }`}
+                        className={`grid items-stretch group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+                          newBand ? '' : 'border-t border-line/40'
+                        } ${isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}`}
                         style={gridStyle}
                       >
                         <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
                           <PaletteIcon size={14} />
                           <code className="font-mono text-[12px] text-fg-muted truncate">{name}</code>
                           {tone === BASE_TONE && (
-                            <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">base</span>
+                            <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">anchor</span>
                           )}
                         </div>
                         <div className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">

@@ -8,6 +8,7 @@ import { BackgroundSpecimenPreview } from './atoms/BackgroundSpecimenPreview'
 import { BorderSpecimenPreview } from './atoms/BorderSpecimenPreview'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
+import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
 
@@ -16,12 +17,31 @@ import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
 const ButtonSpec = SPECIMENS.Button
 const BadgeSpec = SPECIMENS.Badge
 const SwitchSpec = SPECIMENS.Toggle
+const CheckboxSpec = SPECIMENS.Checkbox
+const SliderSpec = SPECIMENS.Slider
+const StatusBadgeSpec = SPECIMENS.StatusBadge
+const ToastSpec = SPECIMENS.Toast
+const CardSpec = SPECIMENS.Card
+const ModalSpec = SPECIMENS.Modal
+const InputSpec = SPECIMENS.Input
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
 const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
   content: 'Content preview',
   background: 'Background preview',
   border: 'Border preview',
+}
+
+// When no semantic focus is active, the panel instead tailors itself to the
+// active Variables foundation — same idea (a live specimen for what you're
+// editing), one level up. Only foundations with a dedicated set below get a
+// title here; anything else (Icons/Opacity/Shadow/Grid) keeps the generic one.
+const CATEGORY_TITLE: Record<string, string> = {
+  color: 'Color preview',
+  typography: 'Font preview',
+  radius: 'Radius preview',
+  spacing: 'Spacing preview',
+  sizes: 'Sizes preview',
 }
 
 // ── Layout helpers ──────────────────────────────────────────────────────────
@@ -50,6 +70,7 @@ function Tile({ tokens, children }: { tokens: PreviewTokens; children: ReactNode
 // ── Panel ─────────────────────────────────────────────────────────────────
 export default function PreviewPanel({
   focus = null,
+  categoryKey = null,
   previewTheme = 'light',
   iconLibraryKey = null,
   showOverview = false,
@@ -57,6 +78,9 @@ export default function PreviewPanel({
   onCollapse,
 }: {
   focus?: SemanticCategory | null
+  /** Active Variables foundation key (`color`|`typography`|`radius`|…) — tailors
+   *  the generic fallback below to a live specimen set for that foundation. */
+  categoryKey?: string | null
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
   previewTheme?: string
   /** When set (Icons foundation), the panel previews that library's glyphs. */
@@ -75,7 +99,7 @@ export default function PreviewPanel({
     ? `${getIconLibrary(iconLibraryKey)?.label ?? 'Icon'} preview`
     : specimen
     ? FOCUS_TITLE[specimen]
-    : 'Components Preview'
+    : (categoryKey && CATEGORY_TITLE[categoryKey]) || 'Components Preview'
   // Show which theme is on display when it isn't the default light one.
   const themeBadge = !iconLibraryKey && previewTheme && previewTheme !== 'light' ? previewTheme : null
 
@@ -116,6 +140,115 @@ export default function PreviewPanel({
           <BackgroundSpecimenPreview tokens={tokens} />
         ) : specimen === 'border' ? (
           <BorderSpecimenPreview tokens={tokens} />
+        ) : categoryKey === 'color' ? (
+          <>
+            {/* Color drives every one of these live: brand, neutrals and the
+                four semantic states (error/success/warning/info) all repaint
+                the instant their token changes. */}
+            <Group title="Button">
+              <Tile tokens={tokens}>
+                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Ghost' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Badge">
+              <Tile tokens={tokens}>
+                <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Brand' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Checkbox & Switch">
+              <Tile tokens={tokens}>
+                <CheckboxSpec t={tokens} v={{ Checked: 'True' }} />
+                <SwitchSpec t={tokens} v={{ On: 'True' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Slider">
+              <Tile tokens={tokens}>
+                <SliderSpec t={tokens} v={{}} />
+              </Tile>
+            </Group>
+
+            <Group title="Status badge">
+              <Tile tokens={tokens}>
+                <StatusBadgeSpec t={tokens} v={{ Status: 'Online' }} />
+                <StatusBadgeSpec t={tokens} v={{ Status: 'Away' }} />
+                <StatusBadgeSpec t={tokens} v={{ Status: 'Busy' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Toaster">
+              <ToastSpec t={tokens} v={{ Status: 'Success' }} />
+            </Group>
+
+            <Group title="Semantic states">
+              <Tile tokens={tokens}>
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Error' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Warning' }} />
+                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Info' }} />
+              </Tile>
+            </Group>
+          </>
+        ) : categoryKey === 'typography' ? (
+          <>
+            <Group title="Button">
+              <Tile tokens={tokens}>
+                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Font family">
+              <FontFamilyPreview tokens={tokens} />
+            </Group>
+          </>
+        ) : categoryKey === 'radius' ? (
+          <>
+            {/* Highest-visual-impact surfaces — every corner here reads the
+                same `radius` token live, from a pill button to a modal. */}
+            <Group title="Button">
+              <Tile tokens={tokens}>
+                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
+                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Card">
+              <CardSpec t={tokens} v={{}} />
+            </Group>
+
+            <Group title="Input">
+              <InputSpec t={tokens} v={{}} />
+            </Group>
+
+            <Group title="Modal">
+              <ModalSpec t={tokens} v={{}} />
+            </Group>
+          </>
+        ) : categoryKey === 'spacing' || categoryKey === 'sizes' ? (
+          <>
+            {/* The token tables already carry the comparative bars; these add
+                real components so the effect reads, not just the px value. */}
+            <Group title="Button sizes">
+              <Tile tokens={tokens}>
+                <ButtonSpec t={tokens} v={{ Size: 'SM' }} />
+                <ButtonSpec t={tokens} v={{ Size: 'MD' }} />
+                <ButtonSpec t={tokens} v={{ Size: 'LG' }} />
+                <ButtonSpec t={tokens} v={{ Size: 'XL' }} />
+              </Tile>
+            </Group>
+
+            <Group title="Card padding">
+              <CardSpec t={tokens} v={{}} />
+            </Group>
+          </>
         ) : (
           <>
             {/* The exact catalogue specimens (SPECIMENS — the same renderers the

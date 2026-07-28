@@ -688,7 +688,7 @@ export function QuickEditSections({
           <div className="pb-0.5">
             <LinkToggle active={linked} onClick={toggleLink} accentColor={accentBase} />
           </div>
-          <ColorSelect label="Base" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom panelClassName="right-0 w-[240px] max-h-72" />
+          <ColorSelect label="Gray / Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom panelClassName="right-0 w-[240px] max-h-72" />
         </div>
 
         <div className="flex flex-col gap-1">

@@ -351,7 +351,11 @@ export function makeDesignDefaults(): DesignSnapshot {
     projectDescription: '',
     colorAlgorithm: 'radix',
     contrastShift: 0,
-    colorNaming: 'hundreds',
+    // Radix's own 1-12 numbering — every ramp is already stored this way
+    // internally (see BASE_TONE), so this just makes new systems' on-screen
+    // labels and export match it too. Existing persisted systems keep
+    // whatever naming they already have; this only seeds fresh ones.
+    colorNaming: 'numeric',
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: '#7f56d9',
