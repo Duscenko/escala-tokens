@@ -1,7 +1,7 @@
 import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
-import { useTheme, setTheme } from '../lib/theme'
+import { useTheme, getTheme, setTheme } from '../lib/theme'
 import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import SectionRail, { RAIL_WIDTH } from '../components/configurator/SectionRail'
@@ -19,9 +19,10 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
+import { type PickerFocusTarget } from '../components/configurator/PickerColor'
 import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
-import { ALL_WIZARD_COLLECTIONS, type WizardCollection } from '../lib/exportWizard'
+import { type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
 import NewTokenWizard, { type TokenCategory } from '../components/configurator/NewTokenWizard'
@@ -315,14 +316,33 @@ export default function Configurator() {
   // Active Semantic category — shared with the table (master nav) and the preview,
   // so the right panel mirrors whichever token group is being edited.
   const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
-  // Sub-tab within the Color hub (Primary ↔ Alias/Semantics ↔ Gradients). The
-  // preview mirrors the semantic category only while the semantics tab is active.
+  // Sub-tab within the Color hub (Picker ↔ Primary ↔ Alias/Semantics ↔
+  // Gradients). The preview mirrors the semantic category only while the
+  // semantics tab is active.
   const [colorTab, setColorTab] = useState<ColorTab>('primary')
+  // Primary Color's "Edit in Picker Color" link — switches to Picker Color
+  // AND tells it which section (accent/neutral/error/warning/success/info) to
+  // scroll to and pulse.
+  const [pickerFocusTarget, setPickerFocusTarget] = useState<PickerFocusTarget>(null)
+  const onEditInPicker = (target: Exclude<PickerFocusTarget, null>) => {
+    setColorTab('picker')
+    setPickerFocusTarget(target)
+  }
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
   // same state, so switching to Dark anywhere previews Dark everywhere.
-  const [previewTheme, setPreviewTheme] = useState('light')
+  // Initialized from the PERSISTED chrome theme (`sd-theme`), not hardcoded to
+  // 'light': previewTheme itself isn't persisted, but the chrome class is, so a
+  // reload while dark chrome was active used to start every preview back on
+  // light — Alias/Semantics' theme selector, Picker Color's transparency ramp,
+  // and PreviewPanel would all read light tokens under dark chrome until the
+  // user re-clicked the toggle twice to resync.
+  const [previewTheme, setPreviewTheme] = useState(() => {
+    if (getTheme() !== 'dark') return 'light'
+    if (themeKinds.dark === 'dark') return 'dark'
+    return Object.keys(themeKinds).find((k) => themeKinds[k] === 'dark') ?? 'light'
+  })
   // Picking a theme also flips the app chrome to that theme's kind, so a dark
   // preview (built-in dark or any future dark-kind theme) reads on dark chrome.
   const changePreviewTheme = (key: string) => {
@@ -347,8 +367,6 @@ export default function Configurator() {
   // A color family the wizard just created — ColorPrimitives switches its
   // active family to this so the table actually shows what was just made.
   const [focusColorFamily, setFocusColorFamily] = useState<string | null>(null)
-  // Header actions — Share recycles the file-preview card.
-  const [shareOpen, setShareOpen] = useState(false)
   // Components catalogue — filters the master list by label/key.
   const [componentSearch, setComponentSearch] = useState('')
   // Active component category (Components section sub-nav) — filters the list.
@@ -469,7 +487,6 @@ export default function Configurator() {
         <HomeActions
           onNew={(key) => setNewTokenCategory(key as TokenCategory)}
           onImport={() => setImportOpen(true)}
-          onShare={() => setShareOpen(true)}
           tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
         />
       </>
@@ -487,6 +504,9 @@ export default function Configurator() {
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
           focusFamilyKey={focusColorFamily}
+          pickerFocusTarget={pickerFocusTarget}
+          onPickerFocusHandled={() => setPickerFocusTarget(null)}
+          onEditInPicker={onEditInPicker}
         />
       </div>
     ) : section.key === 'typography' ? (
@@ -753,6 +773,7 @@ export default function Configurator() {
           <ExportWizard
             initialCollections={COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']}
             onClose={() => setSectionExportOpen(false)}
+            onConnectGithub={() => { setSectionExportOpen(false); openExport('github') }}
           />
         )}
       </AnimatePresence>
@@ -773,16 +794,6 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
-      {/* Share — the same guided export as Variables, opened whole-system:
-          sharing IS exporting, so it shouldn't be a second, different flow. */}
-      <AnimatePresence>
-        {shareOpen && (
-          <ExportWizard
-            initialCollections={ALL_WIZARD_COLLECTIONS}
-            onClose={() => setShareOpen(false)}
-          />
-        )}
-      </AnimatePresence>
 
       {/* New-design-system window — name + accent, then straight into Foundations */}
       <AnimatePresence>

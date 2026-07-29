@@ -185,7 +185,10 @@ export function ColorSelect({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
-  // Pill — label · color dot · hex · chevron, in a rounded outlined pill.
+  // Pill — label · color dot · hex · chevron, in a rounded outlined field.
+  // Radius matches the `full` variant's `rounded-[13px]` deliberately: these
+  // sit directly under the Color families / Gray-Neutral dropdowns in Picker
+  // Color, and a pill-vs-field mismatch there read as two different controls.
   if (pill) {
     return (
       <div ref={ref} className="relative w-full">
@@ -195,7 +198,7 @@ export function ColorSelect({
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-label={`${label ?? 'Color'} — ${hexLabel}`}
-          className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 transition-colors"
+          className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 transition-colors"
           style={{ ['--tw-ring-color' as string]: accentColor ?? '#111111' }}
         >
           {label && <span className="text-[13px] text-fg">{label}</span>}
@@ -630,37 +633,117 @@ export function StateColorsSelect({
 // always tone 9/BASE_TONE by construction; "anchor" names what the badge
 // shows without colliding with `grayBaseColor`'s "Base" label) ─────────────
 
-export function ScaleRow({ scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default' }: { scale: Record<number, string>; baseIndex?: number; showNumbers?: boolean; labels?: string[]; size?: 'default' | 'thin' }) {
+/** Ink that stays legible on `hex` — used by the `numbersInside` variant, whose
+ *  whole point is showing the tone number ON the tone so contrast is visible. */
+function readableInkOn(hex: string): string {
+  try {
+    // Alpha tones composite over the page, so judge the composite, not the
+    // overlay: a 10%-alpha swatch reads as the page, not as the raw color.
+    const c = chroma(hex)
+    return c.alpha() < 0.5 || c.luminance() > 0.42 ? '#0a0a0a' : '#ffffff'
+  } catch {
+    return '#0a0a0a'
+  }
+}
+
+export function ScaleRow({
+  scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default',
+  numbersInside = false, ariaLabel,
+}: {
+  scale: Record<number, string>
+  baseIndex?: number
+  showNumbers?: boolean
+  labels?: string[]
+  size?: 'default' | 'thin'
+  /** Renders the tone number INSIDE its swatch (instead of as a caption above)
+   *  so the number doubles as a live contrast check against the tone itself.
+   *  Taller (`h-11`) to fit the label, but the SAME `rounded-md` corner as
+   *  every other ScaleRow — a one-off `rounded-[13px]` here (matched to the
+   *  ColorSelect dropdown above it) read as inconsistent with the state-color
+   *  ramps sitting directly below it, on the same tab. */
+  numbersInside?: boolean
+  ariaLabel?: string
+}) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
   const thin = size === 'thin'
   return (
-    <div className="grid grid-cols-12 gap-1.5">
+    <div className="grid grid-cols-12 gap-1" role="group" aria-label={ariaLabel}>
       {entries.map(([key, color], i) => {
         const k = Number(key)
         const isBase = k === baseIndex
         const onLight = k >= BASE_TONE ? '#ffffff' : '#0a0a0a'
+        const label = labels?.[i] ?? key
         return (
-          <div key={key} className="flex flex-col gap-1 min-w-0">
-            {showNumbers && (
-              <span className="text-[9px] text-fg-faint text-center font-mono tabular-nums leading-none truncate">{labels?.[i] ?? key}</span>
+          <div key={key} className="flex flex-col gap-0.5 min-w-0">
+            {showNumbers && !numbersInside && (
+              <span className="text-[9px] text-fg-faint text-center font-mono tabular-nums leading-none truncate">{label}</span>
             )}
             <div
-              className={`${thin ? 'h-[19px]' : 'h-11'} rounded-lg flex items-center justify-center ${isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''}`}
+              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} rounded-md flex items-center justify-center overflow-hidden ${
+                isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''
+              }`}
               style={{ backgroundColor: color }}
               title={isBase ? `Anchor — tone ${key} — ${color}` : `Tone ${key} — ${color}`}
             >
-              {/* No text here — "anchor" doesn't fit any of the 12 cells at any
-                  screen size (tried it; clips even truncated). The ring above
-                  IS the persistent marker; the word itself lives in the title
-                  tooltip and in the token table's row badge, which has room. */}
-              {isBase && !thin && (
-                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: onLight }} aria-hidden />
+              {numbersInside ? (
+                /* The NUMBER only — never "9 Anchor". At 12 cells across the
+                   center column the anchor cell has ~29px of room and the word
+                   needs ~58px, so it truncated to "9 …" and cost the one thing
+                   this variant exists to show: the step number, legible on its
+                   own tone. The ring + dot mark the anchor; the word lives in
+                   the title tooltip and the token table's row badge. */
+                <span
+                  className="px-1 text-[10px] font-mono tabular-nums leading-none"
+                  style={{ color: readableInkOn(color) }}
+                >
+                  {label}
+                </span>
+              ) : (
+                /* No text in the compact variants — "anchor" doesn't fit any of
+                   the 12 cells at that size (tried it; clips even truncated).
+                   The ring IS the persistent marker; the word lives in the
+                   title tooltip and the token table's row badge, which has room. */
+                isBase && !thin && (
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: onLight }} aria-hidden />
+                )
               )}
             </div>
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// Same checkerboard used by Foundations · Opacity's "Opacity Scale" strip
+// (`Step6_Opacity.tsx`) — reused verbatim so a translucent swatch reads as
+// transparent everywhere in the app, not just on one page.
+const CHECKER = {
+  backgroundImage: 'repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)',
+} as const
+
+/** The brand ramp's alpha twin, rendered as a labeled strip over a checkerboard
+ *  — Picker Color's mirror of Opacity's own "Opacity Scale" strip, so the same
+ *  visual language ("this has a checker behind it → it's translucent") means
+ *  the same thing in both places. A `ScaleRow` of solid-looking swatches read
+ *  as just another color ramp with no way to tell it apart from the brand ramp
+ *  above it; painting it on a flat page color (rather than a checker) had the
+ *  same problem AND silently broke across light/dark preview, since an alpha
+ *  value is only correct against the specific page it was solved for. */
+export function TransparencyStrip({ scale, labels }: { scale: Record<number, string>; labels?: string[] }) {
+  const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
+  if (entries.length === 0) return null
+  return (
+    <div className="flex rounded-lg overflow-hidden border border-line" style={{ ...CHECKER, backgroundSize: '12px 12px' }}>
+      {entries.map(([key, color], i) => (
+        <div key={key} className="flex-1 flex flex-col items-center min-w-0">
+          <div className="w-full h-9" style={{ backgroundColor: color }} title={`Tone ${key} — ${color}`} />
+          <span className="text-[9px] font-mono text-fg-faint py-1 bg-surface w-full text-center border-t border-line truncate">
+            {labels?.[i] ?? key}
+          </span>
+        </div>
+      ))}
     </div>
   )
 }

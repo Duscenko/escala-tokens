@@ -1,34 +1,31 @@
-// Primary Color — the Color hub's first tab: the primitive-family editor.
-// Top: the accent · link · neutral · background quick bar with the generated
-// ramps (relocated from Home). Below: a Figma-style families table (Accent ·
-// Neutral · states · custom families) listing every tone as a token row with
-// editable light/dark values, eye toggles on the theme columns and a per-row
-// picker. "+ Add" creates a custom color family with its own 1–12 scale.
-// Token names in the table are the EXACT exported names (tokenGenerator's
-// flattenScale prefixes: accent/neutral/error/success/warning/info/<slug>), so
-// the table, the semantic sources and tokens.json never disagree.
+// Primary Color — the Color hub's usage tab: a Figma-style families table
+// (Accent · Neutral · custom families — States lives in Picker Color now)
+// listing every tone as a token row with editable light/dark values, eye
+// toggles on the theme columns and a per-row picker. "+ Add" creates a custom
+// color family with its own 1–12 scale. Token names in the table are the
+// EXACT exported names (tokenGenerator's flattenScale prefixes:
+// accent/neutral/error/success/warning/info/<slug>), so the table, the
+// semantic sources and tokens.json never disagree. Palette DEFINITION (Color
+// families, Gray/Neutral, State Colors) lives in Picker Color — this tab is
+// usage only; "Edit in Picker Color" jumps there for the active family.
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
-  NAMING_SCHEMES, BASE_TONE, recommendStateColors, generateColorScale,
+  NAMING_SCHEMES, BASE_TONE, generateColorScale,
   generateFamilyDarkScale, detectSeedKind, solidFromSeed, type SeedKind,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
-import {
-  ColorSelect, ScaleRow, InfoDot, LinkToggle, StateColorsSelect, neutralFromBrand, SWATCH,
-  usePopoverPlacement, type IntentRole,
-  BRAND_GROUPS, NEUTRAL_GROUPS, type OptionGroup,
-} from './colorControls'
-import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import { SWATCH, usePopoverPlacement } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
-import { resolveThemePalette, themesUsingFamily, familySlotFor } from '../../lib/themeSources'
+import { themesUsingFamily, familySlotFor } from '../../lib/themeSources'
 import { slugify } from '../../lib/utils'
+import { type PickerFocusTarget } from './PickerColor'
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -42,27 +39,6 @@ function EyeIcon({ active }: { active: boolean }) {
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20" />
     </svg>
-  )
-}
-
-// A calibration READOUT, not a picker: shows what tones 1–2 of Accent and Gray
-// are anchored to. No onChange — the background is DERIVED from Gray/Neutral
-// (see `backgroundFromBase`); an independently-editable field here is what let
-// the page and the ramps grown against it drift apart before. Same visual
-// weight as the ColorSelect triggers beside it, but inert (cursor-default, no
-// chevron) so it doesn't read as another dropdown.
-function DerivedBackgroundField({ label, hex }: { label: string; hex: string }) {
-  return (
-    <div className="flex flex-col gap-1.5 min-w-0">
-      <span className="text-xs text-fg-muted">{label}</span>
-      <div
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-elevated/50 border border-line text-left cursor-default"
-        title="Derived from Gray / Neutral — calibrates tones 1–2 of Accent and Gray. Not independently editable."
-      >
-        <span className={SWATCH} style={{ backgroundColor: hex }} />
-        <span className="flex-1 min-w-0 truncate text-sm text-fg-muted font-mono">{hex}</span>
-      </div>
-    </div>
   )
 }
 
@@ -131,18 +107,20 @@ interface Family {
 export default function ColorPrimitives({
   previewTheme = 'light',
   onPreviewThemeChange,
-  tabsSlot,
   focusFamilyKey,
+  onEditInPicker,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
-  /** The Color hub's tab pills — rendered between the quick bar and the
-   *  families table so the switcher sits right on top of the tokens. */
-  tabsSlot?: ReactNode
   /** External request to switch the active family (e.g. NewTokenWizard just
    *  created it) — a family key (`custom-<slug>`), re-applied whenever it
    *  changes to a new value. */
   focusFamilyKey?: string | null
+  /** "Edit in Picker Color" — only offered for the six fixed families (Accent/
+   *  Neutral/Error/Warning/Success/Info), the ones Picker Color has a section
+   *  for; a custom family has no distinct section there even if a theme
+   *  aliases it to a status slot. */
+  onEditInPicker?: (target: Exclude<PickerFocusTarget, null>) => void
 }) {
   const store = useDesignStore()
   const {
@@ -156,7 +134,6 @@ export default function ColorPrimitives({
     customColors, addCustomColor, updateCustomColor, removeCustomColor,
     pageBackground, darkBackground, themeKinds, themeSources,
     colorAlgorithm, colorNaming, contrastShift,
-    setColorAlgorithm, setColorNaming, setContrastShift,
   } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
@@ -168,58 +145,14 @@ export default function ColorPrimitives({
 
   const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
 
-  // Custom "style themes" carry their own palette — while one is previewed the
-  // quick bar reads (and the ScaleRows render) THAT palette, matching where
-  // changeAccent/changeNeutral route their writes.
-  const pal = resolveThemePalette(themeSources[previewTheme], darkPreview ? 'dark' : 'light', store)
-  const accentBase = pal?.brand?.[BASE_TONE] ?? primaryColor
-  const neutralBase = pal?.gray?.[BASE_TONE] ?? grayBaseColor
-  // Previewing dark shows each family's DARK ramp directly — role-ordered, so
-  // step 9 is the solid in both appearances and needs no re-indexing.
-  const brandRamp = pal?.brand ?? (darkPreview ? primaryDarkScale : primaryScale)
-  const neutralRamp = pal?.gray ?? (darkPreview ? grayDarkScale : grayLightScale)
-
-  // When ON, the neutral scale auto-derives from the accent. Default ON.
-  const [linked, setLinked] = useState(true)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
-  // Saved customs surface in both dropdowns ahead of the Tested presets.
-  const savedGroup: OptionGroup | null = customColors.length
-    ? {
-        label: 'Saved',
-        options: customColors.map((c) => ({ label: c.label, hex: c.base })),
-        onRemove: (hex) => {
-          const match = customColors.find((c) => c.base.toLowerCase() === hex.toLowerCase())
-          if (match) removeCustomColor(match.key)
-        },
-      }
-    : null
-  const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
-  const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
-
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
-  const changeAccent = (hex: string) => applyAccentColor(hex, linked, previewTheme)
+  // Per-row edits here are deliberate, single-family changes — unlike Picker
+  // Color's quick bar (which offers a link toggle for broad-strokes editing),
+  // retinting Accent from this table's pencil popover never cascades to
+  // Neutral. Picker Color is where "move both together" lives.
+  const changeAccent = (hex: string) => applyAccentColor(hex, false, previewTheme)
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
-  const toggleLink = () => {
-    const next = !linked
-    setLinked(next)
-    if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
-  }
-
-  // Neutral is an intent like the others, but it has no primitive of its own —
-  // it IS the Base, so its row writes through the Base applier.
-  const changeIntent = (role: IntentRole, hex: string) =>
-    role === 'neutral' ? changeNeutral(hex) : applyStateColor(role, hex)
-
-  // "Match to accent" — re-harmonizes every status hue against the current brand.
-  const matchStatesToAccent = () => {
-    const rec = recommendStateColors(accentBase)
-    applyStateColor('error', rec.error)
-    applyStateColor('warning', rec.warning)
-    applyStateColor('success', rec.success)
-    applyStateColor('info', rec.info)
-  }
 
   // ── Families table state ──
   const [activeFamily, setActiveFamily] = useState('accent')
@@ -274,8 +207,12 @@ export default function ColorPrimitives({
   // Accents (the brand + every custom family a theme reads as its accent),
   // Neutrals (base + theme neutrals), States (the four intents + custom status
   // families) and Custom for free-standing families no theme references yet.
-  // Derived from `themeSources`, so a family minted by "Add theme" files itself
-  // under the right folder with zero bookkeeping.
+  // States stays here too — this rail is EVERY color primitive's usage table
+  // (Backgrounds/Interactive/Borders/Solid/Text bands), and Error/Success/
+  // Warning/Info are primitives same as Accent/Neutral; Picker Color showing
+  // their full scale for quick editing doesn't remove them from usage.
+  // Derived from `themeSources`, so a family minted by "Add theme" files
+  // itself under the right folder with zero bookkeeping.
   const famGroups = useMemo(() => {
     const groupOf = (f: Family): 'Accents' | 'Neutrals' | 'States' | 'Custom' => {
       if (f.key === 'accent') return 'Accents'
@@ -395,73 +332,24 @@ export default function ColorPrimitives({
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex flex-col gap-6"
     >
-      {/* ── Quick bar: accent · link · gray/neutral · background (derived,
-          read-only) · state colors + ramps ── */}
-      <section className="flex flex-col gap-[24px] rounded-[16px] border border-line p-[24px] shadow-sm">
-        <div className="grid grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-end">
-          <ColorSelect label="Color families" value={accentBase} groups={brandGroups} onChange={changeAccent} allowCustom />
-          <div className="flex flex-col items-center gap-1.5 pb-1.5">
-            <InfoDot tip="Auto-matches the neutral scale to your accent color." />
-            <LinkToggle active={linked} onClick={toggleLink} accentColor={brandRamp[BASE_TONE] ?? primaryColor} />
-          </div>
-          <ColorSelect label="Gray / Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
-          <DerivedBackgroundField
-            label={darkPreview ? 'Background (dark)' : 'Background'}
-            hex={darkPreview ? darkBackground : pageBackground}
-          />
-          <StateColorsSelect
-            label="State Colors"
-            neutral={neutralBase}
-            error={errorColor}
-            warning={warningColor}
-            success={successColor}
-            info={infoColor}
-            onChange={changeIntent}
-            onMatchAccent={matchStatesToAccent}
-            panelClassName="right-0 w-[320px] max-h-[420px]"
-          />
-          <div className="relative pb-0.5">
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((o) => !o)}
-              aria-haspopup="dialog"
-              aria-expanded={settingsOpen}
-              aria-label="Scale settings — algorithm, naming, contrast shift"
-              title="Scale settings"
-              className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
-              }`}
-            >
-              <SlidersIcon />
-            </button>
-            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-              <ColorControls
-                algorithm={colorAlgorithm}
-                naming={colorNaming}
-                contrastShift={contrastShift}
-                onAlgorithm={setColorAlgorithm}
-                onNaming={setColorNaming}
-                onShift={setContrastShift}
-              />
-            </ScaleSettingsModal>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <ScaleRow scale={brandRamp} labels={namingLabels} />
-          <ScaleRow scale={neutralRamp} showNumbers={false} size="thin" />
-        </div>
-      </section>
-
-      {/* Hub tab switcher — right on top of the token table it switches. */}
-      {tabsSlot}
-
       {/* ── Families table — every primitive ramp as token rows ── */}
       <div className="flex flex-col bg-app border border-line rounded-xl overflow-hidden">
         {/* Top bar: active family + add + count + search */}
         <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-sm text-fg truncate">{family.label}</span>
+            {onEditInPicker && !family.customKey && (
+              <button
+                onClick={() => onEditInPicker(family.key as Exclude<PickerFocusTarget, null>)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-fg-faint hover:text-fg border border-line hover:border-line-strong transition-colors flex-shrink-0"
+                title={`Edit ${family.label} in Picker Color`}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+                Edit in Picker Color
+              </button>
+            )}
             <div ref={addRef} className="relative">
               <button
                 onClick={() => setAddOpen((v) => !v)}

@@ -945,7 +945,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 41,
+      version: 42,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1330,12 +1330,13 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) clearSemantics(sys?.snapshot)
           }
-          // Primitives now default to the 50–950 naming the new references use.
-          // Move anyone still on the old numeric default; a deliberate 'tens'
-          // pick is left alone.
-          if (persisted.colorNaming === 'numeric' || !persisted.colorNaming) {
-            persisted.colorNaming = 'hundreds'
-          }
+          // v37→v38 USED to force 'numeric' → 'hundreds' here, back when the
+          // semantic references were written against the 50–950 labels. That
+          // was reversed in v42 (below): Radix numeric 1–12 is the system's
+          // naming now, and this line was actively converting people off it on
+          // every upgrade — the exact opposite of the default. Left as a no-op
+          // rather than deleted so the migration chain stays append-only and
+          // the reversal is legible to whoever reads this next.
         }
         if (version < 39) {
           // v38→v39: a theme no longer OWNS ramps, it REFERENCES primitive
@@ -1436,6 +1437,29 @@ export const useDesignStore = create<DesignStore>()(
           addDarkRamps(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) addDarkRamps(sys?.snapshot)
+          }
+        }
+        if (version < 42) {
+          // v41→v42: Radix numeric 1–12 becomes THE naming, not just the default
+          // for fresh systems. Every ramp was already stored 1–12 internally, so
+          // this only relabels — but it relabels the EXPORT too (`colorNaming`
+          // drives the swatch strip, the families table AND tokenGenerator /
+          // exporters / sectionExport through `toneLabel`), which is the point:
+          // the 12 steps are role positions in the Radix model, and 25–950
+          // implied a Tailwind lightness ramp the scales no longer are.
+          //
+          // This IS a rename for anyone still on 'hundreds' — `accent-700`
+          // becomes `accent-9` in tokens.json / variables.css. A Figma or JSON
+          // integration pinned to the old names has to re-sync. That's accepted
+          // deliberately: v38 had been force-converting people onto 'hundreds'
+          // on every upgrade, so leaving both behaviours in place meant the
+          // naming a system exported depended on which version it upgraded from.
+          const toNumeric = (state: any) => {
+            if (state) state.colorNaming = 'numeric'
+          }
+          toNumeric(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) toNumeric(sys?.snapshot)
           }
         }
         return persisted

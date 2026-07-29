@@ -24,7 +24,7 @@ then export. **There is no left icon rail** — section switching lives in the t
 │ ◆ Escala          │  Variables · Documentation · Components               │
 │   Token controls  │              [Figma] [◆ Connect] [☾/☀]                 │
 ├── LEFT COLUMN ────┼── CANVAS ──────────────────────────────────────────────┤
-│  Variables rail   │ Color │ Quick edit · New · Import JSON · Share · Kits  │  ← row 2
+│  Variables rail   │ Color │ Quick edit · New · Import JSON · Kits · Export │  ← row 2
 │ Color · Font      │  · Export                                             │
 │ Radius · Spacing  │  the active foundation's editable token table         │
 │ Sizes · Icons …   │                                                       │
@@ -35,18 +35,23 @@ The brand block's right border is the same divider as the left column's, so it r
 unbroken from the very top. **Every row-2 header is `h-[52px]`** — `CenterHeader`,
 `PreviewPanel`, `SaveSidePanel` — so they line up across every column of every section.
 Any new panel header uses that height too. Their actions use the shared `ui/HeaderPill`
-(Variables' New · Import JSON · Share · Kits AND Export are the same component — don't
-hand-roll another pill).
+(Variables' New · Import JSON · Kits AND Export are the same component — don't hand-roll
+another pill).
 
 > **Export is a guided flow, not a dump — and there is only ONE of it.** Variables' Export
-> pill AND its Share pill both open `ExportWizard` (Source → Format → Export),
-> backed by `lib/exportWizard.ts`; sharing IS exporting, so they must not diverge into two
-> flows. They differ only in what's pre-checked: Export scopes to the section you opened it
-> from (`COLLECTIONS_OF`), Share opens whole-system (`ALL_WIZARD_COLLECTIONS`). Step 1 picks **collections**
-> (primitives · semantics · typography · spacing · radius · opacity · shadow · grid ·
-> sizes · icons) and, for semantics, which **theme modes** ship; step 2 picks the format
-> (W3C DTCG · Escala JSON · CSS · SCSS · Tailwind · Markdown) and single-vs-per-collection
-> files; step 3 summarizes and downloads. Rules that keep it honest:
+> pill opens `ExportWizard` (Source → Format → Export), backed by `lib/exportWizard.ts`.
+> A separate **Share** pill used to open the same wizard pre-checked to whole-system
+> (`ALL_WIZARD_COLLECTIONS`) instead of the active section — it was retired (`HomeActions`,
+> `Configurator.tsx`'s `shareOpen` state and second `ExportWizard` instance all removed)
+> because two pills opening the identical flow just read as duplication; Export's own
+> Step 1 lets you check every collection manually, so whole-system export is still one
+> click away, just not a dedicated button for it. Don't re-add a Share pill that does what
+> Export already does — if whole-system-by-default earns its place back, make it an option
+> INSIDE the one wizard (e.g. a "select all" affordance in Step 1), not a second entry point.
+> Step 1 picks **collections** (primitives · semantics · typography · spacing · radius ·
+> opacity · shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship;
+> step 2 picks the format (W3C DTCG · Escala JSON · CSS · SCSS · Tailwind · Markdown) and
+> single-vs-per-collection files; step 3 summarizes and downloads. Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
 >   disagree with `tokens.json`. Counts on screen are counts in the file.
 > - **W3C ships real aliases**: a semantic value sitting on a primitive tone exports as
@@ -55,8 +60,22 @@ hand-roll another pill).
 > - **Escala JSON is single-file by contract** (it's the plugin payload), so the structure
 >   choice is locked there.
 > - Tailwind and Markdown delegate to `sectionExport`'s builders — one renderer per format,
->   not two. Both `SectionExportModal` and `ShareModal` were retired into this flow
+>   not two. `SectionExportModal` and the old `ShareModal` were retired into this flow
 >   (`FilePreviewCard` lives on in `SaveView`).
+> - **Step 3 also carries a "Save this design system" card** — a name field bound straight
+>   to `projectName`/`setProjectName`, a Save button calling the SAME `saveCurrentSystem()`
+>   the Save & Share hub uses (button reads "Save changes" once `savedSystems` already has
+>   an entry for the current id, exactly like `SaveSidePanel`), and a GitHub status row
+>   (`StatusDot` + `owner/repo · pushed <time>` or "Not synced"). This exists because the
+>   payoff step is also the only natural place to give a first-time system its identity —
+>   before it, a user exporting from Variables had NO path to naming/saving/connecting
+>   without already knowing Save & Share existed. The GitHub button (`onConnectGithub` prop,
+>   wired from `Configurator.tsx`'s one `ExportWizard` call site) closes the wizard and opens
+>   the existing `GitHubConnectView` rather than re-implementing PAT auth + repo push inline
+>   — there is still only ONE GitHub-connect flow. "Save" always saves the WHOLE current
+>   system regardless of which collections this export run scoped to (same as Save & Share's
+>   own Save button) — the card says so explicitly so exporting from, say, Typography
+>   doesn't read as "only Typography got saved."
 
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
   every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
@@ -77,7 +96,7 @@ hand-roll another pill).
   **secondary popover**, not a view: the sliders icon in `CenterHeader`'s rightSlot
   (`QuickEditTrigger` in `Configurator.tsx`) opens `QuickFoundationsPanel` — the same
   popover the Components tab already used. Variables' `CenterHeader` also carries
-  `HomeActions` (New · Import JSON · Share · Kits — **no Reset**; the "reset the whole
+  `HomeActions` (New · Import JSON · Kits — **no Reset**; the "reset the whole
   system to defaults" action was removed from the UI entirely. Per-token "reset to
   standard" icons in the token tables are unrelated and stay).
 - **"New" creates a TOKEN, not a design system** — clicking it opens `NewTokenMenu`
@@ -121,25 +140,75 @@ hand-roll another pill).
   which family "won," which read as "nothing happened" even though the scale WAS created.
 - **`HomeView` is retired** — the old hero/collage hub is unreachable (the file is kept
   for reference only). Don't wire it back up.
-- **Color is a three-tab hub** (`ColorHub`, default tab `primary`). The tab pill bar's
-  position is per-tab: on **Primary Color** it renders BELOW the quick bar, directly above
-  the families table (passed into `ColorPrimitives` as `tabsSlot`); Alias/Gradients keep it
-  pinned on top. **Primary Color** (`ColorPrimitives` — the accent · link · Base · State
-  Colors quick bar + Scale-settings popover over the two `ScaleRow` ramps, then a
-  Figma-style families table. The family nav is **foldered by ROLE, not insertion order**:
-  `Accents` / `Neutrals` / `States` / `Custom`, derived via `familySlotFor()`
-  (`lib/themeSources.ts`) from which theme slot references each family — a family minted
-  by "Add theme" files itself under the right folder with zero bookkeeping; `Custom` holds
-  free-standing families no theme references. Families table: Accent/Neutral/Error/
-  Success/Warning/Info + custom families in that side nav, 12 tone rows each with editable
-  **light/dark** hex
-  cells (row names are the EXACT exported token names — `accent-1`…, matching
-  tokenGenerator's flattenScale prefixes and the semantic sources' "accent"
-  label), eye toggles on the column headers driving `previewTheme`, a per-row
-  inline `ColorPickerPanel`, and "+ Add" creating a `customColors` family — EVERY
-  family carries both a light ramp and a dark twin (Radix two-scale model), and
-  each column edits its own; **no inversion anywhere**, step N means the same
-  role in both · **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
+- **Color is a four-tab hub** (`ColorHub`, default tab `primary`), split along Radix's own
+  "generate scale" vs "use it" line: **Picker Color** DEFINES the base palette, **Primary
+  Color** shows how it's APPLIED. The tab pill bar is now pinned on top for all four tabs
+  (`ColorHub` renders it once, above whichever tab's content scrolls beneath it) — it used
+  to render mid-content on Primary Color only (passed in as `tabsSlot`), which meant it
+  scrolled out of reach; don't reintroduce that split.
+  - **Picker Color** (`PickerColor.tsx`) — the accent · link · Gray/Neutral quick bar (no
+    Background field — see below) over two `ScaleRow` ramps, then **State Colors expanded**:
+    Neutral/Error/Success/Warning/Info each get their OWN full 1–12 `ScaleRow`, always
+    visible — no popover, no tab switch, unlike the old `StateColorsSelect` this replaced
+    (still used elsewhere: hex-only, scale hidden behind a chevron). Editing a state's hex
+    still goes through the same `ColorSelect` pattern as Color families/Gray-Neutral
+    (`variant="pill"`, `STATE_PRESETS[role]`). No usage table here — that's Primary Color's
+    job, kept separate on purpose so "decide your colors" and "see where they land" don't
+    compete for the same screen. Three things about the opening control row are deliberate:
+    - **No section heading, no card chrome, no vertical padding.** The `<h3>Color families`
+      only repeated the `ColorSelect` label directly beneath it, and the card border around
+      a tab's FIRST block just pushed everything down. It's a bare dense row now.
+    - **The Scale-settings gear lives at the far right OF that row**, baseline-aligned with
+      the two dropdowns (`grid-cols-[1fr_auto_1fr_auto]`), not in a header of its own.
+    - **Below the brand ramp is its TRANSPARENCY twin, not a second neutral.** An
+      independent gray ramp sat there with no control of its own, which read as a stray
+      scale. It's `generateAlphaScale(brandRamp, page, appearance)` — the same helper the
+      export ships as `accent-a*`, so screen and `tokens.json` can't disagree — rendered by
+      the dedicated `TransparencyStrip` (`colorControls.tsx`), NOT a `ScaleRow`: a grid of
+      solid-looking swatches read as just another color ramp, with nothing to signal "these
+      are translucent." `TransparencyStrip` reuses Foundations · Opacity's exact checkerboard
+      (`CHECKER`'s `repeating-conic-gradient(var(--elevated), var(--surface))`, the same
+      pattern `Step6_Opacity.tsx`'s "Opacity Scale" strip uses) so the same visual language —
+      checker behind a swatch → translucent — means the same thing everywhere in the app,
+      captioned "Transparency scale" so it can't be mistaken for a second solid ramp. This
+      also fixed a correctness bug, not just a labeling one: alpha values are only correct
+      against the specific page they were solved for, so painting them on a flat backdrop
+      color (the row's earlier approach) silently broke across light/dark preview; the
+      checkerboard has no "wrong theme" to break against.
+  - **Primary Color** (`ColorPrimitives.tsx`) — usage ONLY now: the families table, nothing
+    else. The family nav is **foldered by ROLE, not insertion order**: `Accents` /
+    `Neutrals` / `States` (Error/Success/Warning/Info + custom families a theme aliases to
+    a status slot — kept here too, deliberately: this rail is EVERY primitive's usage table
+    — Backgrounds/Interactive/Borders/Solid/Text bands — and a state color is a primitive
+    same as Accent/Neutral, so Picker Color showing its full scale for quick editing
+    doesn't pull it out of usage) / `Custom` for free-standing families no theme references
+    yet, derived via `familySlotFor()` (`lib/themeSources.ts`) from which theme slot
+    references each family — a family minted by "Add theme" files itself under the right
+    folder with zero bookkeeping. Families table: Accent/Neutral/Error/Success/Warning/Info
+    + custom families in that side nav, 12 tone rows each with editable **light/dark** hex
+    cells (row names are the EXACT exported token names — `accent-1`…, matching
+    tokenGenerator's flattenScale prefixes), eye toggles on the column headers driving
+    `previewTheme`, a per-row inline `ColorPickerPanel`, and "+ Add" creating a
+    `customColors` family — EVERY family carries both a light ramp and a dark twin (Radix
+    two-scale model), and each column edits its own; **no inversion anywhere**, step N
+    means the same role in both. The table header carries an **"Edit in Picker Color"**
+    link next to the active family's name — for the six FIXED families (`!family.customKey`
+    — Accent/Neutral/Error/Warning/Success/Info, the ones Picker Color has a section for; a
+    custom family gets no link even if a theme aliases it to a status slot, since it has no
+    distinct section there) — wired through `onEditInPicker` (`Configurator.tsx`'s
+    `pickerFocusTarget` state): switches `colorTab` to `'picker'` and tells `PickerColor`
+    which section ref to `scrollIntoView` + ring-pulse for ~1.6s. A per-row pencil edit here
+    is a deliberate SINGLE-family change and never cascades to Neutral
+    (`applyAccentColor(hex, false, …)`) — "move both together" is Picker Color's
+    link-toggle's job, not a usage-table side effect.
+  - **The "Background" swatch is REMOVED, not disabled.** It used to sit in the quick bar
+    as `DerivedBackgroundField` — a read-only readout of `pageBackground`/`darkBackground`
+    for calibrating tones 1–2 — but it looked exactly like its interactive `ColorSelect`
+    neighbors (same trigger shape) while doing nothing on click, which read as broken. Cut
+    entirely rather than left disabled, so the UI doesn't promise interactivity it doesn't
+    have; a real background picker is still out of scope (see "Base drives the page" above
+    — independent editability there is what caused page/ramp drift before).
+  - **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
   **architecture picker** — `ArchitecturePicker`: radio cards for Flat /
   Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
   the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
@@ -157,8 +226,11 @@ hand-roll another pill).
   swap. Switching architectures resets category/search state) ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
-  since the rail was removed — Share + Kits in Variables' header cover the same
-  ground, so re-add an entry point before relying on it):
+  since the rail was removed — Kits in Variables' header and the Export wizard's own
+  "Save this design system" card (see above) cover PART of the same ground — naming,
+  local-saving, GitHub status — but neither replaces the hub's saved-systems GRID (browse/
+  load/delete past systems) or the Figma connect pill, so re-add an entry point before
+  relying on either as a substitute):
   the center IS the export surface — a tabbed file-preview card (tokens.json with a
   "Figma plugin" badge · variables.css · README.md, accent-colored active tab, plus an
   "Export all files" action tab) with Copy / Download per file and the live-endpoint
@@ -166,11 +238,15 @@ hand-roll another pill).
   right aside is `SaveSidePanel` ("Current Design System"): identity (name/description),
   Bring to Figma / Connect-with-GitHub pills with status dots, summary chips and "Save
   design system" (local registry via `saveCurrentSystem`).
-- **Multi design system**: `savedSystems` (persisted registry) — a system is *saved* only
-  by a successful GitHub push (`GitHubConnectView` upserts `{ id: repo, name, description,
-  repo, savedAt, snapshot }`). `loadSystem(id)` restores a deep-cloned `DesignSnapshot`;
-  `startNewSystem()` resets to `makeDesignDefaults()`. GitHub (PAT identity) is "the
-  account" — no separate auth backend. Removing an entry is local-only.
+- **Multi design system**: `savedSystems` (persisted registry) — two ways in. `saveCurrentSystem()`
+  (the store action `SaveSidePanel`'s Save button AND the Export wizard's "Save this design
+  system" card both call) upserts a LOCAL entry keyed `` `local:${slugify(projectName)}` ``
+  when unconnected, or the repo id once one exists — so saving never requires GitHub. A
+  successful push (`GitHubConnectView`) upserts the same shape keyed by `owner/repo`,
+  `{ id: repo, name, description, repo, savedAt, snapshot, source }`. `loadSystem(id)`
+  restores a deep-cloned `DesignSnapshot`; `startNewSystem()` resets to `makeDesignDefaults()`.
+  GitHub (PAT identity) is "the account" for the GitHub-backed half — no separate auth
+  backend. Removing an entry is local-only either way.
 - **Section sub-rail = `SectionRail.tsx`** — ONE component for all three sections, so the
   second column is identical everywhere: 200px, transparent over the brand gradient,
   uppercase group caption + `icon · label` rows (active = raised white row in the UI
@@ -198,7 +274,14 @@ hand-roll another pill).
 - **Theme = one control**: the top bar's single icon button (`ThemeToggle`) shows the
   theme you'd switch TO — a **moon while light**, a **sun while dark**. It calls
   `changePreviewTheme`, so the previewed theme and the app chrome flip together. There is
-  no segmented sun|moon pill any more.
+  no segmented sun|moon pill any more. `previewTheme`'s `useState` in `Configurator.tsx` is
+  **initialized from the persisted chrome theme** (`getTheme()`, `sd-theme`), not hardcoded
+  to `'light'` — `previewTheme` itself still isn't persisted, but the chrome class is, so a
+  reload while dark chrome was active used to start every previewTheme-driven surface
+  (Alias/Semantics' theme selector, Picker Color's transparency scale, `PreviewPanel`) back
+  on light until the toggle was clicked twice to resync. Any code that needs "is the preview
+  dark right now" on first render must go through this init, not assume `previewTheme` starts
+  `'light'`.
 - **Right = `PreviewPanel.tsx`**: a **persistent, sticky specimen** of whatever foundation
   is being edited — **expanded by default** (`previewCollapsed` starts `false`; the slim
   strip still lets anyone collapse it for width). It's a separate tree from the center
@@ -215,9 +298,20 @@ hand-roll another pill).
      `icon`→`ForegroundSpecimenPreview`. Only set while `colorTab === 'semantics'`.
   2. **`categoryKey`** (the active Variables foundation key, passed straight from
      `activeFoundation`) — when `focus` isn't set, tailors the panel to a live component
-     set for that foundation: **color** → Button · Badge · Checkbox & Switch · Slider ·
-     Status badge · Toaster · a dedicated Semantic-states group (Error/Success/Warning/Info
-     badges) · **typography** → Button + `FontFamilyPreview` (a trigger that opens a modal
+     set for that foundation: **color** → `ColorCollage`, ONE composite surface rather than
+     a stack of titled `Group`/`Tile` blocks (Buttons · status tags · Slider ·
+     Checkbox+Switch · Badges · Semantic states · Toaster · Dropzone · Select · URL
+     `InputGroup` · `PasswordStrength` · TabMenu+Avatar). Titles and per-tile borders ate
+     most of the height, so only two or three components were ever on screen — and colour
+     is the foundation with the widest blast radius, judged by seeing many components
+     repaint TOGETHER. Sharing one surface is what makes that systemic connection legible;
+     separate tiles read as unrelated samples. Everything in it is a catalogue `SPECIMENS`
+     renderer (never hand-rolled markup) reading the same `radius`/`sizes`/type/semantic
+     tokens, so moving Radius or the accent visibly moves every component at once, and the
+     collage can't drift from what the plugin ships. Its lead button's icons come from the
+     system's own `iconLibrary` prefix. Use ONE Switch, not an on/off pair — each Switch
+     specimen renders its own "Notifications" label, so two read as a duplicated row ·
+     **typography** → Button + `FontFamilyPreview` (a trigger that opens a modal
      listing Heading/Body family with a "Copy family" clipboard action per row) ·
      **radius** → Button · Card · Input · Modal (the catalogue's `ModalSpecimen`, which
      renders inline — not a real floating dialog) · **spacing**/**sizes** → Button at every
@@ -249,7 +343,7 @@ src/
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 28)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 42)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
@@ -320,7 +414,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 40`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 42`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **Tall popovers → `usePopoverPlacement`** (`colorControls`). A popover carrying
 > `ColorPickerPanel` (HSV + hue + alpha + Palette + Saved) is ~540px — taller than the room
@@ -329,6 +423,26 @@ Store uses `persist` middleware with `version: 40`. If you add fields, bump the 
 > space that actually exists. Pair it with pinned header · scrolling body · pinned footer
 > so the primary action can never scroll out of reach. Used by the "+ Add" family popover
 > and the per-family edit popover; use it for any new one rather than a fixed max-height.
+
+> **`ScaleRow` is compact by default.** Swatches are `h-8` (`thin` variant `h-4`) with
+> `gap-1` — shrunk from an earlier `h-11`/`gap-1.5` because stacking multiple 12-tone ramps
+> (Picker Color's brand + neutral + 5 state scales) at the old size made the page feel
+> heavy. It's the ONE shared component behind every ramp — `PickerColor.tsx`,
+> `AddThemeModal.tsx` — so a size change here is felt everywhere; the on-swatch "Anchor"
+> text was already dropped in favor of the ring + dot (title tooltip carries the label),
+> which is what keeps this size legible.
+>
+> **`numbersInside` is the exception, and only the brand ramp uses it.** It moves the tone
+> number ONTO its swatch (ink picked by `readableInkOn`), which needs `h-11` to fit — so the
+> number doubles as a live contrast check on the tone it labels. That's worth the height for
+> the one ramp you're actively picking; the five state ramps keep captions above and stay
+> compact, or the tab's density regresses. Corner radius stays `rounded-md` though — SAME as
+> every other `ScaleRow` variant. It briefly matched the `ColorSelect` dropdown above it
+> instead (`rounded-[13px]`), which looked deliberate in isolation but inconsistent once
+> the State Colors ramps (still `rounded-md`) were visible in the same scroll — don't
+> special-case this cell's radius again without checking it against the ramps below it.
+> `ColorSelect`'s `pill` variant is still `rounded-[13px]` though (unrelated call — that's
+> the State Colors hex trigger, not a swatch grid, matching the dropdown it sits beside).
 
 > **Editing a family's color.** Each row of the Color-families nav carries a pencil that
 > opens `ColorPickerPanel` for THAT family, routed by `changeFamilyBase()` to whichever
@@ -431,23 +545,43 @@ Store uses `persist` middleware with `version: 40`. If you add fields, bump the 
 > at 7–8px, tried it, it clips; the full word lives in the cell's `title` tooltip and in
 > the families table's row badge, which has room.
 >
-> **On-screen labels default to Radix numeric (1–12), not Tailwind hundreds (25–950) —
-> for NEW systems only.** Every ramp is stored 1–12 internally regardless of naming scheme
-> (nothing to migrate); `colorNaming` (`'numeric' | 'hundreds' | 'tens'`, `NAMING_SCHEMES`
-> in `colorUtils.ts`) only relabels the swatch-strip numbers, the families table's row
-> names (`accent-25` vs `accent-1`) AND the exported token names — one scheme drives all
-> three, deliberately, so what's on screen is never a lie about what ships. `
-> makeDesignDefaults()` seeds `colorNaming: 'numeric'`; **existing persisted/saved systems
-> keep whatever they already have** (a store default only ever applies to fresh state, so
-> this doesn't silently rename anyone's already-exported `accent-25`-style tokens or break
-> a live Figma/JSON integration pointed at them). The families table also captions its 12
-> rows into Radix's 5 role bands (`TONE_BANDS` in `ColorPrimitives.tsx`: 1–2 Backgrounds ·
-> 3–5 Interactive components · 6–8 Borders · 9–10 Solid colors · 11–12 Accessible text) —
-> keyed off the tone NUMBER, so the grouping holds under either naming scheme.
+> **Radix numeric (1–12) is THE naming — for every system, not just new ones.** Every ramp
+> is stored 1–12 internally regardless of scheme (nothing to migrate); `colorNaming`
+> (`'numeric' | 'hundreds' | 'tens'`, `NAMING_SCHEMES` in `colorUtils.ts`) only relabels the
+> swatch-strip numbers, the families table's row names (`accent-25` vs `accent-1`) AND the
+> exported token names — one scheme drives all three, deliberately, so what's on screen is
+> never a lie about what ships. `makeDesignDefaults()` seeds `'numeric'` and **store v42
+> converts every persisted + saved system to it**.
+>
+> This reversed an earlier position ("new systems only, existing keep theirs"), because that
+> position was never actually holding: the v37→v38 block force-converted `'numeric'` →
+> `'hundreds'` on every upgrade, so the naming a system exported depended on which version
+> it happened to upgrade FROM. v42 settles it in one direction and the v38 line is now a
+> documented no-op. It IS a rename for anyone who was on hundreds — `accent-700` ships as
+> `accent-9` — so a Figma/JSON integration pinned to the old names has to re-sync; that cost
+> was taken deliberately over leaving two behaviours in the chain. The scheme picker stays,
+> so hundreds/tens remain a deliberate opt-in.
+>
+> The families table also captions its 12 rows into Radix's 5 role bands (`TONE_BANDS` in
+> `ColorPrimitives.tsx`: 1–2 Backgrounds · 3–5 Interactive components · 6–8 Borders ·
+> 9–10 Solid colors · 11–12 Accessible text) — keyed off the tone NUMBER, so the grouping
+> holds under either naming scheme.
 
 > **Light vs dark ramps.** A ramp always runs 1 (lightest) → 12 (darkest); what differs is **which end grows out of the page**. `generateColorScale(…, appearance: 'light')` anchors tone 1 to `pageBackground`; `generateDarkColorScale()` anchors tone **12** to `darkBackground` *and* re-derives the ramp's base (tone 9) as a dark neutral, so tones 9–12 are the dark surfaces instead of mid-grays. Gray is the **only** ramp with a dark twin — colored ramps (brand/status) keep their hue and just shift tone via `recDarkTone`. Anything that builds a `GlobalScales` **must pass `grayDark`**: it's optional in the type, and omitting it silently falls back to the legacy constant — which would make Step3's resync treat every dark gray as stale and overwrite the generated ramp.
 
 > **Live preview tip:** changing the brand in Foundations · Color re-derives the already-mapped brand semantic tokens (via `BRAND_TOKEN_TONES` + `accessibleSolidTone`) so the right-hand preview and the export track the new brand. Unmapped tokens fall back to `primaryColor` in `resolvePreviewTokens`.
+
+> **`resolvePreviewTokens` never trusts a persisted semantic value blindly.** Its internal
+> `resolveRole()` runs every `semanticTokens[key]` through `normalizeThemeValue()`
+> (`lib/semanticRoles.ts`) — the same staleness check `Step3_SemanticTokens` already used
+> for its own auto-populate/reset — before using it, falling back to the role's recommended
+> tone when the stored hex is no longer a genuine tone of the current source scale. This
+> matters because that auto-populate effect only runs while Alias/Semantics is mounted: a
+> user who edits colors and previews via Components (never visiting Semantics) could
+> otherwise carry a stale dark-theme value indefinitely — e.g. the Components-tab preview
+> background staying light-gray in dark mode instead of tracking the real dark surface.
+> Keep every field in `resolvePreviewTokens` going through `resolveRole()`, not a raw
+> `semanticTokens[key] || rec(key)` read.
 
 ---
 

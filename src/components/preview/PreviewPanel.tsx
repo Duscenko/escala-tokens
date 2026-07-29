@@ -10,6 +10,7 @@ import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
+import { useDesignStore } from '../../store/useDesignStore'
 import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
 
 // Catalogue renderers reused verbatim — keys are plugin gates ('Toggle' ships
@@ -24,6 +25,12 @@ const ToastSpec = SPECIMENS.Toast
 const CardSpec = SPECIMENS.Card
 const ModalSpec = SPECIMENS.Modal
 const InputSpec = SPECIMENS.Input
+const InputGroupSpec = SPECIMENS.InputGroup
+const PasswordStrengthSpec = SPECIMENS.PasswordStrength
+const DropzoneSpec = SPECIMENS.Dropzone
+const SelectSpec = SPECIMENS.Select
+const TabMenuSpec = SPECIMENS.TabMenu
+const AvatarSpec = SPECIMENS.Avatar
 
 // When the shell focuses a semantic category, the panel becomes a specimen for it.
 const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
@@ -67,6 +74,84 @@ function Tile({ tokens, children }: { tokens: PreviewTokens; children: ReactNode
   )
 }
 
+// ── Color collage ──────────────────────────────────────────────────────────
+// The Color foundation's specimen is ONE composite surface, not a stack of
+// titled tiles. Two reasons it's built this way:
+//  · Density — the old one-Group-per-component layout spent most of its height
+//    on captions and tile borders, so only two or three components were ever
+//    on screen at once. Colour is the foundation with the widest blast radius,
+//    and you can only judge it by seeing many components repaint TOGETHER.
+//  · Systemic connection — every specimen here reads the same tokens (radius,
+//    sizes, type scale, semantic colours) off `t`, so moving the Radius slider
+//    or the accent visibly moves buttons, inputs, the uploader and the toast in
+//    lockstep. Sharing one surface is what makes that legible; separate tiles
+//    read as unrelated samples.
+// Keep the components token-driven catalogue SPECIMENS (never hand-rolled
+// markup) so this can't drift from what the plugin ships.
+function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefix: string }) {
+  // Icons come from the system's OWN library, so the collage's lead button is
+  // one more thing that repaints when a foundation changes.
+  const icons = { prefix: iconPrefix, leading: true, trailing: true }
+  return (
+    <div
+      className="flex flex-col gap-3.5 p-4"
+      style={{
+        background: tokens.surface,
+        border: `1px solid ${tokens.borderDefault || tokens.border || '#eaecf0'}`,
+        borderRadius: 14,
+      }}
+    >
+      <div className="flex flex-wrap items-center gap-2.5">
+        <ButtonSpec t={tokens} v={{ Style: 'Solid' }} icons={icons} />
+        <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
+        <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <StatusBadgeSpec t={tokens} v={{ Status: 'Online' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'Away' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'Busy' }} />
+        <StatusBadgeSpec t={tokens} v={{ Status: 'Offline' }} />
+      </div>
+
+      <SliderSpec t={tokens} v={{}} />
+
+      {/* One switch, not an on/off pair — each Switch specimen renders its own
+          "Notifications" label, so two of them read as a duplicated row. */}
+      <div className="flex flex-wrap items-center gap-4">
+        <CheckboxSpec t={tokens} v={{ Checked: 'True' }} />
+        <SwitchSpec t={tokens} v={{ On: 'True' }} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
+        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Brand' }} />
+        <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
+      </div>
+
+      {/* Semantic states — the four status ramps, side by side, so an edit to
+          any one of them is visible without leaving the Color foundation. */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Error' }} />
+        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
+        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Warning' }} />
+        <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Info' }} />
+      </div>
+
+      <ToastSpec t={tokens} v={{ Status: 'Success' }} />
+      <DropzoneSpec t={tokens} v={{}} />
+      <SelectSpec t={tokens} v={{}} />
+      <InputGroupSpec t={tokens} v={{}} />
+      <PasswordStrengthSpec t={tokens} v={{ Strength: 'Weak' }} />
+
+      <div className="flex items-center justify-between gap-3">
+        <TabMenuSpec t={tokens} v={{}} />
+        <AvatarSpec t={tokens} v={{ Size: 'MD' }} />
+      </div>
+    </div>
+  )
+}
+
 // ── Panel ─────────────────────────────────────────────────────────────────
 export default function PreviewPanel({
   focus = null,
@@ -102,6 +187,7 @@ export default function PreviewPanel({
     : (categoryKey && CATEGORY_TITLE[categoryKey]) || 'Components Preview'
   // Show which theme is on display when it isn't the default light one.
   const themeBadge = !iconLibraryKey && previewTheme && previewTheme !== 'light' ? previewTheme : null
+  const collageIconPrefix = getIconLibrary(useDesignStore((s) => s.iconLibrary))?.iconifyPrefix ?? 'lucide'
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
@@ -141,61 +227,7 @@ export default function PreviewPanel({
         ) : specimen === 'border' ? (
           <BorderSpecimenPreview tokens={tokens} />
         ) : categoryKey === 'color' ? (
-          <>
-            {/* Color drives every one of these live: brand, neutrals and the
-                four semantic states (error/success/warning/info) all repaint
-                the instant their token changes. */}
-            <Group title="Button">
-              <Tile tokens={tokens}>
-                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Ghost' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Badge">
-              <Tile tokens={tokens}>
-                <BadgeSpec t={tokens} v={{ Style: 'Solid', Color: 'Brand' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Brand' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Outline', Color: 'Neutral' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Checkbox & Switch">
-              <Tile tokens={tokens}>
-                <CheckboxSpec t={tokens} v={{ Checked: 'True' }} />
-                <SwitchSpec t={tokens} v={{ On: 'True' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Slider">
-              <Tile tokens={tokens}>
-                <SliderSpec t={tokens} v={{}} />
-              </Tile>
-            </Group>
-
-            <Group title="Status badge">
-              <Tile tokens={tokens}>
-                <StatusBadgeSpec t={tokens} v={{ Status: 'Online' }} />
-                <StatusBadgeSpec t={tokens} v={{ Status: 'Away' }} />
-                <StatusBadgeSpec t={tokens} v={{ Status: 'Busy' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Toaster">
-              <ToastSpec t={tokens} v={{ Status: 'Success' }} />
-            </Group>
-
-            <Group title="Semantic states">
-              <Tile tokens={tokens}>
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Error' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Success' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Warning' }} />
-                <BadgeSpec t={tokens} v={{ Style: 'Soft', Color: 'Info' }} />
-              </Tile>
-            </Group>
-          </>
+          <ColorCollage tokens={tokens} iconPrefix={collageIconPrefix} />
         ) : categoryKey === 'typography' ? (
           <>
             <Group title="Button">

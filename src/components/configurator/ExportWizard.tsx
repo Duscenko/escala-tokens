@@ -6,6 +6,7 @@ import {
   type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { COLOR_FORMATS, type ColorFormat } from '../../lib/sectionExport'
+import { slugify } from '../../lib/utils'
 
 // ── Guided export (Source → Format → Export) ────────────────────────────────
 // Replaces the one-shot "here's your file" window with a three-step flow, so
@@ -72,6 +73,30 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+function StatusDot({ ok }: { ok: boolean }) {
+  return <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ok ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
+}
+
+function timeAgo(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} min ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+// GitHub brand mark — monochrome, tracks currentColor (same glyph as
+// TopNav/SaveView's — kept local rather than shared, matching the existing
+// precedent of a small duplicated icon per call site in this codebase).
+function GitHubGlyph({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
+  )
+}
+
 function download(file: { name: string; content: string }) {
   const mime = file.name.endsWith('.json') ? 'application/json' : 'text/plain'
   const url = URL.createObjectURL(new Blob([file.content], { type: mime }))
@@ -84,15 +109,24 @@ function download(file: { name: string; content: string }) {
 
 export default function ExportWizard({
   onClose,
+  onConnectGithub,
   initialCollections = ['primitives', 'semantics'],
 }: {
   onClose: () => void
+  /** Closes the wizard and opens the dedicated GitHub connect flow — the
+   *  wizard links out rather than re-implementing PAT auth + repo push
+   *  itself, so there's still only ONE GitHub-connect flow in the app. */
+  onConnectGithub?: () => void
   /** Pre-checked collections — the shell passes the section you opened it from,
    *  so "Export" from Typography starts scoped to Typography. */
   initialCollections?: WizardCollection[]
 }) {
   // Subscribe so counts track edits made while the wizard is open.
   const store = useDesignStore()
+  const {
+    projectName, setProjectName, saveCurrentSystem, savedSystems,
+    githubRepo, githubLastPushAt,
+  } = store
   const meta = useMemo(() => collectionMeta(), [store])
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
 
@@ -106,6 +140,18 @@ export default function ExportWizard({
   const [done, setDone] = useState(false)
   const [copied, setCopied] = useState(false)
   const [preview, setPreview] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+
+  // Same id `saveCurrentSystem` builds — lets the button read "Save changes"
+  // once this exact project already has a registry entry.
+  const savedId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
+  const savedEntry = savedSystems.find((s) => s.id === savedId)
+
+  function handleSaveSystem() {
+    saveCurrentSystem()
+    setJustSaved(true)
+    setTimeout(() => setJustSaved(false), 2200)
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -396,6 +442,66 @@ export default function ExportWizard({
                   </span>
                 </div>
               )}
+
+              {/* Save & sync — the payoff step is also where the system gets an
+                  identity: name it, keep it in the local registry, optionally
+                  wire it to GitHub. This is the ONLY place that flow was
+                  missing from — Save & Share already has it, but a first-time
+                  user exporting from Variables had no path to it at all. Saves
+                  the WHOLE current system, not just this export's scope (same
+                  as Save & Share's own Save button), so the helper line below
+                  says so explicitly rather than implying "Typography" saved
+                  when this wizard opened scoped to Typography. */}
+              <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Save this design system</span>
+                  {savedEntry && (
+                    <span className="text-[11px] text-fg-faint flex-shrink-0">
+                      Last saved {timeAgo(savedEntry.savedAt)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="e.g. Acme Design System"
+                    aria-label="Design system name"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-surface text-[13px] font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
+                  />
+                  <button
+                    onClick={handleSaveSystem}
+                    className={`flex-shrink-0 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+                      justSaved ? 'bg-emerald-500 text-white' : 'bg-fg text-app hover:opacity-90'
+                    }`}
+                  >
+                    {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-fg-faint -mt-1">
+                  Saves the whole design system to your local registry — not just this export's scope.
+                </p>
+
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-line/60">
+                  <span className="flex items-center gap-1.5 min-w-0 text-[12px] text-fg-muted">
+                    <StatusDot ok={!!githubRepo} />
+                    <span className="truncate">
+                      {githubRepo
+                        ? `${githubRepo}${githubLastPushAt ? ` · pushed ${timeAgo(githubLastPushAt)}` : ''}`
+                        : 'Not synced to GitHub'}
+                    </span>
+                  </span>
+                  {onConnectGithub && (
+                    <button
+                      onClick={onConnectGithub}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-line-strong text-fg hover:bg-elevated transition-colors"
+                    >
+                      <GitHubGlyph />
+                      {githubRepo ? 'Push to GitHub' : 'Connect GitHub'}
+                    </button>
+                  )}
+                </div>
+              </div>
 
               <div className="mt-4 flex items-center gap-1 rounded-xl border border-line bg-surface/50 p-2">
                 <button

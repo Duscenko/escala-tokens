@@ -1,10 +1,14 @@
 // Header actions — the pill row from the Figma header design:
-//   + New · ⬆ Import JSON · ⋯ Share · ▸ Kits
+//   + New · ⬆ Import JSON · ▸ Kits
 // New opens a category menu (Color/Font/Radius/Spacing/Sizes, matching the
 // Variables rail) → NewTokenWizard, a guided 2–3 step flow, in Configurator;
-// Import reuses the shell's existing modal; Share opens the ExportWizard (same
-// guided flow as Variables' Export); Kits is a self-contained "save current as
-// + previous kits" popover over the local savedSystems registry.
+// Import reuses the shell's existing modal; Kits is a self-contained "save
+// current as + previous kits" popover over the local savedSystems registry.
+// Share was retired — it opened the exact same ExportWizard as the Export
+// pill, just pre-checked to whole-system instead of the active section, and
+// having both read as two buttons doing one job. Export's own Step 1 lets you
+// select every collection manually, so nothing is unreachable, just one pill
+// fewer for the same result.
 
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,12 +25,6 @@ const PlusIcon: ComponentType = () => (
 const UploadIcon: ComponentType = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
-  </svg>
-)
-const ShareIcon: ComponentType = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-    <path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98" />
   </svg>
 )
 const FolderIcon: ComponentType = () => (
@@ -220,11 +218,10 @@ function NewTokenMenu({ categories, onSelect, onClose }: {
 }
 
 // ── The pill row itself (header rightSlot on Home) ───────────────────────────
-export default function HomeActions({ onNew, onImport, onShare, tokenCategories }: {
+export default function HomeActions({ onNew, onImport, tokenCategories }: {
   /** Called with the picked category key (`color`|`typography`|`radius`|`spacing`|`sizes`). */
   onNew: (category: string) => void
   onImport: () => void
-  onShare: () => void
   tokenCategories: { key: string; label: string; Icon: ComponentType }[]
 }) {
   const [kitsOpen, setKitsOpen] = useState(false)
@@ -254,7 +251,6 @@ export default function HomeActions({ onNew, onImport, onShare, tokenCategories 
         </AnimatePresence>
       </div>
       <Pill Icon={UploadIcon} label="Import JSON" onClick={onImport} />
-      <Pill Icon={ShareIcon} label="Share" onClick={onShare} />
       <div className="relative">
         <Pill
           Icon={FolderIcon}

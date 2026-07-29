@@ -1,22 +1,24 @@
 import Step3_SemanticTokens, { type SemanticCategory } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
+import PickerColor, { type PickerFocusTarget } from './PickerColor'
 
-export type ColorTab = 'primary' | 'gradients' | 'semantics'
+export type ColorTab = 'picker' | 'primary' | 'semantics' | 'gradients'
 
 const TABS: { key: ColorTab; label: string }[] = [
+  { key: 'picker', label: 'Picker Color' },
   { key: 'primary', label: 'Primary Color' },
   { key: 'semantics', label: 'Alias / Semantics' },
   { key: 'gradients', label: 'Gradients' },
 ]
 
-// The Color hub unifies the primitive families (ColorPrimitives), the semantic
-// alias matrix (Step3) and the gradient tokens (StepGradients) under one
-// foundation, switched by a three-tab pill bar. On Primary the bar sits BELOW
-// the quick bar, directly above the families table (passed down as `tabsSlot`);
-// the other tabs keep it pinned on top. Primary and Gradients scroll normally;
-// the Alias tab self-manages its internal scroll, so it lives in a bounded
-// min-h-0 flex parent.
+// The Color hub unifies palette DEFINITION (PickerColor: Color families,
+// Gray/Neutral, State Colors — each with its full scale always visible), the
+// primitive families' USAGE table (ColorPrimitives), the semantic alias
+// matrix (Step3) and the gradient tokens (StepGradients) under one
+// foundation, switched by a four-tab pill bar. The bar is always pinned above
+// the content — same position for every tab — so jumping between "define"
+// and "use" never requires scrolling back up first.
 export default function ColorHub({
   colorTab,
   onColorTabChange,
@@ -25,6 +27,9 @@ export default function ColorHub({
   previewTheme,
   onPreviewThemeChange,
   focusFamilyKey,
+  pickerFocusTarget,
+  onPickerFocusHandled,
+  onEditInPicker,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -35,6 +40,12 @@ export default function ColorHub({
   /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
    *  NewTokenWizard just created). */
   focusFamilyKey?: string | null
+  /** Forwarded to PickerColor — scrolls + pulses the requested section. */
+  pickerFocusTarget?: PickerFocusTarget
+  onPickerFocusHandled?: () => void
+  /** Forwarded to ColorPrimitives — "Edit in Picker Color" switches to that
+   *  tab AND focuses the family the link was clicked from. */
+  onEditInPicker?: (target: Exclude<PickerFocusTarget, null>) => void
 }) {
   const tabBar = (
     <div className="flex items-center gap-1 p-1 rounded-full bg-elevated/60 border border-line w-full">
@@ -58,34 +69,38 @@ export default function ColorHub({
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      {colorTab === 'primary' ? (
-        <div className="flex-1 min-h-0 overflow-y-auto p-8">
+      <div className="flex-shrink-0 px-8 pt-6">{tabBar}</div>
+      {colorTab === 'picker' ? (
+        <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-6">
+          <PickerColor
+            previewTheme={previewTheme}
+            onPreviewThemeChange={onPreviewThemeChange}
+            focusTarget={pickerFocusTarget}
+            onFocusHandled={onPickerFocusHandled}
+          />
+        </div>
+      ) : colorTab === 'primary' ? (
+        <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-6">
           <ColorPrimitives
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
-            tabsSlot={tabBar}
             focusFamilyKey={focusFamilyKey}
+            onEditInPicker={onEditInPicker}
           />
         </div>
       ) : colorTab === 'gradients' ? (
-        <>
-          <div className="flex-shrink-0 px-8 pt-6">{tabBar}</div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-8">
-            <StepGradients />
-          </div>
-        </>
+        <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-6">
+          <StepGradients />
+        </div>
       ) : (
-        <>
-          <div className="flex-shrink-0 px-8 pt-6">{tabBar}</div>
-          <div className="flex-1 min-h-0 flex flex-col p-8">
-            <Step3_SemanticTokens
-              activeCategory={activeCategory}
-              onCategoryChange={onCategoryChange}
-              previewTheme={previewTheme}
-              onPreviewThemeChange={onPreviewThemeChange}
-            />
-          </div>
-        </>
+        <div className="flex-1 min-h-0 flex flex-col p-8 pt-6">
+          <Step3_SemanticTokens
+            activeCategory={activeCategory}
+            onCategoryChange={onCategoryChange}
+            previewTheme={previewTheme}
+            onPreviewThemeChange={onPreviewThemeChange}
+          />
+        </div>
       )}
     </div>
   )
