@@ -11,7 +11,7 @@ import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
-import { tonalPalettes } from './semanticArchitectures'
+import { tonalPalettes, buildArchitectureView } from './semanticArchitectures'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
 
@@ -123,6 +123,61 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // atoms (right panel, Home collage, docs) visibly follow the selection.
   const arch = store.semanticArchitecture ?? 'flat'
   const dark = kind === 'dark'
+  tokens.architecture = arch
+
+  // A non-flat architecture stores its edits as REFS in `architectureOverrides`,
+  // never in `themes` — so everything resolved above (which reads `themes`) is
+  // blind to them, and editing e.g. `action.primary` in Categorical repainted
+  // NOTHING. Rebuild the same projection the table renders (overrides applied)
+  // and hand the previewed mode's resolved colours to the atoms, so the preview
+  // shows the architecture the user is actually editing.
+  if (arch !== 'flat') {
+    const view = buildArchitectureView(
+      arch,
+      {
+        themes: store.themes,
+        themeKinds: store.themeKinds ?? {},
+        themePalettes: pal ? { [themeKey]: pal } : {},
+        scales: globalScales,
+        accent: primaryColor,
+      },
+      errorColor,
+      store.architectureOverrides?.[arch] ?? {},
+    )
+    if (view) {
+      const flatMap: Record<string, string> = {}
+      for (const cat of view.categories) {
+        for (const tk of cat.tokens) {
+          flatMap[`${cat.key}.${tk.key}`] = (dark ? tk.dark : tk.light).css
+        }
+      }
+      tokens.archTokens = flatMap
+      // Only overwrite a field when the architecture actually defines that slot,
+      // so a projection that omits one keeps the flat-resolved value instead of
+      // blanking the atom out.
+      const put = (field: keyof PreviewTokens, id: string) => {
+        const css = flatMap[id]
+        if (css) (tokens as unknown as Record<string, unknown>)[field] = css
+      }
+      if (arch === 'categorical') {
+        put('surface', 'surface.page')
+        put('neutralFill', 'surface.layer-1')
+        put('brandSolid', 'action.primary')
+        put('onBrand', 'content.on-action')
+        put('brandText', 'content.accent')
+        put('neutralText', 'content.primary')
+        put('fgMuted', 'content.secondary')
+        put('placeholderText', 'content.subtle')
+        put('disabledBg', 'action.disabled')
+        put('disabledText', 'content.subtle')
+        put('border', 'border.default')
+        put('borderDefault', 'border.subtle')
+        put('errorColor', 'status.critical-fg')
+        put('warningColor', 'status.warning-fg')
+        put('successColor', 'status.success-fg')
+      }
+    }
+  }
 
   if (arch === 'tonal') {
     // Material 3: the exact scheme the export ships — primary 40↔80 with paired

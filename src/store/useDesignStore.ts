@@ -945,7 +945,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 42,
+      version: 43,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1460,6 +1460,34 @@ export const useDesignStore = create<DesignStore>()(
           toNumeric(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) toNumeric(sys?.snapshot)
+          }
+        }
+        if (version < 43) {
+          // v42→v43: ~30 of the 39 semantic roles carried a hardcoded `darkTone`
+          // left over from a pre-Radix inversion scheme (25↔950-style mirroring)
+          // that was never removed once per-appearance dark ramps + tone IDENTITY
+          // became the real model (lib/semanticRoles.ts). Worst offender:
+          // background-primary — the PAGE background — pinned to gray tone 12
+          // (the ramp's lightest, near-white step) instead of identity tone 1
+          // (the ramp's darkest step, which IS `darkBackground`). Any dark theme
+          // ever opened in Alias/Semantics had this baked into its stored role
+          // map, and auto-populate only overwrites a value that's no longer ANY
+          // tone of the current ramp — tone 12 still is one, just the wrong
+          // recommendation now, so it silently survives every future resync.
+          //
+          // Same fix as v38/v40: clear the DARK-kind themes' role maps so
+          // Step3's auto-populate (and resolvePreviewTokens' same fallback)
+          // re-seed them from the now-correct identity tones. Light-kind themes
+          // are untouched — their roles were never wrong.
+          const clearDarkSemantics = (state: any) => {
+            if (!state?.themes || typeof state.themes !== 'object') return
+            for (const t of Object.keys(state.themes)) {
+              if ((state.themeKinds?.[t] ?? 'light') === 'dark') state.themes[t] = {}
+            }
+          }
+          clearDarkSemantics(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) clearDarkSemantics(sys?.snapshot)
           }
         }
         return persisted

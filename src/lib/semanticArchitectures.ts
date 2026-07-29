@@ -73,26 +73,37 @@ export type ProjectionInput = {
 // neutral-dark, subtle tints deepen 2→11, text band mirrors 11→7, solid brand
 // fills hold their tone), so both architectures always agree on what a role
 // looks like.
+// NOTE ON THE DARK COLUMN: `neutral-dark` runs 1 = darkest (tone 1 IS
+// `darkBackground`, emitted verbatim) → 12 = lightest, exactly like the light
+// ramp runs 1 = page → 12 = highest-contrast text. So a dark ref uses the SAME
+// step number as its light counterpart, not a mirrored one. This table
+// originally mirrored them (page → `{neutral-dark.12}`), which rendered the
+// whole dark column as a light theme — the same leftover pre-Radix inversion
+// that had to be removed from the flat catalogue's `darkTone`s. Keep the steps
+// aligned; if you find yourself writing `13 − n` here, that's the bug.
 const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: string }[] = [
   // Content — text & icon ink
-  { group: 'content', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.1}' },
+  { group: 'content', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.12}' },
   { group: 'content', key: 'on-action', light: '{neutral.1}',  dark: '{neutral.1}' }, // holds — sits on action.primary, which holds its tone
-  { group: 'content', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.2}' },
-  { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.4}' },
-  { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.12}' }, // ink on surface.inverse
-  { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.7}' },
+  { group: 'content', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
+  { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
+  { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
+  { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
   // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
   { group: 'action', key: 'primary',   light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'action', key: 'neutral',   light: '{neutral.3}',    dark: '{neutral-dark.10}' },
-  { group: 'action', key: 'secondary', light: '{accent.3}',     dark: '{accent.12}' },
-  { group: 'action', key: 'disabled',  light: '{neutral.2}',    dark: '{neutral-dark.11}' },
+  { group: 'action', key: 'neutral',   light: '{neutral.3}',    dark: '{neutral-dark.3}' },
+  { group: 'action', key: 'secondary', light: '{accent.3}',     dark: '{accent.3}' },
+  { group: 'action', key: 'disabled',  light: '{neutral.2}',    dark: '{neutral-dark.2}' },
   // Surface — elevation levels
-  { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.12}' },
-  { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.11}' },
-  { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.10}' },
-  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.11}' },
-  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.1}' },
-  { group: 'surface', key: 'overlay', light: '{neutral.12}', dark: '{neutral-dark.12}' }, // scrim — pair with opacity.60
+  { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
+  { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
+  { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.2}' },
+  // Deliberately inverted, like the flat catalogue's `*-inverse`: an inverse
+  // surface is dark on a light page and light on a dark one, by definition.
+  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
+  { group: 'surface', key: 'overlay', light: '{neutral.12}', dark: '{neutral-dark.1}' }, // pair with opacity.60
   // Status — feedback fg/bg pairs (critical = error family)
   { group: 'status', key: 'critical-bg', light: '{error.2}',    dark: '{error.11}' },
   { group: 'status', key: 'critical-fg', light: '{error.11}',   dark: '{error.7}' },
@@ -100,10 +111,13 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'status', key: 'warning-fg',  light: '{warning.11}', dark: '{warning.7}' },
   { group: 'status', key: 'success-bg',  light: '{success.2}',  dark: '{success.11}' },
   { group: 'status', key: 'success-fg',  light: '{success.11}', dark: '{success.7}' },
-  // Border — strokes
-  { group: 'border', key: 'default',  light: '{neutral.3}', dark: '{neutral-dark.10}' },
-  { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.7}' },
-  { group: 'border', key: 'subtle',   light: '{neutral.5}', dark: '{neutral-dark.11}' },
+  // Border — strokes. (`subtle` sitting on a HIGHER tone than `default` reads
+  // backwards, but that's the shipped light-mode schema and light mode isn't
+  // broken — left alone deliberately rather than silently re-pointing exported
+  // tokens. Only the dark steps are realigned here.)
+  { group: 'border', key: 'default',  light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
+  { group: 'border', key: 'subtle',   light: '{neutral.5}', dark: '{neutral-dark.5}' },
   { group: 'border', key: 'active',   light: '{accent.9}',  dark: '{accent.8}' }, // focus ring — ≥3:1 vs page (WCAG 1.4.11)
   { group: 'border', key: 'critical', light: '{error.8}',   dark: '{error.7}' },
   { group: 'border', key: 'warning',  light: '{warning.8}', dark: '{warning.7}' },

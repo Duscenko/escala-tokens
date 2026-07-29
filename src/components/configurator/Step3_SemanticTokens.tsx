@@ -27,6 +27,51 @@ export { BRAND_TOKEN_TONES }
 // off this, so editing a category's tokens shows a matching live specimen.
 export type SemanticCategory = 'all' | 'content' | 'background' | 'border'
 
+/**
+ * Normalized preview focus — what KIND of thing the selected semantic group
+ * governs, independent of which architecture names it. The flat catalogue has
+ * three groups (content · background · border), Categorical five (content ·
+ * action · surface · status · border), Vibrancy and Tonal their own; the
+ * right-hand preview only cares which of these five specimens to show.
+ */
+export type SemanticFocus = 'content' | 'action' | 'surface' | 'status' | 'border'
+
+/**
+ * Nav-item key → preview focus, across every architecture. `null` = no specific
+ * focus (the "All tokens" entry), which the shell reads as "show the overview".
+ * This is also what drives each nav row's glyph, so the icon and the preview can
+ * never disagree about what a group is.
+ */
+export function focusForNavKey(key: string): SemanticFocus | null {
+  switch (key) {
+    // Flat catalogue + shared names.
+    case 'content': return 'content'
+    case 'border': return 'border'
+    case 'background': return 'surface'
+    // Categorical.
+    case 'action': return 'action'
+    case 'surface': return 'surface'
+    case 'status': return 'status'
+    // Vibrancy (Apple HIG grouping).
+    case 'labels': return 'content'
+    case 'backgrounds': return 'surface'
+    case 'materials': return 'surface'
+    case 'fills': return 'action'
+    case 'separators': return 'border'
+    // Tonal (Material 3) + remaining projection groups.
+    case 'text': return 'content'
+    case 'core': return 'action'
+    case 'secondary': return 'action'
+    case 'tertiary': return 'action'
+    case 'tint': return 'action'
+    case 'surfaces': return 'surface'
+    case 'fallbacks': return 'surface'
+    case 'error': return 'status'
+    case 'outlines': return 'border'
+    default: return null
+  }
+}
+
 // ── Category nav metadata: icon + one-line description (tooltip) ─────────────
 const catIc = (d: string, filled = false): ReactNode => (
   <svg
@@ -54,16 +99,21 @@ const CATEGORY_DESC: Record<SemanticCategory, string> = {
   >),
 }
 
-// Non-flat architecture groups reuse the closest flat category glyph.
-const ARCH_ICON_ALIAS: Record<string, SemanticCategory> = {
-  labels: 'content', text: 'content', fallbacks: 'background',
-  backgrounds: 'background', surface: 'background', surfaces: 'background',
-  fills: 'background', materials: 'background', tint: 'content',
-  core: 'content', secondary: 'content', tertiary: 'content', error: 'background',
-  separators: 'border', outlines: 'border',
+// Glyph per normalized focus — action/status have no flat-category equivalent,
+// so they get their own (a cursor-ish pointer, a pulse).
+const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
+  content: CATEGORY_ICON.content,
+  surface: CATEGORY_ICON.background,
+  border:  CATEGORY_ICON.border,
+  action:  catIc('M3 3l7.5 18 2.6-7.9L21 10.5 3 3z', true),
+  status:  catIc('M3 12h4l2.5-7 4 14L16 12h5'),
 }
-const archIconFor = (key: string): ReactNode =>
-  CATEGORY_ICON[(key in CATEGORY_ICON ? key : ARCH_ICON_ALIAS[key] ?? 'all') as SemanticCategory]
+// A nav row's glyph comes from the SAME mapping the preview focus does, so the
+// icon can never imply a different grouping than the specimen it opens.
+const archIconFor = (key: string): ReactNode => {
+  const focus = focusForNavKey(key)
+  return focus ? FOCUS_ICON[focus] : CATEGORY_ICON.all
+}
 
 // Checkerboard under alpha swatches so transparency reads visually (vibrancy).
 const CHECKER_STYLE: React.CSSProperties = {
@@ -514,14 +564,17 @@ function MatrixRow({
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step3_SemanticTokens({
-  activeCategory: controlledCategory,
-  onCategoryChange,
+  onFocusChange,
   previewTheme,
   onPreviewThemeChange,
 }: {
-  /** Controlled category (driven by the shell so the preview can mirror it). */
-  activeCategory?: SemanticCategory
-  onCategoryChange?: (c: SemanticCategory) => void
+  /** Reports which semantic GROUP is selected so the shell can point the
+   *  preview at it. Deliberately NOT the same value as the nav's own category
+   *  state: this component owns that internally (flat and non-flat keep
+   *  separate selections), and emits a normalized `SemanticFocus` that means
+   *  the same thing in every architecture. They used to be one shared piece of
+   *  state, which is why the non-flat nav could never move the preview. */
+  onFocusChange?: (f: SemanticFocus | 'all') => void
   /** Theme currently rendered in the right-hand preview (eye toggle). */
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
@@ -686,8 +739,7 @@ export default function Step3_SemanticTokens({
     })
 
   // UI state — category is controllable; falls back to internal state standalone.
-  const [internalCategory, setInternalCategory] = useState<SemanticCategory>('all')
-  const activeCategory = controlledCategory ?? internalCategory
+  const [activeCategory, setInternalCategory] = useState<SemanticCategory>('all')
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
@@ -733,17 +785,21 @@ export default function Step3_SemanticTokens({
 
   // Architecture switch resets the view state: first nav option, cleared
   // search/expansion, and the right-hand preview back to the generic overview.
+  // Both nav selections reset, so the focus resets unconditionally — it used to
+  // fire only for non-flat, which doubled as the thing that PINNED non-flat's
+  // focus to 'all' forever (nothing else ever set it).
   useEffect(() => {
     setArchCategory('all')
+    setInternalCategory('all')
     setExpandedRole(null)
     setQuery('')
-    if (semanticArchitecture !== 'flat') onCategoryChange?.('all')
+    onFocusChange?.('all')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [semanticArchitecture])
 
   function selectCategory(c: SemanticCategory) {
-    onCategoryChange?.(c)
-    if (controlledCategory === undefined) setInternalCategory(c)
+    setInternalCategory(c)
+    onFocusChange?.(focusForNavKey(c) ?? 'all')
     setExpandedRole(null)
   }
 
@@ -826,6 +882,10 @@ export default function Step3_SemanticTokens({
       selectCategory(key as SemanticCategory)
     } else {
       setArchCategory(key)
+      // Non-flat used to stop here — the shell never heard about the selection,
+      // so its focus stayed 'all' and the preview showed the generic overview
+      // no matter which group you picked.
+      onFocusChange?.(focusForNavKey(key) ?? 'all')
       setExpandedRole(null)
     }
   }

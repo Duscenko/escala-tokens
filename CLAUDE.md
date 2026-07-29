@@ -80,7 +80,7 @@ another pill).
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
   every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
   `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|
-  `github`|`save`), `semanticCategory`. None persisted — every reload lands on
+  `github`|`save`), `semanticFocus`. None persisted — every reload lands on
   **Variables · Color** (`activeFoundation` defaults to `'color'`) — there is no separate
   landing screen. Leaving a foundation marks it complete (`commitVisit()` →
   `markFoundationComplete`).
@@ -291,11 +291,30 @@ another pill).
   Renders token-driven atoms (`preview/atoms/*` + `ButtonPreview` + the catalogue's
   `SPECIMENS`) from `usePreviewTokens()`, so editing any foundation updates them **live**.
   Two independent axes of context-awareness, checked in priority order:
-  1. **`focus`** (Semantic sub-category, `Step3_SemanticTokens`'s controlled
-     `activeCategory`/`onCategoryChange`, owned as `semanticCategory` state in
-     `Configurator`) — swaps to `text`→`TextSpecimenPreview`,
-     `surface`/`action`/`status`→`BackgroundSpecimenPreview`, `border`→`BorderSpecimenPreview`,
-     `icon`→`ForegroundSpecimenPreview`. Only set while `colorTab === 'semantics'`.
+  1. **`focus`** — a **`SemanticFocus`** (`content`·`action`·`surface`·`status`·`border`,
+     or `'all'`), reported by `Step3_SemanticTokens` via `onFocusChange` and held as
+     `semanticFocus` in `Configurator`. Only set while `colorTab === 'semantics'`; each
+     value renders its specimen from `SEMANTIC_SPECIMENS`
+     (`preview/atoms/SemanticSpecimens.tsx`), which also owns the panel titles so a focus
+     can't be half-wired. This replaced four flat-only atoms (`TextSpecimenPreview`,
+     `BackgroundSpecimenPreview`, `BorderSpecimenPreview`, `ForegroundSpecimenPreview` —
+     the last already dead, it previewed `icon-*` roles the catalogue dropped); they were
+     deleted, not kept for reference, since the new module supersedes them entirely.
+     Three things make this work that are easy to break again:
+     - **Focus is NOT the table's nav selection.** They used to be one shared
+       `semanticCategory`, typed to the FLAT catalogue's 3 groups — so a non-flat
+       architecture (Categorical's Content·Action·Surface·Status·Border) had nowhere to
+       put its selection, `selectNavItem`'s non-flat branch never called up at all, and
+       an effect additionally pinned the focus to `'all'`. Net effect: **every non-flat
+       architecture showed the generic `ColorCollage` no matter which group you picked.**
+       Step3 now owns its nav state (flat + arch, separately) and reports a normalized
+       focus; the shell never pushes one down.
+     - **`focusForNavKey()` maps every architecture's group keys onto the 5**, and the
+       nav row's glyph is derived from the SAME call — icon and specimen can't disagree.
+     - **Specimens caption in the ACTIVE architecture's vocabulary.** `slotOf()` prefers
+       `tokens.archTokens['category.token']` (Categorical's `action.primary`) and falls
+       back to the flat role key (`background-brand-solid`), so the label always names the
+       token you'd actually edit in the table in front of you.
   2. **`categoryKey`** (the active Variables foundation key, passed straight from
      `activeFoundation`) — when `focus` isn't set, tailors the panel to a live component
      set for that foundation: **color** → `ColorCollage`, ONE composite surface rather than
@@ -341,14 +360,14 @@ src/
 ├── components/
 │   ├── configurator/       ← TopNav (global nav), SectionRail (the one left rail), HomeActions (incl. the "New" token-category menu), NewTokenWizard (guided token creation), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout is retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
-│   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + Text/Background/Border/Foreground SpecimenPreview — the Semantic per-category specimens)
+│   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
 │   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 42)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
 │   ├── iconLibraries.ts       ← ICON_LIBRARIES (incl. iconifyPrefix for the live Iconify browser), getIconLibrary(), SAMPLE_GLYPHS (pure data)
-│   ├── previewTokens.ts       ← resolvePreviewTokens()/usePreviewTokens() — single source for live-preview tokens
+│   ├── previewTokens.ts       ← resolvePreviewTokens()/usePreviewTokens() — single source for live-preview tokens; ARCHITECTURE-AWARE (see below)
 │   ├── gradients.ts           ← GradientDef/GradientAssignments types + gradientToCss()/gradientSlug()/makeDefaultGradients() (pure data)
 │   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
 │   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
@@ -582,6 +601,69 @@ Store uses `persist` middleware with `version: 42`. If you add fields, bump the 
 > background staying light-gray in dark mode instead of tracking the real dark surface.
 > Keep every field in `resolvePreviewTokens` going through `resolveRole()`, not a raw
 > `semanticTokens[key] || rec(key)` read.
+
+> **A non-flat architecture stores its edits in `architectureOverrides`, NOT in `themes` —
+> so `resolvePreviewTokens` has to project, or the preview is frozen.** `themes[theme]` only
+> ever holds the FLAT role map; Categorical/Vibrancy/Tonal edits are refs under
+> `architectureOverrides[arch]['category.token'][mode]`. `resolvePreviewTokens` used to read
+> `themes` exclusively and carried a comment that 'flat' and 'categorical' "share the same
+> resolved values" — so editing e.g. `action.primary` in Categorical repainted **nothing**,
+> in any preview, forever. It now rebuilds the same `buildArchitectureView()` the table
+> renders (overrides applied), publishes the previewed mode's resolved colours as
+> `tokens.archTokens`, and maps the ones with a `PreviewTokens` field onto it — guarded so
+> a projection that omits a slot keeps the flat-resolved value instead of blanking the atom.
+> Anything new that resolves preview colour must go through this, not a raw `themes` read.
+
+> **The dark-mode "white box" bug had a second, deeper cause: ~30 of 39 semantic roles'
+> `darkTone` was just wrong**, not stale. `resolveRole()` above only protects against a
+> stored hex that's no longer ANY tone of its scale — it does nothing if the stored (or
+> recommended) tone is a VALID tone that's simply the wrong one. `background-primary` (the
+> page background) was pinned to `darkScale: 'gray', darkTone: 12` — gray tone 12 is the
+> DARK ramp's lightest step (its highest-contrast TEXT tone), not the page. It should have
+> been tone 1 (identity — the dark ramp's tone 1 IS `darkBackground`, same as the light
+> ramp's tone 1 IS `pageBackground`). This wasn't a one-off typo: nearly every role outside
+> the `*-solid` fills carried a leftover Tailwind-scale-style inversion (mirroring roughly
+> `13 − tone`) baked in before the per-appearance Radix dark ramp existed — exactly the
+> "old tone-remapping... don't reintroduce it" CLAUDE.md already warned about elsewhere, just
+> never actually removed from the catalog data itself. Fixed by deleting the hardcoded
+> `darkTone` from every role that isn't a genuine opposite-polarity case, so `recDarkTone()`
+> computes IDENTITY (same step, dark ramp) the way the type comment on `Role.darkTone`
+> already said it should. Only `content-inverse`, `border-brand-alt` (both switch `darkScale`
+> entirely, by design) and `background-overlay` (a modal scrim — its light tone borrows
+> gray-12's near-black LIGHTNESS as a fixed veil colour, not a step position, so it's in
+> `recDarkTone`'s `inverts` list) still carry an explicit override. **A hardcoded `darkTone`
+> on any other role is a bug until proven otherwise** — don't add one without checking it
+> against `recDarkTone`'s identity default first.
+>
+> Because a MATERIALIZED stored value (one already written into `themes[darkTheme]` by
+> Step3's auto-populate, before this fix) is a *valid* tone of its ramp — just the wrong
+> recommendation — `resolveRole()`'s staleness check doesn't catch it or self-heal it; it
+> survives indefinitely once written. Store **v43** clears every dark-kind theme's role map
+> (same blunt-but-proven approach as v38 and v40's `clearSemantics`) so auto-populate
+> re-seeds from the now-correct identity tones. If you ever change a role's recommended
+> tone again, ship a matching migration — don't rely on `resolveRole()` alone to propagate it.
+
+> **The same inversion was ALSO baked into `CATEGORICAL_ROLES`** (`semanticArchitectures.ts`),
+> and it survived the flat fix because it's a separate table. `neutral-dark` runs
+> **1 = darkest** (tone 1 IS `darkBackground`, emitted verbatim) → 12 = lightest, exactly
+> like the light ramp runs 1 = page → 12 = text — so a dark ref uses the SAME step as its
+> light counterpart. The table mirrored them instead (`surface.page` dark →
+> `{neutral-dark.12}`), which rendered Categorical's **entire dark column as a light
+> theme**: near-white page, near-black "dark mode" text. Realigned to identity, with
+> `surface.inverse` and `surface.overlay` keeping deliberate overrides (an inverse surface
+> inverts by definition; a scrim dims rather than inverts, so it stays dark in both). The
+> file's own comment always claimed both architectures agree on what a role looks like —
+> now they actually do. **If you write `13 − n` in a dark ref, that's the bug.**
+>
+> Two related things deliberately left ALONE, so they don't get "fixed" by accident:
+> - Categorical's `border.subtle` sits on a HIGHER tone than `border.default` (5 vs 3),
+>   which reads backwards — but that's the shipped LIGHT-mode schema and light mode isn't
+>   broken. Re-pointing it would silently change exported tokens for no bug.
+> - `scaleLookup` maps the coloured families (`accent`/`error`/…) to their LIGHT ramps
+>   only — there is no `accent-dark` — so Categorical's dark column reads light-ramp tints
+>   even though the store HAS the dark twins (v40). Visible as a pale `surface.accent` on
+>   a dark page. Fixing it means either new `*-dark` ref families or a mode-aware
+>   `refToView`; both change the export, so it's a deliberate follow-up, not a drive-by.
 
 ---
 

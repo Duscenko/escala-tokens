@@ -55,6 +55,14 @@ export interface PreviewTokens {
   // when no gradient is assigned to that surface, so callers fall back to solids.
   coverGradient?: string // card covers / brand hero strips
   avatarGradient?: string // solid avatars / specimens
+  // Which semantic architecture the previewed values came from, and — for a
+  // NON-flat one — its resolved tokens for the previewed mode, keyed
+  // `category.token` (e.g. 'action.primary'). Non-flat architectures store
+  // edits as refs in `architectureOverrides`, NOT in `themes`, so `semanticMap`
+  // alone can't show them; the per-category specimens read from here to caption
+  // (and paint) the exact tokens the user is editing in that architecture.
+  architecture?: 'flat' | 'categorical' | 'vibrancy' | 'tonal'
+  archTokens?: Record<string, string>
 }
 
 /** Parse a px token from a map (e.g. spacing['4'] → 16), with a fallback. */

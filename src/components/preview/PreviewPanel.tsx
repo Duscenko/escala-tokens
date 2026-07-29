@@ -3,15 +3,13 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS } from '../configurator/docs/specimens'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
-import { TextSpecimenPreview } from './atoms/TextSpecimenPreview'
-import { BackgroundSpecimenPreview } from './atoms/BackgroundSpecimenPreview'
-import { BorderSpecimenPreview } from './atoms/BorderSpecimenPreview'
+import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE } from './atoms/SemanticSpecimens'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { useDesignStore } from '../../store/useDesignStore'
-import type { SemanticCategory } from '../configurator/Step3_SemanticTokens'
+import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 
 // Catalogue renderers reused verbatim — keys are plugin gates ('Toggle' ships
 // with the display name "Switch").
@@ -32,12 +30,10 @@ const SelectSpec = SPECIMENS.Select
 const TabMenuSpec = SPECIMENS.TabMenu
 const AvatarSpec = SPECIMENS.Avatar
 
-// When the shell focuses a semantic category, the panel becomes a specimen for it.
-const FOCUS_TITLE: Record<Exclude<SemanticCategory, 'all'>, string> = {
-  content: 'Content preview',
-  background: 'Background preview',
-  border: 'Border preview',
-}
+// When the shell focuses a semantic group, the panel becomes a specimen for it.
+// Titles + renderers both come from the specimen module, so a new focus can't
+// be half-wired (a title with no specimen, or the reverse).
+const FOCUS_TITLE = SEMANTIC_SPECIMEN_TITLE
 
 // When no semantic focus is active, the panel instead tailors itself to the
 // active Variables foundation — same idea (a live specimen for what you're
@@ -162,7 +158,7 @@ export default function PreviewPanel({
   onNavigateFoundation,
   onCollapse,
 }: {
-  focus?: SemanticCategory | null
+  focus?: SemanticFocus | 'all' | null
   /** Active Variables foundation key (`color`|`typography`|`radius`|…) — tailors
    *  the generic fallback below to a live specimen set for that foundation. */
   categoryKey?: string | null
@@ -220,12 +216,8 @@ export default function PreviewPanel({
           <OverviewChecklistPreview onOpenFoundation={onNavigateFoundation ?? (() => {})} />
         ) : iconLibraryKey ? (
           <IconSpecimenPreview libraryKey={iconLibraryKey} />
-        ) : specimen === 'content' ? (
-          <TextSpecimenPreview tokens={tokens} />
-        ) : specimen === 'background' ? (
-          <BackgroundSpecimenPreview tokens={tokens} />
-        ) : specimen === 'border' ? (
-          <BorderSpecimenPreview tokens={tokens} />
+        ) : specimen ? (
+          SEMANTIC_SPECIMENS[specimen]({ tokens })
         ) : categoryKey === 'color' ? (
           <ColorCollage tokens={tokens} iconPrefix={collageIconPrefix} />
         ) : categoryKey === 'typography' ? (

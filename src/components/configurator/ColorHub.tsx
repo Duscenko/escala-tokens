@@ -1,4 +1,4 @@
-import Step3_SemanticTokens, { type SemanticCategory } from './Step3_SemanticTokens'
+import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
 import PickerColor, { type PickerFocusTarget } from './PickerColor'
@@ -22,8 +22,7 @@ const TABS: { key: ColorTab; label: string }[] = [
 export default function ColorHub({
   colorTab,
   onColorTabChange,
-  activeCategory,
-  onCategoryChange,
+  onFocusChange,
   previewTheme,
   onPreviewThemeChange,
   focusFamilyKey,
@@ -33,8 +32,7 @@ export default function ColorHub({
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
-  activeCategory?: SemanticCategory
-  onCategoryChange?: (c: SemanticCategory) => void
+  onFocusChange?: (f: SemanticFocus | 'all') => void
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
   /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
@@ -95,8 +93,7 @@ export default function ColorHub({
       ) : (
         <div className="flex-1 min-h-0 flex flex-col p-8 pt-6">
           <Step3_SemanticTokens
-            activeCategory={activeCategory}
-            onCategoryChange={onCategoryChange}
+            onFocusChange={onFocusChange}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
           />

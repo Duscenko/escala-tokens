@@ -20,7 +20,7 @@ import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { type PickerFocusTarget } from '../components/configurator/PickerColor'
-import { type SemanticCategory } from '../components/configurator/Step3_SemanticTokens'
+import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
@@ -313,9 +313,12 @@ export default function Configurator() {
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
   const [exportMode, setExportMode] = useState<ExportMode>(null)
-  // Active Semantic category — shared with the table (master nav) and the preview,
-  // so the right panel mirrors whichever token group is being edited.
-  const [semanticCategory, setSemanticCategory] = useState<SemanticCategory>('all')
+  // Which semantic GROUP the preview should specimen — reported by
+  // Step3_SemanticTokens, normalized so it means the same thing whichever
+  // architecture is active. The table owns its own nav selection; this is
+  // report-only. (They were one shared value before, which is what kept the
+  // non-flat architectures' preview stuck on the generic overview.)
+  const [semanticFocus, setSemanticFocus] = useState<SemanticFocus | 'all'>('all')
   // Sub-tab within the Color hub (Picker ↔ Primary ↔ Alias/Semantics ↔
   // Gradients). The preview mirrors the semantic category only while the
   // semantics tab is active.
@@ -499,8 +502,7 @@ export default function Configurator() {
         <ColorHub
           colorTab={colorTab}
           onColorTabChange={setColorTab}
-          activeCategory={semanticCategory}
-          onCategoryChange={setSemanticCategory}
+          onFocusChange={setSemanticFocus}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
           focusFamilyKey={focusColorFamily}
@@ -749,7 +751,7 @@ export default function Configurator() {
                 />
               ) : (
                 <PreviewPanel
-                  focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticCategory : null}
+                  focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticFocus : null}
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
