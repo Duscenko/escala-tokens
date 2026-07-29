@@ -413,7 +413,9 @@ export default function ExportWizard({
                 )}
                 {isJson && format !== 'w3c' && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Escala JSON is the exact payload the Figma plugin imports — keys and values ship verbatim.
+                    Escala JSON is the exact payload the Figma plugin imports — keys and values ship verbatim,
+                    and it always ships the WHOLE document (typography, spacing, radius…) regardless of the
+                    collections picked above, since the plugin needs the full contract to import cleanly.
                   </p>
                 )}
               </div>
@@ -426,8 +428,11 @@ export default function ExportWizard({
               <p className="text-[13px] text-fg-muted mt-1">Review your settings and start the export</p>
 
               <div className="mt-5 rounded-xl border border-line bg-surface/50 overflow-hidden">
-                <SummaryRow label="Collections" value={collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')} />
-                <SummaryRow label="Variables" value={String(varCount)} />
+                <SummaryRow
+                  label="Collections"
+                  value={format === 'escala' ? 'All (Escala JSON is one document)' : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')}
+                />
+                {format !== 'escala' && <SummaryRow label="Variables" value={String(varCount)} />}
                 {collections.includes('semantics') && <SummaryRow label="Modes" value={modes.join(', ')} />}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />
                 <SummaryRow label="Structure" value={files.length > 1 ? `${files.length} files` : 'Single file'} />

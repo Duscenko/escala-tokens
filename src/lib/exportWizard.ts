@@ -291,22 +291,6 @@ function scssFor(sel: WizardSelection, collections: WizardCollection[], full: To
   return lines.join('\n').trimEnd()
 }
 
-// ── Escala JSON (the plugin contract, sliced) ────────────────────────────────
-
-function escalaFor(sel: WizardSelection, collections: WizardCollection[], full: TokenJSON): unknown {
-  const out: Record<string, unknown> = { schemaVersion: full.schemaVersion, project: full.project }
-  if (collections.includes('primitives') || collections.includes('semantics')) out.colors = full.colors
-  if (collections.includes('typography')) out.typography = full.typography
-  if (collections.includes('spacing')) out.spacing = full.spacing
-  if (collections.includes('radius')) out.radius = full.radius
-  if (collections.includes('opacity')) out.opacity = full.opacity
-  if (collections.includes('shadow')) out.shadows = full.shadows
-  if (collections.includes('grid')) out.grid = full.grid
-  if (collections.includes('sizes')) out.sizes = full.sizes
-  if (collections.includes('icons')) out.icons = full.icons
-  return out
-}
-
 // ── Public entry ─────────────────────────────────────────────────────────────
 
 export function buildWizardExport(sel: WizardSelection): WizardFile[] {
@@ -316,8 +300,17 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   const ordered = ALL_WIZARD_COLLECTIONS.filter((k) => sel.collections.includes(k))
 
   if (sel.format === 'escala') {
-    // The plugin payload is one document by contract — structure doesn't split it.
-    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(escalaFor(sel, ordered, full), null, 2), language: 'json' }]
+    // NOT sliced by `collections` — this format's whole promise (see its hint
+    // in ExportWizard) is "the exact payload the Figma plugin imports", and
+    // the plugin requires typography/spacing/radius unconditionally, plus
+    // `atoms`/`style` which aren't even collection options here. A collection
+    // filter on this format used to produce a file that LOOKED like a valid
+    // tokens.json (right name, right shape) but silently dropped required
+    // fields — the plugin doesn't degrade gracefully on those, it throws
+    // (e.g. missing `typography` crashed importVariables and, because every
+    // import phase used to share one try/catch, took Components and
+    // Documentation down with it). Ship `full` verbatim, always.
+    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(full, null, 2), language: 'json' }]
   }
 
   if (sel.format === 'w3c') {
