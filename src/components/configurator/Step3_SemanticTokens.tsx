@@ -150,9 +150,16 @@ function parseRef(label: string): [string, number] | null {
 }
 
 function ArchModeEditor({
-  mode, value, scales, onPick,
+  mode, kind, label, value, scales, onPick,
 }: {
-  mode: 'light' | 'dark'
+  /** The theme key this editor writes overrides for — 'light'/'dark' always,
+   *  or a custom theme's key under Categorical. */
+  mode: string
+  /** That theme's light/dark polarity — drives the sun/moon glyph. */
+  kind: 'light' | 'dark'
+  /** Display text — the theme's name (accent-prefixed for a custom theme) or
+   *  the plain 'light'/'dark' word for Vibrancy/Tonal. */
+  label: string
   value: ArchTokenValue
   scales: GlobalScales
   onPick: (ref: string) => void
@@ -168,8 +175,8 @@ function ArchModeEditor({
   return (
     <div className="flex flex-col gap-2">
       <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-        <KindIcon kind={mode} />
-        {mode}
+        <KindIcon kind={kind} />
+        {label}
       </span>
       <div className="flex items-center gap-1 flex-wrap">
         {PICKABLE_FAMILIES.map((fam) => {
@@ -776,9 +783,15 @@ export default function Step3_SemanticTokens({
             { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor },
             errorColor,
             architectureOverrides[semanticArchitecture] ?? {},
+            // Every theme in the workspace — Categorical resolves one column
+            // per entry; Vibrancy/Tonal ignore this (always light/dark, see
+            // ArchitectureView.modeKeys). Passing it uniformly means "+ Theme"
+            // just works the moment Categorical's math supports it, with no
+            // per-architecture branch needed here.
+            themeCols,
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides, themeCols],
   )
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')
@@ -906,11 +919,14 @@ export default function Step3_SemanticTokens({
           })()
       ).filter((t) => !q || t.name.toLowerCase().includes(q))
     : []
-  // Name column keeps a real minimum — with two flexible value columns it
-  // would otherwise collapse to 0 on narrow panes (overflow-auto scrolls).
+  // Name column keeps a real minimum — with flexible value columns it would
+  // otherwise collapse to 0 on narrow panes (overflow-auto scrolls). Value
+  // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
+  // Categorical (one per theme, so "+ Theme" actually grows the table).
+  const archModeKeys = archView?.modeKeys ?? ['light', 'dark']
   const archGridStyle: React.CSSProperties = {
-    // 4th track = the edit toggle, mirroring the flat matrix's trailing column.
-    gridTemplateColumns: 'minmax(11rem,1.4fr) minmax(8.5rem,1fr) minmax(8.5rem,1fr) 2.75rem',
+    // Last track = the edit toggle, mirroring the flat matrix's trailing column.
+    gridTemplateColumns: `minmax(11rem,1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} 2.75rem`,
   }
 
   if (!ready) {
@@ -937,9 +953,13 @@ export default function Step3_SemanticTokens({
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-sm text-fg truncate">{activeItem.label}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeItem.count}</span>
-          {/* + Theme — flat only: extra themes are columns of the flat matrix;
-              the other architectures are two-mode (light/dark) by contract. */}
-          {isFlat && (
+          {/* + Theme — Flat and Categorical: both resolve an extra theme as a
+              real column (Categorical via `themeCols` passed into
+              buildArchitectureView). Vibrancy/Tonal stay hidden: their
+              light/dark are a fixed binary transform of the global primitives
+              with no per-theme concept — a 3rd column has no defined meaning
+              there today (see ArchitectureView.modeKeys' doc comment). */}
+          {(isFlat || semanticArchitecture === 'categorical') && (
           <button
             onClick={() => setAddThemeOpen(true)}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-fg-faint hover:text-fg border border-line hover:border-line-strong transition-colors"
@@ -1041,8 +1061,34 @@ export default function Step3_SemanticTokens({
                 style={archGridStyle}
               >
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
-                <span className="flex items-center gap-1.5 px-3 py-3 border-r border-line"><KindIcon kind="light" /> light</span>
-                <span className="flex items-center gap-1.5 px-3 py-3 border-r border-line"><KindIcon kind="dark" /> dark</span>
+                {archModeKeys.map((mode) => {
+                  const isPreviewed = previewTheme === mode
+                  const label = semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode
+                  return (
+                    <span key={mode} className="flex items-center border-r border-line min-w-0 px-1.5 py-1.5">
+                      {/* Same "whole header is the preview toggle" affordance
+                          the flat matrix's columns use — 'light'/'dark' are
+                          always valid theme keys, and Categorical's added
+                          theme is a real one too, so this just works without
+                          new plumbing. No drag-reorder/resize here (unlike
+                          flat): the non-flat table is schema-order, not a
+                          user-arranged matrix, so reordering columns has no
+                          meaning to preserve. */}
+                      <button
+                        onClick={() => onPreviewThemeChange?.(mode)}
+                        aria-label={isPreviewed ? `${label} is shown in preview` : `Preview theme ${label}`}
+                        aria-pressed={isPreviewed}
+                        title={isPreviewed ? `${label} — shown in preview` : `Show ${label} in the preview`}
+                        className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1.5 rounded-md transition-colors ${
+                          isPreviewed ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                        }`}
+                      >
+                        <KindIcon kind={kindOf(mode)} />
+                        <span className="truncate">{label}</span>
+                      </button>
+                    </span>
+                  )
+                })}
                 <span className="flex items-center justify-center py-3" aria-hidden><TuneIcon active={false} /></span>
               </div>
               {archTokens.length === 0 ? (
@@ -1054,7 +1100,7 @@ export default function Step3_SemanticTokens({
                   const isOpen = archEditing === t.id
                   // Raw CSS (vibrancy alphas, blur) has no primitive to swap,
                   // so those rows stay display-only.
-                  const editable = Boolean(parseRef(t.light.label) || parseRef(t.dark.label))
+                  const editable = archModeKeys.some((m) => parseRef(t.modes[m]?.label ?? ''))
                   return (
                   <div key={t.id} className={isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
                     <div
@@ -1071,21 +1117,21 @@ export default function Step3_SemanticTokens({
                             <PaletteIcon size={16} />
                           </span>
                           <code className="font-mono text-[12px] text-fg-muted truncate" title={t.name}>{t.name}</code>
-                          {(t.edited?.light || t.edited?.dark) && (
+                          {archModeKeys.some((m) => t.edited?.[m]) && (
                             <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from the schema" />
                           )}
                         </button>
                       </div>
-                      {(['light', 'dark'] as const).map((mode) => (
+                      {archModeKeys.map((mode, i) => (
                         <button
                           key={mode}
                           onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
-                          className={`flex items-center min-w-0 px-3 py-3 text-left ${mode === 'light' ? 'border-r border-line' : ''}`}
+                          className={`flex items-center min-w-0 px-3 py-3 text-left ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''}`}
                         >
                           <TokenCell
-                            v={mode === 'light' ? t.light : t.dark}
+                            v={t.modes[mode]}
                             kind={semanticArchitecture}
-                            fallback={mode === 'light' ? t.fallback?.light : t.fallback?.dark}
+                            fallback={t.fallback?.[mode]}
                             edited={Boolean(t.edited?.[mode])}
                           />
                         </button>
@@ -1116,12 +1162,14 @@ export default function Step3_SemanticTokens({
                               <p className="text-[11px] text-fg-muted leading-snug flex-1 min-w-0">{t.description}</p>
                               <span className="flex-shrink-0"><CssVarChip name={t.name.replace(/\./g, '-')} /></span>
                             </div>
-                            {(['light', 'dark'] as const).map((mode) => (
-                              parseRef((mode === 'light' ? t.light : t.dark).label) ? (
+                            {archModeKeys.map((mode) => (
+                              parseRef(t.modes[mode]?.label ?? '') ? (
                                 <ArchModeEditor
                                   key={mode}
                                   mode={mode}
-                                  value={mode === 'light' ? t.light : t.dark}
+                                  kind={kindOf(mode)}
+                                  label={semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode}
+                                  value={t.modes[mode]}
                                   scales={scales}
                                   onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
                                 />
@@ -1130,12 +1178,11 @@ export default function Step3_SemanticTokens({
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
-                                  setArchitectureOverride(semanticArchitecture, t.id, 'light', null)
-                                  setArchitectureOverride(semanticArchitecture, t.id, 'dark', null)
+                                  for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, t.id, mode, null)
                                 }}
-                                disabled={!t.edited?.light && !t.edited?.dark}
+                                disabled={!archModeKeys.some((m) => t.edited?.[m])}
                                 className="text-[10px] text-fg-faint hover:text-accent-ui disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
-                                title="Reset both modes to the architecture's own value"
+                                title="Reset every mode to the architecture's own value"
                               >
                                 Reset to schema
                               </button>

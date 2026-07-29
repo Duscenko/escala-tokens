@@ -4,7 +4,7 @@
 // empty semantic tokens so previews never render with undefined colors.
 
 import type { CSSProperties } from 'react'
-import { useDesignStore, GRAY_DARK_SCALE } from '../store/useDesignStore'
+import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { withAlpha, readableInk } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
@@ -31,10 +31,12 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // Fallback resolver — when a semantic token is empty (e.g. a dark theme the
   // user hasn't opened in the Semantic editor yet), resolve it against the same
   // source ramp + recommended tone the EXPORT uses (lib/semanticRoles), so the
-  // live preview matches tokens.json. Critically this makes a built-in dark
-  // theme fall back to GRAY_DARK_SCALE at inverted tones — never the light ramp,
-  // which is why dark surfaces used to render white.
-  const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
+  // live preview matches tokens.json. Falls back to the CURRENT dark ramp
+  // (DEFAULT_GRAY_DARK_SCALE, identity model) rather than the light ramp —
+  // which is why a dark theme reads as dark here, not white — and rather than
+  // the legacy GRAY_DARK_SCALE, whose tones are inverted relative to what
+  // every other dark ramp in the app now means.
+  const grayDarkScale = store.grayDarkScale ?? DEFAULT_GRAY_DARK_SCALE
   const globalScales: GlobalScales = {
     gray: grayLightScale,
     grayDark: grayDarkScale,
@@ -143,12 +145,19 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
       },
       errorColor,
       store.architectureOverrides?.[arch] ?? {},
+      // Only the previewed theme — Categorical resolves whatever keys it's
+      // given, and the preview only ever needs the one it's rendering.
+      // Vibrancy/Tonal ignore this param entirely (always light/dark).
+      [themeKey],
     )
     if (view) {
       const flatMap: Record<string, string> = {}
       for (const cat of view.categories) {
         for (const tk of cat.tokens) {
-          flatMap[`${cat.key}.${tk.key}`] = (dark ? tk.dark : tk.light).css
+          // Categorical resolves `themeKey` directly; Vibrancy/Tonal only ever
+          // carry 'light'/'dark', so fall back to the kind for those.
+          const v = tk.modes[themeKey] ?? tk.modes[dark ? 'dark' : 'light']
+          if (v) flatMap[`${cat.key}.${tk.key}`] = v.css
         }
       }
       tokens.archTokens = flatMap

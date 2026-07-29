@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
 import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
-import { accessibleSolidTone, generateFamilyDarkScale } from '../lib/colorUtils'
+import { accessibleSolidTone, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
@@ -90,11 +90,28 @@ export const GRAY_LIGHT_SCALE: ColorScale = {
   9: '#414651', 10: '#252b37', 11: '#181d27', 12: '#0a0d12',
 }
 
+// LEGACY — pre-Radix-model ramp, mirrored the wrong way (tone 1 = light,
+// tone 12 = `darkBackground`) from back when dark themes read this single
+// fixed constant instead of generating their own ramp (see the v31→v32
+// migration below). Keep it EXACTLY as-is: its only remaining job is seeding
+// that one migration so genuinely pre-v32 localStorage keeps the dark it
+// already had. Nothing else should read it — see DEFAULT_GRAY_DARK_SCALE.
 export const GRAY_DARK_SCALE: ColorScale = {
   1: '#fafafa', 2: '#f7f7f7', 3: '#f0f0f1',  4: '#ececed',
   5: '#cecfd2', 6: '#94979c', 7: '#85888e',  8: '#61656c',
   9: '#373a41', 10: '#22262f', 11: '#13161b', 12: '#0c0e12',
 }
+
+// The CURRENT model's dark neutral ramp for the default accent/gray/darkBackground
+// — tone 1 IS darkBackground (identity, matching generateColorScale's own dark
+// ramps), computed with the real generator so it can't drift from what editing
+// the gray color would actually produce. Used as the default for fresh systems
+// and as the live fallback wherever `grayDarkScale` is unexpectedly missing —
+// GRAY_DARK_SCALE above stayed the wrong (inverted) ramp for both of those until
+// now, which is why a brand-new system's dark mode could render backwards
+// (tone 1 near-white) for anyone who reached Alias/Semantics or previewed dark
+// before ever editing a color primitive.
+export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c737f', 'radix', 0, '#0c0e12')
 // ──────────────────────────────────────────────────────────────────────────
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
@@ -309,9 +326,14 @@ export interface DesignSnapshot {
    * Per-architecture edits to the projected semantic tokens, as PRIMITIVE REFS
    * (`{accent.9}`) — never loose hex, so a non-flat architecture keeps the same
    * "resolve through a primitive" contract the flat matrix has. Keyed
-   * architecture → `category.token` → mode. Absent = the projection's own value.
+   * architecture → `category.token` → mode, where `mode` is a THEME KEY
+   * ('light', 'dark', or any custom theme — Categorical resolves one column per
+   * theme; Vibrancy/Tonal only ever use 'light'/'dark', their math has no
+   * per-theme concept). Absent = the projection's own value. Structurally
+   * compatible with the pre-N-theme shape (`{light?, dark?}` is a valid
+   * `Record<string,string>`), so no store-version migration was needed.
    */
-  architectureOverrides: Record<string, Record<string, { light?: string; dark?: string }>>
+  architectureOverrides: Record<string, Record<string, Record<string, string>>>
   // Gradients foundation — named gradients + which one drives each preview
   // surface. Exported in tokens.json (`gradients`) / variables.css / README.
   gradients: GradientDef[]
@@ -363,7 +385,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     primaryDarkScale: {},
     grayBaseColor: '#6c737f',
     grayLightScale: { ...GRAY_LIGHT_SCALE },
-    grayDarkScale: { ...GRAY_DARK_SCALE },
+    grayDarkScale: { ...DEFAULT_GRAY_DARK_SCALE },
     errorColor: '#f04438',
     errorScale: {},
     errorDarkScale: {},
@@ -583,8 +605,8 @@ interface DesignStore {
   setSemanticArchitecture: (v: SemanticArchitecture) => void
   // Edits to a non-flat architecture's projected tokens, stored as primitive
   // refs so they keep resolving through the ramps (see the snapshot field).
-  architectureOverrides: Record<string, Record<string, { light?: string; dark?: string }>>
-  setArchitectureOverride: (arch: string, tokenId: string, mode: 'light' | 'dark', ref: string | null) => void
+  architectureOverrides: Record<string, Record<string, Record<string, string>>>
+  setArchitectureOverride: (arch: string, tokenId: string, mode: string, ref: string | null) => void
   resetArchitectureOverrides: (arch: string) => void
 
   // Gradients — named gradients + per-surface assignment (covers, avatars)

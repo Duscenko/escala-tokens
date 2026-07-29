@@ -4,7 +4,7 @@
 // kind. Shared by the Semantic editor (Step3_SemanticTokens) and the token
 // export (tokenGenerator), so exported values ALWAYS resolve to a tone of
 // their source ramp — the Figma plugin aliases them to primitives by hex.
-import { GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
+import { DEFAULT_GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { accessibleSolidTone } from './colorUtils'
 
 // ── Source palettes a token can draw from ──────────────────────────────────
@@ -198,7 +198,7 @@ export type GlobalScales = Record<ScaleSource, Record<number, string>> & {
    * gray: read from the light ramp, a deepened brand tint (recDarkTone sends
    * subtle tints to tones 10–12) is a colour eased toward a WHITE page, then
    * painted on a dark one. Optional so older callers keep working — they fall
-   * back to the light ramp (and GRAY_DARK_SCALE for gray).
+   * back to the light ramp (and DEFAULT_GRAY_DARK_SCALE for gray).
    */
   grayDark?: Record<number, string>
   dark?: Partial<Record<ScaleSource, Record<number, string>>>
@@ -225,7 +225,7 @@ export function sourceScaleFor(
   // neutral against `darkBackground`, so the dark surfaces carry the accent's
   // tint. Colored ramps keep their hue and just shift tone (see recDarkTone).
   if (kind === 'dark') {
-    if (eff === 'gray') return global.grayDark ?? GRAY_DARK_SCALE
+    if (eff === 'gray') return global.grayDark ?? DEFAULT_GRAY_DARK_SCALE
     const twin = global.dark?.[eff]
     if (twin && Object.keys(twin).length) return twin
   }

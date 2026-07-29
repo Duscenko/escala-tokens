@@ -9,9 +9,10 @@
 // families, Gray/Neutral, State Colors) lives in Picker Color — this tab is
 // usage only; "Edit in Picker Color" jumps there for the active family.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore, RESERVED_COLOR_KEYS } from '../../store/useDesignStore'
+import { useDesignStore, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES } from '../../store/useDesignStore'
+import type { ThemeSources } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale,
@@ -26,6 +27,35 @@ import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, familySlotFor } from '../../lib/themeSources'
 import { slugify } from '../../lib/utils'
 import { type PickerFocusTarget } from './PickerColor'
+
+// ── Family folders ──────────────────────────────────────────────────────────
+// The nav's folders are DERIVED from `themeSources` (see `familySlotFor`), not
+// stored on the family — a custom family reads as "Accents" precisely because
+// some theme's `brand` slot points at it. So "which folder should this go in?"
+// is really "which ROLE should it serve", and answering anything but Custom
+// means minting a theme that references it in that slot. That's the same move
+// NewTokenWizard's "Add as a secondary accent" makes, and the only
+// non-destructive one: re-pointing an EXISTING theme's slot would repaint the
+// user's current accent/neutral instead of adding alongside it.
+export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
+export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
+
+/** Status intents — "States" is four distinct slots, so it needs a sub-choice. */
+const STATE_INTENTS = ['error', 'warning', 'success', 'info'] as const
+type StateIntent = (typeof STATE_INTENTS)[number]
+
+/** The theme slot a destination group writes, and the word its name counts from. */
+const GROUP_SLOT: Record<Exclude<FamilyGroup, 'Custom'>, (intent: StateIntent) => keyof ThemeSources> = {
+  Accents: () => 'brand',
+  Neutrals: () => 'gray',
+  States: (intent) => intent,
+}
+const GROUP_BASE_NAME: Record<FamilyGroup, (intent: StateIntent) => string> = {
+  Accents: () => 'Accent',
+  Neutrals: () => 'Neutral',
+  States: (intent) => intent.charAt(0).toUpperCase() + intent.slice(1),
+  Custom: () => '',
+}
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -132,7 +162,7 @@ export default function ColorPrimitives({
     successColor, successScale, successDarkScale, setSuccessScale, setSuccessDarkScale,
     infoColor, infoScale, infoDarkScale, setInfoScale, setInfoDarkScale,
     customColors, addCustomColor, updateCustomColor, removeCustomColor,
-    pageBackground, darkBackground, themeKinds, themeSources,
+    pageBackground, darkBackground, themeKinds, themeSources, themes, addTheme,
     colorAlgorithm, colorNaming, contrastShift,
   } = store
   const applyAccentColor = useApplyAccentColor()
@@ -213,8 +243,8 @@ export default function ColorPrimitives({
   // their full scale for quick editing doesn't remove them from usage.
   // Derived from `themeSources`, so a family minted by "Add theme" files
   // itself under the right folder with zero bookkeeping.
-  const famGroups = useMemo(() => {
-    const groupOf = (f: Family): 'Accents' | 'Neutrals' | 'States' | 'Custom' => {
+  const groupOf = useCallback(
+    (f: Family): FamilyGroup => {
       if (f.key === 'accent') return 'Accents'
       if (f.key === 'neutral') return 'Neutrals'
       if (!f.customKey) return 'States'
@@ -223,11 +253,16 @@ export default function ColorPrimitives({
       if (slot === 'gray') return 'Neutrals'
       if (slot) return 'States'
       return 'Custom'
-    }
-    return (['Accents', 'Neutrals', 'States', 'Custom'] as const)
-      .map((label) => ({ label, items: families.filter((f) => groupOf(f) === label) }))
-      .filter((g) => g.items.length > 0)
-  }, [families, themeSources])
+    },
+    [themeSources],
+  )
+  const famGroups = useMemo(
+    () =>
+      FAMILY_GROUPS
+        .map((label) => ({ label, items: families.filter((f) => groupOf(f) === label) }))
+        .filter((g) => g.items.length > 0),
+    [families, groupOf],
+  )
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -241,6 +276,57 @@ export default function ColorPrimitives({
   const addRef = useRef<HTMLDivElement>(null)
   const [addName, setAddName] = useState('')
   const [addHex, setAddHex] = useState('#7f56d9')
+  const [addGroup, setAddGroup] = useState<FamilyGroup>('Custom')
+  const [addIntent, setAddIntent] = useState<StateIntent>('error')
+  // Whether the user has typed their own name. The suggestion follows the
+  // destination group, but only until they take over — re-suggesting over a
+  // typed name would silently discard it.
+  const [addNameDirty, setAddNameDirty] = useState(false)
+
+  /** First free `<Base>`, `<Base> 2`, `<Base> 3`… — free meaning its SLUG is
+   *  free, since that's what actually has to be unique (`addTaken`). */
+  const suggestName = useCallback(
+    (group: FamilyGroup, intent: StateIntent): string => {
+      const base = GROUP_BASE_NAME[group](intent)
+      if (!base) return '' // Custom keeps the empty field + placeholder.
+      const free = (label: string) => {
+        const s = slugify(label)
+        return !!s && !RESERVED_COLOR_KEYS.includes(s) && !customColors.some((c) => c.key === s)
+      }
+      if (free(base)) return base
+      for (let n = 2; n < 100; n++) {
+        if (free(`${base} ${n}`)) return `${base} ${n}`
+      }
+      return base
+    },
+    [customColors],
+  )
+
+  // Opening seeds the destination from WHERE you opened it: adding while a
+  // family under Accents is selected means you're adding an accent, so it
+  // shouldn't land in Custom and need reclassifying by hand.
+  useEffect(() => {
+    if (!addOpen) return
+    const g = groupOf(family)
+    const intent: StateIntent =
+      g === 'States' && (STATE_INTENTS as readonly string[]).includes(family.key)
+        ? (family.key as StateIntent)
+        : 'error'
+    setAddGroup(g)
+    setAddIntent(intent)
+    setAddName(suggestName(g, intent))
+    setAddNameDirty(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addOpen])
+
+  // Changing the destination re-suggests the name — "Accent 2" filed under
+  // States would be a lie about what it is.
+  const changeAddGroup = (g: FamilyGroup, intent = addIntent) => {
+    setAddGroup(g)
+    setAddIntent(intent)
+    if (!addNameDirty) setAddName(suggestName(g, intent))
+  }
+
   useEffect(() => {
     if (!addOpen) return
     function onDown(e: MouseEvent) {
@@ -315,8 +401,19 @@ export default function ColorPrimitives({
       }
     } catch { return }
     addCustomColor({ key: addSlug, label: addName.trim(), base: solid, scale, darkScale })
+    // A family lands in a folder by being REFERENCED, never by carrying a group
+    // field — so anything but Custom mints a theme identical to the defaults
+    // except for the one slot pointing here (`familySlotFor` then folders it).
+    if (addGroup !== 'Custom') {
+      let themeKey = addSlug
+      let n = 2
+      while (themes[themeKey]) themeKey = `${addSlug}-${n++}`
+      const slot = GROUP_SLOT[addGroup](addIntent)
+      addTheme(themeKey, 'light', { ...DEFAULT_THEME_SOURCES, [slot]: addSlug } as ThemeSources)
+    }
     setActiveFamily(`custom-${addSlug}`)
     setAddName('')
+    setAddNameDirty(false)
     setSeedKind(null)
     setAddOpen(false)
   }
@@ -382,7 +479,8 @@ export default function ColorPrimitives({
                       <span className="text-sm font-semibold text-fg">Add color family</span>
                       <input
                         value={addName}
-                        onChange={(e) => setAddName(e.target.value)}
+                        onChange={(e) => { setAddName(e.target.value); setAddNameDirty(true) }}
+                        onFocus={(e) => e.currentTarget.select()}
                         onKeyDown={(e) => { if (e.key === 'Enter') submitAdd() }}
                         placeholder="Family name — e.g. Teal"
                         aria-label="Family name"
@@ -392,6 +490,53 @@ export default function ColorPrimitives({
                       {addTaken && (
                         <span className="text-[11px] text-red-500">That name is already in use.</span>
                       )}
+
+                      {/* Destination folder. Pre-set from the family you opened
+                          this on, so adding a second accent from Accent lands
+                          under Accents instead of needing reclassifying. */}
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[11px] text-fg-muted">Add to…</span>
+                        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
+                          {FAMILY_GROUPS.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => changeAddGroup(g)}
+                              aria-pressed={addGroup === g}
+                              className={`flex-1 px-1 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                                addGroup === g ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
+                              }`}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                        {/* "States" is four separate slots, not one — so it asks
+                            which intent rather than guessing. */}
+                        {addGroup === 'States' && (
+                          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
+                            {STATE_INTENTS.map((i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => changeAddGroup('States', i)}
+                                aria-pressed={addIntent === i}
+                                className={`flex-1 px-1 py-1 rounded-md text-[10px] font-medium capitalize transition-colors ${
+                                  addIntent === i ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
+                                }`}
+                              >
+                                {i}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <span className="text-[10px] text-fg-faint leading-snug">
+                          {addGroup === 'Custom'
+                            ? 'A free-standing palette — no role until you assign one.'
+                            : `Mints a theme using this as its ${GROUP_SLOT[addGroup](addIntent)}, which is what files it under ${addGroup}.`}
+                        </span>
+                      </div>
+
                       <div className="flex flex-col gap-1.5">
                         <span className="text-[11px] text-fg-muted">This color is my…</span>
                         <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">

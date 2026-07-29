@@ -191,7 +191,28 @@ another pill).
     `previewTheme`, a per-row inline `ColorPickerPanel`, and "+ Add" creating a
     `customColors` family — EVERY family carries both a light ramp and a dark twin (Radix
     two-scale model), and each column edits its own; **no inversion anywhere**, step N
-    means the same role in both. The table header carries an **"Edit in Picker Color"**
+    means the same role in both.
+    - **"+ Add" picks a DESTINATION FOLDER, and that's a role assignment, not a label.**
+      The selector (`FAMILY_GROUPS`: Accents · Neutrals · States · Custom) is pre-set from
+      the group of the family you opened it on, so adding a second accent while Accent is
+      selected lands under Accents instead of Custom. Because folders are derived
+      (`familySlotFor`), anything but Custom **mints a theme** identical to
+      `DEFAULT_THEME_SOURCES` except the one slot pointing at the new family — the same
+      move `NewTokenWizard`'s "secondary accent" makes, and the only non-destructive one
+      (re-pointing an existing theme's slot would repaint the user's current accent). The
+      popover states that consequence inline rather than hiding it. **States asks which
+      intent** (error/warning/success/info) — it's four separate slots, so a single
+      "States" destination would be ambiguous.
+    - The suggested name follows the destination (`Accent 2`, `Neutral 2`, `Error 2`,
+      auto-incrementing past whatever exists) and is fully editable; changing the
+      destination re-suggests **only while the user hasn't typed their own** (`addNameDirty`)
+      — re-suggesting over a typed name would silently discard it. Custom keeps the empty
+      field + "e.g. Teal" placeholder, unchanged.
+    - **Consequence worth knowing:** a family created into Accents/Neutrals/States is then
+      referenced by that minted theme, so `removeCustomColor` refuses it (the nav's trash
+      shows "In use by theme X — remove the theme first"). That's the pre-existing
+      in-use rule, not a special case, but it does mean a non-Custom family isn't deletable
+      in one click the way a Custom one is. The table header carries an **"Edit in Picker Color"**
     link next to the active family's name — for the six FIXED families (`!family.customKey`
     — Accent/Neutral/Error/Warning/Success/Info, the ones Picker Color has a section for; a
     custom family gets no link even if a theme aliases it to a status slot, since it has no
@@ -213,17 +234,44 @@ another pill).
   Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
   the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
   view from its projection via `buildArchitectureView` — sidebar groups,
-  counts and a light/dark table mirror the exported schema exactly. The table is
+  counts and a value table mirror the exported schema exactly. The table is
   **editable in every architecture**, not just Flat, and through the SAME
   affordance: the row's sliders icon expands it (description + CSS var + a ramp
   per mode with the current tone ringed), exactly like the flat matrix — one
   interaction to learn, not two. A family row above each ramp re-points the slot
   to another family. Edits are stored as REFs in
-  `architectureOverrides[arch]['category.token'][mode]` so an edited token still
-  resolves through the ramps. "Reset to schema" clears it; the export applies the
-  same overrides, so tokens.json can't disagree with the table. Cells whose value
-  isn't a ref (vibrancy alphas, blur) stay read-only — there's no primitive to
-  swap. Switching architectures resets category/search state) ·
+  `architectureOverrides[arch]['category.token'][mode]` (`mode` is a THEME KEY,
+  see below) so an edited token still resolves through the ramps. "Reset to
+  schema" clears it; the export applies the same overrides, so tokens.json
+  can't disagree with the table. Cells whose value isn't a ref (vibrancy
+  alphas, blur) stay read-only — there's no primitive to swap. Switching
+  architectures resets category/search state.
+    - **"+ Theme" works in Flat AND Categorical, not Vibrancy/Tonal.**
+      `ArchitectureView.modeKeys` is the authoritative column list per
+      architecture: Categorical gets one column per entry in `themeOrder` (so
+      adding a theme genuinely grows the table, resolved per-theme via
+      `scaleLookup(scales, themePalettes[key], kind)`); Vibrancy and Tonal
+      always report `['light','dark']` regardless of `themeOrder`, because
+      their math is a fixed binary transform of the GLOBAL primitives with NO
+      per-theme concept — Vibrancy's light/dark are two hardcoded calls to one
+      opacity-layer formula, Tonal's is a fixed tone-inversion table
+      (`TONAL_SCHEME`, 40↔80…). A 3rd theme has no defined meaning for either
+      until someone decides what a HIG opacity layer or an M3 tone-inversion
+      means for a non-binary theme — that's a schema decision, not an
+      engineering gap, so the button stays hidden there rather than faking it.
+      Each column's header is the SAME click-to-preview affordance the flat
+      matrix's columns use (no drag-reorder/resize for the arch table though —
+      it's schema-order, not a user-arranged matrix).
+    - **Exports ADDITIVELY.** `colors.architecture.tokens[group][token]` used to
+      be a hardcoded `{light, dark}` pair; it's now `{[themeKey]: ref}` with
+      `light`/`dark` always present (any consumer reading `.light`/`.dark` sees
+      identical values to before) and extra theme keys only when the system
+      actually has them — no schema-version bump, no migration needed for the
+      2-theme case. Was ALSO fixed in the same pass: `tokenGenerator.ts`'s call
+      to `projectArchitecture()` had been omitting `overrides` entirely, so
+      table edits in Categorical/Vibrancy/Tonal never reached the actual export
+      — only the live preview table. Both `overrides` and `themeOrder` are now
+      passed through. ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Kits in Variables' header and the Export wizard's own
@@ -399,7 +447,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `figmaLastPublishAt` / `githubRepo` / `githubLastPushAt` | string \| null — connection status shown on Home; written by the connect views | Home (read-only) |
 | `pageBackground` | string (hex, default `#ffffff`) — anchors tone 1 of every generated **light** ramp (`generateColorScale`'s 4th arg) and is the compositing base for the exported alpha ramps (`colors.primitiveAlpha` via `generateAlphaScale`). **DERIVED, never picked** — `backgroundFromBase(grayBaseColor, 'light')`, HeroUI's model: one Base drives every surface | derived (Base) |
 | `darkBackground` | string (hex, default `#0c0e12`) — the dark-theme page. Anchors **tone 12** of `grayDarkScale` (dark themes read the gray hierarchy inverted, so `surface-0` → tone 12). Also **DERIVED** — `backgroundFromBase(grayBaseColor, 'dark')` | derived (Base) |
-| `grayDarkScale` | ColorScale — dark-appearance neutral ramp, generated by `generateDarkColorScale(grayBaseColor, …, darkBackground)`. Gray roles in a dark theme resolve from **this**, not `grayLightScale` (`sourceScaleFor` → `GlobalScales.grayDark`). Replaces the old fixed `GRAY_DARK_SCALE` constant, which is now only the default seed + fallback | derived (accent · neutral · dark background) |
+| `grayDarkScale` | ColorScale — dark-appearance neutral ramp, generated by `generateDarkColorScale(grayBaseColor, …, darkBackground)`. Gray roles in a dark theme resolve from **this**, not `grayLightScale` (`sourceScaleFor` → `GlobalScales.grayDark`). Default seed + fallback is `DEFAULT_GRAY_DARK_SCALE` — computed via the real generator at module load, so it can't drift from what editing the gray colour would actually produce (see below); NOT the old fixed `GRAY_DARK_SCALE` constant, which is inverted relative to the current model and is kept ONLY for one legacy migration | derived (accent · neutral · dark background) |
 | `primaryColor` | string (hex) | Foundations · Color |
 | `primaryScale` | Record<number, string> | Foundations · Color |
 | `grayLightScale` | ColorScale | Foundations · Color |
@@ -655,15 +703,38 @@ Store uses `persist` middleware with `version: 42`. If you add fields, bump the 
 > file's own comment always claimed both architectures agree on what a role looks like —
 > now they actually do. **If you write `13 − n` in a dark ref, that's the bug.**
 >
-> Two related things deliberately left ALONE, so they don't get "fixed" by accident:
-> - Categorical's `border.subtle` sits on a HIGHER tone than `border.default` (5 vs 3),
->   which reads backwards — but that's the shipped LIGHT-mode schema and light mode isn't
->   broken. Re-pointing it would silently change exported tokens for no bug.
-> - `scaleLookup` maps the coloured families (`accent`/`error`/…) to their LIGHT ramps
->   only — there is no `accent-dark` — so Categorical's dark column reads light-ramp tints
->   even though the store HAS the dark twins (v40). Visible as a pale `surface.accent` on
->   a dark page. Fixing it means either new `*-dark` ref families or a mode-aware
->   `refToView`; both change the export, so it's a deliberate follow-up, not a drive-by.
+> One thing deliberately left ALONE, so it doesn't get "fixed" by accident: Categorical's
+> `border.subtle` sits on a HIGHER tone than `border.default` (5 vs 3), which reads
+> backwards — but that's the shipped LIGHT-mode schema and light mode isn't broken.
+> Re-pointing it would silently change exported tokens for no bug.
+>
+> **UPDATE (N-theme work below): the "coloured families read light-ramp tints in dark
+> mode" gap noted above IS now fixed** — `scaleLookup` takes a `kind` param and consults
+> `GlobalScales.dark` (the same per-family dark twins `sourceScaleFor` already reads for
+> the flat catalogue) whenever no theme palette overrides it. `surface.accent` on the
+> built-in dark theme now correctly reads the dark accent twin, not the light one. This
+> was NOT a schema change — same refs, same shape, just the resolved HEX.
+
+> **`GRAY_DARK_SCALE` (the hardcoded fallback constant) was ALSO a leftover pre-Radix
+> ramp — same bug class, one level lower.** It's `1: '#fafafa' … 12: '#0c0e12'`: light at
+> tone 1, `darkBackground` at tone 12 — the OLD mirrored convention, inverted relative to
+> what `generateDarkColorScale()` has produced for a long time (tone 1 IS the dark page).
+> It's not just an inert fallback: it was `makeDesignDefaults()`'s literal seed for
+> `grayDarkScale`, meaning **every brand-new system shipped with an inverted dark neutral
+> ramp until the user's first edit to Gray/Neutral regenerated it correctly.** Symptom: a
+> fresh system previewed in dark mode before ever touching a colour control rendered
+> backwards — near-white "page," near-black "text" — reproducible by clearing storage and
+> checking `grayDarkScale[1]` against `darkBackground` before touching anything. Fixed by
+> adding **`DEFAULT_GRAY_DARK_SCALE`** — the SAME ramp `generateDarkColorScale()` computes
+> for the default accent/gray/darkBackground, computed once at module load so it can't
+> drift from the live generator — and switching every "when missing, fall back to X" site
+> (`makeDesignDefaults()`, `tokenGenerator.ts`, `previewTokens.ts`, `semanticRoles.ts`) to
+> it. **`GRAY_DARK_SCALE` itself is UNTOUCHED and must stay that way** — the v31→v32
+> migration explicitly seeds it into pre-v32 localStorage to preserve "the exact dark they
+> already had"; changing its values would silently alter what that migration produces for
+> anyone still carrying genuinely ancient state. If you ever need "the correct default dark
+> neutral ramp," that's `DEFAULT_GRAY_DARK_SCALE` — `GRAY_DARK_SCALE` has exactly one
+> remaining job and it isn't that.
 
 ---
 

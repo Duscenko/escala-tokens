@@ -1,4 +1,4 @@
-import { useDesignStore, GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
+import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'
@@ -54,7 +54,7 @@ export function generateTokenJSON() {
   // because dark-theme semantics resolve from the dark twin (see
   // sourceScaleFor). Without them the plugin has nothing to alias a dark brand
   // tint to and would fall back to a loose hex.
-  const grayDarkScale = store.grayDarkScale ?? GRAY_DARK_SCALE
+  const grayDarkScale = store.grayDarkScale ?? DEFAULT_GRAY_DARK_SCALE
   const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
     ([t, kind]) => kind === 'dark' && store.themes[t],
   ) || Boolean(store.themes.dark)
@@ -173,6 +173,12 @@ export function generateTokenJSON() {
       accent: store.primaryColor,
     },
     store.errorColor,
+    // Was missing entirely — table edits (setArchitectureOverride) never
+    // reached the actual export, only the live Alias/Semantics preview.
+    store.architectureOverrides[store.semanticArchitecture] ?? {},
+    // Every theme, so a Categorical system with an added theme ships that
+    // column too, not just the two built-ins.
+    themeNames,
   )
 
   return {

@@ -124,15 +124,45 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'border', key: 'success',  light: '{success.8}', dark: '{success.7}' },
 ]
 
-export function projectCategorical(input: ProjectionInput): Record<string, Record<string, { light: string; dark: string }>> {
-  // The one dynamic tone: the solid brand fill deepens until its light ink
-  // passes WCAG AA — same accessibleSolidTone() anchor the flat export uses.
+/**
+ * Categorical's ref SCHEMA for every role, at a given theme KIND. Unlike
+ * Vibrancy/Tonal (fixed binary formulas over the global primitives),
+ * Categorical's schema only depends on kind — "surface.page is neutral.1 for
+ * a light-kind theme, neutral-dark.1 for a dark-kind one" — the same rule any
+ * number of themes can share. So this stays a 2-variant function (light-kind,
+ * dark-kind schema); what varies per THEME is which primitive family a ref's
+ * `neutral`/`accent`/etc. resolves against, handled by the caller's `look`.
+ */
+function categoricalSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
+  return CATEGORICAL_ROLES.map((r) => ({
+    group: r.group,
+    key: r.key,
+    // The one dynamic tone: the solid brand fill deepens until its light ink
+    // passes WCAG AA — same accessibleSolidTone() anchor the flat export uses.
+    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
+  }))
+}
+
+/**
+ * Categorical resolved across every theme in `themeOrder`: group → token →
+ * themeKey → ref. Each theme reuses `categoricalSchemaFor(theme's kind)` — the
+ * schema is theme-count-independent — resolved against that THEME's own
+ * palette (`themePalettes[key]`, already kind-picked by `resolveThemePalette`)
+ * when it has one, falling back to the global scales for the two built-ins.
+ */
+export function projectCategorical(
+  input: ProjectionInput,
+  themeOrder: string[] = ['light', 'dark'],
+): Record<string, Record<string, Record<string, string>>> {
   const solid = accessibleSolidTone(input.scales.brand)
-  const resolve = (ref: string) => ref.replace('{accent.solid}', `{accent.${solid}}`)
-  const out: Record<string, Record<string, { light: string; dark: string }>> = {}
-  for (const r of CATEGORICAL_ROLES) {
-    out[r.group] ??= {}
-    out[r.group][r.key] = { light: resolve(r.light), dark: resolve(r.dark) }
+  const out: Record<string, Record<string, Record<string, string>>> = {}
+  for (const t of themeOrder) {
+    const kind = input.themeKinds[t] ?? 'light'
+    for (const r of categoricalSchemaFor(kind, solid)) {
+      out[r.group] ??= {}
+      out[r.group][r.key] ??= {}
+      out[r.group][r.key][t] = r.ref
+    }
   }
   return out
 }
@@ -319,16 +349,25 @@ export function projectTonal(input: ProjectionInput, errorSeed: string): {
 export type ArchTokenValue = { css: string; label: string }
 export type ArchTokenView = {
   key: string
-  light: ArchTokenValue
-  dark: ArchTokenValue
+  /** One value per MODE this token's architecture ships, keyed by theme key.
+   *  Vibrancy and Tonal always carry exactly `{light, dark}` — their math is a
+   *  fixed binary transform of the global primitives with no per-theme
+   *  concept, so adding a theme can't extend them (see `buildArchitectureView`).
+   *  Categorical carries one entry per theme passed in `themeOrder`, since its
+   *  refs resolve per-theme the same way the flat catalogue's roles do. */
+  modes: Record<string, ArchTokenValue>
   /** Which modes the user re-pointed — drives the "edited" affordance. */
-  edited?: { light: boolean; dark: boolean }
+  edited?: Record<string, boolean>
   /** Vibrancy labels only: the opaque WCAG fallback alias, per mode — shown as
    *  a badge so the safety net for missing backdrop-filter stays visible. */
-  fallback?: { light: ArchTokenValue; dark: ArchTokenValue }
+  fallback?: Record<string, ArchTokenValue>
 }
 export type ArchCategoryView = { key: string; label: string; description: string; tokens: ArchTokenView[] }
-export type ArchitectureView = { categories: ArchCategoryView[]; total: number }
+/** `modeKeys` is the AUTHORITATIVE column list for the table to render — every
+ *  token's `modes` map has exactly these keys. Categorical: `themeOrder`
+ *  (as many columns as themes exist). Vibrancy/Tonal: always `['light','dark']`,
+ *  regardless of `themeOrder` — their math has no per-theme concept to extend. */
+export type ArchitectureView = { categories: ArchCategoryView[]; total: number; modeKeys: string[] }
 
 /** `{family.tone}` ref → swatch color + display label; raw CSS values pass through. */
 function refToView(ref: string, lookup: (fam: string, tone: number) => string | undefined): ArchTokenValue {
@@ -337,19 +376,45 @@ function refToView(ref: string, lookup: (fam: string, tone: number) => string | 
   return { css: ref, label: ref }
 }
 
-function scaleLookup(scales: GlobalScales): (fam: string, tone: number) => string | undefined {
+// `palette`, when given, is a THEME's own resolved families (`resolveThemePalette`
+// — already picked for that theme's kind, so `palette.gray` is the right-appearance
+// ramp regardless of whether the caller asks for 'neutral' or 'neutral-dark'; only
+// one of those two ever actually gets read for a given theme, since a role's ref
+// schema only exposes the half matching that theme's kind). Falls back to the
+// GLOBAL scales for the two built-in themes (which carry no `themeSources` entry
+// and so resolve `undefined` from `resolveThemePalette`) — identical to today.
+// `kind` picks the dark TWIN for a coloured family when there's no palette to
+// resolve it from — the built-in 'dark' theme has no `themeSources` entry (so
+// `palette` is undefined) but its `action.primary`/etc refs still read
+// `{accent.X}`, and without this that resolved the LIGHT accent ramp even in
+// dark mode (every coloured ref showed the identical hex across both columns
+// — `accent.9` in light and dark both landing on the raw input colour).
+// `GlobalScales.dark` already carries these twins (the flat catalogue's
+// `sourceScaleFor` reads the exact same field); this was the one caller that
+// wasn't consulting it. `kind` defaults to 'light' for callers that never
+// need it (Vibrancy's `look` only ever resolves explicit 'neutral'/
+// 'neutral-dark' family names, never 'accent'/'error'/etc, so its mode split
+// is already handled upstream).
+function scaleLookup(
+  scales: GlobalScales,
+  palette?: ThemePalette,
+  kind: 'light' | 'dark' = 'light',
+): (fam: string, tone: number) => string | undefined {
+  const darkTwin = (fam: 'brand' | 'error' | 'warning' | 'success' | 'info') =>
+    kind === 'dark' ? scales.dark?.[fam] : undefined
   const fams: Record<string, Record<number, string> | undefined> = {
-    neutral: scales.gray,
-    'neutral-dark': scales.grayDark ?? scales.gray,
-    accent: scales.brand,
-    error: scales.error,
-    warning: scales.warning,
-    success: scales.success,
-    info: scales.info,
+    neutral: palette?.gray ?? scales.gray,
+    'neutral-dark': palette?.gray ?? (scales.grayDark ?? scales.gray),
+    accent: palette?.brand ?? darkTwin('brand') ?? scales.brand,
+    error: palette?.error ?? darkTwin('error') ?? scales.error,
+    warning: palette?.warning ?? darkTwin('warning') ?? scales.warning,
+    success: palette?.success ?? darkTwin('success') ?? scales.success,
+    info: palette?.info ?? darkTwin('info') ?? scales.info,
   }
   return (fam, tone) => fams[fam]?.[tone]
 }
 
+// Vibrancy/Tonal only — always exactly a light+dark pair (see ArchTokenView).
 const pairViews = (
   keys: string[],
   light: Record<string, string>,
@@ -358,12 +423,11 @@ const pairViews = (
 ): ArchTokenView[] =>
   keys.map((key) => ({
     key,
-    light: refToView(light[key] ?? '', look),
-    dark: refToView(dark[key] ?? '', look),
+    modes: { light: refToView(light[key] ?? '', look), dark: refToView(dark[key] ?? '', look) },
   }))
 
 /** Edits applied over a projection: `category.token` → mode → primitive ref. */
-export type ArchOverrides = Record<string, { light?: string; dark?: string }>
+export type ArchOverrides = Record<string, Record<string, string>>
 
 /**
  * Re-points a projected token at whatever primitive the user chose. The value
@@ -374,20 +438,26 @@ export type ArchOverrides = Record<string, { light?: string; dark?: string }>
 function applyOverrides(
   categories: ArchCategoryView[],
   overrides: ArchOverrides,
-  look: (fam: string, tone: number) => string | undefined,
+  // Per-MODE lookup — an override on theme "midnight" must resolve against
+  // midnight's own palette, not whichever theme happened to supply a shared
+  // `look`. Accepts either one shared function (Vibrancy/Tonal, always
+  // light/dark over the globals) or a map keyed by mode (Categorical).
+  look: ((fam: string, tone: number) => string | undefined) | Record<string, (fam: string, tone: number) => string | undefined>,
 ): ArchCategoryView[] {
   if (!Object.keys(overrides).length) return categories
+  const lookFor = (mode: string) => (typeof look === 'function' ? look : look[mode] ?? Object.values(look)[0])
   return categories.map((c) => ({
     ...c,
     tokens: c.tokens.map((tk) => {
       const ov = overrides[`${c.key}.${tk.key}`]
       if (!ov) return tk
-      return {
-        ...tk,
-        light: ov.light ? refToView(ov.light, look) : tk.light,
-        dark: ov.dark ? refToView(ov.dark, look) : tk.dark,
-        edited: { light: Boolean(ov.light), dark: Boolean(ov.dark) },
+      const modes = { ...tk.modes }
+      const edited: Record<string, boolean> = {}
+      for (const [mode, ref] of Object.entries(ov)) {
+        edited[mode] = Boolean(ref)
+        if (ref) modes[mode] = refToView(ref, lookFor(mode))
       }
+      return { ...tk, modes, edited }
     }),
   }))
 }
@@ -397,12 +467,20 @@ export function buildArchitectureView(
   input: ProjectionInput,
   errorSeed: string,
   overrides: ArchOverrides = {},
+  /** Which themes to resolve columns for — CATEGORICAL ONLY. Defaults to the
+   *  two built-ins for callers that don't pass one. Vibrancy/Tonal ignore this
+   *  entirely (see ArchitectureView.modeKeys). */
+  themeOrder: string[] = ['light', 'dark'],
 ): ArchitectureView | null {
   if (kind === 'flat') return null
 
   if (kind === 'categorical') {
-    const tokens = projectCategorical(input)
-    const look = scaleLookup(input.scales)
+    const tokens = projectCategorical(input, themeOrder)
+    // Each theme resolves refs against ITS OWN palette (custom families a
+    // theme references), not one shared lookup — same per-theme resolution
+    // the flat catalogue's roles get via `sourceScaleFor`.
+    const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
+      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
     const META: Record<string, [string, string]> = {
       content: ['Content', 'Text & icon ink — primary to inverse'],
       action: ['Action', 'Interactive element fills'],
@@ -414,14 +492,15 @@ export function buildArchitectureView(
       key,
       label: META[key]?.[0] ?? key,
       description: META[key]?.[1] ?? '',
-      tokens: Object.entries(group).map(([k, v]) => ({
+      tokens: Object.entries(group).map(([k, byTheme]) => ({
         key: k,
-        light: refToView(v.light, look),
-        dark: refToView(v.dark, look),
+        modes: Object.fromEntries(
+          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
+        ),
       })),
     }))
-    const edited = applyOverrides(categories, overrides, look)
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0) }
+    const edited = applyOverrides(categories, overrides, lookByTheme)
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
   }
 
   if (kind === 'vibrancy') {
@@ -446,7 +525,9 @@ export function buildArchitectureView(
       { key: 'materials', label: 'Materials', description: 'Translucent panels — pair with backdrop blur', tokens: pairViews(Object.keys(v.light.materials), v.light.materials, v.dark.materials, look) },
     ]
     const edited = applyOverrides(categories, overrides, look)
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0) }
+    // Fixed light/dark by construction — Vibrancy's math has no per-theme
+    // concept, so adding a theme doesn't add a column here (see modeKeys doc).
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: ['light', 'dark'] }
   }
 
   // tonal
@@ -466,12 +547,13 @@ export function buildArchitectureView(
     description: META[key]?.[1] ?? '',
     tokens: Object.entries(group).map(([k, v]) => ({
       key: k,
-      light: refToView(v.light, look),
-      dark: refToView(v.dark, look),
+      modes: { light: refToView(v.light, look), dark: refToView(v.dark, look) },
     })),
   }))
   const editedTonal = applyOverrides(categories, overrides, look)
-  return { categories: editedTonal, total: editedTonal.reduce((n, c) => n + c.tokens.length, 0) }
+  // Fixed light/dark by construction — Tonal's dark is a tone-inversion of the
+  // one accent (40↔80, 90↔30…), with no per-theme concept to extend either.
+  return { categories: editedTonal, total: editedTonal.reduce((n, c) => n + c.tokens.length, 0), modeKeys: ['light', 'dark'] }
 }
 
 // ── Export dispatcher ────────────────────────────────────────────────────────
@@ -482,17 +564,23 @@ export function projectArchitecture(
   input: ProjectionInput,
   errorSeed: string,
   overrides: ArchOverrides = {},
+  /** Themes to ship columns for (Categorical only) — same as buildArchitectureView. */
+  themeOrder: string[] = ['light', 'dark'],
 ): Record<string, unknown> | null {
   switch (kind) {
     case 'categorical': {
-      const tokens = projectCategorical(input)
+      const tokens = projectCategorical(input, themeOrder)
       // Re-point any edited slot so tokens.json matches what the table shows.
+      // ADDITIVE by construction: `light`/`dark` keys are always present (any
+      // consumer reading `.light`/`.dark` sees identical values to before),
+      // extra theme keys only appear when the system actually has them.
       for (const [id, ov] of Object.entries(overrides)) {
         const [group, key] = id.split('.')
         const slot = tokens[group]?.[key]
         if (!slot) continue
-        if (ov.light) slot.light = ov.light
-        if (ov.dark) slot.dark = ov.dark
+        for (const [mode, ref] of Object.entries(ov)) {
+          if (ref) slot[mode] = ref
+        }
       }
       return { kind, tokens }
     }
