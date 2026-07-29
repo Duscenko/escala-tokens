@@ -6,6 +6,7 @@ import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import SectionRail, { RAIL_WIDTH } from '../components/configurator/SectionRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
 type Tab = 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
@@ -364,6 +365,17 @@ export default function Configurator() {
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
+  // The About/corporate drawer, opened from TopNav's burger icon. Two pieces
+  // of state, not one: `aboutOpen` is whether the drawer is mounted,
+  // `aboutSection` is which section is expanded inside it — kept as its own
+  // param on `openAbout` (rather than always 'platform') so a future entry
+  // point can jump straight to a specific section without a second opener.
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [aboutSection, setAboutSection] = useState<AboutSection | null>('platform')
+  function openAbout(section: AboutSection) {
+    setAboutSection(section)
+    setAboutOpen(true)
+  }
   // "New" in Variables — picking a category from HomeActions' menu opens the
   // guided NewTokenWizard scoped to it.
   const [newTokenCategory, setNewTokenCategory] = useState<TokenCategory | null>(null)
@@ -658,6 +670,7 @@ export default function Configurator() {
         exportMode={exportMode}
         onGithub={() => openExport('github')}
         onGetFigma={() => openExport('figma')}
+        onMenu={() => openAbout('platform')}
         brandWidth={railVisible ? RAIL_WIDTH : null}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
@@ -768,6 +781,32 @@ export default function Configurator() {
       </div>
       </div>
       </div>
+
+      {/* ── Row 3: the footer hairline ──
+          The shell is a fixed-viewport app (h-screen, no page scroll), so there
+          is no "bottom of the page" for a conventional footer to sit at. This is
+          a 28px rule instead — attribution only, no links: the burger already
+          opens the full About drawer (how it works, changelog, legal), so
+          repeating entry points here just competed for attention. One quiet
+          line on a step-up surface (`bg-surface`, not `bg-app`) so the rule
+          reads as a distinct strip instead of text floating on the page. */}
+      <footer className="flex-shrink-0 h-7 flex items-center px-4 lg:px-5 border-t border-line bg-surface">
+        <span className="text-[10.5px] text-fg-faint truncate">
+          {COPYRIGHT_LINE} · Built by Cesar Duscenko
+        </span>
+      </footer>
+
+      {/* About / corporate drawer — what this is, how the tokens and plugin
+          work, changelog, contact, legal. */}
+      <AnimatePresence>
+        {aboutOpen && (
+          <AboutMenu
+            section={aboutSection}
+            onSectionChange={setAboutSection}
+            onClose={() => setAboutOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Guided export — Source → Format → Export */}
       <AnimatePresence>

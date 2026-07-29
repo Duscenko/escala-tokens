@@ -2,14 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens, syncUrl as buildSyncUrl } from '../../lib/figmaSync'
+import { FIGMA_PLUGIN_ZIP as PLUGIN_ZIP } from '../../lib/utils'
 
 interface FigmaConnectViewProps {
   /** Back-to-editor affordance shown when rendered inside the shell. */
   onClose?: () => void
 }
-
-/** Static asset bundled in /public — refreshed via `npm run bundle:plugin`. */
-const PLUGIN_ZIP = '/scalable-designs-figma-plugin.zip'
 
 type PublishState = 'idle' | 'publishing' | 'done' | 'error'
 

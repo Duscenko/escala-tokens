@@ -11,6 +11,17 @@ A web configurator that lets product designers build a minimal, custom design to
 **Live URL:** https://scalable-designs.vercel.app
 **Stack:** React + Vite + TypeScript + Tailwind CSS v4 + Zustand + Framer Motion + Radix UI
 
+**Platform: desktop/laptop only, not a responsive site.** The user is a design engineer at
+a keyboard (see `.impeccable.md`), and the surfaces here — dense token tables, the Export
+wizard's collection/component pickers, side-by-side rail + canvas + preview — assume a real
+window, not a phone. Below Tailwind's `md` (768px) `App.tsx` renders a static "optimized for
+desktop" notice (`DesktopOnlyNotice`) instead of the shell, pure CSS (`md:hidden` /
+`hidden md:block`, no JS viewport check). **Don't spend effort making dense editor screens
+work on a phone layout** — that's explicitly out of scope. Individual components still adapt
+between `md` and `xl` (`SectionRail` becomes a drawer below `md`, `PreviewPanel` hides below
+`xl`) — that range is "a smaller laptop window," not a phone, and is as far as responsive
+work goes here.
+
 ---
 
 ## Navigation model — top-nav workspace ("Escala")

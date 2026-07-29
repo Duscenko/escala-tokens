@@ -24,6 +24,10 @@ interface TopNavProps {
   exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
   onGithub: () => void
   onGetFigma: () => void
+  /** Opens the About/corporate drawer (AboutMenu). Always available — it's
+   *  reference material, not a project action, so it doesn't wait on
+   *  `projectCreated` the way the Figma/GitHub pills do. */
+  onMenu: () => void
   /** Width of the left column below, so the brand block's right border extends
    *  it and the divider runs unbroken from the very top. null = no column
    *  (export/connect views), so the block sizes to its content and drops the
@@ -113,7 +117,9 @@ function FigmaSyncPill() {
 // #18181B) so the lockup inverts with the theme instead of going invisible on
 // the dark chrome; the middle ring keeps its 0.3 opacity, which reads on both.
 // No chip behind it — this is a finished badge, not a glyph needing a frame.
-function BrandMark() {
+// Exported — App.tsx's desktop-only gate reuses it rather than duplicating
+// the path data, so there's one place the mark's geometry lives.
+export function BrandMark() {
   return (
     <svg
       width="32" height="32" viewBox="0 0 32 32" fill="none"
@@ -128,7 +134,7 @@ function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onGithub, onGetFigma,
+  nav, onNav, exportMode, onGithub, onGetFigma, onMenu,
   brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
   const { projectCreated } = useDesignStore()
@@ -198,6 +204,16 @@ export default function TopNav({
             </>
           )}
           <ThemeToggle previewTheme={previewTheme} onThemeChange={onThemeChange} />
+          <button
+            onClick={onMenu}
+            aria-label="About Escala Tokens"
+            title="About · how it works · changelog · contact"
+            className="w-9 h-9 rounded-full flex items-center justify-center border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

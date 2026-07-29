@@ -47,6 +47,11 @@ export interface WizardSelection {
   colorFormat: ColorFormat
   /** W3C only — semantic values that sit on a primitive tone ship as `{color.accent.600}` references. */
   includeAliases: boolean
+  /** Escala JSON only — whether `atoms` ships at all (which components, per
+   *  `useDesignStore`'s `selectedComponents` — the SAME list the Components
+   *  tab edits, so there's no second, divergent "which components" list).
+   *  Other formats have no component representation and ignore this. */
+  includeComponents: boolean
 }
 
 export interface WizardFile {
@@ -309,8 +314,12 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // fields — the plugin doesn't degrade gracefully on those, it throws
     // (e.g. missing `typography` crashed importVariables and, because every
     // import phase used to share one try/catch, took Components and
-    // Documentation down with it). Ship `full` verbatim, always.
-    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(full, null, 2), language: 'json' }]
+    // Documentation down with it). Ship `full` verbatim, always — EXCEPT
+    // `atoms`, the one field Step 1's "Include components" toggle controls:
+    // off ships an empty array so the plugin's importComponents phase
+    // no-ops, same as unchecking every component individually.
+    const payload = sel.includeComponents ? full : { ...full, atoms: [] }
+    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
   }
 
   if (sel.format === 'w3c') {
