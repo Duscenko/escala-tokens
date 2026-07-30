@@ -51,7 +51,12 @@ function KitsPopover({ onClose }: { onClose: () => void }) {
     projectName, setProjectName, primaryColor,
     savedSystems, saveCurrentSystem, loadSystem, removeSavedSystem,
   } = useDesignStore()
-  const [name, setName] = useState(projectName)
+  // Starts EMPTY, not pre-filled with `projectName` — a pre-filled field
+  // hides the "e.g. Acme v2" placeholder entirely, so it never actually
+  // taught anyone what to type. Empty here still means "keep the current
+  // name" (handleSave falls back to it), the field just doesn't LOOK
+  // pre-answered.
+  const [name, setName] = useState('')
   const [justSaved, setJustSaved] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -99,7 +104,7 @@ function KitsPopover({ onClose }: { onClose: () => void }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-            placeholder="e.g. Acme v2"
+            placeholder="Name this kit"
             aria-label="Kit name"
             className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-app text-sm text-fg outline-none transition-colors placeholder:text-fg-faint focus:border-line-strong"
           />

@@ -28,6 +28,10 @@ interface TopNavProps {
    *  reference material, not a project action, so it doesn't wait on
    *  `projectCreated` the way the Figma/GitHub pills do. */
   onMenu: () => void
+  /** Mirrors the left rail's own collapsed state — when the rail shrinks to
+   *  an icon strip, the brand block above it shrinks the same way, so the
+   *  divider between them stays one continuous line at every width. */
+  railCollapsed?: boolean
   /** Width of the left column below, so the brand block's right border extends
    *  it and the divider runs unbroken from the very top. null = no column
    *  (export/connect views), so the block sizes to its content and drops the
@@ -134,7 +138,7 @@ export function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onGithub, onGetFigma, onMenu,
+  nav, onNav, exportMode, onGithub, onGetFigma, onMenu, railCollapsed = false,
   brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
   const { projectCreated } = useDesignStore()
@@ -142,16 +146,21 @@ export default function TopNav({
   return (
     <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
       {/* Brand block — spans the left column below, so its right border and the
-          column divider read as one rule from the very top. */}
+          column divider read as one rule from the very top. Collapses to just
+          the mark (no wordmark) in step with the rail below it. */}
       <div
-        className={`flex items-center gap-3 px-4 lg:px-5 flex-shrink-0 ${brandWidth ? 'border-r border-line' : ''}`}
+        className={`flex items-center gap-3 flex-shrink-0 transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
+          railCollapsed ? 'justify-center px-0' : 'px-4 lg:px-5'
+        }`}
         style={brandWidth ? { width: brandWidth } : undefined}
       >
         <BrandMark />
-        <div className="min-w-0">
-          <div className="text-[14px] font-semibold text-fg truncate leading-tight">Escala Tokens</div>
-          <div className="text-[11.5px] text-fg-faint leading-tight">Token generator</div>
-        </div>
+        {!railCollapsed && (
+          <div className="min-w-0">
+            <div className="text-[14px] font-semibold text-fg truncate leading-tight">Escala Tokens</div>
+            <div className="text-[11.5px] text-fg-faint leading-tight">Token generator</div>
+          </div>
+        )}
       </div>
 
       {/* Nav + actions */}

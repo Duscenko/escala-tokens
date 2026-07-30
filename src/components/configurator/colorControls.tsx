@@ -648,7 +648,7 @@ function readableInkOn(hex: string): string {
 
 export function ScaleRow({
   scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default',
-  numbersInside = false, ariaLabel,
+  numbersInside = false, ariaLabel, selectedIndex, recommendedIndex, onSelect,
 }: {
   scale: Record<number, string>
   baseIndex?: number
@@ -663,28 +663,64 @@ export function ScaleRow({
    *  ramps sitting directly below it, on the same tab. */
   numbersInside?: boolean
   ariaLabel?: string
+  /** "What's currently picked" for an interactive caller (e.g. a semantic
+   *  token's tone) — deliberately separate from `baseIndex` (the PRIMITIVE's
+   *  own tone-9 anchor, unrelated to any particular picker's selection).
+   *  Only meaningful together with `onSelect`. */
+  selectedIndex?: number | null
+  /** A hint, shown as a tinted number — independent of `selectedIndex` (a
+   *  tone can be recommended, selected, both, or neither). */
+  recommendedIndex?: number | null
+  /** Present ⇒ every cell becomes a button and the row is a picker (Token
+   *  Details' tone ramps). Absent ⇒ ScaleRow stays the read-only strip every
+   *  other caller (Picker Color, AddThemeModal) already relies on — adding
+   *  interactivity never changes their rendering. */
+  onSelect?: (tone: number, hex: string) => void
 }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
   const thin = size === 'thin'
+  const Cell = onSelect ? 'button' : 'div'
   return (
     <div className="grid grid-cols-12 gap-1" role="group" aria-label={ariaLabel}>
       {entries.map(([key, color], i) => {
         const k = Number(key)
         const isBase = k === baseIndex
+        const isSelected = k === selectedIndex
+        const isRecommended = k === recommendedIndex
         const onLight = k >= BASE_TONE ? '#ffffff' : '#0a0a0a'
         const label = labels?.[i] ?? key
         return (
           <div key={key} className="flex flex-col gap-0.5 min-w-0">
             {showNumbers && !numbersInside && (
-              <span className="text-[9px] text-fg-faint text-center font-mono tabular-nums leading-none truncate">{label}</span>
+              <span
+                className={`text-[9px] text-center font-mono tabular-nums leading-none truncate ${
+                  isSelected ? 'text-accent-ui font-semibold' : isRecommended ? 'text-accent-ui/70' : 'text-fg-faint'
+                }`}
+              >
+                {label}
+              </span>
             )}
-            <div
-              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} rounded-md flex items-center justify-center overflow-hidden ${
+            <Cell
+              {...(onSelect ? { onClick: () => onSelect(k, color), type: 'button' as const } : {})}
+              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full rounded-md flex items-center justify-center overflow-hidden transition-transform ${
                 isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''
+              } ${
+                isSelected
+                  ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'
+                  // The number caption is the recommended-tone signal, but
+                  // it's gone whenever `showNumbers` is off (ToneAxisRow
+                  // prints one shared axis for several ramps instead) — a
+                  // faint ring keeps the hint visible on the swatch itself.
+                  // Only when nothing stronger (selected) already owns the ring.
+                  : isRecommended && !showNumbers ? 'ring-1 ring-accent-ui/50' : ''
+              } ${
+                onSelect ? 'hover:scale-105 cursor-pointer' : ''
               }`}
               style={{ backgroundColor: color }}
-              title={isBase ? `Anchor — tone ${key} — ${color}` : `Tone ${key} — ${color}`}
+              title={isBase ? `Anchor — tone ${key} — ${color}` : `Tone ${key} — ${color}${isRecommended ? ' · recommended' : ''}`}
+              aria-label={onSelect ? `Use tone ${key}${isRecommended ? ' (recommended)' : ''}${isSelected ? ' (selected)' : ''}` : undefined}
+              aria-pressed={onSelect ? isSelected : undefined}
             >
               {numbersInside ? (
                 /* The NUMBER only — never "9 Anchor". At 12 cells across the
@@ -708,7 +744,7 @@ export function ScaleRow({
                   <span className="w-1 h-1 rounded-full" style={{ backgroundColor: onLight }} aria-hidden />
                 )
               )}
-            </div>
+            </Cell>
           </div>
         )
       })}

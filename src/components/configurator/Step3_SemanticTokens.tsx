@@ -15,7 +15,7 @@ import { resolveThemePalette } from '../../lib/themeSources'
 import AddThemeModal from './AddThemeModal'
 import ArchitecturePicker from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
-import { BRAND_GROUPS, findOption } from './colorControls'
+import { BRAND_GROUPS, findOption, ScaleRow } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
@@ -178,7 +178,7 @@ function ArchModeEditor({
         <KindIcon kind={kind} />
         {label}
       </span>
-      <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex items-center gap-0.5 flex-wrap">
         {PICKABLE_FAMILIES.map((fam) => {
           if (!ramps[fam] || !Object.keys(ramps[fam]!).length) return null
           const on = fam === family
@@ -187,7 +187,7 @@ function ArchModeEditor({
               key={fam}
               onClick={() => onPick(`{${fam}.${tone ?? 9}}`)}
               aria-pressed={on}
-              className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition-colors ${
+              className={`px-1.5 py-0.5 rounded-md text-[9px] font-mono transition-colors ${
                 on ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg-muted'
               }`}
             >
@@ -196,28 +196,19 @@ function ArchModeEditor({
           )
         })}
       </div>
-      <div className="flex gap-2 flex-wrap">
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
-          const hex = ramp?.[n]
-          if (!hex) return null
-          const on = n === tone
-          return (
-            <div key={n} className="flex flex-col items-center gap-0.5">
-              <button
-                onClick={() => onPick(`{${family}.${n}}`)}
-                title={`${family}.${n} — ${hex}`}
-                aria-label={`Use ${family}.${n}`}
-                aria-pressed={on}
-                className={`w-7 h-7 rounded-md transition-all duration-150 hover:scale-110 ${
-                  on ? 'ring-2 ring-accent-ui ring-offset-2 ring-offset-app' : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/20 dark:hover:ring-white/20'
-                }`}
-                style={{ backgroundColor: hex }}
-              />
-              <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${on ? 'text-accent-ui font-semibold' : 'text-fg-faint'}`}>{n}</span>
-            </div>
-          )
-        })}
-      </div>
+      {/* Thin + numberless: the shared ScaleRow the tone picker below and
+          Picker Color's ramps use, sized like the Edit-family-color popover's
+          own Palette section (h-4, no per-row numbers — ToneAxisRow prints
+          the shared 1–12 axis once for every mode in the modal, not per mode). */}
+      <ScaleRow
+        scale={ramp ?? {}}
+        baseIndex={0}
+        selectedIndex={tone}
+        onSelect={(n) => onPick(`{${family}.${n}}`)}
+        ariaLabel={`Pick a ${family} tone`}
+        size="thin"
+        showNumbers={false}
+      />
     </div>
   )
 }
@@ -335,6 +326,198 @@ function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: nu
   )
 }
 
+// ── Token Details modal ───────────────────────────────────────────────────
+// Editing used to happen inline — the row grew open beneath itself (see the
+// git history for that version). Redesigned as a real dialog (Figma: node
+// 3714:12435) so the row list stays put while you edit, and there's room for
+// Name + Description alongside the value ramps instead of squeezing them
+// into an expanding row. This is only the SHELL (header, Name, Description,
+// "Values" heading) — the per-mode ramp editors are passed in as children so
+// flat's TonePicker and the architecture view's ArchModeEditor keep their
+// existing, already-correct read/write logic untouched; only where they
+// render moved.
+function TokenDetailsModal({
+  name, cssVarName, description, onReset, resetDisabled, onClose, reduce, children,
+}: {
+  name: string
+  /** The Figma mock doesn't show this, but the inline editor it replaces did
+   *  — dropping it would be a feature regression the redesign never asked
+   *  for, so it rides along the Name row instead (the other "identifier"
+   *  for this token). */
+  cssVarName: string
+  description: string
+  onReset: () => void
+  resetDisabled: boolean
+  onClose: () => void
+  reduce: boolean
+  children: ReactNode
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.15 }}
+      onMouseDown={onClose}
+      // No scrim — this reads as a floating panel over the table, the same
+      // language HomeActions' "New token"/Kits popovers already use, not a
+      // blocking dialog. The layer is still full-viewport and still catches
+      // outside clicks to close; it just isn't painted, per the "same style
+      // as the New Token menu" request. DeleteThemeModal (below) keeps its
+      // scrim on purpose — that one gates a destructive, irreversible action.
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Token Details"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: reduce ? 0 : 0.16, ease: 'easeOut' }}
+        onMouseDown={(e) => e.stopPropagation()}
+        // w-64 — the exact width ColorPrimitives' "Edit family color" popover
+        // uses for the same job (a compact color-picker panel). This modal
+        // used to run 480px wide purely because nothing constrained it; the
+        // content never needed that — see the ramps below, now sized to the
+        // same 12-column grid that popover's own Palette section uses.
+        className="relative w-full max-w-64 max-h-[80vh] flex flex-col rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
+      >
+        {/* Header — title + Reset, matching the Figma dialog. Close sits
+            absolutely in the corner (same position the design uses) rather
+            than in the flex row, so Reset stays flush right regardless of
+            title length. */}
+        <div className="flex items-center justify-between gap-3 pl-4 pr-10 h-10 border-b border-line flex-shrink-0">
+          <h2 className="text-[13px] font-semibold text-fg truncate">Token Details</h2>
+          <button
+            onClick={onReset}
+            disabled={resetDisabled}
+            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-6 rounded-lg border border-line text-[10px] text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
+          >
+            Reset
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 12a9 9 0 1 1 2.6 6.36" />
+              <path d="M3 21v-6h6" />
+            </svg>
+          </button>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* Name + Description — read-only: both are catalogue metadata (the
+              role's fixed key/label and its fixed description), not per-token
+              user text, so there's nothing here to save. Shown for context,
+              styled like the Figma input/textarea so the dialog still reads
+              as an editor, not just a viewer. */}
+          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line/60">
+            <div className="flex h-6 rounded-md border border-line overflow-hidden">
+              <span className="px-2 flex items-center bg-elevated text-[10px] text-fg-faint border-r border-line flex-shrink-0">Name</span>
+              <span className="px-2 flex items-center flex-1 min-w-0 text-[11px] text-fg-muted font-mono truncate" title={name}>{name}</span>
+            </div>
+            {/* Below the Name row, not beside it — at this width (w-64,
+                matching the Edit-family-color popover) a copy chip sharing
+                the row with the name pill left ~2 characters of the name
+                visible on anything longer than "error". */}
+            <CssVarChip name={cssVarName} />
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] text-fg-faint">Description</span>
+              <p className="px-2 py-1.5 rounded-md border border-line text-[11px] text-fg-muted leading-relaxed">{description}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-4">
+            <span className="text-[11px] font-semibold text-fg">Values</span>
+            {children}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Delete-theme confirmation ────────────────────────────────────────────
+// deleteTheme() used to fire straight off the header's X — one misclick
+// silently wiped every semantic value mapped to that theme, with no undo.
+function DeleteThemeModal({
+  name, isPreviewed, onConfirm, onCancel,
+}: {
+  name: string
+  isPreviewed: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onMouseDown={onCancel}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="Delete theme"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: 0.16, ease: 'easeOut' }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="w-full max-w-[360px] rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
+      >
+        <div className="p-5 flex items-start gap-3">
+          <span className="flex-shrink-0 w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center" aria-hidden>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <path d="M12 9v4" /><path d="M12 17h.01" />
+            </svg>
+          </span>
+          <div className="min-w-0 flex flex-col gap-1 pt-0.5">
+            <h2 className="text-[14px] font-semibold text-fg">Delete "{name}"?</h2>
+            <p className="text-[12.5px] text-fg-muted leading-relaxed">
+              Every semantic value mapped to this theme will be deleted too. This can't be undone.
+              {isPreviewed && ' The preview will switch to another theme.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-line bg-surface/50">
+          <button
+            onClick={onCancel}
+            className="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+          >
+            Delete theme
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /** Per-mode scale editor trigger — the shared official sliders icon with the
  *  matrix's active/hover coloring. */
 function TuneIcon({ active }: { active: boolean }) {
@@ -346,59 +529,47 @@ function TuneIcon({ active }: { active: boolean }) {
   )
 }
 
+// A thin wrapper over the shared ScaleRow (the same compact 12-column grid
+// Picker Color's "click to apply" ramps use) rather than a hand-rolled
+// flex-wrap grid — the old version wrapped tone 12 onto its own line at the
+// modal's width and ran noticeably bigger/looser than every other ramp in
+// the app. `baseIndex={0}` suppresses ScaleRow's anchor ring (tone 9,
+// primitive-wide) — irrelevant here, this ramp cares about `selectedTone`.
 function TonePicker({
-  scale,
-  selectedTone,
-  recommendedTone,
-  onChange,
-  compact = false,
+  scale, selectedTone, recommendedTone, onChange,
 }: {
   scale: Record<number, string>
   selectedTone: number | null
   recommendedTone: number
   onChange: (hex: string) => void
-  compact?: boolean
 }) {
-  const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
-  const size = compact ? 'w-6 h-6' : 'w-7 h-7'
   return (
-    <div className="flex gap-2 flex-wrap">
-      {entries.map(([key, color]) => {
-        const k = Number(key)
-        const isSelected = k === selectedTone
-        const isRecommended = k === recommendedTone
-        return (
-          <div key={key} className="flex flex-col items-center gap-0.5">
-            <div className="h-2 flex items-end justify-center">
-              {isSelected && (
-                <svg width="6" height="4" viewBox="0 0 6 4" className="text-accent-ui flex-shrink-0">
-                  <path d="M3 4L0 0h6L3 4z" fill="currentColor" />
-                </svg>
-              )}
-            </div>
-            <button
-              onClick={() => onChange(color)}
-              title={`Tone ${key} — ${color}${isRecommended ? ' · recommended' : ''}`}
-              className={`${size} rounded-md transition-all duration-150 ${
-                isSelected
-                  ? 'ring-2 ring-accent-ui ring-offset-[3px] ring-offset-app scale-125 shadow-[0_0_8px_rgba(0,136,255,0.35)]'
-                  : 'ring-1 ring-black/10 dark:ring-white/10 hover:scale-110 hover:ring-black/20 dark:hover:ring-white/20'
-              }`}
-              style={{ backgroundColor: color }}
-              aria-label={`Tone ${key}${isRecommended ? ' (recommended)' : ''}${isSelected ? ' (selected)' : ''}`}
-            />
-            <span className={`text-[9px] font-mono leading-none tabular-nums mt-0.5 ${
-              isSelected
-                ? 'text-accent-ui font-semibold'
-                : isRecommended
-                ? 'text-accent-ui/70'
-                : 'text-fg-faint'
-            }`}>
-              {key}
-            </span>
-          </div>
-        )
-      })}
+    <ScaleRow
+      scale={scale}
+      baseIndex={0}
+      selectedIndex={selectedTone}
+      recommendedIndex={recommendedTone}
+      onSelect={(_, hex) => onChange(hex)}
+      ariaLabel="Pick a tone"
+      size="thin"
+      showNumbers={false}
+    />
+  )
+}
+
+// One 1–12 axis, shared by every mode's ramp in a Token Details modal instead
+// of each ramp printing its own — same technique the Edit-family-color
+// popover's Palette section uses for its accent/neutral rows. Grid metrics
+// (grid-cols-12 gap-1) must match ScaleRow's exactly or the numbers drift out
+// of column with the swatches above them.
+function ToneAxisRow() {
+  return (
+    <div className="grid grid-cols-12 gap-1" aria-hidden>
+      {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+        <span key={n} className="text-[8px] font-mono tabular-nums leading-none text-center text-fg-faint">
+          {n}
+        </span>
+      ))}
     </div>
   )
 }
@@ -447,26 +618,19 @@ function MatrixRow({
   cols,
   modified,
   expanded,
-  reduce,
   gridStyle,
   naming,
   onToggle,
-  onPick,
-  onReset,
 }: {
   role: Role
   index: number
   cols: ThemeCol[]
   modified: boolean
   expanded: boolean
-  reduce: boolean
   gridStyle: React.CSSProperties
   naming: ColorNaming
   onToggle: () => void
-  onPick: (theme: string, hex: string) => void
-  onReset: () => void
 }) {
-  const desc = cleanDescription(role.description)
   const isEven = index % 2 === 1
 
   return (
@@ -507,63 +671,17 @@ function MatrixRow({
           )
         })}
 
-        {/* Filter / edit toggle */}
+        {/* Filter / edit toggle — opens the Token Details modal (see the
+            main component's render) rather than expanding inline. */}
         <button
           onClick={onToggle}
           aria-expanded={expanded}
-          aria-label={expanded ? 'Close scale editor' : 'Edit scale'}
+          aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
           className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors"
         >
           <TuneIcon active={expanded} />
         </button>
       </div>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.2, ease: 'easeOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="flex flex-col gap-4 px-4 pt-2 pb-5">
-              {/* Description + copyable CSS var — moved out of the row so rows
-                  stay a single line; surfaced here on open. */}
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-[11px] text-fg-muted leading-snug flex-1 min-w-0">{desc}</p>
-                <span className="flex-shrink-0"><CssVarChip name={role.key} /></span>
-              </div>
-              {cols.map((col) => (
-                <div key={col.key} className="flex flex-col gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-                    <KindIcon kind={col.kind} />
-                    {col.key}
-                  </span>
-                  <TonePicker
-                    scale={col.scale}
-                    selectedTone={toneIndexOf(col.scale, col.value)}
-                    recommendedTone={col.recTone}
-                    onChange={(hex) => onPick(col.key, hex)}
-                    compact={role.isVariant}
-                  />
-                </div>
-              ))}
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={onReset}
-                  disabled={!modified}
-                  className="text-[10px] text-fg-faint hover:text-accent-ui disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
-                  title="Reset every theme to recommended"
-                >
-                  Reset to recommended
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -755,6 +873,12 @@ export default function Step3_SemanticTokens({
   const [addThemeOpen, setAddThemeOpen] = useState(false)
   // Which architecture cell has its primitive picker open (`tokenId:mode`).
   const [archEditing, setArchEditing] = useState<string | null>(null)
+  // Theme key pending a delete confirmation — deleteTheme() used to fire
+  // straight off the column header's X with no warning, which silently wiped
+  // every semantic value mapped to that theme. Shared by both the flat
+  // matrix's header and Categorical's (the only two places a column is a
+  // real, deletable theme).
+  const [themeToDelete, setThemeToDelete] = useState<string | null>(null)
 
   // ── Architecture-driven view ──────────────────────────────────────────────
   // For a NON-flat architecture the sidebar categories, counts and table rows
@@ -1064,6 +1188,12 @@ export default function Step3_SemanticTokens({
                 {archModeKeys.map((mode) => {
                   const isPreviewed = previewTheme === mode
                   const label = semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode
+                  // Only Categorical's columns are real theme columns (one per
+                  // `themeOrder` entry, same as the flat matrix) — Vibrancy/Tonal's
+                  // 'light'/'dark' are fixed slots of a global transform with no
+                  // per-theme concept, so there's nothing meaningful to delete
+                  // (matches why "+ Theme" is hidden for those too, above).
+                  const deletable = semanticArchitecture === 'categorical' && themeCols.length > 1
                   return (
                     <span key={mode} className="flex items-center border-r border-line min-w-0 px-1.5 py-1.5">
                       {/* Same "whole header is the preview toggle" affordance
@@ -1086,6 +1216,16 @@ export default function Step3_SemanticTokens({
                         <KindIcon kind={kindOf(mode)} />
                         <span className="truncate">{label}</span>
                       </button>
+                      {deletable && (
+                        <button
+                          onClick={() => setThemeToDelete(mode)}
+                          aria-label={`Remove theme ${label}`}
+                          title={`Remove theme ${label}`}
+                          className="text-fg-faint hover:text-red-500 transition-colors flex-shrink-0 px-1"
+                        >
+                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
+                        </button>
+                      )}
                     </span>
                   )
                 })}
@@ -1136,61 +1276,18 @@ export default function Step3_SemanticTokens({
                           />
                         </button>
                       ))}
-                      {/* Filter / edit toggle — same affordance as the flat matrix */}
+                      {/* Filter / edit toggle — opens the Token Details modal,
+                          same as the flat matrix (see the main component's render). */}
                       <button
                         onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
                         aria-expanded={isOpen}
-                        aria-label={isOpen ? 'Close scale editor' : 'Edit scale'}
+                        aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
                         disabled={!editable}
                         className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors"
                       >
                         <TuneIcon active={isOpen} />
                       </button>
                     </div>
-
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: reduce ? 0 : 0.2, ease: 'easeOut' }}
-                          style={{ overflow: 'hidden' }}
-                        >
-                          <div className="flex flex-col gap-4 px-4 pt-2 pb-5">
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="text-[11px] text-fg-muted leading-snug flex-1 min-w-0">{t.description}</p>
-                              <span className="flex-shrink-0"><CssVarChip name={t.name.replace(/\./g, '-')} /></span>
-                            </div>
-                            {archModeKeys.map((mode) => (
-                              parseRef(t.modes[mode]?.label ?? '') ? (
-                                <ArchModeEditor
-                                  key={mode}
-                                  mode={mode}
-                                  kind={kindOf(mode)}
-                                  label={semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode}
-                                  value={t.modes[mode]}
-                                  scales={scales}
-                                  onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
-                                />
-                              ) : null
-                            ))}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, t.id, mode, null)
-                                }}
-                                disabled={!archModeKeys.some((m) => t.edited?.[m])}
-                                className="text-[10px] text-fg-faint hover:text-accent-ui disabled:opacity-30 disabled:hover:text-fg-faint px-2 py-1 rounded border border-line hover:border-line-strong disabled:hover:border-line transition-colors"
-                                title="Reset every mode to the architecture's own value"
-                              >
-                                Reset to schema
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                   )
                 })
@@ -1265,7 +1362,7 @@ export default function Step3_SemanticTokens({
                         only maps roles to it. */}
                     {canDelete && (
                       <button
-                        onClick={() => deleteTheme(t)}
+                        onClick={() => setThemeToDelete(t)}
                         aria-label={`Remove theme ${displayName}`}
                         title={`Remove theme ${displayName}`}
                         className="text-fg-faint hover:text-red-500 transition-colors flex-shrink-0"
@@ -1314,12 +1411,9 @@ export default function Step3_SemanticTokens({
                   })}
                   modified={isModified(role)}
                   expanded={expandedRole === role.key}
-                  reduce={reduce}
                   gridStyle={gridStyle}
                   naming={colorNaming}
                   onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}
-                  onPick={(theme, hex) => setThemeToken(theme, role.key, hex)}
-                  onReset={() => resetRole(role)}
                 />
               ))
             )}
@@ -1327,6 +1421,101 @@ export default function Step3_SemanticTokens({
           )}
         </div>
       </div>
+
+      {/* Token Details — one instance per architecture kind, since flat and
+          non-flat track separate "which row is open" state (expandedRole vs
+          archEditing) and read from different data shapes (Role/ThemeCol vs
+          the projected ArchToken). Only one can ever be non-null at a time —
+          switching architecture clears both. */}
+      <AnimatePresence>
+        {isFlat && expandedRole && (() => {
+          const role = ALL_ROLES.find((r) => r.key === expandedRole)
+          if (!role) return null
+          const cols: ThemeCol[] = themeCols.map((t) => {
+            const kind = kindOf(t)
+            return {
+              key: t,
+              kind,
+              scale: scaleFor(t, role, kind),
+              value: themes[t]?.[role.key] ?? '',
+              recTone: recToneFor(role, kind, scaleFor(t, role, kind)),
+              previewed: previewTheme === t,
+            }
+          })
+          return (
+            <TokenDetailsModal
+              key="flat-token-details"
+              name={role.label}
+              cssVarName={role.key}
+              description={cleanDescription(role.description)}
+              onReset={() => resetRole(role)}
+              resetDisabled={!isModified(role)}
+              onClose={() => setExpandedRole(null)}
+              reduce={reduce}
+            >
+              {cols.map((col) => (
+                <div key={col.key} className="flex flex-col gap-2">
+                  <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+                    <KindIcon kind={col.kind} />
+                    {col.key}
+                  </span>
+                  <TonePicker
+                    scale={col.scale}
+                    selectedTone={toneIndexOf(col.scale, col.value)}
+                    recommendedTone={col.recTone}
+                    onChange={(hex) => setThemeToken(col.key, role.key, hex)}
+                  />
+                </div>
+              ))}
+              <ToneAxisRow />
+            </TokenDetailsModal>
+          )
+        })()}
+
+        {!isFlat && archEditing && (() => {
+          const t = archTokens.find((x) => x.id === archEditing)
+          if (!t) return null
+          return (
+            <TokenDetailsModal
+              key="arch-token-details"
+              name={t.name}
+              cssVarName={t.name.replace(/\./g, '-')}
+              description={t.description}
+              onReset={() => {
+                for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, t.id, mode, null)
+              }}
+              resetDisabled={!archModeKeys.some((m) => t.edited?.[m])}
+              onClose={() => setArchEditing(null)}
+              reduce={reduce}
+            >
+              {archModeKeys.map((mode) => (
+                parseRef(t.modes[mode]?.label ?? '') ? (
+                  <ArchModeEditor
+                    key={mode}
+                    mode={mode}
+                    kind={kindOf(mode)}
+                    label={semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode}
+                    value={t.modes[mode]}
+                    scales={scales}
+                    onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
+                  />
+                ) : null
+              ))}
+              <ToneAxisRow />
+            </TokenDetailsModal>
+          )
+        })()}
+
+        {themeToDelete && (
+          <DeleteThemeModal
+            key="delete-theme"
+            name={themeDisplayName(themeToDelete)}
+            isPreviewed={previewTheme === themeToDelete}
+            onCancel={() => setThemeToDelete(null)}
+            onConfirm={() => { deleteTheme(themeToDelete); setThemeToDelete(null) }}
+          />
+        )}
+      </AnimatePresence>
 
       <AddThemeModal
         open={addThemeOpen}

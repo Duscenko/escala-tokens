@@ -4,7 +4,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
 import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
-import SectionRail, { RAIL_WIDTH } from '../components/configurator/SectionRail'
+import SectionRail, { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
@@ -34,7 +34,6 @@ import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
-import QuickFoundationsPanel from '../components/configurator/QuickFoundationsPanel'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import HeaderPill from '../components/ui/HeaderPill'
@@ -257,51 +256,6 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
   )
 }
 
-// ── Quick-edit trigger — a compact icon button that opens the shared
-// QuickFoundationsPanel popover (Presets swatch row + the full accordion of
-// quick controls). Shared by Variables and Components so "Quick edit" reads
-// identically wherever it's parked in the header. ────────────────────────────
-function QuickEditTrigger({
-  open, onToggle, onClose, onOpenFoundations, previewTheme, onThemeChange, onAddTheme,
-}: {
-  open: boolean
-  onToggle: () => void
-  onClose: () => void
-  onOpenFoundations: () => void
-  previewTheme: string
-  onThemeChange: (theme: string) => void
-  onAddTheme: () => void
-}) {
-  return (
-    <div className="relative">
-      <button
-        onClick={onToggle}
-        aria-label="Quick edit foundations"
-        aria-expanded={open}
-        title="Quick edit — presets and foundations without leaving this view"
-        className={`flex-shrink-0 p-1.5 rounded-lg border transition-colors ${
-          open ? 'bg-elevated border-line-strong text-fg' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
-        }`}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-          <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-          <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-          <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-        </svg>
-      </button>
-      <QuickFoundationsPanel
-        open={open}
-        onClose={onClose}
-        onOpenFoundations={onOpenFoundations}
-        previewTheme={previewTheme}
-        onThemeChange={onThemeChange}
-        onAddTheme={onAddTheme}
-      />
-    </div>
-  )
-}
-
 export default function Configurator() {
   const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
   const theme = useTheme()
@@ -358,8 +312,11 @@ export default function Configurator() {
   // a persistent, always-visible specimen of the category being edited, not an
   // opt-in extra — collapsing is still available for anyone who wants the width.
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
-  // Components catalogue — quick-edit popover for the Foundations you've already set.
-  const [quickPanelOpen, setQuickPanelOpen] = useState(false)
+  // Left section rail (SectionRail) collapsed to an icon-only strip — mirrors
+  // the right preview panel's own collapse pattern. TopNav's brand block
+  // reads this too (via `railCollapsed` below), so the wordmark drops out in
+  // step with the rail instead of leaving orphaned empty space beside it.
+  const [railCollapsed, setRailCollapsed] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
   const [sectionExportOpen, setSectionExportOpen] = useState(false)
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
@@ -489,22 +446,11 @@ export default function Configurator() {
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     centerRightSlot = (
-      <>
-        <QuickEditTrigger
-          open={quickPanelOpen}
-          onToggle={() => setQuickPanelOpen((v) => !v)}
-          onClose={() => setQuickPanelOpen(false)}
-          onOpenFoundations={() => selectFoundation('color')}
-          previewTheme={previewTheme}
-          onThemeChange={changePreviewTheme}
-          onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
-        />
-        <HomeActions
-          onNew={(key) => setNewTokenCategory(key as TokenCategory)}
-          onImport={() => setImportOpen(true)}
-          tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
-        />
-      </>
+      <HomeActions
+        onNew={(key) => setNewTokenCategory(key as TokenCategory)}
+        onImport={() => setImportOpen(true)}
+        tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
+      />
     )
     const Active = section.Component
     body = section.key === 'color' ? (
@@ -549,17 +495,6 @@ export default function Configurator() {
       title: 'Components',
       subtitle: 'Browse the catalogue — toggle any component to include or remove it.',
     }
-    centerRightSlot = (
-      <QuickEditTrigger
-        open={quickPanelOpen}
-        onToggle={() => setQuickPanelOpen((v) => !v)}
-        onClose={() => setQuickPanelOpen(false)}
-        onOpenFoundations={() => selectFoundation('color')}
-        previewTheme={previewTheme}
-        onThemeChange={changePreviewTheme}
-        onAddTheme={() => { selectFoundation('color'); setColorTab('semantics') }}
-      />
-    )
     body = (
       <div className="h-full flex min-h-0">
         {/* Master list (relocated from the old wide sidebar) */}
@@ -671,7 +606,8 @@ export default function Configurator() {
         onGithub={() => openExport('github')}
         onGetFigma={() => openExport('figma')}
         onMenu={() => openAbout('platform')}
-        brandWidth={railVisible ? RAIL_WIDTH : null}
+        brandWidth={railVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
+        railCollapsed={railVisible && railCollapsed}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
       />
@@ -686,8 +622,11 @@ export default function Configurator() {
         {railVisible && tab === 'foundations' && (
           <SectionRail
             ariaLabel="Foundations"
+            title="Variables"
             active={railActive}
             onSelect={selectFoundation}
+            collapsed={railCollapsed}
+            onToggleCollapse={() => setRailCollapsed((v) => !v)}
             // Figma-style split: token tables are Variables; the rest are Styles.
             groups={[
               { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
@@ -698,8 +637,11 @@ export default function Configurator() {
         {railVisible && (tab === 'components' || tab === 'docs') && (
           <SectionRail
             ariaLabel="Component categories"
+            title={tab === 'docs' ? 'Documentation' : 'Components'}
             active={componentCategory}
             onSelect={setComponentCategory}
+            collapsed={railCollapsed}
+            onToggleCollapse={() => setRailCollapsed((v) => !v)}
             groups={[{
               label: 'Categories',
               items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
