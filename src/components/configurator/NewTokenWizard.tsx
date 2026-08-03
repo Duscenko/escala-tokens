@@ -134,7 +134,7 @@ export default function NewTokenWizard({
   const store = useDesignStore()
   const {
     customColors, addCustomColor, themes, addTheme, colorAlgorithm, contrastShift, pageBackground, darkBackground,
-    typography, setTypography, radius, setRadius, spacing: _spacing, setSpacing,
+    typography, setTypography, radius, setRadius, setSpacing,
     sizes, setSizes, primaryScale, primaryColor,
   } = store
   const applyAccentColor = useApplyAccentColor()

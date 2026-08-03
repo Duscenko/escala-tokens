@@ -1,18 +1,25 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { checkContrast, accessibleSolidTone } from '../../lib/colorUtils'
+import { usePopoverPlacement } from './colorControls'
 import {
   ARCHITECTURE_OPTIONS, architectureLabel, tonalPalettes, compositeOver,
   type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 
 // ─── Architecture picker — Alias/Semantics ──────────────────────────────────
-// Radio cards for the four semantic token architectures. The flat matrix below
-// stays the editing surface for every choice; the selection changes which
-// PROJECTION the export emits (lib/semanticArchitectures.ts). Each card carries
-// an educational tooltip, and the strip underneath is a live accessibility
-// preview: real WCAG ratios computed from the system's current ramps.
+// Radio cards for the semantic token architectures. The matrix below stays the
+// editing surface for every choice; the selection changes which PROJECTION the
+// export emits (lib/semanticArchitectures.ts). Each card carries an educational
+// tooltip, and `ArchContrastStrip` is a live accessibility preview: real WCAG
+// ratios computed from the system's current ramps.
+//
+// This ships as TWO exports, not one card, because Semantics mirrors
+// Primitives' three-row layout: the trigger sits in the 198px left cell (the
+// slot Primitives gives "<Family> color" + its hex dropdown) and the contrast
+// strip fills the flex-1 cell beside it (where Primitives puts the ScaleRow).
+// They're separate grid cells, so a single component can't span both.
 
 function ArchGlyph({ kind }: { kind: SemanticArchitecture }) {
   const a = 'var(--accent-ui)'
@@ -23,6 +30,24 @@ function ArchGlyph({ kind }: { kind: SemanticArchitecture }) {
           <rect x="1" y="2" width="34" height="5" rx="2.5" fill={a} opacity=".9" />
           <rect x="1" y="12" width="44" height="5" rx="2.5" fill={a} opacity=".55" />
           <rect x="1" y="22" width="26" height="5" rx="2.5" fill={a} opacity=".3" />
+        </svg>
+      )
+    case 'astryx':
+      return (
+        <svg width="44" height="26" viewBox="0 0 52 30" fill="none" aria-hidden>
+          <circle cx="9" cy="15" r="8" fill={a} opacity=".9" />
+          <rect x="22" y="4" width="28" height="6" rx="3" fill={a} opacity=".7" />
+          <rect x="22" y="14" width="20" height="6" rx="3" fill={a} opacity=".4" />
+          <rect x="22" y="24" width="14" height="4" rx="2" fill={a} opacity=".22" />
+        </svg>
+      )
+    case 'shadcn':
+      return (
+        <svg width="44" height="26" viewBox="0 0 52 30" fill="none" aria-hidden>
+          <rect x="1" y="1" width="50" height="28" rx="6" fill={a} opacity=".1" stroke={a} strokeOpacity=".4" strokeWidth="1.2" />
+          <rect x="6" y="18" width="16" height="6" rx="3" fill={a} opacity=".85" />
+          <rect x="26" y="6" width="20" height="4" rx="2" fill={a} opacity=".5" />
+          <rect x="26" y="14" width="14" height="4" rx="2" fill={a} opacity=".3" />
         </svg>
       )
     case 'categorical':
@@ -74,7 +99,7 @@ function RatioBadge({ fg, bg }: { fg: string; bg: string }) {
 /** One live contrast specimen: "Aa" in fg over bg + the measured ratio. */
 function PairChip({ label, fg, bg, note }: { label: string; fg: string; bg: string; note?: string }) {
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
       <span
         className="w-9 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
         style={{ backgroundColor: bg, color: fg }}
@@ -94,7 +119,7 @@ function PairChip({ label, fg, bg, note }: { label: string; fg: string; bg: stri
 }
 
 /** The accessibility preview — swaps per selected architecture. */
-function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
+export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
   const { primaryScale, primaryColor, errorColor, grayLightScale, grayDarkScale } = useDesignStore()
   const g = grayLightScale
   const gd = grayDarkScale
@@ -106,6 +131,24 @@ function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
         <PairChip label="text-primary / surface-1 · light" fg={g[12]} bg={g[2]} />
         <PairChip label="text-primary / surface-1 · dark" fg={gd[1]} bg={gd[11]} />
         <PairChip label="text-on-brand / action-primary" fg={g[1]} bg={solid} />
+      </>
+    )
+  }
+  if (kind === 'astryx') {
+    return (
+      <>
+        <PairChip label="text.primary / background.body · light" fg={g[12]} bg={g[1]} />
+        <PairChip label="text.primary / background.body · dark" fg={gd[1]} bg={gd[12]} />
+        <PairChip label="accent.on-solid / accent.solid" fg={g[1]} bg={solid} />
+      </>
+    )
+  }
+  if (kind === 'shadcn') {
+    return (
+      <>
+        <PairChip label="foreground / background · light" fg={g[12]} bg={g[1]} />
+        <PairChip label="foreground / background · dark" fg={gd[1]} bg={gd[12]} />
+        <PairChip label="primary-foreground / primary" fg={g[1]} bg={solid} />
       </>
     )
   }
@@ -139,11 +182,51 @@ function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
   )
 }
 
-export default function ArchitecturePicker() {
+/**
+ * The contrast strip on its own — lives in the flex-1 cell of Semantics' first
+ * row, the slot Primitives fills with the active family's ScaleRow. Same idea
+ * in both: the row's right side shows what the left side's selection produces.
+ */
+export function ArchContrastStrip({ kind }: { kind: SemanticArchitecture }) {
+  // Scrolls sideways instead of wrapping: wrapping grew this row taller than
+  // ColorPrimitives' matching row, so the table below shifted down when you
+  // switched tabs — the exact "same structure across tabs" break this layout
+  // exists to fix. Height stays pinned to the label + dropdown beside it.
+  return (
+    <div className="flex items-center gap-5 min-w-0 overflow-x-auto">
+      <ArchPreview kind={kind} />
+    </div>
+  )
+}
+
+/**
+ * The architecture trigger — a ColorSelect-shaped dropdown sized to match the
+ * hex field Primitives puts in this same 198px cell (w-40 h-9 rounded-[13px]),
+ * so switching tabs doesn't move the control. The radio cards that used to be
+ * an always-expandable accordion row now live inside its popover.
+ */
+export function ArchitectureSelect() {
   const { semanticArchitecture, setSemanticArchitecture } = useDesignStore()
   const [open, setOpen] = useState(false)
   const reduce = useReducedMotion() ?? false
   const groupRef = useRef<HTMLDivElement>(null)
+  const anchorRef = useRef<HTMLDivElement>(null)
+  const place = usePopoverPlacement(anchorRef, open, { prefer: 380, max: 560 })
+
+  // Click-outside / Escape to dismiss, same as the other field popovers.
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (!anchorRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
   // Roving-tabindex radiogroup: arrows move AND select (native radio behavior).
   function onKeyDown(e: React.KeyboardEvent) {
@@ -160,45 +243,51 @@ export default function ArchitecturePicker() {
   }
 
   return (
-    <div className="flex-shrink-0 bg-app border border-line rounded-xl overflow-hidden">
-      {/* Header row — always visible; the collapsed state is a compact summary */}
+    <div ref={anchorRef} className="relative w-full">
+      {/* Trigger — mirrors the hex field Primitives renders in this same cell */}
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-haspopup="dialog"
         aria-expanded={open}
-        className="w-full flex items-center gap-3 h-11 px-4 text-left hover:bg-elevated/40 transition-colors"
+        aria-label="Change token architecture"
+        title="Change token architecture"
+        className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-1.5 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
       >
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token architecture</span>
-        <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-elevated text-[12px] font-medium text-accent-ui shadow-sm">
-          <ArchGlyph kind={semanticArchitecture} />
+        <ArchGlyph kind={semanticArchitecture} />
+        <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-accent-ui">
           {architectureLabel(semanticArchitecture)}
         </span>
-        <span className="flex-1" />
-        <span className="text-[11px] text-fg-faint">{open ? 'Hide options' : 'Change'}</span>
         <svg
-          width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"
+          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
           strokeLinecap="round" strokeLinejoin="round"
-          className={`text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden
         >
-          <path d="M2.5 4.5 6 8l3.5-3.5" />
+          <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
 
-      <AnimatePresence initial={false}>
+      <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.2, ease: 'easeOut' }}
-            style={{ overflow: 'hidden' }}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: reduce ? 0 : 0.14, ease: 'easeOut' }}
+            role="dialog"
+            aria-label="Token architecture"
+            style={{ maxHeight: place.max }}
+            className={`absolute left-0 z-30 w-[34rem] max-w-[80vw] rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+              place.up ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
           >
-            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-line pt-3">
+            <div className="overflow-y-auto p-4 flex flex-col gap-3">
               <div
                 ref={groupRef}
                 role="radiogroup"
                 aria-label="Semantic token architecture"
                 onKeyDown={onKeyDown}
-                className="grid grid-cols-2 xl:grid-cols-4 gap-2.5"
+                className="grid grid-cols-2 gap-2.5"
               >
                 {ARCHITECTURE_OPTIONS.map((o) => {
                   const checked = semanticArchitecture === o.key
@@ -208,7 +297,7 @@ export default function ArchitecturePicker() {
                       role="radio"
                       aria-checked={checked}
                       tabIndex={checked ? 0 : -1}
-                      onClick={() => setSemanticArchitecture(o.key)}
+                      onClick={() => { setSemanticArchitecture(o.key); setOpen(false) }}
                       className={`relative flex flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors ${
                         checked
                           ? 'border-accent-ui ring-1 ring-accent-ui bg-elevated shadow-sm'
@@ -243,18 +332,13 @@ export default function ArchitecturePicker() {
                 })}
               </div>
 
-              {/* Live accessibility preview — real ratios from the current ramps */}
-              <div className="flex items-center gap-5 flex-wrap rounded-lg bg-elevated/50 border border-line px-3.5 py-2.5">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint flex-shrink-0">
-                  Contrast check
-                </span>
-                <ArchPreview kind={semanticArchitecture} />
-              </div>
-
+              {/* No contrast strip in here — it lives in the row beside this
+                  trigger now (ArchContrastStrip), always visible instead of
+                  hidden behind the popover it used to be nested in. */}
               <p className="text-[11px] text-fg-faint leading-snug">
-                The matrix below stays the editing surface for every architecture — the choice changes the
+                The matrix stays the editing surface for every architecture — the choice changes the
                 <span className="font-mono text-fg-muted"> colors.architecture </span>
-                projection in tokens.json. Flat is the classic export shape.
+                projection in tokens.json. Astryx is the default, one-hop export shape.
               </p>
             </div>
           </motion.div>

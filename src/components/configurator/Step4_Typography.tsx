@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
 import {
@@ -204,7 +203,6 @@ const previewCell = 'flex items-center px-3 py-2 border-r border-line overflow-h
 
 export default function Step4_Typography() {
   const { typography, setTypography } = useDesignStore()
-  const reduce = useReducedMotion() ?? false
 
   const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
   const [query, setQuery] = useState('')
@@ -398,14 +396,12 @@ export default function Step4_Typography() {
     ((showSize || showLineHeight) && TYPE_SCALE_KEYS.some((k) => match(k)))
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduce ? 0 : 0.3, ease: 'easeOut' }}
-      className="flex flex-col bg-app border border-line rounded-xl overflow-hidden flex-1 min-h-0"
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
+    // No floating card (border/rounded-xl) and no enter animation — matches
+    // VariablesTable's flush treatment (the other 6 foundations) and the
+    // Color hub's tables, none of which re-animate on every render either.
+    <div className="flex flex-col bg-app flex-1 min-h-0">
+      {/* Top bar — h-[52px], same row height as every other section header */}
+      <div className="flex items-center justify-between gap-3 h-[52px] px-4 border-b border-line bg-app flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-sm text-fg truncate">{activeLabel}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeCount}</span>
@@ -431,7 +427,7 @@ export default function Step4_Typography() {
 
       {/* Body: side nav + tables */}
       <div className="flex items-stretch flex-1 min-h-0">
-        <nav aria-label="Typography categories" className="w-40 flex-shrink-0 border-r border-line p-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
+        <nav aria-label="Typography categories" className="w-[198px] flex-shrink-0 border-r border-line p-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
           {TYPO_CATEGORIES.map((c) => {
             const isActive = activeCategory === c.key
             return (
@@ -465,6 +461,6 @@ export default function Step4_Typography() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

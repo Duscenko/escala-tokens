@@ -1,10 +1,18 @@
 import { useState, type ReactNode } from 'react'
 
-// Framed, filterable variables table shared by every token foundation (Radius ·
-// Spacing · Sizes · Opacity · Shadow · Grid) — the same Figma-like shell
-// Typography and Color use: a top bar (title · count · search), pinned column
-// headers and zebra rows of Token name · Value · Preview, with a per-row reset
-// when the value drifts from the standard.
+// Flush, filterable variables table shared by every token foundation (Radius ·
+// Spacing · Sizes · Opacity · Shadow · Grid) — a top bar (title · count ·
+// search), pinned column headers and zebra rows of Token name · Value ·
+// Preview, with a per-row reset when the value drifts from the standard.
+//
+// No card border/rounding of its own — matches the Color hub's tables
+// (ColorPrimitives / Step3 / StepGradients), which dropped their floating
+// `rounded-xl border` shell for the same reason: a table sitting inside a
+// page that already has its own margin doesn't need a second frame around
+// it too. The h-[52px] top bar height matches Color's row-2 convention
+// ("Groups" / "Tokens" / "Collections") for the same reason every other
+// h-[52px] header in the app does — so headers line up if they're ever
+// shown side by side.
 
 const GRID = 'grid grid-cols-[minmax(9rem,1fr)_7.5rem_minmax(8rem,1.5fr)_3rem]'
 // `wideValues` — for long CSS values (shadow ramps): the value column takes the
@@ -90,9 +98,9 @@ export default function VariablesTable({
   const stacked = groups.length > 1
 
   return (
-    <div className="flex flex-col bg-app border border-line rounded-xl overflow-hidden">
+    <div className="flex flex-col bg-app">
       {/* Top bar */}
-      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
+      <div className="flex items-center justify-between gap-3 h-[52px] px-4 border-b border-line bg-app flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="text-sm text-fg truncate">{title}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{total}</span>

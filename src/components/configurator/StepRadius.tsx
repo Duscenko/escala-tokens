@@ -29,9 +29,11 @@ export const RADIUS_PRESETS = [
 
 export const RADIUS_STEPS = ['none', 'sm', 'md', 'lg', 'full'] as const
 
-// The system standard the per-token reset returns to (the Soft preset — the
-// same ramp makeDesignDefaults seeds).
-const RADIUS_STANDARD: Record<string, string> = RADIUS_PRESETS[1].values
+// The system standard the per-token reset returns to (the Rounded preset —
+// the same ramp makeDesignDefaults seeds). Keep this index and the store's
+// default `radius` in sync — they're deliberately the same ramp so "fresh
+// system" and "reset to standard" never disagree.
+const RADIUS_STANDARD: Record<string, string> = RADIUS_PRESETS[2].values
 
 function pxToNum(val: string): number {
   return parseFloat(val.replace('px', '')) || 0
@@ -50,7 +52,7 @@ export default function StepRadius() {
   // No fallback: custom values show no preset selected, matching Quick edit.
   const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchRadiusPreset(radius))
 
-  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
+  const accentColor = themes.light?.primary || primaryColor || '#9522e9'
 
   function applyPreset(preset: (typeof RADIUS_PRESETS)[number]) {
     setSelectedPreset(preset.label)

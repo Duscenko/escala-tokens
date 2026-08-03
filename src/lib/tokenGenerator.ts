@@ -1,4 +1,4 @@
-import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
+import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'

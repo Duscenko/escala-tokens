@@ -380,7 +380,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     colorNaming: 'numeric',
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
-    primaryColor: '#7f56d9',
+    primaryColor: '#9522e9',
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: '#6c737f',
@@ -411,14 +411,17 @@ export function makeDesignDefaults(): DesignSnapshot {
       weights: { ...FONT_WEIGHT_STANDARD },
     },
     spacing: { '1': '4px', '2': '8px', '3': '12px', '4': '16px', '6': '24px', '8': '32px' },
-    radius: { none: '0px', sm: '4px', md: '8px', lg: '12px', full: '9999px' },
+    // Rounded preset (RADIUS_PRESETS[2] in StepRadius.tsx) — matches
+    // RADIUS_STANDARD there, so a fresh system and a per-token reset always
+    // land on the same values.
+    radius: { none: '0px', sm: '8px', md: '16px', lg: '24px', full: '9999px' },
     opacity: { ...OPACITY_DEFAULT },
     shadows: { ...SHADOW_DEFAULT },
     grid: { ...GRID_DEFAULT },
     sizes: { ...SIZES_DEFAULT },
     padding: { ...PADDING_DEFAULT },
     panelBackground: 'solid',
-    semanticArchitecture: 'flat',
+    semanticArchitecture: 'astryx',
     architectureOverrides: {},
     gradients: makeDefaultGradients(),
     gradientAssignments: makeDefaultGradientAssignments(),
@@ -967,7 +970,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 43,
+      version: 44,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1510,6 +1513,26 @@ export const useDesignStore = create<DesignStore>()(
           clearDarkSemantics(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) clearDarkSemantics(sys?.snapshot)
+          }
+        }
+        if (version < 44) {
+          // v43→v44: "Astryx" replaces Flat Semantic as the default/visible
+          // architecture in the picker — same additive-projection mechanism as
+          // Categorical/Vibrancy/Tonal (lib/semanticArchitectures.ts), just with
+          // the Astryx color-token naming (accent/background/text/icon/status/
+          // border). The flat 39-role catalogue underneath is UNCHANGED —
+          // colors.semantic/semanticDark/themes still ship exactly as before;
+          // picking Astryx only adds a colors.architecture block, same as
+          // picking Categorical always did. 'flat' was the only value that
+          // existed before this architecture did, so every system on it moves
+          // to 'astryx' — otherwise the picker would show a retired card as
+          // "selected" for anyone who never touched this setting.
+          const toAstryx = (state: any) => {
+            if (state?.semanticArchitecture === 'flat') state.semanticArchitecture = 'astryx'
+          }
+          toAstryx(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) toAstryx(sys?.snapshot)
           }
         }
         return persisted

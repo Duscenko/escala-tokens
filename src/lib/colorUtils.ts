@@ -61,7 +61,7 @@ export type SeedKind = 'light' | 'dark' | 'alpha'
  * hex darker than the midpoint between the two pages reads as a dark-theme
  * value; otherwise light.
  */
-export function detectSeedKind(hex: string, lightBg = '#ffffff', darkBg = '#111111'): SeedKind {
+export function detectSeedKind(hex: string, _lightBg = '#ffffff', darkBg = '#111111'): SeedKind {
   try {
     const c = chroma(hex)
     if (c.alpha() < 0.99) return 'alpha'
@@ -87,14 +87,6 @@ export function solidFromSeed(hex: string, kind: SeedKind, lightBg: string, dark
     return hex
   }
 }
-
-// Easing exponents for the two halves. The light run (1–8) uses a square-root
-// ease so tones rush toward white and the border band (6–8) stays pastel —
-// linear interpolation is what made borders look heavy. The dark run (10–12)
-// eases in gently so tone 10 sits just below the solid (its hover) while 11–12
-// still reach text-grade contrast.
-const LIGHT_EASE = 0.5
-const DARK_EASE = 1.4
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n))

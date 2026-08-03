@@ -13,7 +13,6 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { slugify } from '../../lib/utils'
 import HeaderPill from '../ui/HeaderPill'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
@@ -48,7 +47,7 @@ function timeAgo(iso: string): string {
 // ── Kits popover — name & save the current system, reopen a previous kit ─────
 function KitsPopover({ onClose }: { onClose: () => void }) {
   const {
-    projectName, setProjectName, primaryColor,
+    setProjectName, primaryColor,
     savedSystems, saveCurrentSystem, loadSystem, removeSavedSystem,
   } = useDesignStore()
   // Starts EMPTY, not pre-filled with `projectName` — a pre-filled field

@@ -20,11 +20,15 @@ export default function NewSystemModal({
   /** Called after the new system is created — the shell navigates to Foundations · Color. */
   onCreated: () => void
 }) {
-  const { startNewSystem, setProjectName, savedSystems, githubRepo, projectName } = useDesignStore()
+  const { startNewSystem, savedSystems, githubRepo, projectName } = useDesignStore()
   const applyAccentColor = useApplyAccentColor()
 
   const [name, setName] = useState('')
-  const [accent, setAccent] = useState(COLOR_FAMILY_PRESETS[0].hex)
+  // '#9522e9' — the platform's default accent (makeDesignDefaults' own
+  // primaryColor). Was COLOR_FAMILY_PRESETS[0].hex (Indigo), a DIFFERENT
+  // default than a truly fresh store gets — this dialog and a first-ever
+  // load should agree on what "default" means.
+  const [accent, setAccent] = useState('#9522e9')
   // Deferred accent apply: startNewSystem() resets the store, so the accent has
   // to be applied on the NEXT render, when useApplyAccentColor's closure reads
   // the fresh default state instead of the outgoing system's.

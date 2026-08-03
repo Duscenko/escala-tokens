@@ -61,7 +61,7 @@ export interface PreviewTokens {
   // edits as refs in `architectureOverrides`, NOT in `themes`, so `semanticMap`
   // alone can't show them; the per-category specimens read from here to caption
   // (and paint) the exact tokens the user is editing in that architecture.
-  architecture?: 'flat' | 'categorical' | 'vibrancy' | 'tonal'
+  architecture?: 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal'
   archTokens?: Record<string, string>
 }
 

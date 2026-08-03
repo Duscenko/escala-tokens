@@ -5,7 +5,6 @@ import { SPECIMENS } from '../configurator/docs/specimens'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE } from './atoms/SemanticSpecimens'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
-import { OverviewChecklistPreview } from './atoms/OverviewChecklistPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -154,8 +153,6 @@ export default function PreviewPanel({
   categoryKey = null,
   previewTheme = 'light',
   iconLibraryKey = null,
-  showOverview = false,
-  onNavigateFoundation,
   onCollapse,
 }: {
   focus?: SemanticFocus | 'all' | null
@@ -166,17 +163,12 @@ export default function PreviewPanel({
   previewTheme?: string
   /** When set (Icons foundation), the panel previews that library's glyphs. */
   iconLibraryKey?: string | null
-  /** When true (Home), the panel shows the foundations overview checklist. */
-  showOverview?: boolean
-  onNavigateFoundation?: (key: string) => void
   /** When set, shows a header button to collapse the panel. */
   onCollapse?: () => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const specimen = focus && focus !== 'all' ? focus : null
-  const title = showOverview
-    ? 'Overview'
-    : iconLibraryKey
+  const title = iconLibraryKey
     ? `${getIconLibrary(iconLibraryKey)?.label ?? 'Icon'} preview`
     : specimen
     ? FOCUS_TITLE[specimen]
@@ -212,9 +204,7 @@ export default function PreviewPanel({
 
       {/* Artboard — overview · icon set · a category specimen when focused · else component grid */}
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-5 flex flex-col gap-6">
-        {showOverview ? (
-          <OverviewChecklistPreview onOpenFoundation={onNavigateFoundation ?? (() => {})} />
-        ) : iconLibraryKey ? (
+        {iconLibraryKey ? (
           <IconSpecimenPreview libraryKey={iconLibraryKey} />
         ) : specimen ? (
           SEMANTIC_SPECIMENS[specimen]({ tokens })

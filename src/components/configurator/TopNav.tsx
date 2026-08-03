@@ -12,7 +12,7 @@ import ThemeToggle from './ThemeToggle'
 export type TopNavKey = 'variables' | 'documentation' | 'components'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
-  { key: 'variables', label: 'Variables' },
+  { key: 'variables', label: 'Variables Generator' },
   { key: 'documentation', label: 'Documentation' },
   { key: 'components', label: 'Components' },
 ]

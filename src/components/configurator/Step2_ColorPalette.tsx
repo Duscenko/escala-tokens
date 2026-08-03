@@ -241,7 +241,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
     grayBaseColor, grayLightScale, grayDarkScale,
     customColors, updateCustomColor, removeCustomColor,
     colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
-    pageBackground, setPageBackground, darkBackground, themeKinds,
+    pageBackground, darkBackground, themeKinds,
   } = useDesignStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const applyAccentColor = useApplyAccentColor()

@@ -55,7 +55,7 @@ export default function Step5_Spacing() {
   // Infer the active base from step 1 so the chips reflect a saved 8px scale.
   const [baseUnit, setBaseUnit] = useState(() => pxToNum(spacing['1'] ?? '4px') || DEFAULT_BASE)
 
-  const accentColor = themes.light?.primary || primaryColor || '#7f56d9'
+  const accentColor = themes.light?.primary || primaryColor || '#9522e9'
 
   const valueOf = (step: string) => spacing[step] ?? `${Number(step) * baseUnit}px`
   const maxSpacingPx = Math.max(...SPACING_STEPS.map((s) => pxToNum(valueOf(s))), 1)

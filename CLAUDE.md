@@ -113,8 +113,8 @@ another pill).
 - **"New" creates a TOKEN, not a design system** — clicking it opens `NewTokenMenu`
   (`HomeActions.tsx`), a category popover fed by `VARIABLE_FOUNDATIONS` in
   `Configurator.tsx` (`FOUNDATIONS` minus Icons/Opacity/Shadow/Grid — the exact same
-  array `SectionRail`'s Variables group renders from, so the menu and the rail can never
-  disagree). Picking a category opens `NewTokenWizard.tsx`: a **guided 2–4 step flow**
+  array `FoundationIconRail`'s "Variables" group renders from, so the menu and the
+  toolbar can never disagree). Picking a category opens `NewTokenWizard.tsx`: a **guided 2–4 step flow**
   (Name/Target → Value/Scale → Confirm[ → Role, Color only]) that owns the full-screen
   modal for every step, so the long token table is never visible until the flow closes.
   Each category writes through the SAME store actions the Foundations editors use — no
@@ -151,58 +151,85 @@ another pill).
   which family "won," which read as "nothing happened" even though the scale WAS created.
 - **`HomeView` is retired** — the old hero/collage hub is unreachable (the file is kept
   for reference only). Don't wire it back up.
-- **Color is a four-tab hub** (`ColorHub`, default tab `primary`), split along Radix's own
-  "generate scale" vs "use it" line: **Picker Color** DEFINES the base palette, **Primary
-  Color** shows how it's APPLIED. The tab pill bar is now pinned on top for all four tabs
-  (`ColorHub` renders it once, above whichever tab's content scrolls beneath it) — it used
-  to render mid-content on Primary Color only (passed in as `tabsSlot`), which meant it
-  scrolled out of reach; don't reintroduce that split.
-  - **Picker Color** (`PickerColor.tsx`) — the accent · link · Gray/Neutral quick bar (no
-    Background field — see below) over two `ScaleRow` ramps, then **State Colors expanded**:
-    Neutral/Error/Success/Warning/Info each get their OWN full 1–12 `ScaleRow`, always
-    visible — no popover, no tab switch, unlike the old `StateColorsSelect` this replaced
-    (still used elsewhere: hex-only, scale hidden behind a chevron). Editing a state's hex
-    still goes through the same `ColorSelect` pattern as Color families/Gray-Neutral
-    (`variant="pill"`, `STATE_PRESETS[role]`). No usage table here — that's Primary Color's
-    job, kept separate on purpose so "decide your colors" and "see where they land" don't
-    compete for the same screen. Three things about the opening control row are deliberate:
-    - **No section heading, no card chrome, no vertical padding.** The `<h3>Color families`
-      only repeated the `ColorSelect` label directly beneath it, and the card border around
-      a tab's FIRST block just pushed everything down. It's a bare dense row now.
-    - **The Scale-settings gear lives at the far right OF that row**, baseline-aligned with
-      the two dropdowns (`grid-cols-[1fr_auto_1fr_auto]`), not in a header of its own.
-    - **Below the brand ramp is its TRANSPARENCY twin, not a second neutral.** An
-      independent gray ramp sat there with no control of its own, which read as a stray
-      scale. It's `generateAlphaScale(brandRamp, page, appearance)` — the same helper the
-      export ships as `accent-a*`, so screen and `tokens.json` can't disagree — rendered by
-      the dedicated `TransparencyStrip` (`colorControls.tsx`), NOT a `ScaleRow`: a grid of
-      solid-looking swatches read as just another color ramp, with nothing to signal "these
-      are translucent." `TransparencyStrip` reuses Foundations · Opacity's exact checkerboard
-      (`CHECKER`'s `repeating-conic-gradient(var(--elevated), var(--surface))`, the same
-      pattern `Step6_Opacity.tsx`'s "Opacity Scale" strip uses) so the same visual language —
-      checker behind a swatch → translucent — means the same thing everywhere in the app,
-      captioned "Transparency scale" so it can't be mistaken for a second solid ramp. This
-      also fixed a correctness bug, not just a labeling one: alpha values are only correct
-      against the specific page they were solved for, so painting them on a flat backdrop
-      color (the row's earlier approach) silently broke across light/dark preview; the
-      checkerboard has no "wrong theme" to break against.
-  - **Primary Color** (`ColorPrimitives.tsx`) — usage ONLY now: the families table, nothing
-    else. The family nav is **foldered by ROLE, not insertion order**: `Accents` /
-    `Neutrals` / `States` (Error/Success/Warning/Info + custom families a theme aliases to
-    a status slot — kept here too, deliberately: this rail is EVERY primitive's usage table
-    — Backgrounds/Interactive/Borders/Solid/Text bands — and a state color is a primitive
-    same as Accent/Neutral, so Picker Color showing its full scale for quick editing
-    doesn't pull it out of usage) / `Custom` for free-standing families no theme references
-    yet, derived via `familySlotFor()` (`lib/themeSources.ts`) from which theme slot
-    references each family — a family minted by "Add theme" files itself under the right
-    folder with zero bookkeeping. Families table: Accent/Neutral/Error/Success/Warning/Info
-    + custom families in that side nav, 12 tone rows each with editable **light/dark** hex
-    cells (row names are the EXACT exported token names — `accent-1`…, matching
-    tokenGenerator's flattenScale prefixes), eye toggles on the column headers driving
-    `previewTheme`, a per-row inline `ColorPickerPanel`, and "+ Add" creating a
-    `customColors` family — EVERY family carries both a light ramp and a dark twin (Radix
-    two-scale model), and each column edits its own; **no inversion anywhere**, step N
-    means the same role in both.
+- **Color is a three-tab hub** (`ColorHub`, default tab `primary`, labeled **Primitives**):
+  **Primitives** / **Semantics** / **Gradients**. The tab pill bar is pinned on top for all
+  three tabs (`ColorHub` renders it once, above whichever tab's content scrolls beneath it).
+  - **Picker Color is retired** — matching the Figma redesign this whole shell now follows
+    (see Navigation model's `FoundationIconRail` note), which merges palette DEFINITION back
+    into the usage table instead of keeping them on separate tabs. `PickerColor.tsx` is
+    unwired (kept for reference only, same treatment as `WorkbenchLayout`/`HomeView` — don't
+    wire it back up); its capabilities moved:
+    - The **accent · Gray/Neutral quick bar** → **Primitives**' promoted quick-edit strip
+      (below), contextual to whichever family is active in the nav instead of two fixed
+      dropdowns.
+    - **State Colors' "all five ramps visible at once"** comparison view is a real,
+      deliberate loss, accepted for matching Figma exactly: each state (Neutral/Error/
+      Success/Warning/Info) is still fully editable, just one at a time now — click it in
+      the **Groups** nav and its quick-edit strip + table appear, same as any family.
+    - **The Transparency scale** (`TransparencyStrip`, checkerboard-backed) → **Accent-Alpha**,
+      a first-class nav entry under Accents (`generateAlphaScale(primaryScale/DarkScale,
+      page, appearance)`, same helper the export ships as `accent-a*`) rather than a
+      bespoke strip on a different tab. It's **read-only everywhere** — `Family.isAlpha`
+      guards `changeFamilyBase`, hides the nav pencil and the per-row expand-to-edit button
+      — because an alpha value is SOLVED against its page (see "Alpha twins are solved, not
+      eyeballed" below), never independently set. Its table cells use `AlphaHexCell`
+      (swatch over checkerboard + static hex text, no input) instead of `HexCell`: the same
+      checkerboard `CHECKER` constant `Step6_Opacity.tsx`'s "Opacity Scale" strip uses,
+      now **exported** from `colorControls.tsx` so both call sites share one pattern rather
+      than two independently-styled "this is translucent" cues. This is the same
+      correctness fix the old `TransparencyStrip` comment already explained: an alpha value
+      painted on a flat backdrop silently breaks across light/dark preview, since it's only
+      correct against the specific page it was solved for — the checkerboard has no "wrong
+      theme" to break against.
+    - **The scale-settings gear** (algorithm/naming/contrast shift, `ScaleSettingsModal` +
+      `ColorControls` from `Step2_ColorPalette.tsx`) → the same promoted quick-edit strip.
+  - **Primitives** (`ColorPrimitives.tsx`) — now BOTH definition and usage: the family nav,
+    a per-family quick-edit strip, and the families table, all on one screen, stacked as
+    **three full-width rows** (own `motion.div className="h-full flex flex-col"` root — was
+    a single `flex` row before this pass, which is what left the quick-edit strip and the
+    `Groups` header confined to the table's own column instead of spanning the same width as
+    the icon-toolbar row above them, a mismatch caught in review against the Figma reference):
+    1. the quick-edit strip, full width; 2. `Groups` + the **tab pill bar + search** sharing
+    ONE row (`ColorHub` passes its `tabBar` down as a prop instead of pre-wrapping it, so
+    `ColorPrimitives` can place it next to `Groups` — same line, per Figma — rather than each
+    owning a separate row); 3. the nav+table split. The family nav itself is **promoted to
+    the outer-left position** `SectionRail` used to occupy for Variables — flush, full height,
+    `w-[198px]` (was a `w-44` sub-nav nested inside a padded, bordered card) — and that same
+    198px width is what row 2's `Groups` + **"+ Add" family trigger** (moved here from the
+    table's old top bar; same `addOpen`/`addRef` state and popover, new location — the
+    popover itself anchors `left-0` off that trigger, not `right-0`, since right-anchoring a
+    288px popover off a trigger sitting at the LEFT edge of the row clips it off-screen) sits
+    inside, so it lines up with the nav directly below. It's still **foldered by ROLE, not
+    insertion order**: `Accents` (now Accent +
+    Accent-Alpha) / `Neutrals` / `States` (Error/Success/Warning/Info + custom families a
+    theme aliases to a status slot — kept here too, deliberately: this rail is EVERY
+    primitive's usage table — Backgrounds/Interactive/Borders/Solid/Text bands — and a state
+    color is a primitive same as Accent/Neutral) / `Custom` for free-standing families no
+    theme references yet, derived via `familySlotFor()` (`lib/themeSources.ts`) from which
+    theme slot references each family — a family minted by "Add theme" files itself under
+    the right folder with zero bookkeeping.
+    - **The promoted quick-edit strip** sits above the table, contextual to the active
+      family: a `<Family> color` label + hex field in a bordered pill (`HexCell` wrapped in
+      a `rounded-[13px] border-line-strong` container — matches the weight of a `ColorSelect`
+      dropdown rather than reading as a bare table cell), a **wand button** ("Match Neutral
+      and States colors", only wired while Accent is active) running `matchStatesToAccent()`
+      — `recommendStateColors(primaryColor)` into every state PLUS `neutralFromBrand()` into
+      Neutral, a broader re-harmonize than the old Picker Color "Match to accent" link (which
+      only touched states) — a full-size `ScaleRow` of the family's ramp in the previewed
+      appearance, and the scale-settings gear. Read-only (hex field + wand hidden, `ScaleRow`
+      still shown) for Accent-Alpha.
+    - **"Edit in Picker Color" is gone** — with the quick-edit strip living on the same
+      screen as the table, selecting a family in the nav already surfaces everything that
+      link used to jump to. The `onEditInPicker`/`pickerFocusTarget` prop chain
+      (`ColorHub` → `ColorPrimitives`, `Configurator.tsx` state) was removed, not repurposed.
+    - Families table: Accent/Accent-Alpha/Neutral/Error/Success/Warning/Info + custom
+      families in that side nav, 12 tone rows each with **light/dark** cells (row names are
+      the EXACT exported token names — `accent-1`…, matching tokenGenerator's flattenScale
+      prefixes — `accent-a-1`… for Accent-Alpha), eye toggles on the column headers driving
+      `previewTheme`, a per-row inline `ColorPickerPanel` (skipped for Accent-Alpha rows),
+      and "+ Add" creating a `customColors` family — EVERY family carries both a light ramp
+      and a dark twin (Radix two-scale model), and each column edits its own; **no inversion
+      anywhere**, step N means the same role in both.
     - **"+ Add" picks a DESTINATION FOLDER, and that's a role assignment, not a label.**
       The selector (`FAMILY_GROUPS`: Accents · Neutrals · States · Custom) is pre-set from
       the group of the family you opened it on, so adding a second accent while Accent is
@@ -223,16 +250,11 @@ another pill).
       referenced by that minted theme, so `removeCustomColor` refuses it (the nav's trash
       shows "In use by theme X — remove the theme first"). That's the pre-existing
       in-use rule, not a special case, but it does mean a non-Custom family isn't deletable
-      in one click the way a Custom one is. The table header carries an **"Edit in Picker Color"**
-    link next to the active family's name — for the six FIXED families (`!family.customKey`
-    — Accent/Neutral/Error/Warning/Success/Info, the ones Picker Color has a section for; a
-    custom family gets no link even if a theme aliases it to a status slot, since it has no
-    distinct section there) — wired through `onEditInPicker` (`Configurator.tsx`'s
-    `pickerFocusTarget` state): switches `colorTab` to `'picker'` and tells `PickerColor`
-    which section ref to `scrollIntoView` + ring-pulse for ~1.6s. A per-row pencil edit here
-    is a deliberate SINGLE-family change and never cascades to Neutral
-    (`applyAccentColor(hex, false, …)`) — "move both together" is Picker Color's
-    link-toggle's job, not a usage-table side effect.
+      in one click the way a Custom one is. The nav's per-row pencil (hidden for
+      Accent-Alpha, see above) is a deliberate SINGLE-family change and never cascades to
+      Neutral (`changeFamilyBase` → `applyAccentColor(hex, false, …)`) — the quick-edit
+      strip's wand is the "move several together" affordance now, not a usage-table
+      side effect.
   - **The "Background" swatch is REMOVED, not disabled.** It used to sit in the quick bar
     as `DerivedBackgroundField` — a read-only readout of `pageBackground`/`darkBackground`
     for calibrating tones 1–2 — but it looked exactly like its interactive `ColorSelect`
@@ -240,7 +262,7 @@ another pill).
     entirely rather than left disabled, so the UI doesn't promise interactivity it doesn't
     have; a real background picker is still out of scope (see "Base drives the page" above
     — independent editability there is what caused page/ramp drift before).
-  - **Alias / Semantics** (`Step3_SemanticTokens`, topped by the
+  - **Semantics** (`Step3_SemanticTokens`, topped by the
   **architecture picker** — `ArchitecturePicker`: radio cards for Flat /
   Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
   the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
@@ -306,18 +328,31 @@ another pill).
   restores a deep-cloned `DesignSnapshot`; `startNewSystem()` resets to `makeDesignDefaults()`.
   GitHub (PAT identity) is "the account" for the GitHub-backed half — no separate auth
   backend. Removing an entry is local-only either way.
-- **Section sub-rail = `SectionRail.tsx`** — ONE component for all three sections, so the
-  second column is identical everywhere: 200px, transparent over the brand gradient,
-  uppercase group caption + `icon · label` rows (active = raised white row in the UI
-  accent). Variables feeds it the foundations split into Figma-style **Variables** /
-  **Styles** groups; Components and Documentation feed it the catalogue **Categories**
-  (icons from `CATEGORY_ICONS` in `Configurator`). Don't fork it per section — pass a
-  different `groups` array. It carries **no** global nav and no action block — those live
-  in `TopNav`: **Bring to Figma** (icon button → `FigmaConnectView`) and **Connect**
-  (black GitHub pill → `GitHubConnectView`: PAT connect → pick/create repo → push
-  tokens.json/variables.css/README.md). Below the rail, Components and Documentation each
-  add the same 208px master list (search + grouped component list) — keep those two in
-  sync too.
+- **Section sub-rail = `SectionRail.tsx`** — now Components' and Documentation's rail only:
+  200px, transparent over the brand gradient, uppercase group caption + `icon · label` rows
+  (active = raised white row in the UI accent). Components and Documentation feed it the
+  catalogue **Categories** (icons from `CATEGORY_ICONS` in `Configurator`); it still carries
+  **no** global nav and no action block — those live in `TopNav`: **Bring to Figma** (icon
+  button → `FigmaConnectView`) and **Connect** (black GitHub pill → `GitHubConnectView`: PAT
+  connect → pick/create repo → push tokens.json/variables.css/README.md). Below the rail,
+  Components and Documentation each add the same 208px master list (search + grouped
+  component list) — keep those two in sync too. Don't fork it per section — pass a
+  different `groups` array.
+  - **Variables no longer uses it.** The outer 200px column reserved for foundation
+    switching read as wasted width once a foundation's own content (Color's family tree) also
+    wanted a left column, and text labels for 9 well-known icons were redundant once the
+    icons themselves were legible. `FoundationIconRail.tsx` replaces it there: a compact
+    horizontal row of icon-only buttons (40.5px, `rounded-[13.5px]`, active = filled
+    `accent-ui` circle + soft shadow, tooltip carries the name) docked in a `h-[52px]` row
+    above `CenterHeader`, together with `HomeActions` (New · Import JSON · Kits) and the
+    Export pill — the same row Figma's redesign puts them in. It reads the SAME `groups`
+    shape (`VARIABLE_FOUNDATIONS` "Variables" + the rest as "Styles") `SectionRail` used to,
+    just rendered as a row instead of a labeled column, so the menu/rail/toolbar data source
+    still can't disagree. `Configurator.tsx`'s `outerRailVisible` (≠ `railVisible`) gates
+    `TopNav`'s `brandWidth`/divider now — `null` on Variables (no column to align against),
+    unchanged on Components/Documentation. Freed width goes to whichever foundation is
+    active; only Color has its own sub-nav to spend it on (see below), the other 8 foundations
+    just render wider.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
@@ -417,7 +452,7 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), SectionRail (the one left rail), HomeActions (incl. the "New" token-category menu), NewTokenWizard (guided token creation), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout is retired (kept for reference only, see Navigation model)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (Components/Documentation's left rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (incl. the "New" token-category menu), NewTokenWizard (guided token creation), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ComponentDocPane, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout and PickerColor are retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
@@ -504,11 +539,12 @@ Store uses `persist` middleware with `version: 42`. If you add fields, bump the 
 
 > **`ScaleRow` is compact by default.** Swatches are `h-8` (`thin` variant `h-4`) with
 > `gap-1` — shrunk from an earlier `h-11`/`gap-1.5` because stacking multiple 12-tone ramps
-> (Picker Color's brand + neutral + 5 state scales) at the old size made the page feel
-> heavy. It's the ONE shared component behind every ramp — `PickerColor.tsx`,
-> `AddThemeModal.tsx` — so a size change here is felt everywhere; the on-swatch "Anchor"
-> text was already dropped in favor of the ring + dot (title tooltip carries the label),
-> which is what keeps this size legible.
+> (the old Picker Color's brand + neutral + 5 state scales) at the old size made the page
+> feel heavy. It's the ONE shared component behind every ramp — `ColorPrimitives.tsx`'s
+> quick-edit strip (default size — one ramp at a time now, not several stacked, so the
+> extra height is affordable again), `AddThemeModal.tsx` — so a size change here is felt
+> everywhere; the on-swatch "Anchor" text was already dropped in favor of the ring + dot
+> (title tooltip carries the label), which is what keeps this size legible.
 >
 > **`numbersInside` is the exception, and only the brand ramp uses it.** It moves the tone
 > number ONTO its swatch (ink picked by `readableInkOn`), which needs `h-11` to fit — so the

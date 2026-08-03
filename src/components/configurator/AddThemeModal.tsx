@@ -29,12 +29,17 @@ export default function AddThemeModal({
   open,
   onClose,
   editKey = null,
+  seedFrom = null,
   onRenamed,
 }: {
   open: boolean
   onClose: () => void
   // When set, the modal edits this existing theme instead of creating a new one.
   editKey?: string | null
+  // When set (and editKey isn't), the form pre-fills from this theme's resolved
+  // palette but still creates a brand-new theme on submit — a "Duplicate" flow
+  // reusing the same load-a-palette logic edit mode already has.
+  seedFrom?: string | null
   // Fired after a successful rename so callers can re-point their preview state.
   onRenamed?: (oldKey: string, newKey: string) => void
 }) {
@@ -69,17 +74,20 @@ export default function AddThemeModal({
   const brandGroups = savedGroup ? [savedGroup, ...BRAND_GROUPS] : BRAND_GROUPS
   const neutralGroups = savedGroup ? [savedGroup, ...NEUTRAL_GROUPS] : NEUTRAL_GROUPS
 
-  // On open: seed from the edited theme's palette (base = tone 9), or fall back
-  // to the current global colors for a fresh theme.
+  // On open: seed from the edited (or duplicated) theme's palette (base = tone
+  // 9), or fall back to the current global colors for a fresh theme. Editing
+  // and duplicating both read the same source palette; only editing carries
+  // the source's name/key forward (a duplicate always gets a fresh name).
+  const sourceKey = editKey ?? seedFrom
   useEffect(() => {
     if (!open) return
     setErr(null); setLinked(false)
-    if (editKey) {
-      const pal = resolveThemePalette(themeSources[editKey], themeKinds[editKey] ?? 'light', store)
+    if (sourceKey) {
+      const pal = resolveThemePalette(themeSources[sourceKey], themeKinds[sourceKey] ?? 'light', store)
       const base = (s: ThemePalette[keyof ThemePalette] | undefined, fb: string) =>
         (s?.[9] as string | undefined) ?? fb
-      setName(editKey)
-      setKind(themeKinds[editKey] ?? 'light')
+      setName(editKey ? sourceKey : '')
+      setKind(themeKinds[sourceKey] ?? 'light')
       setBrand(base(pal?.brand, primaryColor)); setNeutral(base(pal?.gray, grayBaseColor))
       setError(base(pal?.error, errorColor)); setWarning(base(pal?.warning, warningColor))
       setSuccess(base(pal?.success, successColor)); setInfo(base(pal?.info, infoColor))
@@ -88,7 +96,7 @@ export default function AddThemeModal({
       setBrand(primaryColor); setNeutral(grayBaseColor)
       setError(errorColor); setWarning(warningColor); setSuccess(successColor); setInfo(infoColor)
     }
-  }, [open, editKey, themeKinds, themeSources, primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor])
+  }, [open, editKey, sourceKey, themeKinds, themeSources, primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor])
 
   useEffect(() => {
     if (!open) return

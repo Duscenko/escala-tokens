@@ -70,7 +70,7 @@ export function stopsMatch(a: GradientStop[], b: GradientStop[]): boolean {
 // Both stay inside the accent's own hue family (quiet, credible), never a neon
 // rainbow.
 
-const DEFAULT_ACCENT = '#7f56d9'
+const DEFAULT_ACCENT = '#9522e9'
 
 function hsl(hex: string): [number, number, number] {
   const [h, s, l] = chroma(hex).hsl()
@@ -157,7 +157,7 @@ export function makeDefaultGradientAssignments(): GradientAssignments {
 }
 
 /** A blank gradient seeded from a base color — used by the "＋ New" action. */
-export function makeGradient(base = '#7f56d9'): GradientDef {
+export function makeGradient(base = DEFAULT_ACCENT): GradientDef {
   return {
     id: `grad-${Math.random().toString(36).slice(2, 8)}`,
     name: 'New gradient',

@@ -3,7 +3,7 @@
 // strip, the brand↔neutral link toggle, and the info dot. Kept presentational
 // (no store writes) so callers own their own state.
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -319,7 +319,7 @@ export function ColorSelect({
                     <input
                       value={customDraft}
                       onChange={(e) => handleCustomDraft(e.target.value)}
-                      placeholder="7F56D9"
+                      placeholder="9522E9"
                       spellCheck={false}
                       aria-label={`Custom ${label ?? 'color'} hex`}
                       className="w-[4.5rem] flex-shrink-0 text-[12px] font-mono tabular-nums bg-surface border border-line rounded-md px-1.5 py-1 text-fg outline-none focus:border-line-strong"
@@ -648,7 +648,7 @@ function readableInkOn(hex: string): string {
 
 export function ScaleRow({
   scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default',
-  numbersInside = false, ariaLabel, selectedIndex, recommendedIndex, onSelect,
+  numbersInside = false, joined = false, ariaLabel, selectedIndex, recommendedIndex, onSelect,
 }: {
   scale: Record<number, string>
   baseIndex?: number
@@ -662,6 +662,12 @@ export function ScaleRow({
    *  ColorSelect dropdown above it) read as inconsistent with the state-color
    *  ramps sitting directly below it, on the same tab. */
   numbersInside?: boolean
+  /** Renders the 12 tones as ONE continuous bar — no gaps between swatches,
+   *  only the outer corners rounded — so the ramp reads as a single gradient
+   *  strip rather than 12 separate chips. Pairs with `numbersInside`: with no
+   *  gutters there's nowhere for a caption to sit, so the number moves onto
+   *  its own tone (which is also what makes it a live contrast check). */
+  joined?: boolean
   ariaLabel?: string
   /** "What's currently picked" for an interactive caller (e.g. a semantic
    *  token's tone) — deliberately separate from `baseIndex` (the PRIMITIVE's
@@ -682,7 +688,7 @@ export function ScaleRow({
   const thin = size === 'thin'
   const Cell = onSelect ? 'button' : 'div'
   return (
-    <div className="grid grid-cols-12 gap-1" role="group" aria-label={ariaLabel}>
+    <div className={`grid grid-cols-12 ${joined ? 'gap-0' : 'gap-1'}`} role="group" aria-label={ariaLabel}>
       {entries.map(([key, color], i) => {
         const k = Number(key)
         const isBase = k === baseIndex
@@ -690,6 +696,15 @@ export function ScaleRow({
         const isRecommended = k === recommendedIndex
         const onLight = k >= BASE_TONE ? '#ffffff' : '#0a0a0a'
         const label = labels?.[i] ?? key
+        // Joined: square up the inner seams so the 12 cells form one bar,
+        // keeping the radius only on the two ends of the strip.
+        const corner = !joined
+          ? 'rounded-md'
+          : i === 0
+          ? 'rounded-l-[10px]'
+          : i === entries.length - 1
+          ? 'rounded-r-[10px]'
+          : ''
         return (
           <div key={key} className="flex flex-col gap-0.5 min-w-0">
             {showNumbers && !numbersInside && (
@@ -703,8 +718,11 @@ export function ScaleRow({
             )}
             <Cell
               {...(onSelect ? { onClick: () => onSelect(k, color), type: 'button' as const } : {})}
-              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full rounded-md flex items-center justify-center overflow-hidden transition-transform ${
-                isBase ? 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app' : ''
+              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full ${corner} flex items-center justify-center overflow-hidden transition-transform ${
+                // The anchor ring goes INSET when joined — an offset ring would
+                // punch a gap through the seams the joined variant exists to
+                // close. Tone 9 stays marked either way (see CLAUDE.md).
+                isBase ? (joined ? 'ring-2 ring-inset ring-fg/30 relative z-10' : 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app') : ''
               } ${
                 isSelected
                   ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'
@@ -755,7 +773,7 @@ export function ScaleRow({
 // Same checkerboard used by Foundations · Opacity's "Opacity Scale" strip
 // (`Step6_Opacity.tsx`) — reused verbatim so a translucent swatch reads as
 // transparent everywhere in the app, not just on one page.
-const CHECKER = {
+export const CHECKER = {
   backgroundImage: 'repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)',
 } as const
 
@@ -834,5 +852,82 @@ export function LinkToggle({ active, onClick, accentColor }: { active: boolean; 
         <path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" />
       </svg>
     </button>
+  )
+}
+
+// ── System ramp grid ────────────────────────────────────────────────────────
+// One labelled row per primitive family, twelve tone cells each, over a single
+// shared 1–12 axis. Every cell is a real token, so picking one is a direct
+// "use {family.tone}" — no intermediate "first choose a family, then choose a
+// tone" step, and every family stays visible for comparison while you choose.
+//
+// This started life inside ColorPickerPanel as its "Palette — your system's
+// ramps" block. It was the wrong home: that picker exists to author a NEW raw
+// colour, so offering the system's existing tokens there mixed two different
+// jobs in one popover. It belongs where you're genuinely choosing an existing
+// token — the semantic Token Details modal — so it moved here to be shared.
+export function SystemRampGrid({
+  ramps,
+  selected = null,
+  onPick,
+  ariaLabel,
+}: {
+  /** Families in display order; empty ramps are skipped. */
+  ramps: { key: string; scale: Record<number, string> | undefined }[]
+  /** The currently-referenced token, ringed in the grid. */
+  selected?: { family: string; tone: number } | null
+  onPick: (family: string, tone: number, hex: string) => void
+  ariaLabel?: string
+}) {
+  const rows = ramps.filter((r) => r.scale && Object.keys(r.scale).length > 0)
+  if (!rows.length) return null
+
+  return (
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className="grid items-center"
+      style={{ gridTemplateColumns: '4.25rem repeat(12, minmax(0, 1fr))', columnGap: 3, rowGap: 4 }}
+    >
+      {rows.map((row) => (
+        <Fragment key={row.key}>
+          <span className="text-[9px] font-mono text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((tone) => {
+            const hex = row.scale?.[tone]
+            if (!hex) return <span key={tone} style={{ gridColumn: tone + 1 }} />
+            const on = selected?.family === row.key && selected?.tone === tone
+            return (
+              <button
+                key={tone}
+                type="button"
+                onClick={() => onPick(row.key, tone, hex)}
+                title={`${row.key}.${tone} — ${hex}`}
+                aria-label={`Use ${row.key}.${tone}`}
+                aria-pressed={on}
+                className={`h-4 w-full min-w-0 rounded-[4px] transition-all ${
+                  on
+                    ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'
+                    : 'ring-1 ring-black/10 dark:ring-white/10 hover:ring-black/25 dark:hover:ring-white/25'
+                }`}
+                style={{ background: hex, gridColumn: tone + 1 }}
+              />
+            )
+          })}
+        </Fragment>
+      ))}
+      {/* Shared tone axis — printed once for every ramp above it, the same
+          1–12 the scale editors number. */}
+      <span aria-hidden />
+      {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+        <span
+          key={`axis-${n}`}
+          className="text-[8px] font-mono tabular-nums leading-none text-center text-fg-faint"
+          style={{ gridColumn: n + 1 }}
+          aria-hidden
+        >
+          {n}
+        </span>
+      ))}
+    </div>
   )
 }

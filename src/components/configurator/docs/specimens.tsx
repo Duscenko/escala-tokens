@@ -38,10 +38,6 @@ function statusColor(t: PreviewTokens, name: string): string {
 const focusRing = (t: PreviewTokens, accent: string): string =>
   `0 0 0 2px ${t.surface}, 0 0 0 4px ${withAlpha(accent, alphaOf(t, '40', 0.4))}`
 
-/** Focus glow around inputs — alpha reads the Opacity foundation's 20 step. */
-const focusGlow = (t: PreviewTokens, accent: string): string =>
-  `0 0 0 3px ${withAlpha(accent, alphaOf(t, '20', 0.15))}`
-
 function baseFont(t: PreviewTokens): CSSProperties {
   return { fontFamily: fontFamilyOf(t), color: t.neutralText }
 }

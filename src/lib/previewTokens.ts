@@ -75,7 +75,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   const brandFallback = pal?.brand?.[9] || primaryColor
   // Dark ink option for readableInk — darkest gray of the active theme's ramp.
   const grayScale = pal?.gray ?? (kind === 'dark' ? grayDarkScale : grayLightScale)
-  const brandSolid = resolveRole('background-brand-solid') || brandFallback || '#7f56d9'
+  const brandSolid = resolveRole('background-brand-solid') || brandFallback || '#9522e9'
   // Resolve the gradient assigned to each preview surface into a CSS string.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
@@ -87,7 +87,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     // (which rendered dark themes white).
     surface: resolveRole('background-primary') || store.pageBackground || '#ffffff',
     brandSolid,
-    brandText: resolveRole('content-brand') || brandFallback || '#7f56d9',
+    brandText: resolveRole('content-brand') || brandFallback || '#9522e9',
     // Label ink on the brand fill — contrast-driven so a bright accent (where
     // white text fails WCAG) gets dark ink, in every theme. content-inverse's
     // tone can invert wrongly in dark, so resolve it live against the fill.
@@ -184,6 +184,36 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
         put('errorColor', 'status.critical-fg')
         put('warningColor', 'status.warning-fg')
         put('successColor', 'status.success-fg')
+      } else if (arch === 'astryx') {
+        put('surface', 'background.body')
+        put('neutralFill', 'background.surface')
+        put('brandSolid', 'accent.solid')
+        put('onBrand', 'accent.on-solid')
+        put('brandText', 'text.accent')
+        put('neutralText', 'text.primary')
+        put('fgMuted', 'text.secondary')
+        put('placeholderText', 'text.disabled')
+        put('disabledBg', 'background.muted')
+        put('disabledText', 'text.disabled')
+        put('border', 'border.default')
+        put('borderDefault', 'border.emphasized')
+        put('errorColor', 'status.error')
+        put('warningColor', 'status.warning')
+        put('successColor', 'status.success')
+      } else if (arch === 'shadcn') {
+        put('surface', 'base.background')
+        put('neutralFill', 'card.fill')
+        put('brandSolid', 'primary.fill')
+        put('onBrand', 'primary.foreground')
+        put('brandText', 'primary.fill')
+        put('neutralText', 'base.foreground')
+        put('fgMuted', 'muted.foreground')
+        put('placeholderText', 'muted.foreground')
+        put('disabledBg', 'muted.fill')
+        put('disabledText', 'muted.foreground')
+        put('border', 'border.default')
+        put('borderDefault', 'border.input')
+        put('errorColor', 'destructive.fill')
       }
     }
   }
@@ -220,8 +250,9 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     tokens.neutralFill = withAlpha(fillBase, 0.12)  // tertiary fill
     tokens.disabledBg = withAlpha(fillBase, 0.08)   // quaternary fill
   }
-  // 'flat' and 'categorical' share the same resolved values — categorical is a
-  // curated regrouping of the identical tone math, so the render matches.
+  // 'flat', 'categorical', 'astryx' and 'shadcn' share the same underlying tone
+  // math — the latter three are curated regroupings/renamings of it, resolved
+  // via the `put()` calls above, so the render always matches the export.
 
   return tokens
 }

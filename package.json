@@ -11,10 +11,6 @@
     "bundle:plugin": "node scripts/bundle-plugin.mjs"
   },
   "dependencies": {
-    "@radix-ui/react-label": "^2.1.8",
-    "@radix-ui/react-select": "^2.2.6",
-    "@radix-ui/react-slot": "^1.2.4",
-    "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.3.0",
     "@vercel/blob": "^2.4.0",
     "chroma-js": "^3.2.0",

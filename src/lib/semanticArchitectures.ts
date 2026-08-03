@@ -17,8 +17,12 @@ import type { GlobalScales } from './semanticRoles'
 import { accessibleSolidTone } from './colorUtils'
 import type { ThemePalette } from '../store/useDesignStore'
 
-export type SemanticArchitecture = 'flat' | 'categorical' | 'vibrancy' | 'tonal'
+export type SemanticArchitecture = 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal'
 
+// 'flat' stays a valid value (the underlying editing model every architecture
+// projects from, see the header comment above) but is no longer offered as a
+// picker card — Astryx replaced it as the visible "one alias per role" choice.
+// Old persisted systems migrate 'flat' → 'astryx' (useDesignStore.ts v43→v44).
 export const ARCHITECTURE_OPTIONS: {
   key: SemanticArchitecture
   label: string
@@ -27,10 +31,16 @@ export const ARCHITECTURE_OPTIONS: {
   tip: string
 }[] = [
   {
-    key: 'flat',
-    label: 'Flat Semantic',
-    desc: 'One alias per role — fastest to consume.',
-    tip: 'One alias per role, resolved in a single hop — token → primitive. Hierarchy lives in the name (surface-, action-, text-). Best for CSS variables, Tailwind utilities and flat Figma collections; zero tooling required to consume.',
+    key: 'astryx',
+    label: 'Astryx',
+    desc: 'Astryx color tokens — accent, background, text, icon, status, border.',
+    tip: 'The Astryx design-token color contract: one alias per role, resolved in a single hop — token → primitive — grouped as Accent · Background · Text · Icon · Status · Border. Best when your codebase already speaks Astryx-style tokens (color-accent, color-text-primary, color-background-surface…) and you want the export to ship the exact same names.',
+  },
+  {
+    key: 'shadcn',
+    label: 'shadcn/ui',
+    desc: 'shadcn/ui color tokens — background, card, primary, sidebar…',
+    tip: "The shadcn/ui CSS variable contract: background/foreground, card, popover, primary, secondary, muted, accent, destructive, border/input/ring and a parallel sidebar set. Best when your codebase already runs shadcn/ui components and you want the export to ship the exact same variable names.",
   },
   {
     key: 'categorical',
@@ -159,6 +169,162 @@ export function projectCategorical(
   for (const t of themeOrder) {
     const kind = input.themeKinds[t] ?? 'light'
     for (const r of categoricalSchemaFor(kind, solid)) {
+      out[r.group] ??= {}
+      out[r.group][r.key] ??= {}
+      out[r.group][r.key][t] = r.ref
+    }
+  }
+  return out
+}
+
+// ── Astryx ───────────────────────────────────────────────────────────────────
+// The Astryx design-token color contract (@astryxdesign/core `defineTheme`):
+// one alias per role, one hop to a primitive — same shape/math as Categorical,
+// just grouped and named the way Astryx themes are (color-accent,
+// color-background-surface, color-text-primary…). Curated, not a projection
+// of the 39 flat roles — deliberately scoped to the roles that map cleanly
+// onto Escala's primitive model (accent/neutral/error/warning/success); the
+// chromatic swatch families (blue/cyan/green/…) and syntax-highlight tokens an
+// Astryx theme file may also carry are out of scope for a semantic
+// architecture — they're app-specific extras, not part of the alias layer.
+const ASTRYX_ROLES: { group: string; key: string; light: string; dark: string }[] = [
+  // Accent — the brand color and how to sit on top of it
+  { group: 'accent', key: 'solid',    light: '{accent.solid}', dark: '{accent.solid}' },
+  { group: 'accent', key: 'on-solid', light: '{neutral.1}',    dark: '{neutral.1}' },
+  { group: 'accent', key: 'muted',    light: '{accent.3}',     dark: '{accent.3}' },
+  // Background — page canvas through elevated surfaces
+  { group: 'background', key: 'body',     light: '{neutral.1}',  dark: '{neutral-dark.1}' },
+  { group: 'background', key: 'surface',  light: '{neutral.2}',  dark: '{neutral-dark.2}' },
+  { group: 'background', key: 'muted',    light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'background', key: 'popover',  light: '{neutral.2}',  dark: '{neutral-dark.2}' },
+  // Deliberately inverted — an inverted surface is dark on a light page and
+  // light on a dark one, by definition (same pattern as Categorical's
+  // `surface.inverse`).
+  { group: 'background', key: 'inverted', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Text — foreground ink
+  { group: 'text', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  { group: 'text', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
+  { group: 'text', key: 'disabled',  light: '{neutral.7}',  dark: '{neutral-dark.7}' },
+  { group: 'text', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
+  // Icon — same hierarchy as Text, one step lighter (icons read lighter than type)
+  { group: 'icon', key: 'primary',   light: '{neutral.11}', dark: '{neutral-dark.11}' },
+  { group: 'icon', key: 'secondary', light: '{neutral.9}',  dark: '{neutral-dark.9}' },
+  { group: 'icon', key: 'disabled',  light: '{neutral.7}',  dark: '{neutral-dark.7}' },
+  { group: 'icon', key: 'accent',    light: '{accent.9}',   dark: '{accent.9}' },
+  // Status — feedback fg/bg/on triads per severity
+  { group: 'status', key: 'success',       light: '{success.9}',  dark: '{success.9}' },
+  { group: 'status', key: 'success-muted', light: '{success.3}',  dark: '{success.3}' },
+  { group: 'status', key: 'on-success',    light: '{neutral.1}',  dark: '{neutral.1}' },
+  { group: 'status', key: 'error',         light: '{error.9}',    dark: '{error.9}' },
+  { group: 'status', key: 'error-muted',   light: '{error.3}',    dark: '{error.3}' },
+  { group: 'status', key: 'on-error',      light: '{neutral.1}',  dark: '{neutral.1}' },
+  { group: 'status', key: 'warning',       light: '{warning.9}',  dark: '{warning.9}' },
+  { group: 'status', key: 'warning-muted', light: '{warning.3}',  dark: '{warning.3}' },
+  // Warning yellow stays light in both appearances, so its "on" ink is dark.
+  { group: 'status', key: 'on-warning',    light: '{neutral.12}', dark: '{neutral.12}' },
+  // Border — strokes
+  { group: 'border', key: 'default',    light: '{neutral.5}', dark: '{neutral-dark.5}' },
+  { group: 'border', key: 'emphasized', light: '{neutral.7}', dark: '{neutral-dark.7}' },
+]
+
+/** Astryx's ref schema for every role, at a given theme kind — same dynamic
+ *  solid-tone anchor as Categorical (`{accent.solid}` → accessibleSolidTone). */
+function astryxSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
+  return ASTRYX_ROLES.map((r) => ({
+    group: r.group,
+    key: r.key,
+    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
+  }))
+}
+
+/** Astryx resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
+export function projectAstryx(
+  input: ProjectionInput,
+  themeOrder: string[] = ['light', 'dark'],
+): Record<string, Record<string, Record<string, string>>> {
+  const solid = accessibleSolidTone(input.scales.brand)
+  const out: Record<string, Record<string, Record<string, string>>> = {}
+  for (const t of themeOrder) {
+    const kind = input.themeKinds[t] ?? 'light'
+    for (const r of astryxSchemaFor(kind, solid)) {
+      out[r.group] ??= {}
+      out[r.group][r.key] ??= {}
+      out[r.group][r.key][t] = r.ref
+    }
+  }
+  return out
+}
+
+// ── shadcn/ui ────────────────────────────────────────────────────────────────
+// The shadcn/ui CSS-variable contract (--background, --card, --primary,
+// --sidebar-*…): same one-hop-per-role shape/math as Astryx and Categorical,
+// named the way a shadcn `:root`/`.dark` block is. Curated to the roles shadcn
+// itself ships as COLOR variables — `--radius` isn't a color and `--chart-1`
+// … `--chart-5` are a data-viz palette with no equivalent primitive in
+// Escala's model (they're independent hues, not tones of any existing ramp),
+// so both are out of scope here, same call as dropping Astryx's chromatic/
+// syntax extras above.
+const SHADCN_ROLES: { group: string; key: string; light: string; dark: string }[] = [
+  // Base — page canvas and default ink
+  { group: 'base', key: 'background', light: '{neutral.1}',  dark: '{neutral-dark.1}' },
+  { group: 'base', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Card — the default raised panel
+  { group: 'card', key: 'fill',       light: '{neutral.2}',  dark: '{neutral-dark.2}' },
+  { group: 'card', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Popover — floating surfaces (menus, dropdowns, tooltips)
+  { group: 'popover', key: 'fill',       light: '{neutral.2}',  dark: '{neutral-dark.2}' },
+  { group: 'popover', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Primary — the brand action color
+  { group: 'primary', key: 'fill',       light: '{accent.solid}', dark: '{accent.solid}' },
+  { group: 'primary', key: 'foreground', light: '{neutral.1}',    dark: '{neutral.1}' },
+  // Secondary — a lower-emphasis fill (secondary buttons, chips)
+  { group: 'secondary', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'secondary', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Muted — subtle backgrounds (disabled states, quiet panels)
+  { group: 'muted', key: 'fill',       light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  { group: 'muted', key: 'foreground', light: '{neutral.9}', dark: '{neutral-dark.9}' },
+  // Accent — shadcn overloads this name for a subtle interactive-hover tint,
+  // NOT the brand color (that's Primary) — kept faithful to the source contract.
+  { group: 'accent', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'accent', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Destructive — the one severity color shadcn's base contract ships (no
+  // paired "-foreground" in the source variables, so none is added here)
+  { group: 'destructive', key: 'fill', light: '{error.9}', dark: '{error.9}' },
+  // Border / Input / Ring — strokes and focus rings
+  { group: 'border', key: 'default', light: '{neutral.5}', dark: '{neutral-dark.5}' },
+  { group: 'border', key: 'input',   light: '{neutral.5}', dark: '{neutral-dark.6}' },
+  { group: 'border', key: 'ring',    light: '{neutral.6}', dark: '{neutral-dark.6}' },
+  // Sidebar — a parallel surface set for nav rails/dashboards
+  { group: 'sidebar', key: 'background',          light: '{neutral.2}',   dark: '{neutral-dark.2}' },
+  { group: 'sidebar', key: 'foreground',          light: '{neutral.12}',  dark: '{neutral-dark.12}' },
+  { group: 'sidebar', key: 'primary',             light: '{accent.solid}', dark: '{accent.solid}' },
+  { group: 'sidebar', key: 'primary-foreground',  light: '{neutral.1}',   dark: '{neutral.1}' },
+  { group: 'sidebar', key: 'accent',              light: '{neutral.3}',   dark: '{neutral-dark.3}' },
+  { group: 'sidebar', key: 'accent-foreground',   light: '{neutral.12}',  dark: '{neutral-dark.12}' },
+  { group: 'sidebar', key: 'border',               light: '{neutral.5}',  dark: '{neutral-dark.5}' },
+  { group: 'sidebar', key: 'ring',                light: '{neutral.6}',   dark: '{neutral-dark.6}' },
+]
+
+/** shadcn's ref schema for every role, at a given theme kind — same dynamic
+ *  solid-tone anchor as Astryx/Categorical (`{accent.solid}` → accessibleSolidTone). */
+function shadcnSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
+  return SHADCN_ROLES.map((r) => ({
+    group: r.group,
+    key: r.key,
+    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
+  }))
+}
+
+/** shadcn resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
+export function projectShadcn(
+  input: ProjectionInput,
+  themeOrder: string[] = ['light', 'dark'],
+): Record<string, Record<string, Record<string, string>>> {
+  const solid = accessibleSolidTone(input.scales.brand)
+  const out: Record<string, Record<string, Record<string, string>>> = {}
+  for (const t of themeOrder) {
+    const kind = input.themeKinds[t] ?? 'light'
+    for (const r of shadcnSchemaFor(kind, solid)) {
       out[r.group] ??= {}
       out[r.group][r.key] ??= {}
       out[r.group][r.key][t] = r.ref
@@ -503,6 +669,68 @@ export function buildArchitectureView(
     return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
   }
 
+  if (kind === 'astryx') {
+    const tokens = projectAstryx(input, themeOrder)
+    // Same per-theme resolution as Categorical — each theme's refs resolve
+    // against ITS OWN palette, not one shared lookup.
+    const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
+      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
+    const META: Record<string, [string, string]> = {
+      accent: ['Accent', 'The brand color and its on-fill ink'],
+      background: ['Background', 'Page canvas through elevated surfaces'],
+      text: ['Text', 'Foreground ink — primary to disabled'],
+      icon: ['Icon', 'Icon ink — mirrors Text one step lighter'],
+      status: ['Status', 'Feedback fg/bg/on triads per severity'],
+      border: ['Border', 'Strokes — default and emphasized'],
+    }
+    const categories = Object.entries(tokens).map(([key, group]) => ({
+      key,
+      label: META[key]?.[0] ?? key,
+      description: META[key]?.[1] ?? '',
+      tokens: Object.entries(group).map(([k, byTheme]) => ({
+        key: k,
+        modes: Object.fromEntries(
+          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
+        ),
+      })),
+    }))
+    const edited = applyOverrides(categories, overrides, lookByTheme)
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
+  }
+
+  if (kind === 'shadcn') {
+    const tokens = projectShadcn(input, themeOrder)
+    // Same per-theme resolution as Categorical/Astryx — each theme's refs
+    // resolve against ITS OWN palette, not one shared lookup.
+    const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
+      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
+    const META: Record<string, [string, string]> = {
+      base: ['Base', 'Page background and default foreground ink'],
+      card: ['Card', 'The default raised panel'],
+      popover: ['Popover', 'Floating surfaces — menus, dropdowns, tooltips'],
+      primary: ['Primary', 'The brand action color and its on-fill ink'],
+      secondary: ['Secondary', 'A lower-emphasis fill — secondary buttons, chips'],
+      muted: ['Muted', 'Subtle backgrounds — disabled states, quiet panels'],
+      accent: ['Accent', 'Subtle interactive-hover tint (not the brand color)'],
+      destructive: ['Destructive', 'The severity color for dangerous actions'],
+      border: ['Border', 'Strokes, inputs and focus rings'],
+      sidebar: ['Sidebar', 'A parallel surface set for nav rails/dashboards'],
+    }
+    const categories = Object.entries(tokens).map(([key, group]) => ({
+      key,
+      label: META[key]?.[0] ?? key,
+      description: META[key]?.[1] ?? '',
+      tokens: Object.entries(group).map(([k, byTheme]) => ({
+        key: k,
+        modes: Object.fromEntries(
+          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
+        ),
+      })),
+    }))
+    const edited = applyOverrides(categories, overrides, lookByTheme)
+    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
+  }
+
   if (kind === 'vibrancy') {
     const v = projectVibrancy(input)
     const look = scaleLookup(input.scales)
@@ -574,6 +802,30 @@ export function projectArchitecture(
       // ADDITIVE by construction: `light`/`dark` keys are always present (any
       // consumer reading `.light`/`.dark` sees identical values to before),
       // extra theme keys only appear when the system actually has them.
+      for (const [id, ov] of Object.entries(overrides)) {
+        const [group, key] = id.split('.')
+        const slot = tokens[group]?.[key]
+        if (!slot) continue
+        for (const [mode, ref] of Object.entries(ov)) {
+          if (ref) slot[mode] = ref
+        }
+      }
+      return { kind, tokens }
+    }
+    case 'astryx': {
+      const tokens = projectAstryx(input, themeOrder)
+      for (const [id, ov] of Object.entries(overrides)) {
+        const [group, key] = id.split('.')
+        const slot = tokens[group]?.[key]
+        if (!slot) continue
+        for (const [mode, ref] of Object.entries(ov)) {
+          if (ref) slot[mode] = ref
+        }
+      }
+      return { kind, tokens }
+    }
+    case 'shadcn': {
+      const tokens = projectShadcn(input, themeOrder)
       for (const [id, ov] of Object.entries(overrides)) {
         const [group, key] = id.split('.')
         const slot = tokens[group]?.[key]

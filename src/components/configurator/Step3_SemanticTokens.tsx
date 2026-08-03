@@ -13,9 +13,9 @@ import {
 import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
 import { resolveThemePalette } from '../../lib/themeSources'
 import AddThemeModal from './AddThemeModal'
-import ArchitecturePicker from './ArchitecturePicker'
+import { ArchitectureSelect, ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
-import { BRAND_GROUPS, findOption, ScaleRow } from './colorControls'
+import { BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
@@ -52,6 +52,18 @@ export function focusForNavKey(key: string): SemanticFocus | null {
     case 'action': return 'action'
     case 'surface': return 'surface'
     case 'status': return 'status'
+    // Astryx.
+    case 'accent': return 'action'
+    case 'icon': return 'content'
+    // shadcn/ui (groups shared with Astryx/Categorical/Tonal above reuse
+    // those cases: accent, secondary, border).
+    case 'base': return 'surface'
+    case 'card': return 'surface'
+    case 'popover': return 'surface'
+    case 'primary': return 'action'
+    case 'muted': return 'surface'
+    case 'destructive': return 'status'
+    case 'sidebar': return 'surface'
     // Vibrancy (Apple HIG grouping).
     case 'labels': return 'content'
     case 'backgrounds': return 'surface'
@@ -71,6 +83,13 @@ export function focusForNavKey(key: string): SemanticFocus | null {
     default: return null
   }
 }
+
+// Architectures whose refs resolve PER-THEME (one column per `themeOrder`
+// entry, same as the flat matrix) — so "+ Theme", real theme-name labels and
+// deletable columns all apply. Vibrancy/Tonal stay excluded: their light/dark
+// are a fixed binary transform of the global primitives with no per-theme
+// concept (see ArchitectureView.modeKeys' doc comment in semanticArchitectures.ts).
+const PER_THEME_ARCHITECTURES = new Set<SemanticArchitecture>(['categorical', 'astryx', 'shadcn'])
 
 // ── Category nav metadata: icon + one-line description (tooltip) ─────────────
 const catIc = (d: string, filled = false): ReactNode => (
@@ -150,11 +169,8 @@ function parseRef(label: string): [string, number] | null {
 }
 
 function ArchModeEditor({
-  mode, kind, label, value, scales, onPick,
+  kind, label, value, scales, onPick,
 }: {
-  /** The theme key this editor writes overrides for — 'light'/'dark' always,
-   *  or a custom theme's key under Categorical. */
-  mode: string
   /** That theme's light/dark polarity — drives the sun/moon glyph. */
   kind: 'light' | 'dark'
   /** Display text — the theme's name (accent-prefixed for a custom theme) or
@@ -166,11 +182,8 @@ function ArchModeEditor({
 }) {
   const parsed = parseRef(value.label)
   const ramps = rampsOf(scales)
-  // Which family this mode reads. Switching family re-points the same slot, so
-  // the family row doubles as the "read from" control the popover used to be.
   const family = parsed?.[0] ?? 'accent'
   const tone = parsed?.[1] ?? null
-  const ramp = ramps[family] ?? scales.brand
 
   return (
     <div className="flex flex-col gap-2">
@@ -178,36 +191,17 @@ function ArchModeEditor({
         <KindIcon kind={kind} />
         {label}
       </span>
-      <div className="flex items-center gap-0.5 flex-wrap">
-        {PICKABLE_FAMILIES.map((fam) => {
-          if (!ramps[fam] || !Object.keys(ramps[fam]!).length) return null
-          const on = fam === family
-          return (
-            <button
-              key={fam}
-              onClick={() => onPick(`{${fam}.${tone ?? 9}}`)}
-              aria-pressed={on}
-              className={`px-1.5 py-0.5 rounded-md text-[9px] font-mono transition-colors ${
-                on ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg-muted'
-              }`}
-            >
-              {fam}
-            </button>
-          )
-        })}
-      </div>
-      {/* Thin + numberless: the shared ScaleRow the tone picker below and
-          Picker Color's ramps use, sized like the Edit-family-color popover's
-          own Palette section (h-4, no per-row numbers — ToneAxisRow prints
-          the shared 1–12 axis once for every mode in the modal, not per mode). */}
-      <ScaleRow
-        scale={ramp ?? {}}
-        baseIndex={0}
-        selectedIndex={tone}
-        onSelect={(n) => onPick(`{${family}.${n}}`)}
-        ariaLabel={`Pick a ${family} tone`}
-        size="thin"
-        showNumbers={false}
+      {/* Every family, every tone, in one grid — picking a cell writes
+          `{family.tone}` directly. This replaced a chip row ("which family?")
+          stacked over a single ScaleRow ("which tone?"): that split one choice
+          into two clicks and hid all the other families behind the active
+          chip, so you couldn't compare candidates while choosing. Same widget
+          the colour picker used to carry as its "Palette" block. */}
+      <SystemRampGrid
+        ramps={PICKABLE_FAMILIES.map((key) => ({ key, scale: ramps[key] }))}
+        selected={tone != null ? { family, tone } : null}
+        onPick={(fam, t) => onPick(`{${fam}.${t}}`)}
+        ariaLabel={`Pick a token for ${label}`}
       />
     </div>
   )
@@ -603,6 +597,16 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
+/** Duplicate glyph — two overlapping squares, matching the header's trash icon weight. */
+function CopyIcon() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1.5" y="1.5" width="7" height="7" rx="1.2" />
+      <path d="M4.5 10.5h5a1 1 0 0 0 1-1v-5" />
+    </svg>
+  )
+}
+
 /** Sun (light) / moon (dark) glyph used by the per-theme editor labels. */
 function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
   return kind === 'light' ? (
@@ -692,7 +696,12 @@ export default function Step3_SemanticTokens({
   onFocusChange,
   previewTheme,
   onPreviewThemeChange,
+  tabBar,
 }: {
+  /** Color's three-tab bar, passed down (not pre-wrapped) so it renders on the
+   *  SAME row as this table's "Tokens" header — exactly how ColorPrimitives
+   *  places it next to "Groups". Both tabs sit in one position across tabs. */
+  tabBar?: ReactNode
   /** Reports which semantic GROUP is selected so the shell can point the
    *  preview at it. Deliberately NOT the same value as the nav's own category
    *  state: this component owns that internally (flat and non-flat keep
@@ -713,7 +722,7 @@ export default function Step3_SemanticTokens({
     setThemeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
     semanticArchitecture, architectureOverrides,
-    setArchitectureOverride, resetArchitectureOverrides,
+    setArchitectureOverride,
   } = store
 
   const reduce = useReducedMotion() ?? false
@@ -871,6 +880,9 @@ export default function Step3_SemanticTokens({
   // Theme modal state. Add-only: a theme is created against the primitives and
   // then reads through them, so there is no edit mode to open.
   const [addThemeOpen, setAddThemeOpen] = useState(false)
+  // Set while the modal is duplicating an existing theme rather than starting
+  // blank — see the header's copy icon, next to the delete icon.
+  const [duplicateFrom, setDuplicateFrom] = useState<string | null>(null)
   // Which architecture cell has its primitive picker open (`tokenId:mode`).
   const [archEditing, setArchEditing] = useState<string | null>(null)
   // Theme key pending a delete confirmation — deleteTheme() used to fire
@@ -1012,7 +1024,6 @@ export default function Step3_SemanticTokens({
         })),
       ]
   const activeKey = isFlat ? (activeCategory as string) : archCategory
-  const activeItem = navItems.find((n) => n.key === activeKey) ?? navItems[0]
 
   function selectNavItem(key: string) {
     if (isFlat) {
@@ -1062,41 +1073,52 @@ export default function Step3_SemanticTokens({
   }
 
   return (
-    <div className="flex flex-col gap-3 flex-1 min-h-0">
-    {/* Architecture picker — which projection the export emits; the matrix
-        below is the editing surface for all of them. */}
-    <ArchitecturePicker />
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduce ? 0 : 0.3, ease: 'easeOut' }}
-      className="flex flex-col bg-app border border-line rounded-xl overflow-hidden flex-1 min-h-0"
-    >
-      {/* Top bar: active category title + count + search — pinned */}
-      <div className="flex items-center justify-between gap-3 h-12 px-4 border-b border-line bg-app flex-shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-sm text-fg truncate">{activeItem.label}</span>
-          <span className="text-[11px] font-mono tabular-nums text-fg-faint">{activeItem.count}</span>
-          {/* + Theme — Flat and Categorical: both resolve an extra theme as a
-              real column (Categorical via `themeCols` passed into
-              buildArchitectureView). Vibrancy/Tonal stay hidden: their
-              light/dark are a fixed binary transform of the global primitives
-              with no per-theme concept — a 3rd column has no defined meaning
-              there today (see ArchitectureView.modeKeys' doc comment). */}
-          {(isFlat || semanticArchitecture === 'categorical') && (
-          <button
-            onClick={() => setAddThemeOpen(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-fg-faint hover:text-fg border border-line hover:border-line-strong transition-colors"
-            title="Add a theme — its roles resolve through the primary colors"
-          >
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
-            Theme
-          </button>
-          )}
+    // Plain div, no enter animation — see the matching note in
+    // ColorPrimitives: the three Color tabs share one chrome, so only the
+    // foundation-level swap should animate. (`reduce` is still used by the
+    // modals below.)
+    <div className="h-full flex flex-col">
+      {/* ── Row 1 — architecture strip. Mirrors ColorPrimitives' quick-edit
+          row exactly: a 198px labelled cell holding the control (there a
+          family hex field, here the architecture dropdown) against a flex-1
+          cell showing what that choice produces (there the ScaleRow, here the live
+          WCAG contrast chips). Same 198px + border-r as the rows below, so
+          the left edge reads as one continuous column across all three. ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token architecture</span>
+          <ArchitectureSelect />
+        </div>
+        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
+        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
+          <ArchContrastStrip kind={semanticArchitecture} />
+        </div>
+      </div>
+
+      {/* ── Row 2 — "Tokens" + the tab bar + search, on ONE line, matching
+          ColorPrimitives' "Groups" row (same h-[52px], same 198px split). ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+        {/* No "+" here, unlike ColorPrimitives' matching "Groups" cell: adding
+            a theme adds a COLUMN, so its trigger lives at the end of the
+            column headers (see the tables' trailing header cell) where the new
+            column actually appears. Primitives' + adds a row-group, which is
+            why it belongs beside the nav label there. */}
+        <div className="w-[198px] flex-shrink-0 flex items-center px-4 h-[52px] border-r border-line">
+          {/* "Groups", not "Tokens" — the same word ColorPrimitives uses for
+              the same nav directly below it. Both list GROUPS (families there,
+              semantic categories here); calling it something else on one tab
+              made the two rails read as unrelated controls. */}
+          <span className="text-[13px] font-semibold text-fg">Groups</span>
+        </div>
+        {/* Mirrors ColorPrimitives' matching row — items-stretch, no left
+            padding (tab tint reaches the edge), pr-3 (12px) on the right so
+            the search field keeps clearance instead of sitting flush. */}
+        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
           {/* Panel background — Radix-style solid/translucent for raised
               surfaces (cards, panels). Only relevant while viewing Background. */}
           {isFlat && activeCategory === 'background' && (
-            <div className="flex items-center gap-2 ml-1">
+            <div className="self-center flex items-center gap-2 flex-shrink-0">
               <span className="text-[11px] text-fg-faint">Panel background</span>
               <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
                 {(['solid', 'translucent'] as const).map((v) => (
@@ -1114,36 +1136,36 @@ export default function Step3_SemanticTokens({
               </div>
             </div>
           )}
-        </div>
-        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search…"
-            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-            aria-label="Filter tokens"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              aria-label="Clear filter"
-              className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs"
-            >
-              ✕
-            </button>
-          )}
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter tokens"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear filter"
+                className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Body: category side-nav + token table */}
-      <div className="flex items-stretch flex-1 min-h-0">
-        {/* Internal category nav — icon-only, tooltip on hover */}
-        <nav aria-label="Token categories" className="w-40 flex-shrink-0 border-r border-line py-2 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
+      {/* ── Row 3 — nav + table, filling the remaining height ── */}
+      <div className="flex-1 min-h-0 flex items-stretch">
+        {/* Category nav — same 198px/border-r/bg-app as ColorPrimitives' family nav */}
+        <nav aria-label="Token categories" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
           {navItems.map((item) => {
             const isActive = activeKey === item.key
             return (
@@ -1187,13 +1209,15 @@ export default function Step3_SemanticTokens({
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
                 {archModeKeys.map((mode) => {
                   const isPreviewed = previewTheme === mode
-                  const label = semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode
-                  // Only Categorical's columns are real theme columns (one per
-                  // `themeOrder` entry, same as the flat matrix) — Vibrancy/Tonal's
-                  // 'light'/'dark' are fixed slots of a global transform with no
-                  // per-theme concept, so there's nothing meaningful to delete
-                  // (matches why "+ Theme" is hidden for those too, above).
-                  const deletable = semanticArchitecture === 'categorical' && themeCols.length > 1
+                  const label = PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode
+                  // Only a PER_THEME_ARCHITECTURES entry's columns are real
+                  // theme columns (one per `themeOrder` entry, same as the
+                  // flat matrix) — Vibrancy/Tonal's 'light'/'dark' are fixed
+                  // slots of a global transform with no per-theme concept, so
+                  // there's nothing meaningful to delete (matches why
+                  // "+ Theme" is hidden for those too, above).
+                  const isThemeCol = PER_THEME_ARCHITECTURES.has(semanticArchitecture)
+                  const deletable = isThemeCol && themeCols.length > 1
                   return (
                     <span key={mode} className="flex items-center border-r border-line min-w-0 px-1.5 py-1.5">
                       {/* Same "whole header is the preview toggle" affordance
@@ -1213,9 +1237,19 @@ export default function Step3_SemanticTokens({
                           isPreviewed ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
                         }`}
                       >
-                        <KindIcon kind={kindOf(mode)} />
+                        <EyeIcon active={isPreviewed} />
                         <span className="truncate">{label}</span>
                       </button>
+                      {isThemeCol && (
+                        <button
+                          onClick={() => setDuplicateFrom(mode)}
+                          aria-label={`Duplicate theme ${label}`}
+                          title={`Duplicate theme ${label}`}
+                          className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
+                        >
+                          <CopyIcon />
+                        </button>
+                      )}
                       {deletable && (
                         <button
                           onClick={() => setThemeToDelete(mode)}
@@ -1229,7 +1263,27 @@ export default function Step3_SemanticTokens({
                     </span>
                   )
                 })}
-                <span className="flex items-center justify-center py-3" aria-hidden><TuneIcon active={false} /></span>
+                {/* Trailing header cell = "add another mode". It sits at the
+                    END of the theme columns because that's where the new
+                    column lands — the affordance points at its own result.
+                    Hidden for Vibrancy/Tonal, whose light/dark are a fixed
+                    binary transform with no per-theme concept (same rule the
+                    per-column delete follows). Falls back to the decorative
+                    tune glyph so the column keeps its width either way. */}
+                <span className="flex items-center justify-center py-1.5">
+                  {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
+                    <button
+                      onClick={() => setAddThemeOpen(true)}
+                      aria-label="Add a theme"
+                      title="Add a theme — its roles resolve through the primary colors"
+                      className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
+                    </button>
+                  ) : (
+                    <TuneIcon active={false} />
+                  )}
+                </span>
               </div>
               {archTokens.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">
@@ -1262,11 +1316,18 @@ export default function Step3_SemanticTokens({
                           )}
                         </button>
                       </div>
-                      {archModeKeys.map((mode, i) => (
+                      {archModeKeys.map((mode) => (
                         <button
                           key={mode}
                           onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
-                          className={`flex items-center min-w-0 px-3 py-3 text-left ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''}`}
+                          // Border-r on EVERY mode column, including the last —
+                          // the header above already puts one after every mode
+                          // (unconditionally, see its `archModeKeys.map`), so
+                          // skipping it here for the final column left rows with
+                          // no divider before the trailing edit-icon cell while
+                          // the header still showed one. Same fix as the
+                          // Primitives table, which never had this gap.
+                          className="flex items-center min-w-0 px-3 py-3 text-left border-r border-line"
                         >
                           <TokenCell
                             v={t.modes[mode]}
@@ -1353,6 +1414,14 @@ export default function Step3_SemanticTokens({
                       <EyeIcon active={isPreviewed} />
                       <span className="truncate">{displayName}</span>
                     </button>
+                    <button
+                      onClick={() => setDuplicateFrom(t)}
+                      aria-label={`Duplicate theme ${displayName}`}
+                      title={`Duplicate theme ${displayName}`}
+                      className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
+                    >
+                      <CopyIcon />
+                    </button>
                     {/* No per-theme colour editing here, by design: a theme is a
                         READING of the primitives, never a place to set colour.
                         Editing a theme's accent in isolation would fork it from
@@ -1383,8 +1452,18 @@ export default function Step3_SemanticTokens({
                   </span>
                 )
               })}
-              <span className="flex items-center justify-center py-3" aria-hidden>
-                <TuneIcon active={false} />
+              {/* Trailing header cell = "add another mode" — see the arch
+                  table's matching cell above. Flat always resolves an extra
+                  theme as a real column, so it's always live here. */}
+              <span className="flex items-center justify-center py-1.5">
+                <button
+                  onClick={() => setAddThemeOpen(true)}
+                  aria-label="Add a theme"
+                  title="Add a theme — its roles resolve through the primary colors"
+                  className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
+                </button>
               </span>
             </div>
 
@@ -1492,16 +1571,19 @@ export default function Step3_SemanticTokens({
                 parseRef(t.modes[mode]?.label ?? '') ? (
                   <ArchModeEditor
                     key={mode}
-                    mode={mode}
                     kind={kindOf(mode)}
-                    label={semanticArchitecture === 'categorical' ? themeDisplayName(mode) : mode}
+                    label={PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode}
                     value={t.modes[mode]}
                     scales={scales}
                     onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
                   />
                 ) : null
               ))}
-              <ToneAxisRow />
+              {/* No trailing ToneAxisRow here: SystemRampGrid prints its own
+                  1–12 axis under each mode's ramps, and a bare grid-cols-12
+                  row would sit misaligned anyway — it lacks the grid's
+                  leading family-label column. The flat modal above still
+                  uses it, since TonePicker has no axis of its own. */}
             </TokenDetailsModal>
           )
         })()}
@@ -1518,13 +1600,13 @@ export default function Step3_SemanticTokens({
       </AnimatePresence>
 
       <AddThemeModal
-        open={addThemeOpen}
-        onClose={() => setAddThemeOpen(false)}
+        open={addThemeOpen || !!duplicateFrom}
+        seedFrom={duplicateFrom}
+        onClose={() => { setAddThemeOpen(false); setDuplicateFrom(null) }}
         onRenamed={(oldKey, newKey) => {
           if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
         }}
       />
-    </motion.div>
     </div>
   )
 }

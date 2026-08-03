@@ -2,11 +2,21 @@
 // assign them to preview surfaces (card covers, avatars), and ship them in the
 // export. Store-driven: every edit writes straight to `gradients` /
 // `gradientAssignments`, so the live previews + tokens.json track instantly.
+//
+// Layout mirrors ColorPrimitives / Step3_SemanticTokens exactly — the three
+// tabs of the Color hub must not reshuffle the page when you switch between
+// them. Row 1 = a 198px labelled control cell + a wide "what it produces"
+// cell; row 2 = the nav's header sharing a line with the tab bar + search;
+// row 3 = the 198px nav against a flush, full-bleed table. The per-tab
+// mapping of row 1 is: Primitives → family hex + its ramp · Semantics →
+// architecture + its contrast chips · Gradients → gradient type + the live bar.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { gradientToCss, gradientSlug, makeGradient, derivedStopsFor, type GradientDef, type GradientType } from '../../lib/gradients'
+import { usePopoverPlacement } from './colorControls'
 import ColorField from '../ui/ColorField'
+import { SlidersIcon } from '../ui/icons'
 
 const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
   { key: 'linear', label: 'Linear' },
@@ -43,14 +53,90 @@ function AssignSelect({ label, value, onChange, gradients }: {
   )
 }
 
-export default function StepGradients() {
+/** Type dropdown — shaped like Primitives' hex field / Semantics' architecture
+ *  select so the 198px cell holds the same control silhouette on every tab. */
+function TypeSelect({ value, onChange, swatch }: {
+  value: GradientType
+  onChange: (t: GradientType) => void
+  swatch: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Gradient type"
+        className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-2 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+      >
+        <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ background: swatch }} aria-hidden />
+        <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-fg capitalize">{value}</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div role="listbox" className="absolute left-0 top-full mt-2 z-30 w-full rounded-xl border border-line bg-app shadow-xl p-1 flex flex-col">
+          {TYPE_OPTIONS.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              role="option"
+              aria-selected={o.key === value}
+              onClick={() => { onChange(o.key); setOpen(false) }}
+              className={`px-2.5 py-1.5 rounded-lg text-left text-[13px] transition-colors ${
+                o.key === value ? 'bg-elevated text-fg font-semibold' : 'text-fg-muted hover:text-fg hover:bg-elevated/60'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
   const {
     gradients, gradientAssignments, primaryColor,
     addGradient, updateGradient, removeGradient, setGradientAssignment,
   } = useDesignStore()
 
   const [selectedId, setSelectedId] = useState<string | null>(gradients[0]?.id ?? null)
+  const [query, setQuery] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsRef = useRef<HTMLDivElement>(null)
+  const settingsPlace = usePopoverPlacement(settingsRef, settingsOpen, { prefer: 360, max: 520 })
   const selected = gradients.find((g) => g.id === selectedId) ?? gradients[0] ?? null
+
+  useEffect(() => {
+    if (!settingsOpen) return
+    function onDown(e: MouseEvent) { if (!settingsRef.current?.contains(e.target as Node)) setSettingsOpen(false) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setSettingsOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [settingsOpen])
 
   function create() {
     const g = makeGradient()
@@ -79,133 +165,202 @@ export default function StepGradients() {
     patch({ stops: selected.stops.filter((_, idx) => idx !== i) })
   }
 
-  return (
-    <div className="flex flex-col gap-8 max-w-4xl">
-      {/* Assignments — which gradient drives each preview surface */}
-      <section className="flex flex-col gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-sm font-semibold text-fg">Assignments</h3>
-          <p className="text-xs text-fg-faint">Pick which gradient renders on each surface in the live previews.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <AssignSelect label="Card cover" value={gradientAssignments.cover} gradients={gradients} onChange={(id) => setGradientAssignment('cover', id)} />
-          <AssignSelect label="Avatars" value={gradientAssignments.avatar} gradients={gradients} onChange={(id) => setGradientAssignment('avatar', id)} />
-        </div>
-      </section>
+  const q = query.trim().toLowerCase()
+  const visible = q ? gradients.filter((g) => g.name.toLowerCase().includes(q)) : gradients
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Gradient library */}
-        <div className="lg:w-64 flex-shrink-0 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-fg">Gradients</h3>
-            <button
-              type="button"
-              onClick={create}
-              className="flex items-center gap-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-              New
-            </button>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {gradients.map((g) => {
-              const active = g.id === selectedId
-              const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id
-              return (
+  const linkable = selected ? derivedStopsFor(selected.id, primaryColor) !== null : false
+  const locked = !!selected && linkable && selected.linked === true
+
+  // Three tracks, matching the reference: position · color · row actions.
+  const gridStyle: React.CSSProperties = {
+    gridTemplateColumns: 'minmax(9rem,1fr) minmax(12rem,1.6fr) minmax(10rem,1fr)',
+  }
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* ── Row 1 — gradient type + the live bar it produces ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
+          {selected ? (
+            <TypeSelect
+              value={selected.type}
+              onChange={(t) => patch({ type: t })}
+              swatch={gradientToCss(selected)}
+            />
+          ) : (
+            <span className="text-[13px] text-fg-faint">—</span>
+          )}
+        </div>
+        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
+        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
+          {selected ? (
+            <>
+              {/* The bar IS the preview — same role the ramp plays on
+                  Primitives: row 1's right cell always shows the thing the
+                  left cell's control defines. */}
+              <div
+                className="flex-1 min-w-0 h-11 rounded-[10px] ring-1 ring-line"
+                style={{ background: gradientToCss(selected) }}
+                title={`--gradient-${gradientSlug(selected)}`}
+              />
+              {selected.type === 'linear' && (
+                <label className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[11px] text-fg-faint">Angle</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    value={selected.angle}
+                    onChange={(e) => patch({ angle: Number(e.target.value) })}
+                    className="w-28 accent-fg"
+                    aria-label="Gradient angle"
+                  />
+                  <span className="text-[12px] font-mono tabular-nums text-fg w-9 text-right">{selected.angle}°</span>
+                </label>
+              )}
+              {/* Gear — the name, CSS var and surface assignments. Mirrors
+                  Primitives' scale-settings gear in the same spot: the
+                  "everything else about this thing" affordance. */}
+              <div ref={settingsRef} className="relative flex-shrink-0">
                 <button
-                  key={g.id}
                   type="button"
-                  onClick={() => setSelectedId(g.id)}
-                  className={`group flex items-center gap-2.5 px-2 py-2 rounded-xl border text-left transition-colors ${
-                    active ? 'border-line-strong bg-elevated' : 'border-line hover:bg-surface'
+                  onClick={() => setSettingsOpen((o) => !o)}
+                  aria-haspopup="dialog"
+                  aria-expanded={settingsOpen}
+                  aria-label="Gradient settings — name and surface assignments"
+                  title="Gradient settings"
+                  className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                    settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
                   }`}
                 >
-                  <span className="w-9 h-9 rounded-lg flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g) }} />
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] text-fg truncate">{g.name}</span>
-                    <span className="block text-[10px] text-fg-faint truncate capitalize">{g.type} · {g.stops.length} stops{assigned ? ' · in use' : ''}</span>
-                  </span>
-                  {gradients.length > 1 && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); if (selectedId === g.id) setSelectedId(gradients.find((x) => x.id !== g.id)?.id ?? null); removeGradient(g.id) }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); removeGradient(g.id) } }}
-                      aria-label={`Delete ${g.name}`}
-                      className="w-6 h-6 flex items-center justify-center rounded-lg text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
-                    </span>
-                  )}
+                  <SlidersIcon />
                 </button>
-              )
-            })}
+                {settingsOpen && (
+                  <div
+                    role="dialog"
+                    aria-label="Gradient settings"
+                    style={{ maxHeight: settingsPlace.max }}
+                    className={`absolute right-0 z-30 w-80 rounded-2xl border border-line bg-app shadow-xl overflow-y-auto p-4 flex flex-col gap-4 ${
+                      settingsPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
+                    }`}
+                  >
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-fg-muted">Name</span>
+                      <input
+                        value={selected.name}
+                        onChange={(e) => patch({ name: e.target.value })}
+                        className="px-3 py-2 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong"
+                      />
+                      <span className="text-[10px] font-mono text-fg-faint">--gradient-{gradientSlug(selected)}</span>
+                    </label>
+                    <div className="flex flex-col gap-2 border-t border-line pt-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-semibold text-fg">Assignments</span>
+                        <span className="text-[11px] text-fg-faint">Which gradient renders on each surface in the live previews.</span>
+                      </div>
+                      <AssignSelect label="Card cover" value={gradientAssignments.cover} gradients={gradients} onChange={(id) => setGradientAssignment('cover', id)} />
+                      <AssignSelect label="Avatars" value={gradientAssignments.avatar} gradients={gradients} onChange={(id) => setGradientAssignment('avatar', id)} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <span className="text-sm text-fg-faint">No gradients yet — create one to get started.</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Row 2 — "Collections" + the tab bar + search, on one line ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+        <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
+          <span className="text-[13px] font-semibold text-fg">Collections</span>
+          <button
+            type="button"
+            onClick={create}
+            aria-label="New gradient"
+            title="Create a new gradient"
+            className="flex items-center justify-center w-6 h-6 rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
+          </button>
+        </div>
+        {/* Mirrors ColorPrimitives' matching row — pr-3 (12px) clearance. */}
+        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter gradients"
+            />
+            {query && (
+              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Editor */}
-        {selected ? (
-          <div className="flex-1 min-w-0 flex flex-col gap-4">
-            {/* Big live preview */}
-            <div className="h-44 rounded-2xl ring-1 ring-line overflow-hidden" style={{ background: gradientToCss(selected) }} />
-
-            {/* Name + type */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <label className="flex-1 flex flex-col gap-1">
-                <span className="text-xs text-fg-muted">Name</span>
-                <input
-                  value={selected.name}
-                  onChange={(e) => patch({ name: e.target.value })}
-                  className="px-3 py-2 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong"
-                />
-                <span className="text-[10px] font-mono text-fg-faint">--gradient-{gradientSlug(selected)}</span>
-              </label>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-fg-muted">Type</span>
-                <div className="flex gap-0.5 rounded-lg border border-line bg-surface p-0.5">
-                  {TYPE_OPTIONS.map((o) => (
-                    <button
-                      key={o.key}
-                      type="button"
-                      onClick={() => patch({ type: o.key })}
-                      aria-pressed={o.key === selected.type}
-                      className={`px-3 py-1.5 rounded-md text-[12px] transition-colors ${
-                        o.key === selected.type ? 'bg-elevated text-fg font-semibold shadow-sm' : 'text-fg-muted hover:text-fg'
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
+      {/* ── Row 3 — gradient nav + the stops table ── */}
+      <div className="flex-1 min-h-0 flex items-stretch">
+        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
+          {visible.map((g) => {
+            const active = g.id === selectedId
+            const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id
+            return (
+              <div key={g.id} className="group relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(g.id)}
+                  aria-current={active}
+                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g) }} aria-hidden />
+                  <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{g.name}</span>
+                  {assigned && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" title="In use" aria-hidden />}
+                </button>
+                {gradients.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => { if (selectedId === g.id) setSelectedId(gradients.find((x) => x.id !== g.id)?.id ?? null); removeGradient(g.id) }}
+                    aria-label={`Delete ${g.name}`}
+                    title={`Delete ${g.name}`}
+                    className="absolute right-1.5 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-elevated"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                )}
               </div>
-            </div>
+            )
+          })}
+          {visible.length === 0 && (
+            <p className="px-2.5 py-3 text-[12px] text-fg-faint">No gradients match “{query}”.</p>
+          )}
+        </nav>
 
-            {/* Angle (linear only) */}
-            {selected.type === 'linear' && (
-              <label className="flex items-center gap-3">
-                <span className="text-xs text-fg-muted w-12 flex-shrink-0">Angle</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={360}
-                  value={selected.angle}
-                  onChange={(e) => patch({ angle: Number(e.target.value) })}
-                  className="flex-1 accent-fg"
-                  aria-label="Gradient angle"
-                />
-                <span className="text-[12px] font-mono tabular-nums text-fg w-12 text-right">{selected.angle}°</span>
-              </label>
-            )}
-
-            {/* Stops */}
-            {(() => {
-              const linkable = derivedStopsFor(selected.id, primaryColor) !== null
-              const locked = linkable && selected.linked === true
-              return (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-fg-muted">Stops</span>
+        <div className="flex-1 min-w-0 overflow-auto">
+          {selected ? (
+            <div className="min-w-[28rem]">
+              <div
+                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
+                style={gridStyle}
+              >
+                <span className="pl-4 py-3 border-r border-line">Transparency</span>
+                <span className="flex items-center gap-2 border-r border-line px-4 py-3">
+                  Stops
+                  {/* Link-to-accent lives in the STOPS header because it's a
+                      statement about where every stop's COLOR comes from, not
+                      about one row. Only the two built-ins can derive. */}
                   {linkable && (
                     <button
                       type="button"
@@ -217,7 +372,7 @@ export default function StepGradients() {
                       title={locked
                         ? 'Colors follow the accent. Unlock to edit the stops by hand.'
                         : 'Relink to the accent — replaces the stops with accent-derived colors.'}
-                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium normal-case tracking-normal transition-colors ${
                         locked ? 'bg-elevated text-fg ring-1 ring-line' : 'text-fg-faint hover:text-fg'
                       }`}
                     >
@@ -229,28 +384,39 @@ export default function StepGradients() {
                       {locked ? 'Linked to accent' : 'Link to accent'}
                     </button>
                   )}
-                </div>
-                <button
-                  type="button"
-                  onClick={addStop}
-                  disabled={locked}
-                  className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors disabled:opacity-30 disabled:hover:text-fg-muted"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-                  Add stop
-                </button>
+                </span>
+                <span className="flex items-center justify-between gap-2 px-4 py-1.5">
+                  Add gradient stop
+                  <button
+                    type="button"
+                    onClick={addStop}
+                    disabled={locked}
+                    aria-label="Add gradient stop"
+                    title={locked ? 'Unlock the stops first' : 'Add a gradient stop'}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint disabled:hover:border-line"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
+                  </button>
+                </span>
               </div>
+
               {locked && (
-                <p className="text-[11px] text-fg-faint">
+                <p className="px-4 py-2 text-[11px] text-fg-faint border-b border-line/40">
                   These stops are derived from your accent color, so the gradient stays on-brand when the accent changes. Unlock to pick custom colors.
                 </p>
               )}
-              <div className="flex flex-col gap-2">
-                {selected.stops.map((s, i) => (
-                  <div key={i} className={`flex items-center gap-2.5 ${locked ? 'opacity-60 pointer-events-none' : ''}`} aria-disabled={locked || undefined}>
-                    <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={26} />
-                    <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
-                    <div className="flex items-center w-16 px-2 py-1.5 rounded-lg border border-line bg-surface">
+
+              {selected.stops.map((s, i) => (
+                <div
+                  key={i}
+                  className={`grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+                    i % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+                  } ${locked ? 'opacity-60' : ''}`}
+                  style={gridStyle}
+                  aria-disabled={locked || undefined}
+                >
+                  <div className="pl-4 pr-3 py-2.5 border-r border-line">
+                    <div className="flex items-center w-24 px-2 py-1.5 rounded-lg border border-line bg-surface">
                       <input
                         type="number"
                         min={0}
@@ -259,31 +425,40 @@ export default function StepGradients() {
                         disabled={locked}
                         onChange={(e) => updateStop(i, 'pos', Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                         aria-label={`Stop ${i + 1} position`}
-                        className="w-full bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <span className="text-[10px] text-fg-faint">%</span>
                     </div>
+                  </div>
+
+                  <div className={`flex items-center gap-2.5 px-4 py-2.5 border-r border-line min-w-0 ${locked ? 'pointer-events-none' : ''}`}>
+                    <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={22} />
+                    <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
+                  </div>
+
+                  <div className="flex items-center px-4 py-2.5">
                     <button
                       type="button"
                       onClick={() => removeStop(i)}
                       disabled={locked || selected.stops.length <= 2}
                       aria-label={`Remove stop ${i + 1}`}
+                      title={selected.stops.length <= 2 ? 'A gradient needs at least two stops' : `Remove stop ${i + 1}`}
                       className="w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
+                      </svg>
                     </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-              )
-            })()}
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-sm text-fg-faint">
-            No gradients yet — create one to get started.
-          </div>
-        )}
+          ) : (
+            <div className="px-4 py-12 text-center text-sm text-fg-faint">
+              No gradients yet — create one to get started.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

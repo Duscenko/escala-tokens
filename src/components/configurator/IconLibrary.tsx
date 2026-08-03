@@ -301,6 +301,10 @@ export default function IconLibrary() {
       </p>
 
       <div className="border-t border-line pt-6">
+        <IconBrowser libraryKey={iconLibrary} />
+      </div>
+
+      <div className="border-t border-line pt-6">
         <CustomIcons />
       </div>
     </motion.div>

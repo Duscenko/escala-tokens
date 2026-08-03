@@ -5,6 +5,7 @@ import { useTheme, getTheme, setTheme } from '../lib/theme'
 import { readableAccent } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import SectionRail, { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
+import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
@@ -20,7 +21,6 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
-import { type PickerFocusTarget } from '../components/configurator/PickerColor'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
@@ -230,7 +230,7 @@ function CatalogueCheck() {
 type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
-function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot }: { Icon: ComponentType; title: string; subtitle: string; onExport?: () => void; accentColor?: string; rightSlot?: ReactNode }) {
+function CenterHeader({ Icon, title, subtitle, accentColor }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string }) {
   return (
     <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line/60 flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
@@ -239,19 +239,6 @@ function CenterHeader({ Icon, title, subtitle, onExport, accentColor, rightSlot 
       <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
       <p className="text-sm text-fg-faint truncate">{subtitle}</p>
-      {(rightSlot || onExport) && (
-        <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-          {rightSlot}
-          {onExport && (
-            <HeaderPill
-              Icon={ExportIcon}
-              label="Export"
-              onClick={onExport}
-              title="Copy this section as CSS · Tailwind · Tokens · MD"
-            />
-          )}
-        </div>
-      )}
     </div>
   )
 }
@@ -274,18 +261,10 @@ export default function Configurator() {
   // report-only. (They were one shared value before, which is what kept the
   // non-flat architectures' preview stuck on the generic overview.)
   const [semanticFocus, setSemanticFocus] = useState<SemanticFocus | 'all'>('all')
-  // Sub-tab within the Color hub (Picker ↔ Primary ↔ Alias/Semantics ↔
-  // Gradients). The preview mirrors the semantic category only while the
-  // semantics tab is active.
+  // Sub-tab within the Color hub (Primitives ↔ Semantics ↔ Gradients). The
+  // preview mirrors the semantic category only while the semantics tab is
+  // active.
   const [colorTab, setColorTab] = useState<ColorTab>('primary')
-  // Primary Color's "Edit in Picker Color" link — switches to Picker Color
-  // AND tells it which section (accent/neutral/error/warning/success/info) to
-  // scroll to and pulse.
-  const [pickerFocusTarget, setPickerFocusTarget] = useState<PickerFocusTarget>(null)
-  const onEditInPicker = (target: Exclude<PickerFocusTarget, null>) => {
-    setColorTab('picker')
-    setPickerFocusTarget(target)
-  }
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
@@ -401,7 +380,6 @@ export default function Configurator() {
   let header: { Icon: ComponentType; title: string; subtitle: string }
   let body: ReactNode
   let centerKey: string
-  let centerRightSlot: ReactNode = null
 
   if (exportMode === 'github') {
     header = { Icon: GitHubIcon, title: 'GitHub', subtitle: 'Version your design system in a repository.' }
@@ -445,13 +423,9 @@ export default function Configurator() {
     centerKey = 'export-save'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
-    centerRightSlot = (
-      <HomeActions
-        onNew={(key) => setNewTokenCategory(key as TokenCategory)}
-        onImport={() => setImportOpen(true)}
-        tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
-      />
-    )
+    // HomeActions (New/Import JSON/Kits) and the Export pill now live in the
+    // FoundationIconRail row above CenterHeader, not in centerRightSlot — see
+    // the icon-toolbar row in the render below.
     const Active = section.Component
     body = section.key === 'color' ? (
       // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
@@ -464,9 +438,6 @@ export default function Configurator() {
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
           focusFamilyKey={focusColorFamily}
-          pickerFocusTarget={pickerFocusTarget}
-          onPickerFocusHandled={() => setPickerFocusTarget(null)}
-          onEditInPicker={onEditInPicker}
         />
       </div>
     ) : section.key === 'typography' ? (
@@ -574,11 +545,22 @@ export default function Configurator() {
   // export/connect view (Code · Docs · Figma · GitHub) — those own the full
   // panel. Save keeps the aside: it hosts the Overview + Connections panel.
   const showPreview = (tab !== 'components' && tab !== 'docs' && !exportMode) || exportMode === 'save'
-  const railActive = !exportMode && tab === 'foundations' ? activeFoundation : null
 
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
   const railVisible = projectCreated && !exportMode
+  // The OUTER vertical SectionRail only persists for Components/Documentation
+  // now — Variables switches foundations via the horizontal FoundationIconRail
+  // docked in the header instead, so there's no left column to reserve width
+  // for there. TopNav's brand-block divider follows this, not `railVisible`.
+  const outerRailVisible = railVisible && tab !== 'foundations'
+  // Color is the one foundation with its own internal 198px column (family
+  // nav / token categories / gradient list — see ColorPrimitives, Step3,
+  // StepGradients). It's not an outer rail, so `outerRailVisible` above stays
+  // false for it — but the brand block's divider still needs to continue
+  // unbroken into that column, or the vertical line just stops at the header
+  // and restarts one row down, reading as two unrelated rules instead of one.
+  const colorColumnVisible = tab === 'foundations' && !exportMode && activeFoundation === 'color'
 
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
@@ -606,8 +588,8 @@ export default function Configurator() {
         onGithub={() => openExport('github')}
         onGetFigma={() => openExport('figma')}
         onMenu={() => openAbout('platform')}
-        brandWidth={railVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
-        railCollapsed={railVisible && railCollapsed}
+        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : colorColumnVisible ? 198 : null}
+        railCollapsed={outerRailVisible && railCollapsed}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
       />
@@ -616,24 +598,12 @@ export default function Configurator() {
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
       {/* ── Body: section sub-rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
-        {/* The second column is section-specific: the foundation rail on
-            Foundations, the category rail on Components. Documentation carries
-            its own catalogue sidebar (DocsView), so no rail there. */}
-        {railVisible && tab === 'foundations' && (
-          <SectionRail
-            ariaLabel="Foundations"
-            title="Variables"
-            active={railActive}
-            onSelect={selectFoundation}
-            collapsed={railCollapsed}
-            onToggleCollapse={() => setRailCollapsed((v) => !v)}
-            // Figma-style split: token tables are Variables; the rest are Styles.
-            groups={[
-              { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-              { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-            ]}
-          />
-        )}
+        {/* The second column is section-specific: Components get the category
+            rail. Documentation carries its own catalogue sidebar (DocsView).
+            Foundations no longer reserves an outer column at all — switching
+            lives in the horizontal FoundationIconRail docked in the header,
+            freeing this width for a foundation's own sub-nav (Color's family
+            Groups tree, promoted inside ColorPrimitives). */}
         {railVisible && (tab === 'components' || tab === 'docs') && (
           <SectionRail
             ariaLabel="Component categories"
@@ -657,14 +627,51 @@ export default function Configurator() {
         <div className="flex-1 min-w-0 flex overflow-hidden bg-app border-l border-line">
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
-            <CenterHeader
-              Icon={header.Icon}
-              title={header.title}
-              subtitle={header.subtitle}
-              onExport={canExportSection ? () => setSectionExportOpen(true) : undefined}
-              accentColor={theme === 'dark' ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a') : primaryScale[9] ?? primaryColor}
-              rightSlot={centerRightSlot}
-            />
+            {/* Foundation switcher — horizontal icon toolbar + collection
+                actions, replacing the outer SectionRail for Variables. Shown
+                for every foundation (it's the persistent switcher); the text
+                header below it is skipped for Color specifically, since its
+                job — naming what you're editing — is taken over by the
+                promoted per-family quick-edit strip inside ColorPrimitives. */}
+            {tab === 'foundations' && !exportMode && (
+              // Left inset is pl-4, not the pr side's px-6/lg:px-8: it has to
+              // match the 16px `px-4` every 198px column below uses for its
+              // own label (Accent color / Groups / Tokens), so the icon rail's
+              // first icon lines up with them instead of sitting ~18px deeper.
+              <div className="flex items-center gap-4 pl-4 pr-6 lg:pr-8 h-[52px] border-b border-line/60 flex-shrink-0">
+                <FoundationIconRail
+                  active={activeFoundation}
+                  onSelect={selectFoundation}
+                  groups={[
+                    { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+                    { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+                  ]}
+                />
+                <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+                  <HomeActions
+                    onNew={(key) => setNewTokenCategory(key as TokenCategory)}
+                    onImport={() => setImportOpen(true)}
+                    tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
+                  />
+                  {canExportSection && (
+                    <HeaderPill
+                      Icon={ExportIcon}
+                      label="Export"
+                      onClick={() => setSectionExportOpen(true)}
+                      title="Copy this section as CSS · Tailwind · Tokens · MD"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+            {!(tab === 'foundations' && activeFoundation === 'color' && !exportMode) && (
+              <CenterHeader
+                Icon={header.Icon}
+                title={header.title}
+                subtitle={header.subtitle}
+                accentColor={theme === 'dark' ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a') : primaryScale[9] ?? primaryColor}
+              />
+            )}
             <div className="flex-1 min-h-0">
               {/* No `exit` animation and no AnimatePresence: the header (above)
                   and this body both derive from `activeFoundation` in the same
@@ -710,10 +717,6 @@ export default function Configurator() {
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
-                  onNavigateFoundation={(key) => {
-                    if (key === 'components') { setTab('components') }
-                    else { setTab('foundations'); setActiveFoundation(key) }
-                  }}
                   onCollapse={() => setPreviewCollapsed(true)}
                 />
               )}
