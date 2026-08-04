@@ -393,16 +393,6 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-/** Duplicate glyph — two overlapping squares, matching the header's trash icon weight. */
-function CopyIcon() {
-  return (
-    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1.5" y="1.5" width="7" height="7" rx="1.2" />
-      <path d="M4.5 10.5h5a1 1 0 0 0 1-1v-5" />
-    </svg>
-  )
-}
-
 /** Sun (light) / moon (dark) glyph used by the per-theme editor labels. */
 function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
   return kind === 'light' ? (
@@ -678,9 +668,6 @@ export default function Step3_SemanticTokens({
   // Theme modal state. Add-only: a theme is created against the primitives and
   // then reads through them, so there is no edit mode to open.
   const [addThemeOpen, setAddThemeOpen] = useState(false)
-  // Set while the modal is duplicating an existing theme rather than starting
-  // blank — see the header's copy icon, next to the delete icon.
-  const [duplicateFrom, setDuplicateFrom] = useState<string | null>(null)
   // Which architecture cell has its primitive picker open (`tokenId:mode`).
   const [archEditing, setArchEditing] = useState<string | null>(null)
   // Theme key pending a delete confirmation — deleteTheme() used to fire
@@ -1041,16 +1028,6 @@ export default function Step3_SemanticTokens({
                         <EyeIcon active={isPreviewed} />
                         <span className="truncate">{label}</span>
                       </button>
-                      {isThemeCol && (
-                        <button
-                          onClick={() => setDuplicateFrom(mode)}
-                          aria-label={`Duplicate theme ${label}`}
-                          title={`Duplicate theme ${label}`}
-                          className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
-                        >
-                          <CopyIcon />
-                        </button>
-                      )}
                       {deletable && (
                         <button
                           onClick={() => setThemeToDelete(mode)}
@@ -1214,14 +1191,6 @@ export default function Step3_SemanticTokens({
                     >
                       <EyeIcon active={isPreviewed} />
                       <span className="truncate">{displayName}</span>
-                    </button>
-                    <button
-                      onClick={() => setDuplicateFrom(t)}
-                      aria-label={`Duplicate theme ${displayName}`}
-                      title={`Duplicate theme ${displayName}`}
-                      className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
-                    >
-                      <CopyIcon />
                     </button>
                     {/* No per-theme colour editing here, by design: a theme is a
                         READING of the primitives, never a place to set colour.
@@ -1412,9 +1381,8 @@ export default function Step3_SemanticTokens({
       </AnimatePresence>
 
       <AddThemeModal
-        open={addThemeOpen || !!duplicateFrom}
-        seedFrom={duplicateFrom}
-        onClose={() => { setAddThemeOpen(false); setDuplicateFrom(null) }}
+        open={addThemeOpen}
+        onClose={() => setAddThemeOpen(false)}
         onRenamed={(oldKey, newKey) => {
           if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
         }}
