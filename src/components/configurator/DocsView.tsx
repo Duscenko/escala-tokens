@@ -12,6 +12,14 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, type AxisValues } from './docs/specimens'
 import { FigmaShipList } from './ComponentDocPane'
+import DesignRules from './DesignRules'
+
+/** Rail key for the Design Rules sheet. Deliberately NOT a member of
+ *  `CATEGORIES`: that array is the component catalogue, shared with the
+ *  Components tab, and Design Rules documents the TOKENS, not a component
+ *  group. Keeping it out means the Components tab's filter can never be
+ *  handed a category with no components in it. */
+export const DESIGN_RULES_KEY = '__design-rules'
 
 // Categories whose components respond to pointer/keyboard — they get the
 // standard keyboard-interaction table in Accessibility.
@@ -445,6 +453,19 @@ function DocArticle({
 // ── Shell: catalogue sidebar · article · TOC ──────────────────────────────────
 
 export default function DocsView({ previewTheme = 'light', category }: { previewTheme?: string; category?: string }) {
+  // The token reference takes the whole pane: it has no per-component
+  // catalogue to filter and no per-article TOC to anchor.
+  if (category === DESIGN_RULES_KEY) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <DesignRules />
+      </div>
+    )
+  }
+  return <ComponentDocs previewTheme={previewTheme} category={category} />
+}
+
+function ComponentDocs({ previewTheme = 'light', category }: { previewTheme?: string; category?: string }) {
   const tokens = usePreviewTokens(previewTheme)
   const [activeKey, setActiveKey] = useState('Button')
   const [search, setSearch] = useState('')

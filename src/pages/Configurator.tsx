@@ -18,7 +18,7 @@ import ExportView from '../components/configurator/ExportView'
 import FigmaConnectView from '../components/configurator/FigmaConnectView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
-import DocsView from '../components/configurator/DocsView'
+import DocsView, { DESIGN_RULES_KEY } from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -199,6 +199,8 @@ const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
 }
 
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
+// Design Rules — a ruled page, distinct from DocIcon's plain sheet.
+const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
 const SaveIcon: ComponentType = () => (
@@ -337,6 +339,11 @@ export default function Configurator() {
   const [componentSearch, setComponentSearch] = useState('')
   // Active component category (Components section sub-nav) — filters the list.
   const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
+  // Documentation's rail carries one extra entry — the token reference — which
+  // is NOT a component category. Held separately so selecting it can't leave
+  // `componentCategory` pointing at something the Components tab can't filter
+  // by; switching back to a real category just clears it.
+  const [docsDesignRules, setDocsDesignRules] = useState(false)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Every foundation section can export its token slice.
@@ -497,7 +504,7 @@ export default function Configurator() {
       title: 'Documentation',
       subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
     }
-    body = <DocsView previewTheme={previewTheme} category={componentCategory} />
+    body = <DocsView previewTheme={previewTheme} category={docsDesignRules ? DESIGN_RULES_KEY : componentCategory} />
     centerKey = 'docs'
   } else {
     header = {
@@ -647,14 +654,26 @@ export default function Configurator() {
           <SectionRail
             ariaLabel="Component categories"
             title={tab === 'docs' ? 'Documentation' : 'Components'}
-            active={componentCategory}
-            onSelect={setComponentCategory}
+            active={tab === 'docs' && docsDesignRules ? DESIGN_RULES_KEY : componentCategory}
+            onSelect={(key) => {
+              if (key === DESIGN_RULES_KEY) { setDocsDesignRules(true); return }
+              setDocsDesignRules(false)
+              setComponentCategory(key)
+            }}
             collapsed={railCollapsed}
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
-            groups={[{
-              label: 'Categories',
-              items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
-            }]}
+            groups={[
+              // Documentation only: the system's own reference sheet, above the
+              // component catalogue because it documents what the components
+              // are BUILT from.
+              ...(tab === 'docs'
+                ? [{ label: 'Reference', items: [{ key: DESIGN_RULES_KEY, label: 'Design Rules', Icon: RulesIcon }] }]
+                : []),
+              {
+                label: 'Categories',
+                items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
+              },
+            ]}
           />
         )}
 
