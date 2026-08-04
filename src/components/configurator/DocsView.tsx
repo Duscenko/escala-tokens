@@ -452,7 +452,18 @@ function DocArticle({
 
 // ── Shell: catalogue sidebar · article · TOC ──────────────────────────────────
 
-export default function DocsView({ previewTheme = 'light', category }: { previewTheme?: string; category?: string }) {
+export default function DocsView({
+  previewTheme = 'light', category, search = '',
+}: {
+  previewTheme?: string
+  category?: string
+  /** The input itself now lives in Configurator's CenterHeader row — see
+   *  `docsSearch` there — so it sits on the same line as the "Documentation |
+   *  The full reference…" title instead of floating at the top of the
+   *  sidebar with a visible gap under the header. This is just the current
+   *  value, for filtering; DocsView never renders the box. */
+  search?: string
+}) {
   // The token reference takes the whole pane: it has no per-component
   // catalogue to filter and no per-article TOC to anchor.
   if (category === DESIGN_RULES_KEY) {
@@ -462,13 +473,14 @@ export default function DocsView({ previewTheme = 'light', category }: { preview
       </div>
     )
   }
-  return <ComponentDocs previewTheme={previewTheme} category={category} />
+  return <ComponentDocs previewTheme={previewTheme} category={category} search={search} />
 }
 
-function ComponentDocs({ previewTheme = 'light', category }: { previewTheme?: string; category?: string }) {
+function ComponentDocs({
+  previewTheme = 'light', category, search,
+}: { previewTheme?: string; category?: string; search: string }) {
   const tokens = usePreviewTokens(previewTheme)
   const [activeKey, setActiveKey] = useState('Button')
-  const [search, setSearch] = useState('')
   const articleRef = useRef<HTMLDivElement>(null)
 
   const def = COMPONENTS.find((c) => c.key === activeKey) ?? COMPONENTS[0]
@@ -494,15 +506,10 @@ function ComponentDocs({ previewTheme = 'light', category }: { previewTheme?: st
 
   return (
     <div className="h-full flex min-h-0">
-      {/* Catalogue sidebar */}
+      {/* Catalogue sidebar — the search box that used to open this column now
+          lives in CenterHeader's row (see Configurator.tsx), so there's no gap
+          between the header and the first category any more. */}
       <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search components"
-          aria-label="Search components"
-          className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
-        />
         {CATEGORIES
           // No search → only the category picked in the shared rail; searching
           // spans every category (mirrors the Components master list).

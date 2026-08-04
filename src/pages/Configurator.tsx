@@ -239,7 +239,7 @@ function CatalogueCheck() {
 type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
-function CenterHeader({ Icon, title, subtitle, accentColor }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string }) {
+function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string; right?: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line/60 flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
@@ -247,7 +247,8 @@ function CenterHeader({ Icon, title, subtitle, accentColor }: { Icon: ComponentT
       </span>
       <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
-      <p className="text-sm text-fg-faint truncate">{subtitle}</p>
+      <p className="text-sm text-fg-faint truncate flex-1 min-w-0">{subtitle}</p>
+      {right && <div className="flex-shrink-0 ml-3">{right}</div>}
     </div>
   )
 }
@@ -344,6 +345,11 @@ export default function Configurator() {
   // `componentCategory` pointing at something the Components tab can't filter
   // by; switching back to a real category just clears it.
   const [docsDesignRules, setDocsDesignRules] = useState(false)
+  // Documentation's catalogue filter. Rendered in CenterHeader's row (see
+  // `right` below), not inside DocsView's own sidebar — the box used to open
+  // that column with a gap under the header; this puts it on the same line
+  // as the "Documentation | The full reference…" title instead.
+  const [docsSearch, setDocsSearch] = useState('')
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Every foundation section can export its token slice.
@@ -420,7 +426,7 @@ export default function Configurator() {
     setExportMode(mode)
   }
   // ── Resolve center header + body for the current mode ──
-  let header: { Icon: ComponentType; title: string; subtitle: string }
+  let header: { Icon: ComponentType; title: string; subtitle: string; right?: ReactNode }
   let body: ReactNode
   let centerKey: string
 
@@ -503,8 +509,30 @@ export default function Configurator() {
       Icon: DocIcon,
       title: 'Documentation',
       subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
+      // On the same line as the title now, not floating atop the sidebar with
+      // a gap under this row. Hidden on Design Rules — it's one long page,
+      // not a filterable catalogue, so there's nothing here to search.
+      right: !docsDesignRules ? (
+        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={docsSearch}
+            onChange={(e) => setDocsSearch(e.target.value)}
+            placeholder="Search components"
+            aria-label="Search components"
+            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+          />
+          {docsSearch && (
+            <button onClick={() => setDocsSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+          )}
+        </div>
+      ) : undefined,
     }
-    body = <DocsView previewTheme={previewTheme} category={docsDesignRules ? DESIGN_RULES_KEY : componentCategory} />
+    body = <DocsView previewTheme={previewTheme} category={docsDesignRules ? DESIGN_RULES_KEY : componentCategory} search={docsSearch} />
     centerKey = 'docs'
   } else {
     header = {
@@ -730,6 +758,7 @@ export default function Configurator() {
                 // Same derivation as --accent-ui, not a second copy of it: this
                 // title WAS the raw anchor tone, the most visible 3:1 failure.
                 accentColor={uiAccent}
+                right={header.right}
               />
             )}
             <div className="flex-1 min-h-0">
