@@ -539,18 +539,34 @@ export default function Configurator() {
       Icon: ComponentsIcon,
       title: 'Components',
       subtitle: 'Browse the catalogue — toggle any component to include or remove it.',
-    }
-    body = (
-      <div className="h-full flex min-h-0">
-        {/* Master list (relocated from the old wide sidebar) */}
-        <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
+      // Same treatment as Documentation: on the header's own line, not
+      // floating atop the sidebar with a gap underneath it.
+      right: (
+        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
           <input
+            type="text"
             value={componentSearch}
             onChange={(e) => setComponentSearch(e.target.value)}
             placeholder="Search components"
             aria-label="Search components"
-            className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
+            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
           />
+          {componentSearch && (
+            <button onClick={() => setComponentSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+          )}
+        </div>
+      ),
+    }
+    body = (
+      <div className="h-full flex min-h-0">
+        {/* Master list (relocated from the old wide sidebar) — search now
+            lives in CenterHeader's row, so this starts flush at the first
+            category with no gap under the header. */}
+        <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
           {(() => { const q = componentSearch.trim().toLowerCase(); return CATEGORIES
             // No search → just the category picked in the sub-rail; searching
             // spans every category so nothing is hidden behind the filter.
