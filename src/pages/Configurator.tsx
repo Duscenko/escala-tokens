@@ -68,6 +68,11 @@ interface FoundationSection {
   Icon: ComponentType
 }
 
+// Foundations that render FLUSH (no `p-8`) because they carry a 198px left
+// column — the Color hub's row shape, which they all now follow. Icons is the
+// only remaining padded one: it's an Iconify browser, not a token table.
+const RAILED_FOUNDATIONS = new Set(['typography', 'radius', 'spacing', 'sizes', 'opacity', 'shadow', 'grid'])
+
 const FOUNDATIONS: FoundationSection[] = [
   {
     key: 'color',
@@ -471,10 +476,10 @@ export default function Configurator() {
           focusFamilyKey={focusColorFamily}
         />
       </div>
-    ) : section.key === 'typography' || section.key === 'radius' || section.key === 'spacing' ? (
-      // Typography and Radius own their internal scroll so their top bars +
+    ) : RAILED_FOUNDATIONS.has(section.key) ? (
+      // Railed foundations own their internal scroll so their top bars +
       // pinned column headers work — no outer overflow here. FLUSH, like the
-      // Color hub: `p-8` framed them as floating cards whose 198px rail no
+      // Color hub: `p-8` framed them as floating cards whose 198px column no
       // longer lined up with the icon toolbar or CenterHeader above. The Color
       // tables set the parameters every railed foundation follows.
       <div className="h-full flex flex-col min-h-0">

@@ -1,6 +1,17 @@
-import { motion } from 'framer-motion'
 import { useDesignStore, SHADOW_DEFAULT } from '../../store/useDesignStore'
 import VariablesTable from './VariablesTable'
+import RailSelect from '../ui/RailSelect'
+
+// Elevation glyph — the same mark the foundation rail uses for Shadow, so the
+// preset trigger reads as "shadow" at a glance.
+function ElevationIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3" width="13" height="13" rx="2" />
+      <path d="M8 21h11a2 2 0 0 0 2-2V8" />
+    </svg>
+  )
+}
 
 // Shadow presets — each defines the full xs→2xl elevation ramp, named by
 // intensity. Mirrors the Radius foundation's preset pattern (StepRadius.tsx)
@@ -64,38 +75,50 @@ export default function Step7_Shadow() {
   const activePreset = matchShadowPreset(shadows)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-6"
-    >
-      {/* ── Variables table — Figma-style token rows ── */}
+    // Same three rows as Radius — Shadow has a genuine global control (the
+    // elevation preset), so row 1 pairs it with what it produces. The preset
+    // moved out of VariablesTable's `toolbar`, where four pills competed with
+    // search for the row on a narrow window.
+    <div className="h-full flex flex-col">
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Preset</span>
+          <RailSelect
+            value={activePreset}
+            options={SHADOW_PRESETS.map((p) => ({ value: p.label, label: p.label, description: p.description }))}
+            onChange={(label) => {
+              const preset = SHADOW_PRESETS.find((p) => p.label === label)
+              if (preset) setShadows(preset.values)
+            }}
+            ariaLabel="Shadow preset"
+            icon={<ElevationIcon />}
+          />
+        </div>
+        {/* What the preset produces — the whole ramp on one line. This replaces
+            the 3x2 grid of h-20 cards that used to sit below the table: same
+            information, and it now sits NEXT TO the control that changes it,
+            which is the job row 1's right cell does on every foundation. */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 pl-6 lg:pl-8 pr-3 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Elevation</span>
+          <div className="flex items-center gap-3">
+            {SHADOW_STEPS.map((step) => (
+              <div key={step} className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
+                <div
+                  className="w-full h-8 rounded-lg bg-surface border border-line/40"
+                  style={{ boxShadow: shadows[step] ?? 'none' }}
+                />
+                <span className="text-[9px] font-mono text-fg-faint">{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <VariablesTable
         title="Shadow tokens"
         searchLabel="Filter shadow tokens"
         wideValues
-        toolbar={
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-fg-faint">Preset</span>
-            <div className="flex gap-1">
-              {SHADOW_PRESETS.map((preset) => (
-                <button
-                  key={preset.label}
-                  onClick={() => setShadows(preset.values)}
-                  title={preset.description}
-                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                    activePreset === preset.label
-                      ? 'bg-fg text-app'
-                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        }
+        railed
         groups={[
           {
             valueLabel: 'Shadow',
@@ -119,30 +142,6 @@ export default function Step7_Shadow() {
           },
         ]}
       />
-
-      {/* ── Elevation cards: one per level — the visual specimen sits below the
-          editable table, so you tune values first, then see the ramp. ── */}
-      <div className="flex flex-col gap-3">
-        <label className="text-sm text-fg-muted uppercase tracking-wide">Elevation</label>
-        <div className="grid grid-cols-3 gap-4 rounded-xl border border-line bg-app p-6">
-          {Object.entries(shadows).map(([key, value], i) => (
-            <motion.div
-              key={key}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <div
-                className="w-full h-20 rounded-xl bg-surface border border-line/40"
-                style={{ boxShadow: value }}
-              />
-              <span className="text-[11px] font-mono text-fg-faint">shadow-{key}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-    </motion.div>
+    </div>
   )
 }

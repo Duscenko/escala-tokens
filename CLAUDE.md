@@ -360,30 +360,44 @@ another pill).
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8` —
-  **except Color, Typography, Radius and Spacing, which render FLUSH**: each carries a
-  198px left column, and `p-8` framed them as floating cards whose column no longer lined
-  up with the icon toolbar or `CenterHeader` above. Any foundation that grows one goes
-  flush too and adopts the Color tables' row shape — **row 1** = a `w-[198px] … border-r`
+  **except Icons — every token foundation now renders FLUSH** (`RAILED_FOUNDATIONS` in
+  `Configurator.tsx`: typography · radius · spacing · sizes · opacity · shadow · grid,
+  plus Color's own hub). Each carries a 198px left column, and `p-8` framed them as
+  floating cards whose column no longer lined up with the icon toolbar or `CenterHeader`
+  above. Icons keeps its padding — it's an Iconify browser, not a token table. The shape
+  is the Color tables' — **row 1** = a `w-[198px] … border-r`
   labelled control cell (`<Family> color` · `Gradient type` · `Preset` · `Base unit`)
   beside a right cell showing *what that control produces* (the ramp · the gradient bar ·
-  the roundness slider + chip · the spacing scale drawn to scale), `pr-3` clearance on the
-  right edge; **row 2** = a `h-[52px]` labelled cell (`Groups` / `Collections`) beside the
-  active collection + search; **row 3** = the nav (`py-1.5 px-2`) against the flush table.
-  **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`), so the
-  gutter is per-section: Radius uses it with an EMPTY body — the column exists purely so
-  its table's left edge lands on the same line as everyone else's — Spacing fills it with
-  a real 2-item nav (Spacing scale · Surface paddings, which used to stack in one scroll
-  behind sticky sub-headers), and Opacity · Shadow · Grid · Sizes keep the undivided
-  full-bleed bar they've always had. Don't make `railed` the default; those four have
-  nothing to align against.
+  the roundness slider + chip · the spacing scale · the elevation ramp), `pr-3` clearance
+  on the right edge; **row 2** = a `h-[52px]` labelled cell (`Groups` / `Collections`)
+  beside the active collection + search; **row 3** = the nav (`py-1.5 px-2`) against the
+  flush table. **Row 1 exists only where the section HAS a global control** — Color,
+  Gradients, Radius, Spacing and Shadow do; Typography, Sizes, Opacity and Grid start at
+  the Collections row instead of inventing one.
+  **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`/`footer`),
+  so the gutter's CONTENT is per-section: Sizes · Opacity · Shadow · Radius leave it empty
+  (the column exists purely so their table's left edge lands on the same line as everyone
+  else's), while Spacing and Grid fill it with a real collections nav — Spacing scale ·
+  Surface paddings and Layout · Breakpoints, both of which used to stack in one scroll
+  behind sticky sub-headers.
+  - **`footer` renders the section's visual specimen INSIDE the table's scroll column**
+    (Sizes' component heights, Opacity's checkerboard strip, Grid's column overlay). It
+    can't be a sibling any more: once a section is railed the table owns its column, so a
+    block outside would sit beside the rail rather than under the rows it illustrates.
+    Grid's overlay renders only for the Layout collection — a breakpoint ramp has nothing
+    to draw, and rendering it there would be dead chrome.
+  - Shadow's elevation specimen moved INTO row 1's right cell (a single 6-step strip)
+    rather than staying a 3×2 grid of `h-20` cards below the table: it belongs next to the
+    preset that changes it, and keeping both would have been the same ramp twice.
   - **The rail cell's dropdown is `ui/RailSelect`, one component.** Gradients' type,
     Radius' preset and Spacing's base unit are the same control, and it was hand-rolled
     three times (identical `h-9 rounded-[13px] border-line-strong` trigger, chevron and
     outside-click listbox) before being extracted. It takes `fallbackLabel` — Radius shows
     **"Custom"** when the ramp matches no preset, where the old Sharp/Soft/Rounded/Pill
     pill row just showed nothing selected, which read as "no preset applied yet".
-  - Radius' presets and Spacing's base units moved OUT of `VariablesTable`'s `toolbar`
-    into that cell; on a narrow window those pill rows pushed search off the row),
+  - Radius' presets, Spacing's base units and Shadow's presets all moved OUT of
+    `VariablesTable`'s `toolbar` into that cell; on a narrow window those pill rows pushed
+    search off the row),
   the component docs (`ComponentDocPane` — interactive playground per component), the
   **Documentation tab** (`DocsView` — createui-style docs site: catalogue sidebar + per-component
   article with hero Preview/Code, Description, Usage, per-axis Examples, Accessibility,

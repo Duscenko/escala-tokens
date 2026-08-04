@@ -81,6 +81,7 @@ export default function VariablesTable({
   railed = false,
   railTop,
   railBody,
+  footer,
 }: {
   title: string
   groups: VariableGroup[]
@@ -92,15 +93,23 @@ export default function VariablesTable({
   /**
    * Renders the 198px left gutter the Color hub and Typography use, so this
    * table's left edge lands on the SAME line as theirs. Opt-in per section:
-   * a section with no rail content (Radius) still wants the gutter for
-   * alignment, while the sections that are genuinely full-bleed (Spacing,
-   * Opacity, Shadow, Grid, Sizes) keep the undivided bar they have today.
+   * a section with no rail CONTENT (Radius · Sizes · Opacity · Shadow) still
+   * wants the gutter for alignment, while Spacing and Grid fill it with a real
+   * collections nav. Off only for a table rendered outside a foundation page.
    */
   railed?: boolean
   /** Rail content beside the top bar — h-[52px] cell. */
   railTop?: ReactNode
   /** Rail content beside the rows — fills the remaining height. */
   railBody?: ReactNode
+  /**
+   * Visual specimen rendered UNDER the rows, inside the table's own scroll
+   * column (Sizes' component heights, Opacity's checkerboard strip, Grid's
+   * column overlay). It has to live in here rather than as a sibling: once a
+   * section is railed the table owns its column, so a block outside would sit
+   * beside the rail instead of under the table it illustrates.
+   */
+  footer?: ReactNode
 }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
@@ -185,6 +194,7 @@ export default function VariablesTable({
       <div className="flex flex-col bg-app">
         {topBar}
         {rows}
+        {footer}
       </div>
     )
   }
@@ -200,7 +210,10 @@ export default function VariablesTable({
       </div>
       <div className="flex items-stretch flex-1 min-h-0">
         <div className="w-[198px] flex-shrink-0 border-r border-line bg-app overflow-y-auto">{railBody}</div>
-        <div className="flex-1 min-w-0 overflow-auto">{rows}</div>
+        <div className="flex-1 min-w-0 overflow-auto">
+          {rows}
+          {footer && <div className="px-4 py-6">{footer}</div>}
+        </div>
       </div>
     </div>
   )
