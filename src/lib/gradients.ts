@@ -9,10 +9,22 @@ import { slugify } from './utils'
 export type GradientType = 'linear' | 'radial'
 
 export interface GradientStop {
-  /** Any CSS color the picker produces — 6- or 8-digit hex (alpha) included. */
+  /** Any CSS color the picker produces — 6- or 8-digit hex (alpha) included.
+   *  When `tone` is set this is a CACHE of `accentScale[tone]`, re-resolved
+   *  whenever the accent moves; never the source of truth. */
   color: string
   /** Stop position along the gradient axis, 0–100 (%). */
   pos: number
+  /**
+   * The accent-ramp TONE (1–12) this stop reads, for a linked gradient.
+   *
+   * "Linked to accent" used to mean stops computed by ad-hoc HSL math off the
+   * raw accent hex (`brandCoverStops` below) — colours that existed nowhere in
+   * the primitives, so a "linked" gradient shipped loose hex the plugin and the
+   * CSS could never alias back to a token. A linked stop is now a REFERENCE to
+   * a tone of the accent ramp, exactly like a semantic token is.
+   */
+  tone?: number
 }
 
 export interface GradientDef {
@@ -106,14 +118,65 @@ export function brandAvatarStops(accent: string): GradientStop[] {
   }
 }
 
-/** The accent-derived stop signature for a gradient, or null when the gradient
- *  has no derivation (custom gradients can't be accent-linked). One resolver so
- *  the editor's lock, the accent retint and the migration all agree on what
- *  "linked" produces. */
+/** LEGACY — the pre-primitive stop signature. Kept ONLY for the v35→v36 and
+ *  v36→v37 migration blocks, which must keep producing exactly what they always
+ *  produced (migrations are append-only). Nothing live should call this; use
+ *  `linkedStopsFor` instead. */
 export function derivedStopsFor(id: string, accent: string): GradientStop[] | null {
   if (id === 'brand-cover') return brandCoverStops(accent)
   if (id === 'aurora') return brandAvatarStops(accent)
   return null
+}
+
+// ── Primitive-backed linking ─────────────────────────────────────────────────
+
+/** Which accent-ramp TONES each built-in gradient reads, and where each sits.
+ *  Tones follow the Radix bands: 9 is the solid (the accent verbatim), 11–12
+ *  the deep text end, 7 a light border tint — so a linked gradient is always a
+ *  walk along the user's own ramp, never an invented colour. */
+export const LINKED_GRADIENT_TONES: Record<string, { tone: number; pos: number }[]> = {
+  'brand-cover': [{ tone: 9, pos: 0 }, { tone: 12, pos: 100 }],
+  aurora: [{ tone: 7, pos: 0 }, { tone: 9, pos: 50 }, { tone: 11, pos: 100 }],
+}
+
+/** True when this gradient can be accent-linked at all (the built-ins can; a
+ *  user-created gradient has no defined tone signature). */
+export function isLinkable(id: string): boolean {
+  return id in LINKED_GRADIENT_TONES
+}
+
+/** Resolve a stop's tone against the ramp, falling back to the nearest tone
+ *  present (a ramp is always 1–12, so this only guards malformed state). */
+function toneColor(scale: Record<number, string> | undefined, tone: number, fallback: string): string {
+  return scale?.[tone] ?? fallback
+}
+
+/**
+ * A linked gradient's stops, resolved against the accent RAMP.
+ *
+ * `prev` is the gradient's current stops: any that already carry a `tone` are
+ * preserved (tone AND position), so re-tinting the accent re-resolves the
+ * user's own choices instead of resetting to the default signature — that's
+ * what makes adding/moving stops possible while the gradient stays linked.
+ * Pass no `prev` (or stops with no tones) to seed the default signature.
+ */
+export function linkedStopsFor(
+  id: string,
+  scale: Record<number, string> | undefined,
+  prev?: GradientStop[],
+): GradientStop[] | null {
+  const signature = LINKED_GRADIENT_TONES[id]
+  if (!signature) return null
+  const fallback = scale?.[9] ?? DEFAULT_ACCENT
+  const kept = prev?.filter((s) => typeof s.tone === 'number')
+  const source = kept && kept.length >= 2
+    ? kept.map((s) => ({ tone: s.tone as number, pos: s.pos }))
+    : signature
+  return source.map(({ tone, pos }) => ({
+    tone,
+    pos: clampPos(pos),
+    color: toneColor(scale, tone, fallback),
+  }))
 }
 
 // ── Defaults ─────────────────────────────────────────────────────────────────
@@ -121,14 +184,26 @@ export function derivedStopsFor(id: string, accent: string): GradientStop[] | nu
 /** Fresh default gradient set. Brand Cover + Aurora are derived from `accent`
  *  (defaults to the app's default violet) so a new system's gradients already
  *  match its brand; Moss Glow stays a fixed example of a non-brand gradient. */
-export function makeDefaultGradients(accent: string = DEFAULT_ACCENT): GradientDef[] {
+export function makeDefaultGradients(
+  accent: string = DEFAULT_ACCENT,
+  /** The accent's 12-tone ramp, so a brand-new system's linked gradients are
+   *  tone-backed from the first render instead of waiting for the first accent
+   *  edit to convert them. Passed IN rather than generated here on purpose:
+   *  this module stays dependency-free (see the file header), and importing
+   *  colorUtils created a module-init cycle through the store — the generator
+   *  was still undefined when `makeDesignDefaults()` ran at import time.
+   *  Omitted ⇒ the legacy hex derivation, which the v45 migration then
+   *  converts. */
+  scale?: Record<number, string>,
+): GradientDef[] {
+  const ramp = scale
   return [
     {
       id: 'brand-cover',
       name: 'Brand Cover',
       type: 'linear',
       angle: 135,
-      stops: brandCoverStops(accent),
+      stops: (ramp && linkedStopsFor('brand-cover', ramp)) || brandCoverStops(accent),
       linked: true,
     },
     {
@@ -136,7 +211,7 @@ export function makeDefaultGradients(accent: string = DEFAULT_ACCENT): GradientD
       name: 'Aurora',
       type: 'linear',
       angle: 120,
-      stops: brandAvatarStops(accent),
+      stops: (ramp && linkedStopsFor('aurora', ramp)) || brandAvatarStops(accent),
       linked: true,
     },
     {

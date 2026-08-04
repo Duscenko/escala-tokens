@@ -13,9 +13,11 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { gradientToCss, gradientSlug, makeGradient, derivedStopsFor, type GradientDef, type GradientType } from '../../lib/gradients'
-import { usePopoverPlacement } from './colorControls'
+import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, type GradientDef, type GradientType } from '../../lib/gradients'
+import { usePopoverPlacement, ScaleRow } from './colorControls'
+import { NAMING_SCHEMES, BASE_TONE } from '../../lib/colorUtils'
 import ColorField from '../ui/ColorField'
+import RailSelect from '../ui/RailSelect'
 import { SlidersIcon } from '../ui/icons'
 
 const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
@@ -53,69 +55,9 @@ function AssignSelect({ label, value, onChange, gradients }: {
   )
 }
 
-/** Type dropdown — shaped like Primitives' hex field / Semantics' architecture
- *  select so the 198px cell holds the same control silhouette on every tab. */
-function TypeSelect({ value, onChange, swatch }: {
-  value: GradientType
-  onChange: (t: GradientType) => void
-  swatch: string
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative w-full">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label="Gradient type"
-        className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-2 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-      >
-        <span className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10" style={{ background: swatch }} aria-hidden />
-        <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-fg capitalize">{value}</span>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-      {open && (
-        <div role="listbox" className="absolute left-0 top-full mt-2 z-30 w-full rounded-xl border border-line bg-app shadow-xl p-1 flex flex-col">
-          {TYPE_OPTIONS.map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              role="option"
-              aria-selected={o.key === value}
-              onClick={() => { onChange(o.key); setOpen(false) }}
-              className={`px-2.5 py-1.5 rounded-lg text-left text-[13px] transition-colors ${
-                o.key === value ? 'bg-elevated text-fg font-semibold' : 'text-fg-muted hover:text-fg hover:bg-elevated/60'
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
   const {
-    gradients, gradientAssignments, primaryColor,
+    gradients, gradientAssignments, primaryColor, primaryScale, colorNaming,
     addGradient, updateGradient, removeGradient, setGradientAssignment,
   } = useDesignStore()
 
@@ -154,10 +96,27 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
     patch({ stops })
   }
 
+  // Adding a stop works while LINKED too — it used to be disabled there, which
+  // read as "a linked gradient is frozen." Linking only says where a stop's
+  // COLOUR comes from (a tone of the accent ramp); how many stops there are and
+  // where they sit is still the user's call. A linked gradient therefore grows
+  // a tone-backed stop, and `linkedStopsFor` preserves it on the next retint.
   function addStop() {
     if (!selected) return
     const last = selected.stops[selected.stops.length - 1]
-    patch({ stops: [...selected.stops, { color: last?.color ?? '#7f56d9', pos: 100 }] })
+    const pos = Math.min(100, Math.max(0, Math.round(((last?.pos ?? 0) + 100) / 2)))
+    const stop = locked
+      ? { tone: last?.tone ?? BASE_TONE, color: primaryScale[last?.tone ?? BASE_TONE] ?? primaryColor, pos }
+      : { color: last?.color ?? primaryColor, pos }
+    patch({ stops: [...selected.stops, stop] })
+  }
+
+  /** Re-point a linked stop at another tone of the accent ramp. */
+  function setStopTone(i: number, tone: number) {
+    if (!selected) return
+    const stops = selected.stops.map((s, idx) =>
+      idx === i ? { ...s, tone, color: primaryScale[tone] ?? s.color } : s)
+    patch({ stops })
   }
 
   function removeStop(i: number) {
@@ -168,8 +127,11 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
   const q = query.trim().toLowerCase()
   const visible = q ? gradients.filter((g) => g.name.toLowerCase().includes(q)) : gradients
 
-  const linkable = selected ? derivedStopsFor(selected.id, primaryColor) !== null : false
+  const linkable = selected ? isLinkable(selected.id) : false
   const locked = !!selected && linkable && selected.linked === true
+  const toneNames = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
+  /** The exported primitive a linked stop references, e.g. `accent-9`. */
+  const tokenNameFor = (tone: number) => `accent-${toneNames[tone - 1] ?? tone}`
 
   // Three tracks, matching the reference: position · color · row actions.
   const gridStyle: React.CSSProperties = {
@@ -183,10 +145,18 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
         <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
           {selected ? (
-            <TypeSelect
+            <RailSelect
               value={selected.type}
+              options={TYPE_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
               onChange={(t) => patch({ type: t })}
-              swatch={gradientToCss(selected)}
+              ariaLabel="Gradient type"
+              icon={
+                <span
+                  className="block w-4 h-4 rounded-full ring-1 ring-black/10"
+                  style={{ background: gradientToCss(selected) }}
+                  aria-hidden
+                />
+              }
             />
           ) : (
             <span className="text-[13px] text-fg-faint">—</span>
@@ -366,7 +336,7 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                       type="button"
                       onClick={() => {
                         if (locked) patch({ linked: false })
-                        else patch({ linked: true, stops: derivedStopsFor(selected.id, primaryColor) ?? selected.stops })
+                        else patch({ linked: true, stops: linkedStopsFor(selected.id, primaryScale, selected.stops) ?? selected.stops })
                       }}
                       aria-pressed={locked}
                       title={locked
@@ -390,9 +360,8 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                   <button
                     type="button"
                     onClick={addStop}
-                    disabled={locked}
                     aria-label="Add gradient stop"
-                    title={locked ? 'Unlock the stops first' : 'Add a gradient stop'}
+                    title={locked ? 'Add a stop — it reads an accent tone too' : 'Add a gradient stop'}
                     className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint disabled:hover:border-line"
                   >
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
@@ -402,7 +371,9 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
 
               {locked && (
                 <p className="px-4 py-2 text-[11px] text-fg-faint border-b border-line/40">
-                  These stops are derived from your accent color, so the gradient stays on-brand when the accent changes. Unlock to pick custom colors.
+                  Each stop reads a <strong className="font-semibold text-fg-muted">tone of your accent ramp</strong>, so the gradient
+                  re-resolves through the primitives whenever the accent changes. Pick a different tone below, or unlock to use a
+                  free colour instead.
                 </p>
               )}
 
@@ -411,9 +382,8 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                   key={i}
                   className={`grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
                     i % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-                  } ${locked ? 'opacity-60' : ''}`}
+                  }`}
                   style={gridStyle}
-                  aria-disabled={locked || undefined}
                 >
                   <div className="pl-4 pr-3 py-2.5 border-r border-line">
                     <div className="flex items-center w-24 px-2 py-1.5 rounded-lg border border-line bg-surface">
@@ -422,7 +392,6 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                         min={0}
                         max={100}
                         value={s.pos}
-                        disabled={locked}
                         onChange={(e) => updateStop(i, 'pos', Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                         aria-label={`Stop ${i + 1} position`}
                         className="w-full bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -431,16 +400,48 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                     </div>
                   </div>
 
-                  <div className={`flex items-center gap-2.5 px-4 py-2.5 border-r border-line min-w-0 ${locked ? 'pointer-events-none' : ''}`}>
-                    <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={22} />
-                    <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
+                  {/* Linked → the stop IS a primitive, so it names the token
+                      and offers the ramp to re-point at. Unlinked → a free
+                      colour, so it keeps the raw picker + hex. Showing bare hex
+                      for a linked stop was the bug: it named a value that lived
+                      nowhere in the system. */}
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 border-r border-line min-w-0">
+                    {locked && typeof s.tone === 'number' ? (
+                      <>
+                        <span
+                          className="w-[22px] h-[22px] rounded-md flex-shrink-0 ring-1 ring-black/10"
+                          style={{ background: s.color }}
+                          aria-hidden
+                        />
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                          <span className="text-[12px] font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone)} — ${s.color.toUpperCase()}`}>
+                            {tokenNameFor(s.tone)}
+                          </span>
+                          <ScaleRow
+                            scale={primaryScale}
+                            labels={toneNames}
+                            selectedIndex={s.tone}
+                            onSelect={(tone) => setStopTone(i, tone)}
+                            ariaLabel={`Stop ${i + 1} accent tone`}
+                            showNumbers={false}
+                            size="thin"
+                            joined
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={22} />
+                        <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex items-center px-4 py-2.5">
                     <button
                       type="button"
                       onClick={() => removeStop(i)}
-                      disabled={locked || selected.stops.length <= 2}
+                      disabled={selected.stops.length <= 2}
                       aria-label={`Remove stop ${i + 1}`}
                       title={selected.stops.length <= 2 ? 'A gradient needs at least two stops' : `Remove stop ${i + 1}`}
                       className="w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint"

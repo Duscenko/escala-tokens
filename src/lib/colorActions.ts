@@ -8,11 +8,11 @@
 // family. Applying always targets a specific `themeKey` (the previewed one) so
 // a swatch click visibly updates what's on screen.
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
-import { derivedStopsFor } from './gradients'
+import { linkedStopsFor } from './gradients'
 import { neutralFromBrand } from '../components/configurator/colorControls'
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
@@ -145,9 +145,12 @@ export function useApplyAccentColor() {
       // Keep the accent-linked gradients on-brand. The link is an explicit
       // per-gradient lock (`linked`, toggled in the Gradients editor) — an
       // unlocked gradient is the user's to keep, whatever its colors.
+      // Re-resolved against the new RAMP, passing the current stops so the
+      // user's own tones, positions and stop count survive the retint — a
+      // linked gradient tracks the accent, it isn't reset by it.
       for (const g of gradients) {
         if (!g.linked) continue
-        const stops = derivedStopsFor(g.id, hex)
+        const stops = linkedStopsFor(g.id, scale, g.stops)
         if (stops) updateGradient(g.id, { stops })
       }
     } catch {
@@ -186,6 +189,60 @@ export function useEnsureColorScales() {
       /* invalid hex — ignore */
     }
   }, [])
+}
+
+// Rebuilds EVERY ramp from its stored base colour when the contrast shift (or
+// the scale algorithm) changes — those inputs feed `generateColorScale`, but
+// the ramps themselves are materialised in the store, so without this the
+// slider changed a number that nothing ever re-read.
+//
+// This logic used to live as a local effect inside `Step2_ColorPalette`, which
+// `Configurator.tsx` stopped rendering when it special-cased the Color
+// foundation to mount `ColorHub` instead — so the effect silently never ran
+// and the control was inert no matter what the maths did. Mounted at the shell
+// now, so it can't be orphaned by a future re-route again.
+//
+// Deliberately does NOT fire on mount: `prev` is seeded with the CURRENT value
+// on first render, so only a real change regenerates. Firing on mount would
+// overwrite every hand-edited tone with a freshly generated one on each page
+// load.
+export function useRegenerateScalesOnScaleSettings() {
+  const contrastShift = useDesignStore((s) => s.contrastShift)
+  const colorAlgorithm = useDesignStore((s) => s.colorAlgorithm)
+  const prev = useRef<string | null>(null)
+
+  useEffect(() => {
+    const key = `${colorAlgorithm}:${contrastShift}`
+    if (prev.current === null) { prev.current = key; return }
+    if (prev.current === key) return
+    prev.current = key
+
+    const s = useDesignStore.getState()
+    const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+    const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, s.darkBackground)
+    try {
+      s.setPrimaryScale(gen(s.primaryColor))
+      s.setPrimaryDarkScale(genDark(s.primaryColor))
+      s.setErrorScale(gen(s.errorColor))
+      s.setErrorDarkScale(genDark(s.errorColor))
+      s.setWarningScale(gen(s.warningColor))
+      s.setWarningDarkScale(genDark(s.warningColor))
+      s.setSuccessScale(gen(s.successColor))
+      s.setSuccessDarkScale(genDark(s.successColor))
+      s.setInfoScale(gen(s.infoColor))
+      s.setInfoDarkScale(genDark(s.infoColor))
+      // Gray's dark twin is a genuine dark-neutral ramp (anchored to the dark
+      // page), not the generic family transform — same split useEnsureColorScales
+      // and the accent applier use.
+      s.setGrayLightScale(gen(s.grayBaseColor))
+      s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground))
+      s.customColors.forEach((c) =>
+        s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) }),
+      )
+    } catch {
+      /* invalid hex — leave the ramps as they are */
+    }
+  }, [contrastShift, colorAlgorithm])
 }
 
 // Applies a new page background. The background is the anchor every ramp is

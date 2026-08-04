@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
+import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
-  architectureLabel, buildArchitectureView,
+  architectureLabel, buildArchitectureView, scaleLookup,
   type ArchTokenValue, type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 import {
@@ -15,7 +15,7 @@ import { resolveThemePalette } from '../../lib/themeSources'
 import AddThemeModal from './AddThemeModal'
 import { ArchitectureSelect, ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
-import { BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid } from './colorControls'
+import { BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
@@ -155,11 +155,28 @@ const CHECKER_STYLE: React.CSSProperties = {
 // role's description, which is half of why you open the editor at all.
 const PICKABLE_FAMILIES = ['accent', 'neutral', 'neutral-dark', 'error', 'warning', 'success', 'info'] as const
 
-function rampsOf(scales: GlobalScales): Record<string, Record<number, string> | undefined> {
-  return {
-    accent: scales.brand, neutral: scales.gray, 'neutral-dark': scales.grayDark ?? scales.gray,
-    error: scales.error, warning: scales.warning, success: scales.success, info: scales.info,
+// Built through `scaleLookup` — the SAME resolver the architecture table and
+// the export use — so the swatch you click is the colour that mode will
+// actually render. It used to read `scales.brand`/`scales.error`/… directly,
+// i.e. the LIGHT ramps for every mode: a dark theme's picker showed light
+// tints, and picking one silently stored a ref that resolves to a completely
+// different (dark-twin) colour. Every mode showed an identical grid, which is
+// what made the bug invisible.
+function rampsOf(
+  scales: GlobalScales,
+  palette?: ThemePalette,
+  kind: 'light' | 'dark' = 'light',
+): Record<string, Record<number, string> | undefined> {
+  const look = scaleLookup(scales, palette, kind)
+  const build = (fam: string) => {
+    const out: Record<number, string> = {}
+    for (let tone = 1; tone <= 12; tone++) {
+      const hex = look(fam, tone)
+      if (hex) out[tone] = hex
+    }
+    return Object.keys(out).length ? out : undefined
   }
+  return Object.fromEntries(PICKABLE_FAMILIES.map((fam) => [fam, build(fam)]))
 }
 
 /** `neutral.12` → ['neutral', 12]; null for raw CSS (vibrancy alphas, blur). */
@@ -168,29 +185,31 @@ function parseRef(label: string): [string, number] | null {
   return m ? [m[1], Number(m[2])] : null
 }
 
+// The mode's name + light/dark glyph used to live here; it's the collapsible
+// section header now (see TokenDetailsModal's `sections`), so this renders the
+// grid alone rather than printing a second label inside its own card.
 function ArchModeEditor({
-  kind, label, value, scales, onPick,
+  label, value, scales, palette, kind, onPick,
 }: {
-  /** That theme's light/dark polarity — drives the sun/moon glyph. */
+  /** That mode's own palette + polarity — the grid MUST resolve through these
+   *  (see `rampsOf`), or a dark mode offers light swatches. */
+  palette?: ThemePalette
   kind: 'light' | 'dark'
   /** Display text — the theme's name (accent-prefixed for a custom theme) or
-   *  the plain 'light'/'dark' word for Vibrancy/Tonal. */
+   *  the plain 'light'/'dark' word for Vibrancy/Tonal. Used for the grid's
+   *  accessible name; the visible label is the section header's. */
   label: string
   value: ArchTokenValue
   scales: GlobalScales
   onPick: (ref: string) => void
 }) {
   const parsed = parseRef(value.label)
-  const ramps = rampsOf(scales)
+  const ramps = rampsOf(scales, palette, kind)
   const family = parsed?.[0] ?? 'accent'
   const tone = parsed?.[1] ?? null
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-        <KindIcon kind={kind} />
-        {label}
-      </span>
       {/* Every family, every tone, in one grid — picking a cell writes
           `{family.tone}` directly. This replaced a chip row ("which family?")
           stacked over a single ScaleRow ("which tone?"): that split one choice
@@ -269,37 +288,6 @@ function cleanDescription(description: string): string {
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-/** Copyable CSS-variable chip — the token's code syntax, e.g. `var(--surface-0)`. */
-function CssVarChip({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false)
-  const cssVar = `var(--${name})`
-  return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation()
-        navigator.clipboard?.writeText(cssVar)
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1200)
-      }}
-      title={`Copy ${cssVar}`}
-      aria-label={`Copy CSS variable ${cssVar}`}
-      className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surface border border-line text-[10px] font-mono text-fg-faint hover:text-fg-muted hover:border-line-strong transition-colors max-w-full"
-    >
-      {copied ? (
-        <>
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 flex-shrink-0"><path d="M2.5 6.5 5 9l4.5-5.5" /></svg>
-          <span className="text-emerald-500">copied</span>
-        </>
-      ) : (
-        <>
-          <span className="truncate">--{name}</span>
-          <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" className="flex-shrink-0 opacity-70"><rect x="4.5" y="4.5" width="7" height="7" rx="1.4" /><path d="M9.5 4.5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v5.5a1 1 0 0 0 1 1h1.5" strokeLinecap="round" /></svg>
-        </>
-      )}
-    </button>
-  )
-}
-
 /** Aliased reference badge — mirrors how Figma shows a variable bound to a primitive. */
 function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: number | null; color: string; naming: ColorNaming }) {
   // The `base` family labels by white/black; the numbered ramps use the active
@@ -317,198 +305,6 @@ function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: nu
         {SCALE_META[scale].label}<span className="text-fg-faint">-</span>{label}
       </span>
     </span>
-  )
-}
-
-// ── Token Details modal ───────────────────────────────────────────────────
-// Editing used to happen inline — the row grew open beneath itself (see the
-// git history for that version). Redesigned as a real dialog (Figma: node
-// 3714:12435) so the row list stays put while you edit, and there's room for
-// Name + Description alongside the value ramps instead of squeezing them
-// into an expanding row. This is only the SHELL (header, Name, Description,
-// "Values" heading) — the per-mode ramp editors are passed in as children so
-// flat's TonePicker and the architecture view's ArchModeEditor keep their
-// existing, already-correct read/write logic untouched; only where they
-// render moved.
-function TokenDetailsModal({
-  name, cssVarName, description, onReset, resetDisabled, onClose, reduce, children,
-}: {
-  name: string
-  /** The Figma mock doesn't show this, but the inline editor it replaces did
-   *  — dropping it would be a feature regression the redesign never asked
-   *  for, so it rides along the Name row instead (the other "identifier"
-   *  for this token). */
-  cssVarName: string
-  description: string
-  onReset: () => void
-  resetDisabled: boolean
-  onClose: () => void
-  reduce: boolean
-  children: ReactNode
-}) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: reduce ? 0 : 0.15 }}
-      onMouseDown={onClose}
-      // No scrim — this reads as a floating panel over the table, the same
-      // language HomeActions' "New token"/Kits popovers already use, not a
-      // blocking dialog. The layer is still full-viewport and still catches
-      // outside clicks to close; it just isn't painted, per the "same style
-      // as the New Token menu" request. DeleteThemeModal (below) keeps its
-      // scrim on purpose — that one gates a destructive, irreversible action.
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Token Details"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97, y: 8 }}
-        transition={{ duration: reduce ? 0 : 0.16, ease: 'easeOut' }}
-        onMouseDown={(e) => e.stopPropagation()}
-        // w-64 — the exact width ColorPrimitives' "Edit family color" popover
-        // uses for the same job (a compact color-picker panel). This modal
-        // used to run 480px wide purely because nothing constrained it; the
-        // content never needed that — see the ramps below, now sized to the
-        // same 12-column grid that popover's own Palette section uses.
-        className="relative w-full max-w-64 max-h-[80vh] flex flex-col rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
-      >
-        {/* Header — title + Reset, matching the Figma dialog. Close sits
-            absolutely in the corner (same position the design uses) rather
-            than in the flex row, so Reset stays flush right regardless of
-            title length. */}
-        <div className="flex items-center justify-between gap-3 pl-4 pr-10 h-10 border-b border-line flex-shrink-0">
-          <h2 className="text-[13px] font-semibold text-fg truncate">Token Details</h2>
-          <button
-            onClick={onReset}
-            disabled={resetDisabled}
-            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-6 rounded-lg border border-line text-[10px] text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
-          >
-            Reset
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M3 12a9 9 0 1 1 2.6 6.36" />
-              <path d="M3 21v-6h6" />
-            </svg>
-          </button>
-        </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-        </button>
-
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          {/* Name + Description — read-only: both are catalogue metadata (the
-              role's fixed key/label and its fixed description), not per-token
-              user text, so there's nothing here to save. Shown for context,
-              styled like the Figma input/textarea so the dialog still reads
-              as an editor, not just a viewer. */}
-          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line/60">
-            <div className="flex h-6 rounded-md border border-line overflow-hidden">
-              <span className="px-2 flex items-center bg-elevated text-[10px] text-fg-faint border-r border-line flex-shrink-0">Name</span>
-              <span className="px-2 flex items-center flex-1 min-w-0 text-[11px] text-fg-muted font-mono truncate" title={name}>{name}</span>
-            </div>
-            {/* Below the Name row, not beside it — at this width (w-64,
-                matching the Edit-family-color popover) a copy chip sharing
-                the row with the name pill left ~2 characters of the name
-                visible on anything longer than "error". */}
-            <CssVarChip name={cssVarName} />
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] text-fg-faint">Description</span>
-              <p className="px-2 py-1.5 rounded-md border border-line text-[11px] text-fg-muted leading-relaxed">{description}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-4">
-            <span className="text-[11px] font-semibold text-fg">Values</span>
-            {children}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-// ── Delete-theme confirmation ────────────────────────────────────────────
-// deleteTheme() used to fire straight off the header's X — one misclick
-// silently wiped every semantic value mapped to that theme, with no undo.
-function DeleteThemeModal({
-  name, isPreviewed, onConfirm, onCancel,
-}: {
-  name: string
-  isPreviewed: boolean
-  onConfirm: () => void
-  onCancel: () => void
-}) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onCancel() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onCancel])
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      onMouseDown={onCancel}
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-      role="alertdialog"
-      aria-modal="true"
-      aria-label="Delete theme"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97, y: 8 }}
-        transition={{ duration: 0.16, ease: 'easeOut' }}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="w-full max-w-[360px] rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
-      >
-        <div className="p-5 flex items-start gap-3">
-          <span className="flex-shrink-0 w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center" aria-hidden>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-              <path d="M12 9v4" /><path d="M12 17h.01" />
-            </svg>
-          </span>
-          <div className="min-w-0 flex flex-col gap-1 pt-0.5">
-            <h2 className="text-[14px] font-semibold text-fg">Delete "{name}"?</h2>
-            <p className="text-[12.5px] text-fg-muted leading-relaxed">
-              Every semantic value mapped to this theme will be deleted too. This can't be undone.
-              {isPreviewed && ' The preview will switch to another theme.'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-line bg-surface/50">
-          <button
-            onClick={onCancel}
-            className="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
-          >
-            Delete theme
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
   )
 }
 
@@ -876,6 +672,8 @@ export default function Step3_SemanticTokens({
   const [activeCategory, setInternalCategory] = useState<SemanticCategory>('all')
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  /** The token table's scroll container — the Token Details dialog's anchor. */
+  const tableRef = useRef<HTMLDivElement>(null)
 
   // Theme modal state. Add-only: a theme is created against the primitives and
   // then reads through them, so there is no edit mode to open.
@@ -1196,8 +994,11 @@ export default function Step3_SemanticTokens({
           })}
         </nav>
 
-        {/* Token table — scrolls internally; column header stays pinned */}
-        <div className="flex-1 min-w-0 overflow-auto">
+        {/* Token table — scrolls internally; column header stays pinned.
+            `tableRef` is what the Token Details dialog docks against, so it
+            opens beside the trailing settings column instead of over the
+            values it's editing. */}
+        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
@@ -1531,23 +1332,28 @@ export default function Step3_SemanticTokens({
               resetDisabled={!isModified(role)}
               onClose={() => setExpandedRole(null)}
               reduce={reduce}
-            >
-              {cols.map((col) => (
-                <div key={col.key} className="flex flex-col gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-                    <KindIcon kind={col.kind} />
-                    {col.key}
-                  </span>
-                  <TonePicker
-                    scale={col.scale}
-                    selectedTone={toneIndexOf(col.scale, col.value)}
-                    recommendedTone={col.recTone}
-                    onChange={(hex) => setThemeToken(col.key, role.key, hex)}
-                  />
-                </div>
-              ))}
-              <ToneAxisRow />
-            </TokenDetailsModal>
+              anchorRef={tableRef}
+              initialOpenKey={previewTheme}
+              sections={cols.map((col) => ({
+                key: col.key,
+                label: col.key,
+                kind: col.kind,
+                content: (
+                  <div className="flex flex-col gap-2">
+                    <TonePicker
+                      scale={col.scale}
+                      selectedTone={toneIndexOf(col.scale, col.value)}
+                      recommendedTone={col.recTone}
+                      onChange={(hex) => setThemeToken(col.key, role.key, hex)}
+                    />
+                    {/* Per-section now, not once at the bottom: with the modes
+                        collapsible, a single trailing axis would belong to
+                        whichever section happened to still be open. */}
+                    <ToneAxisRow />
+                  </div>
+                ),
+              }))}
+            />
           )
         })()}
 
@@ -1566,25 +1372,31 @@ export default function Step3_SemanticTokens({
               resetDisabled={!archModeKeys.some((m) => t.edited?.[m])}
               onClose={() => setArchEditing(null)}
               reduce={reduce}
-            >
-              {archModeKeys.map((mode) => (
-                parseRef(t.modes[mode]?.label ?? '') ? (
-                  <ArchModeEditor
-                    key={mode}
-                    kind={kindOf(mode)}
-                    label={PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode}
-                    value={t.modes[mode]}
-                    scales={scales}
-                    onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
-                  />
-                ) : null
-              ))}
-              {/* No trailing ToneAxisRow here: SystemRampGrid prints its own
-                  1–12 axis under each mode's ramps, and a bare grid-cols-12
-                  row would sit misaligned anyway — it lacks the grid's
-                  leading family-label column. The flat modal above still
-                  uses it, since TonePicker has no axis of its own. */}
-            </TokenDetailsModal>
+              anchorRef={tableRef}
+              initialOpenKey={previewTheme}
+              // No ToneAxisRow in these sections: SystemRampGrid prints its own
+              // 1–12 axis under each mode's ramps, and a bare grid-cols-12 row
+              // would sit misaligned anyway — it lacks the grid's leading
+              // family-label column. The flat modal above still uses it, since
+              // TonePicker has no axis of its own.
+              sections={archModeKeys
+                .filter((mode) => parseRef(t.modes[mode]?.label ?? ''))
+                .map((mode) => ({
+                  key: mode,
+                  label: PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode,
+                  kind: kindOf(mode),
+                  content: (
+                    <ArchModeEditor
+                      value={t.modes[mode]}
+                      scales={scales}
+                      palette={resolvedPalettes[mode]}
+                      kind={kindOf(mode)}
+                      label={PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode}
+                      onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
+                    />
+                  ),
+                }))}
+            />
           )
         })()}
 

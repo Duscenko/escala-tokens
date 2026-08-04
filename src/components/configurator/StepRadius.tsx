@@ -1,7 +1,17 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import VariablesTable from './VariablesTable'
+import RailSelect from '../ui/RailSelect'
+
+// Corner glyph — the same mark the foundation rail uses for this section, so
+// the preset trigger reads as "border radius" at a glance.
+function CornerIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 19V11C5 7.68629 7.68629 5 11 5H19" />
+    </svg>
+  )
+}
 
 // Radius presets — each defines the full none→full ramp, named by personality.
 export const RADIUS_PRESETS = [
@@ -82,68 +92,67 @@ export default function StepRadius() {
   const lgPx = pxToNum(radius.lg ?? '12px')
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-6"
-    >
-      {/* ── Scale slider — grade the overall roundness in one move ── */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-fg-faint uppercase tracking-wider">Scale roundness</span>
-          <span className="text-xs font-mono text-fg-muted tabular-nums">lg · {radius.lg ?? '12px'}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            min={0}
-            max={32}
-            step={1}
-            value={Math.min(lgPx, 32)}
-            onChange={(e) => scaleRoundness(Number(e.target.value))}
-            className="flex-1 accent-fg cursor-pointer"
-            aria-label="Scale border radius"
-          />
-          {/* Live shape that grows with the slider */}
-          <div
-            className="flex-shrink-0 transition-all"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: radius.lg ?? '12px',
-              backgroundColor: accentColor + '22',
-              border: `1.5px solid ${accentColor}88`,
+    // Three rows, the same shape ColorPrimitives / StepGradients / Typography
+    // use — a 198px labelled control cell over a 198px gutter, against a flush
+    // table. It used to be a `p-8` stack (slider block, then a full-bleed
+    // table), so this section's left edge sat 32px in and matched nothing.
+    // No enter animation either: the other foundation tables dropped theirs.
+    <div className="h-full flex flex-col">
+      {/* ── Row 1 — the preset that defines the ramp | what it produces ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Preset</span>
+          {/* "Custom" when the ramp matches no preset — the old pill row just
+              showed nothing selected, which read as "no preset applied yet". */}
+          <RailSelect
+            value={selectedPreset}
+            options={RADIUS_PRESETS.map((p) => ({ value: p.label, label: p.label, description: p.description }))}
+            onChange={(label) => {
+              const preset = RADIUS_PRESETS.find((p) => p.label === label)
+              if (preset) applyPreset(preset)
             }}
+            ariaLabel="Radius preset"
+            icon={<CornerIcon />}
           />
+        </div>
+        {/* pr-3 clearance on the right edge — same as every other row 1. */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 pl-6 lg:pl-8 pr-3 py-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Scale roundness</span>
+            <span className="text-[11px] font-mono text-fg-muted tabular-nums">lg · {radius.lg ?? '12px'}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min={0}
+              max={32}
+              step={1}
+              value={Math.min(lgPx, 32)}
+              onChange={(e) => scaleRoundness(Number(e.target.value))}
+              className="flex-1 min-w-0 accent-fg cursor-pointer"
+              aria-label="Scale border radius"
+            />
+            {/* Live shape that grows with the slider */}
+            <div
+              className="flex-shrink-0 transition-all"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.lg ?? '12px',
+                backgroundColor: accentColor + '22',
+                border: `1.5px solid ${accentColor}88`,
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ── Variables table — Figma-style token rows ── */}
+      {/* ── Rows 2+3 — the table, with the 198px gutter that keeps its left
+          edge on the same line as Color's and Typography's navs. ── */}
       <VariablesTable
         title="Radius tokens"
         searchLabel="Filter radius tokens"
-        toolbar={
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-fg-faint">Preset</span>
-            <div className="flex gap-1">
-              {RADIUS_PRESETS.map((preset) => (
-                <button
-                  key={preset.label}
-                  onClick={() => applyPreset(preset)}
-                  title={preset.description}
-                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                    selectedPreset === preset.label
-                      ? 'bg-fg text-app'
-                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        }
+        railed
         groups={[
           {
             valueLabel: 'Radius',
@@ -172,6 +181,6 @@ export default function StepRadius() {
           },
         ]}
       />
-    </motion.div>
+    </div>
   )
 }

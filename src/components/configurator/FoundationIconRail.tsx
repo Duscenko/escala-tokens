@@ -32,7 +32,12 @@ export default function FoundationIconRail({
                 title={label}
                 className={`flex-shrink-0 flex items-center justify-center w-[40.5px] h-[40.5px] rounded-[13.5px] transition-colors ${
                   on
-                    ? 'bg-accent-ui/[0.83] text-white shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
+                    // Full opacity, not the old /[0.83]. That softening blended
+                    // the fill toward the page, which quietly undid the ink's
+                    // contrast guarantee: --accent-ink is solved against the
+                    // ACCENT, not against an 83% composite of it. Any fill that
+                    // wants to stay legible has to be the real accent.
+                    ? 'bg-accent-ui text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
                     : 'text-fg-muted hover:text-fg hover:bg-elevated'
                 }`}
               >

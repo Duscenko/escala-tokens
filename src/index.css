@@ -18,6 +18,10 @@
      Configurator shell; adjusted per theme for readability). Used by table
      active states, modified dots and previewed-theme highlights. */
   --color-accent-ui: var(--accent-ui);
+  /* Label ink ON an --accent-ui fill. Contrast-derived (see Configurator's
+     uiAccentInk), never a hardcoded text-white: a light accent needs dark ink,
+     and on dark chrome the accent brightens so it needs dark ink there too. */
+  --color-accent-ink: var(--accent-ink);
 }
 
 :root {
@@ -32,6 +36,7 @@
   --line-strong: #d4d4d4;
   /* Fallback until the shell derives it from the primary scale. */
   --accent-ui: #7f56d9;
+  --accent-ink: #ffffff;
 
   font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0.18px;
@@ -44,6 +49,45 @@
   @media (max-width: 1024px) {
     font-size: 16px;
   }
+}
+
+/* Forces the LIGHT palette on a subtree, mirroring `.dark` below. Needed
+   because a subtree can opt INTO dark with `class="dark"` but had no way to opt
+   back out — the Token Details dialog paints each mode's card in that mode's
+   own appearance (a dark theme's ramps have to be judged on a dark surface),
+   so its light card must stay light even while the app chrome is dark. */
+.light {
+  --app: #ffffff;
+  --surface: #f6f6f7;
+  --elevated: #e8e8ea;
+  --fg: #18181b;
+  --fg-muted: #52525b;
+  --fg-faint: #737373;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+
+  color-scheme: light;
+}
+
+/* Slim scrollbar for dense floating panels — the default macOS/Windows bar is
+   as wide as a token swatch and dominates a 360px dialog. */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-faint);
 }
 
 .dark {

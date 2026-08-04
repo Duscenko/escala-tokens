@@ -170,9 +170,13 @@ another pill).
       a first-class nav entry under Accents (`generateAlphaScale(primaryScale/DarkScale,
       page, appearance)`, same helper the export ships as `accent-a*`) rather than a
       bespoke strip on a different tab. It's **read-only everywhere** — `Family.isAlpha`
-      guards `changeFamilyBase`, hides the nav pencil and the per-row expand-to-edit button
+      guards `changeFamilyBase`, hides the nav pencil and the per-row Token Details button
       — because an alpha value is SOLVED against its page (see "Alpha twins are solved, not
-      eyeballed" below), never independently set. Its table cells use `AlphaHexCell`
+      eyeballed" below), never independently set. **Its nav chip is checkerboard-backed too**
+      (`FamilySwatch`, painting the alpha ramp's step 5 — not the step-9 anchor, which
+      composites to a near-opaque chip that reads as just another solid): Accent and
+      Accent-Alpha sit adjacent under Accents, and with two identical solid chips nothing on
+      screen said which one was the translucent ramp. Its table cells use `AlphaHexCell`
       (swatch over checkerboard + static hex text, no input) instead of `HexCell`: the same
       checkerboard `CHECKER` constant `Step6_Opacity.tsx`'s "Opacity Scale" strip uses,
       now **exported** from `colorControls.tsx` so both call sites share one pattern rather
@@ -226,7 +230,7 @@ another pill).
       families in that side nav, 12 tone rows each with **light/dark** cells (row names are
       the EXACT exported token names — `accent-1`…, matching tokenGenerator's flattenScale
       prefixes — `accent-a-1`… for Accent-Alpha), eye toggles on the column headers driving
-      `previewTheme`, a per-row inline `ColorPickerPanel` (skipped for Accent-Alpha rows),
+      `previewTheme`, a per-row **Token Details** dialog (skipped for Accent-Alpha rows),
       and "+ Add" creating a `customColors` family — EVERY family carries both a light ramp
       and a dark twin (Radix two-scale model), and each column edits its own; **no inversion
       anywhere**, step N means the same role in both.
@@ -355,7 +359,31 @@ another pill).
     just render wider.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
-  `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8`),
+  `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8` —
+  **except Color, Typography, Radius and Spacing, which render FLUSH**: each carries a
+  198px left column, and `p-8` framed them as floating cards whose column no longer lined
+  up with the icon toolbar or `CenterHeader` above. Any foundation that grows one goes
+  flush too and adopts the Color tables' row shape — **row 1** = a `w-[198px] … border-r`
+  labelled control cell (`<Family> color` · `Gradient type` · `Preset` · `Base unit`)
+  beside a right cell showing *what that control produces* (the ramp · the gradient bar ·
+  the roundness slider + chip · the spacing scale drawn to scale), `pr-3` clearance on the
+  right edge; **row 2** = a `h-[52px]` labelled cell (`Groups` / `Collections`) beside the
+  active collection + search; **row 3** = the nav (`py-1.5 px-2`) against the flush table.
+  **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`), so the
+  gutter is per-section: Radius uses it with an EMPTY body — the column exists purely so
+  its table's left edge lands on the same line as everyone else's — Spacing fills it with
+  a real 2-item nav (Spacing scale · Surface paddings, which used to stack in one scroll
+  behind sticky sub-headers), and Opacity · Shadow · Grid · Sizes keep the undivided
+  full-bleed bar they've always had. Don't make `railed` the default; those four have
+  nothing to align against.
+  - **The rail cell's dropdown is `ui/RailSelect`, one component.** Gradients' type,
+    Radius' preset and Spacing's base unit are the same control, and it was hand-rolled
+    three times (identical `h-9 rounded-[13px] border-line-strong` trigger, chevron and
+    outside-click listbox) before being extracted. It takes `fallbackLabel` — Radius shows
+    **"Custom"** when the ramp matches no preset, where the old Sharp/Soft/Rounded/Pill
+    pill row just showed nothing selected, which read as "no preset applied yet".
+  - Radius' presets and Spacing's base units moved OUT of `VariablesTable`'s `toolbar`
+    into that cell; on a narrow window those pill rows pushed search off the row),
   the component docs (`ComponentDocPane` — interactive playground per component), the
   **Documentation tab** (`DocsView` — createui-style docs site: catalogue sidebar + per-component
   article with hero Preview/Code, Description, Usage, per-axis Examples, Accessibility,
@@ -456,7 +484,7 @@ src/
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 42)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 45)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
@@ -506,7 +534,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `typography` | { fontFamily, headingFontFamily, sizes, lineHeights, weights } | Foundations · Typography |
 | `spacing` | Record<string, string> | Foundations · Spacing |
 | `padding` | Record<'top'\|'right'\|'bottom'\|'left', string> — per-side surface inset for padded surfaces (collage tiles, Card, sign-up card via `paddingOf()`); exported as `padding` in tokens.json + `--padding-*` CSS vars | Quick edit · Padding |
-| `gradients` | GradientDef[] (`{ id, name, type: 'linear'\|'radial', angle, stops: {color,pos}[], linked? }`) — named gradients; `gradientToCss()` builds the CSS. `linked` is an explicit accent lock (Brand Cover/Aurora default true): while on, `useApplyAccentColor` re-derives the stops via `derivedStopsFor(id, accent)` and the editor disables stop editing; the lock chip in StepGradients unlocks (free editing) / re-locks (re-derives from the current accent). Exported as `gradients` (slug→css) in tokens.json + `--gradient-*` CSS vars + README table | Foundations · Gradients |
+| `gradients` | GradientDef[] (`{ id, name, type: 'linear'\|'radial', angle, stops: {color,pos,tone?}[], linked? }`) — named gradients; `gradientToCss()` builds the CSS. **A linked stop REFERENCES a primitive**: `tone` is the accent-ramp step it reads and `color` is just a cache of `primaryScale[tone]`, re-resolved by `useApplyAccentColor` via `linkedStopsFor(id, scale, prevStops)`. Exported as `gradients` (slug→css) in tokens.json + `--gradient-*` CSS vars + README table | Foundations · Gradients |
 | `gradientAssignments` | `{ cover, avatar }` (gradient id or null) — which gradient drives each preview surface: HomeView's card cover (`GlassPanel`) + solid avatars (`AvatarRound`), resolved into `PreviewTokens.coverGradient`/`avatarGradient` | Foundations · Gradients |
 | `savedColors` | string[] — the custom `ColorField` picker's "Saved" swatch library (hex, alpha-aware) | any ColorField |
 | `radius` | Record<string, string> | Foundations · Border Radius |
@@ -527,7 +555,136 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 42`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 45`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+
+> **"Linked to accent" means a gradient stop REFERENCES a primitive — not that it's frozen.**
+> `GradientStop.tone` is the accent-ramp step the stop reads; `color` is only a cache of
+> `primaryScale[tone]`. Linking used to mean stops computed by ad-hoc HSL math off the raw
+> accent hex (`brandCoverStops`/`brandAvatarStops`), producing colours that existed nowhere
+> in the primitives — so a gradient that claimed to be on-brand shipped loose hex the plugin
+> and the CSS could never alias, and the editor could only print that hex because there was
+> no primitive to name. Rules that keep this honest:
+> - **`linkedStopsFor(id, scale, prevStops)` is the ONE resolver** — the editor's lock, the
+>   accent retint (`colorActions`) and the v45 migration all go through it. It takes `prev`
+>   so a retint re-resolves the user's OWN tones, positions and stop count rather than
+>   resetting to `LINKED_GRADIENT_TONES`' default signature.
+> - **Linking constrains COLOUR only.** Position edits, adding a stop and removing a stop
+>   all stay live while linked (they used to be disabled, which read as "a linked gradient
+>   is frozen"); a stop added while linked is tone-backed and survives the next retint. The
+>   colour cell swaps to a tone ramp + the token's name (`accent-9`) instead of a hex field
+>   — a linked stop names its primitive, an unlinked one keeps the raw picker.
+> - **`derivedStopsFor` is LEGACY and migration-only.** The v35→v36 / v36→v37 blocks must
+>   keep producing exactly what they always produced, so it stays untouched. Nothing live
+>   may call it.
+> - **`lib/gradients.ts` stays dependency-free** (its header says so, and it matters): the
+>   default accent ramp is generated in the STORE (`DEFAULT_ACCENT_SCALE`, computed at
+>   module load by the real generator, same pattern as `DEFAULT_GRAY_DARK_SCALE`) and passed
+>   into `makeDefaultGradients`. Importing `generateColorScale` into gradients.ts instead
+>   created a module-init cycle — `makeDesignDefaults()` runs at import time and found the
+>   generator undefined. Seeding it this way is also what makes a BRAND-NEW system's linked
+>   gradients tone-backed from the first render, rather than waiting for the first accent
+>   edit (the same fresh-system-default bug class as the old `GRAY_DARK_SCALE` seed).
+
+> **Deleting a theme is reachable from the Primitives rail, not just Semantics.** The
+> family nav's per-family trash is LOCKED while any theme references that family ("remove
+> the theme first") — and the only place to remove a theme used to be Semantics' column
+> header, a different tab, so a family minted by "+ Theme" was effectively undeletable from
+> the screen that shows it. Each THEME folder header (never `BASE_FOLDER`/`CUSTOM_FOLDER`)
+> now carries a hover trash opening the SAME `DeleteThemeModal` Semantics uses (shared from
+> `colorControls` — one destructive action, one warning, or one entry point would under-state
+> what the other destroys). Deleting the theme frees its families into **Custom**, where the
+> existing per-family trash already unlocks. No colour data is destroyed — only the theme
+> and the semantic values mapped to it.
+
+> **The chrome's accent is DERIVED for contrast, exactly like the tokens it sits next to.**
+> Two CSS vars, both written by `Configurator.tsx` and nothing else:
+> - **`--accent-ui`** = `chromeAccent(scale, page, fallback)` (`colorUtils.ts`) — walk UP
+>   from the anchor (tone 9) until the tone clears **4.5:1 against the chrome page**. This
+>   is the same move the token side already makes for `action-primary`
+>   (`accessibleSolidTone`), which is why the app chrome and the Color preview's Button now
+>   resolve to the identical hex. It was `primaryScale[9]` raw — the ONE tone with no
+>   contrast guarantee — so a pale accent (`#c76aff`) gave **3.03:1** section titles and
+>   3.03:1 buttons while the preview beside them rendered a correctly-darkened one. Now
+>   4.68:1. One upward walk serves both appearances, because every ramp's HIGH tones are
+>   its accessible-text end (near-black on a light ramp, near-white on a dark one) — so
+>   light chrome reads `primaryScale`, dark chrome reads `primaryDarkScale`, no branching
+>   and no hand-brightening.
+> - **`--accent-ink`** (`text-accent-ink`) = `readableInk(uiAccent)` — the label ink for
+>   any `bg-accent-ui` fill. **Never hardcode `text-white` on an accent fill**; eight call
+>   sites did, which is fine for a dark accent and unreadable for a pale one, and inverts
+>   entirely in dark chrome (there the accent brightens, so the ink comes out near-black —
+>   6.43:1 where `text-white` was 3.03:1).
+>
+> Consequences worth keeping:
+> - **A softened accent fill breaks the ink guarantee.** `--accent-ink` is solved against
+>   the accent, not against a composite of it, so `bg-accent-ui/[0.83]` (what
+>   `FoundationIconRail`'s active button used) quietly undoes the math. Fills that carry a
+>   label use the full accent; the low-alpha variants (`/[0.06]`–`/[0.08]` tints, dots,
+>   underlines, connector lines) carry no text and are fine.
+> - **The contrast target is `--app`, deliberately** — the same reference the role
+>   catalogue uses for every text role (`contrastAgainst: 'background-primary'`). Aiming at
+>   `--elevated` would be stricter but forces tone 12 (near-black) for a pale accent, and
+>   the chrome stops reading as the user's colour. **Known residual:** accent text sitting
+>   ON `bg-elevated` (active table rows) lands ≈3.8:1 — fine as a UI component, short of AA
+>   for body text. Fixing it means moving those rows onto an accent tint instead of
+>   `bg-elevated`; that's a visual-design change, not a token one.
+> - `CenterHeader`'s `accentColor` takes `uiAccent` — it used to re-derive the same
+>   expression inline, which is how it drifted into being the most visible 3:1 failure.
+>   Anything else needing "the chrome accent" reads the var or that variable, never
+>   `primaryScale[9]`.
+
+> **There is ONE "open a token, edit its value" surface in the Color hub:
+> `TokenDetailsModal` (`colorControls.tsx`).** Semantics' role rows and Primitives' tone
+> rows both open it — same shell (Token Details header + Reset · Name · copyable CSS-var
+> chip · Description · "Values"), each caller passing its own editors via **`sections`** so
+> the read/write logic stays where it belongs (flat's `TonePicker`, the arch view's
+> `ArchModeEditor`, Primitives' light/dark `ColorPickerPanel`). Primitives used to expand
+> its rows INLINE instead — two interactions for one job, on two tabs of the same hub —
+> so don't reintroduce an inline row editor. It lives in `colorControls` (not Step3)
+> precisely so a third caller doesn't fork a copy. Primitives-specific bits: `cssVarName`
+> is `color-<token>` because that's what `exporters.ts` actually emits (`--color-accent-9`);
+> Description comes from `TONE_DESCRIPTIONS`, keyed off the tone NUMBER like `TONE_BANDS`
+> so it survives a naming-scheme change; **Reset means "back to what the generator
+> produces for this family's base"**, computed from the SAME generators the family was
+> built with (`generateDarkColorScale` for neutral, `generateFamilyDarkScale` otherwise) so
+> a reset can never disagree with retinting the family, and it resets BOTH appearances the
+> way Semantics' Reset clears every mode. Only one HSV panel renders at a time (both modes
+> are listed as selectable rows) — two stacked pickers overflow the dialog for a value you
+> edit one at a time.
+>
+> Three rules the shell itself enforces, so no caller can drift from them:
+> - **One `sections` entry per mode, collapsible, and only ONE starts open.** A system with
+>   light + dark + two custom themes stacked four full ramp grids in one dialog — the mode
+>   you came to edit could be a screen-height of scrolling away. Which one opens is
+>   `initialOpenKey`, and every caller passes the **previewed** theme/appearance (not
+>   literally the first section), so the dialog opens on the value the user can watch
+>   change. The section header owns the mode's name + `KindIcon`; `ArchModeEditor` no
+>   longer prints its own, or the label appears twice.
+> - **It docks against `anchorRef`'s right edge**, not the viewport centre — callers pass
+>   their token table's scroll container, so the dialog opens beside the trailing settings
+>   column the row's button lives in instead of covering the values it edits. No anchor =
+>   centred fallback. The anchor is the CONTAINER (a fixed column), so it's measured on
+>   open + resize only, not on scroll.
+> - **Each mode's card is painted in ITS OWN appearance, and shows ITS OWN ramps.** The
+>   card carries a `light`/`dark` class (both defined in `index.css`; `.light` exists
+>   precisely so a subtree can opt back OUT of dark, which `.dark` alone couldn't) — so a
+>   dark mode's swatches are judged on the dark page they ship against, and the light card
+>   stays light even while the app chrome is dark. Not a hardcoded colour: it's the same
+>   two token sets the whole app uses. The ramps themselves come from **`scaleLookup`**
+>   (exported from `semanticArchitectures.ts`), the same resolver the arch table and the
+>   export use. `rampsOf` used to read `scales.brand`/`scales.error`/… directly — the LIGHT
+>   ramps for every mode — so a dark theme's picker offered light tints and picking one
+>   stored a ref that resolves to a completely different dark-twin colour. Every mode
+>   rendering an identical grid is what hid it. **If a picker builds ramps without a
+>   `kind`, that's the bug back.**
+> - **The dialog is 360px (`PANEL_W`), not 256.** At 256 the 12-tone grid had ~136px for
+>   twelve cells plus gaps — sub-9px swatches, neither pickable nor readable. Its scrolling
+>   body uses `.scrollbar-thin` (also in `index.css`); the platform default bar is about as
+>   wide as a token swatch and dominated the panel.
+> - **Inside "Values", ramp labels use the platform UI font, not mono.** `accent` /
+>   `neutral-dark` are family labels; only genuine code identifiers (the Name row, the
+>   CSS-var chip, table token names) stay mono. `SystemRampGrid`'s row labels and 1–12 axis
+>   were mono and made the dialog read as two unrelated typefaces stacked.
 
 > **Tall popovers → `usePopoverPlacement`** (`colorControls`). A popover carrying
 > `ColorPickerPanel` (HSV + hue + alpha + Palette + Saved) is ~540px — taller than the room

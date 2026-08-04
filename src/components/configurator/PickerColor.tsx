@@ -46,8 +46,8 @@ export default function PickerColor({
     infoColor, infoScale, infoDarkScale,
     customColors, removeCustomColor,
     themeKinds, themeSources,
-    colorAlgorithm, colorNaming, contrastShift,
-    setColorAlgorithm, setColorNaming, setContrastShift,
+    colorNaming, contrastShift,
+    setContrastShift,
   } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
@@ -169,8 +169,8 @@ export default function PickerColor({
               onClick={() => setSettingsOpen((o) => !o)}
               aria-haspopup="dialog"
               aria-expanded={settingsOpen}
-              aria-label="Scale settings — algorithm, naming, contrast shift"
-              title="Scale settings"
+              aria-label="Contrast — how far every ramp travels from the page"
+              title="Contrast"
               className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                 settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
               }`}
@@ -178,14 +178,7 @@ export default function PickerColor({
               <SlidersIcon />
             </button>
             <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-              <ColorControls
-                algorithm={colorAlgorithm}
-                naming={colorNaming}
-                contrastShift={contrastShift}
-                onAlgorithm={setColorAlgorithm}
-                onNaming={setColorNaming}
-                onShift={setContrastShift}
-              />
+              <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
             </ScaleSettingsModal>
           </div>
         </div>

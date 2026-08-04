@@ -277,7 +277,7 @@ export default function NewTokenWizard({
                   >
                     <span
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 transition-colors ${
-                        complete || active ? 'bg-accent-ui text-white' : 'bg-elevated text-fg-faint'
+                        complete || active ? 'bg-accent-ui text-accent-ink' : 'bg-elevated text-fg-faint'
                       }`}
                     >
                       {complete ? <CheckIcon /> : n}
@@ -582,7 +582,7 @@ export default function NewTokenWizard({
             <button
               onClick={() => canNext && setStep((s) => (s + 1) as Step)}
               disabled={!canNext}
-              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-white disabled:opacity-40 transition-opacity"
+              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-accent-ink disabled:opacity-40 transition-opacity"
             >
               Next
             </button>
@@ -590,7 +590,7 @@ export default function NewTokenWizard({
             <button
               onClick={commit}
               disabled={!canConfirm}
-              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-white disabled:opacity-40 transition-opacity hover:opacity-90"
+              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-accent-ink disabled:opacity-40 transition-opacity hover:opacity-90"
             >
               {category === 'color' ? ROLE_CONFIRM_LABEL[colorRole] : CONFIRM_LABEL[category]}
             </button>

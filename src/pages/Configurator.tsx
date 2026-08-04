@@ -2,8 +2,10 @@ import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
-import { readableAccent } from '../lib/colorUtils'
+import { chromeAccent, readableInk } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
+import { useLoadActiveFonts } from '../lib/fonts'
+import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import SectionRail, { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
@@ -244,10 +246,18 @@ function CenterHeader({ Icon, title, subtitle, accentColor }: { Icon: ComponentT
 }
 
 export default function Configurator() {
-  const { primaryScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
+  const { primaryScale, primaryDarkScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
+  // Fetches the configured typeface's webfont — mounted here (not inside the
+  // Typography foundation) so every foundation's PreviewPanel actually
+  // renders in it from first paint, not just after a visit to Font.
+  useLoadActiveFonts()
+  // Rebuilds every ramp when the contrast shift changes — mounted here, not in
+  // a foundation, so it can't be orphaned by which component the Color section
+  // happens to render (see the hook's own note).
+  useRegenerateScalesOnScaleSettings()
   const [tab, setTab] = useState<Tab>('foundations')
   // Every session lands on Variables · Color — no separate landing screen.
   const [activeFoundation, setActiveFoundation] = useState<string>('color')
@@ -330,13 +340,34 @@ export default function Configurator() {
   // ── Chrome accent — the UI's own highlight color (table active states,
   // modified dots, previewed-theme tints via `accent-ui`) tracks the system's
   // primary, adjusted for readability on dark chrome like the header/rail.
+  // It used to be `primaryScale[9]` raw in light chrome — the anchor tone, i.e.
+  // the user's hex verbatim. That's the one tone with NO contrast guarantee, so
+  // a light accent gave 3:1 section titles and 3:1 white-on-fill buttons while
+  // the Color preview panel right beside them rendered a correctly-darkened
+  // button (the token side anchors `action-primary` to `accessibleSolidTone`).
+  // Same anchor now drives the chrome, resolved against the chrome's own page —
+  // and each appearance walks its OWN ramp, so dark chrome reads the dark twin
+  // instead of brightening a light-ramp tone by hand.
+  // The contrast target is `--app` (the chrome PAGE), deliberately — the same
+  // reference the role catalogue uses for every text role
+  // (`contrastAgainst: 'background-primary'`). Aiming at `--elevated`
+  // (#e8e8ea) instead would be stricter, but for a pale accent it forces tone
+  // 12 — near-black — and the chrome stops reading as the user's colour at
+  // all. Residual: accent text sitting ON `bg-elevated` (active table rows)
+  // lands around 3.8:1 — fine as a UI component, short of AA for body text.
+  // Fixing THAT means moving those rows off `bg-elevated` onto an accent tint,
+  // which is a visual-design change, not a token one.
   const uiAccent =
     theme === 'dark'
-      ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a')
-      : primaryScale[9] ?? primaryColor
+      ? chromeAccent(primaryDarkScale, '#0a0a0a', primaryColor)
+      : chromeAccent(primaryScale, '#ffffff', primaryColor)
+  // The ink for `bg-accent-ui` fills. Derived, so a pale accent gets dark ink
+  // instead of the unreadable white every call site used to hardcode.
+  const uiAccentInk = readableInk(uiAccent)
   useEffect(() => {
     document.documentElement.style.setProperty('--accent-ui', uiAccent)
-  }, [uiAccent])
+    document.documentElement.style.setProperty('--accent-ink', uiAccentInk)
+  }, [uiAccent, uiAccentInk])
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = primaryScale
@@ -440,10 +471,13 @@ export default function Configurator() {
           focusFamilyKey={focusColorFamily}
         />
       </div>
-    ) : section.key === 'typography' ? (
-      // Typography owns its own internal scroll so its top bar + section column
-      // headers can stay pinned — no outer overflow here.
-      <div className="h-full p-8 flex flex-col min-h-0">
+    ) : section.key === 'typography' || section.key === 'radius' || section.key === 'spacing' ? (
+      // Typography and Radius own their internal scroll so their top bars +
+      // pinned column headers work — no outer overflow here. FLUSH, like the
+      // Color hub: `p-8` framed them as floating cards whose 198px rail no
+      // longer lined up with the icon toolbar or CenterHeader above. The Color
+      // tables set the parameters every railed foundation follows.
+      <div className="h-full flex flex-col min-h-0">
         <Active />
       </div>
     ) : (
@@ -669,7 +703,9 @@ export default function Configurator() {
                 Icon={header.Icon}
                 title={header.title}
                 subtitle={header.subtitle}
-                accentColor={theme === 'dark' ? readableAccent(primaryScale[9] ?? primaryColor, '#0a0a0a') : primaryScale[9] ?? primaryColor}
+                // Same derivation as --accent-ui, not a second copy of it: this
+                // title WAS the raw anchor tone, the most visible 3:1 failure.
+                accentColor={uiAccent}
               />
             )}
             <div className="flex-1 min-h-0">

@@ -78,6 +78,9 @@ export default function VariablesTable({
   toolbar,
   searchLabel = 'Filter tokens',
   wideValues = false,
+  railed = false,
+  railTop,
+  railBody,
 }: {
   title: string
   groups: VariableGroup[]
@@ -86,6 +89,18 @@ export default function VariablesTable({
   searchLabel?: string
   /** Give the value column the room (long CSS values, e.g. shadow ramps). */
   wideValues?: boolean
+  /**
+   * Renders the 198px left gutter the Color hub and Typography use, so this
+   * table's left edge lands on the SAME line as theirs. Opt-in per section:
+   * a section with no rail content (Radius) still wants the gutter for
+   * alignment, while the sections that are genuinely full-bleed (Spacing,
+   * Opacity, Shadow, Grid, Sizes) keep the undivided bar they have today.
+   */
+  railed?: boolean
+  /** Rail content beside the top bar — h-[52px] cell. */
+  railTop?: ReactNode
+  /** Rail content beside the rows — fills the remaining height. */
+  railBody?: ReactNode
 }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
@@ -97,12 +112,10 @@ export default function VariablesTable({
     .filter((g) => g.rows.length > 0)
   const stacked = groups.length > 1
 
-  return (
-    <div className="flex flex-col bg-app">
-      {/* Top bar */}
-      <div className="flex items-center justify-between gap-3 h-[52px] px-4 border-b border-line bg-app flex-shrink-0">
+  const topBar = (
+    <div className={`flex items-center justify-between gap-3 h-[52px] ${railed ? 'pl-4 pr-3' : 'px-4 border-b border-line'} bg-app flex-shrink-0`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-sm text-fg truncate">{title}</span>
+          <span className={railed ? 'text-[11px] font-semibold uppercase tracking-widest text-fg-muted truncate' : 'text-sm text-fg truncate'}>{title}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{total}</span>
         </div>
         <div className="flex items-center gap-3 min-w-0">
@@ -126,45 +139,69 @@ export default function VariablesTable({
           </div>
         </div>
       </div>
+  )
 
-      {/* Groups */}
-      {filtered.length === 0 ? (
-        <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
-      ) : (
-        filtered.map((g) => (
-          <div key={g.label ?? 'tokens'}>
-            {stacked && g.label && <GroupLabel label={g.label} count={g.rows.length} />}
-            <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} grid={grid} />
-            {g.rows.map((r, i) => (
-              <div key={r.name} className={rowClass(i, grid)}>
-                <div className="flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line">
-                  <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
-                  {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
-                </div>
-                <div className="flex items-center px-3 py-2 border-r border-line">
-                  <input
-                    type="text"
-                    value={r.value}
-                    onChange={(e) => r.onChange(e.target.value)}
-                    aria-label={`${r.name} value`}
-                    className="w-full bg-app text-[13px] font-mono text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">{r.preview}</div>
-                <button
-                  onClick={r.onReset}
-                  disabled={!r.modified}
-                  title="Reset to standard"
-                  aria-label={`Reset ${r.name} to standard`}
-                  className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
-                >
-                  <ResetIcon />
-                </button>
-              </div>
-            ))}
+  const rows = filtered.length === 0 ? (
+    <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
+  ) : (
+    filtered.map((g) => (
+      <div key={g.label ?? 'tokens'}>
+        {stacked && g.label && <GroupLabel label={g.label} count={g.rows.length} />}
+        <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} grid={grid} />
+        {g.rows.map((r, i) => (
+          <div key={r.name} className={rowClass(i, grid)}>
+            <div className="flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line">
+              <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
+              {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
+            </div>
+            <div className="flex items-center px-3 py-2 border-r border-line">
+              <input
+                type="text"
+                value={r.value}
+                onChange={(e) => r.onChange(e.target.value)}
+                aria-label={`${r.name} value`}
+                className="w-full bg-app text-[13px] font-mono text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors"
+              />
+            </div>
+            <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">{r.preview}</div>
+            <button
+              onClick={r.onReset}
+              disabled={!r.modified}
+              title="Reset to standard"
+              aria-label={`Reset ${r.name} to standard`}
+              className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+            >
+              <ResetIcon />
+            </button>
           </div>
-        ))
-      )}
+        ))}
+      </div>
+    ))
+  )
+
+  // Full-bleed (the 5 rail-less sections) — unchanged from before `railed`.
+  if (!railed) {
+    return (
+      <div className="flex flex-col bg-app">
+        {topBar}
+        {rows}
+      </div>
+    )
+  }
+
+  // Railed — a 198px gutter runs the full height beside BOTH the top bar and
+  // the rows, so the table's left edge lands on the same line as the Color
+  // hub's and Typography's navs.
+  return (
+    <div className="flex flex-col bg-app flex-1 min-h-0">
+      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+        <div className="w-[198px] flex-shrink-0 flex items-center px-4 h-[52px] border-r border-line">{railTop}</div>
+        <div className="flex-1 min-w-0">{topBar}</div>
+      </div>
+      <div className="flex items-stretch flex-1 min-h-0">
+        <div className="w-[198px] flex-shrink-0 border-r border-line bg-app overflow-y-auto">{railBody}</div>
+        <div className="flex-1 min-w-0 overflow-auto">{rows}</div>
+      </div>
     </div>
   )
 }

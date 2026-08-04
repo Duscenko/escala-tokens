@@ -5,59 +5,44 @@
 // promoted DEFINE surface Picker Color used to own — a quick-edit strip above
 // the table (hex field, "match states" wand, scale, algorithm settings) edits
 // whichever family is active, so palette definition and usage now live on one
-// screen. "+ Add" (in the nav header) creates a custom color family with its
-// own 1–12 scale. Token names in the table are the EXACT exported names
+// screen. The nav groups families under a THEME folder (see BASE_FOLDER) —
+// families are created by Semantics' "+ Theme", not from this rail. Token
+// names in the table are the EXACT exported names
 // (tokenGenerator's flattenScale prefixes: accent/neutral/error/success/
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
 // never disagree.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore, RESERVED_COLOR_KEYS, DEFAULT_THEME_SOURCES } from '../../store/useDesignStore'
-import type { ThemeSources } from '../../store/useDesignStore'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useDesignStore } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
-  generateFamilyDarkScale, detectSeedKind, solidFromSeed, type SeedKind,
+  generateDarkColorScale, generateFamilyDarkScale,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
-import { SWATCH, CHECKER, ScaleRow, usePopoverPlacement } from './colorControls'
+import { SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
-import { themesUsingFamily, familySlotFor } from '../../lib/themeSources'
-import { slugify } from '../../lib/utils'
+import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 
-// ── Family folders ──────────────────────────────────────────────────────────
-// The nav's folders are DERIVED from `themeSources` (see `familySlotFor`), not
-// stored on the family — a custom family reads as "Accents" precisely because
-// some theme's `brand` slot points at it. So "which folder should this go in?"
-// is really "which ROLE should it serve", and answering anything but Custom
-// means minting a theme that references it in that slot. That's the same move
-// NewTokenWizard's "Add as a secondary accent" makes, and the only
-// non-destructive one: re-pointing an EXISTING theme's slot would repaint the
-// user's current accent/neutral instead of adding alongside it.
+// ── Family groups ───────────────────────────────────────────────────────────
+// The second nav level, inside each theme folder. Which group a family lands
+// in is DERIVED from `themeSources` — a custom family reads as "Accents"
+// precisely because its theme's `brand` slot points at it (see `homeOf`).
+//
+// There is no "+ Add family" control here any more: minting a family from this
+// rail meant also deciding which theme slot should reference it (or inventing a
+// theme to hold it), which was too much flow for a nav header. Families are
+// created where that decision is already being made — Semantics' "+ Theme",
+// which asks for the accent/neutral/status colours it needs and files the
+// families it mints under that theme's folder automatically.
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
-
-/** Status intents — "States" is four distinct slots, so it needs a sub-choice. */
-const STATE_INTENTS = ['error', 'warning', 'success', 'info'] as const
-type StateIntent = (typeof STATE_INTENTS)[number]
-
-/** The theme slot a destination group writes, and the word its name counts from. */
-const GROUP_SLOT: Record<Exclude<FamilyGroup, 'Custom'>, (intent: StateIntent) => keyof ThemeSources> = {
-  Accents: () => 'brand',
-  Neutrals: () => 'gray',
-  States: (intent) => intent,
-}
-const GROUP_BASE_NAME: Record<FamilyGroup, (intent: StateIntent) => string> = {
-  Accents: () => 'Accent',
-  Neutrals: () => 'Neutral',
-  States: (intent) => intent.charAt(0).toUpperCase() + intent.slice(1),
-  Custom: () => '',
-}
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -86,6 +71,44 @@ const TONE_BANDS: { max: number; label: string }[] = [
 ]
 function toneBand(tone: number): string {
   return TONE_BANDS.find((b) => tone <= b.max)?.label ?? ''
+}
+
+// What a step is FOR — the Token Details dialog's Description, mirroring the
+// role descriptions Semantics shows in the same slot. Keyed off the tone
+// number (like TONE_BANDS), so it holds under any naming scheme.
+const TONE_DESCRIPTIONS: { max: number; text: string }[] = [
+  { max: 2,  text: 'App background. Step 1 is the page itself; step 2 is a subtle surface on top of it.' },
+  { max: 5,  text: 'Interactive component fills — 3 at rest, 4 on hover, 5 while active.' },
+  { max: 8,  text: 'Borders — 6 subtle, 7 the default, 8 on hover or focus.' },
+  { max: 10, text: 'Solid fills. Step 9 is the anchor — the family’s own colour, verbatim — and 10 is its hover.' },
+  { max: 12, text: 'Accessible text on the page — 11 clears WCAG AA (≈4.5:1), 12 is the high-contrast step.' },
+]
+function toneDescription(tone: number): string {
+  return TONE_DESCRIPTIONS.find((b) => tone <= b.max)?.text ?? ''
+}
+
+// The alpha tone the family NAV previews. Not the anchor (step 9 composites to
+// a near-opaque overlay, so it reads as a plain solid chip and defeats the
+// point); a mid interactive step is unmistakably translucent while still
+// carrying the family's hue.
+const ALPHA_NAV_TONE = 5
+
+/** A family's chip in the nav. An alpha family gets the checkerboard treatment
+ *  its table cells already use (see AlphaHexCell) instead of a solid chip of
+ *  its base — the two families sat side by side under Accents looking
+ *  identical, so nothing on screen said which one was the translucent ramp. */
+function FamilySwatch({ family, dark }: { family: Family; dark: boolean }) {
+  if (!family.isAlpha) return <span className={SWATCH} style={{ backgroundColor: family.base }} />
+  const value = (dark ? family.dark : family.light)[ALPHA_NAV_TONE] ?? family.base
+  return (
+    <span
+      className={`${SWATCH} relative overflow-hidden`}
+      style={{ ...CHECKER, backgroundSize: '5px 5px' }}
+      title={`${family.label} — a translucent ramp (${value})`}
+    >
+      <span className="absolute inset-0" style={{ backgroundColor: value }} />
+    </span>
+  )
 }
 
 
@@ -125,13 +148,22 @@ function HexCell({ value, onChange, ariaLabel }: { value: string; onChange: (hex
 // so this has no input, just the swatch (over a checkerboard, so the
 // translucency itself stays legible instead of reading as a flat, wrong-
 // looking color) and the hex as static text. ──
-function AlphaHexCell({ value }: { value: string }) {
+function AlphaHexCell({ value, solid, solidName }: { value: string; solid?: string; solidName?: string }) {
+  // Split swatch when the solid twin is known: the LEFT half is the raw alpha
+  // over the checkerboard (so the translucency is unmistakable), the RIGHT half
+  // is the solid tone it composites to. Side by side they read as one fact —
+  // "this alpha IS accent-3" — which a lone faint chip never communicated; the
+  // checkerboard proved it was translucent but not WHICH tone it reproduced.
+  const title = solid && solidName
+    ? `${value} — the alpha that renders as ${solidName} (${solid}) over its page. Derived, not directly editable.`
+    : `${value} — derived, not directly editable`
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <span className={`${SWATCH} relative overflow-hidden flex-shrink-0`} style={{ ...CHECKER, backgroundSize: '6px 6px' }}>
-        <span className="absolute inset-0" style={{ backgroundColor: value }} />
+      <span className={`${SWATCH} relative overflow-hidden flex-shrink-0`} style={{ ...CHECKER, backgroundSize: '6px 6px' }} title={title}>
+        <span className={`absolute inset-y-0 left-0 ${solid ? 'right-1/2' : 'right-0'}`} style={{ backgroundColor: value }} />
+        {solid && <span className="absolute inset-y-0 left-1/2 right-0" style={{ backgroundColor: solid }} />}
       </span>
-      <span className="w-full min-w-0 truncate text-[12px] font-mono tabular-nums text-fg-muted px-1.5 py-1" title={`${value} — derived, not directly editable`}>
+      <span className="w-full min-w-0 truncate text-[12px] font-mono tabular-nums text-fg-muted px-1.5 py-1" title={title}>
         {value.replace(/^#/, '').toUpperCase()}
       </span>
     </div>
@@ -157,7 +189,30 @@ interface Family {
    *  read-only, over a checkerboard so the translucency stays legible instead
    *  of reading as a flat (and page-appearance-dependent) wrong color. */
   isAlpha?: boolean
+  /** For an alpha twin of a CUSTOM family: the family key it derives from, so
+   *  it files into the same theme folder as its solid instead of drifting into
+   *  "Custom" on its own. */
+  alphaOf?: string
+  /** For an alpha twin: the SOLID ramp it reproduces when composited over its
+   *  page. Rendered beside the translucent value so a row reads as "this alpha
+   *  IS that solid" rather than an unrelated faint colour. */
+  solidLight?: ColorScale
+  solidDark?: ColorScale
 }
+
+// ── Theme folders ───────────────────────────────────────────────────────────
+// The nav is two levels: a THEME folder, then that theme's Accents/Neutrals/
+// States. Every family has exactly one home theme, so nothing is duplicated:
+//
+//  · The globals (accent, neutral, the four states) belong to `BASE_FOLDER` —
+//    labelled "Theme 1" rather than a theme's name because BOTH built-in modes
+//    (light + dark) read them; they're one palette seen two ways, not two.
+//  · A custom family belongs to the FIRST theme in `themeOrder` whose sources
+//    reference it — i.e. the theme that minted it when it was added in
+//    Semantics. A theme that reuses a global for a slot doesn't re-home it.
+//  · Anything no theme references falls to `CUSTOM_FOLDER`.
+const BASE_FOLDER = '__base'
+const CUSTOM_FOLDER = '__custom'
 
 export default function ColorPrimitives({
   previewTheme = 'light',
@@ -186,10 +241,11 @@ export default function ColorPrimitives({
     warningColor, warningScale, warningDarkScale, setWarningScale, setWarningDarkScale,
     successColor, successScale, successDarkScale, setSuccessScale, setSuccessDarkScale,
     infoColor, infoScale, infoDarkScale, setInfoScale, setInfoDarkScale,
-    customColors, addCustomColor, updateCustomColor, removeCustomColor,
-    pageBackground, darkBackground, themeKinds, themeSources, themes, addTheme,
+    customColors, updateCustomColor, removeCustomColor,
+    removeTheme,
+    pageBackground, darkBackground, themeKinds, themeSources, themeOrder,
     colorAlgorithm, colorNaming, contrastShift,
-    setColorAlgorithm, setColorNaming, setContrastShift,
+    setContrastShift,
   } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
@@ -213,19 +269,38 @@ export default function ColorPrimitives({
   // ── Families table state ──
   const [activeFamily, setActiveFamily] = useState('accent')
   const [query, setQuery] = useState('')
+  // Which tone's Token Details dialog is open, and which appearance that
+  // dialog is currently editing. Rows used to expand INLINE here while the
+  // identical job on the Semantics tab opened a dialog — same hub, same "edit
+  // one token's value" task, two different interactions. Primitives now opens
+  // the SAME shared TokenDetailsModal, so there's one thing to learn.
   const [expandedTone, setExpandedTone] = useState<number | null>(null)
-  const [addOpen, setAddOpen] = useState(false)
+  const [detailMode, setDetailMode] = useState<'light' | 'dark'>('light')
+  const reduce = useReducedMotion() ?? false
+  /** The tones table's scroll container — the Token Details dialog's anchor. */
+  const tableRef = useRef<HTMLDivElement>(null)
+
   // Scale-settings gear (algorithm/naming/contrast shift) — promoted from
   // Picker Color into the quick-edit strip below.
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // Which nav folders (Accents/Neutrals/States/Custom) are collapsed — all
-  // expanded by default, same as before this was collapsible at all.
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<FamilyGroup>>(new Set())
-  const toggleGroup = (label: FamilyGroup) => {
+  // Theme folder pending deletion. The rail's per-family trash is LOCKED while
+  // a theme references that family ("remove the theme first") — and until now
+  // the only place to remove a theme was Semantics' column header, which is a
+  // different tab. So a custom family created by "+ Theme" was, in practice,
+  // undeletable from the screen that shows it. This is that missing exit:
+  // deleting the theme frees its families into Custom, where the existing
+  // per-family trash already works. Nothing about the colours is destroyed —
+  // only the theme and the semantic values mapped to it.
+  const [themeToDelete, setThemeToDelete] = useState<string | null>(null)
+  // Collapsed nav sections — all expanded by default. Keys are the theme
+  // folder's key for a whole folder, or `<folder>/<group>` for one of its
+  // Accents/Neutrals/States groups, so the two levels collapse independently.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev)
-      if (next.has(label)) next.delete(label)
-      else next.add(label)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
@@ -236,6 +311,13 @@ export default function ColorPrimitives({
   useEffect(() => {
     if (focusFamilyKey) setActiveFamily(focusFamilyKey)
   }, [focusFamilyKey])
+
+  /** Families some theme reads as its brand — those get an alpha twin. */
+  const brandFamilyKeys = useMemo(() => {
+    const s = new Set<string>()
+    Object.values(themeSources).forEach((refs) => { if (refs?.brand) s.add(refs.brand) })
+    return s
+  }, [themeSources])
 
   // A no-op setter for derived families (Accent-Alpha) — never actually
   // invoked since every edit affordance (pencil, per-row expand) is guarded
@@ -255,24 +337,45 @@ export default function ColorPrimitives({
       light: generateAlphaScale(primaryScale, pageBackground, 'light'),
       dark: generateAlphaScale(primaryDarkScale, darkBackground, 'dark'),
       setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: primaryScale, solidDark: primaryDarkScale,
     },
     { key: 'neutral', label: 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,    setLight: setGrayLightScale, setDark: setGrayDarkScale },
     { key: 'error',   label: 'Error',   tokenPrefix: 'error',   base: errorColor,    light: errorScale,     dark: errorDarkScale,   setLight: setErrorScale,     setDark: setErrorDarkScale },
     { key: 'success', label: 'Success', tokenPrefix: 'success', base: successColor,  light: successScale,   dark: successDarkScale, setLight: setSuccessScale,   setDark: setSuccessDarkScale },
     { key: 'warning', label: 'Warning', tokenPrefix: 'warning', base: warningColor,  light: warningScale,   dark: warningDarkScale, setLight: setWarningScale,   setDark: setWarningDarkScale },
     { key: 'info',    label: 'Info',    tokenPrefix: 'info',    base: infoColor,     light: infoScale,      dark: infoDarkScale,    setLight: setInfoScale,      setDark: setInfoDarkScale },
-    ...customColors.map((c) => ({
-      key: `custom-${c.key}`,
-      label: c.label,
-      tokenPrefix: c.key,
-      base: c.base,
-      light: c.scale,
-      dark: c.darkScale ?? c.scale,
-      setLight: (s: ColorScale) => updateCustomColor(c.key, { scale: s }),
-      setDark: (s: ColorScale) => updateCustomColor(c.key, { darkScale: s }),
-      customKey: c.key,
-    })),
+    // A custom family that some theme reads as its BRAND gets an alpha twin
+    // right after it, exactly like the global Accent does — a theme's accent
+    // needs its overlay ramp as much as the default one. Built adjacent so the
+    // pair stays together in the Accents group. These are real exported tokens
+    // (`tokenGenerator` already emits `<key>-a*` for every custom family), not
+    // a display-only row.
+    ...customColors.flatMap((c): Family[] => {
+      const solid: Family = {
+        key: `custom-${c.key}`,
+        label: c.label,
+        tokenPrefix: c.key,
+        base: c.base,
+        light: c.scale,
+        dark: c.darkScale ?? c.scale,
+        setLight: (s: ColorScale) => updateCustomColor(c.key, { scale: s }),
+        setDark: (s: ColorScale) => updateCustomColor(c.key, { darkScale: s }),
+        customKey: c.key,
+      }
+      if (!brandFamilyKeys.has(c.key)) return [solid]
+      return [solid, {
+        key: `custom-${c.key}-alpha`,
+        label: `${c.label}-Alpha`,
+        tokenPrefix: `${c.key}-a`,
+        base: c.base,
+        light: generateAlphaScale(c.scale, pageBackground, 'light'),
+        dark: generateAlphaScale(c.darkScale ?? c.scale, darkBackground, 'dark'),
+        setLight: noopSet, setDark: noopSet, isAlpha: true, alphaOf: c.key,
+        solidLight: c.scale, solidDark: c.darkScale ?? c.scale,
+      }]
+    }),
   ], [
+    brandFamilyKeys,
     primaryColor, primaryScale, setPrimaryScale,
     primaryDarkScale, setPrimaryDarkScale,
     pageBackground, darkBackground, noopSet,
@@ -298,102 +401,70 @@ export default function ColorPrimitives({
   // their full scale for quick editing doesn't remove them from usage.
   // Derived from `themeSources`, so a family minted by "Add theme" files
   // itself under the right folder with zero bookkeeping.
-  const groupOf = useCallback(
-    (f: Family): FamilyGroup => {
-      if (f.key === 'accent' || f.key === 'accent-alpha') return 'Accents'
-      if (f.key === 'neutral') return 'Neutrals'
-      if (!f.customKey) return 'States'
-      const slot = familySlotFor(f.customKey, themeSources)
-      if (slot === 'brand') return 'Accents'
-      if (slot === 'gray') return 'Neutrals'
-      if (slot) return 'States'
-      return 'Custom'
+  /** A family's home folder + the group it sits in there. See BASE_FOLDER. */
+  const homeOf = useCallback(
+    (f: Family): { folder: string; group: FamilyGroup } => {
+      // Globals — one palette, read by both built-in modes.
+      if (f.key === 'accent' || f.key === 'accent-alpha') return { folder: BASE_FOLDER, group: 'Accents' }
+      if (f.key === 'neutral') return { folder: BASE_FOLDER, group: 'Neutrals' }
+      const custKey = f.customKey ?? f.alphaOf
+      if (!custKey) return { folder: BASE_FOLDER, group: 'States' }
+      // Custom family — homed to the first theme that references it, under the
+      // group matching the SLOT it fills there (brand → Accents, gray →
+      // Neutrals, any status slot → States).
+      for (const theme of themeOrder) {
+        const refs = themeSources[theme]
+        if (!refs) continue
+        for (const slot of FAMILY_SLOTS) {
+          if (refs[slot] !== custKey) continue
+          return {
+            folder: theme,
+            group: slot === 'brand' ? 'Accents' : slot === 'gray' ? 'Neutrals' : 'States',
+          }
+        }
+      }
+      return { folder: CUSTOM_FOLDER, group: 'Custom' }
     },
-    [themeSources],
+    [themeOrder, themeSources],
   )
-  const famGroups = useMemo(
-    () =>
-      FAMILY_GROUPS
-        .map((label) => ({ label, items: families.filter((f) => groupOf(f) === label) }))
-        .filter((g) => g.items.length > 0),
-    [families, groupOf],
-  )
+
+  const navFolders = useMemo(() => {
+    const byFolder = new Map<string, Map<FamilyGroup, Family[]>>()
+    families.forEach((f) => {
+      const { folder, group } = homeOf(f)
+      if (!byFolder.has(folder)) byFolder.set(folder, new Map())
+      const groups = byFolder.get(folder)!
+      if (!groups.has(group)) groups.set(group, [])
+      groups.get(group)!.push(f)
+    })
+    // Base first, then themes in the user's own column order, Custom last.
+    const order = [BASE_FOLDER, ...themeOrder.filter((t) => t !== BASE_FOLDER), CUSTOM_FOLDER]
+    return order
+      .filter((k) => byFolder.has(k))
+      .map((k) => ({
+        key: k,
+        label:
+          k === BASE_FOLDER ? 'Theme 1'
+          : k === CUSTOM_FOLDER ? 'Custom'
+          : k.charAt(0).toUpperCase() + k.slice(1),
+        groups: FAMILY_GROUPS
+          .map((label) => ({ label, items: byFolder.get(k)!.get(label) ?? [] }))
+          .filter((g) => g.items.length > 0),
+      }))
+  }, [families, homeOf, themeOrder])
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
   const rowName = (tone: number) => `${family.tokenPrefix}-${namingLabels[tone - 1] ?? tone}`
+  // The SOLID token an alpha row reproduces — `accent-a-3` → `accent-3`. The
+  // alpha prefix is the solid's plus "-a" (see the alpha families above), so
+  // dropping that suffix recovers the solid's exported name exactly.
+  const solidRowName = (tone: number) =>
+    `${family.tokenPrefix.replace(/-a$/, '')}-${namingLabels[tone - 1] ?? tone}`
   const visibleTones = q ? tones.filter((tone) => rowName(tone).toLowerCase().includes(q)) : tones
 
   const setTone = (scale: ColorScale, setter: (s: ColorScale) => void, tone: number, hex: string) =>
     setter({ ...scale, [tone]: hex })
-
-  // ── "+ Add" custom-family popover ──
-  const addRef = useRef<HTMLDivElement>(null)
-  const [addName, setAddName] = useState('')
-  const [addHex, setAddHex] = useState('#9522e9')
-  const [addGroup, setAddGroup] = useState<FamilyGroup>('Custom')
-  const [addIntent, setAddIntent] = useState<StateIntent>('error')
-  // Whether the user has typed their own name. The suggestion follows the
-  // destination group, but only until they take over — re-suggesting over a
-  // typed name would silently discard it.
-  const [addNameDirty, setAddNameDirty] = useState(false)
-
-  /** First free `<Base>`, `<Base> 2`, `<Base> 3`… — free meaning its SLUG is
-   *  free, since that's what actually has to be unique (`addTaken`). */
-  const suggestName = useCallback(
-    (group: FamilyGroup, intent: StateIntent): string => {
-      const base = GROUP_BASE_NAME[group](intent)
-      if (!base) return '' // Custom keeps the empty field + placeholder.
-      const free = (label: string) => {
-        const s = slugify(label)
-        return !!s && !RESERVED_COLOR_KEYS.includes(s) && !customColors.some((c) => c.key === s)
-      }
-      if (free(base)) return base
-      for (let n = 2; n < 100; n++) {
-        if (free(`${base} ${n}`)) return `${base} ${n}`
-      }
-      return base
-    },
-    [customColors],
-  )
-
-  // Opening seeds the destination from WHERE you opened it: adding while a
-  // family under Accents is selected means you're adding an accent, so it
-  // shouldn't land in Custom and need reclassifying by hand.
-  useEffect(() => {
-    if (!addOpen) return
-    const g = groupOf(family)
-    const intent: StateIntent =
-      g === 'States' && (STATE_INTENTS as readonly string[]).includes(family.key)
-        ? (family.key as StateIntent)
-        : 'error'
-    setAddGroup(g)
-    setAddIntent(intent)
-    setAddName(suggestName(g, intent))
-    setAddNameDirty(false)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addOpen])
-
-  // Changing the destination re-suggests the name — "Accent 2" filed under
-  // States would be a lie about what it is.
-  const changeAddGroup = (g: FamilyGroup, intent = addIntent) => {
-    setAddGroup(g)
-    setAddIntent(intent)
-    if (!addNameDirty) setAddName(suggestName(g, intent))
-  }
-
-  useEffect(() => {
-    if (!addOpen) return
-    function onDown(e: MouseEvent) {
-      if (addRef.current && !addRef.current.contains(e.target as Node)) setAddOpen(false)
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setAddOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
-  }, [addOpen])
-
-  const addPlace = usePopoverPlacement(addRef, addOpen)
 
   // ── Per-family colour editing ──
   // The nav used to be selection-only: to retint a family you had to go back up
@@ -402,11 +473,44 @@ export default function ColorPrimitives({
   // owns it.
   const [editFamily, setEditFamily] = useState<string | null>(null)
   const editRef = useRef<HTMLDivElement>(null)
+  const editPopRef = useRef<HTMLDivElement>(null)
   const editPlace = usePopoverPlacement(editRef, editFamily)
+
+  // The picker is 256px wide but the nav column is 198px AND scrolls
+  // (`overflow-y-auto`), with two more `overflow:hidden` wrappers above it from
+  // the folder/group collapse animations. An absolutely-positioned popover
+  // inside that stack gets CLIPPED on its right edge and top — which is exactly
+  // the bug: the state pickers rendered as a sliver inside the rail's mask.
+  //
+  // No arrangement of z-index fixes an overflow clip, so the popover is
+  // portaled to <body> and positioned `fixed` off the row's measured rect
+  // instead. Re-measured on scroll (capture phase, so the NAV's own scroll
+  // counts) and resize so it stays pinned to its row.
+  const [editRect, setEditRect] = useState<DOMRect | null>(null)
+  useEffect(() => {
+    if (!editFamily) { setEditRect(null); return }
+    const measure = () => {
+      const r = editRef.current?.getBoundingClientRect()
+      if (r) setEditRect(r)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [editFamily])
+
   useEffect(() => {
     if (!editFamily) return
     function onDown(e: MouseEvent) {
-      if (editRef.current && !editRef.current.contains(e.target as Node)) setEditFamily(null)
+      const t = e.target as Node
+      // Both the anchor row AND the portaled popover count as "inside" — the
+      // popover is no longer a DOM descendant of the row, so checking only the
+      // row would close the picker on its own clicks.
+      if (editRef.current?.contains(t) || editPopRef.current?.contains(t)) return
+      setEditFamily(null)
     }
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setEditFamily(null) }
     document.addEventListener('mousedown', onDown)
@@ -445,52 +549,99 @@ export default function ColorPrimitives({
     applyStateColor(f.key as 'error' | 'warning' | 'success' | 'info', hex)
   }
 
-  const addSlug = slugify(addName)
-  const addTaken = RESERVED_COLOR_KEYS.includes(addSlug) || customColors.some((c) => c.key === addSlug)
-  const canAdd = addName.trim().length > 0 && !addTaken
+  // Built here rather than inline in the nav so it renders ONCE, outside every
+  // clipping ancestor. `left` follows the row but is clamped to the viewport so
+  // a 256px panel can't hang off-screen on a narrow window.
+  const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
+  const editPortal = editingFamily && editRect
+    ? createPortal(
+        <AnimatePresence>
+          <motion.div
+            ref={editPopRef}
+            key={editingFamily.key}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            role="dialog"
+            aria-label={`Edit ${editingFamily.label} color`}
+            style={{
+              position: 'fixed',
+              left: Math.min(editRect.left, window.innerWidth - 256 - 12),
+              ...(editPlace.up
+                ? { bottom: window.innerHeight - editRect.top + 8 }
+                : { top: editRect.bottom + 8 }),
+              maxHeight: editPlace.max,
+            }}
+            className="z-50 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-shrink-0">
+              <span className={SWATCH} style={{ backgroundColor: editingFamily.base }} />
+              <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{editingFamily.label}</span>
+              <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+              <ColorPickerPanel value={editingFamily.base} onChange={(hex) => changeFamilyBase(editingFamily, hex)} />
+            </div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body,
+      )
+    : null
 
-  // What the pasted colour IS decides how the family is built — see SeedKind.
-  // Detected from the value, but the user owns the call.
-  const detectedKind = useMemo(
-    () => detectSeedKind(addHex, pageBackground, darkBackground),
-    [addHex, pageBackground, darkBackground],
-  )
-  const [seedKind, setSeedKind] = useState<SeedKind | null>(null)
-  const activeSeedKind: SeedKind = seedKind ?? detectedKind
-
-  function submitAdd() {
-    if (!canAdd) return
-    // An alpha seed is composited back to the solid it renders as; a dark seed
-    // anchors the DARK ramp (step 9) and the light one is derived from it.
-    const solid = solidFromSeed(addHex, activeSeedKind, pageBackground, darkBackground)
-    let scale: ColorScale
-    let darkScale: ColorScale
+  // ── Token Details dialog (one tone of the active family) ──
+  // "Reset" means: put this tone back to what the generator produces for the
+  // family's own base — the primitives' equivalent of Semantics' "reset to
+  // the recommended tone". Computed from the SAME generators the family was
+  // built with (neutral has its own dark builder), so a reset can't disagree
+  // with what editing the family colour would produce.
+  const standardScales = useMemo(() => {
     try {
-      if (activeSeedKind === 'dark') {
-        darkScale = generateFamilyDarkScale(solid, colorAlgorithm, contrastShift, darkBackground)
-        scale = generateColorScale(solid, colorAlgorithm, contrastShift, pageBackground)
-      } else {
-        scale = generateColorScale(solid, colorAlgorithm, contrastShift, pageBackground)
-        darkScale = generateFamilyDarkScale(solid, colorAlgorithm, contrastShift, darkBackground)
+      return {
+        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pageBackground),
+        dark: family.key === 'neutral'
+          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, darkBackground)
+          : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, darkBackground),
       }
-    } catch { return }
-    addCustomColor({ key: addSlug, label: addName.trim(), base: solid, scale, darkScale })
-    // A family lands in a folder by being REFERENCED, never by carrying a group
-    // field — so anything but Custom mints a theme identical to the defaults
-    // except for the one slot pointing here (`familySlotFor` then folders it).
-    if (addGroup !== 'Custom') {
-      let themeKey = addSlug
-      let n = 2
-      while (themes[themeKey]) themeKey = `${addSlug}-${n++}`
-      const slot = GROUP_SLOT[addGroup](addIntent)
-      addTheme(themeKey, 'light', { ...DEFAULT_THEME_SOURCES, [slot]: addSlug } as ThemeSources)
+    } catch {
+      return null
     }
-    setActiveFamily(`custom-${addSlug}`)
-    setAddName('')
-    setAddNameDirty(false)
-    setSeedKind(null)
-    setAddOpen(false)
-  }
+  }, [family.base, family.key, colorAlgorithm, contrastShift, pageBackground, darkBackground])
+
+  const detailsModal = !family.isAlpha && expandedTone != null ? (() => {
+    const tone = expandedTone
+    const name = rowName(tone)
+    const modes = [
+      { key: 'light' as const, value: family.light[tone] ?? '#ffffff', std: standardScales?.light[tone], set: (hex: string) => setTone(family.light, family.setLight, tone, hex) },
+      { key: 'dark' as const, value: family.dark[tone] ?? '#000000', std: standardScales?.dark[tone], set: (hex: string) => setTone(family.dark, family.setDark, tone, hex) },
+    ]
+    const modified = modes.some((m) => m.std && m.value.toLowerCase() !== m.std.toLowerCase())
+    return (
+      <TokenDetailsModal
+        key={`${family.key}-${tone}`}
+        name={name}
+        // Matches what `exporters.ts` actually emits for a primitive
+        // (`--color-accent-9`), so the chip is copy-pasteable as-is.
+        cssVarName={`color-${name}`}
+        description={toneDescription(tone)}
+        onReset={() => modes.forEach((m) => { if (m.std) m.set(m.std) })}
+        resetDisabled={!modified}
+        onClose={() => setExpandedTone(null)}
+        reduce={reduce}
+        anchorRef={tableRef}
+        initialOpenKey={detailMode}
+        // One collapsible card per appearance, first open — the same shape
+        // Semantics' modes use. Collapsed peers are what make stacking full
+        // HSV pickers affordable here: only the mode you opened is tall.
+        sections={modes.map((m) => ({
+          key: m.key,
+          label: m.key,
+          kind: m.key,
+          content: <ColorPickerPanel value={m.value} onChange={m.set} />,
+        }))}
+      />
+    )
+  })() : null
 
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: 'minmax(9rem,1.1fr) repeat(2, minmax(8.5rem,1fr)) 2.75rem',
@@ -521,7 +672,11 @@ export default function ColorPrimitives({
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{family.label} color</span>
           {family.isAlpha ? (
             <div className="w-full h-9 px-2.5 rounded-[13px] border border-line-strong bg-surface flex items-center">
-              <AlphaHexCell value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'} />
+              <AlphaHexCell
+                value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'}
+                solid={(darkPreview ? family.solidDark : family.solidLight)?.[BASE_TONE]}
+                solidName={solidRowName(BASE_TONE)}
+              />
             </div>
           ) : (
             <div ref={stripEditRef} className="relative w-full">
@@ -604,8 +759,8 @@ export default function ColorPrimitives({
             onClick={() => setSettingsOpen((o) => !o)}
             aria-haspopup="dialog"
             aria-expanded={settingsOpen}
-            aria-label="Scale settings — algorithm, naming, contrast shift"
-            title="Scale settings"
+            aria-label="Contrast — how far every ramp travels from the page"
+            title="Contrast"
             className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
               settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
             }`}
@@ -613,14 +768,7 @@ export default function ColorPrimitives({
             <SlidersIcon />
           </button>
           <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-            <ColorControls
-              algorithm={colorAlgorithm}
-              naming={colorNaming}
-              contrastShift={contrastShift}
-              onAlgorithm={setColorAlgorithm}
-              onNaming={setColorNaming}
-              onShift={setContrastShift}
-            />
+            <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
           </ScaleSettingsModal>
         </div>
         </div>
@@ -634,139 +782,6 @@ export default function ColorPrimitives({
       <div className="flex items-stretch flex-shrink-0 border-b border-line">
         <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
           <span className="text-[13px] font-semibold text-fg">Groups</span>
-          <div ref={addRef} className="relative">
-            <button
-              onClick={() => setAddOpen((v) => !v)}
-              aria-haspopup="dialog"
-              aria-expanded={addOpen}
-              aria-label="Add color family"
-              title="Add a custom color family with its own 1–12 scale"
-              className="flex items-center justify-center w-6 h-6 rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
-            </button>
-            <AnimatePresence>
-              {addOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.14, ease: 'easeOut' }}
-                  role="dialog"
-                  aria-label="Add color family"
-                  // Capped and split into three bands: the name and the CTA are
-                  // pinned, only the picker scrolls. Unbounded, the panel ran
-                  // past the viewport and "Add family" became unreachable.
-                  style={{ maxHeight: addPlace.max }}
-                  className={`absolute left-0 z-30 w-72 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                    addPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
-                  }`}
-                >
-                  <div className="flex flex-col gap-3 px-4 pt-4 pb-3 flex-shrink-0">
-                    <span className="text-sm font-semibold text-fg">Add color family</span>
-                    <input
-                      value={addName}
-                      onChange={(e) => { setAddName(e.target.value); setAddNameDirty(true) }}
-                      onFocus={(e) => e.currentTarget.select()}
-                      onKeyDown={(e) => { if (e.key === 'Enter') submitAdd() }}
-                      placeholder="Family name — e.g. Teal"
-                      aria-label="Family name"
-                      autoFocus
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
-                    />
-                    {addTaken && (
-                      <span className="text-[11px] text-red-500">That name is already in use.</span>
-                    )}
-
-                    {/* Destination folder. Pre-set from the family you opened
-                        this on, so adding a second accent from Accent lands
-                        under Accents instead of needing reclassifying. */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[11px] text-fg-muted">Add to…</span>
-                      <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
-                        {FAMILY_GROUPS.map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => changeAddGroup(g)}
-                            aria-pressed={addGroup === g}
-                            className={`flex-1 px-1 py-1 rounded-md text-[10px] font-medium transition-colors ${
-                              addGroup === g ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
-                            }`}
-                          >
-                            {g}
-                          </button>
-                        ))}
-                      </div>
-                      {/* "States" is four separate slots, not one — so it asks
-                          which intent rather than guessing. */}
-                      {addGroup === 'States' && (
-                        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
-                          {STATE_INTENTS.map((i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => changeAddGroup('States', i)}
-                              aria-pressed={addIntent === i}
-                              className={`flex-1 px-1 py-1 rounded-md text-[10px] font-medium capitalize transition-colors ${
-                                addIntent === i ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
-                              }`}
-                            >
-                              {i}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <span className="text-[10px] text-fg-faint leading-snug">
-                        {addGroup === 'Custom'
-                          ? 'A free-standing palette — no role until you assign one.'
-                          : `Mints a theme using this as its ${GROUP_SLOT[addGroup](addIntent)}, which is what files it under ${addGroup}.`}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[11px] text-fg-muted">This color is my…</span>
-                      <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
-                        {(['light', 'dark', 'alpha'] as SeedKind[]).map((k) => (
-                          <button
-                            key={k}
-                            type="button"
-                            onClick={() => setSeedKind(k)}
-                            aria-pressed={activeSeedKind === k}
-                            title={
-                              k === 'light' ? 'Light-theme solid — the dark ramp is derived from it'
-                              : k === 'dark' ? 'Dark-theme solid — anchors the dark ramp instead'
-                              : 'A translucent value — composited over the page to recover its solid'
-                            }
-                            className={`flex-1 px-2 py-1 rounded-md text-[11px] font-medium capitalize transition-colors ${
-                              activeSeedKind === k ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
-                            }`}
-                          >
-                            {k}
-                          </button>
-                        ))}
-                      </div>
-                      <span className="text-[10px] text-fg-faint leading-snug">
-                        {seedKind === null ? 'Detected from the value — change it if that\'s not what you meant.' : null}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-1">
-                    <ColorPickerPanel value={addHex} onChange={setAddHex} />
-                  </div>
-                  <div className="px-4 pt-3 pb-4 flex-shrink-0 border-t border-line">
-                    <button
-                      onClick={submitAdd}
-                      disabled={!canAdd}
-                      className="w-full px-3 py-2 rounded-lg text-[13px] font-semibold bg-fg text-app disabled:opacity-30 transition-opacity"
-                    >
-                      Add family
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
         </div>
         {/* items-stretch + no left padding: the active tab's tint has to reach
             this cell's top, bottom and left edge to read as a block rather than
@@ -798,13 +813,67 @@ export default function ColorPrimitives({
       {/* ── nav + table, filling the remaining height ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
       <nav aria-label="Color families" className="w-[198px] flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app">
-        {famGroups.map((group) => {
-          const collapsed = collapsedGroups.has(group.label)
+        {navFolders.map((folder) => {
+          const folderCollapsed = collapsedGroups.has(folder.key)
           return (
-            <div key={group.label} className="flex flex-col gap-0.5">
+          <div key={folder.key} className="flex flex-col">
+            {/* Theme folder — the outer level. Its Accents/Neutrals/States sit
+                inside it, so a second theme's families never mix with the
+                base palette's. */}
+            {/* A THEME folder (not Base, not Custom) can be deleted from here
+                — see `themeToDelete`. The trash is hover-only so the rail stays
+                quiet, but it's always reachable by keyboard. */}
+            <div className="group/folder flex items-center gap-1 pr-1.5">
             <button
               type="button"
-              onClick={() => toggleGroup(group.label)}
+              onClick={() => toggleGroup(folder.key)}
+              aria-expanded={!folderCollapsed}
+              className="flex-1 min-w-0 flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-muted hover:text-fg transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+              </svg>
+              <span className="flex-1 text-left truncate">{folder.label}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${folderCollapsed ? '-rotate-90' : ''}`}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setThemeToDelete(folder.key)}
+                aria-label={`Delete theme ${folder.label}`}
+                title={`Delete the ${folder.label} theme — its color families stay, and move to Custom`}
+                className="mt-1.5 flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/folder:opacity-100 focus-visible:opacity-100 transition-all"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                </svg>
+              </button>
+            )}
+            </div>
+            <AnimatePresence initial={false}>
+              {!folderCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+        {folder.groups.map((group) => {
+          const groupKey = `${folder.key}/${group.label}`
+          const collapsed = collapsedGroups.has(groupKey)
+          // The Custom folder's only group IS "Custom" — a second header
+          // repeating the folder's own name adds a level without adding
+          // information, so it renders its families directly.
+          const hideHeader = folder.key === CUSTOM_FOLDER
+          return (
+            <div key={groupKey} className="flex flex-col gap-0.5 pl-2">
+            {!hideHeader && (
+            <button
+              type="button"
+              onClick={() => toggleGroup(groupKey)}
               aria-expanded={!collapsed}
               className="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint hover:text-fg-muted transition-colors"
             >
@@ -816,8 +885,9 @@ export default function ColorPrimitives({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
+            )}
             <AnimatePresence initial={false}>
-              {!collapsed && (
+              {(!collapsed || hideHeader) && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -836,7 +906,7 @@ export default function ColorPrimitives({
                       isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                     }`}
                   >
-                    <span className={SWATCH} style={{ backgroundColor: f.base }} />
+                    <FamilySwatch family={f} dark={darkPreview} />
                     <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{f.label}</span>
                   </button>
                   {/* Edit — stays visible on the active row so the affordance is
@@ -895,29 +965,8 @@ export default function ColorPrimitives({
                     )
                   })()}
                   <AnimatePresence>
-                    {editFamily === f.key && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                        transition={{ duration: 0.14, ease: 'easeOut' }}
-                        role="dialog"
-                        aria-label={`Edit ${f.label} color`}
-                        style={{ maxHeight: editPlace.max }}
-                        className={`absolute left-0 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                          editPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-shrink-0">
-                          <span className={SWATCH} style={{ backgroundColor: f.base }} />
-                          <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{f.label}</span>
-                          <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{f.base.toUpperCase()}</span>
-                        </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-                          <ColorPickerPanel value={f.base} onChange={(hex) => changeFamilyBase(f, hex)} />
-                        </div>
-                      </motion.div>
-                    )}
+                    {/* The picker itself is NOT rendered here — it's portaled
+                        to <body> once, below. See `editPortal`. */}
                   </AnimatePresence>
                 </div>
               )
@@ -928,9 +977,15 @@ export default function ColorPrimitives({
             </div>
           )
         })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          )
+        })}
           </nav>
 
-          <div className="flex-1 min-w-0 h-full overflow-auto">
+          <div ref={tableRef} className="flex-1 min-w-0 h-full overflow-auto">
             <div className="min-w-[24rem]">
               {/* Column header — light/dark eye toggles drive the preview theme */}
               <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint" style={gridStyle}>
@@ -972,10 +1027,6 @@ export default function ColorPrimitives({
                   // near-white in light, near-black in dark. No inversion: that
                   // was the workaround for colours not having a dark ramp.
                   const darkTone = tone
-                  // The inline picker edits the column being previewed.
-                  const pickTarget = darkPreview
-                    ? { value: family.dark[darkTone] ?? '#000000', set: (hex: string) => setTone(family.dark, family.setDark, darkTone, hex) }
-                    : { value: family.light[tone] ?? '#ffffff', set: (hex: string) => setTone(family.light, family.setLight, tone, hex) }
                   // A new role band starts here — caption it, so the 12 rows
                   // read as 5 grouped ranges (Radix's own breakdown) instead of
                   // an undifferentiated list. Keyed off the TONE, not the
@@ -1005,7 +1056,11 @@ export default function ColorPrimitives({
                         </div>
                         <div className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">
                           {family.isAlpha ? (
-                            <AlphaHexCell value={family.light[tone] ?? '#00000000'} />
+                            <AlphaHexCell
+                              value={family.light[tone] ?? '#00000000'}
+                              solid={family.solidLight?.[tone]}
+                              solidName={solidRowName(tone)}
+                            />
                           ) : (
                             <HexCell
                               value={family.light[tone] ?? '#ffffff'}
@@ -1016,7 +1071,11 @@ export default function ColorPrimitives({
                         </div>
                         <div className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">
                           {family.isAlpha ? (
-                            <AlphaHexCell value={family.dark[darkTone] ?? '#00000000'} />
+                            <AlphaHexCell
+                              value={family.dark[darkTone] ?? '#00000000'}
+                              solid={family.solidDark?.[darkTone]}
+                              solidName={solidRowName(darkTone)}
+                            />
                           ) : (
                             <HexCell
                               value={family.dark[darkTone] ?? '#000000'}
@@ -1032,10 +1091,14 @@ export default function ColorPrimitives({
                           </div>
                         ) : (
                           <button
-                            onClick={() => setExpandedTone((cur) => (cur === tone ? null : tone))}
+                            onClick={() => {
+                              setDetailMode(darkPreview ? 'dark' : 'light')
+                              setExpandedTone((cur) => (cur === tone ? null : tone))
+                            }}
+                            aria-haspopup="dialog"
                             aria-expanded={expanded}
-                            aria-label={`Edit ${name} with the color picker`}
-                            title="Open color picker"
+                            aria-label={`Open token details for ${name}`}
+                            title="Token details"
                             className={`flex items-center justify-center w-full h-full transition-colors ${
                               expanded ? 'text-accent-ui' : 'text-fg-faint hover:text-fg'
                             }`}
@@ -1044,25 +1107,6 @@ export default function ColorPrimitives({
                           </button>
                         )}
                       </div>
-                      <AnimatePresence initial={false}>
-                        {!family.isAlpha && expanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                            style={{ overflow: 'hidden' }}
-                            className="border-t border-line/40"
-                          >
-                            <div className="px-4 py-4 flex flex-col gap-2 max-w-xs">
-                              <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-                                {name} — {darkPreview ? 'dark' : 'light'} value
-                              </span>
-                              <ColorPickerPanel value={pickTarget.value} onChange={pickTarget.set} />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
                   )
                 })
@@ -1070,6 +1114,38 @@ export default function ColorPrimitives({
             </div>
           </div>
         </div>
+
+      {/* Per-family colour picker — portaled out of the nav so the rail's
+          scroll mask can't clip it (see `editRect`). Rendered once for
+          whichever family is being edited, not per row. */}
+      {editPortal}
+
+      {/* Token Details — the SAME dialog Semantics' rows open (see
+          colorControls' TokenDetailsModal), not an inline row expansion. */}
+      <AnimatePresence>{detailsModal}</AnimatePresence>
+
+      {/* Same confirmation Semantics' column header uses (shared from
+          colorControls) — one destructive action, one warning. */}
+      <AnimatePresence>
+        {themeToDelete && (
+          <DeleteThemeModal
+            key="delete-theme"
+            name={themeToDelete.charAt(0).toUpperCase() + themeToDelete.slice(1)}
+            isPreviewed={previewTheme === themeToDelete}
+            onCancel={() => setThemeToDelete(null)}
+            onConfirm={() => {
+              // Re-point the preview before the column disappears, exactly as
+              // Semantics' deleteTheme does.
+              if (previewTheme === themeToDelete) {
+                const next = themeOrder.find((t) => t !== themeToDelete)
+                if (next) onPreviewThemeChange?.(next)
+              }
+              removeTheme(themeToDelete)
+              setThemeToDelete(null)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

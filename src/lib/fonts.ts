@@ -1,6 +1,9 @@
 // Font catalogue for the Typography foundation — shared by the picker (Step4)
 // and the export (variables.css / README) so the family stack is consistent.
 
+import { useEffect } from 'react'
+import { useDesignStore } from '../store/useDesignStore'
+
 export interface FontPreset {
   label: string
   value: string
@@ -91,3 +94,21 @@ export const POPULAR_GOOGLE_FONTS: string[] = [
   'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono', 'Roboto Mono',
   'Inconsolata', 'Ubuntu Mono', 'PT Mono', 'Courier Prime', 'DM Mono', 'Martian Mono',
 ]
+
+// Loads the system's active body + heading fonts. Mount this ONCE at the app
+// shell, not inside the Typography foundation — `font-family: Inter` (the
+// default) is written into every preview atom's inline style from the
+// moment the app boots, but nothing actually fetches Inter's webfont until
+// this runs. Step4_Typography used to be the only caller (via its own local
+// effect), which loaded the fonts only once the user visited that ONE
+// foundation — every other foundation's PreviewPanel rendered with the
+// browser's fallback font until then, silently failing to look like the
+// configured typeface for anyone who never opened Font.
+export function useLoadActiveFonts() {
+  const fontFamily = useDesignStore((s) => s.typography.fontFamily)
+  const headingFontFamily = useDesignStore((s) => s.typography.headingFontFamily)
+  useEffect(() => {
+    loadGoogleFont(fontFamily)
+    loadGoogleFont(headingFontFamily ?? fontFamily)
+  }, [fontFamily, headingFontFamily])
+}

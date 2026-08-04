@@ -1,7 +1,24 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import VariablesTable from './VariablesTable'
+import RailSelect from '../ui/RailSelect'
+
+// Ruler glyph — the same mark the foundation rail uses for Spacing, so the
+// base-unit trigger reads as "spacing" at a glance.
+function RulerIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 21V3M3 21V3M9 8v8M15 8v8" />
+    </svg>
+  )
+}
+
+/** The two token collections the rail switches between. */
+const SPACING_COLLECTIONS = [
+  { key: 'scale', label: 'Spacing scale' },
+  { key: 'padding', label: 'Surface paddings' },
+] as const
+type SpacingCollection = (typeof SPACING_COLLECTIONS)[number]['key']
 
 // Base unit presets — also used by NewTokenWizard's Spacing step.
 export const BASE_PRESETS = [
@@ -52,8 +69,12 @@ function PaddingPreview({ side, value }: { side: 'top' | 'right' | 'bottom' | 'l
 export default function Step5_Spacing() {
   const { spacing, setSpacing, padding, setPadding, primaryColor, themes } = useDesignStore()
 
-  // Infer the active base from step 1 so the chips reflect a saved 8px scale.
+  // Infer the active base from step 1 so the control reflects a saved 8px scale.
   const [baseUnit, setBaseUnit] = useState(() => pxToNum(spacing['1'] ?? '4px') || DEFAULT_BASE)
+  // The rail's selection. The two groups used to stack in one scroll behind
+  // sticky sub-headers; with a rail they become real collections, the same way
+  // Typography's categories and Color's families do.
+  const [collection, setCollection] = useState<SpacingCollection>('scale')
 
   const accentColor = themes.light?.primary || primaryColor || '#9522e9'
 
@@ -65,83 +86,116 @@ export default function Step5_Spacing() {
     setSpacing(buildSpacingFromBase(base))
   }
 
+  const scaleRows = SPACING_STEPS.map((step) => {
+    const value = valueOf(step)
+    const standard = `${Number(step) * DEFAULT_BASE}px`
+    const barW = (pxToNum(value) / maxSpacingPx) * 100
+    return {
+      name: `spacing-${step}`,
+      value,
+      modified: value !== standard,
+      onChange: (v: string) => setSpacing({ ...spacing, [step]: v }),
+      onReset: () => setSpacing({ ...spacing, [step]: standard }),
+      preview: (
+        <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${Math.max(barW, 2)}%`, backgroundColor: accentColor + '88' }}
+          />
+        </div>
+      ),
+    }
+  })
+
+  // Per-side inset padded surfaces use (cards, tiles, panels) — the same
+  // `padding` token Quick edit's Padding row writes.
+  const paddingRows = PADDING_SIDES.map((side) => {
+    const value = padding?.[side.key] ?? PADDING_STANDARD
+    return {
+      name: `padding-${side.key}`,
+      value,
+      modified: value !== PADDING_STANDARD,
+      onChange: (v: string) => setPadding({ ...padding, [side.key]: v }),
+      onReset: () => setPadding({ ...padding, [side.key]: PADDING_STANDARD }),
+      preview: <PaddingPreview side={side.key} value={value} />,
+    }
+  })
+
+  const counts: Record<SpacingCollection, number> = { scale: scaleRows.length, padding: paddingRows.length }
+  const active = SPACING_COLLECTIONS.find((c) => c.key === collection) ?? SPACING_COLLECTIONS[0]
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-6"
-    >
+    // Same three rows as Color / Typography / Radius: a 198px labelled control
+    // cell over a 198px nav, against a flush table. Was a `p-8` stack with both
+    // groups in one scroll behind sticky sub-headers.
+    <div className="h-full flex flex-col">
+      {/* ── Row 1 — the base unit | the scale it generates ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Base unit</span>
+          <RailSelect
+            value={baseUnit}
+            options={BASE_PRESETS.map((p) => ({ value: p.value, label: p.label.replace(/\s+/g, ' ') }))}
+            onChange={applyBase}
+            ariaLabel="Spacing base unit"
+            icon={<RulerIcon />}
+          />
+        </div>
+        {/* What the base unit PRODUCES — the same job row 1's right cell does
+            on every other foundation (Color's ramp, Radius' slider+chip,
+            Gradients' bar): every step drawn to scale, so changing the base
+            visibly redraws the whole system in one glance. */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 pl-6 lg:pl-8 pr-3 py-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Scale</span>
+            <span className="text-[11px] font-mono text-fg-muted tabular-nums">
+              {valueOf('1')} → {valueOf('16')}
+            </span>
+          </div>
+          <div className="flex items-end gap-1.5 h-9">
+            {SPACING_STEPS.map((step) => (
+              <div
+                key={step}
+                className="flex-1 min-w-0 rounded-sm"
+                style={{
+                  height: `${Math.max((pxToNum(valueOf(step)) / maxSpacingPx) * 100, 6)}%`,
+                  backgroundColor: accentColor + '88',
+                }}
+                title={`spacing-${step} — ${valueOf(step)}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Rows 2+3 — the rail's collections against the flush table ── */}
       <VariablesTable
-        title="Spacing tokens"
+        title={active.label}
         searchLabel="Filter spacing tokens"
-        toolbar={
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-fg-faint">Base unit</span>
-            <div className="flex gap-1">
-              {BASE_PRESETS.map((p) => (
+        railed
+        railTop={<span className="text-[13px] font-semibold text-fg">Collections</span>}
+        railBody={
+          <nav aria-label="Spacing collections" className="py-1.5 px-2 flex flex-col gap-0.5">
+            {SPACING_COLLECTIONS.map((c) => {
+              const isActive = c.key === collection
+              return (
                 <button
-                  key={p.value}
-                  onClick={() => applyBase(p.value)}
-                  className={`px-2.5 py-1 rounded text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                    baseUnit === p.value
-                      ? 'bg-fg text-app'
-                      : 'bg-surface text-fg-muted border border-line hover:border-line-strong hover:text-fg'
+                  key={c.key}
+                  onClick={() => setCollection(c.key)}
+                  aria-current={isActive}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                    isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  {p.value}px
+                  <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
+                  <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{counts[c.key]}</span>
                 </button>
-              ))}
-            </div>
-          </div>
+              )
+            })}
+          </nav>
         }
-        groups={[
-          {
-            label: 'Spacing scale',
-            valueLabel: 'Value',
-            rows: SPACING_STEPS.map((step) => {
-              const value = valueOf(step)
-              const standard = `${Number(step) * DEFAULT_BASE}px`
-              const barW = (pxToNum(value) / maxSpacingPx) * 100
-              return {
-                name: `spacing-${step}`,
-                value,
-                modified: value !== standard,
-                onChange: (v: string) => setSpacing({ ...spacing, [step]: v }),
-                onReset: () => setSpacing({ ...spacing, [step]: standard }),
-                preview: (
-                  <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.max(barW, 2)}%`,
-                        backgroundColor: accentColor + '88',
-                      }}
-                    />
-                  </div>
-                ),
-              }
-            }),
-          },
-          {
-            // Per-side inset padded surfaces use (cards, tiles, panels) — the
-            // same `padding` token Quick edit's Padding row writes.
-            label: 'Surface padding',
-            valueLabel: 'Value',
-            rows: PADDING_SIDES.map((side) => {
-              const value = padding?.[side.key] ?? PADDING_STANDARD
-              return {
-                name: `padding-${side.key}`,
-                value,
-                modified: value !== PADDING_STANDARD,
-                onChange: (v: string) => setPadding({ ...padding, [side.key]: v }),
-                onReset: () => setPadding({ ...padding, [side.key]: PADDING_STANDARD }),
-                preview: <PaddingPreview side={side.key} value={value} />,
-              }
-            }),
-          },
-        ]}
+        groups={[{ valueLabel: 'Value', rows: collection === 'scale' ? scaleRows : paddingRows }]}
       />
-    </motion.div>
+    </div>
   )
 }

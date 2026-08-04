@@ -561,7 +561,7 @@ function refToView(ref: string, lookup: (fam: string, tone: number) => string | 
 // need it (Vibrancy's `look` only ever resolves explicit 'neutral'/
 // 'neutral-dark' family names, never 'accent'/'error'/etc, so its mode split
 // is already handled upstream).
-function scaleLookup(
+export function scaleLookup(
   scales: GlobalScales,
   palette?: ThemePalette,
   kind: 'light' | 'dark' = 'light',

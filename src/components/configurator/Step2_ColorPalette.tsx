@@ -1,137 +1,37 @@
 import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import {
-  generateColorScale, recommendStateColors,
-  ALGORITHM_OPTIONS, RECOMMENDED_ALGORITHM, NAMING_SCHEMES,
-  type ColorAlgorithm, type ColorNaming,
-} from '../../lib/colorUtils'
+import { generateColorScale, recommendStateColors, NAMING_SCHEMES } from '../../lib/colorUtils'
 import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
   BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
 } from './colorControls'
 
-// ── Generic outlined dropdown (Algorithm · Naming) ──────────────────────────
-
-function SelectMenu<T extends string>({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  value: T
-  options: { key: T; label: string }[]
-  onChange: (v: T) => void
-  ariaLabel: string
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const active = options.find((o) => o.key === value)?.label ?? options[0]?.label
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={ariaLabel}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left"
-      >
-        <span className="text-sm text-fg truncate">{active}</span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
-          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.12 }}
-            role="listbox"
-            className="absolute z-30 left-0 right-0 mt-1.5 rounded-lg border border-line-strong bg-app shadow-lg p-1.5 max-h-72 overflow-y-auto"
-          >
-            {options.map((o) => (
-              <button
-                key={o.key}
-                type="button"
-                role="option"
-                aria-selected={o.key === value}
-                onClick={() => { onChange(o.key); setOpen(false) }}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  o.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
-                }`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ── Scale settings — Algorithm · Naming · Contrast shift ────────────────────
-// Drives how every 1–12 ramp is generated + how the export names them. Changing
-// the algorithm or shift regenerates all scales so the preview + export track live.
-// Lives in a modal (gear entry point next to the Primitives heading).
+// ── Scale settings — Contrast shift ─────────────────────────────────────────
+// Drives how far every 1–12 ramp travels from the page; changing it regenerates
+// all scales so the preview + export track live. Lives in a popover (gear entry
+// point in the Primitives quick-edit strip).
+//
+// The Algorithm and Naming dropdowns that used to sit above this were REMOVED:
+// the algorithm is pinned to Radix (`makeDesignDefaults`' own default, and the
+// model the whole scale system is documented against), and naming is pinned to
+// Radix numeric 1–12 — which store v42 already force-converts every system to,
+// so the picker was offering a choice the migration immediately overrode. Both
+// values still live in the store and still drive the export; they just aren't
+// user-switchable while there's no infrastructure to support the alternatives.
 
 export function ColorControls({
-  algorithm,
-  naming,
   contrastShift,
-  onAlgorithm,
-  onNaming,
   onShift,
 }: {
-  algorithm: ColorAlgorithm
-  naming: ColorNaming
   contrastShift: number
-  onAlgorithm: (a: ColorAlgorithm) => void
-  onNaming: (n: ColorNaming) => void
   onShift: (n: number) => void
 }) {
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Algorithm */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Algorithm</span>
-          {algorithm === RECOMMENDED_ALGORITHM && (
-            <span className="text-[10px] font-medium text-emerald-600">Recommended</span>
-          )}
-        </div>
-        <SelectMenu value={algorithm} options={ALGORITHM_OPTIONS} onChange={onAlgorithm} ariaLabel="Scale algorithm" />
-      </div>
-
-      {/* Naming */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Naming</span>
-        <SelectMenu
-          value={naming}
-          options={NAMING_SCHEMES.map((s) => ({ key: s.key, label: s.label }))}
-          onChange={onNaming}
-          ariaLabel="Token naming scheme"
-        />
-      </div>
-
       {/* Contrast shift */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
@@ -207,9 +107,9 @@ export function ScaleSettingsModal({
         >
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-fg">Scale settings</h3>
+              <h3 className="text-sm font-semibold text-fg">Contrast</h3>
               <p className="text-xs text-fg-faint mt-0.5">
-                How every 1–12 ramp is generated and how tokens are named in the export.
+                How far every 1–12 ramp travels from the page background.
               </p>
             </div>
             <button
@@ -240,7 +140,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
     grayBaseColor, grayLightScale, grayDarkScale,
     customColors, updateCustomColor, removeCustomColor,
-    colorAlgorithm, contrastShift, colorNaming, setColorAlgorithm, setContrastShift, setColorNaming,
+    colorAlgorithm, contrastShift, colorNaming, setContrastShift,
     pageBackground, darkBackground, themeKinds,
   } = useDesignStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -387,14 +287,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
                 </svg>
               </button>
               <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-                <ColorControls
-                  algorithm={colorAlgorithm}
-                  naming={colorNaming}
-                  contrastShift={contrastShift}
-                  onAlgorithm={setColorAlgorithm}
-                  onNaming={setColorNaming}
-                  onShift={setContrastShift}
-                />
+                <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
               </ScaleSettingsModal>
             </div>
           </div>

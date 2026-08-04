@@ -3,11 +3,11 @@ import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
 import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
-import { accessibleSolidTone, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
+import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
-  brandCoverStops, brandAvatarStops, stopsMatch, derivedStopsFor,
+  brandCoverStops, brandAvatarStops, stopsMatch, derivedStopsFor, linkedStopsFor,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
@@ -112,6 +112,15 @@ export const GRAY_DARK_SCALE: ColorScale = {
 // (tone 1 near-white) for anyone who reached Alias/Semantics or previewed dark
 // before ever editing a color primitive.
 export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c737f', 'radix', 0, '#0c0e12')
+// The default accent's ramp, computed by the real generator at module load for
+// the same reason DEFAULT_GRAY_DARK_SCALE is: it seeds the built-in gradients'
+// tone-backed stops (see makeDefaultGradients), so a brand-new system's
+// "linked to accent" gradients reference real primitives from the first render
+// instead of loose hex. Generated HERE, not inside lib/gradients.ts — that
+// module is deliberately dependency-free, and importing the generator there
+// created an init-order cycle (makeDesignDefaults() runs at import time and
+// found generateColorScale still undefined).
+export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale('#9522e9', 'radix', 0, '#ffffff')
 // ──────────────────────────────────────────────────────────────────────────
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
@@ -423,7 +432,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     panelBackground: 'solid',
     semanticArchitecture: 'astryx',
     architectureOverrides: {},
-    gradients: makeDefaultGradients(),
+    gradients: makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
     selectedComponents: [...COMPONENT_KEYS],
@@ -970,7 +979,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 44,
+      version: 45,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1249,7 +1258,7 @@ export const useDesignStore = create<DesignStore>()(
           // saved snapshot) that predates the feature.
           const seedGradients = (state: any) => {
             if (!state || typeof state !== 'object') return
-            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients()
+            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE)
             if (!state.gradientAssignments) state.gradientAssignments = makeDefaultGradientAssignments()
             if (!Array.isArray(state.savedColors)) state.savedColors = []
           }
@@ -1533,6 +1542,34 @@ export const useDesignStore = create<DesignStore>()(
           toAstryx(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) toAstryx(sys?.snapshot)
+          }
+        }
+        if (version < 45) {
+          // v44→v45: an accent-LINKED gradient now references tones of the
+          // accent ramp (`GradientStop.tone`) instead of colours invented by
+          // ad-hoc HSL math off the raw accent hex. The old derivation produced
+          // values that existed nowhere in the primitives, so a gradient that
+          // claimed to be "linked to accent" shipped loose hex the plugin and
+          // the CSS could never alias back to a token — and the editor could
+          // only show that hex, with no primitive to name.
+          //
+          // Only LINKED gradients convert: an unlocked one is the user's own
+          // hand-picked colour and stays exactly as it is. Positions come from
+          // the tone signature, since the old stops had no tones to preserve.
+          const toToneStops = (state: any) => {
+            if (!state || !Array.isArray(state.gradients)) return
+            const scale = state.primaryScale && typeof state.primaryScale === 'object'
+              ? state.primaryScale
+              : undefined
+            state.gradients = state.gradients.map((g: any) => {
+              if (!g?.linked) return g
+              const stops = linkedStopsFor(g.id, scale, Array.isArray(g.stops) ? g.stops : undefined)
+              return stops ? { ...g, stops } : g
+            })
+          }
+          toToneStops(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) toToneStops(sys?.snapshot)
           }
         }
         return persisted

@@ -184,6 +184,25 @@ function buildScale(
   const towardDark = appearance === 'light'
   const dir = towardDark ? -1 : 1
 
+  // ── Contrast shift ────────────────────────────────────────────────────────
+  // `shift` (−1…1) reshapes how far the ramp travels from the page. It used to
+  // touch ONLY steps 10–12, leaving steps 1–8 — two thirds of the scale, and
+  // every background/fill/border in it — provably invariant, which is why the
+  // control read as doing nothing.
+  //
+  // Steps 2–8 now apply it as a GAMMA on the page→solid interpolation
+  // parameter: w' = w ** gamma. That's the right shape for this because it
+  // preserves both endpoints by construction (0**g = 0, 1**g = 1), stays
+  // monotonic in both w and shift, and needs no clamping — so step 1 is still
+  // the page verbatim and step 8 can never overshoot the solid.
+  //   shift > 0 → gamma < 1 → w' > w → steps sit further from the page (more
+  //   contrast); shift < 0 → the reverse.
+  //
+  // Every coefficient below is chosen so shift = 0 is an exact no-op: gamma
+  // becomes 1 and each target keeps its original constant, so existing systems
+  // regenerate byte-identical ramps.
+  const gamma = 1 - shift * 0.35
+
   const out: string[] = []
   for (let i = 1; i <= TONES; i++) {
     // ── 9: the solid. The base hex verbatim — the one hard value in the scale.
@@ -196,7 +215,10 @@ function buildScale(
       // Step 1 IS the app background — the page hex verbatim, so a brand
       // background like #111522 round-trips into --neutral-1 exactly.
       if (i === 1) { out.push(page); continue }
-      const w = BG_WEIGHTS[i]
+      // Chroma and hue read the SHIFTED position too, not the raw weight — a
+      // step that moved closer to the solid in lightness should carry more of
+      // its colour, or the ramp desaturates as contrast climbs.
+      const w = Math.pow(BG_WEIGHTS[i], gamma)
       const L = pageL + (baseL - pageL) * w
       // `lightCmul` keeps each algorithm's feel at the page end: Radix wants
       // almost no chroma in 1–2, saturation-led ramps want more.
@@ -208,7 +230,11 @@ function buildScale(
 
     // ── 10: solid hover — one step further from the page than the solid.
     if (i === BASE_TONE + 1) {
-      const step = 0.045 * (1 + shift)
+      // Gain is 0.6, not 1: at the old full gain a shift of −1 drove `step` to
+      // exactly 0, collapsing the hover tone onto the solid it's supposed to
+      // be distinguishable from. Capped this way it stays a real step (0.018
+      // at the floor) across the whole slider.
+      const step = 0.045 * (1 + shift * 0.6)
       const H = baseH + (spec.hueShift?.(0.2) ?? 0)
       out.push(chroma.oklch(clamp01(baseL + dir * step), baseC * spec.darkCmul, H).hex())
       continue
@@ -217,7 +243,17 @@ function buildScale(
     // ── 11–12: text, defined by CONTRAST rather than a lightness offset, so it
     // stays legible on a tinted or near-black page instead of only on white.
     // 11 targets WCAG AA (4.5:1); 12 goes near-max for high-contrast copy.
-    const target = (i === TONES ? 12 : 4.5) * (1 + shift * 0.25)
+    //
+    // The gain is ASYMMETRIC on purpose. Dialing contrast UP should be able to
+    // reach AAA, but dialing it DOWN must not quietly ship unreadable text, so
+    // the negative side is much gentler: step 11 bottoms out at 3.5:1 (still
+    // AA-large) instead of the 3.4:1 the old symmetric 0.25 gain allowed, and
+    // tops out at 6.5:1. Step 12's gain is smaller again — its 12:1 baseline is
+    // already near the ceiling, and a target the search can't reach just clamps
+    // (which is what made the old +0.25 end of this slider a no-op).
+    const isMaxTone = i === TONES
+    const textGain = shift >= 0 ? (isMaxTone ? 0.18 : 0.45) : (isMaxTone ? 0.15 : 0.22)
+    const target = (isMaxTone ? 12 : 4.5) * (1 + shift * textGain)
     const C = baseC * (i === TONES ? 0.42 : 0.72)
     const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0)
     out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark))
@@ -501,6 +537,38 @@ export function accessibleSolidTone(scale: Record<number, string>, start = BASE_
     if (hex && checkContrast('#ffffff', hex) >= 4.5) return t
   }
   return 12
+}
+
+// ── The app chrome's own accent ────────────────────────────────────────────
+// The chrome (`--accent-ui`) tracks the user's accent, and it is used BOTH as
+// ink (`text-accent-ui` on section titles, links, active nav) and as a fill
+// (`bg-accent-ui` on primary buttons, step dots, active pills). One value, two
+// jobs, so it has to clear 4.5:1 against the chrome page — otherwise a light
+// accent like #c76aff renders 3.0:1 titles and 3.0:1 white-on-fill buttons,
+// while the Color preview right beside them shows a correctly-darkened button,
+// because the token side already anchors `action-primary` to
+// `accessibleSolidTone`. This is that same anchor, resolved against the chrome
+// page instead of pure white.
+//
+// Works for BOTH appearances with one upward walk, because that's the Radix
+// model: every ramp's HIGH tones are its accessible-text end — 11–12 are
+// near-black on a light ramp and near-white on a dark one. So "walk up from
+// the anchor until it clears the page" deepens a light accent on white chrome
+// and brightens it on dark chrome, with no branch.
+export function chromeAccent(
+  scale: Record<number, string> | undefined,
+  page: string,
+  fallback: string,
+): string {
+  const seed = scale?.[BASE_TONE] ?? fallback
+  if (!scale) return readableAccent(seed, page)
+  for (let t = BASE_TONE; t <= 12; t++) {
+    const hex = scale[t]
+    if (hex && checkContrast(hex, page) >= 4.5) return hex
+  }
+  // No tone clears it (a ramp generated against a very different page) — nudge
+  // the anchor itself rather than shipping the failing tone.
+  return readableAccent(seed, page)
 }
 
 // Accent ink for app chrome (rail labels, section titles): brand tone 9 is tuned

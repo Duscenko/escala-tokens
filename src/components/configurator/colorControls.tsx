@@ -891,7 +891,11 @@ export function SystemRampGrid({
     >
       {rows.map((row) => (
         <Fragment key={row.key}>
-          <span className="text-[9px] font-mono text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
+          {/* Platform UI font, not mono: these are family LABELS ("accent",
+              "neutral-dark"), not code identifiers the way the dialog's Name
+              row and CSS-var chip are. Mono here made the dialog read as two
+              unrelated typefaces stacked. */}
+          <span className="text-[9px] font-medium text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
           {Array.from({ length: 12 }, (_, i) => i + 1).map((tone) => {
             const hex = row.scale?.[tone]
             if (!hex) return <span key={tone} style={{ gridColumn: tone + 1 }} />
@@ -921,7 +925,7 @@ export function SystemRampGrid({
       {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
         <span
           key={`axis-${n}`}
-          className="text-[8px] font-mono tabular-nums leading-none text-center text-fg-faint"
+          className="text-[8px] tabular-nums leading-none text-center text-fg-faint"
           style={{ gridColumn: n + 1 }}
           aria-hidden
         >
@@ -931,3 +935,336 @@ export function SystemRampGrid({
     </div>
   )
 }
+
+// ── Token Details modal ───────────────────────────────────────────────────
+// Lives here (not in Step3) because it is the ONE "open a token, edit its
+// value" surface for the whole Color hub: Semantics' role rows AND Primitives'
+// tone rows both open it. Primitives used to expand its rows inline instead —
+// two different interactions for the same job, on two tabs of the same hub —
+// which is exactly the inconsistency this move removes. The shell owns the
+// header, Name, CSS var and Description; the per-mode value editors are passed
+// in as `sections`, so each caller keeps its own already-correct read/write
+// logic (flat's TonePicker, the architecture view's ArchModeEditor,
+// Primitives' light/dark ColorPickerPanel) and only WHERE they render is
+// shared.
+
+/** Light/dark polarity glyph for a mode's header. */
+export function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
+  return kind === 'light' ? (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-amber-500"><circle cx="6" cy="6" r="2.4" fill="currentColor"/><path d="M6 1v1.4M6 9.6V11M1 6h1.4M9.6 6H11M2.5 2.5l1 1M8.5 8.5l1 1M9.5 2.5l-1 1M3.5 8.5l-1 1" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>
+  ) : (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-indigo-400"><path d="M10 7.2A4.2 4.2 0 1 1 4.8 2a3.3 3.3 0 0 0 5.2 5.2z" fill="currentColor"/></svg>
+  )
+}
+
+// Dialog width. Was 256 (w-64, borrowed from the "Edit family color" popover),
+// which left the 12-tone ramp grid ~136px for twelve cells + gaps — swatches
+// under 9px, unpickable and unreadable. 360 gives the grid ~240px (20px cells)
+// while still fitting beside the table on a laptop window.
+const PANEL_W = 360
+
+/** One mode's value editor, in a collapsible card. See `TokenDetailsModal`. */
+export type TokenDetailSection = {
+  key: string
+  label: string
+  kind?: 'light' | 'dark'
+  content: ReactNode
+}
+
+/** Copyable CSS-variable chip — the token's code syntax, e.g. `var(--surface-0)`. */
+export function CssVarChip({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false)
+  const cssVar = `var(--${name})`
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        navigator.clipboard?.writeText(cssVar)
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1200)
+      }}
+      title={`Copy ${cssVar}`}
+      aria-label={`Copy CSS variable ${cssVar}`}
+      className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surface border border-line text-[10px] font-mono text-fg-faint hover:text-fg-muted hover:border-line-strong transition-colors max-w-full"
+    >
+      {copied ? (
+        <>
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 flex-shrink-0"><path d="M2.5 6.5 5 9l4.5-5.5" /></svg>
+          <span className="text-emerald-500">copied</span>
+        </>
+      ) : (
+        <>
+          <span className="truncate">--{name}</span>
+          <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" className="flex-shrink-0 opacity-70"><rect x="4.5" y="4.5" width="7" height="7" rx="1.4" /><path d="M9.5 4.5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v5.5a1 1 0 0 0 1 1h1.5" strokeLinecap="round" /></svg>
+        </>
+      )}
+    </button>
+  )
+}
+
+export function TokenDetailsModal({
+  name, cssVarName, description, onReset, resetDisabled, onClose, reduce, sections, initialOpenKey, anchorRef,
+}: {
+  name: string
+  /** The Figma mock doesn't show this, but the inline editor it replaces did
+   *  — dropping it would be a feature regression the redesign never asked
+   *  for, so it rides along the Name row instead (the other "identifier"
+   *  for this token). */
+  cssVarName: string
+  description: string
+  onReset: () => void
+  resetDisabled: boolean
+  onClose: () => void
+  reduce: boolean
+  /** One card per mode (light · dark · every custom theme). */
+  sections: TokenDetailSection[]
+  /** Which section starts expanded. Defaults to the first; callers pass the
+   *  mode currently being PREVIEWED, so the dialog opens on the value the
+   *  user can actually see change. */
+  initialOpenKey?: string
+  /** The table's scroll container. The dialog docks against its RIGHT edge —
+   *  beside the trailing settings column the row's button lives in — instead
+   *  of floating over the middle of the table it's editing. Falls back to
+   *  viewport-centred when absent or unmeasurable. */
+  anchorRef?: RefObject<HTMLElement | null>
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Only the FIRST mode opens by default. A system with light + dark + two
+  // custom themes stacked four full ramp grids into one dialog, so the mode
+  // you actually came to edit could be an entire screen-height of scrolling
+  // away; collapsed peers keep every mode reachable in one view.
+  const [open, setOpen] = useState<Set<string>>(() => {
+    const first = sections.find((s) => s.key === initialOpenKey) ?? sections[0]
+    return new Set(first ? [first.key] : [])
+  })
+
+  // Measured on open + on resize. Not on scroll: the anchor is the table
+  // CONTAINER (a fixed-position column), not a row, so its edge doesn't move
+  // while the table scrolls underneath.
+  const [dockLeft, setDockLeft] = useState<number | null>(null)
+  useEffect(() => {
+    const measure = () => {
+      const r = anchorRef?.current?.getBoundingClientRect()
+      if (!r) { setDockLeft(null); return }
+      // 256 = w-64. Sit just inside the container's right edge, clamped so a
+      // narrow window can never push the panel off-screen.
+      setDockLeft(Math.max(12, Math.min(r.right - PANEL_W - 12, window.innerWidth - PANEL_W - 12)))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [anchorRef])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.15 }}
+      onMouseDown={onClose}
+      // No scrim — this reads as a floating panel over the table, the same
+      // language HomeActions' "New token"/Kits popovers already use, not a
+      // blocking dialog. The layer is still full-viewport and still catches
+      // outside clicks to close; it just isn't painted, per the "same style
+      // as the New Token menu" request. DeleteThemeModal keeps its scrim on
+      // purpose — that one gates a destructive, irreversible action.
+      className={`fixed inset-0 z-50 flex items-center p-4 ${dockLeft == null ? 'justify-center' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Token Details"
+    >
+      <motion.div
+        style={{ width: PANEL_W, ...(dockLeft == null ? null : { marginLeft: dockLeft - 16 }) }}
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: reduce ? 0 : 0.16, ease: 'easeOut' }}
+        onMouseDown={(e) => e.stopPropagation()}
+        // w-64 — the exact width ColorPrimitives' "Edit family color" popover
+        // uses for the same job (a compact color-picker panel). This modal
+        // used to run 480px wide purely because nothing constrained it; the
+        // content never needed that — see the ramps below, now sized to the
+        // same 12-column grid that popover's own Palette section uses.
+        className="relative w-full max-h-[80vh] flex flex-col rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
+      >
+        {/* Header — title + Reset, matching the Figma dialog. Close sits
+            absolutely in the corner (same position the design uses) rather
+            than in the flex row, so Reset stays flush right regardless of
+            title length. */}
+        <div className="flex items-center justify-between gap-3 pl-4 pr-10 h-10 border-b border-line flex-shrink-0">
+          <h2 className="text-[13px] font-semibold text-fg truncate">Token Details</h2>
+          <button
+            onClick={onReset}
+            disabled={resetDisabled}
+            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-6 rounded-lg border border-line text-[10px] text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
+          >
+            Reset
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 12a9 9 0 1 1 2.6 6.36" />
+              <path d="M3 21v-6h6" />
+            </svg>
+          </button>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+          {/* Name + Description — read-only: both are catalogue metadata (the
+              role's fixed key/label and its fixed description), not per-token
+              user text, so there's nothing here to save. Shown for context,
+              styled like the Figma input/textarea so the dialog still reads
+              as an editor, not just a viewer. */}
+          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line/60">
+            <div className="flex h-6 rounded-md border border-line overflow-hidden">
+              <span className="px-2 flex items-center bg-elevated text-[10px] text-fg-faint border-r border-line flex-shrink-0">Name</span>
+              <span className="px-2 flex items-center flex-1 min-w-0 text-[11px] text-fg-muted font-mono truncate" title={name}>{name}</span>
+            </div>
+            {/* Below the Name row, not beside it — at this width (w-64,
+                matching the Edit-family-color popover) a copy chip sharing
+                the row with the name pill left ~2 characters of the name
+                visible on anything longer than "error". */}
+            <CssVarChip name={cssVarName} />
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] text-fg-faint">Description</span>
+              <p className="px-2 py-1.5 rounded-md border border-line text-[11px] text-fg-muted leading-relaxed">{description}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-4">
+            <span className="text-[11px] font-semibold text-fg">Values</span>
+            {sections.map((s) => {
+              const isOpen = open.has(s.key)
+              return (
+                // Each card is painted in ITS OWN appearance — `light`/`dark`
+                // re-declare the palette vars for this subtree only (see
+                // index.css), so a dark mode's ramps are judged on the dark
+                // page they actually ship against, and the light card stays
+                // light even while the app chrome is dark. Not a hardcoded
+                // colour: it's the same two token sets the whole app uses.
+                <div key={s.key} className={`${s.kind ?? 'light'} bg-app rounded-xl border border-line overflow-hidden`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpen((prev) => {
+                      const next = new Set(prev)
+                      if (next.has(s.key)) next.delete(s.key)
+                      else next.add(s.key)
+                      return next
+                    })}
+                    aria-expanded={isOpen}
+                    className={`w-full flex items-center gap-1.5 px-2.5 h-8 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                      isOpen ? 'text-fg-muted bg-surface' : 'text-fg-faint hover:text-fg-muted hover:bg-surface/60'
+                    }`}
+                  >
+                    {s.kind && <KindIcon kind={s.kind} />}
+                    <span className="flex-1 text-left truncate">{s.label}</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div className="px-2.5 pt-2 pb-2.5 border-t border-line/60">{s.content}</div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Delete-theme confirmation ──
+// Shared: Semantics deletes a theme from its column header, Primitives from
+// the theme FOLDER in its family rail. Same destructive action, same warning —
+// forking it would let one entry point under-state what the other destroys.──────────────────────────────────────────
+// deleteTheme() used to fire straight off the header's X — one misclick
+// silently wiped every semantic value mapped to that theme, with no undo.
+export function DeleteThemeModal({
+  name, isPreviewed, onConfirm, onCancel,
+}: {
+  name: string
+  isPreviewed: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      onMouseDown={onCancel}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="Delete theme"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: 0.16, ease: 'easeOut' }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="w-full max-w-[360px] rounded-2xl bg-app border border-line shadow-2xl overflow-hidden"
+      >
+        <div className="p-5 flex items-start gap-3">
+          <span className="flex-shrink-0 w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center" aria-hidden>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <path d="M12 9v4" /><path d="M12 17h.01" />
+            </svg>
+          </span>
+          <div className="min-w-0 flex flex-col gap-1 pt-0.5">
+            <h2 className="text-[14px] font-semibold text-fg">Delete "{name}"?</h2>
+            <p className="text-[12.5px] text-fg-muted leading-relaxed">
+              Every semantic value mapped to this theme will be deleted too. This can't be undone.
+              {isPreviewed && ' The preview will switch to another theme.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-line bg-surface/50">
+          <button
+            onClick={onCancel}
+            className="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+          >
+            Delete theme
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
