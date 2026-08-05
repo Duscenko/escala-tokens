@@ -29,6 +29,7 @@ import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import { buildFamilyExport, WIZARD_FORMATS, type WizardFormat } from '../../lib/exportWizard'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -111,6 +112,150 @@ function FamilySwatch({ family, dark }: { family: Family; dark: boolean }) {
   )
 }
 
+
+// ── Per-column quick export ─────────────────────────────────────────────────
+// The icon sits in the light and dark column headers, so what it exports is
+// unambiguous: THIS family, THIS appearance. Picking a format copies the
+// result to the clipboard — the glyph is the app's copy/export mark and the
+// whole point is pasting one ramp into code or an AI prompt; the guided
+// wizard (Export pill) is still the way to get files on disk.
+//
+// It is NOT a second exporter: `buildFamilyExport` assembles a normal
+// WizardSelection and runs it through `buildWizardExport`, so this output is
+// byte-identical to running the wizard scoped the same way.
+const EXPORT_MENU_W = 304
+
+function ColumnExportMenu({ family, label, appearance }: { family: string; label: string; appearance: 'light' | 'dark' }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState<WizardFormat | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const place = usePopoverPlacement(ref, open)
+
+  // The header lives inside the table's `overflow-auto` column, so an
+  // absolutely-positioned panel is CLIPPED at that container's bottom edge
+  // (measured: a ~340px menu overflows on any normal window height). Same
+  // problem — and same fix — as the family picker below: portal it to <body>
+  // and position `fixed` off the button's measured rect, re-measured on scroll
+  // (capture, so the table's own scroll counts) and resize.
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  useEffect(() => {
+    if (!open) { setRect(null); return }
+    const measure = () => { const r = ref.current?.getBoundingClientRect(); if (r) setRect(r) }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (ref.current?.contains(t) || panelRef.current?.contains(t)) return
+      setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+
+  function copy(format: WizardFormat) {
+    const files = buildFamilyExport(family, appearance, format)
+    navigator.clipboard.writeText(
+      files.map((f) => (files.length > 1 ? `/* ${f.name} */\n${f.content}` : f.content)).join('\n\n'),
+    )
+    setCopied(format)
+    setTimeout(() => { setCopied(null); setOpen(false) }, 900)
+  }
+
+  const panel = open && rect
+    ? createPortal(
+        <AnimatePresence>
+          <motion.div
+            ref={panelRef}
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            role="menu"
+            aria-label={`Export ${label} — ${appearance}`}
+            style={{
+              position: 'fixed',
+              // Right-aligned to the icon, clamped so a column near either
+              // viewport edge still shows the whole panel.
+              left: Math.min(Math.max(8, rect.right - EXPORT_MENU_W), window.innerWidth - EXPORT_MENU_W - 8),
+              ...(place.up ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+              maxHeight: place.max,
+              width: EXPORT_MENU_W,
+            }}
+            className="z-50 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden normal-case tracking-normal"
+          >
+            <div className="flex items-baseline justify-between gap-2 px-4 pt-3 pb-2 flex-shrink-0">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Format</span>
+              <span className="text-[11px] font-normal text-fg-faint truncate">{label} · {appearance}</span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
+              {WIZARD_FORMATS.map((f) => {
+                const isEscala = f.key === 'escala'
+                const done = copied === f.key
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => copy(f.key)}
+                    className={`w-full px-3 py-2 text-left rounded-xl border transition-colors ${
+                      done ? 'border-emerald-500/60 bg-emerald-500/[0.08]' : 'border-line hover:border-line-strong hover:bg-elevated/40'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-[13px] font-medium text-fg">{f.label}</span>
+                      {isEscala && (
+                        <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-[9px] font-semibold uppercase tracking-wide flex-shrink-0">
+                          Figma plugin
+                        </span>
+                      )}
+                      {done && <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">Copied</span>}
+                    </span>
+                    <span className="block text-[11.5px] font-normal text-fg-faint truncate">
+                      {/* Escala JSON is a whole-document contract — say so here
+                          rather than let it read as family-scoped like the rest. */}
+                      {isEscala ? 'The whole tokens.json — not scoped to this ramp' : f.hint}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body,
+      )
+    : null
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Export the ${label} family — ${appearance}`}
+        title={`Copy the ${appearance} ${label} ramp in any format`}
+        className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+          open ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg hover:bg-elevated'
+        }`}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      </button>
+      {panel}
+    </div>
+  )
+}
 
 // ── Editable hex cell (swatch + live hex field, draft pattern) ───────────────
 
@@ -999,12 +1144,22 @@ export default function ColorPrimitives({
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${col} — shown in preview` : `Show ${col} in the preview`}
                         className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
-                          isPreviewed ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
                         }`}
                       >
                         <EyeIcon active={isPreviewed} />
                         <span className="truncate">{col}</span>
                       </button>
+                      {/* Export lives per COLUMN, not per table: an icon here
+                          can only mean "this family, this appearance", which
+                          is exactly the scope a ramp is useful in. Hidden for
+                          alpha families — alpha ramps live in
+                          `colors.primitiveAlpha`, which no export collection
+                          ships, so the icon would hand over the solid twin
+                          instead. */}
+                      {!family.isAlpha && (
+                        <ColumnExportMenu family={family.tokenPrefix} label={family.label} appearance={col} />
+                      )}
                     </span>
                   )
                 })}

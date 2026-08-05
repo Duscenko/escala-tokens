@@ -56,20 +56,49 @@ export function exportLanguage(format: ExportFormat): string {
 
 // ── Section token sources ───────────────────────────────────────────────────
 
+/** Per-call export scoping. Today only the color section reads it: the export
+ *  wizard lets a run ship a SUBSET of the primitive families (Primitives' own
+ *  per-family quick export is that same path, pre-scoped to one family), so
+ *  every renderer here has to honour the same filter or the Tailwind/Markdown
+ *  slices would silently ship families the summary said were excluded. */
+export interface SectionExportOptions {
+  /** Family keys to keep (`accent`, `neutral`, a custom family's key…).
+   *  Omitted = every family, i.e. the pre-existing behaviour. */
+  families?: string[]
+  /** Which appearance's ramps ship. Omitted = the light ones (what this module
+   *  has always exported). 'dark' swaps in each family's dark twin under its
+   *  EXPORTED name (`accent-dark-*`), matching tokenGenerator — a per-column
+   *  quick export from the Primitives table ships exactly one appearance. */
+  appearance?: 'light' | 'dark'
+  /** Whether the semantic (light) block ships alongside the primitives.
+   *  Omitted = yes. The wizard passes `false` when the run picked Primitives
+   *  but not Semantics — those are two separate collections there, and the
+   *  color section used to ship both regardless of which one was checked. */
+  includeSemantics?: boolean
+}
+
 /** Ordered color families present in the system: [name, scale].
  *  Family names match tokens.json (`accent`/`neutral` — the plugin contract),
  *  so every export surface speaks the same vocabulary. */
-function colorFamilies(store: Store): [string, Record<number, string>][] {
-  const fams: [string, Record<number, string>][] = [
-    ['accent', store.primaryScale],
-    ['neutral', store.grayLightScale],
+function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, Record<number, string>][] {
+  const dark = opts.appearance === 'dark'
+  // Name and scale move together: the dark twin exports as `accent-dark-*`,
+  // exactly what tokenGenerator emits, so a scoped slice still names the same
+  // tokens as tokens.json. `families` always matches on the FAMILY (`accent`),
+  // never on the suffixed name.
+  const fams: [string, string, Record<number, string> | undefined][] = [
+    ['accent', 'accent-dark', dark ? store.primaryDarkScale : store.primaryScale],
+    ['neutral', 'neutral-dark', dark ? store.grayDarkScale : store.grayLightScale],
+    ['error', 'error-dark', dark ? store.errorDarkScale : store.errorScale],
+    ['warning', 'warning-dark', dark ? store.warningDarkScale : store.warningScale],
+    ['success', 'success-dark', dark ? store.successDarkScale : store.successScale],
+    ['info', 'info-dark', dark ? store.infoDarkScale : store.infoScale],
+    ...store.customColors.map((c): [string, string, Record<number, string> | undefined] =>
+      [c.key, `${c.key}-dark`, dark ? c.darkScale : c.scale]),
   ]
-  if (Object.keys(store.errorScale).length) fams.push(['error', store.errorScale])
-  if (Object.keys(store.warningScale).length) fams.push(['warning', store.warningScale])
-  if (Object.keys(store.successScale).length) fams.push(['success', store.successScale])
-  if (Object.keys(store.infoScale).length) fams.push(['info', store.infoScale])
-  store.customColors.forEach((c) => fams.push([c.key, c.scale]))
   return fams
+    .filter(([family, , scale]) => scale && Object.keys(scale).length && (!opts.families || opts.families.includes(family)))
+    .map(([family, darkName, scale]) => [dark ? darkName : family, scale!])
 }
 
 const sortedEntries = (o: Record<string, string>) =>
@@ -88,15 +117,17 @@ const SIMPLE: Partial<Record<SectionKey, { prefix: string; tailwind: string; get
 // ── CSS ──────────────────────────────────────────────────────────────────────
 
 // Inner :root declarations (un-indented) for a section — composable for "all".
-function cssLines(section: SectionKey, store: Store, cf: ColorFormat): string[] {
+function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string[] {
   if (section === 'color') {
     const lines: string[] = []
-    colorFamilies(store).forEach(([name, scale]) => {
+    colorFamilies(store, opts).forEach(([name, scale]) => {
       lines.push(`/* ${cap(name)} */`)
       sortedEntries(scale).forEach(([k, v]) => lines.push(`--color-${name}-${toneLabel(store.colorNaming, Number(k))}: ${formatColor(v, cf)};`))
     })
-    lines.push('/* Semantic — light */')
-    Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) lines.push(`--color-${k}: ${formatColor(v, cf)};`) })
+    if (opts.includeSemantics !== false) {
+      lines.push('/* Semantic — light */')
+      Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) lines.push(`--color-${k}: ${formatColor(v, cf)};`) })
+    }
     return lines
   }
   if (section === 'typography') {
@@ -125,8 +156,8 @@ function wrapRoot(lines: string[]): string {
   return `:root {\n${lines.map((l) => (l ? `  ${l}` : '')).join('\n')}\n}`
 }
 
-function cssFor(section: SectionKey, store: Store, cf: ColorFormat): string {
-  return wrapRoot(cssLines(section, store, cf))
+function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
+  return wrapRoot(cssLines(section, store, cf, opts))
 }
 
 // ── Tailwind (theme.extend snippet) ──────────────────────────────────────────
@@ -138,15 +169,17 @@ function twConfig(extend: Record<string, unknown>): string {
 }
 
 // The theme.extend slice for a section — composable for "all".
-function twExtend(section: SectionKey, store: Store, cf: ColorFormat): Record<string, unknown> {
+function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): Record<string, unknown> {
   if (section === 'color') {
     const colors: Record<string, unknown> = {}
-    colorFamilies(store).forEach(([name, scale]) => {
+    colorFamilies(store, opts).forEach(([name, scale]) => {
       const obj: Record<string, string> = {}
       sortedEntries(scale).forEach(([k, v]) => { obj[toneLabel(store.colorNaming, Number(k))] = formatColor(v, cf) })
       colors[name] = obj
     })
-    Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) colors[k] = formatColor(v, cf) })
+    if (opts.includeSemantics !== false) {
+      Object.entries(store.themes.light ?? {}).forEach(([k, v]) => { if (v) colors[k] = formatColor(v, cf) })
+    }
     return { colors }
   }
   if (section === 'typography') {
@@ -163,12 +196,12 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat): Record<st
   return { [simple.tailwind]: simple.get(store) }
 }
 
-function tailwindFor(section: SectionKey, store: Store, cf: ColorFormat): string {
+function tailwindFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'icons') {
     const lib = getIconLibrary(store.iconLibrary)
     return `// Icons aren't a Tailwind theme key — install the set and import per-icon.\n// ${lib?.label ?? store.iconLibrary}${lib?.npm ? `  ·  npm i ${lib.npm}` : ''}`
   }
-  return twConfig(twExtend(section, store, cf))
+  return twConfig(twExtend(section, store, cf, opts))
 }
 
 // ── Tokens (exact tokens.json slices) ────────────────────────────────────────
@@ -202,14 +235,14 @@ function table(headers: string[], rows: string[][]): string {
   ].join('\n')
 }
 
-function mdFor(section: SectionKey, store: Store, cf: ColorFormat): string {
+function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'color') {
     const parts = ['## Color']
-    colorFamilies(store).forEach(([name, scale]) => {
+    colorFamilies(store, opts).forEach(([name, scale]) => {
       parts.push(`\n### ${cap(name)}\n`)
       parts.push(table(['Token', 'Value'], sortedEntries(scale).map(([k, v]) => [`\`${name}-${toneLabel(store.colorNaming, Number(k))}\``, `\`${formatColor(v, cf)}\``])))
     })
-    const sem = Object.entries(store.themes.light ?? {}).filter(([, v]) => v)
+    const sem = opts.includeSemantics === false ? [] : Object.entries(store.themes.light ?? {}).filter(([, v]) => v)
     if (sem.length) {
       parts.push('\n### Semantic (light)\n')
       parts.push(table(['Token', 'Value'], sem.map(([k, v]) => [`\`${k}\``, `\`${formatColor(v, cf)}\``])))
@@ -268,13 +301,18 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat): s
   }
 }
 
-export function buildSectionExport(section: SectionKey | 'all', format: ExportFormat, colorFormat: ColorFormat = 'hex'): string {
+export function buildSectionExport(
+  section: SectionKey | 'all',
+  format: ExportFormat,
+  colorFormat: ColorFormat = 'hex',
+  opts: SectionExportOptions = {},
+): string {
   const store = useDesignStore.getState()
   if (section === 'all') return buildFullExport(store, format, colorFormat)
   switch (format) {
-    case 'css': return cssFor(section, store, colorFormat)
-    case 'tailwind': return tailwindFor(section, store, colorFormat)
+    case 'css': return cssFor(section, store, colorFormat, opts)
+    case 'tailwind': return tailwindFor(section, store, colorFormat, opts)
     case 'tokens': return JSON.stringify(tokensFor(section), null, 2)
-    case 'md': return mdFor(section, store, colorFormat)
+    case 'md': return mdFor(section, store, colorFormat, opts)
   }
 }

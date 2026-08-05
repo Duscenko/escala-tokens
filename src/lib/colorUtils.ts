@@ -528,15 +528,75 @@ export function isAccessible(fg: string, bg: string, level: 'AA' | 'AAA' = 'AA')
   return level === 'AA' ? contrast >= 4.5 : contrast >= 7
 }
 
+/** WCAG 2.x thresholds for `C = (L_max + 0.05) / (L_min + 0.05)`. */
+export const WCAG_AA = 4.5
+export const WCAG_AAA = 7
+
 // Lightest brand tone (>= start) whose WHITE text passes WCAG AA (4.5:1).
 // Keeps the solid brand button accessible even for bright hues where the design
 // system's solid tone (9) is too light for white text. Falls back to 12.
+//
+// TWO ASSUMPTIONS LIVE IN HERE, and both break for the curated architectures:
+// the ink is literally `#ffffff` (theirs is `{neutral.1}`, the page — a hair
+// darker), and the ramp passed in is the one the tone will be READ from (they
+// resolve the same index against a theme's own ramp, which is a different
+// colour). Use `solidInkPair` when either can't be guaranteed; this stays for
+// the flat catalogue, which does resolve per-ramp.
 export function accessibleSolidTone(scale: Record<number, string>, start = BASE_TONE): number {
   for (let t = start; t <= 12; t++) {
     const hex = scale[t]
-    if (hex && checkContrast('#ffffff', hex) >= 4.5) return t
+    if (hex && checkContrast('#ffffff', hex) >= WCAG_AA) return t
   }
   return 12
+}
+
+/** A solid fill and the ink that is actually legible on it. */
+export interface SolidInkPair {
+  /** Ramp step for the fill. */
+  tone: number
+  /** Index into the `inks` array passed in — the caller owns what that means. */
+  ink: number
+  /** The achieved ratio. Below `target` means NOTHING in the ramp cleared it. */
+  contrast: number
+}
+
+/**
+ * Solve fill and ink TOGETHER: walk the ramp from `start` and take the first
+ * tone where the best of `inks` clears `target`; if no tone does, take the
+ * highest-contrast pair available rather than a fixed fallback.
+ *
+ * This is `accessibleSolidTone` generalized along the two axes that actually
+ * vary — a real ink set instead of hardcoded white, and whichever ramp the
+ * tone will be read from — so the guarantee holds per theme instead of only
+ * for the light ramp with white text on it. The comparison is plain WCAG:
+ * `C = (L_max + 0.05) / (L_min + 0.05)` (chroma's `contrast`).
+ *
+ * Returning the argmax on failure matters: a mid-lightness ramp (yellow, lime)
+ * can have NO step where either near-white or near-black clears 4.5, and
+ * silently falling back to step 12 there picked a worse pair than the ramp's
+ * own best.
+ */
+export function solidInkPair(
+  scale: Record<number, string>,
+  inks: string[],
+  start = BASE_TONE,
+  target = WCAG_AA,
+): SolidInkPair {
+  let best: SolidInkPair = { tone: start, ink: 0, contrast: -1 }
+  for (let t = start; t <= 12; t++) {
+    const fill = scale[t]
+    if (!fill) continue
+    for (let i = 0; i < inks.length; i++) {
+      let c: number
+      try { c = checkContrast(inks[i], fill) } catch { continue }
+      if (c > best.contrast) best = { tone: t, ink: i, contrast: c }
+      // First tone that clears the bar wins — walking further only darkens the
+      // fill for no accessibility gain, and the ramp's anchor (9) is the tone
+      // the system is actually built around.
+      if (c >= target) return { tone: t, ink: i, contrast: c }
+    }
+  }
+  return best
 }
 
 // ── The app chrome's own accent ────────────────────────────────────────────

@@ -60,11 +60,44 @@ another pill).
 > Export already does — if whole-system-by-default earns its place back, make it an option
 > INSIDE the one wizard (e.g. a "select all" affordance in Step 1), not a second entry point.
 > Step 1 picks **collections** (primitives · semantics · typography · spacing · radius ·
-> opacity · shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship;
+> opacity · shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship
+> and, for primitives, which **families** ship (Accent · Neutral · Error … + customs —
+> `primitiveFamilyMeta()`, derived from the real `colors.primitive` keys so a family can't
+> be offered that the payload doesn't contain; picking one ships BOTH its ramps, since
+> `accent` and `accent-dark` are one family two ways, exactly like the Primitives table's
+> light/dark columns). Every family checked = `primitiveFamilies: undefined` = the
+> pre-scoping payload byte-for-byte, so the default export never changed;
 > step 2 picks the format (W3C DTCG · Escala JSON · CSS · SCSS · Tailwind · Markdown) and
 > single-vs-per-collection files; step 3 summarizes and downloads. Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
 >   disagree with `tokens.json`. Counts on screen are counts in the file.
+> - **Primitives' per-column export icon COPIES one ramp; it doesn't fork the export.**
+>   `ColumnExportMenu` (`ColorPrimitives.tsx`) sits in the **light** and **dark** column
+>   headers — per column, deliberately, because an icon there can only mean "this family,
+>   this appearance", which is the only scope a single ramp is useful in. It opens a
+>   FORMAT popover (the same `WIZARD_FORMATS` list) and picking one **copies to the
+>   clipboard** — pasting a ramp into code or an AI prompt is what this is for; files on
+>   disk stay the guided wizard's job. Not a second exporter: `buildFamilyExport()`
+>   assembles a normal `WizardSelection` and runs it through `buildWizardExport`, so the
+>   copy is byte-identical to running the wizard scoped the same way. Escala JSON is the
+>   one entry that ISN'T scoped (whole-document contract) and the popover says so inline.
+>   Hidden on alpha families: alpha ramps live in `colors.primitiveAlpha`, which no
+>   collection ships, so the icon would hand over the solid twin instead.
+>   The popover is **portaled to `<body>` and positioned `fixed`** — the header sits
+>   inside the table's `overflow-auto` column, which clipped a ~340px absolute panel on
+>   any normal window height (same fix as the family picker's `editPortal`).
+>   Separately, the wizard REMOUNTS per open (`key={exportRun}` in `Configurator`) —
+>   reopening inside the 0.15s exit animation reused the instance, so a narrowed run
+>   handed its scope and its step 3 to the next export.
+> - **A family filter has to reach every renderer, not just the JSON ones.** Primitives
+>   and semantics collapse onto ONE `sectionExport` 'color' section for Tailwind/Markdown,
+>   so `buildWizardExport` passes `{ families, includeSemantics }` (`SectionExportOptions`)
+>   down — otherwise an Accent-only run would still render six families plus the whole
+>   alias layer in those two formats. Same reason `aliasMap` is scoped: a W3C alias must
+>   never reference a token the file left out. `appearance` is in that same options bag:
+>   `sectionExport`'s `colorFamilies` only ever knew the LIGHT scales, so a dark-column
+>   copy in Tailwind/Markdown would have silently shipped light hexes under a dark name —
+>   it now swaps in each family's dark twin under its exported `*-dark` prefix.
 > - **W3C ships real aliases**: a semantic value sitting on a primitive tone exports as
 >   `{color.neutral.900}`, not a loose hex. That's the point of the format — don't
 >   "simplify" it back to hex.
@@ -308,7 +341,39 @@ another pill).
       to `projectArchitecture()` had been omitting `overrides` entirely, so
       table edits in Categorical/Vibrancy/Tonal never reached the actual export
       — only the live preview table. Both `overrides` and `themeOrder` are now
-      passed through. ·
+      passed through.
+    - **A solid fill and its ink are ONE decision, solved per theme against real
+      hexes.** The curated architectures (Categorical · Astryx · shadcn) all share
+      `projectCurated`/`curatedRefs` (`semanticArchitectures.ts`) and two markers that
+      never escape that module: `{accent.solid}` → the accessible fill step, and
+      `{on:<fam>.<tone>}` → whichever of `INK_REFS` (`{neutral.1}` near-white ·
+      `{neutral.12}` near-black) actually clears WCAG AA on that fill, via
+      `solidInkPair()` (`colorUtils.ts`). Exported refs are still plain
+      `{family.tone}` — the contract and `refToView`'s grammar are unchanged.
+      This replaced two independent bugs that both shipped inaccessible pairs:
+      **(1) the tone was solved on the wrong ramp** — one
+      `accessibleSolidTone(scales.brand)` index computed off the LIGHT ramp was
+      reused in every theme column, where `{accent.N}` resolves against THAT
+      theme's ramp (measured, accent `#c76aff`: 4.60:1 light / **4.07:1 dark**
+      from a single shared index; and since "walk up until white passes" lands on
+      11–12, which on any dark twin is the near-WHITE end, white ink there is
+      unreadable). **(2) the ink was assumed, never checked** — `accessibleSolidTone`
+      searches against literal `#ffffff` while the shipped ink is `{neutral.1}`,
+      the page, a hair darker (accent `#fff3b0` measured **4.44:1** in light while
+      the search believed it passed). Astryx's hand-patched `on-warning:
+      {neutral.12}` was this same rule written once as a special case; it's now
+      derived. After: those cases read 17.3 / 6.4 / 11.7 / 13.6 : 1 in BOTH
+      columns, and the fill stays on the anchor (step 9 — the user's actual brand
+      colour) instead of being darkened toward near-black, because flipping the
+      ink solves it more cheaply than deepening the fill.
+      **Target is AA (4.5), not AAA (7)** — deliberately: it's what the rest of the
+      system already guarantees (ramp step 11 is generated to ≈4.5, `chromeAccent`
+      walks to 4.5), and 7:1 would force nearly every brand button to step 12.
+      `solidInkPair` returns the ramp's **argmax** when nothing clears the target,
+      rather than a fixed step-12 fallback that could be worse than the ramp's own
+      best. `accessibleSolidTone` is untouched and still correct for the flat
+      catalogue, which does resolve per-ramp — don't reach for it where the ink
+      isn't literally white or the ramp isn't the one the tone is read from. ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Kits in Variables' header and the Export wizard's own
@@ -445,8 +510,23 @@ another pill).
        architecture showed the generic `ColorCollage` no matter which group you picked.**
        Step3 now owns its nav state (flat + arch, separately) and reports a normalized
        focus; the shell never pushes one down.
-     - **`focusForNavKey()` maps every architecture's group keys onto the 5**, and the
+     - **`focusForNavKey()` maps every architecture's group keys onto the 6**, and the
        nav row's glyph is derived from the SAME call — icon and specimen can't disagree.
+     - **`icon` is its own focus, not a synonym for `content`.** Astryx ships `icon.*`
+       as a hierarchy parallel to `text.*` (icons read lighter than type at the same
+       tone, so they get their own steps); it used to fold into `'content'`, so picking
+       **Icon** in the nav showed the text specimen and no glyph at all. `IconSpecimen`
+       covers the three places icon ink is actually judged — hierarchy, icon-only
+       buttons on a fill, inline with text. Architectures with no icon group
+       (Categorical, flat) fall back to their content inks, which is exactly what those
+       roles mean there, and `ContentSpecimen` also carries a glyph row — Categorical's
+       Content is literally "text & icon ink", and a hierarchy judged only on type hides
+       that the same tone reads differently at icon weight.
+     - **Preview glyphs ALWAYS come from `TokenIcon` → `t.iconPrefix`** (the library
+       picked in Foundations · Icons), never a hand-drawn SVG — same rule the Color
+       collage and the component docs already follow, so switching the library
+       re-renders them with that set's real glyph names (`lucide/search` →
+       `ph/magnifying-glass`).
      - **Specimens caption in the ACTIVE architecture's vocabulary.** `slotOf()` prefers
        `tokens.archTokens['category.token']` (Categorical's `action.primary`) and falls
        back to the flat role key (`background-brand-solid`), so the label always names the

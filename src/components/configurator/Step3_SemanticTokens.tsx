@@ -34,7 +34,7 @@ export type SemanticCategory = 'all' | 'content' | 'background' | 'border'
  * action · surface · status · border), Vibrancy and Tonal their own; the
  * right-hand preview only cares which of these five specimens to show.
  */
-export type SemanticFocus = 'content' | 'action' | 'surface' | 'status' | 'border'
+export type SemanticFocus = 'content' | 'icon' | 'action' | 'surface' | 'status' | 'border'
 
 /**
  * Nav-item key → preview focus, across every architecture. `null` = no specific
@@ -54,7 +54,10 @@ export function focusForNavKey(key: string): SemanticFocus | null {
     case 'status': return 'status'
     // Astryx.
     case 'accent': return 'action'
-    case 'icon': return 'content'
+    // Astryx ships `icon.*` as its OWN hierarchy parallel to `text.*`, so it
+    // gets its own specimen — it used to fold into 'content', which meant
+    // picking Icon in the nav showed the text preview and no glyphs at all.
+    case 'icon': return 'icon'
     // shadcn/ui (groups shared with Astryx/Categorical/Tonal above reuse
     // those cases: accent, secondary, border).
     case 'base': return 'surface'
@@ -122,6 +125,9 @@ const CATEGORY_DESC: Record<SemanticCategory, string> = {
 // so they get their own (a cursor-ish pointer, a pulse).
 const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
   content: CATEGORY_ICON.content,
+  // A star — the app's own stand-in for "a glyph", distinct from Content's
+  // type mark so the two Astryx groups don't read as the same thing.
+  icon:    catIc('M12 3l2.6 6.2 6.4.5-4.9 4.2 1.5 6.1L12 16.8 6.4 20l1.5-6.1L3 9.7l6.4-.5L12 3z'),
   surface: CATEGORY_ICON.background,
   border:  CATEGORY_ICON.border,
   action:  catIc('M3 3l7.5 18 2.6-7.9L21 10.5 3 3z', true),
@@ -1007,7 +1013,7 @@ export default function Step3_SemanticTokens({
                   const isThemeCol = PER_THEME_ARCHITECTURES.has(semanticArchitecture)
                   const deletable = isThemeCol && themeCols.length > 1
                   return (
-                    <span key={mode} className="flex items-center border-r border-line min-w-0 px-1.5 py-1.5">
+                    <span key={mode} className={`flex items-center border-r border-line min-w-0 px-1.5 py-1.5 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       {/* Same "whole header is the preview toggle" affordance
                           the flat matrix's columns use — 'light'/'dark' are
                           always valid theme keys, and Categorical's added
@@ -1022,7 +1028,7 @@ export default function Step3_SemanticTokens({
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${label} — shown in preview` : `Show ${label} in the preview`}
                         className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1.5 rounded-md transition-colors ${
-                          isPreviewed ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
                         }`}
                       >
                         <EyeIcon active={isPreviewed} />
@@ -1185,7 +1191,7 @@ export default function Step3_SemanticTokens({
                       title={isPreviewed ? `${displayName} — shown in preview` : `Show ${displayName} in the preview`}
                       className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
                         isPreviewed
-                          ? 'bg-elevated text-accent-ui shadow-sm'
+                          ? 'text-accent-ui'
                           : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
                       }`}
                     >

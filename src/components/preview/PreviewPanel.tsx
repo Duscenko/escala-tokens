@@ -92,7 +92,6 @@ function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefi
       className="flex flex-col gap-3.5 p-4"
       style={{
         background: tokens.surface,
-        border: `1px solid ${tokens.borderDefault || tokens.border || '#eaecf0'}`,
         borderRadius: 14,
       }}
     >

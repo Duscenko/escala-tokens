@@ -40,6 +40,18 @@ const ALL_SECTION_COUNT = new Set(Object.values(SECTION_OF)).size
 
 export interface WizardSelection {
   collections: WizardCollection[]
+  /** Primitive color families to ship (`accent`, `neutral`, a custom key…) —
+   *  a subset of `primitiveFamilyMeta()`. Ignored unless 'primitives' is
+   *  selected. `undefined` means "every family", so a caller that doesn't care
+   *  about family scoping keeps the pre-existing whole-palette behaviour.
+   *  Primitives' per-family quick export is just this field pre-filled with
+   *  one key — there's no second export path behind that icon. */
+  primitiveFamilies?: string[]
+  /** Which appearance of those families ships — `undefined` = both ramps
+   *  (`accent-*` AND `accent-dark-*`), which is what a normal export does.
+   *  Primitives' per-column quick export sets it, since that icon sits in the
+   *  light or the dark column and can only honestly ship that one. */
+  primitiveAppearance?: 'light' | 'dark'
   /** Semantic themes to ship (subset of themeOrder). Ignored unless 'semantics' is selected. */
   modes: string[]
   format: WizardFormat
@@ -70,6 +82,60 @@ export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[
   { key: 'tailwind', label: 'Tailwind config', hint: 'theme.extend snippet' },
   { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
 ]
+
+// ── Primitive families ───────────────────────────────────────────────────────
+// `colors.primitive` is FLAT (`accent-9`, `accent-dark-9`, `teal-3`), so a
+// "family" here is the exported prefix minus its tone and minus the `-dark`
+// twin marker: picking Accent ships BOTH appearances, exactly like the
+// Primitives table shows one family as a light + dark pair of columns. Keyed
+// off the real payload rather than the store, so a family can't be offered
+// that the export doesn't actually contain.
+
+/** `accent-9` → `accent` · `neutral-dark-3` → `neutral`. */
+export function primitiveFamilyOf(tokenName: string): string {
+  return splitFlat(tokenName)[0].replace(/-dark$/, '')
+}
+
+export interface PrimitiveFamilyMeta {
+  key: string
+  label: string
+  count: number
+}
+
+/** Every primitive family in the payload, in export order, with its variable
+ *  count (light + dark ramps together). */
+export function primitiveFamilyMeta(full: TokenJSON = generateTokenJSON()): PrimitiveFamilyMeta[] {
+  const counts = new Map<string, number>()
+  for (const name of Object.keys(full.colors.primitive)) {
+    const key = primitiveFamilyOf(name)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  const labels = new Map(useDesignStore.getState().customColors.map((c) => [c.key, c.label]))
+  return [...counts].map(([key, count]) => ({
+    key,
+    label: labels.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1),
+    count,
+  }))
+}
+
+/** Is this flat token name a DARK-twin one (`accent-dark-9`)? */
+const isDarkToken = (name: string) => splitFlat(name)[0].endsWith('-dark')
+
+/** The primitive slice a selection ships — every family, both ramps, when
+ *  unscoped. */
+function pickedPrimitives(
+  full: TokenJSON,
+  families?: string[],
+  appearance?: 'light' | 'dark',
+): Record<string, string> {
+  if (!families && !appearance) return full.colors.primitive
+  return Object.fromEntries(
+    Object.entries(full.colors.primitive).filter(([name]) =>
+      (!families || families.includes(primitiveFamilyOf(name)))
+      && (!appearance || isDarkToken(name) === (appearance === 'dark')),
+    ),
+  )
+}
 
 // ── Collection metadata (labels + live variable counts) ──────────────────────
 
@@ -102,11 +168,17 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
 }
 
 /** Variables the current selection ships — the summary's headline number. */
-export function selectionCount(sel: Pick<WizardSelection, 'collections' | 'modes'>, full: TokenJSON = generateTokenJSON()): number {
+export function selectionCount(
+  sel: Pick<WizardSelection, 'collections' | 'modes' | 'primitiveFamilies' | 'primitiveAppearance'>,
+  full: TokenJSON = generateTokenJSON(),
+): number {
   const meta = collectionMeta(full)
   return sel.collections.reduce((sum, key) => {
     const m = meta.find((x) => x.key === key)
     if (!m) return sum
+    // Family-scoped primitives count only the families actually shipping —
+    // the headline number has to match the file, family filter included.
+    if (key === 'primitives') return sum + Object.keys(pickedPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)).length
     if (key === 'semantics') {
       const perMode = m.modes?.length ? m.count / m.modes.length : m.count
       return sum + Math.round(perMode * sel.modes.length)
@@ -127,19 +199,21 @@ const splitFlat = (name: string): [string, string] => {
   return i < 0 ? [name, name] : [name.slice(0, i), name.slice(i + 1)]
 }
 
-function w3cPrimitives(full: TokenJSON): W3CNode {
+function w3cPrimitives(full: TokenJSON, families?: string[], appearance?: 'light' | 'dark'): W3CNode {
   const out: Record<string, Record<string, W3CNode>> = {}
-  for (const [name, hex] of Object.entries(full.colors.primitive)) {
+  for (const [name, hex] of Object.entries(pickedPrimitives(full, families, appearance))) {
     const [family, tone] = splitFlat(name)
     ;(out[family] ??= {})[tone] = token(hex, 'color')
   }
   return out as W3CNode
 }
 
-/** hex → `{color.<family>.<tone>}` over the exported primitives (first hit wins). */
-function aliasMap(full: TokenJSON): Map<string, string> {
+/** hex → `{color.<family>.<tone>}` over the exported primitives (first hit wins).
+ *  Scoped to the families actually shipping, so an alias can never reference a
+ *  token this file left out. */
+function aliasMap(full: TokenJSON, families?: string[]): Map<string, string> {
   const map = new Map<string, string>()
-  for (const [name, hex] of Object.entries(full.colors.primitive)) {
+  for (const [name, hex] of Object.entries(pickedPrimitives(full, families))) {
     const [family, tone] = splitFlat(name)
     const key = hex.toLowerCase()
     if (!map.has(key)) map.set(key, `{color.${family}.${tone}}`)
@@ -147,8 +221,8 @@ function aliasMap(full: TokenJSON): Map<string, string> {
   return map
 }
 
-function w3cSemantics(full: TokenJSON, modes: string[], aliases: boolean): W3CNode {
-  const refs = aliases ? aliasMap(full) : null
+function w3cSemantics(full: TokenJSON, modes: string[], aliases: boolean, families?: string[]): W3CNode {
+  const refs = aliases ? aliasMap(full, families) : null
   const out: Record<string, Record<string, W3CNode>> = {}
   for (const mode of modes) {
     const theme = full.colors.themes[mode]
@@ -209,8 +283,14 @@ const W3C_ROOT: Record<WizardCollection, string> = {
 }
 
 function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON): W3CNode {
-  if (key === 'primitives') return w3cPrimitives(full)
-  if (key === 'semantics') return w3cSemantics(full, sel.modes, sel.includeAliases)
+  if (key === 'primitives') return w3cPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)
+  if (key === 'semantics') {
+    // Only constrain aliases to the picked families when primitives are
+    // actually part of this export; otherwise every alias would point outside
+    // the file anyway and narrowing them adds nothing.
+    const families = sel.collections.includes('primitives') ? sel.primitiveFamilies : undefined
+    return w3cSemantics(full, sel.modes, sel.includeAliases, families)
+  }
   return w3cSection(key, full)
 }
 
@@ -221,7 +301,7 @@ function varLines(key: WizardCollection, sel: WizardSelection, full: TokenJSON):
   const cf = sel.colorFormat
   switch (key) {
     case 'primitives':
-      return Object.entries(full.colors.primitive).map(([n, v]) => [`color-${n}`, formatColor(v, cf)])
+      return Object.entries(pickedPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)).map(([n, v]) => [`color-${n}`, formatColor(v, cf)])
     case 'typography': {
       const t = full.typography
       return [
@@ -340,20 +420,31 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // window used, so a Tailwind/MD slice reads identically wherever it's taken.
     const ext = sel.format === 'tailwind' ? 'js' : 'md'
     const sections = [...new Set(ordered.map((k) => SECTION_OF[k]))]
+    // Primitives and semantics collapse onto ONE 'color' section here, so the
+    // section builders need to be told which half (and which families) this
+    // run actually picked — otherwise a primitives-only, Accent-only export
+    // would still render every family plus the whole semantic layer.
+    const colorOpts = {
+      families: ordered.includes('primitives') ? sel.primitiveFamilies : [],
+      appearance: sel.primitiveAppearance,
+      includeSemantics: ordered.includes('semantics'),
+    }
     if (sel.structure === 'per-collection') {
       return sections
         .map((s) => ({
           name: `${s}.${ext}`,
-          content: buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat),
+          content: buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat, colorOpts),
           language: ext as 'js' | 'md',
         }))
         .filter((f) => f.content.trim().length > 0)
     }
     // Whole-system when every section is in play, otherwise stitch the picked ones.
-    const isAll = sections.length === ALL_SECTION_COUNT
+    // "Every section" also means an unscoped color section — a family filter
+    // makes this a partial export even when all ten collections are checked.
+    const isAll = sections.length === ALL_SECTION_COUNT && !sel.primitiveFamilies && !sel.primitiveAppearance
     const content = isAll
       ? buildSectionExport('all', sel.format, sel.colorFormat)
-      : sections.map((s) => buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat)).join(
+      : sections.map((s) => buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat, colorOpts)).join(
           sel.format === 'md' ? '\n\n---\n\n' : '\n\n',
         )
     return [{ name: `${slug}.${ext}`, content, language: ext as 'js' | 'md' }]
@@ -367,4 +458,30 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
       .filter((f) => f.content.trim().length > 0)
   }
   return [{ name: `${slug}.${ext}`, content: build(sel, ordered, full), language: ext }]
+}
+
+/** One primitive family, one appearance, one format — the payload behind the
+ *  per-column export icon in the Primitives table. It is NOT a separate
+ *  exporter: it builds a normal `WizardSelection` and runs it through
+ *  `buildWizardExport`, so a quick copy of the Accent ramp is byte-identical
+ *  to running the full wizard scoped the same way (and to tokens.json).
+ *  Escala JSON is the documented exception — it ships the whole document by
+ *  contract, scoping or not. */
+export function buildFamilyExport(
+  family: string,
+  appearance: 'light' | 'dark',
+  format: WizardFormat,
+  colorFormat: ColorFormat = 'hex',
+): WizardFile[] {
+  return buildWizardExport({
+    collections: ['primitives'],
+    modes: [],
+    format,
+    structure: 'single',
+    colorFormat,
+    includeAliases: false,
+    includeComponents: false,
+    primitiveFamilies: [family],
+    primitiveAppearance: appearance,
+  })
 }

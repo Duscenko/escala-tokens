@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
-  buildWizardExport, collectionMeta, selectionCount, WIZARD_FORMATS,
+  buildWizardExport, collectionMeta, primitiveFamilyMeta, selectionCount, WIZARD_FORMATS,
   type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { COLOR_FORMATS, type ColorFormat } from '../../lib/sectionExport'
@@ -131,10 +131,15 @@ export default function ExportWizard({
   } = store
   const meta = useMemo(() => collectionMeta(), [store])
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
+  // Primitive families (Accent · Neutral · Error … + customs) — the second
+  // level of "what do you want to export?" for the primitives collection,
+  // mirroring how `modes` narrows semantics.
+  const famMeta = useMemo(() => primitiveFamilyMeta(), [store])
 
   const [step, setStep] = useState<Step>(1)
   const [collections, setCollections] = useState<WizardCollection[]>(initialCollections)
   const [modes, setModes] = useState<string[]>(allModes)
+  const [families, setFamilies] = useState<string[]>(famMeta.map((f) => f.key))
   const [format, setFormat] = useState<WizardFormat>('w3c')
   const [structure, setStructure] = useState<WizardStructure>('single')
   const [colorFormat, setColorFormat] = useState<ColorFormat>('hex')
@@ -171,22 +176,38 @@ export default function ExportWizard({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const sel: WizardSelection = { collections, modes, format, structure, colorFormat, includeAliases, includeComponents }
+  // Every family picked = unscoped, so an untouched export keeps producing the
+  // exact same payload it did before family scoping existed.
+  const allFamilies = families.length === famMeta.length
+  const sel: WizardSelection = {
+    collections, modes, format, structure, colorFormat, includeAliases, includeComponents,
+    primitiveFamilies: allFamilies ? undefined : families,
+  }
   const files = useMemo(
     () => (collections.length ? buildWizardExport(sel) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [collections, modes, format, structure, colorFormat, includeAliases, includeComponents, store],
+    [collections, modes, families, format, structure, colorFormat, includeAliases, includeComponents, store],
   )
-  const varCount = useMemo(() => selectionCount({ collections, modes }), [collections, modes, store])
+  const varCount = useMemo(
+    () => selectionCount({ collections, modes, primitiveFamilies: allFamilies ? undefined : families }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [collections, modes, families, allFamilies, store],
+  )
   const isJson = format === 'w3c' || format === 'escala'
   // Escala JSON is one document by contract, so structure can't split it.
   const structureLocked = format === 'escala'
-  const canNext = step === 1 ? collections.length > 0 && (!collections.includes('semantics') || modes.length > 0) : true
+  const canNext = step === 1
+    ? collections.length > 0
+      && (!collections.includes('semantics') || modes.length > 0)
+      && (!collections.includes('primitives') || families.length > 0)
+    : true
 
   const toggleCollection = (key: WizardCollection) =>
     setCollections((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))
   const toggleMode = (m: string) =>
     setModes((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m]))
+  const toggleFamily = (k: string) =>
+    setFamilies((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]))
 
   function runExport() {
     files.forEach((f, i) => setTimeout(() => download(f), i * 120))
@@ -350,6 +371,57 @@ export default function ExportWizard({
                       })}
                     </div>
                   </div>
+
+                  {/* Primitives is the one collection that's really a stack of
+                      independent ramps — "export just the Accent scale" is a
+                      routine ask (and what Primitives' per-family export icon
+                      opens this wizard for), so it gets the same second-level
+                      picker semantics gets for its modes. Each chip counts the
+                      variables it carries, light + dark ramps together, since
+                      that's how the Primitives table shows a family too. */}
+                  {collections.includes('primitives') && famMeta.length > 1 && (
+                    <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
+                      <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Families</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setFamilies(famMeta.map((f) => f.key))}
+                            className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          >
+                            All
+                          </button>
+                          <button
+                            onClick={() => setFamilies([])}
+                            className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          >
+                            None
+                          </button>
+                        </div>
+                      </div>
+                      <span className="block px-1 pb-2 text-[12px] text-fg-muted">Color · Primitives</span>
+                      <div className="flex flex-wrap gap-2 px-1">
+                        {famMeta.map((f) => {
+                          const on = families.includes(f.key)
+                          return (
+                            <button
+                              key={f.key}
+                              onClick={() => toggleFamily(f.key)}
+                              aria-pressed={on}
+                              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border transition-colors ${
+                                on ? 'border-accent-ui text-accent-ui bg-accent-ui/[0.07]' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
+                              }`}
+                            >
+                              {f.label}
+                              <span className="text-[11px] font-mono tabular-nums text-fg-faint">{f.count}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {families.length === 0 && (
+                        <p className="px-1 pt-2.5 text-[12px] text-red-500">Pick at least one family to ship the primitives.</p>
+                      )}
+                    </div>
+                  )}
 
                   {collections.includes('semantics') && (
                     <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
@@ -623,6 +695,12 @@ export default function ExportWizard({
                   label="Collections"
                   value={format === 'escala' ? 'All (Escala JSON is one document)' : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')}
                 />
+                {format !== 'escala' && collections.includes('primitives') && (
+                  <SummaryRow
+                    label="Families"
+                    value={allFamilies ? 'All' : famMeta.filter((f) => families.includes(f.key)).map((f) => f.label).join(', ')}
+                  />
+                )}
                 {format !== 'escala' && <SummaryRow label="Variables" value={String(varCount)} />}
                 {collections.includes('semantics') && <SummaryRow label="Modes" value={modes.join(', ')} />}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />

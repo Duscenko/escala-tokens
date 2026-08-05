@@ -14,7 +14,7 @@
 //                 paired on-colors, light↔dark as a tone inversion (40↔80…)
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
-import { accessibleSolidTone } from './colorUtils'
+import { accessibleSolidTone, solidInkPair } from './colorUtils'
 import type { ThemePalette } from '../store/useDesignStore'
 
 export type SemanticArchitecture = 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal'
@@ -75,6 +75,123 @@ export type ProjectionInput = {
   accent: string
 }
 
+// ── Solid fills and the ink that sits on them ────────────────────────────────
+// Every curated architecture (Categorical · Astryx · shadcn) has the same two
+// roles: a solid brand fill and the ink ON it. Both used to be static — the
+// fill's tone came from one `accessibleSolidTone(scales.brand)` call and the
+// ink was hardcoded `{neutral.1}` — and that produced measurably inaccessible
+// pairs, for two independent reasons:
+//
+//  1. **The tone was solved on the wrong ramp.** One index was computed from
+//     the LIGHT accent ramp and then reused in every theme's column, where
+//     `{accent.N}` resolves against THAT theme's ramp (`scaleLookup`'s dark
+//     twin, or a custom family). Same number, different colour, no guarantee.
+//     Measured with accent `#c76aff`: 4.60:1 light, 4.07:1 dark — one column
+//     passes AA and the other doesn't, from a single shared index. Worse for a
+//     ramp whose high tones are the near-WHITE end (every dark twin): the
+//     search "walks up until white passes" lands on 11–12, which in a dark
+//     ramp is nearly white — white ink on it is unreadable.
+//  2. **The ink was assumed, never checked.** `accessibleSolidTone` searches
+//     against literal `#ffffff`, but the shipped ink is `{neutral.1}` — the
+//     page, a hair darker. Accent `#fff3b0` measured 4.44:1 in light: the
+//     search believed it had passed. And for a mid-lightness ramp (yellow,
+//     lime) near-white may never be the right answer at any tone — the
+//     Astryx table already hand-patched exactly that with `on-warning:
+//     {neutral.12}`, which is the general rule written once as a special case.
+//
+// Both are now solved TOGETHER, per theme, against real hexes:
+// `solidInkPair` walks that theme's own ramp and scores each step against the
+// real ink candidates via WCAG's `C = (L_max + 0.05) / (L_min + 0.05)`,
+// returning the first pair that clears AA (or the ramp's best if none can).
+//
+// Target is **AA (4.5:1)**, not AAA — deliberately. It's the threshold the
+// rest of the system already guarantees (ramp step 11 is generated to ≈4.5,
+// `chromeAccent` walks to 4.5), and demanding 7:1 would push almost every
+// brand button to step 12, i.e. near-black, discarding the user's colour.
+//
+// The refs that SHIP are still plain `{neutral.1}` / `{neutral.12}` — the
+// `{on:…}` marker below never escapes this module, so the export contract and
+// `refToView`'s `{family.tone}` grammar are unchanged.
+
+type Look = (fam: string, tone: number) => string | undefined
+
+/** Ink candidates for a solid fill, in preference order. Near-white first: on
+ *  a tie the light ink is the conventional read for a brand button. */
+const INK_REFS = ['{neutral.1}', '{neutral.12}'] as const
+
+const REF_RE = /^\{([a-z-]+)\.(\d+)\}$/
+
+/** Every step of a family, as the ramp `solidInkPair` walks. */
+function rampOf(look: Look, fam: string): Record<number, string> {
+  const out: Record<number, string> = {}
+  for (let t = 1; t <= 12; t++) {
+    const hex = look(fam, t)
+    if (hex) out[t] = hex
+  }
+  return out
+}
+
+/** Resolve INK_REFS to the hexes they carry in this theme. */
+function inkHexes(look: Look): string[] {
+  return INK_REFS.map((r) => {
+    const m = REF_RE.exec(r)!
+    return look(m[1], Number(m[2])) ?? (m[2] === '1' ? '#ffffff' : '#000000')
+  })
+}
+
+/** Which ink ref is legible on an already-resolved fill. */
+function inkRefFor(fill: string | undefined, look: Look): string {
+  if (!fill) return INK_REFS[0]
+  // A one-step "ramp": there's nothing to search, only the ink to choose.
+  return INK_REFS[solidInkPair({ 1: fill }, inkHexes(look), 1).ink]
+}
+
+/**
+ * A curated role table resolved for ONE theme, against that theme's OWN ramps.
+ *
+ * Two markers are substituted here, and only here:
+ *  · `{accent.solid}`    → `{accent.<tone>}`, the accessible fill step
+ *  · `{on:<fam>.<tone>}` → whichever INK_REF actually passes on that fill
+ *    (`{on:accent.solid}` resolves the fill's tone first)
+ */
+function curatedRefs(
+  roles: { group: string; key: string; light: string; dark: string }[],
+  kind: 'light' | 'dark',
+  look: Look,
+): { group: string; key: string; ref: string }[] {
+  const pair = solidInkPair(rampOf(look, 'accent'), inkHexes(look))
+  return roles.map((r) => {
+    const ref = (kind === 'dark' ? r.dark : r.light)
+      // Handles both `{accent.solid}` and `{on:accent.solid}` in one pass.
+      .replace(/\{(on:)?accent\.solid\}/g, (_m, on: string | undefined) => `{${on ?? ''}accent.${pair.tone}}`)
+      .replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
+        inkRefFor(look(fam, Number(tone)), look))
+    return { group: r.group, key: r.key, ref }
+  })
+}
+
+/** Every curated architecture projects identically — table in, per-theme refs
+ *  out — so they share one loop instead of three copies that can drift. */
+function projectCurated(
+  roles: { group: string; key: string; light: string; dark: string }[],
+  input: ProjectionInput,
+  themeOrder: string[],
+): Record<string, Record<string, Record<string, string>>> {
+  const out: Record<string, Record<string, Record<string, string>>> = {}
+  for (const t of themeOrder) {
+    const kind = input.themeKinds[t] ?? 'light'
+    // The SAME lookup `buildArchitectureView` renders with, so the tone this
+    // solves for is scored against the exact hex the table will show.
+    const look = scaleLookup(input.scales, input.themePalettes[t], kind)
+    for (const r of curatedRefs(roles, kind, look)) {
+      out[r.group] ??= {}
+      out[r.group][r.key] ??= {}
+      out[r.group][r.key][t] = r.ref
+    }
+  }
+  return out
+}
+
 // ── Categorical ──────────────────────────────────────────────────────────────
 // LIGHTWEIGHT by contract: a fixed, curated 29-role catalogue — NOT a
 // projection of the 89 flat roles. Content · Action · Surface · Status ·
@@ -94,7 +211,9 @@ export type ProjectionInput = {
 const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: string }[] = [
   // Content — text & icon ink
   { group: 'content', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  { group: 'content', key: 'on-action', light: '{neutral.1}',  dark: '{neutral.1}' }, // holds — sits on action.primary, which holds its tone
+  // Sits on action.primary, so its ink is SOLVED against that fill per theme
+  // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
+  { group: 'content', key: 'on-action', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   { group: 'content', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
   { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
@@ -135,46 +254,17 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
 ]
 
 /**
- * Categorical's ref SCHEMA for every role, at a given theme KIND. Unlike
- * Vibrancy/Tonal (fixed binary formulas over the global primitives),
- * Categorical's schema only depends on kind — "surface.page is neutral.1 for
- * a light-kind theme, neutral-dark.1 for a dark-kind one" — the same rule any
- * number of themes can share. So this stays a 2-variant function (light-kind,
- * dark-kind schema); what varies per THEME is which primitive family a ref's
- * `neutral`/`accent`/etc. resolves against, handled by the caller's `look`.
- */
-function categoricalSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
-  return CATEGORICAL_ROLES.map((r) => ({
-    group: r.group,
-    key: r.key,
-    // The one dynamic tone: the solid brand fill deepens until its light ink
-    // passes WCAG AA — same accessibleSolidTone() anchor the flat export uses.
-    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
-  }))
-}
-
-/**
  * Categorical resolved across every theme in `themeOrder`: group → token →
- * themeKey → ref. Each theme reuses `categoricalSchemaFor(theme's kind)` — the
- * schema is theme-count-independent — resolved against that THEME's own
- * palette (`themePalettes[key]`, already kind-picked by `resolveThemePalette`)
- * when it has one, falling back to the global scales for the two built-ins.
+ * themeKey → ref. The schema is theme-count-independent — "surface.page is
+ * neutral.1 for a light-kind theme, neutral-dark.1 for a dark-kind one" — so
+ * what varies per THEME is which primitive family each ref resolves against,
+ * plus the solid-fill/ink pair, both handled by `projectCurated`.
  */
 export function projectCategorical(
   input: ProjectionInput,
   themeOrder: string[] = ['light', 'dark'],
 ): Record<string, Record<string, Record<string, string>>> {
-  const solid = accessibleSolidTone(input.scales.brand)
-  const out: Record<string, Record<string, Record<string, string>>> = {}
-  for (const t of themeOrder) {
-    const kind = input.themeKinds[t] ?? 'light'
-    for (const r of categoricalSchemaFor(kind, solid)) {
-      out[r.group] ??= {}
-      out[r.group][r.key] ??= {}
-      out[r.group][r.key][t] = r.ref
-    }
-  }
-  return out
+  return projectCurated(CATEGORICAL_ROLES, input, themeOrder)
 }
 
 // ── Astryx ───────────────────────────────────────────────────────────────────
@@ -190,7 +280,7 @@ export function projectCategorical(
 const ASTRYX_ROLES: { group: string; key: string; light: string; dark: string }[] = [
   // Accent — the brand color and how to sit on top of it
   { group: 'accent', key: 'solid',    light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'accent', key: 'on-solid', light: '{neutral.1}',    dark: '{neutral.1}' },
+  { group: 'accent', key: 'on-solid', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   { group: 'accent', key: 'muted',    light: '{accent.3}',     dark: '{accent.3}' },
   // Background — page canvas through elevated surfaces
   { group: 'background', key: 'body',     light: '{neutral.1}',  dark: '{neutral-dark.1}' },
@@ -214,45 +304,27 @@ const ASTRYX_ROLES: { group: string; key: string; light: string; dark: string }[
   // Status — feedback fg/bg/on triads per severity
   { group: 'status', key: 'success',       light: '{success.9}',  dark: '{success.9}' },
   { group: 'status', key: 'success-muted', light: '{success.3}',  dark: '{success.3}' },
-  { group: 'status', key: 'on-success',    light: '{neutral.1}',  dark: '{neutral.1}' },
+  { group: 'status', key: 'on-success',    light: '{on:success.9}', dark: '{on:success.9}' },
   { group: 'status', key: 'error',         light: '{error.9}',    dark: '{error.9}' },
   { group: 'status', key: 'error-muted',   light: '{error.3}',    dark: '{error.3}' },
-  { group: 'status', key: 'on-error',      light: '{neutral.1}',  dark: '{neutral.1}' },
+  { group: 'status', key: 'on-error',      light: '{on:error.9}',   dark: '{on:error.9}' },
   { group: 'status', key: 'warning',       light: '{warning.9}',  dark: '{warning.9}' },
   { group: 'status', key: 'warning-muted', light: '{warning.3}',  dark: '{warning.3}' },
-  // Warning yellow stays light in both appearances, so its "on" ink is dark.
-  { group: 'status', key: 'on-warning',    light: '{neutral.12}', dark: '{neutral.12}' },
+  // Warning yellow stays light in both appearances, so its "on" ink comes out
+  // dark — solved, not hardcoded: that hand-patched {neutral.12} was the
+  // general rule (pick the ink by contrast) written once as a special case.
+  { group: 'status', key: 'on-warning',    light: '{on:warning.9}', dark: '{on:warning.9}' },
   // Border — strokes
   { group: 'border', key: 'default',    light: '{neutral.5}', dark: '{neutral-dark.5}' },
   { group: 'border', key: 'emphasized', light: '{neutral.7}', dark: '{neutral-dark.7}' },
 ]
-
-/** Astryx's ref schema for every role, at a given theme kind — same dynamic
- *  solid-tone anchor as Categorical (`{accent.solid}` → accessibleSolidTone). */
-function astryxSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
-  return ASTRYX_ROLES.map((r) => ({
-    group: r.group,
-    key: r.key,
-    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
-  }))
-}
 
 /** Astryx resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
 export function projectAstryx(
   input: ProjectionInput,
   themeOrder: string[] = ['light', 'dark'],
 ): Record<string, Record<string, Record<string, string>>> {
-  const solid = accessibleSolidTone(input.scales.brand)
-  const out: Record<string, Record<string, Record<string, string>>> = {}
-  for (const t of themeOrder) {
-    const kind = input.themeKinds[t] ?? 'light'
-    for (const r of astryxSchemaFor(kind, solid)) {
-      out[r.group] ??= {}
-      out[r.group][r.key] ??= {}
-      out[r.group][r.key][t] = r.ref
-    }
-  }
-  return out
+  return projectCurated(ASTRYX_ROLES, input, themeOrder)
 }
 
 // ── shadcn/ui ────────────────────────────────────────────────────────────────
@@ -276,7 +348,7 @@ const SHADCN_ROLES: { group: string; key: string; light: string; dark: string }[
   { group: 'popover', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
   // Primary — the brand action color
   { group: 'primary', key: 'fill',       light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'primary', key: 'foreground', light: '{neutral.1}',    dark: '{neutral.1}' },
+  { group: 'primary', key: 'foreground', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   // Secondary — a lower-emphasis fill (secondary buttons, chips)
   { group: 'secondary', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
   { group: 'secondary', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
@@ -298,39 +370,19 @@ const SHADCN_ROLES: { group: string; key: string; light: string; dark: string }[
   { group: 'sidebar', key: 'background',          light: '{neutral.2}',   dark: '{neutral-dark.2}' },
   { group: 'sidebar', key: 'foreground',          light: '{neutral.12}',  dark: '{neutral-dark.12}' },
   { group: 'sidebar', key: 'primary',             light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'sidebar', key: 'primary-foreground',  light: '{neutral.1}',   dark: '{neutral.1}' },
+  { group: 'sidebar', key: 'primary-foreground',  light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   { group: 'sidebar', key: 'accent',              light: '{neutral.3}',   dark: '{neutral-dark.3}' },
   { group: 'sidebar', key: 'accent-foreground',   light: '{neutral.12}',  dark: '{neutral-dark.12}' },
   { group: 'sidebar', key: 'border',               light: '{neutral.5}',  dark: '{neutral-dark.5}' },
   { group: 'sidebar', key: 'ring',                light: '{neutral.6}',   dark: '{neutral-dark.6}' },
 ]
 
-/** shadcn's ref schema for every role, at a given theme kind — same dynamic
- *  solid-tone anchor as Astryx/Categorical (`{accent.solid}` → accessibleSolidTone). */
-function shadcnSchemaFor(kind: 'light' | 'dark', solidTone: number): { group: string; key: string; ref: string }[] {
-  return SHADCN_ROLES.map((r) => ({
-    group: r.group,
-    key: r.key,
-    ref: (kind === 'dark' ? r.dark : r.light).replace('{accent.solid}', `{accent.${solidTone}}`),
-  }))
-}
-
 /** shadcn resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
 export function projectShadcn(
   input: ProjectionInput,
   themeOrder: string[] = ['light', 'dark'],
 ): Record<string, Record<string, Record<string, string>>> {
-  const solid = accessibleSolidTone(input.scales.brand)
-  const out: Record<string, Record<string, Record<string, string>>> = {}
-  for (const t of themeOrder) {
-    const kind = input.themeKinds[t] ?? 'light'
-    for (const r of shadcnSchemaFor(kind, solid)) {
-      out[r.group] ??= {}
-      out[r.group][r.key] ??= {}
-      out[r.group][r.key][t] = r.ref
-    }
-  }
-  return out
+  return projectCurated(SHADCN_ROLES, input, themeOrder)
 }
 
 // ── Vibrancy ─────────────────────────────────────────────────────────────────

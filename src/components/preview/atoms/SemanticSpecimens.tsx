@@ -14,9 +14,10 @@
 
 import { type ReactNode } from 'react'
 import { fontFamilyOf, radiusOf, weightOf } from '../../../lib/previewTokens'
+import { TokenIcon, type IconConcept } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
 
-export type SemanticFocusKey = 'content' | 'action' | 'surface' | 'status' | 'border'
+export type SemanticFocusKey = 'content' | 'icon' | 'action' | 'surface' | 'status' | 'border'
 
 type Slot = { css: string; label: string }
 
@@ -116,6 +117,27 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
         </div>
       </Section>
 
+      {/* Content ink paints GLYPHS as well as type — Categorical says so
+          outright ("text & icon ink"), and a hierarchy judged only on text
+          hides that the same tone reads differently at icon weight. Glyphs
+          come from the system's own icon library (see IconSpecimen). */}
+      <Section t={t} title="The same ink on glyphs">
+        <div className="flex items-center gap-4 flex-wrap">
+          {([
+            { slot: primary, concept: 'home' as IconConcept },
+            { slot: secondary, concept: 'search' as IconConcept },
+            { slot: tertiary, concept: 'settings' as IconConcept },
+            { slot: brandInk, concept: 'star' as IconConcept },
+            { slot: disabled, concept: 'zap' as IconConcept },
+          ]).map((g, i) => (
+            <span key={i} className="flex flex-col items-center gap-1.5 min-w-0">
+              <TokenIcon t={t} concept={g.concept} size={20} color={g.slot.css} />
+              <Caption color={t.fgMuted || '#717680'}>{g.slot.label.split('.').pop()}</Caption>
+            </span>
+          ))}
+        </div>
+      </Section>
+
       {/* Ink on a filled surface — the one content role that is judged against
           a fill rather than the page, so it's shown on that fill. */}
       <Section t={t} title="On a filled surface">
@@ -123,10 +145,106 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           className="flex items-center justify-between gap-3"
           style={{ background: fill.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}
         >
-          <span style={{ color: onFill.css, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600) }}>
+          <span
+            className="flex items-center gap-2"
+            style={{ color: onFill.css, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600) }}
+          >
+            <TokenIcon t={t} concept="check" size={15} color={onFill.css} />
             Text on a brand fill
           </span>
           <Caption color={onFill.css}>{onFill.label}</Caption>
+        </div>
+      </Section>
+    </Frame>
+  )
+}
+
+// ── Icon — the glyph hierarchy, in the contexts icons are actually judged ────
+// Astryx ships `icon.*` as its OWN parallel hierarchy to `text.*` (icons read
+// lighter than type at the same tone, so they get their own ramp steps), which
+// had no preview at all — picking "Icon" in the nav showed the text specimen.
+// Architectures without a dedicated icon group (Categorical, flat) fall back
+// to their content inks, which is exactly what those roles mean there.
+//
+// Every glyph comes from `TokenIcon` → `t.iconPrefix`, i.e. the library chosen
+// in Foundations · Icons — never a hand-drawn SVG — so switching the library
+// re-renders this with that set's real glyphs, same as the Color collage and
+// the component docs.
+export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
+  const primary = s('content-primary', 'icon.primary', t.neutralText)
+  const secondary = s('content-secondary', 'icon.secondary', t.fgMuted || t.neutralText)
+  const disabled = s('content-disabled', 'icon.disabled', t.disabledText)
+  const accent = s('content-brand', 'icon.accent', t.brandText)
+  const onFill = s('content-inverse', 'content.on-action', t.onBrand)
+  const fill = s('background-brand-solid', 'action.primary', t.brandSolid)
+  const surface = s('background-secondary', 'action.neutral', t.neutralFill)
+  const r = radiusOf(t, 'md', '8px')
+
+  const hierarchy: { slot: Slot; concept: IconConcept }[] = [
+    { slot: primary, concept: 'home' },
+    { slot: secondary, concept: 'search' },
+    { slot: accent, concept: 'star' },
+    { slot: disabled, concept: 'settings' },
+  ]
+
+  return (
+    <Frame t={t}>
+      <Section t={t} title="Hierarchy">
+        <div className="flex flex-col gap-2.5">
+          {hierarchy.map((g) => (
+            <Row key={g.slot.label} t={t} label={g.slot.label}>
+              <TokenIcon t={t} concept={g.concept} size={20} color={g.slot.css} />
+              <span style={{ color: g.slot.css, fontSize: 13 }} className="truncate">
+                {g.slot.label.split('.').pop()}
+              </span>
+            </Row>
+          ))}
+        </div>
+      </Section>
+
+      {/* Icon-only buttons are the strictest test: no label to fall back on,
+          so the glyph ink has to carry the whole affordance on each fill. */}
+      <Section t={t} title="On fills">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span
+            className="inline-flex items-center justify-center"
+            style={{ background: fill.css, borderRadius: r, width: 34, height: 34 }}
+            title={onFill.label}
+          >
+            <TokenIcon t={t} concept="plus" size={17} color={onFill.css} />
+          </span>
+          <span
+            className="inline-flex items-center justify-center"
+            style={{ background: surface.css, borderRadius: r, width: 34, height: 34 }}
+            title={primary.label}
+          >
+            <TokenIcon t={t} concept="share" size={17} color={primary.css} />
+          </span>
+          <span
+            className="inline-flex items-center gap-2"
+            style={{
+              background: surface.css, borderRadius: r, padding: '0 12px', height: 34,
+              color: primary.css, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600),
+            }}
+          >
+            <TokenIcon t={t} concept="upload" size={15} color={primary.css} />
+            Upload
+          </span>
+        </div>
+      </Section>
+
+      <Section t={t} title="Inline with text">
+        <div className="flex flex-col gap-2">
+          {([
+            { slot: accent, concept: 'info' as IconConcept, copy: 'Learn how tokens resolve' },
+            { slot: secondary, concept: 'user' as IconConcept, copy: 'Signed in as designer' },
+          ]).map((line) => (
+            <span key={line.copy} className="flex items-center gap-2 min-w-0">
+              <TokenIcon t={t} concept={line.concept} size={15} color={line.slot.css} />
+              <span style={{ color: line.slot.css, fontSize: 13 }} className="truncate">{line.copy}</span>
+            </span>
+          ))}
         </div>
       </Section>
     </Frame>
@@ -422,6 +540,7 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
 export const SEMANTIC_SPECIMENS: Record<SemanticFocusKey, (p: { tokens: PreviewTokens }) => ReactNode> = {
   content: ContentSpecimen,
+  icon: IconSpecimen,
   action: ActionSpecimen,
   surface: SurfaceSpecimen,
   status: StatusSpecimen,
@@ -430,6 +549,7 @@ export const SEMANTIC_SPECIMENS: Record<SemanticFocusKey, (p: { tokens: PreviewT
 
 export const SEMANTIC_SPECIMEN_TITLE: Record<SemanticFocusKey, string> = {
   content: 'Content preview',
+  icon: 'Icon preview',
   action: 'Action preview',
   surface: 'Surface preview',
   status: 'Status preview',

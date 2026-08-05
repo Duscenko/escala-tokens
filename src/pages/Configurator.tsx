@@ -316,6 +316,21 @@ export default function Configurator() {
   const [railCollapsed, setRailCollapsed] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
   const [sectionExportOpen, setSectionExportOpen] = useState(false)
+  // Which primitive color families the NEXT export run starts scoped to.
+  // `null` = whatever the collection default is (every family) — set only by
+  // Primitives' per-family export icon, and cleared again whenever the generic
+  // Export pill opens the wizard, so a quick export never leaks its narrow
+  // scope into the next full one.
+  // Bumped on every open so the wizard REMOUNTS. Its step/format/family state
+  // is internal, and closing then reopening inside the 0.15s exit animation
+  // reuses the same AnimatePresence child — so a narrowed run (a few families,
+  // already on step 3) could hand that state to the next export. A fresh key
+  // per open makes "opened again" mean "started again".
+  const [exportRun, setExportRun] = useState(0)
+  const openSectionExport = () => {
+    setExportRun((n) => n + 1)
+    setSectionExportOpen(true)
+  }
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
@@ -759,7 +774,7 @@ export default function Configurator() {
                     <HeaderPill
                       Icon={ExportIcon}
                       label="Export"
-                      onClick={() => setSectionExportOpen(true)}
+                      onClick={openSectionExport}
                       title="Copy this section as CSS · Tailwind · Tokens · MD"
                     />
                   )}
@@ -862,6 +877,7 @@ export default function Configurator() {
       <AnimatePresence>
         {sectionExportOpen && canExportSection && (
           <ExportWizard
+            key={exportRun}
             initialCollections={COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']}
             onClose={() => setSectionExportOpen(false)}
             onConnectGithub={() => { setSectionExportOpen(false); openExport('github') }}
