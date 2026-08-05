@@ -248,8 +248,7 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
         }`}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <rect x="9" y="9" width="13" height="13" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          <path d="M20.7914 12.6074C21.0355 12.3981 21.1575 12.2935 21.2023 12.169C21.2415 12.0598 21.2415 11.9402 21.2023 11.831C21.1575 11.7065 21.0355 11.6018 20.7914 11.3926L12.3206 4.13196C11.9004 3.77176 11.6903 3.59166 11.5124 3.58725C11.3578 3.58342 11.2101 3.65134 11.1124 3.77122C11 3.90915 11 4.18589 11 4.73936V9.03462C8.86532 9.40807 6.91159 10.4897 5.45971 12.1139C3.87682 13.8845 3.00123 16.1759 3 18.551V19.1629C4.04934 17.8989 5.35951 16.8765 6.84076 16.1659C8.1467 15.5394 9.55842 15.1683 11 15.0705V19.2606C11 19.8141 11 20.0908 11.1124 20.2288C11.2101 20.3486 11.3578 20.4166 11.5124 20.4127C11.6903 20.4083 11.9004 20.2282 12.3206 19.868L20.7914 12.6074Z" />
         </svg>
       </button>
       {panel}
@@ -273,6 +272,7 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
 }) {
   const [draft, setDraft] = useState(value.replace(/^#/, '').toUpperCase())
   const [focused, setFocused] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Track outside changes (accent swap regenerates the ramp) unless mid-type.
   useEffect(() => { if (!focused) setDraft(value.replace(/^#/, '').toUpperCase()) }, [value, focused])
@@ -283,8 +283,17 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
     if (cleaned.length === 6) onChange(`#${cleaned.toLowerCase()}`)
   }
 
+  function copy() {
+    navigator.clipboard.writeText(`#${value.replace(/^#/, '').toLowerCase()}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 900)
+  }
+
   return (
-    <div className="flex items-center gap-2 min-w-0">
+    // `group/hex` scopes the hover to THIS cell, not the whole row (the row
+    // itself is `group` for its own trailing "expand tone" button) — hovering
+    // the dark column shouldn't reveal a copy icon on the light one.
+    <div className="group/hex flex items-center gap-2 min-w-0">
       {onSwatchClick ? (
         <button
           type="button"
@@ -305,8 +314,29 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
         onBlur={() => setFocused(false)}
         spellCheck={false}
         aria-label={ariaLabel}
-        className="w-full min-w-0 bg-app text-[12px] font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors"
+        className="flex-1 min-w-0 bg-app text-[12px] font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors"
       />
+      {/* Hidden until the cell is hovered/focused — a copy icon sitting there
+          permanently on every one of the 12×2 rows would out-noise the hex
+          text it's next to. `focus-visible` keeps it reachable without a mouse. */}
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? 'Copied' : `Copy ${ariaLabel}`}
+        title={copied ? 'Copied' : 'Copy hex value'}
+        className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-fg hover:bg-elevated opacity-0 group-hover/hex:opacity-100 focus-visible:opacity-100 transition-opacity"
+      >
+        {copied ? (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        ) : (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        )}
+      </button>
     </div>
   )
 }
