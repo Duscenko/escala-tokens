@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { type PreviewTokens } from './ButtonPreview'
-import { SPECIMENS } from '../configurator/docs/specimens'
+import { SPECIMENS, Live } from '../configurator/docs/specimens'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE } from './atoms/SemanticSpecimens'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
@@ -15,7 +15,6 @@ import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
 const ButtonSpec = SPECIMENS.Button
 const BadgeSpec = SPECIMENS.Badge
 const SwitchSpec = SPECIMENS.Toggle
-const CheckboxSpec = SPECIMENS.Checkbox
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
 const ToastSpec = SPECIMENS.Toast
@@ -24,8 +23,6 @@ const ModalSpec = SPECIMENS.Modal
 const InputSpec = SPECIMENS.Input
 const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
-const DropzoneSpec = SPECIMENS.Dropzone
-const SelectSpec = SPECIMENS.Select
 const TabMenuSpec = SPECIMENS.TabMenu
 const AvatarSpec = SPECIMENS.Avatar
 
@@ -95,10 +92,16 @@ function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefi
         borderRadius: 14,
       }}
     >
+      {/* `Live` wraps whatever should respond to the cursor. It drives each
+          specimen's OWN State axis from real pointer/focus events, so a hover
+          here paints the exact variant the plugin ships — the collage is where
+          you judge the system, and a system is judged in motion, not at rest.
+          Components with no State axis (badges, avatar) stay visually still;
+          see the wrapper's own notes for why that's deliberate. */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <ButtonSpec t={tokens} v={{ Style: 'Solid' }} icons={icons} />
-        <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
-        <ButtonSpec t={tokens} v={{ Style: 'Soft' }} />
+        <Live c="Button" t={tokens} v={{ Style: 'Solid' }} icons={icons} />
+        <Live c="Button" t={tokens} v={{ Style: 'Outline' }} />
+        <Live c="Button" t={tokens} v={{ Style: 'Soft' }} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -111,10 +114,12 @@ function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefi
       <SliderSpec t={tokens} v={{}} />
 
       {/* One switch, not an on/off pair — each Switch specimen renders its own
-          "Notifications" label, so two of them read as a duplicated row. */}
+          "Notifications" label, so two of them read as a duplicated row.
+          Both actually flip on click (`toggle`), which is the only way to see
+          the brand fill arrive and leave the way it will in the product. */}
       <div className="flex flex-wrap items-center gap-4">
-        <CheckboxSpec t={tokens} v={{ Checked: 'True' }} />
-        <SwitchSpec t={tokens} v={{ On: 'True' }} />
+        <Live c="Checkbox" t={tokens} v={{ Checked: 'True' }} toggle="Checked" />
+        <Live c="Toggle" t={tokens} v={{ On: 'True' }} toggle="On" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -133,8 +138,10 @@ function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefi
       </div>
 
       <ToastSpec t={tokens} v={{ Status: 'Success' }} />
-      <DropzoneSpec t={tokens} v={{}} />
-      <SelectSpec t={tokens} v={{}} />
+      {/* Dropzone names its hover-equivalent 'Dragging' — hovering an uploader
+          IS what a drag looks like, and it's a shipped variant, not invented. */}
+      <Live c="Dropzone" t={tokens} hoverState="Dragging" />
+      <Live c="Select" t={tokens} />
       <InputGroupSpec t={tokens} v={{}} />
       <PasswordStrengthSpec t={tokens} v={{ Strength: 'Weak' }} />
 

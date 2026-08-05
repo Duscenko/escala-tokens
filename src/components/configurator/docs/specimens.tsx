@@ -5,12 +5,13 @@
 // here is what lands in Figma. All colors/radius/type resolve from PreviewTokens
 // — inline styles by design (see CLAUDE.md conventions).
 
-import type { CSSProperties, ReactNode } from 'react'
+import { useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
-import type { ComponentDef } from '../../../lib/componentCatalogue'
+import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 
 export type AxisValues = Record<string, string>
 
@@ -37,6 +38,12 @@ function statusColor(t: PreviewTokens, name: string): string {
 
 const focusRing = (t: PreviewTokens, accent: string): string =>
   `0 0 0 2px ${t.surface}, 0 0 0 4px ${withAlpha(accent, alphaOf(t, '40', 0.4))}`
+
+/** Eases every property a State variant can change. 140ms sits in the
+ *  micro-feedback band — long enough to read as a transition, short enough that
+ *  the control still feels immediate under the cursor. */
+const STATE_TRANSITION =
+  'background 0.14s ease-out, border-color 0.14s ease-out, color 0.14s ease-out, box-shadow 0.14s ease-out'
 
 function baseFont(t: PreviewTokens): CSSProperties {
   return { fontFamily: fontFamilyOf(t), color: t.neutralText }
@@ -197,6 +204,11 @@ function ButtonSpecimen({ t, v, icons }: SpecimenProps) {
         fontSize: sz.f, fontWeight: weightOf(t, 'semibold', 600),
         cursor: disabled ? 'not-allowed' : 'pointer',
         boxShadow: state === 'Focused' ? focusRing(t, color) : undefined,
+        // Eases the state change instead of snapping. Matters in two places at
+        // once: the collage, where `Live` drives State from a real hover, and
+        // the docs playground, where flipping the State dropdown now shows the
+        // delta between two variants rather than a hard cut.
+        transition: STATE_TRANSITION,
       }}
     >
       {loading && <SpecimenSpinner size={sz.icon - 2} color={fg} track={fg + '33'} />}
@@ -295,6 +307,7 @@ function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
         boxShadow: state === 'Focused' ? `0 0 0 3px ${accent}26` : undefined,
         fontSize: sz.f, color: disabled ? t.disabledText : t.placeholderText,
         cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: STATE_TRANSITION,
       }}
     >
       Select an option
@@ -321,6 +334,7 @@ function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
           background: fill, border: `1.5px solid ${line}`,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
+          transition: STATE_TRANSITION,
         }}
       >
         {checked && (
@@ -350,7 +364,7 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
         aria-checked={on}
         style={{
           width: trackW, height: trackH, borderRadius: 999, background: track, position: 'relative',
-          transition: 'background 0.15s',
+          transition: STATE_TRANSITION,
           boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
           display: 'inline-block',
         }}
@@ -952,16 +966,97 @@ function SwitchGroupSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
+// Really draggable. Its value is LOCAL and drives nothing outside the specimen
+// — same contract as the Checkbox labelled "Remember me", which remembers
+// nothing: the label is sample copy, the component is the subject. Dragging is
+// what proves the track/fill/thumb tokens hold at every value rather than only
+// at the one hardcoded percentage, and the readout is the slider's own number,
+// so it can't lie.
 function SliderSpecimen({ t }: { t: PreviewTokens }) {
+  const [value, setValue] = useState(60)
+  const [drag, setDrag] = useState(false)
+  const [hover, setHover] = useState(false)
+  const [focus, setFocus] = useState(false)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  const setFromX = (clientX: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setValue(Math.round(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100))))
+  }
+
+  // Pointer capture on the TRACK, with move/up on the window: a drag that
+  // leaves the 6px-tall track (which is most of them) has to keep tracking, or
+  // the thumb drops the moment your finger strays vertically.
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    setDrag(true)
+    setFromX(e.clientX)
+    const move = (ev: PointerEvent) => setFromX(ev.clientX)
+    const up = () => {
+      setDrag(false)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
+  const active = drag || hover || focus
   return (
     <div style={{ ...baseFont(t), width: 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
         <span style={{ color: t.fgMuted }}>Border radius</span>
-        <span style={{ fontWeight: weightOf(t, 'medium', 500) }}>60%</span>
+        {/* Tabular so the number doesn't jitter the row width as it changes. */}
+        <span style={{ fontWeight: weightOf(t, 'medium', 500), fontVariantNumeric: 'tabular-nums' }}>{value}%</span>
       </div>
-      <div role="slider" aria-valuenow={60} aria-valuemin={0} aria-valuemax={100} style={{ position: 'relative', height: 6, borderRadius: 999, background: t.neutralFill }}>
-        <span style={{ position: 'absolute', left: 0, width: '60%', height: '100%', borderRadius: 999, background: t.brandSolid }} />
-        <span style={{ position: 'absolute', left: '60%', top: '50%', transform: 'translate(-50%, -50%)', width: 18, height: 18, borderRadius: 999, background: '#ffffff', border: `2px solid ${t.brandSolid}`, boxShadow: '0 1px 3px rgba(10,13,18,0.25)' }} />
+      <div
+        ref={trackRef}
+        role="slider"
+        aria-label="Border radius"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        onKeyDown={(e) => {
+          const step = e.shiftKey ? 10 : 1
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setValue((n) => Math.min(100, n + step)) }
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); setValue((n) => Math.max(0, n - step)) }
+          else if (e.key === 'Home') { e.preventDefault(); setValue(0) }
+          else if (e.key === 'End') { e.preventDefault(); setValue(100) }
+        }}
+        style={{
+          position: 'relative', height: 6, borderRadius: 999, background: t.neutralFill,
+          // Padding-free hit area: 6px is under every touch-target guideline, so
+          // the row above and below the track is claimed with a transparent
+          // border-box rather than by making the visible track fatter.
+          boxSizing: 'content-box', borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
+          backgroundClip: 'content-box',
+          cursor: drag ? 'grabbing' : 'grab', outline: 'none', touchAction: 'none',
+        }}
+      >
+        <span style={{
+          position: 'absolute', left: 0, width: `${value}%`, height: '100%', borderRadius: 999, background: t.brandSolid,
+          // No transition while dragging — a fill that eases behind the cursor
+          // reads as lag, not polish. Keyboard steps and click-to-jump ease.
+          transition: drag ? 'none' : 'width 0.12s ease-out',
+        }} />
+        <span style={{
+          position: 'absolute', left: `${value}%`, top: '50%',
+          // Scale lives in the same transform as the centering translate, so the
+          // thumb grows from its middle instead of drifting right as it grows.
+          transform: `translate(-50%, -50%) scale(${drag ? 1.15 : active ? 1.08 : 1})`,
+          width: 18, height: 18, borderRadius: 999, background: '#ffffff',
+          border: `2px solid ${t.brandSolid}`,
+          boxShadow: focus ? focusRing(t, t.brandSolid) : '0 1px 3px rgba(10,13,18,0.25)',
+          transition: drag ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out' : 'left 0.12s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out',
+        }} />
       </div>
     </div>
   )
@@ -1003,6 +1098,7 @@ function DropzoneSpecimen({ t, v }: SpecimenProps) {
         border: `1.5px dashed ${line}`,
         background: active ? softer(t, t.brandSolid) : error ? softer(t, t.errorColor) : t.surface,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center',
+        transition: STATE_TRANSITION,
       }}
     >
       <span style={{ width: 40, height: 40, borderRadius: 999, background: error ? soft(t, t.errorColor) : soft(t, t.brandSolid), color: error ? t.errorColor : t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1482,25 +1578,84 @@ function StepperSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
+// Genuinely selectable — a tab strip that can't be clicked isn't a tab strip,
+// it's a picture of one. Interactive by DEFAULT (unlike `Live`, which is opt-in):
+// TabMenu declares no axes, so there's no variant dropdown for a click to
+// contradict, and the docs playground wants the real behaviour too.
+//
+// The active pill is ONE element that slides between tabs (`layoutId`) rather
+// than a background that blinks on and off per tab. That's what makes the
+// selection read as a single object moving, which is the whole point of a
+// segmented control — and while it slides you can see the brand tint travel
+// across the neutral text, so the two tokens are judged against each other.
+// Tween, not spring: this is a tool, and bounce reads as toy here.
 function TabMenuSpecimen({ t }: { t: PreviewTokens }) {
   const items = ['All', 'Drafts', 'Published']
+  const [active, setActive] = useState(0)
+  const [hover, setHover] = useState<number | null>(null)
+  const reduce = useReducedMotion() ?? false
+  // Scopes the sliding pill to THIS instance — two TabMenus on one screen would
+  // otherwise share a layoutId and animate the pill between each other.
+  const pillId = `tabmenu-pill-${useId()}`
+
   return (
     <div role="tablist" style={{ ...baseFont(t), display: 'inline-flex', gap: 4 }}>
-      {items.map((item, i) => (
-        <span
-          key={item}
-          role="tab"
-          aria-selected={i === 0}
-          style={{
-            padding: '7px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
-            background: i === 0 ? soft(t, t.brandSolid) : 'transparent',
-            color: i === 0 ? t.brandText : t.fgMuted,
-            fontWeight: i === 0 ? weightOf(t, 'semibold', 600) : 400,
-          }}
-        >
-          {item}
-        </span>
-      ))}
+      {items.map((item, i) => {
+        const on = i === active
+        return (
+          <span
+            key={item}
+            role="tab"
+            aria-selected={on}
+            // Roving tabindex: the strip is ONE tab stop and the arrows move
+            // within it, which is what a tablist is supposed to do — three
+            // separate stops would make a 3-item control cost 3 tabs.
+            tabIndex={on ? 0 : -1}
+            onClick={() => setActive(i)}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover((h) => (h === i ? null : h))}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                e.preventDefault()
+                const next = (i + (e.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length
+                setActive(next)
+                // Focus follows selection — the ARIA pattern for an
+                // automatic-activation tablist, and the only way the arrows
+                // stay usable past the first press.
+                const el = e.currentTarget.parentElement?.children[next] as HTMLElement | undefined
+                el?.focus()
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setActive(i)
+              }
+            }}
+            style={{
+              position: 'relative', padding: '7px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
+              // An inactive tab warms toward the brand ink on hover instead of
+              // gaining a fill — a second filled pill would compete with the
+              // real selection for "which one is active".
+              color: on ? t.brandText : hover === i ? t.neutralText : t.fgMuted,
+              fontWeight: on ? weightOf(t, 'semibold', 600) : 400,
+              transition: STATE_TRANSITION,
+              outline: 'none',
+            }}
+          >
+            {on && (
+              <motion.span
+                layoutId={pillId}
+                aria-hidden
+                style={{
+                  position: 'absolute', inset: 0, borderRadius: 999,
+                  background: soft(t, t.brandSolid),
+                }}
+                transition={reduce ? { duration: 0 } : { duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              />
+            )}
+            {/* Above the pill, which is absolutely positioned over the cell. */}
+            <span style={{ position: 'relative' }}>{item}</span>
+          </span>
+        )
+      })}
     </div>
   )
 }
@@ -1602,6 +1757,117 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
 // Components whose specimen renders on the "panel" role (surface-1) — the
 // canvas behind these gets a patterned backdrop so translucent mode is visible.
 export const PANEL_COMPONENTS = new Set(['Card'])
+
+// ── Live — real interaction, painted with the SHIPPED state variants ─────────
+// The preview collage renders the same specimens the docs playground does, and
+// those already implement Hover / Pressed / Focused because the Figma plugin
+// ships them as variants (`componentCatalogue` axes — the plugin is the source
+// of truth). So making the preview interactive is NOT a matter of inventing
+// hover colours: it feeds real pointer/focus events into the axis that already
+// exists, which means what you feel on hover is byte-for-byte the variant that
+// lands in Figma, and it retints with the accent like everything else.
+//
+// Three rules that keep it honest, all load-bearing:
+//  · **A component with no `State` axis gets NO colour change.** Badge, Avatar,
+//    StatusBadge and friends ship no hover variant, so previewing one would
+//    advertise a state the design system doesn't contain. They can still carry
+//    the tap/hover MOTION below — motion is a property of this surface, not a
+//    token the plugin has to mirror.
+//  · **Which states exist is READ from the catalogue, never listed here**, so a
+//    plugin change can't leave this out of sync. Toggle has no 'Pressed', so a
+//    press there resolves to 'Hover' rather than falling back to Default (which
+//    would read as the press *un*-highlighting the control).
+//  · **Opt-in.** The docs playground drives `State` from its own dropdown; if
+//    this wrapper were on by default there, hovering would silently override the
+//    variant the user explicitly selected to inspect.
+function axisValues(component: string, axis: string): string[] {
+  return COMPONENTS.find((c) => c.key === component)?.axes.find((a) => a.name === axis)?.values ?? []
+}
+
+export function Live({
+  c,
+  t,
+  v = {},
+  icons,
+  toggle,
+  lift = false,
+  hoverState,
+}: {
+  /** Catalogue key — indexes both SPECIMENS and the axes read above. */
+  c: string
+  t: PreviewTokens
+  v?: AxisValues
+  icons?: IconOpts
+  /** Boolean axis ('On' / 'Checked') a click flips, so switches and checkboxes
+   *  actually switch instead of being a still life. Ignored when the catalogue
+   *  says the axis has no True/False pair. */
+  toggle?: string
+  /** Adds a 2px hover lift. For elements with no State axis this is the ONLY
+   *  hover cue, so it's opt-in per call site rather than blanket — a Badge that
+   *  rises on hover implies a click target that isn't there. */
+  lift?: boolean
+  /** State a hover resolves to when the component names it something other than
+   *  'Hover'. Dropzone is the case this exists for: its shipped variants are
+   *  Default / Dragging / Error, and hovering an uploader previewing 'Dragging'
+   *  is exactly the state a real drag would put it in. Still has to name a state
+   *  the catalogue offers — the `pick` below drops it otherwise. */
+  hoverState?: string
+}) {
+  const render = SPECIMENS[c]
+  const states = axisValues(c, 'State')
+  const reduce = useReducedMotion() ?? false
+  const [hover, setHover] = useState(false)
+  const [press, setPress] = useState(false)
+  const [focus, setFocus] = useState(false)
+
+  const toggleValues = toggle ? axisValues(c, toggle) : []
+  const canToggle = !!toggle && toggleValues.includes('True') && toggleValues.includes('False')
+  const [on, setOn] = useState((v[toggle ?? ''] ?? 'True') === 'True')
+
+  if (!render) return null
+
+  // First state in the chain the catalogue actually offers. Focus sits last:
+  // it's the weakest signal of the three and only shows when nothing else does.
+  const pick = (...want: (string | undefined)[]) =>
+    want.find((s): s is string => !!s && states.includes(s))
+  const state =
+    (press ? pick('Pressed', hoverState, 'Hover') : undefined) ??
+    (hover ? pick(hoverState, 'Hover') : undefined) ??
+    (focus ? pick('Focused') : undefined)
+
+  const merged: AxisValues = { ...v }
+  if (state) merged.State = state
+  if (canToggle) merged[toggle] = on ? 'True' : 'False'
+
+  const flip = canToggle ? () => setOn((o) => !o) : undefined
+
+  return (
+    <motion.span
+      style={{ display: 'inline-flex', cursor: flip ? 'pointer' : undefined }}
+      // Motion, not colour — safe on every component, State axis or not.
+      animate={reduce ? undefined : { y: lift && hover ? -2 : 0 }}
+      whileTap={reduce ? undefined : { scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+      onHoverStart={() => setHover(true)}
+      onHoverEnd={() => { setHover(false); setPress(false) }}
+      onPointerDown={() => setPress(true)}
+      onPointerUp={() => setPress(false)}
+      onPointerCancel={() => setPress(false)}
+      // Bubbled from the specimen's own <button> where it has one, so a real
+      // keyboard focus lights the real Focused variant.
+      onFocus={() => setFocus(true)}
+      onBlur={() => setFocus(false)}
+      onClick={flip}
+      // Only togglables become focusable here. No `role`: the specimen's own
+      // inner element already carries role="switch"/the real <button>, and a
+      // second role on the wrapper would announce the control twice.
+      tabIndex={flip ? 0 : undefined}
+      onKeyDown={flip ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip() } } : undefined}
+    >
+      {render({ t, v: merged, icons })}
+    </motion.span>
+  )
+}
 
 /** Usage snippet reflecting the current axis values — interaction-only states
  *  (Hover/Pressed/Focused) map to real props only when they are (disabled/loading). */

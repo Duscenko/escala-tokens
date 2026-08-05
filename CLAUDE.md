@@ -545,7 +545,57 @@ another pill).
      tokens, so moving Radius or the accent visibly moves every component at once, and the
      collage can't drift from what the plugin ships. Its lead button's icons come from the
      system's own `iconLibrary` prefix. Use ONE Switch, not an on/off pair — each Switch
-     specimen renders its own "Notifications" label, so two read as a duplicated row ·
+     specimen renders its own "Notifications" label, so two read as a duplicated row.
+     **The collage is INTERACTIVE, via `Live` (`docs/specimens.tsx`)** — a wrapper that
+     feeds real pointer/focus events into each specimen's OWN `State` axis. That's the
+     whole trick: the specimens already implement Hover/Pressed/Focused because the plugin
+     ships them as variants, so hovering paints the exact variant that lands in Figma
+     rather than a hover colour invented for the preview, and it retints with the accent
+     like everything else. Rules it enforces:
+     - **No `State` axis → no colour change.** Badge, StatusBadge and Avatar ship no hover
+       variant, so previewing one would advertise a state the system doesn't contain.
+       They stay still; `lift` (a 2px hover rise) exists for the cases where motion alone
+       is wanted, and is opt-in per call site because a Badge that rises implies a click
+       target that isn't there.
+     - **Which states exist is READ from `COMPONENTS`, never listed in the wrapper**, so a
+       plugin change can't desync it. Toggle has no 'Pressed' → a press there resolves to
+       'Hover' instead of Default (which would read as the press *un*-highlighting it).
+     - **`hoverState` names the hover equivalent when it isn't called 'Hover'.** Dropzone's
+       shipped states are Default/Dragging/Error, and hovering an uploader IS what a drag
+       looks like — still validated against the catalogue, so it can't name a fiction.
+     - **`toggle` makes Switch and Checkbox actually flip** (the axis it names must have a
+       True/False pair). Only togglables get `tabIndex`; the wrapper carries no `role`,
+       because the specimen's own `role="switch"` / real `<button>` would then be
+       announced twice.
+     - **Opt-in, and it must stay that way.** `ComponentDocPane` drives `State` from its
+       own dropdown — if `Live` were on by default there, hovering would silently override
+       the variant the user selected to inspect. (Verified: hover in the playground is a
+       no-op.) The shared `STATE_TRANSITION` on the specimens IS global, deliberately:
+       in the playground it makes flipping the State dropdown show the delta between two
+       variants instead of a hard cut.
+     **Slider and TabMenu are interactive BY DEFAULT, not through `Live`** — both declare
+     `axes: []`, so there's no variant dropdown for a click to contradict, and a tab strip
+     that can't be clicked is a picture of one. Their state is LOCAL and drives nothing
+     outside the specimen: same contract as the Checkbox labelled "Remember me", which
+     remembers nothing. The label is sample copy; the component is the subject. Do NOT wire
+     the Slider to the real `radius` — the preview is a preview, and Foundations · Radius
+     (plus Quick Edit) is where that's edited.
+     - **Slider**: drag, click-to-jump, and full keyboard (`←/→` ±1, `Shift` ±10, Home/End),
+       because `role="slider"` promises it. Move/up listen on the WINDOW, not the track —
+       a 6px-tall track loses the pointer the moment a drag strays vertically. The fill has
+       NO transition while dragging (easing behind the cursor reads as lag) and eases on
+       keyboard/click. Thumb scale rides in the same `transform` as its centering translate,
+       or it drifts right as it grows. The track claims its touch target with transparent
+       9px borders + `background-clip: content-box` rather than by getting visually fatter.
+     - **TabMenu**: the active pill is ONE element sliding between tabs (`layoutId`, scoped
+       per instance with `useId` so two strips don't animate the pill between each other),
+       not a background blinking on and off — that's what makes the selection read as a
+       single object moving. Hover warms an inactive tab's INK, never gives it a fill: a
+       second filled pill competes with the real selection. Roving tabindex + arrow keys
+       with focus following selection (the ARIA automatic-activation tablist pattern) —
+       three tab stops for a three-item control is not a control.
+     - **Tween, not spring, for both** — this is a dense editor tool; bounce reads as toy.
+       Both honour `useReducedMotion`. ·
      **typography** → Button + `FontFamilyPreview` (a trigger that opens a modal
      listing Heading/Body family with a "Copy family" clipboard action per row) ·
      **radius** → Button · Card · Input · Modal (the catalogue's `ModalSpecimen`, which

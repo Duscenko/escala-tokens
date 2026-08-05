@@ -879,6 +879,10 @@ export default function ColorPrimitives({
           ) : (
             <div ref={stripEditRef} className="relative w-full">
               <div className="h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-1">
+                {/* No separate chevron any more — the swatch itself opens this
+                    same popover (onSwatchClick), so a second trigger doing the
+                    identical thing was redundant. The hex text stays directly
+                    editable either way. */}
                 <div className="flex-1 min-w-0">
                   <HexCell
                     value={family.base}
@@ -888,23 +892,6 @@ export default function ColorPrimitives({
                     swatchLabel={`Open color picker for ${family.label}`}
                   />
                 </div>
-                {/* Same edit surface the nav row's pencil opens, reachable
-                    from the field showing the value too — like a native
-                    <select>, the chevron signals "pick a color," even
-                    though the hex text itself stays directly editable. */}
-                <button
-                  type="button"
-                  onClick={() => setStripEditOpen((o) => !o)}
-                  aria-haspopup="dialog"
-                  aria-expanded={stripEditOpen}
-                  aria-label={`Open color picker for ${family.label}`}
-                  title="Open color picker"
-                  className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded text-fg-faint hover:text-fg transition-colors"
-                >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
               </div>
               <AnimatePresence>
                 {stripEditOpen && (
