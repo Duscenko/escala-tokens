@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
-import type { ColorAlgorithm, ColorNaming } from '../lib/colorUtils'
+import { DEFAULT_NEUTRAL_TINT, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
@@ -278,6 +278,10 @@ export interface DesignSnapshot {
   colorAlgorithm: ColorAlgorithm
   contrastShift: number
   colorNaming: ColorNaming
+  // How much of the Neutral's colour reaches the page (see NEUTRAL_TINTS).
+  // Part of the snapshot, not a global preference: it changes the generated
+  // ramps, so a saved system has to carry its own level.
+  neutralTint: NeutralTint
   // Page background primitive (Radix custom-palette input) — anchors tone 1 of
   // every generated ramp and is the compositing base for derived alpha ramps.
   pageBackground: string
@@ -387,6 +391,9 @@ export function makeDesignDefaults(): DesignSnapshot {
     // labels and export match it too. Existing persisted systems keep
     // whatever naming they already have; this only seeds fresh ones.
     colorNaming: 'numeric',
+    // Today's behaviour verbatim — `subtle`'s constants ARE the ones
+    // backgroundFromBase used to hardcode, so a fresh system is unchanged.
+    neutralTint: DEFAULT_NEUTRAL_TINT,
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: '#9522e9',
@@ -488,9 +495,14 @@ interface DesignStore {
   colorAlgorithm: ColorAlgorithm
   contrastShift: number
   colorNaming: ColorNaming
+  neutralTint: NeutralTint
   setColorAlgorithm: (a: ColorAlgorithm) => void
   setContrastShift: (n: number) => void
   setColorNaming: (n: ColorNaming) => void
+  /** Writes the level only. Regenerating the page + every ramp from it is
+   *  `useApplyGrayColor(grayBaseColor)`'s job — one code path for "the base
+   *  changed", whether it was the hex or how much of it survives. */
+  setNeutralTint: (t: NeutralTint) => void
 
   // Page background primitive — the surface every ramp is generated against
   // (tone-1 anchor) and the compositing base for the exported alpha ramps.
@@ -693,6 +705,7 @@ export const useDesignStore = create<DesignStore>()(
       setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
       setContrastShift: (n) => set({ contrastShift: n }),
       setColorNaming: (n) => set({ colorNaming: n }),
+      setNeutralTint: (t) => set({ neutralTint: t }),
       setPageBackground: (hex) => set({ pageBackground: hex }),
       setDarkBackground: (hex) => set({ darkBackground: hex }),
 
@@ -979,7 +992,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 45,
+      version: 46,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1570,6 +1583,20 @@ export const useDesignStore = create<DesignStore>()(
           toToneStops(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) toToneStops(sys?.snapshot)
+          }
+        }
+        if (version < 46) {
+          // v45→v46: `neutralTint` — how much of the Neutral's colour survives
+          // into the page (NEUTRAL_TINTS). Pure backfill: 'subtle' holds the
+          // exact constants `backgroundFromBase` used to hardcode, so every
+          // upgraded system keeps the page and the ramps it already had. A
+          // system that never sets it renders identically forever.
+          const seedTint = (state: any) => {
+            if (state && !state.neutralTint) state.neutralTint = DEFAULT_NEUTRAL_TINT
+          }
+          seedTint(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedTint(sys?.snapshot)
           }
         }
         return persisted

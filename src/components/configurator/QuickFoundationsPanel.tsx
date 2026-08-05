@@ -563,7 +563,7 @@ export function QuickEditSections({
     grayBaseColor,
     errorColor, warningColor, successColor, infoColor,
     customColors, removeCustomColor,
-    semanticArchitecture, setSemanticArchitecture,
+    semanticArchitecture, setSemanticArchitecture, neutralTint,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
     iconLibrary, setIconLibrary,
@@ -592,7 +592,7 @@ export function QuickEditSections({
   const toggleLink = () => {
     const next = !linked
     setLinked(next)
-    if (next) applyGrayColor(neutralFromBrand(accentBase), previewTheme)
+    if (next) applyGrayColor(neutralFromBrand(accentBase, neutralTint), previewTheme)
   }
   // Neutral is an intent like the others, but it has no primitive of its own —
   // it IS the Base, so its row writes through the Base applier.

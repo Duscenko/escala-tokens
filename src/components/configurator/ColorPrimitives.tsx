@@ -19,7 +19,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
-  generateDarkColorScale, generateFamilyDarkScale,
+  generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
@@ -259,7 +259,18 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
 
 // ── Editable hex cell (swatch + live hex field, draft pattern) ───────────────
 
-function HexCell({ value, onChange, ariaLabel }: { value: string; onChange: (hex: string) => void; ariaLabel: string }) {
+function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
+  value: string
+  onChange: (hex: string) => void
+  ariaLabel: string
+  /** When set, the swatch becomes a button opening the same picker the trailing
+   *  chevron does. A colour chip that looks clickable and isn't reads as broken,
+   *  and the swatch is the part users aim at first; the hex text stays directly
+   *  editable either way. Omitted in the table cells, which have no picker to
+   *  open — there the swatch is a readout of the value beside it. */
+  onSwatchClick?: () => void
+  swatchLabel?: string
+}) {
   const [draft, setDraft] = useState(value.replace(/^#/, '').toUpperCase())
   const [focused, setFocused] = useState(false)
 
@@ -274,7 +285,19 @@ function HexCell({ value, onChange, ariaLabel }: { value: string; onChange: (hex
 
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <span className={SWATCH} style={{ backgroundColor: value }} />
+      {onSwatchClick ? (
+        <button
+          type="button"
+          onClick={onSwatchClick}
+          aria-haspopup="dialog"
+          aria-label={swatchLabel ?? 'Open color picker'}
+          title={swatchLabel ?? 'Open color picker'}
+          className={`${SWATCH} transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
+          style={{ backgroundColor: value }}
+        />
+      ) : (
+        <span className={SWATCH} style={{ backgroundColor: value }} />
+      )}
       <input
         value={draft}
         onChange={(e) => handle(e.target.value)}
@@ -389,8 +412,8 @@ export default function ColorPrimitives({
     customColors, updateCustomColor, removeCustomColor,
     removeTheme,
     pageBackground, darkBackground, themeKinds, themeSources, themeOrder,
-    colorAlgorithm, colorNaming, contrastShift,
-    setContrastShift,
+    colorAlgorithm, colorNaming, contrastShift, neutralTint,
+    setContrastShift, setNeutralTint,
   } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
@@ -726,7 +749,7 @@ export default function ColorPrimitives({
               <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-              <ColorPickerPanel value={editingFamily.base} onChange={(hex) => changeFamilyBase(editingFamily, hex)} />
+              <ColorPickerPanel value={editingFamily.base} onChange={(hex) => changeFamilyBase(editingFamily, hex)} suggestions />
             </div>
           </motion.div>
         </AnimatePresence>,
@@ -831,6 +854,8 @@ export default function ColorPrimitives({
                     value={family.base}
                     onChange={(hex) => changeFamilyBase(family, hex)}
                     ariaLabel={`${family.label} base color`}
+                    onSwatchClick={() => setStripEditOpen((o) => !o)}
+                    swatchLabel={`Open color picker for ${family.label}`}
                   />
                 </div>
                 {/* Same edit surface the nav row's pencil opens, reachable
@@ -866,7 +891,7 @@ export default function ColorPrimitives({
                     }`}
                   >
                     <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                      <ColorPickerPanel value={family.base} onChange={(hex) => changeFamilyBase(family, hex)} />
+                      <ColorPickerPanel value={family.base} onChange={(hex) => changeFamilyBase(family, hex)} suggestions />
                     </div>
                   </motion.div>
                 )}
@@ -913,7 +938,18 @@ export default function ColorPrimitives({
             <SlidersIcon />
           </button>
           <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-            <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
+            <ColorControls
+              contrastShift={contrastShift}
+              onShift={setContrastShift}
+              neutralTint={neutralTint}
+              // Writing the level is only half of it: the page is DERIVED from
+              // the Neutral, so the tint has to re-run the same applier a base
+              // change does — one code path for "the base moved", whether the
+              // hex changed or how much of it survives. It reads the level from
+              // the store, hence the write first.
+              onTint={(t) => { setNeutralTint(t); applyGrayColor(grayBaseColor, previewTheme) }}
+              tintPreview={(t) => backgroundFromBase(grayBaseColor, darkPreview ? 'dark' : 'light', t)}
+            />
           </ScaleSettingsModal>
         </div>
         </div>

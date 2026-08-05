@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { generateColorScale, recommendStateColors, NAMING_SCHEMES } from '../../lib/colorUtils'
+import { generateColorScale, recommendStateColors, NAMING_SCHEMES, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
 import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
@@ -24,14 +24,62 @@ import {
 export function ColorControls({
   contrastShift,
   onShift,
+  neutralTint,
+  onTint,
+  tintPreview,
 }: {
   contrastShift: number
   onShift: (n: number) => void
+  /** Omit both to hide the tint block (hosts that don't own the system Base). */
+  neutralTint?: NeutralTint
+  onTint?: (t: NeutralTint) => void
+  /** Page hex each level would produce, for the swatch. Caller computes it so
+   *  this stays presentational (no store reads), same as the rest of the file. */
+  tintPreview?: (t: NeutralTint) => string
 }) {
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Neutral tint — how much of the Neutral's colour reaches the page.
+          Discrete levels, not a slider: this is Radix's "pick a gray family"
+          decision (Gray · Mauve · Slate · Sage · Sand), and a free 0–1 value
+          would let a system land on a tint nobody chose deliberately. It sits
+          ABOVE contrast shift because it moves the page, which every other
+          value in the modal is then computed against. */}
+      {neutralTint && onTint && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Neutral tint</span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {NEUTRAL_TINTS.map((t) => {
+              const active = t.key === neutralTint
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => onTint(t.key)}
+                  title={t.hint}
+                  aria-pressed={active}
+                  className={`flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-lg border text-left transition-colors ${
+                    active ? 'border-accent-ui bg-accent-ui/[0.08] text-fg' : 'border-line text-fg-muted hover:border-line-strong'
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
+                    style={{ background: tintPreview?.(t.key) ?? 'transparent' }}
+                  />
+                  <span className="min-w-0 truncate text-[11px]">{t.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          <span className="text-[10px] text-fg-faint leading-snug">
+            How much of the Neutral's colour reaches the page. Every ramp grows out of it.
+          </span>
+        </div>
+      )}
+
       {/* Contrast shift */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
@@ -140,7 +188,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
     infoColor,    infoScale,    setInfoColor,    setInfoScale,
     grayBaseColor, grayLightScale, grayDarkScale,
     customColors, updateCustomColor, removeCustomColor,
-    colorAlgorithm, contrastShift, colorNaming, setContrastShift,
+    colorAlgorithm, contrastShift, colorNaming, setContrastShift, neutralTint,
     pageBackground, darkBackground, themeKinds,
   } = useDesignStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -200,7 +248,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
   function toggleLink() {
     const next = !linked
     setLinked(next)
-    if (next) regenerateGray(neutralFromBrand(primaryColor))
+    if (next) regenerateGray(neutralFromBrand(primaryColor, neutralTint))
   }
 
   // Recommend harmonized state colors from a brand hex, then regenerate scales.

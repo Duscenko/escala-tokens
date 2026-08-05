@@ -6,7 +6,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
-import { BASE_TONE } from '../../lib/colorUtils'
+import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralTintSpec, type NeutralTint } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { ColorPickerPanel } from '../ui/ColorField'
 
@@ -468,7 +468,10 @@ function StateColorRow({ role, label, value, onChange }: { role: string; label: 
               />
             ))}
           </div>
-          <ColorPickerPanel value={value} onChange={onChange} />
+          {/* Same family-base rule as Primitives' edit popover: this row IS a
+              family anchor (Neutral / a state), so the curated accessible
+              alternatives belong here too. */}
+          <ColorPickerPanel value={value} onChange={onChange} suggestions />
         </div>
       )}
     </div>
@@ -805,10 +808,14 @@ export function TransparencyStrip({ scale, labels }: { scale: Record<number, str
 // ── Accent-scale link affordances ──────────────────────────────────────────
 
 // A low-saturation neutral that keeps a hint of the brand hue — used when the
-// neutral scale is "linked" to the brand.
-export function neutralFromBrand(hex: string): string {
+// neutral scale is "linked" to the brand. How MUCH hue it keeps is the system's
+// `neutralTint` (see NEUTRAL_TINTS): the linked neutral and the page it derives
+// have to agree on the level, or a "Vivid" system would still flatten the
+// neutral to a near-gray the moment the accent moved. Defaults to `subtle`,
+// whose 0.08 is the pre-tint constant verbatim.
+export function neutralFromBrand(hex: string, tint: NeutralTint = DEFAULT_NEUTRAL_TINT): string {
   try {
-    return chroma(hex).set('hsl.s', 0.08).set('hsl.l', 0.46).hex()
+    return chroma(hex).set('hsl.s', neutralTintSpec(tint).brandSat).set('hsl.l', 0.46).hex()
   } catch {
     return hex
   }

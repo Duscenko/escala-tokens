@@ -70,7 +70,7 @@ export function useApplyAccentColor() {
     setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
     setPageBackground, setDarkBackground,
     gradients, updateGradient,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint,
   } = useDesignStore()
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
@@ -84,7 +84,7 @@ export function useApplyAccentColor() {
         updateCustomColor(refs.brand, { base: hex, scale, darkScale: dark })
         if (linked && refs.gray !== 'neutral') {
           const kind = themeKinds[themeKey] ?? 'light'
-          const neutral = neutralFromBrand(hex)
+          const neutral = neutralFromBrand(hex, neutralTint)
           const gScale = kind === 'dark'
             ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, darkBackground)
             : generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground)
@@ -96,9 +96,9 @@ export function useApplyAccentColor() {
       // The page follows the BASE, not the accent — so it only moves when the
       // base does, i.e. while the link is on. Unlinked, the user's base (and the
       // page computed from it) is theirs to keep.
-      const neutral = linked ? neutralFromBrand(hex) : null
-      const nextBg = neutral ? backgroundFromBase(neutral, 'light') : pageBackground
-      const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark') : darkBackground
+      const neutral = linked ? neutralFromBrand(hex, neutralTint) : null
+      const nextBg = neutral ? backgroundFromBase(neutral, 'light', neutralTint) : pageBackground
+      const nextDarkBg = neutral ? backgroundFromBase(neutral, 'dark', neutralTint) : darkBackground
       const pageMoved = nextBg !== pageBackground
       // Every ramp is re-anchored to whatever page we land on — tone 1 grows
       // out of it, so a moved page that only rebuilt the brand would leave the
@@ -156,7 +156,7 @@ export function useApplyAccentColor() {
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground])
+  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives
@@ -314,8 +314,8 @@ export function useApplyGrayColor() {
         return
       }
 
-      const bg = backgroundFromBase(hex, 'light')
-      const darkBg = backgroundFromBase(hex, 'dark')
+      const bg = backgroundFromBase(hex, 'light', s.neutralTint)
+      const darkBg = backgroundFromBase(hex, 'dark', s.neutralTint)
       const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, bg)
       const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, darkBg)
       // Generate everything first — an invalid base throws before any write.

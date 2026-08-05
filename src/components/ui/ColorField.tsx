@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useDesignStore } from '../../store/useDesignStore'
+import { accessibleVariants } from '../../lib/colorUtils'
 
 type HSVA = { h: number; s: number; v: number; a: number }
 
@@ -40,7 +41,20 @@ function ratioIn(el: HTMLElement, clientX: number, clientY: number) {
   }
 }
 
-export function ColorPickerPanel({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+export function ColorPickerPanel({
+  value,
+  onChange,
+  suggestions = false,
+}: {
+  value: string
+  onChange: (hex: string) => void
+  /** Show the curated accessible alternatives of the current colour. Opt-in,
+   *  and only meaningful where the value being edited is a family's BASE (the
+   *  anchor a whole ramp is grown from) — Accent, Neutral and the states. A
+   *  single tone inside a ramp, or a gradient stop, has no white-ink guarantee
+   *  to keep, so offering "more accessible" versions there would be noise. */
+  suggestions?: boolean
+}) {
   // Only the user's own saved swatches live here now. The system's ramps used
   // to be listed below as a "Palette" block, but this picker's job is authoring
   // a NEW raw colour — offering existing tokens in the same popover mixed two
@@ -60,6 +74,12 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
 
   const hex = useMemo(() => toHex(hsva), [hsva])
   const hueColor = useMemo(() => chroma.hsv(hsva.h, 1, 1).hex(), [hsva.h])
+  // Recomputed as the user drags — the four options are always alternatives to
+  // what's on screen RIGHT NOW, not to whatever the field held on open.
+  const variants = useMemo(
+    () => (suggestions ? accessibleVariants(hex.slice(0, 7)) : []),
+    [suggestions, hex],
+  )
 
   function apply(next: HSVA) {
     setHsva(next)
@@ -243,6 +263,38 @@ export function ColorPickerPanel({ value, onChange }: { value: string; onChange:
           ))}
         </div>
       </div>
+
+      {/* Curated alternatives — same hue, tuned so the anchor itself carries
+          white ink at AA/AAA. Sits BELOW Saved deliberately: "Saved" is the
+          user's own library (a memory), this is a recommendation about the
+          colour currently in the field, so it reads as a consequence of what's
+          above it rather than another palette to browse. */}
+      {variants.length > 0 && (
+        <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
+          <span className="text-[11px] text-fg-muted">Accessible options</span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {variants.map((v) => (
+              <button
+                key={v.hex}
+                type="button"
+                onClick={() => apply(toHsva(v.hex))}
+                title={`${v.hex.toUpperCase()} — ${v.note} (${v.contrast.toFixed(2)}:1)`}
+                className="flex items-center gap-1.5 min-w-0 pl-1 pr-1.5 py-1 rounded-lg border border-line hover:border-line-strong hover:bg-elevated transition-colors text-left"
+              >
+                <span
+                  aria-hidden
+                  className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
+                  style={{ background: v.hex }}
+                />
+                <span className="min-w-0 truncate text-[10px] text-fg-muted">{v.label}</span>
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] text-fg-faint leading-snug">
+            Same hue, tuned so white text passes on the solid.
+          </span>
+        </div>
+      )}
     </div>
   )
 }

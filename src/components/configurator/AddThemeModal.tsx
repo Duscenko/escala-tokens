@@ -48,7 +48,7 @@ export default function AddThemeModal({
     themes, addTheme, renameTheme, updateTheme, customColors, addCustomColor,
     themeKinds, themeSources,
     primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor,
-    colorAlgorithm, contrastShift, pageBackground,
+    colorAlgorithm, contrastShift, pageBackground, neutralTint,
   } = store
   const reduce = useReducedMotion() ?? false
   const isEdit = !!editKey
@@ -119,12 +119,12 @@ export default function AddThemeModal({
   // When linked, the neutral tracks the brand hue.
   function changeBrand(hex: string) {
     setBrand(hex)
-    if (linked) setNeutral(neutralFromBrand(hex))
+    if (linked) setNeutral(neutralFromBrand(hex, neutralTint))
   }
   function toggleLink() {
     const next = !linked
     setLinked(next)
-    if (next) setNeutral(neutralFromBrand(brand))
+    if (next) setNeutral(neutralFromBrand(brand, neutralTint))
   }
 
   function handleCreate() {

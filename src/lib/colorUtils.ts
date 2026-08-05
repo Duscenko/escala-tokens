@@ -335,13 +335,66 @@ export function generateColorScale(
  * at L 0.17 — the same lightness `generateDarkColorScale` assumes when no dark
  * page is given, so the derived page and its ramp agree by construction.
  */
-export function backgroundFromBase(baseHex: string, appearance: ScaleAppearance = 'light'): string {
+// ── How much of the Neutral's colour survives into the page ─────────────────
+// The page is DERIVED from the Neutral (`backgroundFromBase`), and the derivation
+// used to clamp chroma to 0.006 in light — so a deliberately vivid Neutral still
+// produced a white page. Making the clamp a CHOICE is the Radix-faithful fix:
+// Radix never exposes a background colour either, it ships six hue-matched grays
+// (Gray · Mauve · Slate · Sage · Olive · Sand) and the page IS that gray's step 1.
+// The tint level is a property of the neutral, not a second input — which is
+// exactly what keeps "Base drives the page" true and page/ramp drift impossible.
+//
+// `l` is the page lightness, `mul`/`cap` how much of the base's chroma reaches
+// it. Because tone 1 is emitted verbatim as the page, the whole neutral ramp (and
+// every ramp anchored to it) inherits the tint with no second code path — and
+// steps 11–12 are solved BY contrast against that page, so text self-corrects as
+// the page gets more colourful.
+//
+// The ceiling is a TINTED PAGE, not a coloured surface: `vivid` still lands at
+// L≈0.97 light / 0.215 dark — a perceptible cream/lavender that reads as paper.
+// Going further (L≈0.92) would push steps 11–12 much darker and break the chrome
+// tints (`bg-elevated`, active rows) that assume a near-neutral page.
+export type NeutralTint = 'pure' | 'subtle' | 'tinted' | 'vivid'
+
+export const NEUTRAL_TINTS: {
+  key: NeutralTint
+  label: string
+  /** Radix's own gray families, as the reference point for the level. */
+  hint: string
+  light: { l: number; mul: number; cap: number }
+  dark: { l: number; mul: number; cap: number }
+  /** Saturation `neutralFromBrand` gives the linked neutral at this level. */
+  brandSat: number
+}[] = [
+  { key: 'pure',   label: 'Pure',   hint: 'Radix Gray — no hue at all',
+    light: { l: 0.995, mul: 0, cap: 0 },         dark: { l: 0.17,  mul: 0, cap: 0 },        brandSat: 0 },
+  { key: 'subtle', label: 'Subtle', hint: 'Radix Mauve / Slate — a whisper of the hue',
+    light: { l: 0.995, mul: 0.12, cap: 0.006 },  dark: { l: 0.17,  mul: 0.35, cap: 0.022 }, brandSat: 0.08 },
+  { key: 'tinted', label: 'Tinted', hint: 'Radix Sage / Sand — visibly warm or cool',
+    light: { l: 0.985, mul: 0.35, cap: 0.018 },  dark: { l: 0.19,  mul: 0.60, cap: 0.040 }, brandSat: 0.16 },
+  { key: 'vivid',  label: 'Vivid',  hint: 'Beyond Radix — a clearly coloured paper',
+    light: { l: 0.972, mul: 0.70, cap: 0.042 },  dark: { l: 0.215, mul: 1.00, cap: 0.075 }, brandSat: 0.28 },
+]
+
+export const DEFAULT_NEUTRAL_TINT: NeutralTint = 'subtle'
+
+export function neutralTintSpec(tint: NeutralTint = DEFAULT_NEUTRAL_TINT) {
+  return NEUTRAL_TINTS.find((t) => t.key === tint) ?? NEUTRAL_TINTS[1]
+}
+
+export function backgroundFromBase(
+  baseHex: string,
+  appearance: ScaleAppearance = 'light',
+  // Defaults to `subtle`, whose numbers are the pre-tint constants verbatim —
+  // so every existing call site and every stored system regenerates the exact
+  // same page it had before this control existed.
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
+): string {
   try {
     const [, c, hRaw] = chroma(baseHex).oklch()
     const h = Number.isNaN(hRaw) ? 0 : hRaw
-    return appearance === 'dark'
-      ? chroma.oklch(0.17, Math.min(c * 0.35, 0.022), h).hex()
-      : chroma.oklch(0.995, Math.min(c * 0.12, 0.006), h).hex()
+    const spec = neutralTintSpec(tint)[appearance === 'dark' ? 'dark' : 'light']
+    return chroma.oklch(spec.l, Math.min(c * spec.mul, spec.cap), h).hex()
   } catch {
     return appearance === 'dark' ? '#0c0e12' : '#ffffff'
   }
@@ -654,6 +707,80 @@ export function readableInk(bg: string, darkInk = '#0a0d12', lightInk = '#ffffff
   } catch {
     return lightInk
   }
+}
+
+// ── Curated, contrast-tuned alternatives to a hand-picked colour ─────────────
+// Designers reach for the colour they SEE, which is routinely a bright, highly
+// saturated hue whose anchor (tone 9 — the solid fill, emitted verbatim) can't
+// carry white ink at AA. The ramp then compensates by walking the fill down to
+// 11–12 (`accessibleSolidTone`), i.e. the button ships noticeably darker than
+// the colour that was picked. Offering four tuned versions of the SAME hue up
+// front is the cheaper fix: pick one and the anchor itself already passes.
+//
+// The criterion is white ink on the fill (4.5:1 / 7:1), the same guarantee
+// `accessibleSolidTone` walks the ramp for — NOT contrast against the page.
+// Hue is never touched; only lightness (searched, not offset) and chroma, so
+// every suggestion still reads as the user's colour.
+export interface ColorSuggestion {
+  hex: string
+  label: string
+  /** One-line rationale, used as the swatch's tooltip. */
+  note: string
+  /** Achieved ratio of white ink on this fill. */
+  contrast: number
+}
+
+export function accessibleVariants(hex: string, limit = 4): ColorSuggestion[] {
+  let baseL = 0.6
+  let baseC = 0.14
+  let baseH = 0
+  try {
+    const [l, c, h] = chroma(hex).oklch()
+    baseL = l
+    baseC = c
+    baseH = Number.isNaN(h) ? 0 : h
+  } catch {
+    return []
+  }
+  // A suggestion may only DARKEN. `lightnessForContrast` returns the subtlest
+  // tone that still clears the target — which, for a colour that already clears
+  // it comfortably, means a LIGHTER one. Handing a user who picked a safe 5.7:1
+  // purple a barely-passing 4.5:1 purple under the heading "Accessible" is the
+  // opposite of the advice this block exists to give, so the base lightness is
+  // kept whenever it already satisfies the target at that chroma.
+  const build = (target: number, c: number, label: string, note: string): ColorSuggestion => {
+    const chromaC = Math.max(0, c)
+    const atBase = chroma.oklch(baseL, chromaC, baseH).hex()
+    const out = checkContrast('#ffffff', atBase) >= target
+      ? atBase
+      : lightnessForContrast(target, baseH, chromaC, '#ffffff', true)
+    return { hex: out, label, note, contrast: checkContrast('#ffffff', out) }
+  }
+  const seeds: ColorSuggestion[] = [
+    build(WCAG_AA, baseC, 'Accessible', 'Closest tone to yours that carries white text at AA (4.5:1)'),
+    build(WCAG_AA, baseC * 0.6, 'Muted', 'Same hue, calmer saturation — still AA with white text'),
+    // Chroma is capped, not just scaled: past ~0.31 OKLCH most hues fall out of
+    // sRGB and chroma-js clips, so a "vivid" variant would quietly land on the
+    // same hex as `Accessible`.
+    build(WCAG_AA, Math.min(baseC * 1.3, 0.31), 'Vivid', 'Punchier saturation at the same accessible lightness'),
+    build(WCAG_AAA, baseC * 0.95, 'High contrast', 'Deeper tone — white text clears AAA (7:1)'),
+    // Fifth seed, shown only when an earlier one collapsed — which is exactly
+    // the already-accessible case, where "Accessible" IS the current colour and
+    // drops out. Keeps the block at four options without ever repeating a hex.
+    build(5.5, baseC, 'Balanced', 'A little deeper than yours, comfortably above AA'),
+  ]
+  // Drop anything that collapsed onto the current colour or onto an earlier
+  // suggestion (a chroma tweak can round to the same 8-bit hex).
+  const seen = new Set([hex.toLowerCase().slice(0, 7)])
+  const out: ColorSuggestion[] = []
+  for (const s of seeds) {
+    const k = s.hex.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(s)
+    if (out.length === limit) break
+  }
+  return out
 }
 
 // Applies alpha transparency to a hex color — used for the translucent panel
