@@ -98,8 +98,32 @@ const ALPHA_NAV_TONE = 5
  *  its table cells already use (see AlphaHexCell) instead of a solid chip of
  *  its base — the two families sat side by side under Accents looking
  *  identical, so nothing on screen said which one was the translucent ramp. */
-function FamilySwatch({ family, dark }: { family: Family; dark: boolean }) {
-  if (!family.isAlpha) return <span className={SWATCH} style={{ backgroundColor: family.base }} />
+function FamilySwatch({ family, dark, onClick }: {
+  family: Family
+  dark: boolean
+  /** Same "the colour chip itself opens the picker" rule as the quick-edit
+   *  strip's `HexCell` swatch — a chip that looks clickable and only the
+   *  neighbouring pencil actually works reads as broken, and most people reach
+   *  for the colour first. Omitted for alpha families: nothing to edit (an
+   *  alpha ramp is derived, see AlphaHexCell), so the chip stays a plain
+   *  swatch there, same as the pencil already being withheld for them. */
+  onClick?: () => void
+}) {
+  if (!family.isAlpha) {
+    return onClick ? (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-haspopup="dialog"
+        aria-label={`Edit ${family.label} color`}
+        title={`Edit ${family.label} — ${family.base}`}
+        className={`${SWATCH} flex-shrink-0 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
+        style={{ backgroundColor: family.base }}
+      />
+    ) : (
+      <span className={SWATCH} style={{ backgroundColor: family.base }} />
+    )
+  }
   const value = (dark ? family.dark : family.light)[ALPHA_NAV_TONE] ?? family.base
   return (
     <span
@@ -123,11 +147,27 @@ function FamilySwatch({ family, dark }: { family: Family; dark: boolean }) {
 // It is NOT a second exporter: `buildFamilyExport` assembles a normal
 // WizardSelection and runs it through `buildWizardExport`, so this output is
 // byte-identical to running the wizard scoped the same way.
-const EXPORT_MENU_W = 304
+// 304 fit one label + one trailing icon. Copy moved from "click the label" to
+// its own icon (matching download instead of hiding behind a whole-row click
+// no one could see was clickable) needs a second w-10 cell + divider — widened
+// to keep the label from truncating under two dedicated action columns.
+const EXPORT_MENU_W = 420
+
+// This popover's own shorthand for the format list — NOT a rename of
+// `WIZARD_FORMATS` itself, which still reads "W3C Design Tokens" everywhere
+// else (the full wizard has room for the whole name; this compact menu
+// doesn't once a row carries two action icons). `badge` mirrors Escala JSON's
+// "Figma plugin" pill: W3C's flat $value/$type tree is what Figma's OWN
+// "Import variables" accepts with no plugin in the loop, same as Escala JSON
+// needs the Escala plugin specifically — two different "gets into Figma"
+// paths, each worth flagging the same way.
+const MENU_FORMAT_LABEL: Partial<Record<WizardFormat, string>> = { w3c: 'W3C Design' }
+const MENU_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = { w3c: 'Figma native', escala: 'Figma plugin' }
 
 function ColumnExportMenu({ family, label, appearance }: { family: string; label: string; appearance: 'light' | 'dark' }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState<WizardFormat | null>(null)
+  const [downloaded, setDownloaded] = useState<WizardFormat | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const place = usePopoverPlacement(ref, open)
@@ -170,6 +210,27 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
     setTimeout(() => { setCopied(null); setOpen(false) }, 900)
   }
 
+  // Same `buildFamilyExport` call as `copy` — a download is the identical
+  // scoped output, just saved instead of put on the clipboard, so the two
+  // can never disagree about what "this format, this ramp" means. Doesn't
+  // close the popover (unlike `copy`): downloading is the slower action of
+  // the two, and someone comparing formats will likely want a second one
+  // right after — closing on them would undo the point of leaving it open.
+  function downloadOne(format: WizardFormat) {
+    const files = buildFamilyExport(family, appearance, format)
+    for (const f of files) {
+      const mime = f.name.endsWith('.json') ? 'application/json' : f.name.endsWith('.css') || f.name.endsWith('.scss') ? 'text/css' : 'text/plain'
+      const url = URL.createObjectURL(new Blob([f.content], { type: mime }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = f.name
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    setDownloaded(format)
+    setTimeout(() => setDownloaded(null), 900)
+  }
+
   const panel = open && rect
     ? createPortal(
         <AnimatePresence>
@@ -179,7 +240,10 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
-            role="menu"
+            // `dialog`, not `menu` — a menu's children must be menuitems, and
+            // each row is now a `group` of two independent buttons (copy,
+            // download) rather than one activatable item.
+            role="dialog"
             aria-label={`Export ${label} — ${appearance}`}
             style={{
               position: 'fixed',
@@ -198,33 +262,78 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
               {WIZARD_FORMATS.map((f) => {
-                const isEscala = f.key === 'escala'
-                const done = copied === f.key
+                const copyDone = copied === f.key
+                const downloadDone = downloaded === f.key
+                const badge = MENU_FORMAT_BADGE[f.key]
                 return (
-                  <button
+                  // Copy and download are two EQUAL actions now, so both get a
+                  // dedicated icon in their own cell — the label used to double
+                  // as the copy button (click anywhere on it), which read as
+                  // one action with an unrelated icon bolted on rather than two
+                  // choices. The label itself is plain text now, not a control.
+                  <div
                     key={f.key}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => copy(f.key)}
-                    className={`w-full px-3 py-2 text-left rounded-xl border transition-colors ${
-                      done ? 'border-emerald-500/60 bg-emerald-500/[0.08]' : 'border-line hover:border-line-strong hover:bg-elevated/40'
+                    role="group"
+                    aria-label={`${MENU_FORMAT_LABEL[f.key] ?? f.label} — ${label} ${appearance}`}
+                    className={`flex items-stretch rounded-xl border transition-colors ${
+                      copyDone || downloadDone ? 'border-emerald-500/60 bg-emerald-500/[0.08]' : 'border-line hover:border-line-strong'
                     }`}
                   >
-                    <span className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-fg">{f.label}</span>
-                      {isEscala && (
-                        <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-[9px] font-semibold uppercase tracking-wide flex-shrink-0">
-                          Figma plugin
-                        </span>
+                    <div className="flex-1 min-w-0 px-3 py-2">
+                      <span className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium text-fg">{MENU_FORMAT_LABEL[f.key] ?? f.label}</span>
+                        {badge && (
+                          <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-[9px] font-semibold uppercase tracking-wide flex-shrink-0">
+                            {badge}
+                          </span>
+                        )}
+                        {(copyDone || downloadDone) && (
+                          <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                            {copyDone ? 'Copied' : 'Downloaded'}
+                          </span>
+                        )}
+                      </span>
+                      <span className="block text-[11.5px] font-normal text-fg-faint truncate">
+                        {/* Escala JSON is a whole-document contract — say so here
+                            rather than let it read as family-scoped like the rest. */}
+                        {f.key === 'escala' ? 'The whole tokens.json — not scoped to this ramp' : f.hint}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copy(f.key)}
+                      aria-label={`Copy ${label} — ${appearance} as ${MENU_FORMAT_LABEL[f.key] ?? f.label}`}
+                      title={`Copy as ${MENU_FORMAT_LABEL[f.key] ?? f.label}`}
+                      className="flex-shrink-0 w-10 flex items-center justify-center border-l border-line text-fg-faint hover:text-fg hover:bg-elevated/40 transition-colors"
+                    >
+                      {copyDone ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M5 15C4.06812 15 3.60218 15 3.23463 14.8478C2.74458 14.6448 2.35523 14.2554 2.15224 13.7654C2 13.3978 2 12.9319 2 12V5.2C2 4.0799 2 3.51984 2.21799 3.09202C2.40973 2.71569 2.71569 2.40973 3.09202 2.21799C3.51984 2 4.0799 2 5.2 2H12C12.9319 2 13.3978 2 13.7654 2.15224C14.2554 2.35523 14.6448 2.74458 14.8478 3.23463C15 3.60218 15 4.06812 15 5M12.2 22H18.8C19.9201 22 20.4802 22 20.908 21.782C21.2843 21.5903 21.5903 21.2843 21.782 20.908C22 20.4802 22 19.9201 22 18.8V12.2C22 11.0799 22 10.5198 21.782 10.092C21.5903 9.71569 21.2843 9.40973 20.908 9.21799C20.4802 9 19.9201 9 18.8 9H12.2C11.0799 9 10.5198 9 10.092 9.21799C9.71569 9.40973 9.40973 9.71569 9.21799 10.092C9 10.5198 9 11.0799 9 12.2V18.8C9 19.9201 9 20.4802 9.21799 20.908C9.40973 21.2843 9.71569 21.5903 10.092 21.782C10.5198 22 11.0799 22 12.2 22Z" />
+                        </svg>
                       )}
-                      {done && <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">Copied</span>}
-                    </span>
-                    <span className="block text-[11.5px] font-normal text-fg-faint truncate">
-                      {/* Escala JSON is a whole-document contract — say so here
-                          rather than let it read as family-scoped like the rest. */}
-                      {isEscala ? 'The whole tokens.json — not scoped to this ramp' : f.hint}
-                    </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadOne(f.key)}
+                      aria-label={`Download ${label} — ${appearance} as ${MENU_FORMAT_LABEL[f.key] ?? f.label}`}
+                      title={`Download as ${MENU_FORMAT_LABEL[f.key] ?? f.label}`}
+                      className="flex-shrink-0 w-10 flex items-center justify-center rounded-r-xl border-l border-line text-fg-faint hover:text-fg hover:bg-elevated/40 transition-colors"
+                    >
+                      {downloadDone ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 10L12 15M12 15L7 10M12 15V3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -239,7 +348,7 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Export the ${label} family — ${appearance}`}
         title={`Copy the ${appearance} ${label} ramp in any format`}
@@ -795,16 +904,21 @@ export default function ColorPrimitives({
   // with what editing the family colour would produce.
   const standardScales = useMemo(() => {
     try {
+      // "Reset to standard" has to reproduce what the APPLIERS produce, so the
+      // neutral's two ramps take the tint exactly the way `useApplyGrayColor`
+      // passes it — otherwise Reset would quietly hand back the untinted curve
+      // and read as a bug the moment the tint is Tinted/Vivid.
+      const isNeutral = family.key === 'neutral'
       return {
-        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pageBackground),
-        dark: family.key === 'neutral'
-          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, darkBackground)
+        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pageBackground, 'light', isNeutral ? neutralTint : undefined),
+        dark: isNeutral
+          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, darkBackground, neutralTint)
           : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, darkBackground),
       }
     } catch {
       return null
     }
-  }, [family.base, family.key, colorAlgorithm, contrastShift, pageBackground, darkBackground])
+  }, [family.base, family.key, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 
   const detailsModal = !family.isAlpha && expandedTone != null ? (() => {
     const tone = expandedTone
@@ -1097,16 +1211,31 @@ export default function ColorPrimitives({
               const isActive = family.key === f.key
               return (
                 <div key={f.key} className="relative group/fam" ref={editFamily === f.key ? editRef : undefined}>
-                  <button
-                    onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
+                  {/* Was one `<button>` wrapping the swatch + label — the swatch
+                      is now its own button (opens the picker directly, see
+                      `FamilySwatch`), and a button can't nest another button.
+                      Split into two siblings sharing the same row styling
+                      instead: the swatch button, then the label as the
+                      "select this family" trigger. */}
+                  <div
                     aria-current={isActive}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
                       isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                     }`}
                   >
-                    <FamilySwatch family={f} dark={darkPreview} />
-                    <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{f.label}</span>
-                  </button>
+                    <FamilySwatch
+                      family={f}
+                      dark={darkPreview}
+                      onClick={() => { setActiveFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <span className="block truncate text-[13px] font-medium">{f.label}</span>
+                    </button>
+                  </div>
                   {/* Edit — stays visible on the active row so the affordance is
                       findable without hunting for it on hover. Not offered for
                       Accent-Alpha: it's derived (see AlphaHexCell), nothing to
@@ -1185,8 +1314,14 @@ export default function ColorPrimitives({
 
           <div ref={tableRef} className="flex-1 min-w-0 h-full overflow-auto">
             <div className="min-w-[24rem]">
-              {/* Column header — light/dark eye toggles drive the preview theme */}
-              <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint" style={gridStyle}>
+              {/* Column header — light/dark eye toggles drive the preview theme.
+                  Sticky so it survives scrolling the tone rows below: without
+                  it, scrolling past row 1 hides the eye toggles, the per-column
+                  export icon and the settings gear — the only way back to any
+                  of them was scrolling back up. `z-10` keeps it above the row
+                  content (band captions included); `bg-app` (already set) is
+                  what keeps rows from showing through underneath it. */}
+              <div className="sticky top-0 z-10 grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint" style={gridStyle}>
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
                 {(['light', 'dark'] as const).map((col) => {
                   const isPreviewed = previewTheme === col

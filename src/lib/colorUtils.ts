@@ -164,9 +164,15 @@ function buildScale(
   shift: number,
   background?: string,
   appearance: ScaleAppearance = 'light',
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
 ): string[] {
   const [baseL, baseC, baseHraw] = chroma(baseHex).oklch()
   const baseH = Number.isNaN(baseHraw) ? 0 : baseHraw
+  // See NEUTRAL_TINTS.chromaLink. 0 for pure/subtle — and 0 makes the blend
+  // below collapse to the original expression exactly, so the default value of
+  // this parameter is also its no-op value: a call site that never learns about
+  // tints keeps rendering what it rendered before.
+  const chromaLink = neutralTintSpec(tint).chromaLink
 
   // The page this ramp is built to sit on. Steps 1–8 grow OUT of it and steps
   // 11–12 are contrast-tuned AGAINST it, so it anchors both ends of the scale.
@@ -180,6 +186,7 @@ function buildScale(
     } catch { /* invalid background — keep the fallback */ }
   }
   const pageL = chroma(page).oklch()[0]
+  const pageC = chroma(page).oklch()[1]
   // Light themes put text BELOW the page in lightness; dark themes above it.
   const towardDark = appearance === 'light'
   const dir = towardDark ? -1 : 1
@@ -222,7 +229,17 @@ function buildScale(
       const L = pageL + (baseL - pageL) * w
       // `lightCmul` keeps each algorithm's feel at the page end: Radix wants
       // almost no chroma in 1–2, saturation-led ramps want more.
-      const C = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15))
+      const shapedC = baseC * (spec.lightCmul * 0.25 + (1 - spec.lightCmul * 0.25) * Math.pow(w, 1.15))
+      // The page-continuous alternative: start at the page's OWN chroma and
+      // lerp to the base's, so step 2 picks up where step 1 (the page, emitted
+      // verbatim) left off instead of dropping to gray. Uses the same weight
+      // the lightness lerp above already uses, so the two travel together.
+      // When the page and the base carry equal chroma — which is what `vivid`
+      // produces once the anchor is floored to the page — this is CONSTANT
+      // across 1–8: one tint, lightness climbing, no band reading as a
+      // different family.
+      const linkedC = pageC + (baseC - pageC) * Math.pow(w, 1.15)
+      const C = shapedC + (linkedC - shapedC) * chromaLink
       const H = baseH + (spec.hueShift?.(-(1 - w)) ?? 0)
       out.push(chroma.oklch(clamp01(L), Math.max(0, C), H).hex())
       continue
@@ -314,9 +331,14 @@ export function generateColorScale(
   contrastShift = 0,
   background?: string,
   appearance: ScaleAppearance = 'light',
+  /** Only affects steps 2–8's chroma continuity (see NEUTRAL_TINTS.chromaLink).
+   *  Defaults to the no-op level, so omitting it is safe — it just means "keep
+   *  the Radix curve", which is right for every ramp that isn't grown on a
+   *  deliberately coloured page. */
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
 ): Record<number, string> {
   const spec = SPECS[algorithm] ?? SPECS.default
-  const colors = buildScale(baseHex, spec, contrastShift, background, appearance)
+  const colors = buildScale(baseHex, spec, contrastShift, background, appearance, tint)
   const scale: Record<number, string> = {}
   colors.forEach((color, i) => {
     scale[i + 1] = color
@@ -365,15 +387,34 @@ export const NEUTRAL_TINTS: {
   dark: { l: number; mul: number; cap: number }
   /** Saturation `neutralFromBrand` gives the linked neutral at this level. */
   brandSat: number
+  /**
+   * How much steps 2–8 inherit the PAGE's chroma instead of restarting from ~0.
+   *
+   * Radix's curve ramps chroma from almost nothing at step 2 up to the base's at
+   * step 9 — correct when the page is near-neutral (its own chroma is ~0, so
+   * starting there IS continuous). Once the page carries real colour that same
+   * curve tears: measured on a green neutral at `vivid`, step 1 (the page) sits
+   * at chroma 0.0655 and step 2 drops to 0.0025 — a 26× collapse, so the page
+   * reads green and the very next surface reads gray. The lightness curve is
+   * smooth right through it; the discontinuity is 100% chroma.
+   *
+   * 0 = today's behaviour, exactly. 1 = step 2 starts at the page's own chroma
+   * and lerps to the base's, so the whole ramp stays one family. Held at 0 for
+   * `pure`/`subtle` so every system that predates this renders byte-identically
+   * — those two are also provably never pathological (their page multipliers,
+   * 0 and 0.35, are both below the 0.5 the dark neutral's anchor uses, so their
+   * page can't out-saturate the ramp it seeds).
+   */
+  chromaLink: number
 }[] = [
   { key: 'pure',   label: 'Pure',   hint: 'Radix Gray — no hue at all',
-    light: { l: 0.995, mul: 0, cap: 0 },         dark: { l: 0.17,  mul: 0, cap: 0 },        brandSat: 0 },
+    light: { l: 0.995, mul: 0, cap: 0 },         dark: { l: 0.17,  mul: 0, cap: 0 },        brandSat: 0,    chromaLink: 0 },
   { key: 'subtle', label: 'Subtle', hint: 'Radix Mauve / Slate — a whisper of the hue',
-    light: { l: 0.995, mul: 0.12, cap: 0.006 },  dark: { l: 0.17,  mul: 0.35, cap: 0.022 }, brandSat: 0.08 },
+    light: { l: 0.995, mul: 0.12, cap: 0.006 },  dark: { l: 0.17,  mul: 0.35, cap: 0.022 }, brandSat: 0.08, chromaLink: 0 },
   { key: 'tinted', label: 'Tinted', hint: 'Radix Sage / Sand — visibly warm or cool',
-    light: { l: 0.985, mul: 0.35, cap: 0.018 },  dark: { l: 0.19,  mul: 0.60, cap: 0.040 }, brandSat: 0.16 },
+    light: { l: 0.985, mul: 0.35, cap: 0.018 },  dark: { l: 0.19,  mul: 0.60, cap: 0.040 }, brandSat: 0.16, chromaLink: 0.7 },
   { key: 'vivid',  label: 'Vivid',  hint: 'Beyond Radix — a clearly coloured paper',
-    light: { l: 0.972, mul: 0.70, cap: 0.042 },  dark: { l: 0.215, mul: 1.00, cap: 0.075 }, brandSat: 0.28 },
+    light: { l: 0.972, mul: 0.70, cap: 0.042 },  dark: { l: 0.215, mul: 1.00, cap: 0.075 }, brandSat: 0.28, chromaLink: 1 },
 ]
 
 export const DEFAULT_NEUTRAL_TINT: NeutralTint = 'subtle'
@@ -448,6 +489,11 @@ export function generateDarkColorScale(
   algorithm: ColorAlgorithm = 'default',
   contrastShift = 0,
   darkBackground?: string,
+  /** The system's `neutralTint`. Omitting it keeps the pre-tint ramp exactly,
+   *  so this is safe to leave off — but any call site that owns the SYSTEM's
+   *  neutral must pass it, or that ramp silently keeps the washed-out curve
+   *  while the page it sits on is fully tinted. */
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
 ): Record<number, string> {
   let base = neutralHex
   try {
@@ -458,9 +504,20 @@ export function generateDarkColorScale(
     // Deriving it near the page (the old behaviour) left the solid unusable
     // and squashed the whole upper half of the ramp.
     const baseL = 0.5
-    base = chroma.oklch(baseL, nC * 0.5, nH).hex()
+    // Halving the neutral's chroma was written when the page was always
+    // near-neutral. On a tinted page it inverts the ramp: measured on a green
+    // neutral at `vivid`, the page lands at chroma 0.075 while this anchor sat
+    // at 0.039 — the PAGE became the most saturated thing in the ramp, so the
+    // scale it seeds could only ever look washed-out next to it. Flooring the
+    // anchor at the page's own chroma is what lets 1–9 hold one tint.
+    // Provably inert for pure/subtle: their page multipliers (0 and 0.35) are
+    // both below the 0.5 used here, so `max` can never pick the page there.
+    const pageC = darkBackground ? chroma(darkBackground).oklch()[1] : 0
+    const linked = neutralTintSpec(tint).chromaLink > 0
+    const baseC = linked ? Math.max(nC * 0.5, pageC) : nC * 0.5
+    base = chroma.oklch(baseL, baseC, nH).hex()
   } catch { /* invalid neutral — fall back to the raw hex */ }
-  return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark')
+  return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark', tint)
 }
 
 // ── Alpha ramps (Radix custom-palette architecture) ─────────────────────────

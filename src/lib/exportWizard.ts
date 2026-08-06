@@ -285,11 +285,24 @@ const W3C_ROOT: Record<WizardCollection, string> = {
 function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON): W3CNode {
   if (key === 'primitives') return w3cPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)
   if (key === 'semantics') {
-    // Only constrain aliases to the picked families when primitives are
-    // actually part of this export; otherwise every alias would point outside
-    // the file anyway and narrowing them adds nothing.
-    const families = sel.collections.includes('primitives') ? sel.primitiveFamilies : undefined
-    return w3cSemantics(full, sel.modes, sel.includeAliases, families)
+    const primitivesShipped = sel.collections.includes('primitives')
+    // An alias is only resolvable if the primitives it points at are actually
+    // IN this export — a semantics-only run used to alias `{color.accent.9}`
+    // unconditionally (`pickedPrimitives` with no family filter falls back to
+    // the WHOLE unscoped primitive set), producing a document with references
+    // to a `color` tree that was never written anywhere in the output. Every
+    // DTCG-aware importer (Tokens Studio, Figma Variables import, Style
+    // Dictionary) either throws or silently drops the token on a reference it
+    // can't resolve — this is why "W3C export → Figma won't read the file"
+    // reproduces reliably on a Semantics-only run with aliases left on (the
+    // wizard's default). Falling back to the resolved hex here is what
+    // `includeAliases: false` already does deliberately (see the toggle's own
+    // "Resolved to hex" label) — reusing that path means a semantics-only
+    // export is not a special case, just the same fallback with a different
+    // trigger. `ExportWizard.tsx`'s step-3 Summary row mirrors this so the UI
+    // never claims "Included" for a file that will actually ship hex.
+    const families = primitivesShipped ? sel.primitiveFamilies : undefined
+    return w3cSemantics(full, sel.modes, sel.includeAliases && primitivesShipped, families)
   }
   return w3cSection(key, full)
 }

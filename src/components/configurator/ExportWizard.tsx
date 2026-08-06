@@ -638,19 +638,35 @@ export default function ExportWizard({
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3 flex flex-col gap-2">
                 <span className="px-1 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Options</span>
                 {format === 'w3c' && (
-                  <button
-                    onClick={() => setIncludeAliases((v) => !v)}
-                    aria-pressed={includeAliases}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong text-left transition-colors"
-                  >
-                    <CheckBox on={includeAliases} />
-                    <span className="min-w-0">
-                      <span className="block text-[13px] text-fg">Include aliases (variable references)</span>
-                      <span className="block text-[12px] text-fg-faint truncate">
-                        Semantics ship as <code className="font-mono">{'{color.accent.600}'}</code> instead of a loose hex
+                  <>
+                    <button
+                      onClick={() => setIncludeAliases((v) => !v)}
+                      aria-pressed={includeAliases}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line hover:border-line-strong text-left transition-colors"
+                    >
+                      <CheckBox on={includeAliases} />
+                      <span className="min-w-0">
+                        <span className="block text-[13px] text-fg">Include aliases (variable references)</span>
+                        <span className="block text-[12px] text-fg-faint truncate">
+                          Semantics ship as <code className="font-mono">{'{color.accent.600}'}</code> instead of a loose hex
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                    {/* An alias into a `color` tree this run doesn't write is
+                        unresolvable — no importer (Tokens Studio, Figma
+                        Variables, Style Dictionary) can follow a reference to a
+                        file/section that was never shipped, and that's the
+                        reliable way a W3C export "won't import" or errors on
+                        open. `buildWizardExport` already falls back to hex in
+                        this exact case (see `w3cTreeFor`), so this is only
+                        telling the truth about output the checkbox above can't. */}
+                    {includeAliases && collections.includes('semantics') && !collections.includes('primitives') && (
+                      <p className="px-3 text-[11.5px] text-fg-faint leading-snug">
+                        Primitives isn't part of this export, so aliases have nothing to point at —
+                        Semantics will ship resolved hex values regardless of this toggle.
+                      </p>
+                    )}
+                  </>
                 )}
                 {!isJson && (
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line">
@@ -705,7 +721,15 @@ export default function ExportWizard({
                 {collections.includes('semantics') && <SummaryRow label="Modes" value={modes.join(', ')} />}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />
                 <SummaryRow label="Structure" value={files.length > 1 ? `${files.length} files` : 'Single file'} />
-                {format === 'w3c' && <SummaryRow label="Aliases" value={includeAliases ? 'Included' : 'Resolved to hex'} />}
+                {/* Mirrors `w3cTreeFor`'s own condition exactly — aliases only ever
+                    ship when Primitives is part of THIS export, or the row
+                    would claim "Included" for a file shipping hex. */}
+                {format === 'w3c' && (
+                  <SummaryRow
+                    label="Aliases"
+                    value={includeAliases && collections.includes('primitives') ? 'Included' : 'Resolved to hex'}
+                  />
+                )}
                 {!isJson && <SummaryRow label="Color format" value={colorFormat.toUpperCase()} />}
                 <SummaryRow
                   label="Components"

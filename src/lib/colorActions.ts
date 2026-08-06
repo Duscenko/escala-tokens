@@ -108,10 +108,15 @@ export function useApplyAccentColor() {
       // Every coloured family keeps a dark twin in step with its light ramp.
       const genDark = (base: string) => generateFamilyDarkScale(base, colorAlgorithm, contrastShift, nextDarkBg)
       const scaleDark = genDark(hex)
-      const gScale = neutral ? gen(neutral) : null
+      // The NEUTRAL's own ramps pass the tint; the coloured families above
+      // deliberately don't. `chromaLink` means "continue from the page's
+      // chroma", which is only meaningful for the family the page is DERIVED
+      // from — same hue. Feeding it to the accent would paint the page's
+      // chroma at the accent's hue and turn its step 2 into a saturated fill.
+      const gScale = neutral ? generateColorScale(neutral, colorAlgorithm, contrastShift, nextBg, 'light', neutralTint) : null
       // The dark twin — same neutral (so it carries the accent's hue), but grown
       // out of the dark page instead of the light one.
-      const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg) : null
+      const gDark = neutral ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, nextDarkBg, neutralTint) : null
 
       if (pageMoved) setPageBackground(nextBg)
       if (nextDarkBg !== darkBackground) setDarkBackground(nextDarkBg)
@@ -177,7 +182,8 @@ export function useEnsureColorScales() {
       if (!Object.keys(s.warningScale).length)   s.setWarningScale(gen(s.warningColor))
       if (!Object.keys(s.successScale).length)   s.setSuccessScale(gen(s.successColor))
       if (!Object.keys(s.infoScale).length)      s.setInfoScale(gen(s.infoColor))
-      if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(gen(s.grayBaseColor))
+      // `genNeutral`, not `gen`: only the neutral carries the tint's chroma link.
+      if (!Object.keys(s.grayLightScale).length) s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
       // Dark twins — backfills systems created before the two-scale model.
       if (empty(s.primaryDarkScale)) s.setPrimaryDarkScale(genDark(s.primaryColor))
       if (empty(s.errorDarkScale))   s.setErrorDarkScale(genDark(s.errorColor))
@@ -234,8 +240,8 @@ export function useRegenerateScalesOnScaleSettings() {
       // Gray's dark twin is a genuine dark-neutral ramp (anchored to the dark
       // page), not the generic family transform — same split useEnsureColorScales
       // and the accent applier use.
-      s.setGrayLightScale(gen(s.grayBaseColor))
-      s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground))
+      s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
+      s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
       s.customColors.forEach((c) =>
         s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) }),
       )
@@ -319,8 +325,10 @@ export function useApplyGrayColor() {
       const gen = (base: string) => generateColorScale(base, s.colorAlgorithm, s.contrastShift, bg)
       const genDark = (base: string) => generateFamilyDarkScale(base, s.colorAlgorithm, s.contrastShift, darkBg)
       // Generate everything first — an invalid base throws before any write.
-      const scale = gen(hex)
-      const dScale = generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg)
+      // `hex` IS the neutral here, so its two ramps take the tint; `gen` (used
+      // for brand/status/customs below) deliberately doesn't.
+      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, bg, 'light', s.neutralTint)
+      const dScale = generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint)
       const brandScale = gen(s.primaryColor)
       const errorScale = gen(s.errorColor)
       const warningScale = gen(s.warningColor)
@@ -370,7 +378,7 @@ export function useApplyDarkBackground() {
   return useCallback((hex: string) => {
     const s = useDesignStore.getState()
     try {
-      const gDark = generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex)
+      const gDark = generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, hex, s.neutralTint)
       s.setDarkBackground(hex)
       s.setGrayDarkScale(gDark)
       for (const t of s.themeOrder) {

@@ -111,7 +111,7 @@ export function materializeImport(analysis: ImportAnalysis, opts: MaterializeOpt
   // dark background. NEVER left as the stale default when backgrounds changed.
   snap.grayDarkScale = f.grayDark
     ? { ...f.grayDark.scale }
-    : generateDarkColorScale(snap.grayBaseColor, algo, 0, snap.darkBackground)
+    : generateDarkColorScale(snap.grayBaseColor, algo, 0, snap.darkBackground, snap.neutralTint)
 
   // ── Themes: seed every role from the taxonomy, then overlay detections ──
   // grayDark is mandatory here — omitting it would make Step3's resync treat

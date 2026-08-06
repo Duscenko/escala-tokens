@@ -71,16 +71,36 @@ another pill).
 > single-vs-per-collection files; step 3 summarizes and downloads. Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
 >   disagree with `tokens.json`. Counts on screen are counts in the file.
-> - **Primitives' per-column export icon COPIES one ramp; it doesn't fork the export.**
->   `ColumnExportMenu` (`ColorPrimitives.tsx`) sits in the **light** and **dark** column
->   headers — per column, deliberately, because an icon there can only mean "this family,
->   this appearance", which is the only scope a single ramp is useful in. It opens a
->   FORMAT popover (the same `WIZARD_FORMATS` list) and picking one **copies to the
->   clipboard** — pasting a ramp into code or an AI prompt is what this is for; files on
->   disk stay the guided wizard's job. Not a second exporter: `buildFamilyExport()`
->   assembles a normal `WizardSelection` and runs it through `buildWizardExport`, so the
->   copy is byte-identical to running the wizard scoped the same way. Escala JSON is the
->   one entry that ISN'T scoped (whole-document contract) and the popover says so inline.
+> - **Primitives' per-column export icon exports one ramp; it doesn't fork the export
+>   pipeline.** `ColumnExportMenu` (`ColorPrimitives.tsx`) sits in the **light** and
+>   **dark** column headers — per column, deliberately, because an icon there can only
+>   mean "this family, this appearance", which is the only scope a single ramp is useful
+>   in. It opens a FORMAT popover (the same `WIZARD_FORMATS` list); each row is a
+>   `role="group"` of a plain-text label plus TWO dedicated icon buttons — **copy**
+>   (clipboard) and **download** (`downloadOne`, saves to disk) — each running the exact
+>   same `buildFamilyExport()` call, just handed to `navigator.clipboard` vs. a Blob/anchor,
+>   so the two can never disagree about what "this format, this ramp" means. The row used to
+>   be ONE clickable label (click-anywhere-to-copy) with only download getting its own icon
+>   — that read as one action with an unrelated icon bolted on, not two real choices; giving
+>   copy the same dedicated-icon treatment as download is what makes the row symmetric.
+>   Don't re-merge them into a single click target. Copy still auto-closes the popover after
+>   its "Copied" flash; download does NOT, on purpose — downloading is the slower action of
+>   the two, and someone comparing formats is likely to want a second one right after.
+>   `EXPORT_MENU_W` is **420px**, wide enough that no format's hint text truncates with two
+>   40px icon columns on the right — measured against the longest hint (Escala JSON's);
+>   don't shrink it back down without re-checking that one.
+>   **This popover has its own display names, layered on top of `WIZARD_FORMATS` rather than
+>   renaming it** (`MENU_FORMAT_LABEL`/`MENU_FORMAT_BADGE`): W3C Design Tokens reads "W3C
+>   Design" here with a "Figma native" badge (mirroring Escala JSON's "Figma plugin" badge —
+>   W3C's flat `$value`/`$type` tree is what Figma's own "Import variables" accepts with no
+>   plugin, same shape of claim as Escala JSON needing the Escala plugin specifically). The
+>   full wizard's Format step and Summary row still read "W3C Design Tokens" in full — that
+>   view has room and no reason to abbreviate; only this compact, two-icon-per-row popover
+>   does. Not a second
+>   exporter either way: `buildFamilyExport()` assembles a normal `WizardSelection` and
+>   runs it through `buildWizardExport`, so both actions are byte-identical to running the
+>   wizard scoped the same way. Escala JSON is the one entry that ISN'T scoped
+>   (whole-document contract) and the popover says so inline.
 >   Hidden on alpha families: alpha ramps live in `colors.primitiveAlpha`, which no
 >   collection ships, so the icon would hand over the solid twin instead.
 >   The popover is **portaled to `<body>` and positioned `fixed`** — the header sits
@@ -101,6 +121,27 @@ another pill).
 > - **W3C ships real aliases**: a semantic value sitting on a primitive tone exports as
 >   `{color.neutral.900}`, not a loose hex. That's the point of the format — don't
 >   "simplify" it back to hex.
+>   **Except when Primitives isn't part of the export at all** — `w3cTreeFor`
+>   (`exportWizard.ts`) forces `includeAliases` to resolve-to-hex there regardless of the
+>   wizard toggle, because `pickedPrimitives(full, undefined)` falls back to the WHOLE
+>   unscoped primitive set when no family filter is given, so a Semantics-only run used to
+>   alias `{color.accent.9}` unconditionally into a document that never wrote a `color` tree
+>   anywhere — a reference nothing can resolve. That's the reliable, reproducible cause of
+>   "W3C export → Figma/Tokens Studio won't read the file": every DTCG-aware importer either
+>   throws or drops the token on an alias it can't follow. The wizard's own `includeAliases:
+>   false` path already existed for exactly this (see the toggle's "Resolved to hex" label),
+>   so the fix reuses it rather than inventing a second fallback. Step 2's Options panel and
+>   step 3's Summary row both mirror the SAME condition (`collections.includes('primitives')`)
+>   so neither can claim "Included" for a file that will actually ship hex — the toggle
+>   itself is left alone (still checked, still savable as the user's preference) since it's
+>   still honest for the next export where Primitives IS included.
+>   **`$value`/`$type` (with the dollar prefix) is the correct, current W3C DTCG spec** —
+>   don't "fix" it to bare `value`/`type` to chase Figma-import compatibility. Bare keys are
+>   Tokens Studio's OLD, pre-DTCG legacy format; adopting them would silently break the
+>   promise this format's own hint text makes ("Standard format with $value, $type") and
+>   de-standardize the export for every DTCG-compliant consumer that isn't that one legacy
+>   path. If a real Tokens Studio/Figma import failure shows up again, get the literal error
+>   text and confirm which import mode is in use before touching the key names.
 > - **Escala JSON is single-file by contract** (it's the plugin payload), so the structure
 >   choice is locked there.
 > - Tailwind and Markdown delegate to `sectionExport`'s builders — one renderer per format,
@@ -890,12 +931,23 @@ Store uses `persist` middleware with `version: 46`. If you add fields, bump the 
 > `ColorSelect`'s `pill` variant is still `rounded-[13px]` though (unrelated call — that's
 > the State Colors hex trigger, not a swatch grid, matching the dropdown it sits beside).
 
-> **Editing a family's color.** Each row of the Color-families nav carries a pencil that
-> opens `ColorPickerPanel` for THAT family, routed by `changeFamilyBase()` to whichever
-> applier owns it — accent → `useApplyAccentColor`, neutral → `useApplyGrayColor` (so it
-> moves the page, see below), status → `useApplyStateColor`, custom → `updateCustomColor`
-> with a regenerated ramp. The nav is no longer selection-only; keep new families routed
-> there instead of sending users back to the quick bar.
+> **Editing a family's color.** Each row of the Color-families nav carries a pencil AND a
+> clickable swatch that both open the same `editFamily` popover (`ColorPickerPanel` for
+> THAT family), routed by `changeFamilyBase()` to whichever applier owns it — accent →
+> `useApplyAccentColor`, neutral → `useApplyGrayColor` (so it moves the page, see below),
+> status → `useApplyStateColor`, custom → `updateCustomColor` with a regenerated ramp. The
+> nav is no longer selection-only; keep new families routed there instead of sending users
+> back to the quick bar.
+> **The swatch opens the picker directly — the same "the colour chip itself is clickable"
+> rule the quick-edit strip's `HexCell` swatch already follows** (most people reach for the
+> colour first, not a neighbouring pencil). This is why the row is no longer ONE `<button>`
+> wrapping the swatch + label: a button can't nest another button, so the row split into a
+> `<div>` holding two siblings — `FamilySwatch`'s own button (swatch, opens the editor) and
+> a second button for the label (selects the family in the table, same as before). Both
+> still call `setActiveFamily(f.key)` first, so editing a family you weren't already on
+> switches the table to it too, rather than editing one family while looking at another's
+> rows. Omitted for Accent-Alpha (`FamilySwatch`'s `onClick` prop) — nothing to retint
+> independently, same reason the pencil is already withheld there.
 
 > **Popovers inside the Quick-edit accordion.** `Group`'s content wrapper needs
 > `overflow-hidden` for its height animation, and that CLIPS any dropdown opened inside
@@ -969,6 +1021,37 @@ Store uses `persist` middleware with `version: 46`. If you add fields, bump the 
 > - **Changing the tint re-runs `useApplyGrayColor(grayBaseColor)`** — one code path for
 >   "the base moved," whether the hex changed or how much of it survives. Don't write
 >   `setNeutralTint` alone and expect the ramps to follow.
+> - **The tint also governs CHROMA CONTINUITY, via `NEUTRAL_TINTS.chromaLink`** — the page
+>   only being tinted was never enough. `buildScale` ramps chroma from ~0 at step 2 up to the
+>   base's at step 9 and **never looked at the page's own chroma**, which is correct while the
+>   page is near-neutral (start ≈ 0 IS continuous) and tears the moment it isn't: measured on
+>   a green neutral at `vivid`, step 1 (the page, emitted verbatim) sat at chroma 0.0655 and
+>   step 2 dropped to 0.0025 — **26×**, so the page read green and the very next surface read
+>   gray. Across 5 neutral hues the step-1→2 chroma ratio was 18–2150× before, ~1.0× after.
+>   **The lightness curve was smooth right through it — the discontinuity is 100% chroma**, so
+>   don't go looking at `BG_WEIGHTS` or the Radix bands for this bug.
+>   - `chromaLink` blends the original curve with a page→base lerp on the SAME weight the
+>     lightness lerp uses. **0 for pure/subtle, and 0 makes the blend collapse to the original
+>     expression exactly** — so it's both the default parameter value and the no-op value, and
+>     a call site that never learns about tints keeps rendering what it rendered before
+>     (verified: pure + subtle are byte-identical across 5 neutrals × light + dark × 12 steps).
+>   - **A second, coupled defect:** `generateDarkColorScale` anchors tone 9 at `nC * 0.5`, written
+>     when the page was always near-neutral. At tinted/vivid that left the PAGE more chromatic
+>     than the ramp's own anchor (0.075 vs 0.039) — the scale literally could not grow out of
+>     the page. The anchor is now floored at the page's chroma when linked, which is what lets
+>     1–9 hold one tint. Provably inert for pure/subtle: their page multipliers (0 and 0.35)
+>     are both below that 0.5, so `max` can never pick the page there.
+>   - **Only the NEUTRAL passes the tint.** `chromaLink` means "continue from the page's
+>     chroma", which is only meaningful for the family the page is DERIVED from — same hue.
+>     Handing it to the accent would paint the page's chroma at the accent's hue and turn its
+>     step 2 into a saturated fill. `colorActions` therefore threads `neutralTint` into the
+>     gray ramps only, never into the `gen`/`genDark` helpers the coloured families share.
+>   - Steps 10–12 inherit the raised anchor chroma and stay legible on their own: contrast is
+>     search-solved, so the whole set still clears AA (worst measured 4.50:1 over 20 ramps).
+>   - **Known, deliberate gap:** the same tear exists at `subtle`, just milder (≈3–13× rather
+>     than 26×). It is NOT fixed, because `subtle` is the level every pre-tint system sits on
+>     and any non-zero `chromaLink` there restyles their neutral ramp. Raising it is a real
+>     option but needs a store migration + an explicit decision, not a silent default change.
 
 > **Alpha twins are solved, not eyeballed.** `alphaColorOver` inverts alpha compositing
 > — `α = (solid − page)/(overlay − page)`, max across channels, then the overlay is
