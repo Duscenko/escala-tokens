@@ -6,7 +6,7 @@
 // detected semantic values overlay them.
 
 import {
-  generateColorScale, generateDarkColorScale, recommendStateColors,
+  generateColorScale, generateDarkColorScale, recommendStateColors, neutralFromBrand,
 } from '../colorUtils'
 import {
   ALL_ROLES, recHexFor, sourceScaleFor, normalizeThemeValue, type GlobalScales,
@@ -34,16 +34,6 @@ function lightnessOf(hex: string): number {
   }
 }
 
-// Derive a low-saturation neutral that keeps the accent's hue — mirrors
-// colorControls.neutralFromBrand, duplicated here so this module stays free of
-// component imports.
-function neutralFromAccent(hex: string): string {
-  try {
-    return chroma(hex).set('hsl.s', 0.08).set('hsl.l', 0.46).hex()
-  } catch {
-    return hex
-  }
-}
 
 const ROLE_BY_KEY = new Map(ALL_ROLES.map((r) => [r.key, r]))
 
@@ -75,7 +65,7 @@ export function materializeImport(analysis: ImportAnalysis, opts: MaterializeOpt
     snap.grayBaseColor = f.neutral.baseHex
     snap.grayLightScale = { ...f.neutral.scale }
   } else if (f.accent) {
-    snap.grayBaseColor = neutralFromAccent(f.accent.baseHex)
+    snap.grayBaseColor = neutralFromBrand(f.accent.baseHex, snap.neutralTint)
     snap.grayLightScale = generateColorScale(snap.grayBaseColor, algo, 0, snap.pageBackground)
   }
   // (No accent and no neutral → the default Figma gray ramp stays.)

@@ -1,14 +1,20 @@
-// Header actions — the pill row from the Figma header design:
+// Header actions — the pill row from the Figma header design originally read
 //   + New · ⬆ Import JSON · ▸ Kits
-// New opens a category menu (Color/Font/Radius/Spacing/Sizes, matching the
-// Variables rail) → NewTokenWizard, a guided 2–3 step flow, in Configurator;
-// Import reuses the shell's existing modal; Kits is a self-contained "save
-// current as + previous kits" popover over the local savedSystems registry.
-// Share was retired — it opened the exact same ExportWizard as the Export
-// pill, just pre-checked to whole-system instead of the active section, and
-// having both read as two buttons doing one job. Export's own Step 1 lets you
-// select every collection manually, so nothing is unreachable, just one pill
-// fewer for the same result.
+// New (a category menu → NewTokenWizard, a guided 2–3 step flow) and Import
+// JSON (this row's entry into ImportSystemModal) are REMOVED, not hidden —
+// both flows shipped without enough guardrails to be self-explanatory (no
+// preview of what "New" would actually add, no validation feedback on a bad
+// JSON paste) and were confusing enough in practice that leaving them live
+// did more harm than the feature was worth. `NewTokenWizard.tsx` and
+// `ImportSystemModal.tsx` are NOT deleted — same precedent as
+// `WorkbenchLayout`/`PickerColor`/`HomeView` (see CLAUDE.md): kept for
+// reference, not wired up. Import is still reachable from Save & Share
+// (`SaveView`'s own `onImport`, a separate entry point this file never owned).
+// Kits is a self-contained "save current as + previous kits" popover over the
+// local savedSystems registry — untouched.
+// Share was retired earlier for the same "two buttons, one job" reason — it
+// opened the exact same ExportWizard as the Export pill, just pre-checked to
+// whole-system. Export's own Step 1 still selects every collection manually.
 
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,16 +22,6 @@ import { useDesignStore } from '../../store/useDesignStore'
 import HeaderPill from '../ui/HeaderPill'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
-const PlusIcon: ComponentType = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-)
-const UploadIcon: ComponentType = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
-  </svg>
-)
 const FolderIcon: ComponentType = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -170,91 +166,13 @@ function KitsPopover({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── New-token menu — the categories match SectionRail's Variables group
-// exactly (same array, passed down from Configurator), so picking one and
-// scanning the rail always agree. ─────────────────────────────────────────────
-function NewTokenMenu({ categories, onSelect, onClose }: {
-  categories: { key: string; label: string; Icon: ComponentType }[]
-  onSelect: (key: string) => void
-  onClose: () => void
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [onClose])
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.98 }}
-      transition={{ duration: 0.14, ease: 'easeOut' }}
-      role="dialog"
-      aria-label="New token"
-      className="absolute left-0 top-full mt-2 z-30 w-56 rounded-2xl border border-line bg-app shadow-xl p-2"
-    >
-      <span className="block px-2.5 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
-        New token
-      </span>
-      {categories.map(({ key, label, Icon }) => (
-        <button
-          key={key}
-          onClick={() => onSelect(key)}
-          className="w-full flex items-center gap-2.5 h-9 px-2.5 rounded-xl text-[13px] text-left text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-        >
-          <span className="flex-shrink-0 text-fg-faint"><Icon /></span>
-          <span className="truncate">{label}</span>
-        </button>
-      ))}
-    </motion.div>
-  )
-}
-
-// ── The pill row itself (header rightSlot on Home) ───────────────────────────
-export default function HomeActions({ onNew, onImport, tokenCategories }: {
-  /** Called with the picked category key (`color`|`typography`|`radius`|`spacing`|`sizes`). */
-  onNew: (category: string) => void
-  onImport: () => void
-  tokenCategories: { key: string; label: string; Icon: ComponentType }[]
-}) {
+// ── The pill row itself (header rightSlot on Home) — Kits only now ──────────
+export default function HomeActions() {
   const [kitsOpen, setKitsOpen] = useState(false)
-  const [newOpen, setNewOpen] = useState(false)
   const kitsBtn = useRef<HTMLButtonElement>(null)
-  const newBtn = useRef<HTMLButtonElement>(null)
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative">
-        <Pill
-          Icon={PlusIcon}
-          label="New"
-          onClick={() => setNewOpen((v) => !v)}
-          buttonRef={newBtn}
-          aria-haspopup
-          aria-expanded={newOpen}
-        />
-        <AnimatePresence>
-          {newOpen && (
-            <NewTokenMenu
-              categories={tokenCategories}
-              onSelect={(key) => { setNewOpen(false); onNew(key) }}
-              onClose={() => setNewOpen(false)}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-      <Pill Icon={UploadIcon} label="Import JSON" onClick={onImport} />
       <div className="relative">
         <Pill
           Icon={FolderIcon}

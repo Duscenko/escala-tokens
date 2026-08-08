@@ -423,6 +423,27 @@ export function neutralTintSpec(tint: NeutralTint = DEFAULT_NEUTRAL_TINT) {
   return NEUTRAL_TINTS.find((t) => t.key === tint) ?? NEUTRAL_TINTS[1]
 }
 
+/**
+ * A low-saturation neutral carrying the accent's HUE — the "linked neutral".
+ * Analogous, not complementary: the greys should read as belonging to the same
+ * world as the brand (Radix/HeroUI's model), which a 180° rotation would break.
+ * How much hue survives is the tint's `brandSat` (0 at `pure` — a linked
+ * neutral is a true grey there, by definition, not a bug).
+ *
+ * Lives here, not in `colorControls`, because it is pure colour math with no
+ * component dependency AND the store's migration needs it to detect whether a
+ * persisted neutral was hand-picked or link-derived. It used to be duplicated
+ * in `tokenImport/materialize.ts` for exactly that "stay free of component
+ * imports" reason — that copy is gone; there is one implementation now.
+ */
+export function neutralFromBrand(hex: string, tint: NeutralTint = DEFAULT_NEUTRAL_TINT): string {
+  try {
+    return chroma(hex).set('hsl.s', neutralTintSpec(tint).brandSat).set('hsl.l', 0.46).hex()
+  } catch {
+    return hex
+  }
+}
+
 export function backgroundFromBase(
   baseHex: string,
   appearance: ScaleAppearance = 'light',

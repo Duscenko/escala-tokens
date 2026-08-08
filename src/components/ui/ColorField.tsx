@@ -65,6 +65,17 @@ export function ColorPickerPanel({
   const [hsva, setHsva] = useState<HSVA>(() => toHsva(value))
   const [hexDraft, setHexDraft] = useState('')
 
+  // The colour this panel OPENED with — captured once, on mount, never
+  // touched by the outside-resync effect below. Every call site that passes
+  // `suggestions` mounts this panel fresh per popover open (`{open && <.../>}`
+  // / a portal keyed to the editing target), so "on mount" reliably means "the
+  // hex the user had searched/typed/picked before touching anything in here."
+  // It exists so clicking a Muted/Vivid/High-contrast suggestion — which
+  // overwrites the field with a DIFFERENT hex — isn't a one-way trip back to
+  // whatever was found by eye.
+  const [initialHsva] = useState<HSVA>(() => toHsva(value))
+  const initialHex = useMemo(() => toHex(initialHsva), [initialHsva])
+
   // Resync from the outside value only when it represents a different color than
   // what we're already showing (avoids clobbering mid-drag / on gray hue loss).
   useEffect(() => {
@@ -269,30 +280,52 @@ export function ColorPickerPanel({
           user's own library (a memory), this is a recommendation about the
           colour currently in the field, so it reads as a consequence of what's
           above it rather than another palette to browse. */}
-      {variants.length > 0 && (
+      {suggestions && (variants.length > 0 || hex.toLowerCase() !== initialHex.toLowerCase()) && (
         <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
-          <span className="text-[11px] text-fg-muted">Accessible options</span>
-          <div className="grid grid-cols-2 gap-1.5">
-            {variants.map((v) => (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-fg-muted">Accessible options</span>
+            {/* Only appears once the field has actually moved away from what
+                this panel opened with — a Reset that's always visible reads as
+                "there's something to undo" even when there isn't. */}
+            {hex.toLowerCase() !== initialHex.toLowerCase() && (
               <button
-                key={v.hex}
                 type="button"
-                onClick={() => apply(toHsva(v.hex))}
-                title={`${v.hex.toUpperCase()} — ${v.note} (${v.contrast.toFixed(2)}:1)`}
-                className="flex items-center gap-1.5 min-w-0 pl-1 pr-1.5 py-1 rounded-lg border border-line hover:border-line-strong hover:bg-elevated transition-colors text-left"
+                onClick={() => apply(initialHsva)}
+                title={`Back to ${initialHex.toUpperCase()} — what you had before picking a suggestion`}
+                className="flex items-center gap-1 text-[11px] text-fg-faint hover:text-fg transition-colors"
               >
-                <span
-                  aria-hidden
-                  className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
-                  style={{ background: v.hex }}
-                />
-                <span className="min-w-0 truncate text-[10px] text-fg-muted">{v.label}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
+                </svg>
+                Reset
               </button>
-            ))}
+            )}
           </div>
-          <span className="text-[10px] text-fg-faint leading-snug">
-            Same hue, tuned so white text passes on the solid.
-          </span>
+          {variants.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5">
+              {variants.map((v) => (
+                <button
+                  key={v.hex}
+                  type="button"
+                  onClick={() => apply(toHsva(v.hex))}
+                  title={`${v.hex.toUpperCase()} — ${v.note} (${v.contrast.toFixed(2)}:1)`}
+                  className="flex items-center gap-1.5 min-w-0 pl-1 pr-1.5 py-1 rounded-lg border border-line hover:border-line-strong hover:bg-elevated transition-colors text-left"
+                >
+                  <span
+                    aria-hidden
+                    className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
+                    style={{ background: v.hex }}
+                  />
+                  <span className="min-w-0 truncate text-[10px] text-fg-muted">{v.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {variants.length > 0 && (
+            <span className="text-[10px] text-fg-faint leading-snug">
+              Same hue, tuned so white text passes on the solid.
+            </span>
+          )}
         </div>
       )}
     </div>

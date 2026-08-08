@@ -11,14 +11,17 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
-type Tab = 'foundations' | 'components' | 'docs'
+// Two tabs, matching the two top-nav destinations: EDIT the system
+// ('foundations' — the Variables Generator) or READ it ('docs' — the one docs
+// site, Foundations + Components in a single rail). The old 'components' and
+// 'rules' tabs were folded into 'docs'; see DocumentationView's header.
+type Tab = 'foundations' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
-import ComponentDocPane from '../components/configurator/ComponentDocPane'
 import ExportView from '../components/configurator/ExportView'
 import FigmaConnectView from '../components/configurator/FigmaConnectView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
-import DocsView, { DESIGN_RULES_KEY } from '../components/configurator/DocsView'
+import DocumentationView, { OVERVIEW_KEY, isFoundationKey, docRailGroups } from '../components/configurator/DocumentationView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -28,7 +31,6 @@ import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
-import NewTokenWizard, { type TokenCategory } from '../components/configurator/NewTokenWizard'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
@@ -227,14 +229,6 @@ const GitHubIcon: ComponentType = () => (
   </svg>
 )
 
-function CatalogueCheck() {
-  return (
-    <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-      <path d="M2 5.2 4 7.2 8 2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
 
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
@@ -253,7 +247,9 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 }
 
 export default function Configurator() {
-  const { primaryScale, primaryDarkScale, primaryColor, selectedComponents, toggleComponent, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
+  // `selectedComponents`/`toggleComponent` are no longer read here — the
+  // include checkbox moved into ComponentsView along with the master list.
+  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
@@ -344,26 +340,18 @@ export default function Configurator() {
     setAboutSection(section)
     setAboutOpen(true)
   }
-  // "New" in Variables — picking a category from HomeActions' menu opens the
-  // guided NewTokenWizard scoped to it.
-  const [newTokenCategory, setNewTokenCategory] = useState<TokenCategory | null>(null)
-  // A color family the wizard just created — ColorPrimitives switches its
-  // active family to this so the table actually shows what was just made.
-  const [focusColorFamily, setFocusColorFamily] = useState<string | null>(null)
-  // Components catalogue — filters the master list by label/key.
+  // Components catalogue — filters the master list by label/key. ONE search
+  // state now: Documentation carried a second, identical one (`docsSearch`)
+  // over the same catalogue, so a filter typed in one section was invisible in
+  // the other. Rendered in CenterHeader's row, not inside the master list's
+  // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // Active component category (Components section sub-nav) — filters the list.
-  const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
-  // Documentation's rail carries one extra entry — the token reference — which
-  // is NOT a component category. Held separately so selecting it can't leave
-  // `componentCategory` pointing at something the Components tab can't filter
-  // by; switching back to a real category just clears it.
-  const [docsDesignRules, setDocsDesignRules] = useState(false)
-  // Documentation's catalogue filter. Rendered in CenterHeader's row (see
-  // `right` below), not inside DocsView's own sidebar — the box used to open
-  // that column with a gap under the header; this puts it on the same line
-  // as the "Documentation | The full reference…" title instead.
-  const [docsSearch, setDocsSearch] = useState('')
+  // The docs site's active rail entry — a FOUNDATION key ('color', 'shadow'…),
+  // the Overview sentinel, or a component CATEGORY name. One state for both
+  // rail groups, because they are one rail: `isFoundationKey()` is the only
+  // place the two kinds are told apart. Lands on Overview, the system-wide
+  // reference, rather than mid-catalogue.
+  const [docKey, setDocKey] = useState<string>(OVERVIEW_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
   // Every foundation section can export its token slice.
@@ -426,12 +414,24 @@ export default function Configurator() {
     commitVisit()
     markFoundationComplete('components')
     setExportMode(null)
-    setTab('components')
+    setTab('docs')
+    // Selecting a component from the master list while a FOUNDATION page is
+    // open has to move the rail too, or the rail would keep pointing at a
+    // foundation while a component article is on screen.
+    if (isFoundationKey(docKey)) setDocKey(c.category)
     setActiveComponent(c)
+  }
+  // The docs rail — foundations and categories alike. Opening a component
+  // category is handled by DocumentationView's own effect.
+  const selectDocKey = (key: string) => {
+    commitVisit()
+    setExportMode(null)
+    setTab('docs')
+    setDocKey(key)
   }
   const changeTab = (t: Tab) => {
     commitVisit()
-    if (t === 'components') markFoundationComplete('components')
+    if (t === 'docs') markFoundationComplete('components')
     setExportMode(null)
     setTab(t)
   }
@@ -500,7 +500,6 @@ export default function Configurator() {
           onFocusChange={setSemanticFocus}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
-          focusFamilyKey={focusColorFamily}
         />
       </div>
     ) : RAILED_FOUNDATIONS.has(section.key) ? (
@@ -518,44 +517,19 @@ export default function Configurator() {
       </div>
     )
     centerKey = `f-${section.key}`
-  } else if (tab === 'docs') {
+  } else {
+    // ── The docs site — Foundations + Components in one rail ──
+    const onFoundation = isFoundationKey(docKey)
     header = {
       Icon: DocIcon,
       title: 'Documentation',
-      subtitle: 'The full reference for every component — usage, examples, accessibility and API.',
-      // On the same line as the title now, not floating atop the sidebar with
-      // a gap under this row. Hidden on Design Rules — it's one long page,
-      // not a filterable catalogue, so there's nothing here to search.
-      right: !docsDesignRules ? (
-        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={docsSearch}
-            onChange={(e) => setDocsSearch(e.target.value)}
-            placeholder="Search components"
-            aria-label="Search components"
-            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-          />
-          {docsSearch && (
-            <button onClick={() => setDocsSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-          )}
-        </div>
-      ) : undefined,
-    }
-    body = <DocsView previewTheme={previewTheme} category={docsDesignRules ? DESIGN_RULES_KEY : componentCategory} search={docsSearch} />
-    centerKey = 'docs'
-  } else {
-    header = {
-      Icon: ComponentsIcon,
-      title: 'Components',
-      subtitle: 'Browse the catalogue — toggle any component to include or remove it.',
-      // Same treatment as Documentation: on the header's own line, not
-      // floating atop the sidebar with a gap underneath it.
-      right: (
+      subtitle: onFoundation
+        ? 'The foundations you set in the Variables Generator — what each token is for, how to use it, and what it ships as.'
+        : 'One page per component — live playground, examples, accessibility, Figma and API.',
+      // Search filters the component catalogue only, so it's hidden on a
+      // foundation page rather than sitting there filtering nothing. On the
+      // header's own line, not floating atop the master list.
+      right: onFoundation ? undefined : (
         <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
@@ -576,79 +550,28 @@ export default function Configurator() {
       ),
     }
     body = (
-      <div className="h-full flex min-h-0">
-        {/* Master list (relocated from the old wide sidebar) — search now
-            lives in CenterHeader's row, so this starts flush at the first
-            category with no gap under the header. */}
-        <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
-          {(() => { const q = componentSearch.trim().toLowerCase(); return CATEGORIES
-            // No search → just the category picked in the sub-rail; searching
-            // spans every category so nothing is hidden behind the filter.
-            .filter((cat) => q ? true : cat === componentCategory)
-            .map((cat) => {
-            const items = COMPONENTS.filter(
-              (c) => c.category === cat && (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
-            )
-            if (!items.length) return null
-            return (
-              <div key={cat} className="flex flex-col gap-0.5">
-                <span className="text-[10px] text-fg-faint uppercase tracking-widest px-1">{cat}</span>
-                {items.map((comp) => {
-                  const isSelected = selectedComponents.includes(comp.key)
-                  const isActive = activeComponent?.key === comp.key
-                  return (
-                    <div
-                      key={comp.key}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => selectComponent(comp)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          selectComponent(comp)
-                        }
-                      }}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[12px] cursor-pointer transition-all ${
-                        isActive
-                          ? 'bg-surface shadow-sm text-fg border border-line'
-                          : 'text-fg-muted hover:bg-elevated/40 hover:text-fg border border-transparent'
-                      }`}
-                    >
-                      <span>{comp.label}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleComponent(comp.key)
-                        }}
-                        className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected ? 'bg-fg text-app' : 'bg-elevated border border-line-strong'
-                        }`}
-                        aria-label={isSelected ? `Remove ${comp.label}` : `Add ${comp.label}`}
-                      >
-                        {isSelected && <CatalogueCheck />}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )
-            })
-          })()}
-        </div>
-
-        {/* Detail */}
-        <div className="flex-1 min-w-0 overflow-y-auto p-6 lg:p-8">
-          <ComponentDocPane component={activeComponent} previewTheme={previewTheme} />
-        </div>
-      </div>
+      <DocumentationView
+        previewTheme={previewTheme}
+        railKey={docKey}
+        search={componentSearch}
+        active={activeComponent}
+        onSelect={selectComponent}
+        onSelectRailKey={setDocKey}
+        onEditFoundation={selectFoundation}
+      />
     )
-    centerKey = `c-${activeComponent?.key ?? 'none'}`
+    // Constant, NOT keyed on the open page: the view owns its own article
+    // remount, and re-keying here would rebuild the master list — losing its
+    // scroll position — on every pick.
+    centerKey = 'docs'
   }
 
-  // Preview is hidden in the Components tab (docs go full-width) and in every
-  // export/connect view (Code · Docs · Figma · GitHub) — those own the full
-  // panel. Save keeps the aside: it hosts the Overview + Connections panel.
-  const showPreview = (tab !== 'components' && tab !== 'docs' && !exportMode) || exportMode === 'save'
+  // Preview is hidden in Components (the page goes full-width and carries its
+  // own live playground) and in every export/connect view (Code · Docs · Figma
+  // · GitHub) — those own the full panel. Design Rules is a full-width
+  // reference sheet for the same reason. Save keeps the aside: it hosts the
+  // Overview + Connections panel.
+  const showPreview = (tab !== 'docs' && !exportMode) || exportMode === 'save'
 
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
@@ -657,7 +580,12 @@ export default function Configurator() {
   // now — Variables switches foundations via the horizontal FoundationIconRail
   // docked in the header instead, so there's no left column to reserve width
   // for there. TopNav's brand-block divider follows this, not `railVisible`.
-  const outerRailVisible = railVisible && tab !== 'foundations'
+  // Components is the only section left with an outer SectionRail: Variables
+  // switches via the horizontal FoundationIconRail, and Design Rules is one
+  // full-width sheet. `!== 'foundations'` used to be enough (docs had a rail
+  // too) — on Design Rules it drew the brand block's divider down into a
+  // column that isn't there, a rule leading nowhere.
+  const outerRailVisible = railVisible && tab === 'docs'
   // Color is the one foundation with its own internal 198px column (family
   // nav / token categories / gradient list — see ColorPrimitives, Step3,
   // StepGradients). It's not an outer rail, so `outerRailVisible` above stays
@@ -669,13 +597,11 @@ export default function Configurator() {
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
   const navActive: TopNavKey | null =
-    (!exportMode && tab === 'components') ? 'components'
-    : (!exportMode && tab === 'docs') ? 'documentation'
+    (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   const handleNav = (key: TopNavKey) => {
     if (key === 'variables') selectFoundation('color')
-    else if (key === 'components') changeTab('components')
     else changeTab('docs')
   }
 
@@ -702,36 +628,31 @@ export default function Configurator() {
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
       {/* ── Body: section sub-rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
-        {/* The second column is section-specific: Components get the category
-            rail. Documentation carries its own catalogue sidebar (DocsView).
-            Foundations no longer reserves an outer column at all — switching
-            lives in the horizontal FoundationIconRail docked in the header,
-            freeing this width for a foundation's own sub-nav (Color's family
-            Groups tree, promoted inside ColorPrimitives). */}
-        {railVisible && (tab === 'components' || tab === 'docs') && (
+        {/* The docs site's rail — TWO groups in one column, Foundations and
+            Categories, the way a real design-system site lists them. Its
+            entries come from `docRailGroups`, which derives Foundations from
+            the SAME `FOUNDATION_DOCS` the articles render (so the rail can
+            never offer a page that doesn't exist) and Categories from the
+            component catalogue. The Foundations icons are the Variables
+            Generator's OWN foundation glyphs — one mark per foundation across
+            the editor's toolbar, this rail and the page header, so "Shadow"
+            looks the same wherever you meet it.
+            Variables reserves no outer column at all — switching lives in the
+            horizontal FoundationIconRail docked in its header, freeing this
+            width for a foundation's own sub-nav (Color's family Groups tree,
+            promoted inside ColorPrimitives). */}
+        {railVisible && tab === 'docs' && (
           <SectionRail
-            ariaLabel="Component categories"
-            title={tab === 'docs' ? 'Documentation' : 'Components'}
-            active={tab === 'docs' && docsDesignRules ? DESIGN_RULES_KEY : componentCategory}
-            onSelect={(key) => {
-              if (key === DESIGN_RULES_KEY) { setDocsDesignRules(true); return }
-              setDocsDesignRules(false)
-              setComponentCategory(key)
-            }}
+            ariaLabel="Documentation"
+            title="Documentation"
+            active={docKey}
+            onSelect={setDocKey}
             collapsed={railCollapsed}
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
-            groups={[
-              // Documentation only: the system's own reference sheet, above the
-              // component catalogue because it documents what the components
-              // are BUILT from.
-              ...(tab === 'docs'
-                ? [{ label: 'Reference', items: [{ key: DESIGN_RULES_KEY, label: 'Design Rules', Icon: RulesIcon }] }]
-                : []),
-              {
-                label: 'Categories',
-                items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
-              },
-            ]}
+            groups={docRailGroups(
+              (key) => key === OVERVIEW_KEY ? RulesIcon : FOUNDATIONS.find((f) => f.key === key)?.Icon,
+              (cat) => CATEGORY_ICONS[cat],
+            )}
           />
         )}
 
@@ -764,11 +685,7 @@ export default function Configurator() {
                   ]}
                 />
                 <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-                  <HomeActions
-                    onNew={(key) => setNewTokenCategory(key as TokenCategory)}
-                    onImport={() => setImportOpen(true)}
-                    tokenCategories={VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon }))}
-                  />
+                  <HomeActions />
                   {canExportSection && (
                     <HeaderPill
                       Icon={ExportIcon}
@@ -913,29 +830,6 @@ export default function Configurator() {
               setTab('foundations')
               setActiveFoundation('color')
               setColorTab('primary')
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Guided token creation — Name/Target → Value/Scale → Confirm, so "New"
-          never lands straight on the full table. */}
-      <AnimatePresence>
-        {newTokenCategory && (
-          <NewTokenWizard
-            category={newTokenCategory}
-            Icon={FOUNDATIONS.find((f) => f.key === newTokenCategory)?.Icon ?? FOUNDATIONS[0].Icon}
-            onClose={() => setNewTokenCategory(null)}
-            onDone={(focusKey) => {
-              const category = newTokenCategory
-              setNewTokenCategory(null)
-              selectFoundation(category)
-              if (category === 'color' && focusKey) {
-                // Land on the family the wizard just created (or the Accent it
-                // just replaced), on the tab that renders the families table.
-                setColorTab('primary')
-                setFocusColorFamily(focusKey)
-              }
             }}
           />
         )}

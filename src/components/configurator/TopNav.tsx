@@ -9,12 +9,17 @@ import ThemeToggle from './ThemeToggle'
 // the left sits over the token-controls column, the nav + actions on the right
 // sit over the canvas.
 
-export type TopNavKey = 'variables' | 'documentation' | 'components'
+// TWO destinations, and that is the whole model: you either EDIT the system
+// (Variables Generator) or READ it (Documentation). Documentation covers both
+// halves of the system in one rail — Foundations and Components — the way every
+// real design-system site does. It used to be three items where "Documentation"
+// re-rendered the same catalogue "Components" already showed, and "Design Rules"
+// was a separate un-navigable scroll of the foundations.
+export type TopNavKey = 'variables' | 'docs'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'variables', label: 'Variables Generator' },
-  { key: 'documentation', label: 'Documentation' },
-  { key: 'components', label: 'Components' },
+  { key: 'docs', label: 'Documentation' },
 ]
 
 interface TopNavProps {

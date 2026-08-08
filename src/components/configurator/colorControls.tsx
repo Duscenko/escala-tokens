@@ -813,13 +813,10 @@ export function TransparencyStrip({ scale, labels }: { scale: Record<number, str
 // have to agree on the level, or a "Vivid" system would still flatten the
 // neutral to a near-gray the moment the accent moved. Defaults to `subtle`,
 // whose 0.08 is the pre-tint constant verbatim.
-export function neutralFromBrand(hex: string, tint: NeutralTint = DEFAULT_NEUTRAL_TINT): string {
-  try {
-    return chroma(hex).set('hsl.s', neutralTintSpec(tint).brandSat).set('hsl.l', 0.46).hex()
-  } catch {
-    return hex
-  }
-}
+// Moved to `colorUtils` (pure colour math, and the store's v47 migration needs
+// it). Re-exported here so the existing import sites keep working — and so
+// there's still exactly ONE implementation, which is the point.
+export { neutralFromBrand } from '../../lib/colorUtils'
 
 export function InfoDot({ tip }: { tip: string }) {
   return (

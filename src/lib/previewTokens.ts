@@ -77,9 +77,13 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   const grayScale = pal?.gray ?? (kind === 'dark' ? grayDarkScale : grayLightScale)
   const brandSolid = resolveRole('background-brand-solid') || brandFallback || '#9522e9'
   // Resolve the gradient assigned to each preview surface into a CSS string.
+  // Resolved in the PREVIEWED appearance: a linked gradient carries a dark twin
+  // (its stops are tone references), so previewing dark used to paint the light
+  // hexes on the dark page — the same class of bug the dark ramps fixed for
+  // solid colours.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
-    return g ? gradientToCss(g) : undefined
+    return g ? gradientToCss(g, kind === 'dark' ? 'dark' : 'light') : undefined
   }
   const tokens: PreviewTokens = {
     // background-primary is base.white in light / gray tone 12 in dark

@@ -90,12 +90,25 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   // convention (applied on <html>); extra themes use [data-theme="…"].
   themeOrder.filter((t) => t !== 'light').forEach((theme) => {
     const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
-    if (!entries.length) return
-    const selector = theme === 'dark' ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`
     const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
+    // A dark-kind theme also re-points the gradients that carry a dark
+    // appearance — same `--gradient-<slug>` name, overridden in the same block
+    // the semantic tokens are, so consuming a gradient never needs a second
+    // variable name or a theme check.
+    const darkGradients = kind === 'dark'
+      ? gradients.filter((g) => g.stops.some((s) => s.darkColor))
+      : []
+    if (!entries.length && !darkGradients.length) return
+    const selector = theme === 'dark' ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`
     lines.push(`\n${selector} {`)
-    lines.push(`  /* Semantic tokens — ${theme} */`)
-    entries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, kind)};`))
+    if (entries.length) {
+      lines.push(`  /* Semantic tokens — ${theme} */`)
+      entries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, kind)};`))
+    }
+    if (darkGradients.length) {
+      lines.push(`  /* Gradients — ${theme} */`)
+      darkGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, 'dark')};`))
+    }
     lines.push('}')
   })
 
@@ -223,9 +236,9 @@ ${Object.entries(sizes).map(([k,v])=>`| \`--size-${k}\` | \`${v}\` |`).join('\n'
 ## Gradients
 
 ${gradients.length
-  ? `| Token | Type | Value |
-|-------|------|-------|
-${gradients.map((g)=>`| \`--gradient-${gradientSlug(g)}\` | ${g.type} | \`${gradientToCss(g)}\` |`).join('\n')}
+  ? `| Token | Type | Light | Dark |
+|-------|------|-------|------|
+${gradients.map((g)=>`| \`--gradient-${gradientSlug(g)}\` | ${g.type} | \`${gradientToCss(g)}\` | ${g.stops.some((s)=>s.darkColor) ? `\`${gradientToCss(g, 'dark')}\`` : '—'} |`).join('\n')}
 
 Assigned surfaces: ${[
     gradientSlugById(gradientAssignments.cover) ? `card cover → \`--gradient-${gradientSlugById(gradientAssignments.cover)}\`` : null,

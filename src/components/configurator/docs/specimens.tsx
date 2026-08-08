@@ -441,7 +441,23 @@ function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 function ToastSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const c = statusColor(t, v.Status ?? 'Success')
-  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
+  // An "inverse" chip wants a background that's ALWAYS legible against
+  // `color: t.surface` (the page colour, used as ink below) — which is
+  // exactly what `neutralText` already guarantees in every theme, since it's
+  // the tone the system solved specifically to read on the page. Reusing that
+  // pairing (invert it: text colour becomes the chip's fill) is self-
+  // consistent by construction in both directions.
+  //
+  // This used to reach for `background-overlay` — a MODAL SCRIM role (see
+  // semanticRoles.ts), not a card surface. It happens to look right in light
+  // mode (scrim = near-black, same as neutralText there) but breaks in dark:
+  // `recDarkTone` deliberately INVERTS the scrim so it stays near-black in
+  // both themes (a scrim has to darken the backdrop either way) — which means
+  // in dark mode it lands within a few tones of `darkBackground`, i.e. nearly
+  // the page's own colour. Paired with `color: t.surface` (dark mode's near-
+  // black page), the toast became a near-black chip with near-black text on a
+  // near-black page — unreadable, and barely visible as its own surface.
+  const inverse = t.neutralText
   return (
     <div
       style={{
@@ -526,7 +542,10 @@ function ModalSpecimen({ t }: { t: PreviewTokens }) {
 }
 
 function TooltipSpecimen({ t }: { t: PreviewTokens }) {
-  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
+  // See ToastSpecimen's note — same inverse-chip pairing, same dark-mode fix
+  // (was `background-overlay`, a modal scrim that goes near-black in BOTH
+  // themes and nearly matched the dark page, making this unreadable there).
+  const inverse = t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <span style={{ fontSize: 12, padding: '6px 10px', borderRadius: radiusOf(t, 'md', '8px'), background: inverse, color: t.surface }}>
@@ -1300,7 +1319,8 @@ function PopoverSpecimen({ t }: { t: PreviewTokens }) {
 }
 
 function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
-  const inverse = t.semanticMap?.['background-overlay'] || t.neutralText
+  // See ToastSpecimen's note — same fix, same reason.
+  const inverse = t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       <span style={{ fontSize: 12, padding: '6px 10px', borderRadius: radiusOf(t, 'md', '8px'), background: inverse, color: t.surface }}>

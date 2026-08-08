@@ -155,7 +155,10 @@ export function useApplyAccentColor() {
       // linked gradient tracks the accent, it isn't reset by it.
       for (const g of gradients) {
         if (!g.linked) continue
-        const stops = linkedStopsFor(g.id, scale, g.stops)
+        // Both ramps: one `tone` reference, resolved into a light value AND a
+        // dark one, so a linked gradient tracks the accent in both appearances
+        // rather than going stale the moment the preview flips to dark.
+        const stops = linkedStopsFor(g.id, scale, g.stops, scaleDark)
         if (stops) updateGradient(g.id, { stops })
       }
     } catch {
@@ -307,9 +310,17 @@ export function useApplyPageBackground() {
 // CUSTOM neutral family retints that family instead and leaves the globals (and
 // the page) alone — only the system's own Base moves the page.
 export function useApplyGrayColor() {
-  return useCallback((hex: string, themeKey = 'light') => {
+  /** `fromLink` marks the ONE caller that isn't a user edit: the accent applier
+   *  re-deriving the neutral because the link is on. Every other path is a
+   *  person setting the neutral by hand, which unlinks it — otherwise their
+   *  choice would be silently overwritten on the next accent change. The accent
+   *  applier writes the gray inline (it doesn't route through here), so this
+   *  defaults to `false` safely; the flag exists for any future caller that
+   *  does need to recompute without unlinking. */
+  return useCallback((hex: string, themeKey = 'light', fromLink = false) => {
     const s = useDesignStore.getState()
     try {
+      if (!fromLink && s.linkNeutralToAccent) s.setLinkNeutralToAccent(false)
       const refs = s.themeSources[themeKey]
       if (refs && refs.gray !== 'neutral') {
         const kind = s.themeKinds[themeKey] ?? 'light'

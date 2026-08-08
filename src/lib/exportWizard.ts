@@ -8,7 +8,7 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
-import { generateTokenJSON } from './tokenGenerator'
+import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { buildSectionExport, formatColor, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
 
@@ -497,4 +497,73 @@ export function buildFamilyExport(
     primitiveFamilies: [family],
     primitiveAppearance: appearance,
   })
+}
+
+// ── Alpha ramp export ────────────────────────────────────────────────────────
+// The per-column export icon used to be hidden entirely on alpha families
+// (Accent-Alpha, a custom family's `-Alpha` twin) — CLAUDE.md's own reasoning
+// was "the icon would hand over the solid twin instead", and that was literal:
+// alpha values live in `colors.primitiveAlpha`, a bucket `buildFamilyExport`'s
+// pipeline (scoped to `colors.primitive` via `primitiveFamilies`) never reads,
+// so routing an alpha family through it silently exported nothing or the wrong
+// ramp. This is a SEPARATE, minimal builder rather than teaching the whole
+// wizard pipeline about a bucket only this one popover needs to reach.
+//
+// Only the formats that can be built CORRECTLY from a bare `Record<number,
+// string>` are offered — see `ALPHA_EXPORT_FORMATS` below. Tailwind and
+// Markdown delegate to `sectionExport`'s builders, which have zero concept of
+// alpha primitives; faking support there would repeat the exact bug this
+// function exists to fix, just in two formats instead of six.
+export const ALPHA_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala', 'css', 'scss']
+
+export function buildAlphaFamilyExport(
+  /** The alpha Family's own `tokenPrefix` (e.g. `accent-a`, `<custom>-a`) —
+   *  already the exact prefix `tokenGenerator` flattens `colors.primitiveAlpha`
+   *  under, so the output can't disagree with what's already in tokens.json. */
+  tokenPrefix: string,
+  scale: Record<number, string>,
+  format: WizardFormat,
+  colorFormat: ColorFormat = 'hex',
+): WizardFile[] {
+  // Escala JSON is the documented exception for the solid path too — it ships
+  // the whole document by contract, and `colors.primitiveAlpha` is already
+  // part of it, so no family-specific assembly is needed here at all.
+  if (format === 'escala') {
+    const project = useDesignStore.getState().projectName || 'escala'
+    const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'escala'
+    return [{ name: `${slug}.tokens.json`, content: JSON.stringify(generateTokenJSON(), null, 2), language: 'json' }]
+  }
+
+  const naming = useDesignStore.getState().colorNaming
+  // Same flattener `tokenGenerator` uses for `colors.primitiveAlpha` itself —
+  // `accent-a-1`…`accent-a-12` (or the naming scheme's own labels) — so a
+  // reader can match these names straight back to the real export.
+  const flat = flattenScale(tokenPrefix, scale, naming)
+
+  if (format === 'w3c') {
+    const family: Record<string, W3CNode> = {}
+    for (const [name, hex] of Object.entries(flat)) {
+      const [, tone] = splitFlat(name)
+      family[tone] = token(hex, 'color')
+    }
+    const project = useDesignStore.getState().projectName || 'escala'
+    const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'escala'
+    return [{
+      name: `${slug}.tokens.json`,
+      content: JSON.stringify({ color: { [tokenPrefix]: family } }, null, 2),
+      language: 'json',
+    }]
+  }
+
+  // css / scss — same `--color-<name>` / `$color-<name>` naming
+  // `varLines`/`exporters.ts` already use for every other primitive, so an
+  // alpha ramp's variables read as siblings of the solid ones, not a
+  // different convention.
+  const lines = Object.entries(flat).map(([n, v]) => [`color-${n}`, formatColor(v, colorFormat)] as const)
+  if (format === 'css') {
+    const body = lines.map(([n, v]) => `  --${n}: ${v};`).join('\n')
+    return [{ name: 'escala.css', content: `:root {\n${body}\n}`, language: 'css' }]
+  }
+  const body = lines.map(([n, v]) => `$${n}: ${v};`).join('\n')
+  return [{ name: 'escala.scss', content: body, language: 'scss' }]
 }

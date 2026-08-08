@@ -25,6 +25,29 @@ export interface GradientStop {
    * a tone of the accent ramp, exactly like a semantic token is.
    */
   tone?: number
+  /**
+   * The stop's colour in the DARK appearance. Absent ⇒ the stop looks the same
+   * in both, which is the honest default for a hand-picked hex.
+   *
+   * For a LINKED stop this is derived, never hand-set: it is a cache of
+   * `primaryDarkScale[tone]`, the same tone read off the accent's dark twin —
+   * the Radix two-scale model the whole system already follows ("step N means
+   * the same role in both appearances, no inversion anywhere"). That is why a
+   * linked gradient gets its dark version for free: the stop is a REFERENCE, so
+   * there is a second ramp to resolve it against. An unlinked stop has no ramp,
+   * so its dark value is the user's own choice.
+   */
+  darkColor?: string
+}
+
+/** Which appearance a gradient is being resolved for. */
+export type GradientAppearance = 'light' | 'dark'
+
+/** A stop's colour in one appearance. The single place the light/dark fallback
+ *  lives — a stop with no `darkColor` renders its light colour in both, so
+ *  every consumer degrades the same way. */
+export function stopColor(s: GradientStop, appearance: GradientAppearance = 'light'): string {
+  return appearance === 'dark' ? (s.darkColor || s.color) : s.color
 }
 
 export interface GradientDef {
@@ -48,11 +71,13 @@ export interface GradientAssignments {
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
 
-/** The `background`-ready CSS for a gradient (stops sorted by position). */
-export function gradientToCss(g: GradientDef): string {
+/** The `background`-ready CSS for a gradient (stops sorted by position), in the
+ *  given appearance. Defaults to light, so every pre-existing call site keeps
+ *  producing exactly what it produced before. */
+export function gradientToCss(g: GradientDef, appearance: GradientAppearance = 'light'): string {
   const stops = [...g.stops]
     .sort((a, b) => a.pos - b.pos)
-    .map((s) => `${s.color} ${clampPos(s.pos)}%`)
+    .map((s) => `${stopColor(s, appearance)} ${clampPos(s.pos)}%`)
     .join(', ')
   return g.type === 'radial'
     ? `radial-gradient(circle at 30% 30%, ${stops})`
@@ -164,6 +189,11 @@ export function linkedStopsFor(
   id: string,
   scale: Record<number, string> | undefined,
   prev?: GradientStop[],
+  /** The accent's DARK twin. Given, every stop also caches its dark value from
+   *  the SAME tone — one reference, two appearances. Omitted, `darkColor` is
+   *  left off entirely and the gradient renders identically in both, which is
+   *  what every pre-dark call site expects. */
+  darkScale?: Record<number, string>,
 ): GradientStop[] | null {
   const signature = LINKED_GRADIENT_TONES[id]
   if (!signature) return null
@@ -176,6 +206,7 @@ export function linkedStopsFor(
     tone,
     pos: clampPos(pos),
     color: toneColor(scale, tone, fallback),
+    ...(darkScale ? { darkColor: toneColor(darkScale, tone, fallback) } : null),
   }))
 }
 
@@ -195,6 +226,9 @@ export function makeDefaultGradients(
    *  Omitted ⇒ the legacy hex derivation, which the v45 migration then
    *  converts. */
   scale?: Record<number, string>,
+  /** The accent's dark twin — same reason as `scale`, so a fresh system's
+   *  linked gradients ship a dark appearance from the first render. */
+  darkScale?: Record<number, string>,
 ): GradientDef[] {
   const ramp = scale
   return [
@@ -203,7 +237,7 @@ export function makeDefaultGradients(
       name: 'Brand Cover',
       type: 'linear',
       angle: 135,
-      stops: (ramp && linkedStopsFor('brand-cover', ramp)) || brandCoverStops(accent),
+      stops: (ramp && linkedStopsFor('brand-cover', ramp, undefined, darkScale)) || brandCoverStops(accent),
       linked: true,
     },
     {
@@ -211,7 +245,7 @@ export function makeDefaultGradients(
       name: 'Aurora',
       type: 'linear',
       angle: 120,
-      stops: (ramp && linkedStopsFor('aurora', ramp)) || brandAvatarStops(accent),
+      stops: (ramp && linkedStopsFor('aurora', ramp, undefined, darkScale)) || brandAvatarStops(accent),
       linked: true,
     },
     {

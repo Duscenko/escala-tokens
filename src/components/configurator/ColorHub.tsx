@@ -112,7 +112,7 @@ export default function ColorHub({
         // Gradients owns the same three-row shell as the other two tabs now —
         // flush, no padding wrapper, tabBar rendered inside its own header row.
         <div className="flex-1 min-h-0">
-          <StepGradients tabBar={tabBar} />
+          <StepGradients tabBar={tabBar} previewTheme={previewTheme} onPreviewThemeChange={onPreviewThemeChange} />
         </div>
       )}
     </div>

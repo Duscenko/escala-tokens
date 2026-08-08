@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
-import { DEFAULT_NEUTRAL_TINT, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
+import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
@@ -121,6 +121,11 @@ export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c73
 // created an init-order cycle (makeDesignDefaults() runs at import time and
 // found generateColorScale still undefined).
 export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale('#9522e9', 'radix', 0, '#ffffff')
+// The same ramp's DARK twin, for the same reason: a linked gradient stop is one
+// `tone` reference resolved into BOTH appearances, so a brand-new system's
+// gradients carry a dark version from the first render rather than rendering
+// their light hexes on the dark page until the first accent edit.
+export const DEFAULT_ACCENT_DARK_SCALE: ColorScale = generateFamilyDarkScale('#9522e9', 'radix', 0, '#0c0e12')
 // ──────────────────────────────────────────────────────────────────────────
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
@@ -282,6 +287,12 @@ export interface DesignSnapshot {
   // Part of the snapshot, not a global preference: it changes the generated
   // ramps, so a saved system has to carry its own level.
   neutralTint: NeutralTint
+  /** While true, the Neutral is DERIVED from the accent (`neutralFromBrand`) and
+   *  re-derived on every accent change. Editing the Neutral directly clears it —
+   *  see `useApplyGrayColor` — so a hand-picked neutral is never silently
+   *  overwritten on the next accent edit. Snapshot state, not a preference:
+   *  it decides what the neutral ramp IS. */
+  linkNeutralToAccent: boolean
   // Page background primitive (Radix custom-palette input) — anchors tone 1 of
   // every generated ramp and is the compositing base for derived alpha ramps.
   pageBackground: string
@@ -394,6 +405,10 @@ export function makeDesignDefaults(): DesignSnapshot {
     // Today's behaviour verbatim — `subtle`'s constants ARE the ones
     // backgroundFromBase used to hardcode, so a fresh system is unchanged.
     neutralTint: DEFAULT_NEUTRAL_TINT,
+    // A fresh system starts harmonized — its neutral has no history worth
+    // protecting, and an accent-tinted grey is the model the rest of the
+    // system documents (Radix/HeroUI).
+    linkNeutralToAccent: true,
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: '#9522e9',
@@ -439,7 +454,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     panelBackground: 'solid',
     semanticArchitecture: 'astryx',
     architectureOverrides: {},
-    gradients: makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE),
+    gradients: makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
     selectedComponents: [...COMPONENT_KEYS],
@@ -496,6 +511,8 @@ interface DesignStore {
   contrastShift: number
   colorNaming: ColorNaming
   neutralTint: NeutralTint
+  linkNeutralToAccent: boolean
+  setLinkNeutralToAccent: (v: boolean) => void
   setColorAlgorithm: (a: ColorAlgorithm) => void
   setContrastShift: (n: number) => void
   setColorNaming: (n: ColorNaming) => void
@@ -706,6 +723,7 @@ export const useDesignStore = create<DesignStore>()(
       setContrastShift: (n) => set({ contrastShift: n }),
       setColorNaming: (n) => set({ colorNaming: n }),
       setNeutralTint: (t) => set({ neutralTint: t }),
+      setLinkNeutralToAccent: (v) => set({ linkNeutralToAccent: v }),
       setPageBackground: (hex) => set({ pageBackground: hex }),
       setDarkBackground: (hex) => set({ darkBackground: hex }),
 
@@ -992,7 +1010,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 46,
+      version: 48,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1271,7 +1289,7 @@ export const useDesignStore = create<DesignStore>()(
           // saved snapshot) that predates the feature.
           const seedGradients = (state: any) => {
             if (!state || typeof state !== 'object') return
-            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE)
+            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE)
             if (!state.gradientAssignments) state.gradientAssignments = makeDefaultGradientAssignments()
             if (!Array.isArray(state.savedColors)) state.savedColors = []
           }
@@ -1597,6 +1615,70 @@ export const useDesignStore = create<DesignStore>()(
           seedTint(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedTint(sys?.snapshot)
+          }
+        }
+        if (version < 47) {
+          // v46→v47: `linkNeutralToAccent`. Every entry point to the
+          // accent↔neutral link had been retired with Picker Color and the
+          // Workbench (`QuickFoundationsPanel`'s default export ended up
+          // imported by nobody), and Primitives — the only live editing
+          // surface — hardcoded `applyAccentColor(hex, false, …)`. So the
+          // neutral silently stopped tracking the accent for everyone.
+          //
+          // Backfilled by DETECTION rather than a flat default, because the two
+          // wrong answers are both bad: defaulting ON would re-derive (i.e.
+          // overwrite) a neutral the user hand-picked the next time they touch
+          // the accent, and defaulting OFF would leave every already-harmonized
+          // system unlinked for no reason. If the stored neutral is what
+          // `neutralFromBrand` would produce for the stored accent + tint, it
+          // was link-derived → relink; anything else was chosen deliberately →
+          // leave it alone. Same rule the live toggle enforces, applied
+          // retroactively.
+          const seedLink = (state: any) => {
+            if (!state || typeof state.linkNeutralToAccent === 'boolean') return
+            try {
+              const derived = neutralFromBrand(state.primaryColor, state.neutralTint ?? DEFAULT_NEUTRAL_TINT)
+              state.linkNeutralToAccent =
+                typeof state.grayBaseColor === 'string' &&
+                state.grayBaseColor.toLowerCase() === derived.toLowerCase()
+            } catch {
+              state.linkNeutralToAccent = false
+            }
+          }
+          seedLink(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedLink(sys?.snapshot)
+          }
+        }
+        if (version < 48) {
+          // v47→v48: gradients gain a DARK appearance. A linked stop is a
+          // `tone` REFERENCE, so its dark value is derivable — resolve the same
+          // tone against the system's own `primaryDarkScale` and cache it as
+          // `darkColor`. Nothing is invented and nothing is overwritten: only
+          // stops that carry a tone are touched, and their light `color` is
+          // left exactly as it was.
+          //
+          // UNLINKED stops are deliberately left with no `darkColor`. A
+          // hand-picked hex has no second ramp to resolve against, and guessing
+          // one (darkening it, say) would silently restyle a colour the user
+          // chose. Absent `darkColor` renders the light colour in both — the
+          // pre-v48 behaviour — until they pick a dark value themselves.
+          const seedGradientDark = (state: any) => {
+            const ramp = state?.primaryDarkScale
+            if (!Array.isArray(state?.gradients) || !ramp) return
+            state.gradients = state.gradients.map((g: any) => ({
+              ...g,
+              stops: Array.isArray(g?.stops)
+                ? g.stops.map((st: any) =>
+                    typeof st?.tone === 'number' && ramp[st.tone] && !st.darkColor
+                      ? { ...st, darkColor: ramp[st.tone] }
+                      : st)
+                : g?.stops,
+            }))
+          }
+          seedGradientDark(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedGradientDark(sys?.snapshot)
           }
         }
         return persisted

@@ -20,6 +20,7 @@ import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
+  neutralFromBrand, recommendStateColors,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
@@ -29,7 +30,7 @@ import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
-import { buildFamilyExport, WIZARD_FORMATS, type WizardFormat } from '../../lib/exportWizard'
+import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, WIZARD_FORMATS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -164,7 +165,21 @@ const EXPORT_MENU_W = 420
 const MENU_FORMAT_LABEL: Partial<Record<WizardFormat, string>> = { w3c: 'W3C Design' }
 const MENU_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = { w3c: 'Figma native', escala: 'Figma plugin' }
 
-function ColumnExportMenu({ family, label, appearance }: { family: string; label: string; appearance: 'light' | 'dark' }) {
+function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
+  family: string
+  label: string
+  appearance: 'light' | 'dark'
+  /** Routes through `buildAlphaFamilyExport` (reads `colors.primitiveAlpha`)
+   *  instead of the solid-primitive pipeline, and narrows the offered formats
+   *  to `ALPHA_EXPORT_FORMATS` — Tailwind/Markdown have no alpha concept in
+   *  `sectionExport` and would silently export nothing or the solid twin. */
+  isAlpha?: boolean
+  /** The actual alpha hex map for THIS column — `buildAlphaFamilyExport` can't
+   *  re-derive it, since alpha values are solved against a page (see
+   *  `alphaColorOver`) and aren't stored anywhere the export pipeline reads
+   *  from independently. Ignored when `isAlpha` is false. */
+  scale?: Record<number, string>
+}) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState<WizardFormat | null>(null)
   const [downloaded, setDownloaded] = useState<WizardFormat | null>(null)
@@ -201,8 +216,15 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [open])
 
+  // One call site for "give me this format's files", branching to whichever
+  // builder actually knows how to read this family's values — the split
+  // exists at the DATA layer (see `buildAlphaFamilyExport`'s own comment for
+  // why), not duplicated here in `copy`/`downloadOne`.
+  const buildFiles = (format: WizardFormat): WizardFile[] =>
+    isAlpha && scale ? buildAlphaFamilyExport(family, scale, format) : buildFamilyExport(family, appearance, format)
+
   function copy(format: WizardFormat) {
-    const files = buildFamilyExport(family, appearance, format)
+    const files = buildFiles(format)
     navigator.clipboard.writeText(
       files.map((f) => (files.length > 1 ? `/* ${f.name} */\n${f.content}` : f.content)).join('\n\n'),
     )
@@ -210,14 +232,14 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
     setTimeout(() => { setCopied(null); setOpen(false) }, 900)
   }
 
-  // Same `buildFamilyExport` call as `copy` — a download is the identical
-  // scoped output, just saved instead of put on the clipboard, so the two
-  // can never disagree about what "this format, this ramp" means. Doesn't
-  // close the popover (unlike `copy`): downloading is the slower action of
-  // the two, and someone comparing formats will likely want a second one
-  // right after — closing on them would undo the point of leaving it open.
+  // Same `buildFiles` call as `copy` — a download is the identical scoped
+  // output, just saved instead of put on the clipboard, so the two can never
+  // disagree about what "this format, this ramp" means. Doesn't close the
+  // popover (unlike `copy`): downloading is the slower action of the two, and
+  // someone comparing formats will likely want a second one right after —
+  // closing on them would undo the point of leaving it open.
   function downloadOne(format: WizardFormat) {
-    const files = buildFamilyExport(family, appearance, format)
+    const files = buildFiles(format)
     for (const f of files) {
       const mime = f.name.endsWith('.json') ? 'application/json' : f.name.endsWith('.css') || f.name.endsWith('.scss') ? 'text/css' : 'text/plain'
       const url = URL.createObjectURL(new Blob([f.content], { type: mime }))
@@ -261,7 +283,7 @@ function ColumnExportMenu({ family, label, appearance }: { family: string; label
               <span className="text-[11px] font-normal text-fg-faint truncate">{label} · {appearance}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
-              {WIZARD_FORMATS.map((f) => {
+              {(isAlpha ? WIZARD_FORMATS.filter((f) => ALPHA_EXPORT_FORMATS.includes(f.key)) : WIZARD_FORMATS).map((f) => {
                 const copyDone = copied === f.key
                 const downloadDone = downloaded === f.key
                 const badge = MENU_FORMAT_BADGE[f.key]
@@ -552,6 +574,7 @@ export default function ColorPrimitives({
     removeTheme,
     pageBackground, darkBackground, themeKinds, themeSources, themeOrder,
     colorAlgorithm, colorNaming, contrastShift, neutralTint,
+    linkNeutralToAccent, setLinkNeutralToAccent,
     setContrastShift, setNeutralTint,
   } = store
   const applyAccentColor = useApplyAccentColor()
@@ -566,11 +589,33 @@ export default function ColorPrimitives({
 
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
-  // Per-row edits here are deliberate, single-family changes — unlike Picker
-  // Color's quick bar (which offers a link toggle for broad-strokes editing),
-  // retinting Accent from this table's pencil popover never cascades to
-  // Neutral. Picker Color is where "move both together" lives.
-  const changeAccent = (hex: string) => applyAccentColor(hex, false, previewTheme)
+  // Retinting Accent cascades to Neutral only while the link is on — the flag
+  // now lives in the STORE (`linkNeutralToAccent`), not as local state in a
+  // popover. This used to be hardcoded `false` with a comment pointing at
+  // Picker Color as the place "move both together" lives; Picker Color was
+  // retired and the behaviour went with it, so the neutral silently stopped
+  // tracking the accent everywhere. The toggle is in the scale-settings gear,
+  // beside Neutral tint — the setting that decides how much accent hue the
+  // linked neutral even carries.
+  const changeAccent = (hex: string) => applyAccentColor(hex, linkNeutralToAccent, previewTheme)
+
+  // Harmonize the four state colours with the accent. `recommendStateColors`
+  // blends only CHROMA — each state keeps its canonical lightness and hue,
+  // because the hue IS the semantics (a red that drifts toward a green accent
+  // stops reading as an error). So this makes the set share the accent's
+  // saturation character without touching what any of them mean.
+  const stateRecommendation = useMemo(() => recommendStateColors(primaryColor), [primaryColor])
+  const statesMatched =
+    errorColor.toLowerCase() === stateRecommendation.error.toLowerCase() &&
+    warningColor.toLowerCase() === stateRecommendation.warning.toLowerCase() &&
+    successColor.toLowerCase() === stateRecommendation.success.toLowerCase() &&
+    infoColor.toLowerCase() === stateRecommendation.info.toLowerCase()
+  const matchStatesToAccent = () => {
+    applyStateColor('error', stateRecommendation.error)
+    applyStateColor('warning', stateRecommendation.warning)
+    applyStateColor('success', stateRecommendation.success)
+    applyStateColor('info', stateRecommendation.info)
+  }
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
 
   // ── Families table state ──
@@ -1078,8 +1123,26 @@ export default function ColorPrimitives({
               // change does — one code path for "the base moved", whether the
               // hex changed or how much of it survives. It reads the level from
               // the store, hence the write first.
-              onTint={(t) => { setNeutralTint(t); applyGrayColor(grayBaseColor, previewTheme) }}
+              //
+              // `fromLink` is TRUE here even though the user clicked: this is a
+              // recompute, not a hand-picked neutral, so it must not unlink.
+              // And while linked the base itself moves — `brandSat` is a
+              // per-tint value, so the derived neutral changes with the level.
+              onTint={(t) => {
+                setNeutralTint(t)
+                applyGrayColor(linkNeutralToAccent ? neutralFromBrand(primaryColor, t) : grayBaseColor, previewTheme, true)
+              }}
               tintPreview={(t) => backgroundFromBase(grayBaseColor, darkPreview ? 'dark' : 'light', t)}
+              linkNeutral={linkNeutralToAccent}
+              // Turning it ON derives immediately — a link that only takes
+              // effect on the NEXT accent edit reads as broken.
+              onLinkNeutral={(v) => {
+                setLinkNeutralToAccent(v)
+                if (v) applyGrayColor(neutralFromBrand(primaryColor, neutralTint), previewTheme, true)
+              }}
+              linkedNeutralPreview={neutralFromBrand(primaryColor, neutralTint)}
+              onMatchStates={matchStatesToAccent}
+              statesMatched={statesMatched}
             />
           </ScaleSettingsModal>
         </div>
@@ -1340,14 +1403,20 @@ export default function ColorPrimitives({
                       </button>
                       {/* Export lives per COLUMN, not per table: an icon here
                           can only mean "this family, this appearance", which
-                          is exactly the scope a ramp is useful in. Hidden for
-                          alpha families — alpha ramps live in
-                          `colors.primitiveAlpha`, which no export collection
-                          ships, so the icon would hand over the solid twin
-                          instead. */}
-                      {!family.isAlpha && (
-                        <ColumnExportMenu family={family.tokenPrefix} label={family.label} appearance={col} />
-                      )}
+                          is exactly the scope a ramp is useful in. Offered on
+                          alpha families too now — `ColumnExportMenu` routes
+                          them through `buildAlphaFamilyExport` (reads
+                          `colors.primitiveAlpha`) instead of the solid-primitive
+                          pipeline, and narrows the format list to what that
+                          builder can produce correctly (see
+                          `ALPHA_EXPORT_FORMATS`). */}
+                      <ColumnExportMenu
+                        family={family.tokenPrefix}
+                        label={family.label}
+                        appearance={col}
+                        isAlpha={family.isAlpha}
+                        scale={col === 'light' ? family.light : family.dark}
+                      />
                     </span>
                   )
                 })}

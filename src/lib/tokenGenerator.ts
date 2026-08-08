@@ -15,7 +15,7 @@ export const TOKEN_SCHEMA_VERSION = 4
 
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
-function flattenScale(
+export function flattenScale(
   name: string,
   scale: Record<number, string>,
   naming: ColorNaming,
@@ -219,6 +219,12 @@ export function generateTokenJSON() {
     padding: store.padding,
     // Named gradients (slug → CSS) + which one drives each preview surface.
     gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
+    // The dark appearance, ADDITIVE and keyed by the SAME slugs — a consumer
+    // that only knows `gradients` reads byte-identical values to before. A
+    // gradient with no dark override resolves to its light CSS here, so the map
+    // is always complete: a plugin can bind a dark mode without having to check
+    // which entries exist.
+    gradientsDark: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, 'dark')])),
     gradientAssignments: (() => {
       const slugOf = (id: string | null) => {
         const g = store.gradients.find((x) => x.id === id)

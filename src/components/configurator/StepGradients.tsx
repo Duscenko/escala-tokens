@@ -13,12 +13,28 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, type GradientDef, type GradientType } from '../../lib/gradients'
+import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColor, type GradientDef, type GradientType, type GradientAppearance } from '../../lib/gradients'
 import { usePopoverPlacement, ScaleRow } from './colorControls'
 import { NAMING_SCHEMES, BASE_TONE } from '../../lib/colorUtils'
 import ColorField from '../ui/ColorField'
 import RailSelect from '../ui/RailSelect'
 import { SlidersIcon } from '../ui/icons'
+
+/** The same glyph pair ColorPrimitives' light/dark column headers use — the
+ *  eye is already the app's "this is the appearance being previewed" mark, so
+ *  gradients don't invent a second one. */
+function EyeIcon({ active }: { active: boolean }) {
+  return active ? (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20" />
+    </svg>
+  )
+}
 
 const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
   { key: 'linear', label: 'Linear' },
@@ -55,11 +71,28 @@ function AssignSelect({ label, value, onChange, gradients }: {
   )
 }
 
-export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
+export default function StepGradients({
+  tabBar, previewTheme = 'light', onPreviewThemeChange,
+}: {
+  tabBar?: ReactNode
+  previewTheme?: string
+  onPreviewThemeChange?: (theme: string) => void
+} = {}) {
   const {
-    gradients, gradientAssignments, primaryColor, primaryScale, colorNaming,
+    gradients, gradientAssignments, primaryColor, primaryScale, primaryDarkScale,
+    colorNaming, themeKinds,
     addGradient, updateGradient, removeGradient, setGradientAssignment,
   } = useDesignStore()
+
+  // A gradient has exactly TWO appearances, but `previewTheme` is a THEME key
+  // (which may be a custom theme), so it's mapped through `themeKinds` the same
+  // way every other appearance-aware surface does it.
+  const appearance: GradientAppearance = (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light'
+  const isDark = appearance === 'dark'
+  /** The accent ramp the previewed appearance resolves against. Step N means
+   *  the same ROLE in both (Radix two-scale model) — a linked stop keeps its
+   *  tone and swaps ramps, it never inverts. */
+  const ramp = isDark ? primaryDarkScale : primaryScale
 
   const [selectedId, setSelectedId] = useState<string | null>(gradients[0]?.id ?? null)
   const [query, setQuery] = useState('')
@@ -92,7 +125,24 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
 
   function updateStop(i: number, key: 'color' | 'pos', v: string | number) {
     if (!selected) return
-    const stops = selected.stops.map((s, idx) => (idx === i ? { ...s, [key]: v } : s))
+    // Editing the COLOUR while the dark appearance is previewed writes
+    // `darkColor`, not `color` — otherwise judging a gradient on the dark page
+    // and nudging a stop would silently repaint the light one too.
+    const field = key === 'color' && isDark ? 'darkColor' : key
+    const stops = selected.stops.map((s, idx) => (idx === i ? { ...s, [field]: v } : s))
+    patch({ stops })
+  }
+
+  /** Drop a stop's dark override, so it renders its light colour in both again.
+   *  Only meaningful for an unlinked stop — a linked one's dark value is
+   *  derived from its tone and is not the user's to clear. */
+  function clearStopDark(i: number) {
+    if (!selected) return
+    const stops = selected.stops.map((s, idx) => {
+      if (idx !== i) return s
+      const { darkColor: _drop, ...rest } = s
+      return rest
+    })
     patch({ stops })
   }
 
@@ -105,17 +155,34 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
     if (!selected) return
     const last = selected.stops[selected.stops.length - 1]
     const pos = Math.min(100, Math.max(0, Math.round(((last?.pos ?? 0) + 100) / 2)))
+    const tone = last?.tone ?? BASE_TONE
     const stop = locked
-      ? { tone: last?.tone ?? BASE_TONE, color: primaryScale[last?.tone ?? BASE_TONE] ?? primaryColor, pos }
-      : { color: last?.color ?? primaryColor, pos }
+      ? {
+          tone,
+          color: primaryScale[tone] ?? primaryColor,
+          darkColor: primaryDarkScale?.[tone] ?? primaryScale[tone] ?? primaryColor,
+          pos,
+        }
+      // An unlinked stop copies whatever the previous one shows in BOTH
+      // appearances, so adding a stop while previewing dark doesn't create one
+      // that's invisible the moment you switch back.
+      : { color: last?.color ?? primaryColor, ...(last?.darkColor ? { darkColor: last.darkColor } : null), pos }
     patch({ stops: [...selected.stops, stop] })
   }
 
   /** Re-point a linked stop at another tone of the accent ramp. */
   function setStopTone(i: number, tone: number) {
     if (!selected) return
+    // One reference, two resolutions — the point of a linked stop.
     const stops = selected.stops.map((s, idx) =>
-      idx === i ? { ...s, tone, color: primaryScale[tone] ?? s.color } : s)
+      idx === i
+        ? {
+            ...s,
+            tone,
+            color: primaryScale[tone] ?? s.color,
+            darkColor: primaryDarkScale?.[tone] ?? s.darkColor ?? primaryScale[tone] ?? s.color,
+          }
+        : s)
     patch({ stops })
   }
 
@@ -131,7 +198,8 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
   const locked = !!selected && linkable && selected.linked === true
   const toneNames = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
   /** The exported primitive a linked stop references, e.g. `accent-9`. */
-  const tokenNameFor = (tone: number) => `accent-${toneNames[tone - 1] ?? tone}`
+  const tokenNameFor = (tone: number, ap: GradientAppearance = 'light') =>
+    `accent${ap === 'dark' ? '-dark' : ''}-${toneNames[tone - 1] ?? tone}`
 
   // Three tracks, matching the reference: position · color · row actions.
   const gridStyle: React.CSSProperties = {
@@ -153,7 +221,7 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
               icon={
                 <span
                   className="block w-4 h-4 rounded-full ring-1 ring-black/10"
-                  style={{ background: gradientToCss(selected) }}
+                  style={{ background: gradientToCss(selected, appearance) }}
                   aria-hidden
                 />
               }
@@ -169,11 +237,32 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
               {/* The bar IS the preview — same role the ramp plays on
                   Primitives: row 1's right cell always shows the thing the
                   left cell's control defines. */}
-              <div
-                className="flex-1 min-w-0 h-11 rounded-[10px] ring-1 ring-line"
-                style={{ background: gradientToCss(selected) }}
-                title={`--gradient-${gradientSlug(selected)}`}
-              />
+              {/* Both appearances, side by side. A gradient is judged against
+                  the page it ships on, and one bar with a toggle would make
+                  comparing them a click apart — the same reason the Primitives
+                  table shows its light and dark columns together rather than
+                  swapping one. Each half sits on ITS OWN page (`light`/`dark`
+                  classes, both defined in index.css) so neither is judged on
+                  the wrong backdrop, and clicking a half previews it. */}
+              <div className="flex-1 min-w-0 flex items-stretch gap-2">
+                {(['light', 'dark'] as const).map((ap) => (
+                  <button
+                    key={ap}
+                    type="button"
+                    onClick={() => onPreviewThemeChange?.(ap)}
+                    aria-pressed={appearance === ap}
+                    title={appearance === ap ? `${ap} — shown in preview` : `Show ${ap} in the preview`}
+                    className={`${ap} flex-1 min-w-0 rounded-[10px] p-1.5 bg-app transition-shadow ring-1 ${
+                      appearance === ap ? 'ring-accent-ui' : 'ring-line hover:ring-line-strong'
+                    }`}
+                  >
+                    <span
+                      className="block h-9 rounded-[7px] ring-1 ring-black/10"
+                      style={{ background: gradientToCss(selected, ap) }}
+                    />
+                  </button>
+                ))}
+              </div>
               {selected.type === 'linear' && (
                 <label className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-[11px] text-fg-faint">Angle</span>
@@ -295,7 +384,7 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                     active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g) }} aria-hidden />
+                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
                   <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{g.name}</span>
                   {assigned && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" title="In use" aria-hidden />}
                 </button>
@@ -328,6 +417,27 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                 <span className="pl-4 py-3 border-r border-line">Transparency</span>
                 <span className="flex items-center gap-2 border-r border-line px-4 py-3">
                   Stops
+                  {/* Which appearance the colour cells below EDIT. Same eye
+                      affordance and the same `previewTheme` state as the
+                      Primitives table's column headers, so "which one am I
+                      looking at" is one concept app-wide. */}
+                  <span className="flex items-center gap-0.5 normal-case tracking-normal">
+                    {(['light', 'dark'] as const).map((ap) => (
+                      <button
+                        key={ap}
+                        type="button"
+                        onClick={() => onPreviewThemeChange?.(ap)}
+                        aria-pressed={appearance === ap}
+                        title={appearance === ap ? `Editing the ${ap} appearance` : `Edit the ${ap} appearance`}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                          appearance === ap ? 'text-accent-ui bg-accent-ui/[0.08]' : 'text-fg-faint hover:text-fg-muted'
+                        }`}
+                      >
+                        <EyeIcon active={appearance === ap} />
+                        {ap}
+                      </button>
+                    ))}
+                  </span>
                   {/* Link-to-accent lives in the STOPS header because it's a
                       statement about where every stop's COLOR comes from, not
                       about one row. Only the two built-ins can derive. */}
@@ -336,7 +446,7 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                       type="button"
                       onClick={() => {
                         if (locked) patch({ linked: false })
-                        else patch({ linked: true, stops: linkedStopsFor(selected.id, primaryScale, selected.stops) ?? selected.stops })
+                        else patch({ linked: true, stops: linkedStopsFor(selected.id, primaryScale, selected.stops, primaryDarkScale) ?? selected.stops })
                       }}
                       aria-pressed={locked}
                       title={locked
@@ -372,8 +482,8 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
               {locked && (
                 <p className="px-4 py-2 text-[11px] text-fg-faint border-b border-line/40">
                   Each stop reads a <strong className="font-semibold text-fg-muted">tone of your accent ramp</strong>, so the gradient
-                  re-resolves through the primitives whenever the accent changes. Pick a different tone below, or unlock to use a
-                  free colour instead.
+                  re-resolves through the primitives whenever the accent changes — and the same tone resolves against the accent's
+                  dark twin, so the dark appearance comes for free. Pick a different tone below, or unlock to use a free colour instead.
                 </p>
               )}
 
@@ -410,15 +520,18 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                       <>
                         <span
                           className="w-[22px] h-[22px] rounded-md flex-shrink-0 ring-1 ring-black/10"
-                          style={{ background: s.color }}
+                          style={{ background: stopColor(s, appearance) }}
                           aria-hidden
                         />
                         <div className="flex-1 min-w-0 flex flex-col gap-1">
-                          <span className="text-[12px] font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone)} — ${s.color.toUpperCase()}`}>
-                            {tokenNameFor(s.tone)}
+                          {/* The token NAME carries the appearance, matching the
+                              exported prefixes (`accent-9` / `accent-dark-9`) —
+                              same tone, other ramp, no inversion. */}
+                          <span className="text-[12px] font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone, appearance)} — ${stopColor(s, appearance).toUpperCase()}`}>
+                            {tokenNameFor(s.tone, appearance)}
                           </span>
                           <ScaleRow
-                            scale={primaryScale}
+                            scale={ramp}
                             labels={toneNames}
                             selectedIndex={s.tone}
                             onSelect={(tone) => setStopTone(i, tone)}
@@ -431,8 +544,32 @@ export default function StepGradients({ tabBar }: { tabBar?: ReactNode } = {}) {
                       </>
                     ) : (
                       <>
-                        <ColorField value={s.color} onChange={(hex) => updateStop(i, 'color', hex)} ariaLabel={`Stop ${i + 1} color`} size={22} />
-                        <span className="flex-1 min-w-0 text-[12px] font-mono text-fg-muted truncate">{s.color.toUpperCase()}</span>
+                        {/* An unlinked stop has no ramp to resolve against, so
+                            its dark value is the user's own pick. Until they
+                            make one it inherits the light colour (that IS the
+                            pre-dark behaviour) and says so, with a way back. */}
+                        <ColorField
+                          value={stopColor(s, appearance)}
+                          onChange={(hex) => updateStop(i, 'color', hex)}
+                          ariaLabel={`Stop ${i + 1} ${appearance} color`}
+                          size={22}
+                        />
+                        <span className="flex-1 min-w-0 flex items-center gap-2 text-[12px] font-mono text-fg-muted truncate">
+                          {stopColor(s, appearance).toUpperCase()}
+                          {isDark && !s.darkColor && (
+                            <span className="text-[10px] font-sans text-fg-faint whitespace-nowrap">same as light</span>
+                          )}
+                          {isDark && s.darkColor && (
+                            <button
+                              type="button"
+                              onClick={() => clearStopDark(i)}
+                              title="Drop the dark override — render the light colour in both"
+                              className="text-[10px] font-sans text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
+                            >
+                              reset
+                            </button>
+                          )}
+                        </span>
                       </>
                     )}
                   </div>

@@ -27,6 +27,11 @@ export function ColorControls({
   neutralTint,
   onTint,
   tintPreview,
+  linkNeutral,
+  onLinkNeutral,
+  linkedNeutralPreview,
+  onMatchStates,
+  statesMatched,
 }: {
   contrastShift: number
   onShift: (n: number) => void
@@ -36,11 +41,78 @@ export function ColorControls({
   /** Page hex each level would produce, for the swatch. Caller computes it so
    *  this stays presentational (no store reads), same as the rest of the file. */
   tintPreview?: (t: NeutralTint) => string
+  /** Accent↔Neutral link. Omit both to hide the harmony block. */
+  linkNeutral?: boolean
+  onLinkNeutral?: (v: boolean) => void
+  /** The hex the neutral becomes while linked — so the toggle can SHOW its
+   *  consequence instead of describing it. */
+  linkedNeutralPreview?: string
+  /** One-shot "harmonize the four state colours with the accent". Unlike the
+   *  neutral link this stays a button, not a toggle: a state colour is a
+   *  deliberate brand decision far more often than a grey is, so it shouldn't
+   *  silently move every time the accent does. */
+  onMatchStates?: () => void
+  /** True when the states already equal what `onMatchStates` would produce —
+   *  lets the button say "Matched" instead of inviting a no-op click. */
+  statesMatched?: boolean
 }) {
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Harmony — the accent↔neutral link and the states one-shot. Lives HERE,
+          in the scale-settings popover, rather than inline in the quick-edit
+          strip: a control that only renders while Accent is active shifts the
+          ramp beside it 52px right on that one family, which is exactly why the
+          old "match states" wand was removed from the strip. The gear is always
+          present, and this sits next to Neutral tint — the setting that decides
+          how much accent hue a linked neutral even carries. */}
+      {linkNeutral !== undefined && onLinkNeutral && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Harmony</span>
+          <button
+            type="button"
+            onClick={() => onLinkNeutral(!linkNeutral)}
+            aria-pressed={linkNeutral}
+            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border text-left transition-colors ${
+              linkNeutral ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
+            }`}
+          >
+            <span
+              aria-hidden
+              className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
+              style={{ background: linkedNeutralPreview ?? 'transparent' }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] text-fg">Neutral follows the accent</span>
+              <span className="block text-[11px] text-fg-faint leading-snug">
+                {linkNeutral
+                  ? 'Re-derived on every accent change. Editing it by hand unlinks.'
+                  : 'The neutral is set by hand and keeps its own colour.'}
+              </span>
+            </span>
+          </button>
+          {onMatchStates && (
+            <button
+              type="button"
+              onClick={onMatchStates}
+              disabled={statesMatched}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-line text-left text-[12px] text-fg hover:border-line-strong disabled:opacity-45 disabled:hover:border-line transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint">
+                <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5" />
+              </svg>
+              <span className="min-w-0 flex-1">
+                {statesMatched ? 'States already match the accent' : 'Match Error · Warning · Success · Info to accent'}
+              </span>
+            </button>
+          )}
+          <span className="text-[10px] text-fg-faint leading-snug">
+            States keep their own hue — only saturation is harmonized, so red stays red.
+          </span>
+        </div>
+      )}
+
       {/* Neutral tint — how much of the Neutral's colour reaches the page.
           Discrete levels, not a slider: this is Radix's "pick a gray family"
           decision (Gray · Mauve · Slate · Sage · Sand), and a free 0–1 value
