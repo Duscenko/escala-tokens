@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
+import { isLiveEnvironment } from '../../lib/figmaSync'
 import ThemeToggle from './ThemeToggle'
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
@@ -27,11 +27,19 @@ interface TopNavProps {
   nav: TopNavKey | null
   onNav: (key: TopNavKey) => void
   exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
-  onGithub: () => void
   onGetFigma: () => void
+  /** Opens the guided export wizard (CSS · Tailwind · Tokens · MD). Lives here,
+   *  not in a per-foundation header, because exporting is TRANSVERSAL — it
+   *  isn't a property of whichever foundation you happen to be editing, it's
+   *  something you reach for from anywhere in the app. */
+  onExport: () => void
+  /** Whether the export wizard is currently open, for the pill's active state —
+   *  the same convention `exportMode === 'figma'`/`'github'` already uses for
+   *  the pills beside it. */
+  exportOpen?: boolean
   /** Opens the About/corporate drawer (AboutMenu). Always available — it's
    *  reference material, not a project action, so it doesn't wait on
-   *  `projectCreated` the way the Figma/GitHub pills do. */
+   *  `projectCreated` the way Plugin/Export do. */
   onMenu: () => void
   /** Mirrors the left rail's own collapsed state — when the rail shrinks to
    *  an icon strip, the brand block above it shrinks the same way, so the
@@ -44,15 +52,6 @@ interface TopNavProps {
   brandWidth?: number | null
   previewTheme: string
   onThemeChange: (theme: string) => void
-}
-
-// GitHub brand mark — monochrome, tracks currentColor.
-function GitHubGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-    </svg>
-  )
 }
 
 // Figma brand mark — monochrome, tracks currentColor.
@@ -68,55 +67,69 @@ function FigmaGlyph() {
   )
 }
 
-type SyncState = 'idle' | 'publishing' | 'done' | 'error'
+// Export mark — a share/box-out arrow, the same glyph the per-foundation
+// Export pill used before it moved here.
+function ExportGlyph() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20.7914 12.6074C21.0355 12.3981 21.1575 12.2935 21.2023 12.169C21.2415 12.0598 21.2415 11.9402 21.2023 11.831C21.1575 11.7065 21.0355 11.6018 20.7914 11.3926L12.3206 4.13196C11.9004 3.77176 11.6903 3.59166 11.5124 3.58725C11.3578 3.58342 11.2101 3.65134 11.1124 3.77122C11 3.90915 11 4.18589 11 4.73936V9.03462C8.86532 9.40807 6.91159 10.4897 5.45971 12.1139C3.87682 13.8845 3.00123 16.1759 3 18.551V19.1629C4.04934 17.8989 5.35951 16.8765 6.84076 16.1659C8.1467 15.5394 9.55842 15.1683 11 15.0705V19.2606C11 19.8141 11 20.0908 11.1124 20.2288C11.2101 20.3486 11.3578 20.4166 11.5124 20.4127C11.6903 20.4083 11.9004 20.2282 12.3206 19.868L20.7914 12.6074Z" />
+    </svg>
+  )
+}
 
-// Persistent "Sync to Figma" pill — publishes the current token set to
-// /api/tokens on click. A live dot shows when auto-sync is on (every edit
-// republishes); the manual click stays available to force a push.
-function FigmaSyncPill() {
-  const autoSyncFigma = useDesignStore((s) => s.autoSyncFigma)
-  const [state, setState] = useState<SyncState>('idle')
-
-  async function sync() {
-    if (state === 'publishing') return
-    setState('publishing')
-    const ok = await publishTokens()
-    setState(ok ? 'done' : 'error')
-    setTimeout(() => setState('idle'), 2200)
-  }
-
-  const label =
-    state === 'publishing' ? 'Syncing…'
-    : state === 'done'     ? 'Synced'
-    : state === 'error'    ? 'Retry'
-    : 'Sync'
-
+// The outline-pill shape for TopNav's secondary action (Plugin) — icon + a
+// label that hides under `sm`.
+function NavPill({
+  onClick, active, label, title, ariaLabel, children,
+}: {
+  onClick: () => void
+  active?: boolean
+  label: string
+  title?: string
+  ariaLabel?: string
+  children: ReactNode
+}) {
   return (
     <button
-      onClick={sync}
-      title={autoSyncFigma ? 'Auto-sync is on — click to force a publish now' : 'Publish your tokens to Figma now'}
-      aria-label="Sync tokens to Figma"
-      className={`px-3 sm:px-3.5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-semibold transition-all whitespace-nowrap inline-flex items-center gap-1.5 border ${
-        state === 'error'
-          ? 'border-red-400/60 text-red-500 bg-red-500/5'
+      onClick={onClick}
+      aria-label={ariaLabel ?? label}
+      title={title}
+      className={`h-9 px-3.5 rounded-full flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors border ${
+        active
+          ? 'border-line-strong bg-elevated text-fg'
           : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
       }`}
     >
-      {state === 'publishing' ? (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="animate-spin" aria-hidden>
-          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        </svg>
-      ) : state === 'done' ? (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6 9 17l-5-5" /></svg>
-      ) : (
-        <span className="relative inline-flex">
-          <FigmaGlyph />
-          {autoSyncFigma && (
-            <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
-          )}
-        </span>
-      )}
+      {children}
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  )
+}
+
+// The filled, primary-CTA pill — Export's shape now, GitHub Connect's before
+// it. Export took over both the STYLE and the rightmost slot: it's the one
+// action that's always relevant regardless of what you're doing, the same
+// reason Connect used to sit here.
+function PrimaryPill({
+  onClick, active, label, title, ariaLabel, children,
+}: {
+  onClick: () => void
+  active?: boolean
+  label: string
+  title?: string
+  ariaLabel?: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel ?? label}
+      title={title}
+      className={`px-4 h-9 rounded-full text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
+        active ? 'ring-2 ring-fg/30' : ''
+      }`}
+    >
+      {children}
       <span className="hidden sm:inline">{label}</span>
     </button>
   )
@@ -143,10 +156,10 @@ export function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onGithub, onGetFigma, onMenu, railCollapsed = false,
-  brandWidth = null, previewTheme, onThemeChange,
+  nav, onNav, exportMode, onGetFigma, onExport, exportOpen = false,
+  onMenu, railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
-  const { projectCreated } = useDesignStore()
+  const { projectCreated, autoSyncFigma } = useDesignStore()
 
   return (
     <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
@@ -193,28 +206,51 @@ export default function TopNav({
         <div className="flex items-center gap-2 flex-shrink-0">
           {projectCreated && (
             <>
-              {isLiveEnvironment() && <FigmaSyncPill />}
-              <button
+              {/* ONE Figma control, not two. This used to be a "Sync" pill
+                  (publish-on-click, shown only in a live/deployed environment)
+                  standing next to a separate icon-only "Bring to Figma" button
+                  — same glyph twice, whenever both happened to render. They're
+                  merged: one pill, the Figma mark, labelled for what it DOES —
+                  gets you the plugin (`FigmaConnectView`, which auto-publishes
+                  on open) — not what used to be a separate manual-publish
+                  action. The small dot is the only thing that still varies by
+                  environment: it says auto-sync is live, it isn't a second
+                  glyph. */}
+              <NavPill
                 onClick={onGetFigma}
-                aria-label="Bring to Figma"
-                title="Bring to Figma — install the sync plugin"
-                className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
-                  exportMode === 'figma'
-                    ? 'border-line-strong bg-elevated text-fg'
-                    : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
-                }`}
+                active={exportMode === 'figma'}
+                label="Plugin"
+                title="Get the Figma plugin & sync your tokens"
+                ariaLabel="Figma plugin"
               >
-                <FigmaGlyph />
-              </button>
-              <button
-                onClick={onGithub}
-                className={`px-4 h-9 rounded-full text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
-                  exportMode === 'github' ? 'ring-2 ring-fg/30' : ''
-                }`}
+                <span className="relative inline-flex">
+                  <FigmaGlyph />
+                  {isLiveEnvironment() && autoSyncFigma && (
+                    <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
+                  )}
+                </span>
+              </NavPill>
+              {/* Export — the primary CTA now, in both style and position:
+                  it took over the filled black pill and the rightmost slot
+                  that used to belong to a standalone "Connect" GitHub button.
+                  GitHub wasn't dropped — it's reachable from INSIDE the export
+                  wizard's own "Save this design system" card (`onConnectGithub`
+                  there), which is a better home for it: pushing to a repo is
+                  something you do as part of getting your tokens out, not a
+                  parallel top-level destination competing with Export for the
+                  same "ship this system" intent. Transversal for the same
+                  reason it was before — not scoped to whichever foundation
+                  you're editing, so it lives in the global bar, not a
+                  per-section header. */}
+              <PrimaryPill
+                onClick={onExport}
+                active={exportOpen}
+                label="Export"
+                title="Copy or download this system as CSS · Tailwind · Tokens · MD"
+                ariaLabel="Export tokens"
               >
-                <GitHubGlyph />
-                <span className="hidden sm:inline">Connect</span>
-              </button>
+                <ExportGlyph />
+              </PrimaryPill>
             </>
           )}
           <ThemeToggle previewTheme={previewTheme} onThemeChange={onThemeChange} />

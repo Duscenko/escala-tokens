@@ -13,6 +13,14 @@ import { FIGMA_PLUGIN_ZIP, cn } from '../../lib/utils'
 // you consult WHILE working, so it slides in beside the canvas instead of
 // blocking it, and every section is collapsed by default — a list of six
 // labels, not six essays. Only the section you opened it on expands.
+//
+// **This module owns the content, not just the drawer.** `AboutAccordion` and
+// `AboutContact` are exported so the MOBILE screen (`App.tsx`'s
+// `DesktopOnlyNotice`, the only thing that renders below `md`) can show the
+// same sections. A phone visitor can't use the workspace — but "what is this"
+// is exactly what they came for, and it used to be locked behind a burger
+// button that only exists in the desktop shell. One array, two surfaces: the
+// copy can't drift between them.
 
 export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'changelog' | 'legal'
 
@@ -80,7 +88,7 @@ function Entry({ date, children }: { date: string; children: ReactNode }) {
   )
 }
 
-const SECTIONS: { key: AboutSection; label: string; hint: string; body: ReactNode }[] = [
+export const SECTIONS: { key: AboutSection; label: string; hint: string; body: ReactNode }[] = [
   {
     key: 'platform',
     label: 'What Escala is',
@@ -323,6 +331,77 @@ function ContactRow({ icon, label, href }: { icon: ReactNode; label: string; hre
   )
 }
 
+/** The six collapsible sections. Shared by the desktop drawer and the mobile
+ *  screen, so neither can carry a stale copy of the other's wording. Only the
+ *  padding differs, hence `pad` — the drawer sits flush inside a 440px sheet,
+ *  the mobile page needs the same gutter its own header uses. */
+export function AboutAccordion({
+  section, onSectionChange, pad = 'px-5',
+}: {
+  section: AboutSection | null
+  onSectionChange: (s: AboutSection | null) => void
+  pad?: string
+}) {
+  return (
+    <>
+      {SECTIONS.map((s) => {
+        const open = section === s.key
+        return (
+          <div key={s.key} data-section={s.key} className="border-b border-line">
+            <button
+              onClick={() => onSectionChange(open ? null : s.key)}
+              aria-expanded={open}
+              className={`w-full flex items-center gap-3 ${pad} py-3.5 text-left hover:bg-elevated/40 transition-colors`}
+            >
+              <span className={`flex-shrink-0 ${open ? 'text-accent-ui' : 'text-fg-faint'}`}>
+                <Chevron open={open} />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className={`block text-[13px] ${open ? 'font-semibold text-fg' : 'font-medium text-fg'}`}>
+                  {s.label}
+                </span>
+                {!open && <span className="block text-[11.5px] text-fg-faint truncate">{s.hint}</span>}
+              </span>
+            </button>
+            {/* Height animation needs overflow-hidden; nothing in here opens
+                a popover, so the clipping is harmless (see CLAUDE.md's note
+                on animated-height containers that DO hold popovers). */}
+            <motion.div
+              initial={false}
+              animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <div className={`${pad} pb-5 pl-[44px]`}>{s.body}</div>
+            </motion.div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+/** Contact — always open. It's four lines, and hiding the author behind a
+ *  disclosure in an "about" menu would be perverse. */
+export function AboutContact({ pad = 'px-5' }: { pad?: string }) {
+  return (
+    <div className={`${pad} py-4 flex flex-col gap-2`}>
+      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Contact</span>
+      <P>
+        Built and maintained by <span className="text-fg">Cesar Duscenko</span> —
+        design systems and design engineering.
+      </P>
+      <div className="flex flex-col mt-0.5">
+        <ContactRow icon={<MailIcon />} label={CONTACT.email} href={`mailto:${CONTACT.email}`} />
+        <ContactRow icon={<GlobeIcon />} label={CONTACT.site} href={`https://${CONTACT.site}`} />
+        {CONTACT.linkedin && (
+          <ContactRow icon={<LinkedInIcon />} label="LinkedIn" href={CONTACT.linkedin} />
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AboutMenu({
   section,
   onSectionChange,
@@ -391,56 +470,8 @@ export default function AboutMenu({
         </div>
 
         <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto">
-          {SECTIONS.map((s) => {
-            const open = section === s.key
-            return (
-              <div key={s.key} data-section={s.key} className="border-b border-line">
-                <button
-                  onClick={() => onSectionChange(open ? null : s.key)}
-                  aria-expanded={open}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-elevated/40 transition-colors"
-                >
-                  <span className={`flex-shrink-0 ${open ? 'text-accent-ui' : 'text-fg-faint'}`}>
-                    <Chevron open={open} />
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className={`block text-[13px] ${open ? 'font-semibold text-fg' : 'font-medium text-fg'}`}>
-                      {s.label}
-                    </span>
-                    {!open && <span className="block text-[11.5px] text-fg-faint truncate">{s.hint}</span>}
-                  </span>
-                </button>
-                {/* Height animation needs overflow-hidden; nothing in here opens
-                    a popover, so the clipping is harmless (see CLAUDE.md's note
-                    on animated-height containers that DO hold popovers). */}
-                <motion.div
-                  initial={false}
-                  animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-5 pb-5 pl-[44px]">{s.body}</div>
-                </motion.div>
-              </div>
-            )
-          })}
-
-          {/* Contact — always open. It's four lines, and hiding the author
-              behind a disclosure in an "about" menu would be perverse. */}
-          <div className="px-5 py-4 flex flex-col gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Contact</span>
-            <P>
-              Built and maintained by <span className="text-fg">Cesar Duscenko</span> —
-              design systems and design engineering.
-            </P>
-            <div className="flex flex-col mt-0.5">
-              <ContactRow icon={<MailIcon />} label={CONTACT.email} href={`mailto:${CONTACT.email}`} />
-              <ContactRow icon={<GlobeIcon />} label={CONTACT.site} href={`https://${CONTACT.site}`} />
-              {CONTACT.linkedin && (
-                <ContactRow icon={<LinkedInIcon />} label="LinkedIn" href={CONTACT.linkedin} />
-              )}
-            </div>
-          </div>
+          <AboutAccordion section={section} onSectionChange={onSectionChange} />
+          <AboutContact />
         </div>
 
         <div className="flex-shrink-0 px-5 py-3 border-t border-line">

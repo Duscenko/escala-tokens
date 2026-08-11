@@ -10,10 +10,13 @@
 // so a designer no longer has to know which of three places holds the thing
 // they want to read about a system they configure in a fourth.
 //
-// The rail key is EITHER a foundation key ('color', 'shadow', …), the Overview
-// sentinel, or a component category name — `isFoundationKey()` is the only
-// place that distinction is made, so a new foundation is one entry in
-// `FOUNDATION_DOCS` and nothing else.
+// The rail key is EITHER the Overview sentinel or a component category name —
+// `isFoundationKey()` is the only place that distinction is made. Individual
+// foundations ('color', 'shadow', …) are NOT rail keys: they're rows in the
+// Overview entry's own master list, exactly mirroring how a component
+// category's rail entry opens a master list of ITS items. A new foundation is
+// one entry in `FOUNDATION_DOCS` and nothing else — the rail, the master list,
+// the TOC and prev/next all derive from it.
 
 import { useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
@@ -37,10 +40,11 @@ export function isFoundationKey(key: string | undefined): boolean {
   return key === OVERVIEW_KEY || (!!key && FOUNDATION_KEYS.includes(key))
 }
 
-/** The rail groups this view expects, derived from the SAME `FOUNDATION_DOCS`
- *  the articles render — so the rail can never offer a page that doesn't exist,
- *  or hide one that does. Categories come from the component catalogue.
- *  `Configurator` supplies the icons. */
+/** The rail groups this view expects. Foundations is a SINGLE entry —
+ *  "Overview" — exactly the shape a component category has (one rail button
+ *  that opens a master list of its items), not one button per foundation.
+ *  Categories come from the component catalogue. `Configurator` supplies the
+ *  icons. */
 export function docRailGroups(
   foundationIcon: (key: string) => React.ComponentType | undefined,
   categoryIcon: (cat: string) => React.ComponentType | undefined,
@@ -50,13 +54,22 @@ export function docRailGroups(
       label: 'Foundations',
       items: [
         { key: OVERVIEW_KEY, label: 'Overview', Icon: foundationIcon(OVERVIEW_KEY) },
-        ...FOUNDATION_DOCS.map((f) => ({ key: f.key, label: f.label, Icon: foundationIcon(f.key) })),
       ],
     },
     {
       label: 'Categories',
       items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: categoryIcon(cat) })),
     },
+  ]
+}
+
+/** Overview's own master list — Overview itself, first (mirrors a category's
+ *  first item being auto-opened), then the nine foundations, in the exact
+ *  order `FOUNDATION_DOCS` defines them. */
+function overviewRows() {
+  return [
+    { key: OVERVIEW_KEY, label: 'Overview' },
+    ...FOUNDATION_DOCS.map((f) => ({ key: f.key, label: f.label })),
   ]
 }
 
@@ -69,10 +82,11 @@ function CatalogueCheck() {
 }
 
 export default function DocumentationView({
-  previewTheme = 'light', railKey, search = '', active, onSelect, onEditFoundation, onSelectRailKey,
+  previewTheme = 'light', railKey, search = '', active, onSelect, onEditFoundation,
+  activeFoundationKey, onSelectFoundationKey,
 }: {
   previewTheme?: string
-  /** Active rail entry — a foundation key, OVERVIEW_KEY, or a category name. */
+  /** Active rail entry — OVERVIEW_KEY, or a category name. */
   railKey: string
   /** Current value of the CenterHeader search box. This view never renders the
    *  input itself — it sits on the header's line, next to the title. */
@@ -83,8 +97,12 @@ export default function DocumentationView({
   /** Opens Variables · <foundation> — the "Edit tokens" link on a foundation
    *  page, which is what makes this documentation OF the editor. */
   onEditFoundation: (foundationKey: string) => void
-  /** Moves the rail itself (foundation prev/next, Overview's per-section link). */
-  onSelectRailKey: (key: string) => void
+  /** Which row of Overview's OWN master list is open — OVERVIEW_KEY (the
+   *  whole-system sheet) or a foundation key. Lifted to `Configurator`, same
+   *  as `active`/`onSelect` for components, so it survives leaving and
+   *  returning to the Documentation tab instead of resetting every visit. */
+  activeFoundationKey: string
+  onSelectFoundationKey: (key: string) => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const system = useSystemDoc()
@@ -94,11 +112,11 @@ export default function DocumentationView({
 
   const onFoundation = isFoundationKey(railKey)
   const def = active ?? COMPONENTS[0]
-  const doc = onFoundation && railKey !== OVERVIEW_KEY ? foundationDoc(railKey) : undefined
+  const doc = onFoundation && activeFoundationKey !== OVERVIEW_KEY ? foundationDoc(activeFoundationKey) : undefined
 
   // Which page is on screen — also the remount key, so switching pages always
   // starts the reader at the top.
-  const pageKey = onFoundation ? railKey : def.key
+  const pageKey = onFoundation ? activeFoundationKey : def.key
 
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
@@ -134,11 +152,44 @@ export default function DocumentationView({
 
   return (
     <div className="h-full flex min-h-0">
-      {/* Master list — the component half's second column, with the catalogue's
-          include checkboxes. A FOUNDATION has no list: it is one page, so the
-          column is dropped and the article takes the width (same as the
-          reference docs site, where the sidebar goes straight to the page). */}
-      {!onFoundation && (
+      {/* Master list — Overview's own second column when browsing Foundations,
+          the catalogue's (with its include checkboxes) when browsing a
+          Category. Same column, same width, same row shape — a foundation
+          used to have no list at all (it "was one page"), which is exactly
+          the asymmetry this fixes: Overview now opens a list of its nine
+          foundations the same way a category opens a list of its components. */}
+      {onFoundation ? (
+        <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-fg-faint uppercase tracking-widest px-1">Foundations</span>
+            {overviewRows().map((row) => {
+              const isActive = row.key === activeFoundationKey
+              return (
+                <div
+                  key={row.key}
+                  role="button"
+                  tabIndex={0}
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={() => onSelectFoundationKey(row.key)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onSelectFoundationKey(row.key)
+                    }
+                  }}
+                  className={`flex items-center px-2.5 py-1.5 rounded-lg text-[12px] cursor-pointer transition-all ${
+                    isActive
+                      ? 'bg-surface shadow-sm text-fg border border-line'
+                      : 'text-fg-muted hover:bg-elevated/40 hover:text-fg border border-transparent'
+                  }`}
+                >
+                  <span className="truncate">{row.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
         <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
           {groups.length === 0 && (
             <p className="text-[11px] text-fg-faint px-1 pt-1 leading-relaxed">No components match “{search.trim()}”.</p>
@@ -206,11 +257,11 @@ export default function DocumentationView({
             <FoundationArticle
               doc={doc}
               system={system}
-              onOpen={onSelectRailKey}
+              onOpen={onSelectFoundationKey}
               onEdit={onEditFoundation}
             />
           ) : onFoundation ? (
-            <OverviewArticle system={system} onOpen={onSelectRailKey} />
+            <OverviewArticle system={system} onOpen={onSelectFoundationKey} />
           ) : (
             <ComponentArticle def={def} tokens={tokens} onOpen={onSelect} />
           )}

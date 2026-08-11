@@ -40,14 +40,6 @@ import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
 import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
-import HeaderPill from '../components/ui/HeaderPill'
-
-// Share/export mark for the section Export pill.
-const ExportIcon: ComponentType = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M20.7914 12.6074C21.0355 12.3981 21.1575 12.2935 21.2023 12.169C21.2415 12.0598 21.2415 11.9402 21.2023 11.831C21.1575 11.7065 21.0355 11.6018 20.7914 11.3926L12.3206 4.13196C11.9004 3.77176 11.6903 3.59166 11.5124 3.58725C11.3578 3.58342 11.2101 3.65134 11.1124 3.77122C11 3.90915 11 4.18589 11 4.73936V9.03462C8.86532 9.40807 6.91159 10.4897 5.45971 12.1139C3.87682 13.8845 3.00123 16.1759 3 18.551V19.1629C4.04934 17.8989 5.35951 16.8765 6.84076 16.1659C8.1467 15.5394 9.55842 15.1683 11 15.0705V19.2606C11 19.8141 11 20.0908 11.1124 20.2288C11.2101 20.3486 11.3578 20.4166 11.5124 20.4127C11.6903 20.4083 11.9004 20.2282 12.3206 19.868L20.7914 12.6074Z" />
-  </svg>
-)
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -346,16 +338,23 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // The docs site's active rail entry — a FOUNDATION key ('color', 'shadow'…),
-  // the Overview sentinel, or a component CATEGORY name. One state for both
-  // rail groups, because they are one rail: `isFoundationKey()` is the only
-  // place the two kinds are told apart. Lands on Overview, the system-wide
-  // reference, rather than mid-catalogue.
+  // The docs site's active RAIL entry — the Overview sentinel, or a component
+  // CATEGORY name. One state for both rail groups, because they are one rail:
+  // `isFoundationKey()` is the only place the two kinds are told apart. Lands
+  // on Overview rather than mid-catalogue.
   const [docKey, setDocKey] = useState<string>(OVERVIEW_KEY)
+  // Which row of OVERVIEW's own master list is open — a foundation key, or
+  // OVERVIEW_KEY for the whole-system sheet itself. Separate from `docKey`
+  // for the same reason `activeComponent` is separate from a category's rail
+  // key: `docKey` names the GROUP (stays pinned at OVERVIEW_KEY the whole time
+  // you browse foundations, exactly like it stays pinned at a category name
+  // while you browse that category's components), this names which ITEM
+  // inside it is open. Lifted here rather than kept local to
+  // `DocumentationView` so it survives leaving the Documentation tab and
+  // coming back, matching `activeComponent`'s own persistence.
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(OVERVIEW_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
-  // Every foundation section can export its token slice.
-  const canExportSection = tab === 'foundations' && !exportMode
 
   // ── Chrome accent — the UI's own highlight color (table active states,
   // modified dots, previewed-theme tints via `accent-ui`) tracks the system's
@@ -486,9 +485,11 @@ export default function Configurator() {
     centerKey = 'export-save'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
-    // HomeActions (New/Import JSON/Kits) and the Export pill now live in the
-    // FoundationIconRail row above CenterHeader, not in centerRightSlot — see
-    // the icon-toolbar row in the render below.
+    // HomeActions (New/Import JSON/Kits) lives in the FoundationIconRail row
+    // above CenterHeader, not in centerRightSlot — see the icon-toolbar row in
+    // the render below. Export used to sit beside it, but it isn't a property
+    // of whichever foundation you're editing — it's transversal — so it moved
+    // to TopNav (see the Navigation model note there).
     const Active = section.Component
     body = section.key === 'color' ? (
       // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
@@ -556,7 +557,8 @@ export default function Configurator() {
         search={componentSearch}
         active={activeComponent}
         onSelect={selectComponent}
-        onSelectRailKey={setDocKey}
+        activeFoundationKey={docFoundationKey}
+        onSelectFoundationKey={setDocFoundationKey}
         onEditFoundation={selectFoundation}
       />
     )
@@ -615,8 +617,9 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         exportMode={exportMode}
-        onGithub={() => openExport('github')}
         onGetFigma={() => openExport('figma')}
+        onExport={openSectionExport}
+        exportOpen={sectionExportOpen}
         onMenu={() => openAbout('platform')}
         brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : colorColumnVisible ? 198 : null}
         railCollapsed={outerRailVisible && railCollapsed}
@@ -686,14 +689,6 @@ export default function Configurator() {
                 />
                 <div className="ml-auto flex-shrink-0 flex items-center gap-2">
                   <HomeActions />
-                  {canExportSection && (
-                    <HeaderPill
-                      Icon={ExportIcon}
-                      label="Export"
-                      onClick={openSectionExport}
-                      title="Copy this section as CSS · Tailwind · Tokens · MD"
-                    />
-                  )}
                 </div>
               </div>
             )}
@@ -789,12 +784,18 @@ export default function Configurator() {
         )}
       </AnimatePresence>
 
-      {/* Guided export — Source → Format → Export */}
+      {/* Guided export — Source → Format → Export. TRANSVERSAL now: reachable
+          from TopNav regardless of `tab`/`exportMode`, so this modal overlay
+          (its own fixed backdrop) isn't gated to Variables any more. Only
+          while actively editing a foundation does it still start pre-scoped
+          to what's on screen (`COLLECTIONS_OF`) — from Documentation, or from
+          inside another connect view, it falls back to the wizard's own
+          whole-system-leaning default. */}
       <AnimatePresence>
-        {sectionExportOpen && canExportSection && (
+        {sectionExportOpen && (
           <ExportWizard
             key={exportRun}
-            initialCollections={COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']}
+            initialCollections={tab === 'foundations' ? (COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']) : undefined}
             onClose={() => setSectionExportOpen(false)}
             onConnectGithub={() => { setSectionExportOpen(false); openExport('github') }}
           />

@@ -14,13 +14,30 @@ A web configurator that lets product designers build a minimal, custom design to
 **Platform: desktop/laptop only, not a responsive site.** The user is a design engineer at
 a keyboard (see `.impeccable.md`), and the surfaces here — dense token tables, the Export
 wizard's collection/component pickers, side-by-side rail + canvas + preview — assume a real
-window, not a phone. Below Tailwind's `md` (768px) `App.tsx` renders a static "optimized for
-desktop" notice (`DesktopOnlyNotice`) instead of the shell, pure CSS (`md:hidden` /
-`hidden md:block`, no JS viewport check). **Don't spend effort making dense editor screens
-work on a phone layout** — that's explicitly out of scope. Individual components still adapt
-between `md` and `xl` (`SectionRail` becomes a drawer below `md`, `PreviewPanel` hides below
-`xl`) — that range is "a smaller laptop window," not a phone, and is as far as responsive
-work goes here.
+window, not a phone. Below Tailwind's `md` (768px) `App.tsx` renders `DesktopOnlyNotice`
+instead of the shell, pure CSS (`md:hidden` / `hidden md:block`, no JS viewport check).
+**Don't spend effort making dense editor screens work on a phone layout** — that's
+explicitly out of scope. Individual components still adapt between `md` and `xl`
+(`SectionRail` becomes a drawer below `md`, `PreviewPanel` hides below `xl`) — that range is
+"a smaller laptop window," not a phone, and is as far as responsive work goes here.
+
+> **The mobile screen is not a dead end.** `DesktopOnlyNotice` leads with the
+> "optimized for desktop" message and then renders the **entire About drawer** below it —
+> what Escala is · how the tokens work · the Figma plugin · what the docs are based on ·
+> changelog · legal · contact. That content needs no workspace to be useful, and on a phone
+> it used to be unreachable: its only door was `TopNav`'s burger, which lives inside the
+> desktop shell. `AboutMenu.tsx` therefore owns the CONTENT, not just the drawer — it
+> exports `SECTIONS`, `AboutAccordion` and `AboutContact`, and both surfaces render the same
+> array, so the copy can't drift. The drawer keeps its own chrome (72px header, close
+> button, `scrollIntoView` on `section`); mobile keeps its own lead + footer. **This is the
+> one exception to "don't build phone layouts" — it's a static reading surface, not an
+> editor screen.**
+> Two consequences worth knowing: `md:hidden` is `display:none`, not an unmount, so **both
+> screens are in the DOM at once** — `[data-section]` appears twice, which is why the
+> drawer's `scrollIntoView` query is scoped to its own `bodyRef` and must stay that way
+> (a document-wide `querySelector` would find the hidden mobile copy first). And the mobile
+> accordion starts fully collapsed: nothing can pre-open a section there, since the
+> `openAbout(section)` entry point only exists in the shell.
 
 ---
 
@@ -46,11 +63,21 @@ The brand block's right border is the same divider as the left column's, so it r
 unbroken from the very top. **Every row-2 header is `h-[52px]`** — `CenterHeader`,
 `PreviewPanel`, `SaveSidePanel` — so they line up across every column of every section.
 Any new panel header uses that height too. Their actions use the shared `ui/HeaderPill`
-(Variables' Kits AND Export are the same component — don't hand-roll another pill; New and
-Import JSON used to sit here too and are retired, see the Navigation model note below).
+(Variables' Kits is the one still here — Export moved to `TopNav`, see the note below — New
+and Import JSON used to sit here too and are retired, see the Navigation model note below).
 
-> **Export is a guided flow, not a dump — and there is only ONE of it.** Variables' Export
+> **Export is a guided flow, not a dump — and there is only ONE of it.** `TopNav`'s Export
 > pill opens `ExportWizard` (Source → Format → Export), backed by `lib/exportWizard.ts`.
+> **It's TRANSVERSAL, not a per-foundation action** — it used to sit in the
+> `FoundationIconRail` row beside Kits, which meant it only existed while `tab ===
+> 'foundations'` and read as a property of whichever foundation you happened to be editing.
+> Exporting isn't scoped like that: it's something you reach for from anywhere, so it moved
+> to `TopNav`, next to Plugin/Connect — the same cluster of "get your system out of here"
+> actions. `ExportWizard` was already a `fixed inset-0` modal with its own backdrop, so
+> opening it doesn't care what's rendered behind it; the only thing that changes by call
+> site is `initialCollections` — pre-scoped to the active foundation
+> (`COLLECTIONS_OF[activeFoundation]`) when opened from Variables, `undefined` (the wizard's
+> own primitives+semantics default) from anywhere else, incl. Documentation.
 > A separate **Share** pill used to open the same wizard pre-checked to whole-system
 > (`ALL_WIZARD_COLLECTIONS`) instead of the active section — it was retired (`HomeActions`,
 > `Configurator.tsx`'s `shareOpen` state and second `ExportWizard` instance all removed)
@@ -214,22 +241,36 @@ Import JSON used to sit here too and are retired, see the Navigation model note 
   - `docs/foundationArticle.tsx` — the foundation page + the Overview page.
   - `docs/componentArticle.tsx` — the component page (the merged catalogue+docs article).
 - **Rules that keep it honest:**
-  - **The rail derives from `FOUNDATION_DOCS`** (`docRailGroups`), so it can never offer a
-    page that doesn't exist or hide one that does. Its Foundations icons are the Variables
-    Generator's OWN `FOUNDATIONS[].Icon` glyphs, passed in from `Configurator` — one mark
-    per foundation across the editor toolbar, this rail and the page header.
+  - **The rail's Foundations group is ONE entry — "Overview" — not one button per
+    foundation.** Foundations mirrors a component category EXACTLY: a category is one rail
+    button that opens a master list of its components; Overview is one rail button that
+    opens `overviewRows()`'s master list (Overview itself, first, then the nine
+    foundations, in `FOUNDATION_DOCS` order). It used to be nine separate rail buttons
+    (Overview + one per foundation) with no master list at all — an asymmetry with how
+    Categories worked, fixed by giving Foundations the same two-level shape: rail → master
+    list → article. `docRailGroups` still derives the rail (now just the Overview entry)
+    from `FOUNDATION_DOCS`, so it can't offer a foundation the rail doesn't know about;
+    `overviewRows()` (in `DocumentationView.tsx`) derives the master list the same way.
+  - **`docKey` (the RAIL selection) and `activeFoundationKey` (which master-list ROW is
+    open) are separate state, in `Configurator.tsx`, exactly mirroring `docKey`/
+    `activeComponent` for categories.** `docKey` stays pinned at `OVERVIEW_KEY` the ENTIRE
+    time you browse foundations — clicking Color, then Typography, then using prev/next
+    never touches it, same as browsing Button → Button Group never touches a category's
+    rail key. Only `activeFoundationKey` moves. Both are lifted (not local to
+    `DocumentationView`) so leaving the Documentation tab and coming back resumes on the
+    same foundation instead of resetting to Overview — verified: view Shadow → Next → Grid
+    → switch to Variables Generator → back to Documentation → still on Grid.
   - **Every foundation page carries "Edit tokens" → `selectFoundation(key)`**, opening the
     very editor it documents. That link is what makes this documentation OF the Variables
     Generator rather than a parallel description of it. Keep `FoundationDoc.key` equal to
     the `FOUNDATIONS` key or it breaks silently.
   - **`Overview` (`OVERVIEW_KEY = '__overview'`) is the old whole-system sheet**, rendering
     every foundation's sections in one column for hand-off/print. It is NOT a foundation —
-    its own sentinel key, first in the Foundations group. Its TOC is one entry per
+    it's the master list's own first row, the same way a category's master list doesn't
+    duplicate the category's name as one of its own items (Overview isn't the rail's name
+    any more, it's a page, so this is no longer a special case). Its TOC is one entry per
     FOUNDATION, not per section: nine foundations × their sections is a thirty-entry rail
     nobody can scan.
-  - **A foundation page has NO master list** — it is one page, so the 208px column is
-    dropped and the article takes the width (the reference site goes sidebar → page too).
-    The list renders for component categories only.
   - **`Prose` renders `inline code` from backticks.** The foundation copy names tokens
     constantly; a `<p>` printing its own backticks reads as an unrendered markdown file.
     One rule only — don't grow it into a markdown parser.
@@ -481,7 +522,45 @@ Import JSON used to sit here too and are retired, see the Navigation model note 
       rather than a fixed step-12 fallback that could be worse than the ramp's own
       best. `accessibleSolidTone` is untouched and still correct for the flat
       catalogue, which does resolve per-ramp — don't reach for it where the ink
-      isn't literally white or the ramp isn't the one the tone is read from. ·
+      isn't literally white or the ramp isn't the one the tone is read from.
+    - **Ink on a same-family TINT is tone 12, not 11.** Tone 11 is generated to
+      clear ≈4.5:1 against the **PAGE** (`lightnessForContrast` vs tone 1), so the
+      moment it's placed on tone 2–3 — a tint a step or two darker than the page —
+      it lands *under* AA. Measured on Categorical's `status.*-bg`/`status.*-fg`
+      with tone 11 ink: 4.07 / 4.28 / 4.21 : 1 (error / warning / success). Tone 12
+      is Radix's high-contrast text step and survives the tint: ~11:1 in both
+      appearances, worst case across three seeds per family. This is why
+      `status.*-fg` is tone 12 while `content.secondary` (which sits on the PAGE)
+      correctly stays at 11 — the rule is about what the ink SITS ON, not about
+      the role's importance.
+    - **Categorical's `status.*` dark column was a `13 − n` mirror, and it was the
+      worst live contrast bug in the app**: `bg {error.11} / fg {error.7}` measured
+      **1.76 / 1.09 / 1.29 : 1** — a mid-tone ink on a near-text-tone fill, i.e.
+      invisible. Same class as the `surface.page` flip this file already documents;
+      it just survived that pass because it's a separate pair of rows. Both columns
+      are identity now (`scaleLookup` swaps in the dark twin, so tone 2 means "the
+      subtle tint of THIS page" in both). If you write `13 − n` in a dark ref,
+      that's the bug.
+    - **A tone that means "solid" is not a text tone.** shadcn's
+      `muted.foreground` was tone **9** in both appearances — fine-ish on the light
+      ramp (3.86:1) and broken on the dark one, where tone 9 is a mid-grey on a
+      barely-lighter tone 3: **2.89:1**. Now tone 11, the designated low-contrast
+      text step (4.22:1 dark). Not 12 — that's `foreground`'s own tone and would
+      erase the muted/default distinction shadcn's contract exists to draw.
+    - **Known, accepted residuals** (measured, not oversights): text on a step-2/3
+      surface runs a little under 4.5 system-wide, because tone 11 is solved
+      against the page — flat's own `content-primary` on `background-secondary` is
+      4.06 light / 4.47 dark, and shadcn `muted` is 4.22 dark. Categorical's
+      `action.secondary`/`content.accent` (the soft "Secondary" button, accent.3 +
+      accent.11) is 3.61 / 4.01: fixing it means moving `content.accent` to tone
+      12, which also darkens accent text on the PAGE and costs the accent its
+      character — a design call, not a bug fix, so it's left alone deliberately.
+      **The flat catalogue's own status pairs are worse and NOT fixed here**:
+      `background-error-primary`/`content-error` measures 2.48 light / 3.28 dark
+      (warning 1.81 / 4.80, success 2.03 / 4.20), because flat pairs a tone-2 tint
+      with a tone-**8** ink. Flat roles are MATERIALIZED into `themes[theme]`, so
+      re-pointing them needs a `clearSemantics`-style migration (the v43
+      precedent) — don't change `Role.tone` without one. ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Kits in Variables' header and the Export wizard's own
@@ -511,13 +590,25 @@ Import JSON used to sit here too and are retired, see the Navigation model note 
   UI accent). It's fed TWO groups by `docRailGroups` — **Foundations** (from
   `FOUNDATION_DOCS`, icons from the Variables Generator's own `FOUNDATIONS[].Icon`) and
   **Categories** (icons from `CATEGORY_ICONS` in `Configurator`) — and no global nav and no
-  action block; those live in `TopNav`: **Bring to Figma** (icon button → `FigmaConnectView`) and **Connect**
-  (black GitHub pill → `GitHubConnectView`: PAT connect → pick/create repo → push
-  tokens.json/variables.css/README.md). Beside the rail, `DocumentationView` owns the 208px
-  master list — component categories ONLY; a foundation is one page and drops the column.
-  There used to be TWO of that list, one inline in `Configurator` and one in `DocsView` —
-  see the merge note in the Navigation model. Don't fork the rail per section either — pass
-  a different `groups` array.
+  action block; those live in `TopNav`: **Plugin** (outline pill, Figma glyph →
+  `FigmaConnectView`) and **Export** (the filled black pill — opens `ExportWizard`,
+  transversal, see above). **There is no standalone "Connect" GitHub button any more** —
+  it used to sit here too (black pill, rightmost), competing with Export for the same
+  "ship this system" slot. GitHub connect is reachable from INSIDE the export wizard
+  instead: step 3's "Save this design system" card carries its own "Connect GitHub" /
+  "Push to GitHub" button (`onConnectGithub` prop, still opens the same `GitHubConnectView`
+  — PAT connect → pick/create repo → push tokens.json/variables.css/README.md), which reads
+  as the right home for it: pushing to a repo is something you do as part of getting your
+  tokens out, not a parallel top-level destination. `SaveSidePanel` keeps its own GitHub
+  entry point too (`onOpenGithub`) — still the SAME `GitHubConnectView`, still only one
+  GitHub-connect flow in the app, just two doors into it now instead of three. Beside the
+  rail, `DocumentationView` owns the 208px
+  master list — Overview's nine-foundation list and a category's component list share this
+  ONE column (see the Navigation model note on `overviewRows()`/`activeFoundationKey`);
+  there used to be a foundation-shaped hole here (no list at all) plus TWO separate
+  component lists (one inline in `Configurator`, one in `DocsView`) — see the merge note in
+  the Navigation model. Don't fork the rail per section either — pass a different `groups`
+  array.
   - **Variables no longer uses it.** The outer 200px column reserved for foundation
     switching read as wasted width once a foundation's own content (Color's family tree) also
     wanted a left column, and text labels for 9 well-known icons were redundant once the
@@ -525,8 +616,8 @@ Import JSON used to sit here too and are retired, see the Navigation model note 
     horizontal row of icon-only buttons (40.5px, `rounded-[13.5px]`, active = filled
     `accent-ui` circle + soft shadow, tooltip carries the name) docked in a `h-[52px]` row
     above `CenterHeader`, together with `HomeActions` (Kits — New/Import JSON retired, see
-    the Navigation model note above) and the Export pill — the same row Figma's redesign
-    puts them in. It reads the SAME `groups`
+    the Navigation model note above) — Export used to sit beside it too, see the
+    "TRANSVERSAL" note above for why it moved to `TopNav`. It reads the SAME `groups`
     shape (`VARIABLE_FOUNDATIONS` "Variables" + the rest as "Styles") `SectionRail` used to,
     just rendered as a row instead of a labeled column, so the menu/rail/toolbar data source
     still can't disagree. `Configurator.tsx`'s `outerRailVisible` (≠ `railVisible`) gates
@@ -584,9 +675,11 @@ Import JSON used to sit here too and are retired, see the Navigation model note 
   data-driven from `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview since it
   carries its own live specimen), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
-  project name), `FigmaConnectView` (opened by Bring to Figma — download the plugin zip +
-  live-sync guide), or `GitHubConnectView` (opened by the TopNav GitHub pill / Home's
-  Connect; a successful push also upserts the system into `savedSystems`).
+  project name), `FigmaConnectView` (opened by TopNav's Plugin pill — download the plugin
+  zip + live-sync guide), or `GitHubConnectView` (opened by the Export wizard's "Connect
+  GitHub" card or `SaveSidePanel`'s own button — no standalone TopNav entry point any more,
+  see the Navigation model note; a successful push also upserts the system into
+  `savedSystems`).
 - **Theme = one control**: the top bar's single icon button (`ThemeToggle`) shows the
   theme you'd switch TO — a **moon while light**, a **sun while dark**. It calls
   `changePreviewTheme`, so the previewed theme and the app chrome flip together. There is
@@ -1475,7 +1568,7 @@ interface ComponentDef {
 
 **Publishing flow** (`src/lib/figmaSync.ts` — the single source for POSTing tokens):
 - `syncProjectId()` = `slugify(projectName)`; `syncPath()`/`syncUrl()` build the scoped `/api/tokens?project=<id>` endpoint shown in FigmaConnectView / ExportView / HomeView.
-- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by the **TopNav "Sync" pill** (manual push, only rendered when live), the **Figma connect view** (auto-publishes on open), and the auto-sync subscription.
+- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by the **Figma connect view** (auto-publishes on open — reachable from TopNav's **Plugin** pill) and the auto-sync subscription. There used to be a separate manual-publish **"Sync" pill** here too, live-environment-only, which put a second Figma glyph in the bar whenever it and the "Bring to Figma" icon button both rendered — merged into the one **Plugin** pill; publishing now happens by opening the connect view (which auto-publishes) rather than a standalone click-to-push action.
 - `useAutoFigmaSync()` (mounted in `Configurator.tsx`): while `autoSyncFigma` is on, debounce-republishes ~1.5s after edits stop. The change signal is the JSON of `generateTokenJSON()`, so the `figmaLastPublishAt` write can't loop. Toggle lives in `FigmaConnectView`.
 
 ---

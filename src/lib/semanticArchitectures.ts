@@ -233,13 +233,30 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.12}' },
   // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
   { group: 'surface', key: 'overlay', light: '{neutral.12}', dark: '{neutral-dark.1}' }, // pair with opacity.60
-  // Status — feedback fg/bg pairs (critical = error family)
-  { group: 'status', key: 'critical-bg', light: '{error.2}',    dark: '{error.11}' },
-  { group: 'status', key: 'critical-fg', light: '{error.11}',   dark: '{error.7}' },
-  { group: 'status', key: 'warning-bg',  light: '{warning.2}',  dark: '{warning.11}' },
-  { group: 'status', key: 'warning-fg',  light: '{warning.11}', dark: '{warning.7}' },
-  { group: 'status', key: 'success-bg',  light: '{success.2}',  dark: '{success.11}' },
-  { group: 'status', key: 'success-fg',  light: '{success.11}', dark: '{success.7}' },
+  // Status — feedback fg/bg pairs (critical = error family). The fg's ONLY job
+  // is to sit on its own -bg, so the pair is solved as a pair:
+  //
+  //  • **Identity across appearances, not a mirror.** The dark column used to
+  //    read `bg {error.11} / fg {error.7}` — a leftover `13 − n` flip of the
+  //    light row, the exact bug the file header and `recDarkTone` both warn
+  //    about. Measured on the default error/warning/success seeds it produced
+  //    1.76 / 1.09 / 1.29 : 1 — a mid-tone ink on a near-text-tone fill, i.e.
+  //    invisible. Same tone in both columns now; `scaleLookup` already swaps in
+  //    the dark twin, so tone 2 is "the subtle tint of this page" in both.
+  //
+  //  • **The ink is tone 12, not 11.** Tone 11 is generated to clear ≈4.5:1
+  //    against the PAGE (`lightnessForContrast` vs tone 1), so putting it on
+  //    tone 2 — a tint a step darker than the page — systematically lands
+  //    under AA: 4.07 / 4.28 / 4.21 : 1 measured. Tone 12 is Radix's
+  //    high-contrast text step and is the one that survives being placed on a
+  //    tint: 10.99 / 11.38 / 11.32 light, 11.29 / 10.94 / 11.16 dark, worst
+  //    case across three seeds per family.
+  { group: 'status', key: 'critical-bg', light: '{error.2}',    dark: '{error.2}' },
+  { group: 'status', key: 'critical-fg', light: '{error.12}',   dark: '{error.12}' },
+  { group: 'status', key: 'warning-bg',  light: '{warning.2}',  dark: '{warning.2}' },
+  { group: 'status', key: 'warning-fg',  light: '{warning.12}', dark: '{warning.12}' },
+  { group: 'status', key: 'success-bg',  light: '{success.2}',  dark: '{success.2}' },
+  { group: 'status', key: 'success-fg',  light: '{success.12}', dark: '{success.12}' },
   // Border — strokes. (`subtle` sitting on a HIGHER tone than `default` reads
   // backwards, but that's the shipped light-mode schema and light mode isn't
   // broken — left alone deliberately rather than silently re-pointing exported
@@ -352,9 +369,20 @@ const SHADCN_ROLES: { group: string; key: string; light: string; dark: string }[
   // Secondary — a lower-emphasis fill (secondary buttons, chips)
   { group: 'secondary', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
   { group: 'secondary', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Muted — subtle backgrounds (disabled states, quiet panels)
-  { group: 'muted', key: 'fill',       light: '{neutral.3}', dark: '{neutral-dark.3}' },
-  { group: 'muted', key: 'foreground', light: '{neutral.9}', dark: '{neutral-dark.9}' },
+  // Muted — subtle backgrounds (disabled states, quiet panels). `bg-muted
+  // text-muted-foreground` is a real shadcn pairing, so the ink has to read on
+  // the fill. It was tone 9 in both, which is the SOLID step, not a text step —
+  // fine on the light ramp (3.86:1, near AA) and broken on the dark one, where
+  // tone 9 is a mid-grey sitting on a barely-lighter tone 3: 2.89:1 measured.
+  // Tone 11 is the designated low-contrast TEXT step, and puts this pair in
+  // line with the rest of the system (flat's own `content-primary` on
+  // `background-secondary` measures 4.06 light / 4.47 dark — text on a step-2/3
+  // surface runs a little under 4.5 system-wide, because tone 11 is solved
+  // against the PAGE). Tone 12 would clear AA outright but is `foreground`'s
+  // own tone, which would erase the muted/default distinction shadcn's
+  // contract exists to draw.
+  { group: 'muted', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
+  { group: 'muted', key: 'foreground', light: '{neutral.11}', dark: '{neutral-dark.11}' },
   // Accent — shadcn overloads this name for a subtle interactive-hover tint,
   // NOT the brand color (that's Primary) — kept faithful to the source contract.
   { group: 'accent', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
