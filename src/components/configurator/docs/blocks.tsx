@@ -1,12 +1,13 @@
-// Shared documentation blocks — used by BOTH article kinds the docs site
-// renders: a foundation page (`foundationDocs.tsx`) and a component page
-// (`componentArticle.tsx`).
+// Shared documentation blocks — used by BOTH article kinds the app renders:
+// a foundation page (`foundationDocs.tsx`, under the Docs destination) and a
+// component page (`componentArticle.tsx`, under Components).
 //
-// They live here rather than in either article because the whole point of the
-// merged docs site is that a foundation and a component read as the same kind
-// of page: same breadcrumb, same Copy Page, same section headings, same code
-// block, same TOC, same prev/next. Two copies of these would let the two halves
-// drift apart exactly the way the old Documentation/Components split did.
+// They live here, shared, rather than in either article, because a foundation
+// and a component should still read as the same KIND of page even though they
+// now live under two separate top-nav destinations: same breadcrumb shape,
+// same Copy Page, same section headings, same code block, same TOC, same
+// prev/next. Two copies of these would let the two drift apart the way the
+// pre-merge Documentation/Components split once did.
 
 import { useState, type ReactNode } from 'react'
 
@@ -38,21 +39,23 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
 
 // ── Page chrome ──────────────────────────────────────────────────────────────
 
-/** Breadcrumb + page actions. `kind` is the middle crumb — "Foundations" or a
- *  component category — so both article kinds sit in the same hierarchy. */
+/** Breadcrumb + page actions. `section` is the top-nav destination this page
+ *  lives under ("Components" or "Docs" — they're separate destinations now,
+ *  not one shared "Documentation"); `kind` is the middle crumb — "Foundations"
+ *  or a component category. */
 export function DocHeader({
-  kind, title, actions,
-}: { kind: string; title: string; actions: ReactNode }) {
+  section, kind, title, actions,
+}: { section: string; kind: string; title: string; actions: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
       {/* The MIDDLE crumb is the one that drops on a narrow window, not the
           page's own name: with the rail, the master list and the TOC all
           claiming width, three crumbs plus the actions truncated to
-          "Documentation / B… / B", which names nothing. The section and the
+          "Components / B… / B", which names nothing. The section and the
           page survive at every width; the group in between is already visible
           in the rail. */}
       <div className="flex items-center gap-1.5 text-[11px] text-fg-faint min-w-0">
-        <span className="flex-shrink-0">Documentation</span>
+        <span className="flex-shrink-0">{section}</span>
         <span aria-hidden className="hidden lg:inline flex-shrink-0">/</span>
         <span className="hidden lg:inline truncate">{kind}</span>
         <span aria-hidden className="flex-shrink-0">/</span>

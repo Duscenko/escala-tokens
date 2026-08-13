@@ -9,17 +9,20 @@ import ThemeToggle from './ThemeToggle'
 // the left sits over the token-controls column, the nav + actions on the right
 // sit over the canvas.
 
-// TWO destinations, and that is the whole model: you either EDIT the system
-// (Variables Generator) or READ it (Documentation). Documentation covers both
-// halves of the system in one rail — Foundations and Components — the way every
-// real design-system site does. It used to be three items where "Documentation"
-// re-rendered the same catalogue "Components" already showed, and "Design Rules"
-// was a separate un-navigable scroll of the foundations.
-export type TopNavKey = 'variables' | 'docs'
+// THREE destinations: EDIT the system (Variables Generator), browse the
+// component catalogue (Components), or read the token reference (Docs).
+// Components and Docs used to be one "Documentation" destination with two
+// groups sharing a rail (Foundations + Categories) — split apart because
+// browsing components and reading token reference are different intents, and
+// a rail that always listed both regardless of which one you came for was
+// one more thing to visually filter past. Each keeps its own single-purpose
+// rail/master-list now (see `ComponentsView`/`DocsView`).
+export type TopNavKey = 'variables' | 'components' | 'docs'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'variables', label: 'Variables Generator' },
-  { key: 'docs', label: 'Documentation' },
+  { key: 'components', label: 'Components' },
+  { key: 'docs', label: 'Docs' },
 ]
 
 interface TopNavProps {

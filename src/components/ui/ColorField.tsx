@@ -9,7 +9,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useDesignStore } from '../../store/useDesignStore'
-import { accessibleVariants } from '../../lib/colorUtils'
+import { accessibleVariants, readableInk } from '../../lib/colorUtils'
+import { BRAND_SPECTRUM } from '../../lib/brandPalette'
 
 type HSVA = { h: number; s: number; v: number; a: number }
 
@@ -45,6 +46,7 @@ export function ColorPickerPanel({
   value,
   onChange,
   suggestions = false,
+  palette = BRAND_SPECTRUM,
 }: {
   value: string
   onChange: (hex: string) => void
@@ -54,6 +56,14 @@ export function ColorPickerPanel({
    *  single tone inside a ramp, or a gradient stop, has no white-ink guarantee
    *  to keep, so offering "more accessible" versions there would be noise. */
   suggestions?: boolean
+  /** What the "Curated palette" bar offers. Defaults to the full brand
+   *  spectrum, which is right for an accent (any hue is a valid brand) and
+   *  wrong for an intent: a red is what makes an error read as an error, so
+   *  Error's bar ships the curated REDS (`STATE_PRESETS`) and Neutral's the
+   *  gray flavors. Passed in by the caller rather than derived here — this
+   *  module is imported BY `colorControls`, so reading `STATE_PRESETS` back
+   *  out of it would be an import cycle. */
+  palette?: { label: string; hex: string }[]
 }) {
   // Only the user's own saved swatches live here now. The system's ramps used
   // to be listed below as a "Palette" block, but this picker's job is authoring
@@ -188,6 +198,76 @@ export function ColorPickerPanel({
           style={{ left: `${hsva.a * 100}%`, background: hex }}
         />
       </div>
+
+      {/* Curated palette — the vetted brand hues as ONE continuous bar, so
+          jumping to a different hue family is a click instead of hunting the
+          Hue slider for it. Sits BELOW the two sliders, not between them: Hue
+          and Opacity are a pair of continuous axes for the colour you're
+          authoring, and slotting a discrete 17-step strip in the middle broke
+          that pair apart — it read as a third slider you could drag. Carries a
+          visible caption for the same reason: unlabelled it looked like more
+          slider chrome, where every OTHER block in this panel that you pick
+          FROM (Saved, Accessible options) announces itself first.
+          Same scope as `suggestions` — only useful while the value being
+          edited is a family's own base — so it rides that flag rather than
+          adding a second prop that would always be set together with it. */}
+      {suggestions && palette.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] text-fg-muted">Curated palette</span>
+          {/* `rounded-lg`, matching the hex field below it — this strip reads
+              as one more control in the panel's stack, and a pill among
+              rounded-rect inputs looked like a stray slider. The corner clip
+              lives on the CONTAINER (`overflow-hidden`) so the 17 cells stay
+              seamless and only the two ends round off. */}
+          <div
+            role="group"
+            aria-label="Curated palette"
+            className="flex h-6 w-full rounded-lg overflow-hidden touch-none ring-1 ring-black/10"
+          >
+            {palette.map((preset) => {
+              const isSelected = hex.slice(0, 7).toLowerCase() === preset.hex.toLowerCase()
+              // Selection is marked in ink SOLVED against the swatch, never a
+              // hardcoded white: the strip runs from a pale yellow to a deep
+              // indigo, so one fixed colour is invisible at one end and a
+              // glaring slab at the other — white on mid-purple was the
+              // reported "floating white box".
+              const ink = readableInk(preset.hex)
+              return (
+                <button
+                  key={preset.hex}
+                  type="button"
+                  onClick={() => apply(toHsva(preset.hex))}
+                  title={`${preset.label} — ${preset.hex.toUpperCase()}`}
+                  aria-label={`Use ${preset.label}`}
+                  aria-pressed={isSelected}
+                  className="relative flex-1 min-w-0 h-full transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fg"
+                  style={{ backgroundColor: preset.hex }}
+                >
+                  {/* The marker is an INSET rounded outline, not a ring on the
+                      cell itself. A cell-sized ring spans the full 27px height
+                      edge to edge, so it reads as a hard slab dropped on the
+                      strip; pulled in 2px with its own radius it reads as a
+                      highlight sitting IN the swatch, and the 2px of colour
+                      left around it keeps the strip's seam unbroken. Drawn on
+                      a child rather than the button so the cell background
+                      stays full-bleed — rounding the button itself would open
+                      gaps at its corners and break the joined bar.
+                      Radius stays small (3px): the full palette's cells are
+                      only ~15px wide, and at 5px the inner box's corners met
+                      in the middle and the marker rendered as a capsule. */}
+                  {isSelected && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-[2px] rounded-[3px]"
+                      style={{ boxShadow: `inset 0 0 0 2px ${ink}` }}
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Hex + opacity readout */}
       <div className="flex items-center gap-2">

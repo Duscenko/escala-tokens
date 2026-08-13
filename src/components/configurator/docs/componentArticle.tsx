@@ -464,6 +464,7 @@ export function ComponentArticle({
           list: reading the docs and deciding to ship the component is one
           thought, and it used to need two separate sections of the app. */}
       <DocHeader
+        section="Components"
         kind={def.category}
         title={def.label}
         actions={

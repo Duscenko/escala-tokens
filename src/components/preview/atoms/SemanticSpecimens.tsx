@@ -23,14 +23,36 @@ type Slot = { css: string; label: string }
 
 /**
  * Resolves one role to its live colour + the name it goes by in the ACTIVE
- * architecture. `archId` is the Categorical-style `category.token` id; when the
- * current architecture publishes it, that wins for both value and label,
- * otherwise the flat role key does. `fallback` is the already-resolved
- * `PreviewTokens` field, so a role that no architecture names still paints.
+ * architecture.
+ *
+ * `archIds` lists the id this slot goes by in EACH curated architecture —
+ * Categorical's `category.token`, Astryx's, shadcn's — first match wins. It
+ * used to be a single Categorical id, which meant the other two architectures
+ * matched almost nothing: measured, Astryx resolved 5 of 28 slots and shadcn
+ * 1 of 28. The rest silently fell through to the flat catalogue, so the
+ * Action preview painted its Primary button from `themes['background-brand-
+ * solid']` while every other accent surface in the app painted from
+ * `t.brandSolid` — which `resolvePreviewTokens` had already re-mapped onto the
+ * active architecture. Two different greens on screen at once, from one accent.
+ * The ids don't collide across architectures (`action.*` is Categorical-only,
+ * `accent.solid` Astryx-only, `primary.fill` shadcn-only), so a list is
+ * unambiguous.
+ *
+ * `fallback` is the already-arch-resolved `PreviewTokens` field, and for a
+ * NON-FLAT architecture it now beats the flat map: when the active scheme has
+ * no equivalent for a slot, the flat value is a different scheme's answer and
+ * reintroduces exactly the mismatch above. The flat map is only consulted when
+ * the architecture IS flat, where it's the precise per-role value and the
+ * coarser `t.*` field would lose detail.
  */
-function slotOf(t: PreviewTokens, flatKey: string, archId: string, fallback: string): Slot {
+function slotOf(t: PreviewTokens, flatKey: string, archIds: string | string[], fallback: string): Slot {
   const arch = t.archTokens
-  if (arch && arch[archId]) return { css: arch[archId], label: archId }
+  if (arch) {
+    for (const id of Array.isArray(archIds) ? archIds : [archIds]) {
+      if (arch[id]) return { css: arch[id], label: id }
+    }
+    return { css: fallback, label: flatKey }
+  }
   const flat = t.semanticMap ?? {}
   return { css: flat[flatKey] || fallback, label: flatKey }
 }
@@ -86,14 +108,14 @@ function Row({ t, label, children }: { t: PreviewTokens; label: string; children
 
 // ── Content — the text hierarchy, each line painted by its own ink ──────────
 export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
-  const primary = s('content-primary', 'content.primary', t.neutralText)
-  const secondary = s('content-secondary', 'content.secondary', t.fgMuted || t.neutralText)
-  const tertiary = s('content-tertiary', 'content.subtle', t.fgMuted || t.neutralText)
-  const brandInk = s('content-brand', 'content.accent', t.brandText)
-  const disabled = s('content-disabled', 'action.disabled', t.disabledText)
-  const onFill = s('content-inverse', 'content.on-action', t.onBrand)
-  const fill = s('background-brand-solid', 'action.primary', t.brandSolid)
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
+  const primary = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
+  const secondary = s('content-secondary', ['content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
+  const tertiary = s('content-tertiary', ['content.subtle', 'muted.foreground'], t.fgMuted || t.neutralText)
+  const brandInk = s('content-brand', ['content.accent', 'text.accent', 'primary.fill'], t.brandText)
+  const disabled = s('content-disabled', ['text.disabled'], t.disabledText)
+  const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
+  const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
 
   const Line = ({ slot, size, weight, children }: { slot: Slot; size: number; weight: number; children: ReactNode }) => (
     <Row t={t} label={slot.label}>
@@ -171,14 +193,14 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 // re-renders this with that set's real glyphs, same as the Color collage and
 // the component docs.
 export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
-  const primary = s('content-primary', 'icon.primary', t.neutralText)
-  const secondary = s('content-secondary', 'icon.secondary', t.fgMuted || t.neutralText)
-  const disabled = s('content-disabled', 'icon.disabled', t.disabledText)
-  const accent = s('content-brand', 'icon.accent', t.brandText)
-  const onFill = s('content-inverse', 'content.on-action', t.onBrand)
-  const fill = s('background-brand-solid', 'action.primary', t.brandSolid)
-  const surface = s('background-secondary', 'action.neutral', t.neutralFill)
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
+  const primary = s('content-primary', ['icon.primary', 'content.primary', 'text.primary', 'base.foreground'], t.neutralText)
+  const secondary = s('content-secondary', ['icon.secondary', 'content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
+  const disabled = s('content-disabled', ['icon.disabled', 'text.disabled'], t.disabledText)
+  const accent = s('content-brand', ['icon.accent', 'content.accent', 'text.accent', 'primary.fill'], t.brandText)
+  const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
+  const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
+  const surface = s('background-secondary', ['action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
   const r = radiusOf(t, 'md', '8px')
 
   const hierarchy: { slot: Slot; concept: IconConcept }[] = [
@@ -253,14 +275,14 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
 // ── Action — interactive fills: buttons, badges, inputs, controls ───────────
 export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
-  const primary = s('background-brand-solid', 'action.primary', t.brandSolid)
-  const neutral = s('background-secondary', 'action.neutral', t.neutralFill)
-  const secondary = s('background-brand-primary', 'action.secondary', t.neutralFill)
-  const disabled = s('action-disabled', 'action.disabled', t.disabledBg)
-  const onAction = s('content-inverse', 'content.on-action', t.onBrand)
-  const brandInk = s('content-brand', 'content.accent', t.brandText)
-  const stroke = s('border-primary', 'border.default', t.border || '#d0d5dd')
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
+  const primary = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
+  const neutral = s('background-secondary', ['action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
+  const secondary = s('background-brand-primary', ['action.secondary', 'accent.muted'], t.neutralFill)
+  const disabled = s('action-disabled', ['action.disabled', 'background.muted', 'muted.fill'], t.disabledBg)
+  const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
+  const brandInk = s('content-brand', ['content.accent', 'text.accent', 'primary.fill'], t.brandText)
+  const stroke = s('border-primary', ['border.default'], t.border || '#d0d5dd')
   const r = radiusOf(t, 'md', '8px')
   const semi = weightOf(t, 'semibold', 600)
 
@@ -337,13 +359,13 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
 // ── Surface — the elevation stack, page → layers → overlay ──────────────────
 export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
-  const page = s('background-primary', 'surface.page', t.surface)
-  const layer1 = s('background-secondary', 'surface.layer-1', t.neutralFill)
-  const layer2 = s('background-tertiary', 'surface.layer-2', t.neutralFill)
-  const accent = s('background-brand-primary', 'surface.accent', t.neutralFill)
-  const inverse = s('surface-inverse', 'surface.inverse', t.neutralText)
-  const stroke = s('border-secondary', 'border.subtle', t.borderDefault || t.border || '#e9eaeb')
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
+  const page = s('background-primary', ['surface.page', 'background.body', 'base.background'], t.surface)
+  const layer1 = s('background-secondary', ['surface.layer-1', 'background.surface', 'card.fill'], t.neutralFill)
+  const layer2 = s('background-tertiary', ['surface.layer-2', 'background.muted', 'muted.fill'], t.neutralFill)
+  const accent = s('background-brand-primary', ['surface.accent', 'accent.muted'], t.neutralFill)
+  const inverse = s('surface-inverse', ['surface.inverse', 'background.inverted'], t.neutralText)
+  const stroke = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || t.border || '#e9eaeb')
   const r = radiusOf(t, 'lg', '12px')
 
   return (
@@ -377,7 +399,7 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           a dimmed layer rather than as another flat swatch. */}
       <Section t={t} title="Overlay">
         <div style={{ position: 'relative', borderRadius: radiusOf(t, 'md', '8px'), overflow: 'hidden', background: layer1.css, height: 108 }}>
-          <div style={{ position: 'absolute', inset: 0, background: s('background-overlay', 'surface.overlay', t.neutralText).css, opacity: 0.55 }} />
+          <div style={{ position: 'absolute', inset: 0, background: s('background-overlay', ['surface.overlay'], t.neutralText).css, opacity: 0.55 }} />
           <div
             style={{
               position: 'absolute', left: 14, right: 14, top: 20,
@@ -396,27 +418,27 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
 // ── Status — feedback, one alert per severity ───────────────────────────────
 export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const r = radiusOf(t, 'md', '8px')
   const semi = weightOf(t, 'semibold', 600)
 
   const severities: { label: string; bg: Slot; fg: Slot; copy: string }[] = [
     {
       label: 'Critical',
-      bg: s('background-error-primary', 'status.critical-bg', t.neutralFill),
-      fg: s('content-error', 'status.critical-fg', t.errorColor),
+      bg: s('background-error-primary', ['status.critical-bg', 'status.error-muted'], t.neutralFill),
+      fg: s('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor),
       copy: 'Could not save your changes',
     },
     {
       label: 'Warning',
-      bg: s('background-warning-primary', 'status.warning-bg', t.neutralFill),
-      fg: s('content-warning', 'status.warning-fg', t.warningColor || t.errorColor),
+      bg: s('background-warning-primary', ['status.warning-bg', 'status.warning-muted'], t.neutralFill),
+      fg: s('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor),
       copy: 'Your free trial ends soon',
     },
     {
       label: 'Success',
-      bg: s('background-success-primary', 'status.success-bg', t.neutralFill),
-      fg: s('content-success', 'status.success-fg', t.successColor || t.brandText),
+      bg: s('background-success-primary', ['status.success-bg', 'status.success-muted'], t.neutralFill),
+      fg: s('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText),
       copy: 'Payment confirmed',
     },
   ]
@@ -478,12 +500,12 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
 // ── Border — strokes in the contexts where they're actually judged ──────────
 export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
-  const s = (flat: string, arch: string, fb: string) => slotOf(t, flat, arch, fb)
-  const def = s('border-primary', 'border.default', t.border || '#d0d5dd')
-  const subtle = s('border-secondary', 'border.subtle', t.borderDefault || '#e9eaeb')
-  const accent = s('border-brand', 'border.accent', t.brandSolid)
-  const active = s('border-brand', 'border.active', t.brandSolid)
-  const critical = s('border-error', 'border.critical', t.errorColor)
+  const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
+  const def = s('border-primary', ['border.default'], t.border || '#d0d5dd')
+  const subtle = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || '#e9eaeb')
+  const accent = s('border-brand', ['border.accent', 'border.ring'], t.brandSolid)
+  const active = s('border-brand', ['border.active', 'border.ring'], t.brandSolid)
+  const critical = s('border-error', ['border.critical', 'destructive.fill'], t.errorColor)
   const r = radiusOf(t, 'md', '8px')
 
   const Field = ({ slot, text, ring }: { slot: Slot; text: string; ring?: boolean }) => (

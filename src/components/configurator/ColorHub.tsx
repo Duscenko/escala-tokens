@@ -44,8 +44,18 @@ export default function ColorHub({
   // sits on the row's bottom edge, flush against the table header below. That
   // only works if the buttons stretch (`items-stretch` + `h-full`) — with
   // `items-center` the tint would float as a pill inside the row instead.
+  //
+  // The three cells SPLIT the row evenly (`flex-1`, equal basis) rather than
+  // each hugging its own label. Sized to content they clustered at the left
+  // and left a wide dead gap before the search field, and because the labels
+  // differ in length the cells came out three different widths — a row of
+  // blocks that was neither filled nor even. Every call site wraps this in the
+  // same `flex-1 min-w-0` cell (Primitives, Semantics, Gradients), so one
+  // basis rule gives all three tabs an identical row. Padding drops to `px-4`
+  // and only guards the label at narrow widths now that width comes from the
+  // basis; `justify-center` is what actually centres the label in its share.
   const tabBar = (
-    <div className="flex items-stretch h-full">
+    <div className="flex items-stretch h-full w-full">
       {TABS.map((t) => {
         const active = colorTab === t.key
         return (
@@ -53,7 +63,7 @@ export default function ColorHub({
             key={t.key}
             onClick={() => onColorTabChange(t.key)}
             aria-pressed={active}
-            className={`relative h-full px-5 lg:px-7 flex items-center text-[15px] whitespace-nowrap transition-colors ${
+            className={`relative h-full flex-1 min-w-0 px-4 flex items-center justify-center text-[15px] whitespace-nowrap transition-colors ${
               active
                 ? 'font-semibold text-fg bg-accent-ui/[0.07]'
                 : 'font-medium text-fg-faint hover:text-fg-muted hover:bg-elevated/40'

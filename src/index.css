@@ -14,13 +14,22 @@
   --color-fg-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
-  /* Chrome accent — tracks the system's primary color (set at runtime by the
-     Configurator shell; adjusted per theme for readability). Used by table
-     active states, modified dots and previewed-theme highlights. */
+  /* Chrome accent as INK — tracks the system's primary color, walked up its own
+     ramp until it clears 4.5:1 against the chrome PAGE (see Configurator's
+     `chromeAccent`). Correct for text, links, active labels, strokes and the
+     low-alpha washes derived from them. NOT for a solid fill: the walk
+     desaturates the colour to satisfy a page-contrast rule a fill doesn't have,
+     which is what made the chrome's accent buttons visibly different from the
+     brand solid the Color preview renders. */
   --color-accent-ui: var(--accent-ui);
-  /* Label ink ON an --accent-ui fill. Contrast-derived (see Configurator's
-     uiAccentInk), never a hardcoded text-white: a light accent needs dark ink,
-     and on dark chrome the accent brightens so it needs dark ink there too. */
+  /* Chrome accent as a SOLID FILL — the same value every architecture's
+     `{accent.solid}` resolves to (`solidInkPair` on the previewed ramp), so an
+     accent-filled chrome control is literally the user's brand solid, matching
+     the preview's Primary button hex for hex. */
+  --color-accent-solid: var(--accent-solid);
+  /* Label ink ON an --accent-solid fill — solved against that fill, never a
+     hardcoded text-white: a light accent needs dark ink, and on dark chrome the
+     accent brightens so it needs dark ink there too. */
   --color-accent-ink: var(--accent-ink);
 }
 
@@ -36,6 +45,7 @@
   --line-strong: #d4d4d4;
   /* Fallback until the shell derives it from the primary scale. */
   --accent-ui: #7f56d9;
+  --accent-solid: #7f56d9;
   --accent-ink: #ffffff;
 
   font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;

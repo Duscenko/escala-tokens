@@ -251,19 +251,27 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    high-contrast text step and is the one that survives being placed on a
   //    tint: 10.99 / 11.38 / 11.32 light, 11.29 / 10.94 / 11.16 dark, worst
   //    case across three seeds per family.
-  { group: 'status', key: 'critical-bg', light: '{error.2}',    dark: '{error.2}' },
+  //  • **The tint is tone 3, matching Astryx's `status.*-muted`.** Categorical
+  //    and Astryx are two namings of ONE system, so where they express the same
+  //    concept they resolve to the same hex — a severity tint is the Radix
+  //    "component background" step in both. Contrast against the tone-12 ink
+  //    survives the extra step: 10.04 / 10.79 / 10.64 light, 10.35 / 9.59 /
+  //    10.02 dark (error / warning / success), worst case across three seeds.
+  { group: 'status', key: 'critical-bg', light: '{error.3}',    dark: '{error.3}' },
   { group: 'status', key: 'critical-fg', light: '{error.12}',   dark: '{error.12}' },
-  { group: 'status', key: 'warning-bg',  light: '{warning.2}',  dark: '{warning.2}' },
+  { group: 'status', key: 'warning-bg',  light: '{warning.3}',  dark: '{warning.3}' },
   { group: 'status', key: 'warning-fg',  light: '{warning.12}', dark: '{warning.12}' },
-  { group: 'status', key: 'success-bg',  light: '{success.2}',  dark: '{success.2}' },
+  { group: 'status', key: 'success-bg',  light: '{success.3}',  dark: '{success.3}' },
   { group: 'status', key: 'success-fg',  light: '{success.12}', dark: '{success.12}' },
-  // Border — strokes. (`subtle` sitting on a HIGHER tone than `default` reads
-  // backwards, but that's the shipped light-mode schema and light mode isn't
-  // broken — left alone deliberately rather than silently re-pointing exported
-  // tokens. Only the dark steps are realigned here.)
-  { group: 'border', key: 'default',  light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  // Border — strokes. `default` is tone 5, the same step Astryx's own
+  // `border.default` resolves to, so the two namings agree on what a default
+  // stroke IS. That also fixes an ordering this file used to carry and flag:
+  // `subtle` sat on a HIGHER tone (5) than `default` (3), i.e. the "subtle"
+  // stroke was the heavier one. `subtle` takes over the 3 `default` vacated, so
+  // the pair now reads in the right order and no tone leaves the palette.
+  { group: 'border', key: 'default',  light: '{neutral.5}', dark: '{neutral-dark.5}' },
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
-  { group: 'border', key: 'subtle',   light: '{neutral.5}', dark: '{neutral-dark.5}' },
+  { group: 'border', key: 'subtle',   light: '{neutral.3}', dark: '{neutral-dark.3}' },
   { group: 'border', key: 'active',   light: '{accent.9}',  dark: '{accent.8}' }, // focus ring — ≥3:1 vs page (WCAG 1.4.11)
   { group: 'border', key: 'critical', light: '{error.8}',   dark: '{error.7}' },
   { group: 'border', key: 'warning',  light: '{warning.8}', dark: '{warning.7}' },

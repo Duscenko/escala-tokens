@@ -25,7 +25,10 @@ import {
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
 } from '../../lib/colorActions'
-import { SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal } from './colorControls'
+import {
+  SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
+  STATE_PRESETS, type IntentRole,
+} from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
@@ -45,6 +48,26 @@ import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, WIZARD
 // families it mints under that theme's folder automatically.
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
+
+// Which swatches the picker's "Curated palette" bar offers for a given family.
+// An ACCENT (and any custom family) gets the full brand spectrum — every hue
+// is a legitimate brand. An INTENT does not: the hue IS the meaning, so a red
+// drifting toward green stops reading as an error (the same rule
+// `recommendStateColors` follows when it blends chroma but never hue). Those
+// families therefore offer their own curated set — `STATE_PRESETS`, the exact
+// list the State Colors dropdown already shows, so the two entry points can't
+// recommend different reds. Neutral is in that map too and is included here
+// for the same reason: it's an intent (see CLAUDE.md), and a rainbow bar under
+// a gray ramp is as wrong as one under a red.
+// `undefined` ⇒ the panel's own BRAND_SPECTRUM default.
+/** Rendered width of the family-edit popover's `w-64` (16rem at this app's
+ *  18px root = 288px). Used only to clamp it inside a narrow viewport. */
+const EDIT_POPOVER_W = 288
+
+const INTENT_KEYS: readonly string[] = ['neutral', 'error', 'warning', 'success', 'info']
+function curatedPaletteFor(familyKey: string) {
+  return INTENT_KEYS.includes(familyKey) ? STATE_PRESETS[familyKey as IntentRole] : undefined
+}
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -826,7 +849,8 @@ export default function ColorPrimitives({
   const [editFamily, setEditFamily] = useState<string | null>(null)
   const editRef = useRef<HTMLDivElement>(null)
   const editPopRef = useRef<HTMLDivElement>(null)
-  const editPlace = usePopoverPlacement(editRef, editFamily)
+  const navRef = useRef<HTMLElement>(null)
+  const editPlace = usePopoverPlacement(navRef, editFamily, { side: true })
 
   // The picker is 256px wide but the nav column is 198px AND scrolls
   // (`overflow-y-auto`), with two more `overflow:hidden` wrappers above it from
@@ -835,15 +859,26 @@ export default function ColorPrimitives({
   // the bug: the state pickers rendered as a sliver inside the rail's mask.
   //
   // No arrangement of z-index fixes an overflow clip, so the popover is
-  // portaled to <body> and positioned `fixed` off the row's measured rect
-  // instead. Re-measured on scroll (capture phase, so the NAV's own scroll
-  // counts) and resize so it stays pinned to its row.
-  const [editRect, setEditRect] = useState<DOMRect | null>(null)
+  // portaled to <body> and positioned `fixed` off a measured rect instead.
+  //
+  // That rect is the NAV's, not the clicked row's. Anchoring per-row put every
+  // family's picker somewhere different — and worse, the rows sit low enough
+  // that the placement hook flipped most of them ABOVE their row, where a
+  // ~520px panel ran off the top of the window: measured at 833px tall, Error
+  // opened at y=9 (jammed against the viewport edge, overlapping TopNav) while
+  // Success opened at y=46 and Info at y=119. Same control, four positions,
+  // one of them clipped. Anchoring to the nav gives every family ONE position,
+  // and it's beside the column rather than over it, so the family list stays
+  // readable while you edit — the same "dock the picker next to the column,
+  // not on top of it" move the quick-edit strip's popover makes.
+  // Re-measured on scroll (capture phase, so an ancestor's scroll counts) and
+  // on resize.
+  const [navRect, setNavRect] = useState<DOMRect | null>(null)
   useEffect(() => {
-    if (!editFamily) { setEditRect(null); return }
+    if (!editFamily) { setNavRect(null); return }
     const measure = () => {
-      const r = editRef.current?.getBoundingClientRect()
-      if (r) setEditRect(r)
+      const r = navRef.current?.getBoundingClientRect()
+      if (r) setNavRect(r)
     }
     measure()
     window.addEventListener('resize', measure)
@@ -875,7 +910,7 @@ export default function ColorPrimitives({
   // entry point, own popover instance so it anchors where it's clicked.
   const [stripEditOpen, setStripEditOpen] = useState(false)
   const stripEditRef = useRef<HTMLDivElement>(null)
-  const stripEditPlace = usePopoverPlacement(stripEditRef, stripEditOpen)
+  const stripEditPlace = usePopoverPlacement(stripEditRef, stripEditOpen, { side: true })
   useEffect(() => {
     if (!stripEditOpen) return
     function onDown(e: MouseEvent) {
@@ -902,10 +937,14 @@ export default function ColorPrimitives({
   }
 
   // Built here rather than inline in the nav so it renders ONCE, outside every
-  // clipping ancestor. `left` follows the row but is clamped to the viewport so
-  // a 256px panel can't hang off-screen on a narrow window.
+  // clipping ancestor. `left` docks it just past the nav's right border, still
+  // clamped to the viewport so the panel can't hang off-screen on a narrow
+  // window. That clamp used to subtract a literal 256 for "the `w-64` panel" —
+  // wrong here, because this app's root font-size is 18px, so `w-64` (16rem)
+  // measures 288. `EDIT_POPOVER_W` is that measured width; keep the two in
+  // step if the class changes.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
-  const editPortal = editingFamily && editRect
+  const editPortal = editingFamily && navRect
     ? createPortal(
         <AnimatePresence>
           <motion.div
@@ -919,10 +958,13 @@ export default function ColorPrimitives({
             aria-label={`Edit ${editingFamily.label} color`}
             style={{
               position: 'fixed',
-              left: Math.min(editRect.left, window.innerWidth - 256 - 12),
+              left: Math.min(navRect.right + 8, window.innerWidth - EDIT_POPOVER_W - 12),
+              // Top-aligned with the nav in the normal case; `up` only fires on
+              // a window too short to fit the panel below the nav's own top,
+              // and then it bottom-aligns instead of running off-screen.
               ...(editPlace.up
-                ? { bottom: window.innerHeight - editRect.top + 8 }
-                : { top: editRect.bottom + 8 }),
+                ? { bottom: window.innerHeight - navRect.bottom }
+                : { top: navRect.top }),
               maxHeight: editPlace.max,
             }}
             className="z-50 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
@@ -933,7 +975,12 @@ export default function ColorPrimitives({
               <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-              <ColorPickerPanel value={editingFamily.base} onChange={(hex) => changeFamilyBase(editingFamily, hex)} suggestions />
+              <ColorPickerPanel
+                value={editingFamily.base}
+                onChange={(hex) => changeFamilyBase(editingFamily, hex)}
+                suggestions
+                palette={curatedPaletteFor(editingFamily.key)}
+              />
             </div>
           </motion.div>
         </AnimatePresence>,
@@ -1062,12 +1109,25 @@ export default function ColorPrimitives({
                     role="dialog"
                     aria-label={`Edit ${family.label} color`}
                     style={{ maxHeight: stripEditPlace.max }}
-                    className={`absolute left-0 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                      stripEditPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
+                    // Docked to the RIGHT of the 198px column, not under the
+                    // field. Opening downward put a ~540px panel straight over
+                    // the family nav and the first rows of the token table —
+                    // i.e. over the ramp this picker is editing, so you
+                    // couldn't watch the thing you were changing. `left-full
+                    // ml-4` lands its left edge on the column's own `border-r`
+                    // (the field is inset by the row's `px-4`), so it opens
+                    // into the canvas gutter and the table stays readable.
+                    className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                      stripEditPlace.up ? 'bottom-0' : 'top-0'
                     }`}
                   >
                     <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                      <ColorPickerPanel value={family.base} onChange={(hex) => changeFamilyBase(family, hex)} suggestions />
+                      <ColorPickerPanel
+                        value={family.base}
+                        onChange={(hex) => changeFamilyBase(family, hex)}
+                        suggestions
+                        palette={curatedPaletteFor(family.key)}
+                      />
                     </div>
                   </motion.div>
                 )}
@@ -1187,7 +1247,7 @@ export default function ColorPrimitives({
 
       {/* ── nav + table, filling the remaining height ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-      <nav aria-label="Color families" className="w-[198px] flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app">
+      <nav ref={navRef} aria-label="Color families" className="w-[198px] flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app">
         {navFolders.map((folder) => {
           const folderCollapsed = collapsedGroups.has(folder.key)
           return (

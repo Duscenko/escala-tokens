@@ -49,7 +49,7 @@ then export. **There is no left icon rail** — section switching lives in the t
 
 ```
 ┌ row 1 — TopNav (global, every view) ───────────────────────────────────────┐
-│ ◆ Escala          │  Variables Generator · Documentation                  │
+│ ◆ Escala          │  Variables Generator · Components · Docs              │
 │   Token controls  │              [Figma] [◆ Connect] [☾/☀]                 │
 ├── LEFT COLUMN ────┼── CANVAS ──────────────────────────────────────────────┤
 │  Variables rail   │ Color │ Quick edit · Kits · Export                    │  ← row 2
@@ -77,7 +77,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > opening it doesn't care what's rendered behind it; the only thing that changes by call
 > site is `initialCollections` — pre-scoped to the active foundation
 > (`COLLECTIONS_OF[activeFoundation]`) when opened from Variables, `undefined` (the wizard's
-> own primitives+semantics default) from anywhere else, incl. Documentation.
+> own primitives+semantics default) from anywhere else, incl. Components and Docs.
 > A separate **Share** pill used to open the same wizard pre-checked to whole-system
 > (`ALL_WIZARD_COLLECTIONS`) instead of the active section — it was retired (`HomeActions`,
 > `Configurator.tsx`'s `shareOpen` state and second `ExportWizard` instance all removed)
@@ -210,90 +210,90 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   **Variables · Color** (`activeFoundation` defaults to `'color'`) — there is no separate
   landing screen. Leaving a foundation marks it complete (`commitVisit()` →
   `markFoundationComplete`).
-- **TWO top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/`handleNav`),
-  and that split IS the product model: you either **EDIT** the system (**Variables
-  Generator** — `tab 'foundations'`, entering at Color) or **READ** it (**Documentation** —
-  `DocumentationView`, `tab 'docs'`). Export/connect views (Figma · GitHub · Export · Save)
-  unlight both.
-- **Documentation is ONE docs site with TWO rail groups — Foundations + Categories —
-  modelled on createui.co.** Same rail, same article shape, same "On this page" TOC for a
-  foundation page and a component page. It absorbed three former destinations:
-  - `DocsView` ("Documentation") — the component catalogue, documented a SECOND time
-  - `ComponentDocPane` ("Components") — the same catalogue, configured
-  - `DesignRules` ("Design Rules") — the foundations, as one un-navigable 489-line scroll
-  All three files are DELETED (`git log -- <path>` to read them), a deliberate departure
-  from the "keep retired files for reference" convention below: they were extra renderers
-  of data that now has exactly one renderer, and keeping them is the drift hazard this
-  merge exists to close.
-- **File map of the docs site:**
-  - `DocumentationView.tsx` — the shell: master list · article · TOC. Holds the ONE
-    `isFoundationKey()` check that tells a foundation rail key from a category name.
-  - `docs/blocks.tsx` — everything both article kinds share: `CopyButton`, `DocHeader`
-    (breadcrumb), `DocTitle`, `DocSection`, `Prose`, `CodeBlock`, `PreviewCode`,
-    `ShipsAs`, `CountBadge`, `OnThisPage`, `Pager`. **A block used by one article kind
-    only still belongs here if the other could plausibly want it** — two copies is how the
-    old split started.
-  - `docs/foundationDocs.tsx` — `useSystemDoc()` (resolves scales + all 89 roles ONCE per
-    render) and `FOUNDATION_DOCS`, the per-foundation content: lead · why · usage +
-    snippet · `ships` · `tokenCount` · `sections[]` whose `render(c)` draws the live
-    specimen. Adding a foundation is ONE entry here — the rail, the TOC, the Overview page
-    and prev/next all derive from it.
-  - `docs/foundationArticle.tsx` — the foundation page + the Overview page.
-  - `docs/componentArticle.tsx` — the component page (the merged catalogue+docs article).
+- **THREE top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
+  `handleNav`): **Variables Generator** — EDIT the system (`tab 'foundations'`, entering at
+  Color) — **Components** — browse the catalogue (`tab 'components'`, `ComponentsView`) —
+  and **Docs** — read the token reference (`tab 'docs'`, `DocsView`). Export/connect views
+  (Figma · GitHub · Export · Save) unlight all three.
+- **Components and Docs are TWO separate destinations, each a single-purpose rail →
+  master list → article, sharing article renderers but NOT a rail.** They used to be one
+  "Documentation" destination with a shared rail carrying two groups (Foundations +
+  Categories) — reverted, because browsing the component catalogue and reading foundation
+  reference are different intents, and a rail that always listed both regardless of which
+  one you came for was one more thing to filter past to find what you wanted. What's
+  shared is still shared (see below); what differs — the rail, the master list shape, the
+  top-nav entry — is now genuinely separate per destination.
+  - `ComponentsView.tsx` — Components' own shell: master list (grouped by category, with
+    the catalogue's include checkboxes) → `ComponentArticle` → TOC. The category RAIL
+    itself is Configurator's outer `SectionRail`, fed straight from `CATEGORIES` (one
+    group, no Foundations entry to filter past).
+  - `DocsView.tsx` — Docs' own shell: master list (Overview, then the nine foundations) →
+    `FoundationArticle`/`OverviewArticle` → TOC. **No outer `SectionRail`** — Docs has only
+    ONE group of things to list, so a whole column reserved for a lone "Overview" button
+    would be a column spent on one row. It owns its full width under the header instead,
+    the same move Variables Generator makes (`outerRailVisible` is `tab === 'components'`
+    only now; Docs' master list on the left is its entire "rail").
+  - Both still pull from `docs/blocks.tsx` (`CopyButton`, `DocHeader`, `DocTitle`,
+    `DocSection`, `Prose`, `CodeBlock`, `PreviewCode`, `ShipsAs`, `CountBadge`,
+    `OnThisPage`, `Pager`) so a foundation page and a component page read as the same KIND
+    of page — same breadcrumb shape, same Copy Page, same TOC — even though they live under
+    different top-nav entries now. `DocHeader` takes an explicit `section` prop
+    ("Components" / "Docs") for the first breadcrumb crumb — it used to hardcode
+    "Documentation", which was correct back when both shared that one destination and
+    became a stale label the moment they didn't.
+  - `docs/foundationDocs.tsx` (`useSystemDoc()`, `FOUNDATION_DOCS`) and
+    `docs/foundationArticle.tsx`/`docs/componentArticle.tsx` (the article bodies
+    themselves) are UNCHANGED by the split — only the shell around them moved. Adding a
+    foundation is still ONE entry in `FOUNDATION_DOCS`; the master list, the TOC and
+    prev/next all still derive from it.
 - **Rules that keep it honest:**
-  - **The rail's Foundations group is ONE entry — "Overview" — not one button per
-    foundation.** Foundations mirrors a component category EXACTLY: a category is one rail
-    button that opens a master list of its components; Overview is one rail button that
-    opens `overviewRows()`'s master list (Overview itself, first, then the nine
-    foundations, in `FOUNDATION_DOCS` order). It used to be nine separate rail buttons
-    (Overview + one per foundation) with no master list at all — an asymmetry with how
-    Categories worked, fixed by giving Foundations the same two-level shape: rail → master
-    list → article. `docRailGroups` still derives the rail (now just the Overview entry)
-    from `FOUNDATION_DOCS`, so it can't offer a foundation the rail doesn't know about;
-    `overviewRows()` (in `DocumentationView.tsx`) derives the master list the same way.
-  - **`docKey` (the RAIL selection) and `activeFoundationKey` (which master-list ROW is
-    open) are separate state, in `Configurator.tsx`, exactly mirroring `docKey`/
-    `activeComponent` for categories.** `docKey` stays pinned at `OVERVIEW_KEY` the ENTIRE
-    time you browse foundations — clicking Color, then Typography, then using prev/next
-    never touches it, same as browsing Button → Button Group never touches a category's
-    rail key. Only `activeFoundationKey` moves. Both are lifted (not local to
-    `DocumentationView`) so leaving the Documentation tab and coming back resumes on the
-    same foundation instead of resetting to Overview — verified: view Shadow → Next → Grid
-    → switch to Variables Generator → back to Documentation → still on Grid.
+  - **Docs' master list is Overview, then the nine foundations, in `FOUNDATION_DOCS`
+    order** — mirrors a component category's master list exactly (one entry point opens a
+    list of items, Overview is simply the list's first item, not a special case). Adding a
+    foundation there is automatic; nothing in `DocsView.tsx` enumerates them by hand.
+  - **`componentCategory` (Components' rail selection) and `docFoundationKey` (Docs' open
+    row) are independent pieces of state in `Configurator.tsx`, one per destination —
+    switching Components' category never touches `docFoundationKey` and vice versa.** Both
+    are lifted (not local to their view) so leaving a tab and coming back resumes on the
+    same place instead of resetting — verified: Docs → Shadow → Next → Grid → Variables
+    Generator → Docs → still on Grid; Components → Content & Surfaces → Avatar → Variables
+    Generator → Components → still on Avatar.
   - **Every foundation page carries "Edit tokens" → `selectFoundation(key)`**, opening the
-    very editor it documents. That link is what makes this documentation OF the Variables
-    Generator rather than a parallel description of it. Keep `FoundationDoc.key` equal to
-    the `FOUNDATIONS` key or it breaks silently.
-  - **`Overview` (`OVERVIEW_KEY = '__overview'`) is the old whole-system sheet**, rendering
+    very editor it documents (and switching to the Variables Generator tab to do it). That
+    link is what makes Docs documentation OF the Variables Generator rather than a parallel
+    description of it. Keep `FoundationDoc.key` equal to the `FOUNDATIONS` key or it breaks
+    silently.
+  - **`Overview` (`OVERVIEW_KEY = '__overview'`) is the whole-system sheet**, rendering
     every foundation's sections in one column for hand-off/print. It is NOT a foundation —
     it's the master list's own first row, the same way a category's master list doesn't
-    duplicate the category's name as one of its own items (Overview isn't the rail's name
-    any more, it's a page, so this is no longer a special case). Its TOC is one entry per
+    duplicate the category's name as one of its own items. Its TOC is one entry per
     FOUNDATION, not per section: nine foundations × their sections is a thirty-entry rail
     nobody can scan.
   - **`Prose` renders `inline code` from backticks.** The foundation copy names tokens
     constantly; a `<p>` printing its own backticks reads as an unrendered markdown file.
     One rule only — don't grow it into a markdown parser.
   - **The middle breadcrumb crumb drops below `lg`, never the page's own name.** With rail
-    + master list + TOC all claiming width it truncated to "Documentation / B… / B".
+    (Components only) + master list + TOC all claiming width it can truncate; the section
+    and the page survive at every width, the group in between is already visible in the
+    rail/master-list.
   - **The article swaps by REMOUNT (`key` on a plain `motion.div`), never
-    `AnimatePresence mode="wait"`.** `DocsView` used `mode="wait"` and it hung: the view
-    re-rendered with the new page while the DOM kept the old article indefinitely
-    (verified — the render logged the new key, the `<h2>` node never changed). The shell's
-    own center swap avoids it for the same reason.
-  - **`outerRailVisible` is `tab === 'docs'`** — Variables switches via
-    `FoundationIconRail` and reserves no outer column.
-- **What the Documentation/Components merge fixed, so it isn't rebuilt:** every
-  `ComponentDef` field rendered twice in two trees (`description` twice inside Docs alone;
-  `props` in two tables with DIFFERENT columns); two master lists; two search states
-  (`componentSearch` / `docsSearch`); two active-item states, so switching sections lost
-  your place; and split capabilities for the SAME component — Docs owned Examples · TOC ·
-  Copy Page · Related · prev/next · Preview/Code, the catalogue owned live axis controls ·
-  icon slots · translucent-panel backdrop · "Add to system". All of them are on the one
-  page now; check that list before deleting anything from it. The merged **hero** is the
-  playground and the preview/code block at once, so the snippet you copy is the snippet for
-  the variant on screen — neither half could do that — and the variant badge is a real
-  index (`variantIndex`), not a hardcoded "1 of N".
+    `AnimatePresence mode="wait"`.** An earlier version of this shell used `mode="wait"`
+    and it hung: the view re-rendered with the new page while the DOM kept the old article
+    indefinitely (verified — the render logged the new key, the `<h2>` node never changed).
+    The shell's own center swap avoids it for the same reason.
+- **What the ORIGINAL Documentation/Components merge fixed, and the later re-split did
+  NOT undo:** every `ComponentDef` field used to render twice in two trees (`description`
+  twice inside one page alone; `props` in two tables with DIFFERENT columns); two search
+  states; two active-item states, so switching sections lost your place; and split
+  capabilities for the SAME component — one half owned Examples · TOC · Copy Page ·
+  Related · prev/next · Preview/Code, the other owned live axis controls · icon slots ·
+  translucent-panel backdrop · "Add to system". All of that stayed unified inside
+  `ComponentArticle` through the re-split — only the RAIL that used to sit above both
+  Foundations and Components got split back apart, not the component article itself. The
+  merged **hero** is still the playground and the preview/code block at once, so the
+  snippet you copy is the snippet for the variant on screen, and the variant badge is a
+  real index (`variantIndex`), not a hardcoded "1 of N". Don't refuse the article-level
+  unification just because the NAVIGATION got split — they're independent decisions.
 - **Generator/Preset is retired** — the old `WorkbenchLayout` workbench (a left "Preset ·
   Quick edit" accordion beside a live component playground) was the former landing view
   and is now unreachable as its own screen (the file is kept for reference only; don't wire
@@ -584,13 +584,12 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   restores a deep-cloned `DesignSnapshot`; `startNewSystem()` resets to `makeDesignDefaults()`.
   GitHub (PAT identity) is "the account" for the GitHub-backed half — no separate auth
   backend. Removing an entry is local-only either way.
-- **Section sub-rail = `SectionRail.tsx`** — now **Documentation's rail only** (Variables uses
-  `FoundationIconRail`): 200px, transparent over the brand
-  gradient, uppercase group caption + `icon · label` rows (active = raised white row in the
-  UI accent). It's fed TWO groups by `docRailGroups` — **Foundations** (from
-  `FOUNDATION_DOCS`, icons from the Variables Generator's own `FOUNDATIONS[].Icon`) and
-  **Categories** (icons from `CATEGORY_ICONS` in `Configurator`) — and no global nav and no
-  action block; those live in `TopNav`: **Plugin** (outline pill, Figma glyph →
+- **Section sub-rail = `SectionRail.tsx`** — now **Components' rail only** (Variables uses
+  `FoundationIconRail`; Docs uses no outer rail at all, see the Navigation model note):
+  200px, transparent over the brand gradient, uppercase group caption + `icon · label` rows
+  (active = raised white row in the UI accent). It's fed ONE group — **Categories** (icons
+  from `CATEGORY_ICONS` in `Configurator`), straight from `CATEGORIES` — and no global nav
+  and no action block; those live in `TopNav`: **Plugin** (outline pill, Figma glyph →
   `FigmaConnectView`) and **Export** (the filled black pill — opens `ExportWizard`,
   transversal, see above). **There is no standalone "Connect" GitHub button any more** —
   it used to sit here too (black pill, rightmost), competing with Export for the same
@@ -602,13 +601,9 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   tokens out, not a parallel top-level destination. `SaveSidePanel` keeps its own GitHub
   entry point too (`onOpenGithub`) — still the SAME `GitHubConnectView`, still only one
   GitHub-connect flow in the app, just two doors into it now instead of three. Beside the
-  rail, `DocumentationView` owns the 208px
-  master list — Overview's nine-foundation list and a category's component list share this
-  ONE column (see the Navigation model note on `overviewRows()`/`activeFoundationKey`);
-  there used to be a foundation-shaped hole here (no list at all) plus TWO separate
-  component lists (one inline in `Configurator`, one in `DocsView`) — see the merge note in
-  the Navigation model. Don't fork the rail per section either — pass a different `groups`
-  array.
+  rail, `ComponentsView` owns the 208px master list of that category's components (with the
+  catalogue's include checkboxes). Don't fork the rail per section either — pass a
+  different `groups` array.
   - **Variables no longer uses it.** The outer 200px column reserved for foundation
     switching read as wasted width once a foundation's own content (Color's family tree) also
     wanted a left column, and text labels for 9 well-known icons were redundant once the
@@ -666,14 +661,15 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   - Radius' presets, Spacing's base units and Shadow's presets all moved OUT of
     `VariablesTable`'s `toolbar` into that cell; on a narrow window those pill rows pushed
     search off the row),
-  the **Documentation site** (`DocumentationView` — one rail with Foundations +
-  Categories; a foundation page is lead · Why · Usage · its live token sections · Ships as ·
-  prev/next, and a component page is
-  ONE canonical page per component: breadcrumb · Copy Page · Add to system · a live
-  playground hero with a Preview/Code toggle · Usage · per-axis Examples · Accessibility ·
-  Ships-in-Figma · Related · API Reference · prev/next + an "On this page" TOC; fully
-  data-driven from `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview since it
-  carries its own live specimen), `ExportView`
+  the **Docs destination** (`DocsView` — master list of Overview + the nine foundations,
+  no outer rail; a foundation page is lead · Why · Usage · its live token sections · Ships
+  as · prev/next), the **Components destination** (`ComponentsView` — outer category rail
+  + a master list of that category's components; a component page is ONE canonical page
+  per component: breadcrumb · Copy Page · Add to system · a live playground hero with a
+  Preview/Code toggle · Usage · per-axis Examples · Accessibility · Ships-in-Figma ·
+  Related · API Reference · prev/next + an "On this page" TOC; fully data-driven from
+  `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview since it carries its own
+  live specimen), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
   project name), `FigmaConnectView` (opened by TopNav's Plugin pill — download the plugin
   zip + live-sync guide), or `GitHubConnectView` (opened by the Export wizard's "Connect
@@ -735,10 +731,32 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
        collage and the component docs already follow, so switching the library
        re-renders them with that set's real glyph names (`lucide/search` →
        `ph/magnifying-glass`).
-     - **Specimens caption in the ACTIVE architecture's vocabulary.** `slotOf()` prefers
-       `tokens.archTokens['category.token']` (Categorical's `action.primary`) and falls
-       back to the flat role key (`background-brand-solid`), so the label always names the
-       token you'd actually edit in the table in front of you.
+     - **Specimens caption in the ACTIVE architecture's vocabulary, and `slotOf()` takes
+       a CANDIDATE LIST — one id per architecture, first match wins.** It used to take a
+       single Categorical id, which meant the other two curated architectures matched
+       almost nothing and fell through to the flat catalogue: measured, **Astryx resolved
+       5 of 28 slots and shadcn 1 of 28**. That isn't just a label problem — the flat map
+       is a DIFFERENT scheme, resolved from `themes`, so the Action preview painted its
+       Primary button `themes['background-brand-solid']` (`#70cab7`) while the ColorCollage
+       and every component specimen painted `t.brandSolid`, which `resolvePreviewTokens`
+       had already re-mapped onto Astryx's `accent.solid` (`#32bca5`). **Two different
+       accents on screen at once, from one accent colour** — the reported bug. Now
+       26/28 · 26/28 · 17/28. Ids can't collide across architectures (`action.*` is
+       Categorical-only, `accent.solid` Astryx-only, `primary.fill` shadcn-only), so the
+       list is unambiguous; where an architecture genuinely has no equivalent (shadcn ships
+       no brand tint, no scrim, no status bg) the list simply omits it.
+     - **For a NON-FLAT architecture the fallback is the `PreviewTokens` field, never the
+       flat map.** Every `slotOf` call already passes an arch-resolved `t.*` field as its
+       fallback, so an unmatched slot still agrees with the rest of the preview. Reaching
+       for `semanticMap[flatKey]` there is what reintroduces the mismatch above. The flat
+       map is consulted only when the architecture IS flat, where it's the precise
+       per-role value and the coarser `t.*` field would lose detail.
+     - **An arch id must mean the same THING as the flat role, not just sound like it.**
+       `content-disabled` was mapped to Categorical's `action.disabled` — which is a FILL
+       (`{neutral.2}`, near-white), not an ink. Disabled text rendered near-white on a
+       near-white page (~1.05:1, invisible) for every Categorical user. Categorical has no
+       disabled ink at all, so that slot now lists only Astryx's `text.disabled` and
+       otherwise falls back to the resolved `t.disabledText`.
   2. **`categoryKey`** (the active Variables foundation key, passed straight from
      `activeFoundation`) — when `focus` isn't set, tailors the panel to a live component
      set for that foundation: **color** → `ColorCollage`, ONE composite surface rather than
@@ -822,8 +840,8 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 **Important:** This is **not a wizard** — no global step counter, no Continue/Back, no locked
 steps. `currentStep`, `styleDirection`, `selectedAtoms` stay removed. The old
 `FoundationsEditor` (in-Foundations stepper) and `ComponentCatalogue` were **retired** — their
-roles moved into the rail + `DocumentationView`. Don't reintroduce a persistent top header or a
-stepper.
+roles moved into `SectionRail` + `ComponentsView`/`DocsView`. Don't reintroduce a persistent top
+header or a stepper.
 
 ---
 
@@ -832,7 +850,7 @@ stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), SectionRail (Documentation's left rail — Foundations + Categories), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), DocumentationView (the one docs site — Foundations + Components; its articles and shared blocks live in docs/), IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
@@ -981,31 +999,50 @@ Store uses `persist` middleware with `version: 48`. If you add fields, bump the 
 > existing per-family trash already unlocks. No colour data is destroyed — only the theme
 > and the semantic values mapped to it.
 
-> **The chrome's accent is DERIVED for contrast, exactly like the tokens it sits next to.**
-> Two CSS vars, both written by `Configurator.tsx` and nothing else:
+> **The chrome's accent is DERIVED for contrast, exactly like the tokens it sits next to —
+> and INK and FILL are two different derivations.** Three CSS vars, all written by
+> `Configurator.tsx` and nothing else:
 > - **`--accent-ui`** = `chromeAccent(scale, page, fallback)` (`colorUtils.ts`) — walk UP
 >   from the anchor (tone 9) until the tone clears **4.5:1 against the chrome page**. This
->   is the same move the token side already makes for `action-primary`
->   (`accessibleSolidTone`), which is why the app chrome and the Color preview's Button now
->   resolve to the identical hex. It was `primaryScale[9]` raw — the ONE tone with no
->   contrast guarantee — so a pale accent (`#c76aff`) gave **3.03:1** section titles and
->   3.03:1 buttons while the preview beside them rendered a correctly-darkened one. Now
->   4.68:1. One upward walk serves both appearances, because every ramp's HIGH tones are
->   its accessible-text end (near-black on a light ramp, near-white on a dark one) — so
->   light chrome reads `primaryScale`, dark chrome reads `primaryDarkScale`, no branching
->   and no hand-brightening.
-> - **`--accent-ink`** (`text-accent-ink`) = `readableInk(uiAccent)` — the label ink for
->   any `bg-accent-ui` fill. **Never hardcode `text-white` on an accent fill**; eight call
->   sites did, which is fine for a dark accent and unreadable for a pale one, and inverts
->   entirely in dark chrome (there the accent brightens, so the ink comes out near-black —
->   6.43:1 where `text-white` was 3.03:1).
+>   is for everything READ AGAINST THE PAGE: `text-accent-ui` titles, links, active nav,
+>   and the small graphical marks (modified dots, tab underlines, connector rules, the
+>   `/[0.06]`–`/[0.08]` tints) that need to be visible on the chrome. It was
+>   `primaryScale[9]` raw — the ONE tone with no contrast guarantee — so a pale accent
+>   (`#c76aff`) gave **3.03:1** section titles. Now 4.68:1. One upward walk serves both
+>   appearances, because every ramp's HIGH tones are its accessible-text end (near-black on
+>   a light ramp, near-white on a dark one) — so light chrome reads `primaryScale`, dark
+>   chrome reads `primaryDarkScale`, no branching and no hand-brightening.
+> - **`--accent-solid`** (`bg-accent-solid`) = `solidInkPair(ramp, [white, near-black]).tone`
+>   on the previewed ramp — **the accent as a FILL**, and the same rule `{accent.solid}`
+>   resolves through in every architecture (Categorical's `action.primary`, Astryx's
+>   `accent.solid`, shadcn's `primary.fill`) and that flat's `background-brand-solid`
+>   anchors to. So an accent-filled chrome control is the user's brand solid, **hex for hex
+>   with the Color preview's Primary button**.
+> - **`--accent-ink`** (`text-accent-ink`) = `readableInk(accentSolid)` — the label ink for
+>   an `--accent-solid` fill, solved against THAT fill. **Never hardcode `text-white` on an
+>   accent fill**; eight call sites did, which is fine for a dark accent and unreadable for
+>   a pale one.
+>
+> **Why the fill isn't `--accent-ui`.** `chromeAccent`'s walk is a PAGE-contrast rule, and
+> a fill isn't read against the page — its label is read against the fill. Solving both
+> with one value desaturated the fill to satisfy a constraint it doesn't have: measured on
+> accent `#a317e6` in dark chrome, `--accent-ui` landed on dark-ramp tone 11 (`#a557d7`, a
+> washed lavender) while the Color preview's Primary button rendered the anchor `#a317e6`
+> — the same accent showing as two colours on screen, which is what made the chrome's
+> accent buttons look wrong beside the preview. `solidInkPair` also keeps the fill ON the
+> anchor for most accents, because flipping the ink is cheaper than darkening the fill:
+> verified with `#ffe066`, the fill stays `#ffe066` and the ink flips to near-black, while
+> `--accent-ui` correctly darkens to `#89741f` for text. For a well-behaved accent the two
+> coincide (`#9522e9` → both `#9522e9`), so this only diverges where it must.
 >
 > Consequences worth keeping:
+> - **Fills that carry a LABEL use `bg-accent-solid` + `text-accent-ink`** (the foundation
+>   icon rail's active button, the export wizard's step dots and primary buttons). Marks
+>   that carry NO text stay on `bg-accent-ui`, because a 1.5px dot or a 2px underline is a
+>   small graphical element on the page and page contrast is exactly what it needs.
 > - **A softened accent fill breaks the ink guarantee.** `--accent-ink` is solved against
->   the accent, not against a composite of it, so `bg-accent-ui/[0.83]` (what
->   `FoundationIconRail`'s active button used) quietly undoes the math. Fills that carry a
->   label use the full accent; the low-alpha variants (`/[0.06]`–`/[0.08]` tints, dots,
->   underlines, connector lines) carry no text and are fine.
+>   the solid, not against a composite of it, so `bg-accent-solid/[0.83]` would quietly
+>   undo the math. Fills that carry a label use the full solid.
 > - **The contrast target is `--app`, deliberately** — the same reference the role
 >   catalogue uses for every text role (`contrastAgainst: 'background-primary'`). Aiming at
 >   `--elevated` would be stricter but forces tone 12 (near-black) for a pale accent, and
@@ -1455,10 +1492,33 @@ Store uses `persist` middleware with `version: 48`. If you add fields, bump the 
 > file's own comment always claimed both architectures agree on what a role looks like —
 > now they actually do. **If you write `13 − n` in a dark ref, that's the bug.**
 >
-> One thing deliberately left ALONE, so it doesn't get "fixed" by accident: Categorical's
-> `border.subtle` sits on a HIGHER tone than `border.default` (5 vs 3), which reads
-> backwards — but that's the shipped LIGHT-mode schema and light mode isn't broken.
-> Re-pointing it would silently change exported tokens for no bug.
+> **Categorical and Astryx are two NAMINGS of one system, so where they express the same
+> concept they must resolve to the same hex.** Measured across 17 equivalent concepts they
+> already agreed on 13 (page, surfaces, brand solid, the solved on-ink, brand tint, neutral
+> fill, the whole text hierarchy); the alignment closed the rest:
+> - `border.default` **3 → 5**, the step Astryx's own `border.default` resolves to. At tone
+>   3 a Categorical stroke measured 1.24:1 against its page — no visible boundary at all.
+> - `border.subtle` **5 → 3**, taking over the tone `default` vacated. That also fixes an
+>   ordering this file used to flag and leave alone: `subtle` sat on a HIGHER tone than
+>   `default`, i.e. the "subtle" stroke was the heavier one. Now default 1.61:1 > subtle
+>   1.24:1 in light, 1.33 > 1.11 in dark. No tone leaves the palette.
+> - `status.*-bg` **2 → 3**, matching Astryx's `status.*-muted`. Against the tone-12 ink the
+>   pair still measures 10.04 / 10.79 / 10.64 light and 10.35 / 9.59 / 10.02 dark
+>   (error / warning / success), worst case across three seeds per family.
+>
+> **Two differences are deliberate and must NOT be "aligned" — doing so collapses two rows
+> of the same group onto one value.** Categorical ships roles Astryx doesn't, and Astryx
+> serves both with a single token:
+> - `surface.accent` stays `{accent.2}` (Astryx uses `accent.muted` = 3 for both). Tone 3
+>   is already `action.secondary`; equalising them makes a passive brand SURFACE identical
+>   to an interactive brand FILL, which is exactly the Radix 2-vs-3 distinction.
+> - `action.disabled` stays `{neutral.2}` (Astryx uses `background.muted` = 3 for both).
+>   Tone 3 is already `action.neutral` AND `surface.layer-2` — a disabled button would
+>   render identical to a neutral one, side by side in the same table.
+> A duplicate-detector over the projection is the check that catches this: the only pairs
+> that legitimately share a value are `content.on-action == content.inverse` (both are ink
+> on something dark) and `surface.inverse == surface.overlay` in light (the scrim borrows
+> the inverse surface's near-black).
 >
 > **UPDATE (N-theme work below): the "coloured families read light-ramp tints in dark
 > mode" gap noted above IS now fixed** — `scaleLookup` takes a `kind` param and consults

@@ -2,7 +2,7 @@ import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
-import { chromeAccent, readableInk } from '../lib/colorUtils'
+import { chromeAccent, readableInk, solidInkPair } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
@@ -11,17 +11,19 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
-// Two tabs, matching the two top-nav destinations: EDIT the system
-// ('foundations' — the Variables Generator) or READ it ('docs' — the one docs
-// site, Foundations + Components in a single rail). The old 'components' and
-// 'rules' tabs were folded into 'docs'; see DocumentationView's header.
-type Tab = 'foundations' | 'docs'
+// Three tabs, matching the three top-nav destinations: EDIT the system
+// ('foundations' — the Variables Generator), browse the catalogue
+// ('components'), or read the token reference ('docs'). Components and Docs
+// used to be folded into one 'docs' tab (a single rail with two groups); split
+// back into their own tabs, each with its own single-purpose rail.
+type Tab = 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ExportView from '../components/configurator/ExportView'
 import FigmaConnectView from '../components/configurator/FigmaConnectView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
-import DocumentationView, { OVERVIEW_KEY, isFoundationKey, docRailGroups } from '../components/configurator/DocumentationView'
+import ComponentsView from '../components/configurator/ComponentsView'
+import DocsView, { OVERVIEW_KEY } from '../components/configurator/DocsView'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -192,7 +194,8 @@ const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
 }
 
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
-// Design Rules — a ruled page, distinct from DocIcon's plain sheet.
+// Docs (the token reference) — a ruled page, distinct from DocIcon's plain
+// sheet (the README export).
 const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
@@ -338,20 +341,14 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // The docs site's active RAIL entry — the Overview sentinel, or a component
-  // CATEGORY name. One state for both rail groups, because they are one rail:
-  // `isFoundationKey()` is the only place the two kinds are told apart. Lands
-  // on Overview rather than mid-catalogue.
-  const [docKey, setDocKey] = useState<string>(OVERVIEW_KEY)
-  // Which row of OVERVIEW's own master list is open — a foundation key, or
-  // OVERVIEW_KEY for the whole-system sheet itself. Separate from `docKey`
-  // for the same reason `activeComponent` is separate from a category's rail
-  // key: `docKey` names the GROUP (stays pinned at OVERVIEW_KEY the whole time
-  // you browse foundations, exactly like it stays pinned at a category name
-  // while you browse that category's components), this names which ITEM
-  // inside it is open. Lifted here rather than kept local to
-  // `DocumentationView` so it survives leaving the Documentation tab and
-  // coming back, matching `activeComponent`'s own persistence.
+  // Components' outer-rail selection — which component CATEGORY is active.
+  // Lifted here (not local to ComponentsView) so it survives leaving the
+  // Components tab and coming back, matching `activeComponent`'s own
+  // persistence.
+  const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
+  // Docs' master-list selection — a foundation key, or OVERVIEW_KEY for the
+  // whole-system sheet. Lifted for the same reason: survives leaving the Docs
+  // tab and coming back instead of resetting to Overview every visit.
   const [docFoundationKey, setDocFoundationKey] = useState<string>(OVERVIEW_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
@@ -380,13 +377,38 @@ export default function Configurator() {
     theme === 'dark'
       ? chromeAccent(primaryDarkScale, '#0a0a0a', primaryColor)
       : chromeAccent(primaryScale, '#ffffff', primaryColor)
-  // The ink for `bg-accent-ui` fills. Derived, so a pale accent gets dark ink
-  // instead of the unreadable white every call site used to hardcode.
-  const uiAccentInk = readableInk(uiAccent)
+  // ── …and the chrome accent as a FILL, which is a different question ──
+  // `chromeAccent` walks UP the ramp until the tone clears 4.5:1 against the
+  // chrome PAGE. That is the right rule for INK, and the wrong one for a solid
+  // fill: a fill isn't read against the page, its LABEL is read against the
+  // fill. Solving both with one value visibly desaturated the fill — measured
+  // on accent `#a317e6` in dark chrome, `--accent-ui` landed on dark-ramp tone
+  // 11 (`#a557d7`, a washed lavender) while the Color preview's Primary button
+  // rendered the anchor `#a317e6`. Same accent, two colours on screen, which is
+  // exactly what the chrome's accent buttons looked wrong against.
+  //
+  // The fill now uses `solidInkPair` on the previewed ramp — the SAME rule
+  // `{accent.solid}` resolves through in every architecture (Categorical's
+  // `action.primary`, Astryx's `accent.solid`, shadcn's `primary.fill`) and the
+  // same one the flat catalogue's `background-brand-solid` anchors to. So an
+  // accent-filled chrome control is the user's brand solid, hex for hex with
+  // the preview. It also keeps the fill ON the anchor for most accents, because
+  // flipping the ink is cheaper than darkening the fill (see `solidInkPair`).
+  const fillRamp = theme === 'dark' ? primaryDarkScale : primaryScale
+  const uiAccentSolid = (() => {
+    const inks = ['#ffffff', '#0a0d12']
+    const ramp = fillRamp && Object.keys(fillRamp).length ? fillRamp : null
+    if (!ramp) return primaryColor
+    return ramp[solidInkPair(ramp, inks).tone] ?? primaryColor
+  })()
+  // The ink for an `--accent-solid` fill, solved against THAT fill — not
+  // against `--accent-ui`, which is a different colour now.
+  const uiAccentInk = readableInk(uiAccentSolid)
   useEffect(() => {
     document.documentElement.style.setProperty('--accent-ui', uiAccent)
+    document.documentElement.style.setProperty('--accent-solid', uiAccentSolid)
     document.documentElement.style.setProperty('--accent-ink', uiAccentInk)
-  }, [uiAccent, uiAccentInk])
+  }, [uiAccent, uiAccentSolid, uiAccentInk])
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = primaryScale
@@ -413,24 +435,13 @@ export default function Configurator() {
     commitVisit()
     markFoundationComplete('components')
     setExportMode(null)
-    setTab('docs')
-    // Selecting a component from the master list while a FOUNDATION page is
-    // open has to move the rail too, or the rail would keep pointing at a
-    // foundation while a component article is on screen.
-    if (isFoundationKey(docKey)) setDocKey(c.category)
+    setTab('components')
+    setComponentCategory(c.category)
     setActiveComponent(c)
-  }
-  // The docs rail — foundations and categories alike. Opening a component
-  // category is handled by DocumentationView's own effect.
-  const selectDocKey = (key: string) => {
-    commitVisit()
-    setExportMode(null)
-    setTab('docs')
-    setDocKey(key)
   }
   const changeTab = (t: Tab) => {
     commitVisit()
-    if (t === 'docs') markFoundationComplete('components')
+    if (t === 'components') markFoundationComplete('components')
     setExportMode(null)
     setTab(t)
   }
@@ -518,19 +529,13 @@ export default function Configurator() {
       </div>
     )
     centerKey = `f-${section.key}`
-  } else {
-    // ── The docs site — Foundations + Components in one rail ──
-    const onFoundation = isFoundationKey(docKey)
+  } else if (tab === 'components') {
     header = {
-      Icon: DocIcon,
-      title: 'Documentation',
-      subtitle: onFoundation
-        ? 'The foundations you set in the Variables Generator — what each token is for, how to use it, and what it ships as.'
-        : 'One page per component — live playground, examples, accessibility, Figma and API.',
-      // Search filters the component catalogue only, so it's hidden on a
-      // foundation page rather than sitting there filtering nothing. On the
-      // header's own line, not floating atop the master list.
-      right: onFoundation ? undefined : (
+      Icon: ComponentsIcon,
+      title: 'Components',
+      subtitle: 'One page per component — live playground, examples, accessibility, Figma and API.',
+      // On the header's own line, not floating atop the master list.
+      right: (
         <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
@@ -551,29 +556,45 @@ export default function Configurator() {
       ),
     }
     body = (
-      <DocumentationView
+      <ComponentsView
         previewTheme={previewTheme}
-        railKey={docKey}
+        category={componentCategory}
         search={componentSearch}
         active={activeComponent}
         onSelect={selectComponent}
+      />
+    )
+    // Constant, NOT keyed on the open component: the view owns its own article
+    // remount, and re-keying here would rebuild the master list — losing its
+    // scroll position — on every pick.
+    centerKey = 'components'
+  } else {
+    // tab === 'docs'
+    header = {
+      // A ruled page, distinct from DocIcon's plain sheet (the README export)
+      // — Docs and the README were always two different concepts, now they're
+      // also two different destinations.
+      Icon: RulesIcon,
+      title: 'Docs',
+      subtitle: 'The foundations you set in the Variables Generator — what each token is for, how to use it, and what it ships as.',
+    }
+    body = (
+      <DocsView
         activeFoundationKey={docFoundationKey}
         onSelectFoundationKey={setDocFoundationKey}
         onEditFoundation={selectFoundation}
       />
     )
-    // Constant, NOT keyed on the open page: the view owns its own article
-    // remount, and re-keying here would rebuild the master list — losing its
-    // scroll position — on every pick.
+    // Constant, same reasoning as Components above.
     centerKey = 'docs'
   }
 
   // Preview is hidden in Components (the page goes full-width and carries its
-  // own live playground) and in every export/connect view (Code · Docs · Figma
-  // · GitHub) — those own the full panel. Design Rules is a full-width
-  // reference sheet for the same reason. Save keeps the aside: it hosts the
-  // Overview + Connections panel.
-  const showPreview = (tab !== 'docs' && !exportMode) || exportMode === 'save'
+  // own live playground) and in Docs (a full-width reference sheet) — and in
+  // every export/connect view (Code · Docs · Figma · GitHub), which own the
+  // full panel. Save keeps the aside: it hosts the Overview + Connections
+  // panel.
+  const showPreview = (tab === 'foundations' && !exportMode) || exportMode === 'save'
 
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
@@ -582,12 +603,11 @@ export default function Configurator() {
   // now — Variables switches foundations via the horizontal FoundationIconRail
   // docked in the header instead, so there's no left column to reserve width
   // for there. TopNav's brand-block divider follows this, not `railVisible`.
-  // Components is the only section left with an outer SectionRail: Variables
-  // switches via the horizontal FoundationIconRail, and Design Rules is one
-  // full-width sheet. `!== 'foundations'` used to be enough (docs had a rail
-  // too) — on Design Rules it drew the brand block's divider down into a
-  // column that isn't there, a rule leading nowhere.
-  const outerRailVisible = railVisible && tab === 'docs'
+  // Components is the only section with an outer SectionRail (its category
+  // list): Variables switches via the horizontal FoundationIconRail, and Docs
+  // is one self-contained page (its master list IS the whole "rail" it needs
+  // — see DocsView) with no outer column to reserve width for.
+  const outerRailVisible = railVisible && tab === 'components'
   // Color is the one foundation with its own internal 198px column (family
   // nav / token categories / gradient list — see ColorPrimitives, Step3,
   // StepGradients). It's not an outer rail, so `outerRailVisible` above stays
@@ -599,12 +619,13 @@ export default function Configurator() {
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
   const navActive: TopNavKey | null =
-    (!exportMode && tab === 'docs') ? 'docs'
+    (!exportMode && tab === 'components') ? 'components'
+    : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   const handleNav = (key: TopNavKey) => {
     if (key === 'variables') selectFoundation('color')
-    else changeTab('docs')
+    else changeTab(key)
   }
 
   return (
@@ -631,31 +652,28 @@ export default function Configurator() {
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
       {/* ── Body: section sub-rail + floating white panel ── */}
       <div className="flex-1 min-h-0 flex">
-        {/* The docs site's rail — TWO groups in one column, Foundations and
-            Categories, the way a real design-system site lists them. Its
-            entries come from `docRailGroups`, which derives Foundations from
-            the SAME `FOUNDATION_DOCS` the articles render (so the rail can
-            never offer a page that doesn't exist) and Categories from the
-            component catalogue. The Foundations icons are the Variables
-            Generator's OWN foundation glyphs — one mark per foundation across
-            the editor's toolbar, this rail and the page header, so "Shadow"
-            looks the same wherever you meet it.
+        {/* Components' rail — component categories only, now that Docs owns
+            its own page and no longer shares this column (see DocsView). Its
+            entries come straight from `CATEGORIES`, so the rail can never
+            offer a category the catalogue doesn't have.
             Variables reserves no outer column at all — switching lives in the
             horizontal FoundationIconRail docked in its header, freeing this
             width for a foundation's own sub-nav (Color's family Groups tree,
             promoted inside ColorPrimitives). */}
-        {railVisible && tab === 'docs' && (
+        {railVisible && tab === 'components' && (
           <SectionRail
-            ariaLabel="Documentation"
-            title="Documentation"
-            active={docKey}
-            onSelect={setDocKey}
+            ariaLabel="Components"
+            title="Components"
+            active={componentCategory}
+            onSelect={setComponentCategory}
             collapsed={railCollapsed}
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
-            groups={docRailGroups(
-              (key) => key === OVERVIEW_KEY ? RulesIcon : FOUNDATIONS.find((f) => f.key === key)?.Icon,
-              (cat) => CATEGORY_ICONS[cat],
-            )}
+            groups={[
+              {
+                label: 'Categories',
+                items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
+              },
+            ]}
           />
         )}
 

@@ -65,6 +65,7 @@ export function FoundationArticle({
   return (
     <div className="flex flex-col gap-8">
       <DocHeader
+        section="Docs"
         kind="Foundations"
         title={doc.label}
         actions={
@@ -129,6 +130,7 @@ export function OverviewArticle({
   return (
     <div className="flex flex-col gap-8">
       <DocHeader
+        section="Docs"
         kind="Foundations"
         title="Overview"
         actions={<CopyButton text={markdown} label="Copy Page" />}

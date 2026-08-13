@@ -37,7 +37,7 @@ export default function FoundationIconRail({
                     // contrast guarantee: --accent-ink is solved against the
                     // ACCENT, not against an 83% composite of it. Any fill that
                     // wants to stay legible has to be the real accent.
-                    ? 'bg-accent-ui text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
+                    ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
                     : 'text-fg-muted hover:text-fg hover:bg-elevated'
                 }`}
               >

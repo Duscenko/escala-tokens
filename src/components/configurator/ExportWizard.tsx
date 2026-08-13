@@ -43,7 +43,7 @@ function CheckBox({ on }: { on: boolean }) {
     <span
       aria-hidden
       className={`w-[18px] h-[18px] rounded-[5px] flex items-center justify-center flex-shrink-0 border transition-colors ${
-        on ? 'bg-accent-ui border-transparent text-accent-ink' : 'border-line-strong bg-surface'
+        on ? 'bg-accent-solid border-transparent text-accent-ink' : 'border-line-strong bg-surface'
       }`}
     >
       {on && <CheckIcon />}
@@ -255,7 +255,7 @@ export default function ExportWizard({
                 >
                   <span
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 transition-colors ${
-                      complete ? 'bg-accent-ui text-accent-ink' : active ? 'bg-accent-ui text-accent-ink' : 'bg-elevated text-fg-faint'
+                      complete ? 'bg-accent-solid text-accent-ink' : active ? 'bg-accent-solid text-accent-ink' : 'bg-elevated text-fg-faint'
                     }`}
                   >
                     {complete ? <CheckIcon /> : s.n}
@@ -861,14 +861,14 @@ export default function ExportWizard({
             <button
               onClick={() => canNext && setStep((s) => (s + 1) as Step)}
               disabled={!canNext}
-              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-accent-ink disabled:opacity-40 transition-opacity"
+              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity"
             >
               Next
             </button>
           ) : (
             <button
               onClick={runExport}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-ui text-accent-ink transition-opacity hover:opacity-90"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90"
             >
               <svg width="13" height="13" viewBox="0 0 11 11" fill="none" aria-hidden>
                 <path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />

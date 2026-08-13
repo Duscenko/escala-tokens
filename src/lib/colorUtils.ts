@@ -730,16 +730,20 @@ export function solidInkPair(
   return best
 }
 
-// ── The app chrome's own accent ────────────────────────────────────────────
-// The chrome (`--accent-ui`) tracks the user's accent, and it is used BOTH as
-// ink (`text-accent-ui` on section titles, links, active nav) and as a fill
-// (`bg-accent-ui` on primary buttons, step dots, active pills). One value, two
-// jobs, so it has to clear 4.5:1 against the chrome page — otherwise a light
-// accent like #c76aff renders 3.0:1 titles and 3.0:1 white-on-fill buttons,
-// while the Color preview right beside them shows a correctly-darkened button,
-// because the token side already anchors `action-primary` to
-// `accessibleSolidTone`. This is that same anchor, resolved against the chrome
-// page instead of pure white.
+// ── The app chrome's own accent, as INK ─────────────────────────────────────
+// `--accent-ui` tracks the user's accent for everything READ AGAINST THE PAGE:
+// `text-accent-ui` section titles, links, active nav, plus the small graphical
+// marks (modified dots, tab underlines, connector rules) that need to be
+// visible on the chrome — hence the 4.5:1-vs-page walk below. Otherwise a light
+// accent like #c76aff renders 3.0:1 titles.
+//
+// It is NOT the accent used for a solid FILL any more. That's `--accent-solid`
+// (see Configurator), solved with `solidInkPair` so it equals the brand solid
+// every architecture's `{accent.solid}` resolves to. The two used to be one
+// value doing both jobs, which meant a fill inherited a page-contrast rule it
+// doesn't have and came out visibly desaturated — measured on accent #a317e6
+// in dark chrome, the chrome fill landed on dark-ramp tone 11 (#a557d7) while
+// the Color preview's Primary button rendered the anchor #a317e6.
 //
 // Works for BOTH appearances with one upward walk, because that's the Radix
 // model: every ramp's HIGH tones are its accessible-text end — 11–12 are

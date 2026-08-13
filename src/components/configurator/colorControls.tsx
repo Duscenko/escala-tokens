@@ -470,8 +470,12 @@ function StateColorRow({ role, label, value, onChange }: { role: string; label: 
           </div>
           {/* Same family-base rule as Primitives' edit popover: this row IS a
               family anchor (Neutral / a state), so the curated accessible
-              alternatives belong here too. */}
-          <ColorPickerPanel value={value} onChange={onChange} suggestions />
+              alternatives belong here too.
+              `palette={[]}` suppresses the picker's own "Curated palette" bar,
+              though — this row already renders `STATE_PRESETS[role]` as the
+              swatch strip directly above, and the bar would be that identical
+              list a second time inside the same expanded block. */}
+          <ColorPickerPanel value={value} onChange={onChange} suggestions palette={[]} />
         </div>
       )}
     </div>
@@ -524,10 +528,17 @@ export function StateColorRows({
 // with its primary button below the fold. Measure on open, flip above when
 // there's more room there, and cap the panel to the space that actually exists
 // (the caller scrolls its body inside the remainder).
+// `side` is for a panel docked BESIDE its trigger rather than under it. The
+// vertical budget is then measured from the trigger's own TOP (a side-docked
+// panel top-aligns with it) instead of from its bottom edge — using the
+// stacked numbers there would under-report the room by the trigger's height
+// and cap a panel that had space to spare. `up` keeps its meaning in both
+// modes: "grow upward from the anchored edge".
 export function usePopoverPlacement(
   anchor: RefObject<HTMLElement | null>,
   open: unknown,
-  { min = 240, max = 520, prefer = 320 }: { min?: number; max?: number; prefer?: number } = {},
+  { min = 240, max = 520, prefer = 320, side = false }:
+    { min?: number; max?: number; prefer?: number; side?: boolean } = {},
 ) {
   const [place, setPlace] = useState<{ up: boolean; max: number }>({ up: false, max })
   useEffect(() => {
@@ -535,8 +546,8 @@ export function usePopoverPlacement(
     const measure = () => {
       const r = anchor.current?.getBoundingClientRect()
       if (!r) return
-      const below = window.innerHeight - r.bottom - 16
-      const above = r.top - 16
+      const below = window.innerHeight - (side ? r.top : r.bottom) - 16
+      const above = (side ? r.bottom : r.top) - 16
       const up = below < prefer && above > below
       setPlace({ up, max: Math.max(min, Math.min(max, up ? above : below)) })
     }
