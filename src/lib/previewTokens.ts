@@ -108,6 +108,20 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     successColor: (pal?.success?.[9]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[9]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[9]) || infoColor || '#2e90fa',
+    // Tone 12 of each family, same appearance — the accessible ink for text on
+    // that family's own tone-3 tint. Identical maths to what Categorical's own
+    // `status.critical-fg`/`warning-fg`/`success-fg` roles already resolve to;
+    // computed here so every architecture can use it, not just the one that
+    // happens to name it. Same two-tier fallback as errorColor/warningColor/
+    // successColor above: `pal` is only set once a theme actually references a
+    // family (resolveThemePalette returns undefined for an empty themeSources,
+    // the common case for a system with no custom "+Theme" families), so the
+    // usual path is the global scale — dark-appearance twin while previewing a
+    // dark-kind theme, exactly like `globalScales.dark` already threads through
+    // `resolveRole` above.
+    errorInk: pal?.error?.[12] || (kind === 'dark' ? globalScales.dark?.error : globalScales.error)?.[12] || errorColor,
+    warningInk: pal?.warning?.[12] || (kind === 'dark' ? globalScales.dark?.warning : globalScales.warning)?.[12] || warningColor,
+    successInk: pal?.success?.[12] || (kind === 'dark' ? globalScales.dark?.success : globalScales.success)?.[12] || successColor,
     semanticMap: semanticTokens,
     radius,
     spacing,

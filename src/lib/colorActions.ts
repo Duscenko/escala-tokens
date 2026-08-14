@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase } from './colorUtils'
+import { generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase, recommendStateColors } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { linkedStopsFor } from './gradients'
 import { neutralFromBrand } from '../components/configurator/colorControls'
@@ -70,7 +70,7 @@ export function useApplyAccentColor() {
     setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
     setPageBackground, setDarkBackground,
     gradients, updateGradient,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint, linkStatesToAccent,
   } = useDesignStore()
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
@@ -125,11 +125,31 @@ export function useApplyAccentColor() {
       setPrimaryDarkScale(scaleDark)
       if (pageMoved) {
         const s = useDesignStore.getState()
-        s.setErrorScale(gen(s.errorColor)); s.setErrorDarkScale(genDark(s.errorColor))
-        s.setWarningScale(gen(s.warningColor)); s.setWarningDarkScale(genDark(s.warningColor))
-        s.setSuccessScale(gen(s.successColor)); s.setSuccessDarkScale(genDark(s.successColor))
-        s.setInfoScale(gen(s.infoColor)); s.setInfoDarkScale(genDark(s.infoColor))
         s.customColors.forEach((c) => s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) }))
+      }
+      // States (error/warning/success/info) optionally track the accent too —
+      // same contract as the neutral link just above, for the four status
+      // primitives. Linked, `recommendStateColors` blends the NEW accent's
+      // chroma into each canonical hue (hue + lightness stay put, so red stays
+      // red) — the exact math the old one-shot "match states" button ran, now
+      // re-applied on every accent edit instead of a manual click. Unlinked, a
+      // state's own colour is left untouched but its ramp still re-anchors when
+      // the page moved, same as every other coloured family above.
+      if (linkStatesToAccent || pageMoved) {
+        const s = useDesignStore.getState()
+        const rec = linkStatesToAccent ? recommendStateColors(hex) : null
+        const nextError = rec?.error ?? s.errorColor
+        const nextWarning = rec?.warning ?? s.warningColor
+        const nextSuccess = rec?.success ?? s.successColor
+        const nextInfo = rec?.info ?? s.infoColor
+        if (rec) s.setErrorColor(nextError)
+        s.setErrorScale(gen(nextError)); s.setErrorDarkScale(genDark(nextError))
+        if (rec) s.setWarningColor(nextWarning)
+        s.setWarningScale(gen(nextWarning)); s.setWarningDarkScale(genDark(nextWarning))
+        if (rec) s.setSuccessColor(nextSuccess)
+        s.setSuccessScale(gen(nextSuccess)); s.setSuccessDarkScale(genDark(nextSuccess))
+        if (rec) s.setInfoColor(nextInfo)
+        s.setInfoScale(gen(nextInfo)); s.setInfoDarkScale(genDark(nextInfo))
       }
       for (const t of themeOrder) {
         // Only themes reading the GLOBAL accent follow this change.
@@ -164,7 +184,7 @@ export function useApplyAccentColor() {
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
+  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint, linkStatesToAccent])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives
@@ -410,9 +430,15 @@ export function useApplyDarkBackground() {
 export type StateRole = 'error' | 'warning' | 'success' | 'info'
 
 export function useApplyStateColor() {
-  return useCallback((role: StateRole, hex: string) => {
+  /** `fromLink` marks the ONE caller that isn't a user edit: the accent
+   *  applier re-deriving this state because `linkStatesToAccent` is on — same
+   *  contract as `useApplyGrayColor`'s `fromLink`. Every other path is a
+   *  person setting the state by hand, which unlinks it, so their choice is
+   *  never silently overwritten on the next accent change. */
+  return useCallback((role: StateRole, hex: string, fromLink = false) => {
     const s = useDesignStore.getState()
     try {
+      if (!fromLink && s.linkStatesToAccent) s.setLinkStatesToAccent(false)
       const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
       const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
       if (role === 'error')        { s.setErrorColor(hex);   s.setErrorScale(scale); s.setErrorDarkScale(dark) }

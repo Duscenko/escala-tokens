@@ -5,6 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { toneLabel, withAlpha } from './colorUtils'
+import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
 
@@ -14,7 +15,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 const PANEL_KEYS = ['background-secondary']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, opacity, shadows, grid, sizes, colorNaming, panelBackground, pageBackground, gradients } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, colorNaming, panelBackground, pageBackground, gradients } = store
   const semanticTokens = themes.light ?? {}
   const translucent = panelBackground === 'translucent'
   const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
@@ -67,9 +68,6 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
 
-  lines.push('\n  /* Opacity */')
-  Object.entries(opacity).forEach(([k, v]) => lines.push(`  --opacity-${k}: ${v};`))
-
   lines.push('\n  /* Shadow */')
   Object.entries(shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
@@ -116,7 +114,12 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 }
 
 export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { projectName, projectDescription, primaryColor, primaryScale, customColors, themes, themeOrder, typography, spacing, padding, radius, opacity, shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground, gradients, gradientAssignments } = store
+  const {
+    projectName, projectDescription, primaryColor, primaryScale, grayLightScale, errorScale, warningScale,
+    successScale, infoScale, customColors, themes, themeOrder, typography, spacing, padding, radius,
+    shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground,
+    gradients, gradientAssignments,
+  } = store
   const gradientSlugById = (id: string | null) => {
     const g = gradients.find((x) => x.id === id)
     return g ? gradientSlug(g) : null
@@ -124,6 +127,16 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
   const semanticTokens = themes.light ?? {}
   const themeCols = themeOrder.filter((t) => themes[t])
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  // Same 6 built-in families `buildCSS` ships (Accent · Neutral · Error ·
+  // Warning · Success · Info) — this README used to print ONLY Accent plus
+  // any custom colors, silently omitting the other 5 primitive scales that
+  // variables.css and tokens.json both include. Someone reading the README
+  // for "what primitives does this system have" would see one ramp and
+  // conclude the other five didn't exist.
+  const primitiveTable = (name: string, scale: Record<number, string>) =>
+    Object.keys(scale).length
+      ? `\n### Primitive Scale — ${cap(name)}\n\n| Token | Value |\n|-------|-------|\n${Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b)).map(([k, v]) => `| \`--color-${name}-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}\n`
+      : ''
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
   const lib = getIconLibrary(iconLibrary)
@@ -146,13 +159,7 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 ---
 
 ## Color Tokens
-
-### Primitive Scale — Accent
-
-| Token | Value |
-|-------|-------|
-${Object.entries(primaryScale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-accent-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}
-${customColors.map((c)=>`
+${primitiveTable('accent', primaryScale)}${primitiveTable('neutral', grayLightScale)}${primitiveTable('error', errorScale)}${primitiveTable('warning', warningScale)}${primitiveTable('success', successScale)}${primitiveTable('info', infoScale)}${customColors.map((c)=>`
 ### Custom — ${c.label}
 
 | Token | Value |
@@ -198,14 +205,6 @@ ${Object.entries(padding).map(([k,v])=>`| \`--padding-${k}\` | \`${v}\` |`).join
 | Token | Value |
 |-------|-------|
 ${Object.entries(radius).map(([k,v])=>`| \`--radius-${k}\` | \`${v}\` |`).join('\n')}
-
----
-
-## Opacity
-
-| Token | Value |
-|-------|-------|
-${Object.entries(opacity).map(([k,v])=>`| \`--opacity-${k}\` | \`${v}\` |`).join('\n')}
 
 ---
 

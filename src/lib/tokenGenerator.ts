@@ -11,7 +11,15 @@ import { gradientToCss, gradientSlug } from './gradients'
 // v2: primitive color families renamed brand→accent, gray→neutral.
 // v3: semantic token KEYS renamed to a readable taxonomy (bg-primary → surface-0,
 //     bg-accent-solid → action-primary, fg-* → icon-*, text-*_on-accent → text-on-brand-*).
-export const TOKEN_SCHEMA_VERSION = 4
+// v5: `opacity` REMOVED — a standalone 0–100% transparency scale duplicated
+//     what `colors.primitiveAlpha` (accent-a-1…12, composited per family
+//     against the real page) already covers, and shipping both read as two
+//     conflicting answers to "what's the transparency token." The plugin's
+//     `tokens.opacity` import is already guarded (`if (tokens.opacity)`), so
+//     an older configurator's payload (still carrying the field) keeps
+//     importing fine — this bump is for anything that treats an ABSENT field
+//     as a real gap rather than "not part of this system."
+export const TOKEN_SCHEMA_VERSION = 5
 
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
@@ -233,7 +241,6 @@ export function generateTokenJSON() {
       return { cover: slugOf(store.gradientAssignments.cover), avatar: slugOf(store.gradientAssignments.avatar) }
     })(),
     radius: store.radius,
-    opacity: store.opacity,
     shadows: store.shadows,
     grid: store.grid,
     sizes: store.sizes,

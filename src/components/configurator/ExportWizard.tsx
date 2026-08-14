@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
-  buildWizardExport, collectionMeta, primitiveFamilyMeta, selectionCount, WIZARD_FORMATS,
+  buildWizardExport, collectionMeta, primitiveFamilyMeta, selectionCount, WIZARD_FORMATS, WIZARD_FORMAT_BADGE,
   type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { COLOR_FORMATS, type ColorFormat } from '../../lib/sectionExport'
@@ -557,6 +557,7 @@ export default function ExportWizard({
                   {WIZARD_FORMATS.map((f) => {
                     const on = format === f.key
                     const isEscala = f.key === 'escala'
+                    const badge = WIZARD_FORMAT_BADGE[f.key]
                     return (
                       <div
                         key={f.key}
@@ -565,11 +566,22 @@ export default function ExportWizard({
                         <button onClick={() => setFormat(f.key)} aria-pressed={on} className="flex items-center gap-3 w-full px-3 py-2.5 text-left">
                           <Radio on={on} />
                           <span className="min-w-0 flex-1">
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2 flex-wrap">
                               <span className={`block text-[13px] ${on ? 'text-fg font-medium' : 'text-fg'}`}>{f.label}</span>
-                              {isEscala && (
-                                <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-[10px] font-semibold uppercase tracking-wide flex-shrink-0">
-                                  Recommended · Figma plugin
+                              {/* Escala JSON's badge is filled/accent — it's the one
+                                  format this app is built around, and "Recommended"
+                                  should visually outrank a merely-informational tag.
+                                  W3C's and Markdown's are a quiet outline instead:
+                                  worth knowing, not a nudge toward picking them. */}
+                              {badge && (
+                                <span
+                                  className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 ${
+                                    isEscala
+                                      ? 'bg-accent-ui/15 text-accent-ui'
+                                      : 'border border-line-strong text-fg-faint'
+                                  }`}
+                                >
+                                  {badge}
                                 </span>
                               )}
                             </span>

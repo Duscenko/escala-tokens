@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
-import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
+import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
   type GradientDef, type GradientAssignments,
@@ -293,6 +293,13 @@ export interface DesignSnapshot {
    *  overwritten on the next accent edit. Snapshot state, not a preference:
    *  it decides what the neutral ramp IS. */
   linkNeutralToAccent: boolean
+  /** Same contract as `linkNeutralToAccent`, for the four status primitives.
+   *  While true, Error/Warning/Success/Info are DERIVED from the accent
+   *  (`recommendStateColors` — blends only chroma, hue + lightness stay put so
+   *  red stays red) and re-derived on every accent change. Editing a state
+   *  directly clears it — see `useApplyStateColor` — so a hand-picked state
+   *  colour is never silently overwritten on the next accent edit. */
+  linkStatesToAccent: boolean
   // Page background primitive (Radix custom-palette input) — anchors tone 1 of
   // every generated ramp and is the compositing base for derived alpha ramps.
   pageBackground: string
@@ -409,6 +416,10 @@ export function makeDesignDefaults(): DesignSnapshot {
     // protecting, and an accent-tinted grey is the model the rest of the
     // system documents (Radix/HeroUI).
     linkNeutralToAccent: true,
+    // Same reasoning as linkNeutralToAccent: a fresh system's states have no
+    // hand-picked history worth protecting, so they start harmonized with the
+    // accent's chroma too.
+    linkStatesToAccent: true,
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
     primaryColor: '#9522e9',
@@ -513,6 +524,8 @@ interface DesignStore {
   neutralTint: NeutralTint
   linkNeutralToAccent: boolean
   setLinkNeutralToAccent: (v: boolean) => void
+  linkStatesToAccent: boolean
+  setLinkStatesToAccent: (v: boolean) => void
   setColorAlgorithm: (a: ColorAlgorithm) => void
   setContrastShift: (n: number) => void
   setColorNaming: (n: ColorNaming) => void
@@ -724,6 +737,7 @@ export const useDesignStore = create<DesignStore>()(
       setColorNaming: (n) => set({ colorNaming: n }),
       setNeutralTint: (t) => set({ neutralTint: t }),
       setLinkNeutralToAccent: (v) => set({ linkNeutralToAccent: v }),
+      setLinkStatesToAccent: (v) => set({ linkStatesToAccent: v }),
       setPageBackground: (hex) => set({ pageBackground: hex }),
       setDarkBackground: (hex) => set({ darkBackground: hex }),
 
@@ -1010,7 +1024,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 48,
+      version: 49,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1023,7 +1037,12 @@ export const useDesignStore = create<DesignStore>()(
           // ships with every component included by default.
           delete persisted.currentStep
           if (!persisted.projectName) persisted.projectName = 'DS.by.MD'
-          if (!persisted.selectedComponents?.length) {
+          // Only seed when the field is genuinely ABSENT (pre-v3 state, or a
+          // corrupted blob). An explicitly EMPTY array is a real choice —
+          // "ship no components" — and refilling it here silently republished
+          // all 58 as `atoms`, so the Figma plugin generated a page per
+          // component the user had deliberately removed.
+          if (!Array.isArray(persisted.selectedComponents)) {
             persisted.selectedComponents = [...COMPONENT_KEYS]
           }
           // v3→v4: semantic tokens gained an independent dark-mode map. Seed it
@@ -1177,7 +1196,12 @@ export const useDesignStore = create<DesignStore>()(
           // v26→v27: the catalogue grew from 16 to 58 components. New keys ship
           // included by default (same as a fresh system), so union them into the
           // existing selection — anything the user removed stays removed.
-          if (Array.isArray(persisted.selectedComponents)) {
+          // Gated on the PERSISTED version: this union is a one-time catch-up
+          // for state that predates the 58-key catalogue. Left ungated it re-ran
+          // on every later version bump and re-added the 42 non-legacy keys, so
+          // a curated selection healed back to "everything" behind the user's
+          // back — the comment below only ever held for the 16 legacy keys.
+          if (version < 27 && Array.isArray(persisted.selectedComponents)) {
             const have = new Set(persisted.selectedComponents)
             // Only append keys that post-date the old 16-key catalogue.
             const legacy = new Set([
@@ -1679,6 +1703,40 @@ export const useDesignStore = create<DesignStore>()(
           seedGradientDark(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedGradientDark(sys?.snapshot)
+          }
+        }
+        if (version < 49) {
+          // v48→v49: `linkStatesToAccent` — the same accent-follows contract
+          // `linkNeutralToAccent` already has (v47), extended to the four status
+          // primitives. Error/Warning/Success/Info used to harmonize with the
+          // accent only through a manual one-shot "match states" button; now
+          // it's a persisted link, re-derived on every accent edit like the
+          // neutral is.
+          //
+          // Backfilled by DETECTION, same reasoning as v47: a flat default in
+          // either direction is wrong (ON would overwrite hand-picked states on
+          // the next accent edit; OFF would unlink every already-harmonized
+          // system for no reason). If all four stored states equal what
+          // `recommendStateColors(accent)` would produce, they were link-derived
+          // (or the one-shot button was used right before upgrading) → relink;
+          // anything else was chosen deliberately → leave unlinked.
+          const seedStatesLink = (state: any) => {
+            if (!state || typeof state.linkStatesToAccent === 'boolean') return
+            try {
+              const rec = recommendStateColors(state.primaryColor)
+              const eq = (a: unknown, b: string) => typeof a === 'string' && a.toLowerCase() === b.toLowerCase()
+              state.linkStatesToAccent =
+                eq(state.errorColor, rec.error) &&
+                eq(state.warningColor, rec.warning) &&
+                eq(state.successColor, rec.success) &&
+                eq(state.infoColor, rec.info)
+            } catch {
+              state.linkStatesToAccent = false
+            }
+          }
+          seedStatesLink(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedStatesLink(sys?.snapshot)
           }
         }
         return persisted

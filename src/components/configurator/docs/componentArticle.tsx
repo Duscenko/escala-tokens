@@ -19,6 +19,7 @@ import { useDesignStore } from '../../../store/useDesignStore'
 import { COMPONENTS, type ComponentDef, type VariantAxis } from '../../../lib/componentCatalogue'
 import { getIconLibrary } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
+import { mdCell } from '../../../lib/utils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues } from './specimens'
 import {
@@ -67,12 +68,16 @@ function pageMarkdown(def: ComponentDef): string {
   ]
   if (def.axes.length) {
     lines.push('## Variants', '', '| Variant | Options | Default |', '|---|---|---|')
-    def.axes.forEach((a) => lines.push(`| ${a.name} | ${a.values.join(' · ')} | ${a.values[0]} |`))
+    def.axes.forEach((a) => lines.push(`| ${mdCell(a.name)} | ${mdCell(a.values.join(' · '))} | ${mdCell(a.values[0])} |`))
     lines.push('')
   }
   if (def.props.length) {
+    // `p.type` is a TypeScript union rendered verbatim (`"brand" | "danger" |
+    // "success"`) — its own `|`s are column boundaries to a markdown table,
+    // not punctuation, so without escaping every union-typed prop split its
+    // row into extra columns and misaligned the ones after it.
     lines.push('## Props', '', '| Prop | Type | Description |', '|---|---|---|')
-    def.props.forEach((p) => lines.push(`| \`${p.name}\` | \`${p.type}\` | ${p.description} |`))
+    def.props.forEach((p) => lines.push(`| \`${mdCell(p.name)}\` | \`${mdCell(p.type)}\` | ${mdCell(p.description)} |`))
     lines.push('')
   }
   lines.push('## Accessibility', '', def.accessibility, '')

@@ -1,5 +1,5 @@
 // Foundation documentation — one article per foundation the Variables
-// Generator edits (Color · Typography · Radius · Spacing · Opacity · Shadow ·
+// Generator edits (Color · Typography · Radius · Spacing · Shadow ·
 // Grid · Sizes · Icons), rendered in the SAME docs site, with the same page
 // shape, as the component articles.
 //
@@ -50,7 +50,6 @@ export interface SystemDoc {
   spacing: Record<string, string>
   padding: Record<string, string>
   radius: Record<string, string>
-  opacity: Record<string, string>
   shadows: Record<string, string>
   grid: Record<string, string>
   sizes: Record<string, string>
@@ -73,7 +72,7 @@ export function useSystemDoc(): SystemDoc {
     errorScale, errorDarkScale, warningScale, warningDarkScale,
     successScale, successDarkScale, infoScale, infoDarkScale,
     customColors, colorNaming, typography, spacing, padding, radius,
-    opacity, shadows, grid, sizes, iconLibrary, customIcons, themeOrder,
+    shadows, grid, sizes, iconLibrary, customIcons, themeOrder,
   } = useDesignStore()
 
   const scales: GlobalScales = useMemo(() => ({
@@ -149,7 +148,7 @@ export function useSystemDoc(): SystemDoc {
 
   return {
     scales, roles, primitiveFamilies, colorNaming, typography, spacing, padding,
-    radius, opacity, shadows, grid, sizes, iconLibrary, customIcons,
+    radius, shadows, grid, sizes, iconLibrary, customIcons,
     themeCount: themeOrder.length,
   }
 }
@@ -585,47 +584,6 @@ padding: var(--padding-top) var(--padding-right)
         description: 'The per-side inset padded surfaces use. Four values, so a surface can breathe more at the top than the sides.',
         render: (c) => (
           <KeyValues entries={(['top', 'right', 'bottom', 'left'] as const).map((s) => [`padding-${s}`, c.padding?.[s] ?? '—'])} />
-        ),
-      },
-    ],
-  },
-
-  // ── Opacity ────────────────────────────────────────────────────────────────
-  {
-    key: 'opacity',
-    label: 'Opacity',
-    lead: 'The transparency steps overlays, scrims, disabled states and hover tints resolve through — from fully clear to fully opaque.',
-    why: 'Transparency is where "roughly 50%" turns into four different scrims across one product. Fixing the steps makes a dimmed thing recognisably dimmed everywhere, and gives a disabled state one meaning instead of a per-component guess.',
-    usage: 'Use a step, not a decimal. Scrims and modal backdrops sit at the heavy end, hover tints at the light end, disabled controls in the middle. If a value needs to be BOTH translucent and on-brand, reach for the alpha primitives (Accent-Alpha) instead — those are solved against the page, so they survive a theme switch.',
-    usageCode: `opacity: var(--opacity-40);
-
-/* an alpha PRIMITIVE, not an opacity token, when the
-   colour itself must stay correct on both pages */
-background: var(--color-accent-a-3);`,
-    ships: {
-      json: 'opacity',
-      css: '--opacity-*',
-      figma: 'Number variables',
-    },
-    tokenCount: (c) => Object.keys(c.opacity).length,
-    sections: [
-      {
-        id: 'scale',
-        title: 'Scale',
-        description: 'Layer opacity bound to the live Opacity variables.',
-        render: (c) => (
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(c.opacity).map(([key, value]) => {
-              const n = parseFloat(value)
-              const alpha = Number.isNaN(n) ? 1 : value.includes('%') || n > 1 ? Math.min(n / 100, 1) : n
-              return (
-                <div key={key} className="flex flex-col items-center gap-1.5">
-                  <span className="w-16 h-10 rounded-lg bg-accent-ui" style={{ opacity: alpha }} />
-                  <span className="text-[10px] font-mono text-fg-faint">{key} · {value}</span>
-                </div>
-              )
-            })}
-          </div>
         ),
       },
     ],

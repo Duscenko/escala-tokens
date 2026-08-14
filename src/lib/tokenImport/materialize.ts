@@ -138,7 +138,7 @@ export function materializeImport(analysis: ImportAnalysis, opts: MaterializeOpt
   if (analysis.foundations.spacing.status === 'detected') {
     snap.spacing = { ...analysis.foundations.spacing.values }
   }
-  for (const key of ['radius', 'opacity', 'shadows', 'grid', 'sizes'] as const) {
+  for (const key of ['radius', 'shadows', 'grid', 'sizes'] as const) {
     const report = analysis.foundations[key]
     if (report.status === 'detected' && Object.keys(report.values).length) {
       snap[key] = { ...snap[key], ...report.values }

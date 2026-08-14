@@ -14,12 +14,12 @@ import { useDesignStore } from '../store/useDesignStore'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'typography' | 'spacing'
-  | 'radius' | 'opacity' | 'shadow' | 'grid' | 'sizes' | 'icons'
+  | 'radius' | 'shadow' | 'grid' | 'sizes' | 'icons'
 
 /** Every collection, in export order — also the "share the whole system" preset. */
 export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'primitives', 'semantics', 'typography', 'spacing',
-  'radius', 'opacity', 'shadow', 'grid', 'sizes', 'icons',
+  'radius', 'shadow', 'grid', 'sizes', 'icons',
 ]
 
 export type WizardFormat = 'w3c' | 'escala' | 'css' | 'scss' | 'tailwind' | 'md'
@@ -30,13 +30,9 @@ export type WizardStructure = 'single' | 'per-collection'
  *  Primitives and semantics are one 'color' section there, hence the dedupe. */
 const SECTION_OF: Record<WizardCollection, SectionKey> = {
   primitives: 'color', semantics: 'color', typography: 'typography',
-  spacing: 'spacing', radius: 'radius', opacity: 'opacity',
+  spacing: 'spacing', radius: 'radius',
   shadow: 'shadow', grid: 'grid', sizes: 'sizes', icons: 'icons',
 }
-
-/** Distinct sections behind the collections — when all of them are picked the
- *  Tailwind/MD export uses the whole-system builder (which adds the intro). */
-const ALL_SECTION_COUNT = new Set(Object.values(SECTION_OF)).size
 
 export interface WizardSelection {
   collections: WizardCollection[]
@@ -77,11 +73,36 @@ type TokenJSON = ReturnType<typeof generateTokenJSON>
 export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[] = [
   { key: 'w3c', label: 'W3C Design Tokens', hint: 'Standard format with $value, $type' },
   { key: 'escala', label: 'Escala JSON', hint: 'The exact tokens.json the Figma plugin imports' },
+  // Markdown sits right after Escala JSON, not at the bottom of the list —
+  // it's the other format most people reach for here (design context to hand
+  // an AI assistant), so it shouldn't read as an afterthought below three
+  // CSS-flavoured formats it has nothing to do with.
+  { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
   { key: 'css', label: 'CSS Custom Properties', hint: '--token-name: value' },
   { key: 'scss', label: 'SCSS Variables', hint: '$token-name: value' },
   { key: 'tailwind', label: 'Tailwind config', hint: 'theme.extend snippet' },
-  { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
 ]
+
+// Badge shown next to a format's label in the full wizard's Format step
+// (ExportWizard). Only the formats where "why would I pick this one" isn't
+// obvious from the hint alone get one:
+// - Escala JSON is the one the app itself is built around, so it's marked
+//   RECOMMENDED — but naming the plugin "Figma plugin" here reads as "the
+//   Figma plugin" (as in, Figma's own), when it's actually Escala's plugin
+//   FOR Figma. Same badge text problem `ColumnExportMenu`'s "Figma plugin"
+//   avoids because a badge in a table cell has no room to be misread as an
+//   entity name — this one, sitting right next to "Recommended", does.
+// - W3C is the interoperable choice — it needs to say so, or "Recommended"
+//   sitting on the row above it silently outranks the one format that isn't
+//   locked to this app at all.
+// - Markdown's audience isn't a tool that IMPORTS it, it's an AI assistant
+//   reading it as context — naming the assistants makes that concrete instead
+//   of leaving "design context for AI" to mean nothing more specific.
+export const WIZARD_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = {
+  escala: 'Recommended · Escala Plugin',
+  w3c: 'Compatible with other plugins & Figma',
+  md: 'Claude · Codex',
+}
 
 // ── Primitive families ───────────────────────────────────────────────────────
 // `colors.primitive` is FLAT (`accent-9`, `accent-dark-9`, `teal-3`), so a
@@ -159,7 +180,6 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
     { key: 'typography', label: 'Typography', count: typographyCount },
     { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length },
     { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length },
-    { key: 'opacity', label: 'Opacity', count: Object.keys(full.opacity).length },
     { key: 'shadow', label: 'Shadow', count: Object.keys(full.shadows).length },
     { key: 'grid', label: 'Grid', count: Object.keys(full.grid).length },
     { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length },
@@ -258,10 +278,6 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
     case 'radius': return dim(full.radius)
     case 'sizes': return dim(full.sizes)
     case 'grid': return dim(full.grid)
-    case 'opacity':
-      return Object.fromEntries(
-        Object.entries(full.opacity).map(([k, v]) => [k, token(parseFloat(v) / 100, 'number')]),
-      ) as W3CNode
     case 'shadow':
       return Object.fromEntries(Object.entries(full.shadows).map(([k, v]) => [k, token(v, 'shadow')])) as W3CNode
     case 'icons': {
@@ -278,7 +294,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
 // Root keys per collection in the W3C tree (also the per-collection filenames).
 const W3C_ROOT: Record<WizardCollection, string> = {
   primitives: 'color', semantics: 'semantic', typography: 'typography',
-  spacing: 'spacing', radius: 'radius', opacity: 'opacity',
+  spacing: 'spacing', radius: 'radius',
   shadow: 'shadow', grid: 'grid', sizes: 'size', icons: 'icon',
 }
 
@@ -327,7 +343,6 @@ function varLines(key: WizardCollection, sel: WizardSelection, full: TokenJSON):
     }
     case 'spacing': return Object.entries(full.spacing).map(([k, v]) => [`spacing-${k}`, v])
     case 'radius': return Object.entries(full.radius).map(([k, v]) => [`radius-${k}`, v])
-    case 'opacity': return Object.entries(full.opacity).map(([k, v]) => [`opacity-${k}`, v])
     case 'shadow': return Object.entries(full.shadows).map(([k, v]) => [`shadow-${k}`, v])
     case 'grid': return Object.entries(full.grid).map(([k, v]) => [`grid-${k}`, v])
     case 'sizes': return Object.entries(full.sizes).map(([k, v]) => [`size-${k}`, v])
@@ -437,10 +452,18 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // section builders need to be told which half (and which families) this
     // run actually picked — otherwise a primitives-only, Accent-only export
     // would still render every family plus the whole semantic layer.
+    // `modes` matters for the identical reason: the Summary step counts
+    // variables across every MODE the run checked (light+dark ships as one
+    // number), and `mdFor`'s color section used to read the store's light
+    // theme as a literal, silently dropping dark (and any custom theme) from
+    // the file regardless of what Step 1 said was included — the promised
+    // count and the actual file disagreed for Markdown specifically. Omitted
+    // when semantics isn't selected; `mdFor` never reads it in that case.
     const colorOpts = {
       families: ordered.includes('primitives') ? sel.primitiveFamilies : [],
       appearance: sel.primitiveAppearance,
       includeSemantics: ordered.includes('semantics'),
+      modes: ordered.includes('semantics') ? sel.modes : undefined,
     }
     if (sel.structure === 'per-collection') {
       return sections
@@ -451,12 +474,19 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
         }))
         .filter((f) => f.content.trim().length > 0)
     }
-    // Whole-system when every section is in play, otherwise stitch the picked ones.
-    // "Every section" also means an unscoped color section — a family filter
-    // makes this a partial export even when all ten collections are checked.
-    const isAll = sections.length === ALL_SECTION_COUNT && !sel.primitiveFamilies && !sel.primitiveAppearance
+    // Whole-system when every collection is checked, otherwise stitch the
+    // picked ones. Checking `ordered.length` against every WizardCollection
+    // (not just distinct SECTIONS) matters: Primitives and Semantics both
+    // map to 'color', so checking only 9 of the 10 collections — Primitives
+    // but not Semantics, say — still covered all 9 distinct sections and
+    // used to take this branch too, which ignores `includeSemantics`
+    // entirely and would have leaked a semantic table into a run that never
+    // asked for one. A family filter still forces the partial path even with
+    // all ten checked, for the same reason — an unscoped color section is
+    // part of what "every section, unscoped" means.
+    const isAll = ordered.length === ALL_WIZARD_COLLECTIONS.length && !sel.primitiveFamilies && !sel.primitiveAppearance
     const content = isAll
-      ? buildSectionExport('all', sel.format, sel.colorFormat)
+      ? buildSectionExport('all', sel.format, sel.colorFormat, colorOpts)
       : sections.map((s) => buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat, colorOpts)).join(
           sel.format === 'md' ? '\n\n---\n\n' : '\n\n',
         )

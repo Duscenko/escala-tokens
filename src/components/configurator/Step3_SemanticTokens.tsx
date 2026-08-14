@@ -12,7 +12,6 @@ import {
 } from '../../lib/semanticRoles'
 import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
 import { resolveThemePalette } from '../../lib/themeSources'
-import AddThemeModal from './AddThemeModal'
 import { ArchitectureSelect, ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import { BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal } from './colorControls'
@@ -489,6 +488,7 @@ export default function Step3_SemanticTokens({
   previewTheme,
   onPreviewThemeChange,
   tabBar,
+  onOpenAddTheme,
 }: {
   /** Color's three-tab bar, passed down (not pre-wrapped) so it renders on the
    *  SAME row as this table's "Tokens" header — exactly how ColorPrimitives
@@ -504,7 +504,11 @@ export default function Step3_SemanticTokens({
   /** Theme currently rendered in the right-hand preview (eye toggle). */
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
-} = {}) {
+  /** "+ Theme" — opens `AddThemePanel` DOCKED in the right-hand aside
+   *  (Configurator owns that boolean and swaps it in for `PreviewPanel`), not
+   *  a modal this component renders itself. Every trigger just reports up. */
+  onOpenAddTheme: () => void
+}) {
   const store = useDesignStore()
   const {
     primaryColor, errorColor, primaryScale, errorScale, warningScale, successScale, infoScale,
@@ -671,9 +675,6 @@ export default function Step3_SemanticTokens({
   /** The token table's scroll container — the Token Details dialog's anchor. */
   const tableRef = useRef<HTMLDivElement>(null)
 
-  // Theme modal state. Add-only: a theme is created against the primitives and
-  // then reads through them, so there is no edit mode to open.
-  const [addThemeOpen, setAddThemeOpen] = useState(false)
   // Which architecture cell has its primitive picker open (`tokenId:mode`).
   const [archEditing, setArchEditing] = useState<string | null>(null)
   // Theme key pending a delete confirmation — deleteTheme() used to fire
@@ -1057,7 +1058,7 @@ export default function Step3_SemanticTokens({
                 <span className="flex items-center justify-center py-1.5">
                   {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
                     <button
-                      onClick={() => setAddThemeOpen(true)}
+                      onClick={onOpenAddTheme}
                       aria-label="Add a theme"
                       title="Add a theme — its roles resolve through the primary colors"
                       className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1233,7 +1234,7 @@ export default function Step3_SemanticTokens({
                   theme as a real column, so it's always live here. */}
               <span className="flex items-center justify-center py-1.5">
                 <button
-                  onClick={() => setAddThemeOpen(true)}
+                  onClick={onOpenAddTheme}
                   aria-label="Add a theme"
                   title="Add a theme — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1385,14 +1386,6 @@ export default function Step3_SemanticTokens({
           />
         )}
       </AnimatePresence>
-
-      <AddThemeModal
-        open={addThemeOpen}
-        onClose={() => setAddThemeOpen(false)}
-        onRenamed={(oldKey, newKey) => {
-          if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
-        }}
-      />
     </div>
   )
 }

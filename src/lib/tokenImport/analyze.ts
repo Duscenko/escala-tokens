@@ -217,7 +217,6 @@ function hueFamily(baseHex: string): ImportFamilyKey | null {
 const FOUNDATION_CONTAINERS: [Exclude<FoundationKey, 'typography'>, RegExp][] = [
   ['spacing', /^(spacing|space|spaces|gap|gaps)$/],
   ['radius', /^(radius|radii|border-?radius|corner|corners|rounded)$/],
-  ['opacity', /^(opacity|opacities|alpha)$/],
   ['shadows', /^(shadow|shadows|elevation|elevations|box-?shadow)$/],
   ['sizes', /^(sizes|sizing|heights|component-?sizes?)$/],
   ['grid', /^(grid|layout|breakpoints|screens)$/],
@@ -232,7 +231,7 @@ const WEIGHT_NAME_MAP: Record<string, string> = {
 function emptyFoundations(): Record<FoundationKey, FoundationReport> {
   const mk = (): FoundationReport => ({ status: 'default', count: 0, values: {} })
   return {
-    spacing: mk(), radius: mk(), opacity: mk(), shadows: mk(),
+    spacing: mk(), radius: mk(), shadows: mk(),
     grid: mk(), sizes: mk(), typography: mk(),
   }
 }
@@ -342,7 +341,6 @@ function analyzeEscala(json: Record<string, any>): ImportAnalysis {
   }
   adopt('spacing', json.spacing)
   adopt('radius', json.radius)
-  adopt('opacity', json.opacity)
   adopt('shadows', json.shadows)
   adopt('grid', json.grid)
   adopt('sizes', json.sizes)
@@ -652,7 +650,7 @@ export function analyzeTokens(json: unknown, opts?: AnalyzeOptions): AnalyzeResu
   // ── Foundations ──
   const foundations = emptyFoundations()
   const buckets: Record<Exclude<FoundationKey, 'typography'>, Record<string, string>> = {
-    spacing: {}, radius: {}, opacity: {}, shadows: {}, grid: {}, sizes: {},
+    spacing: {}, radius: {}, shadows: {}, grid: {}, sizes: {},
   }
   const foundationOf = (c: TokenCandidate): Exclude<FoundationKey, 'typography'> | null => {
     for (const seg of c.path) {
@@ -705,14 +703,6 @@ export function analyzeTokens(json: unknown, opts?: AnalyzeOptions): AnalyzeResu
 
     const fkey = foundationOf(c)
     if (!fkey) continue
-    if (fkey === 'opacity') {
-      if (c.kind === 'percent') buckets.opacity[key] = c.value
-      else if (c.kind === 'number') {
-        const n = Number(c.value)
-        buckets.opacity[key] = n <= 1 ? `${Math.round(n * 100)}%` : `${n}%`
-      }
-      continue
-    }
     if (fkey === 'shadows') {
       if (c.kind === 'shadow' || c.kind === 'string') buckets.shadows[key] = c.value
       continue

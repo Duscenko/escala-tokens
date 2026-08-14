@@ -422,23 +422,42 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const r = radiusOf(t, 'md', '8px')
   const semi = weightOf(t, 'semibold', 600)
 
+  // The fg slot is TEXT sitting on the bg tint, so it needs a value solved for
+  // that — not every architecture names one. Categorical does (`*-fg`, tone
+  // 12); Astryx and shadcn only expose the vivid tone-9 "solid" colour
+  // (`status.error` / `destructive.fill`), meant for fills/icons, not text on
+  // a pale tint — measured on a live system, tone 9 on tone 3 read 2.05–3.10:1
+  // (fails WCAG AA's 4.5:1, and undershoots even the 3:1 non-text minimum for
+  // warning/success). `ink` is tone 12 of the SAME family (see PreviewTokens'
+  // errorInk/warningInk/successInk) — the identical value Categorical's own
+  // roles already resolve to — substituted in for every non-flat architecture
+  // so the caption still names the token that matched (honest labelling) while
+  // the colour actually reads. Flat's own equivalent gap (content-error, a
+  // separate, already-tracked contrast issue — see CLAUDE.md) is left alone:
+  // it's MATERIALIZED per-theme and needs a role-catalogue migration to fix,
+  // not a preview-only patch.
+  const inkSlot = (flat: string, arch: string | string[], fb: string, ink?: string): Slot => {
+    const resolved = s(flat, arch, fb)
+    return t.archTokens && ink ? { css: ink, label: resolved.label } : resolved
+  }
+
   const severities: { label: string; bg: Slot; fg: Slot; copy: string }[] = [
     {
       label: 'Critical',
       bg: s('background-error-primary', ['status.critical-bg', 'status.error-muted'], t.neutralFill),
-      fg: s('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor),
+      fg: inkSlot('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor, t.errorInk),
       copy: 'Could not save your changes',
     },
     {
       label: 'Warning',
       bg: s('background-warning-primary', ['status.warning-bg', 'status.warning-muted'], t.neutralFill),
-      fg: s('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor),
+      fg: inkSlot('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor, t.warningInk),
       copy: 'Your free trial ends soon',
     },
     {
       label: 'Success',
       bg: s('background-success-primary', ['status.success-bg', 'status.success-muted'], t.neutralFill),
-      fg: s('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText),
+      fg: inkSlot('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText, t.successInk),
       copy: 'Payment confirmed',
     },
   ]

@@ -15,7 +15,7 @@ import { ALL_ROLES } from '../../lib/semanticRoles'
 const MAX_JSON_BYTES = 2 * 1024 * 1024 // 2 MB
 
 const FOUNDATION_LABELS: Record<FoundationKey, string> = {
-  spacing: 'Spacing', radius: 'Radius', opacity: 'Opacity',
+  spacing: 'Spacing', radius: 'Radius',
   shadows: 'Shadows', grid: 'Grid', sizes: 'Sizes', typography: 'Typography',
 }
 

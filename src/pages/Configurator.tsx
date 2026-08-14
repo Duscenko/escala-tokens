@@ -28,6 +28,7 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
+import AddThemePanel from '../components/configurator/AddThemePanel'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
@@ -36,7 +37,6 @@ import NewSystemModal from '../components/configurator/NewSystemModal'
 import Step4_Typography from '../components/configurator/Step4_Typography'
 import Step5_Spacing from '../components/configurator/Step5_Spacing'
 import StepRadius from '../components/configurator/StepRadius'
-import Step6_Opacity from '../components/configurator/Step6_Opacity'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
@@ -66,7 +66,7 @@ interface FoundationSection {
 // Foundations that render FLUSH (no `p-8`) because they carry a 198px left
 // column — the Color hub's row shape, which they all now follow. Icons is the
 // only remaining padded one: it's an Iconify browser, not a token table.
-const RAILED_FOUNDATIONS = new Set(['typography', 'radius', 'spacing', 'sizes', 'opacity', 'shadow', 'grid'])
+const RAILED_FOUNDATIONS = new Set(['typography', 'radius', 'spacing', 'sizes', 'shadow', 'grid'])
 
 const FOUNDATIONS: FoundationSection[] = [
   {
@@ -112,16 +112,6 @@ const FOUNDATIONS: FoundationSection[] = [
     Icon: ic('M21 21V3M3 21V3M9 8V16C9 16.9319 9 17.3978 9.15224 17.7654C9.35523 18.2554 9.74458 18.6448 10.2346 18.8478C10.6022 19 11.0681 19 12 19C12.9319 19 13.3978 19 13.7654 18.8478C14.2554 18.6448 14.6448 18.2554 14.8478 17.7654C15 17.3978 15 16.9319 15 16V8C15 7.06812 15 6.60218 14.8478 6.23463C14.6448 5.74458 14.2554 5.35523 13.7654 5.15224C13.3978 5 12.9319 5 12 5C11.0681 5 10.6022 5 10.2346 5.15224C9.74458 5.35523 9.35523 5.74458 9.15224 6.23463C9 6.60218 9 7.06812 9 8Z'),
   },
   {
-    key: 'opacity',
-    label: 'Opacity',
-    short: 'Opacity',
-    hint: 'Transparency scale',
-    title: 'Opacity',
-    subtitle: 'Define the transparency steps your overlays, scrims and disabled states rely on.',
-    Component: Step6_Opacity,
-    Icon: ic('M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 3v18M12 7.5h7M12 12h9M12 16.5h7', '1.8'),
-  },
-  {
     key: 'shadow',
     label: 'Shadow',
     short: 'Shadow',
@@ -163,10 +153,10 @@ const FOUNDATIONS: FoundationSection[] = [
   },
 ]
 
-// The "Variables" half of the rail (Styles = icons/opacity/shadow/grid) —
+// The "Variables" half of the rail (Styles = icons/shadow/grid) —
 // also the exact category list HomeActions' "New" menu offers, so the two
 // can never drift apart.
-const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'opacity', 'shadow', 'grid'].includes(f.key))
+const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'shadow', 'grid'].includes(f.key))
 
 // Component categories get icons too, so the Components/Documentation rail
 // reads exactly like the Variables one (same row shape, icon + label).
@@ -186,7 +176,6 @@ const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
   typography: ['typography'],
   spacing: ['spacing'],
   radius: ['radius'],
-  opacity: ['opacity'],
   shadow: ['shadow'],
   grid: ['grid'],
   sizes: ['sizes'],
@@ -273,6 +262,12 @@ export default function Configurator() {
   // preview mirrors the semantic category only while the semantics tab is
   // active.
   const [colorTab, setColorTab] = useState<ColorTab>('primary')
+  // "+ Theme"'s panel — DOCKED in the right aside (see the render below),
+  // swapped in for `PreviewPanel` the same way `SaveSidePanel` already is.
+  // Lifted here (not local to Step3, where the trigger lives) because the
+  // aside it docks into is a sibling Configurator renders, not something
+  // Step3 has access to — same reason `colorTab`/`semanticFocus` are lifted.
+  const [addThemeOpen, setAddThemeOpen] = useState(false)
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
@@ -512,6 +507,7 @@ export default function Configurator() {
           onFocusChange={setSemanticFocus}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
+          onOpenAddTheme={() => setAddThemeOpen(true)}
         />
       </div>
     ) : RAILED_FOUNDATIONS.has(section.key) ? (
@@ -759,6 +755,19 @@ export default function Configurator() {
                   onOpenFigma={() => openExport('figma')}
                   onOpenGithub={() => openExport('github')}
                   onCollapse={() => setPreviewCollapsed(true)}
+                />
+              ) : addThemeOpen && !exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? (
+                // "+ Theme" docked here instead of a centred modal — see
+                // AddThemePanel's own doc comment. Gated on the exact screen
+                // it was opened from (mirrors `focus` below) so navigating away
+                // hands the aside back to PreviewPanel rather than leaving a
+                // stranded panel over unrelated foundations; `addThemeOpen`
+                // itself is left set, so coming straight back to Semantics
+                // resumes it — losing in-progress colour picks to a glance at
+                // another tab would be a worse default than that.
+                <AddThemePanel
+                  onClose={() => setAddThemeOpen(false)}
+                  onRenamed={(oldKey, newKey) => { if (previewTheme === oldKey) changePreviewTheme(newKey) }}
                 />
               ) : (
                 <PreviewPanel

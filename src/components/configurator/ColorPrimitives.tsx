@@ -27,7 +27,7 @@ import {
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
-  STATE_PRESETS, type IntentRole,
+  curatedPaletteFor,
 } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
@@ -49,25 +49,9 @@ import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, WIZARD
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
-// Which swatches the picker's "Curated palette" bar offers for a given family.
-// An ACCENT (and any custom family) gets the full brand spectrum — every hue
-// is a legitimate brand. An INTENT does not: the hue IS the meaning, so a red
-// drifting toward green stops reading as an error (the same rule
-// `recommendStateColors` follows when it blends chroma but never hue). Those
-// families therefore offer their own curated set — `STATE_PRESETS`, the exact
-// list the State Colors dropdown already shows, so the two entry points can't
-// recommend different reds. Neutral is in that map too and is included here
-// for the same reason: it's an intent (see CLAUDE.md), and a rainbow bar under
-// a gray ramp is as wrong as one under a red.
-// `undefined` ⇒ the panel's own BRAND_SPECTRUM default.
 /** Rendered width of the family-edit popover's `w-64` (16rem at this app's
  *  18px root = 288px). Used only to clamp it inside a narrow viewport. */
 const EDIT_POPOVER_W = 288
-
-const INTENT_KEYS: readonly string[] = ['neutral', 'error', 'warning', 'success', 'info']
-function curatedPaletteFor(familyKey: string) {
-  return INTENT_KEYS.includes(familyKey) ? STATE_PRESETS[familyKey as IntentRole] : undefined
-}
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -598,6 +582,7 @@ export default function ColorPrimitives({
     pageBackground, darkBackground, themeKinds, themeSources, themeOrder,
     colorAlgorithm, colorNaming, contrastShift, neutralTint,
     linkNeutralToAccent, setLinkNeutralToAccent,
+    linkStatesToAccent, setLinkStatesToAccent,
     setContrastShift, setNeutralTint,
   } = store
   const applyAccentColor = useApplyAccentColor()
@@ -626,19 +611,10 @@ export default function ColorPrimitives({
   // blends only CHROMA — each state keeps its canonical lightness and hue,
   // because the hue IS the semantics (a red that drifts toward a green accent
   // stops reading as an error). So this makes the set share the accent's
-  // saturation character without touching what any of them mean.
+  // saturation character without touching what any of them mean. Used both for
+  // the toggle's swatch preview and to actually apply the link — same value,
+  // so the preview can never promise something the click doesn't deliver.
   const stateRecommendation = useMemo(() => recommendStateColors(primaryColor), [primaryColor])
-  const statesMatched =
-    errorColor.toLowerCase() === stateRecommendation.error.toLowerCase() &&
-    warningColor.toLowerCase() === stateRecommendation.warning.toLowerCase() &&
-    successColor.toLowerCase() === stateRecommendation.success.toLowerCase() &&
-    infoColor.toLowerCase() === stateRecommendation.info.toLowerCase()
-  const matchStatesToAccent = () => {
-    applyStateColor('error', stateRecommendation.error)
-    applyStateColor('warning', stateRecommendation.warning)
-    applyStateColor('success', stateRecommendation.success)
-    applyStateColor('info', stateRecommendation.info)
-  }
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
 
   // ── Families table state ──
@@ -1136,12 +1112,12 @@ export default function ColorPrimitives({
           )}
         </div>
 
-        {/* No "match states to accent" wand here any more: it only rendered
-            while Accent was active, so the ramp beside it started 52px further
-            right on that ONE family and every other family's ramp read as
-            misaligned against it. The strip is the same shape for every family
-            now. (The action itself — recommendStateColors + neutralFromBrand
-            in one click — is gone with it, not relocated.) */}
+        {/* No states-link toggle here either, same reason as the wand it
+            replaced: it only rendered while Accent was active, so the ramp
+            beside it started 52px further right on that ONE family and every
+            other family's ramp read as misaligned against it. The strip is the
+            same shape for every family now — both links live in the gear's
+            Harmony section instead (recommendStateColors / neutralFromBrand). */}
         {/* pr-3 (12px), not the old px-6/lg:px-8 (24-32px) and not flush
             either: the gear needs SOME clearance from the edge — sitting
             dead flush like the table's trailing icon column (which has a
@@ -1201,8 +1177,21 @@ export default function ColorPrimitives({
                 if (v) applyGrayColor(neutralFromBrand(primaryColor, neutralTint), previewTheme, true)
               }}
               linkedNeutralPreview={neutralFromBrand(primaryColor, neutralTint)}
-              onMatchStates={matchStatesToAccent}
-              statesMatched={statesMatched}
+              linkStates={linkStatesToAccent}
+              // Same immediate-derive contract as onLinkNeutral above, and the
+              // same `fromLink: true` reasoning `useApplyGrayColor` already
+              // documents: this is a recompute the link triggered, not a
+              // hand-picked state, so it must not itself unlink.
+              onLinkStates={(v) => {
+                setLinkStatesToAccent(v)
+                if (v) {
+                  applyStateColor('error', stateRecommendation.error, true)
+                  applyStateColor('warning', stateRecommendation.warning, true)
+                  applyStateColor('success', stateRecommendation.success, true)
+                  applyStateColor('info', stateRecommendation.info, true)
+                }
+              }}
+              linkedStatesPreview={stateRecommendation}
             />
           </ScaleSettingsModal>
         </div>

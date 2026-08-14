@@ -167,7 +167,7 @@ export function OverviewArticle({
 
 /** Overview's per-section card. Unlike the per-foundation page, these carry no
  *  TOC anchor of their own — the TOC here is one entry per FOUNDATION, or a
- *  nine-foundation sheet would produce a thirty-entry rail nobody can scan. */
+ *  eight-foundation sheet would produce a crowded rail nobody can scan. */
 function Block({
   title, description, children,
 }: { title: string; description?: string; children: ReactNode }) {

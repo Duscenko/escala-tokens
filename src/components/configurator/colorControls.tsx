@@ -62,6 +62,26 @@ export const STATE_PRESETS: Record<IntentRole, { label: string; hex: string }[]>
   ],
 }
 
+// Which swatches `ColorPickerPanel`'s "Curated palette" bar offers for a given
+// family/slot. An ACCENT (and any custom family) gets the full brand spectrum —
+// every hue is a legitimate brand. An INTENT does not: the hue IS the meaning,
+// so a red drifting toward green stops reading as an error (the same rule
+// `recommendStateColors` follows when it blends chroma but never hue). Those
+// slots therefore offer `STATE_PRESETS`, the exact list the State Colors
+// dropdown already shows, so no two entry points can recommend different reds.
+// Neutral is in that map for the same reason — it's an intent (see CLAUDE.md),
+// and a rainbow bar under a gray ramp is as wrong as one under a red.
+// `undefined` ⇒ the panel's own BRAND_SPECTRUM default.
+//
+// It lives HERE, beside `STATE_PRESETS`, rather than in either caller: both
+// Primitives' family pickers and "Add a theme"'s slot pickers need it, and a
+// second copy is exactly how `AddThemeModal` ended up hand-duplicating all four
+// status preset lists in the first place.
+const INTENT_KEYS: readonly string[] = ['neutral', 'error', 'warning', 'success', 'info']
+export function curatedPaletteFor(familyKey: string) {
+  return INTENT_KEYS.includes(familyKey) ? STATE_PRESETS[familyKey as IntentRole] : undefined
+}
+
 // The system's color chip — a rounded SQUARE, never a dot. Every swatch in
 // these controls (trigger · dropdown option · custom row · state row) shares it,
 // so the shape can't drift apart again.

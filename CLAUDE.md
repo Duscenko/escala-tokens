@@ -87,7 +87,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > Export already does — if whole-system-by-default earns its place back, make it an option
 > INSIDE the one wizard (e.g. a "select all" affordance in Step 1), not a second entry point.
 > Step 1 picks **collections** (primitives · semantics · typography · spacing · radius ·
-> opacity · shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship
+> shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship
 > and, for primitives, which **families** ship (Accent · Neutral · Error … + customs —
 > `primitiveFamilyMeta()`, derived from the real `colors.primitive` keys so a family can't
 > be offered that the payload doesn't contain; picking one ships BOTH its ramps, since
@@ -227,7 +227,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     the catalogue's include checkboxes) → `ComponentArticle` → TOC. The category RAIL
     itself is Configurator's outer `SectionRail`, fed straight from `CATEGORIES` (one
     group, no Foundations entry to filter past).
-  - `DocsView.tsx` — Docs' own shell: master list (Overview, then the nine foundations) →
+  - `DocsView.tsx` — Docs' own shell: master list (Overview, then the eight foundations) →
     `FoundationArticle`/`OverviewArticle` → TOC. **No outer `SectionRail`** — Docs has only
     ONE group of things to list, so a whole column reserved for a lone "Overview" button
     would be a column spent on one row. It owns its full width under the header instead,
@@ -247,7 +247,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     foundation is still ONE entry in `FOUNDATION_DOCS`; the master list, the TOC and
     prev/next all still derive from it.
 - **Rules that keep it honest:**
-  - **Docs' master list is Overview, then the nine foundations, in `FOUNDATION_DOCS`
+  - **Docs' master list is Overview, then the eight foundations, in `FOUNDATION_DOCS`
     order** — mirrors a component category's master list exactly (one entry point opens a
     list of items, Overview is simply the list's first item, not a special case). Adding a
     foundation there is automatic; nothing in `DocsView.tsx` enumerates them by hand.
@@ -267,7 +267,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     every foundation's sections in one column for hand-off/print. It is NOT a foundation —
     it's the master list's own first row, the same way a category's master list doesn't
     duplicate the category's name as one of its own items. Its TOC is one entry per
-    FOUNDATION, not per section: nine foundations × their sections is a thirty-entry rail
+    FOUNDATION, not per section: eight foundations × their sections is a crowded rail
     nobody can scan.
   - **`Prose` renders `inline code` from backticks.** The foundation copy names tokens
     constantly; a `<p>` printing its own backticks reads as an unrendered markdown file.
@@ -360,9 +360,10 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       Accent-Alpha sit adjacent under Accents, and with two identical solid chips nothing on
       screen said which one was the translucent ramp. Its table cells use `AlphaHexCell`
       (swatch over checkerboard + static hex text, no input) instead of `HexCell`: the same
-      checkerboard `CHECKER` constant `Step6_Opacity.tsx`'s "Opacity Scale" strip uses,
-      now **exported** from `colorControls.tsx` so both call sites share one pattern rather
-      than two independently-styled "this is translucent" cues. This is the same
+      checkerboard `CHECKER` constant the (now-retired, see "Opacity is retired" below)
+      `Step6_Opacity.tsx`'s "Opacity Scale" strip used to use, **exported** from
+      `colorControls.tsx` so it stayed one pattern rather than two independently-styled
+      "this is translucent" cues while both were live. This is the same
       correctness fix the old `TransparencyStrip` comment already explained: an alpha value
       painted on a flat backdrop silently breaks across light/dark preview, since it's only
       correct against the specific page it was solved for — the checkerboard has no "wrong
@@ -397,13 +398,13 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     - **The promoted quick-edit strip** sits above the table, contextual to the active
       family: a `<Family> color` label + hex field in a bordered pill (`HexCell` wrapped in
       a `rounded-[13px] border-line-strong` container — matches the weight of a `ColorSelect`
-      dropdown rather than reading as a bare table cell), a **wand button** ("Match Neutral
-      and States colors", only wired while Accent is active) running `matchStatesToAccent()`
-      — `recommendStateColors(primaryColor)` into every state PLUS `neutralFromBrand()` into
-      Neutral, a broader re-harmonize than the old Picker Color "Match to accent" link (which
-      only touched states) — a full-size `ScaleRow` of the family's ramp in the previewed
-      appearance, and the scale-settings gear. Read-only (hex field + wand hidden, `ScaleRow`
-      still shown) for Accent-Alpha.
+      dropdown rather than reading as a bare table cell), a full-size `ScaleRow` of the
+      family's ramp in the previewed appearance, and the scale-settings gear. No wand lives
+      inline here — the gear is where BOTH harmony toggles (Neutral↔Accent, States↔Accent)
+      actually live (see the accent↔neutral/states link note further down): a control that
+      only renders while Accent is active shifted the ramp beside it 52px on that one
+      family, which is why neither toggle is in the strip itself. Read-only (hex field
+      hidden, `ScaleRow` still shown) for Accent-Alpha.
     - **"Edit in Picker Color" is gone** — with the quick-edit strip living on the same
       screen as the table, selecting a family in the nav already surfaces everything that
       link used to jump to. The `onEditInPicker`/`pickerFocusTarget` prop chain
@@ -618,13 +619,13 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     still can't disagree. `Configurator.tsx`'s `outerRailVisible` (≠ `railVisible`) gates
     `TopNav`'s `brandWidth`/divider now — `null` on Variables (no column to align against),
     unchanged on Components. Freed width goes to whichever foundation is
-    active; only Color has its own sub-nav to spend it on (see below), the other 8 foundations
+    active; only Color has its own sub-nav to spend it on (see below), the other 7 foundations
     just render wider.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8` —
   **except Icons — every token foundation now renders FLUSH** (`RAILED_FOUNDATIONS` in
-  `Configurator.tsx`: typography · radius · spacing · sizes · opacity · shadow · grid,
+  `Configurator.tsx`: typography · radius · spacing · sizes · shadow · grid,
   plus Color's own hub). Each carries a 198px left column, and `p-8` framed them as
   floating cards whose column no longer lined up with the icon toolbar or `CenterHeader`
   above. Icons keeps its padding — it's an Iconify browser, not a token table. The shape
@@ -635,16 +636,16 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   on the right edge; **row 2** = a `h-[52px]` labelled cell (`Groups` / `Collections`)
   beside the active collection + search; **row 3** = the nav (`py-1.5 px-2`) against the
   flush table. **Row 1 exists only where the section HAS a global control** — Color,
-  Gradients, Radius, Spacing and Shadow do; Typography, Sizes, Opacity and Grid start at
+  Gradients, Radius, Spacing and Shadow do; Typography, Sizes and Grid start at
   the Collections row instead of inventing one.
   **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`/`footer`),
-  so the gutter's CONTENT is per-section: Sizes · Opacity · Shadow · Radius leave it empty
+  so the gutter's CONTENT is per-section: Sizes · Shadow · Radius leave it empty
   (the column exists purely so their table's left edge lands on the same line as everyone
   else's), while Spacing and Grid fill it with a real collections nav — Spacing scale ·
   Surface paddings and Layout · Breakpoints, both of which used to stack in one scroll
   behind sticky sub-headers.
   - **`footer` renders the section's visual specimen INSIDE the table's scroll column**
-    (Sizes' component heights, Opacity's checkerboard strip, Grid's column overlay). It
+    (Sizes' component heights, Grid's column overlay). It
     can't be a sibling any more: once a section is railed the table owns its column, so a
     block outside would sit beside the rail rather than under the rows it illustrates.
     Grid's overlay renders only for the Layout collection — a breakpoint ramp has nothing
@@ -661,7 +662,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   - Radius' presets, Spacing's base units and Shadow's presets all moved OUT of
     `VariablesTable`'s `toolbar` into that cell; on a narrow window those pill rows pushed
     search off the row),
-  the **Docs destination** (`DocsView` — master list of Overview + the nine foundations,
+  the **Docs destination** (`DocsView` — master list of Overview + the eight foundations,
   no outer rail; a foundation page is lead · Why · Usage · its live token sections · Ships
   as · prev/next), the **Components destination** (`ComponentsView` — outer category rail
   + a master list of that category's components; a component page is ONE canonical page
@@ -829,13 +830,45 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
      `Size` (SM–XL, so it reads the `sizes` tokens live) + Card (reads `padding` live) —
      these sit ALONGSIDE the token tables' own comparative bars (`VariablesTable`'s
      `preview` column + Sizes' "Component Sizes" bar block), not replacing them. Any other
-     foundation (Icons — which instead swaps via `iconLibraryKey`; Opacity, Shadow, Grid)
+     foundation (Icons — which instead swaps via `iconLibraryKey`; Shadow, Grid)
      falls back to the original generic Button/Badge/Switch/Form set. **Hidden in the
      Components tab** (docs go full-width) and below `xl`; the rail becomes a drawer below
      `md`.
 - **Components ship complete**: `selectedComponents` defaults to every key; a checkbox *removes* one.
 - **Foundation progress** (`completedFoundations`) persists; "visited = done" — shown as ✓
   in the Home overview checklist.
+- **Opacity is retired as a foundation** — a standalone 0–100% transparency scale duplicated
+  what `colors.primitiveAlpha` (Accent-Alpha, Foundations · Color's Primitives tab) already
+  covers, and shipping both read as two conflicting answers to "what's the transparency
+  token" — a real user complaint, not a hypothetical one. Unwired everywhere a foundation
+  is reachable or exported, same treatment as `WorkbenchLayout`/`HomeView`/`PickerColor`:
+  - **Nav/UI**: gone from `FOUNDATIONS`/`RAILED_FOUNDATIONS`/`VARIABLE_FOUNDATIONS`/
+    `COLLECTIONS_OF` (`Configurator.tsx`) — no icon in the rail, unreachable. `Step6_Opacity.tsx`
+    itself is NOT deleted (kept for reference only, don't wire it back up).
+  - **Docs**: the `FoundationDoc` entry is gone from `FOUNDATION_DOCS`
+    (`foundationDocs.tsx`) — eight foundations now, not nine.
+  - **Export**: gone from `tokenGenerator.ts` (no `opacity` key in tokens.json — bumped
+    `TOKEN_SCHEMA_VERSION` to **5**, see the Token Export Format section), `exporters.ts`
+    (no `--opacity-*` CSS vars or README table), `sectionExport.ts` (`SectionKey`/
+    `ALL_SECTIONS`) and `exportWizard.ts` (`WizardCollection` — no Step-1 checkbox, no W3C/
+    CSS/Tailwind case). The **import** side matches: `tokenImport/types.ts`'s
+    `FoundationKey` dropped `'opacity'` too, so `ImportSystemModal` no longer offers it as a
+    detected category (an old export that still has an `opacity` block just isn't picked up
+    — the container heuristic that used to catch it, `/^(opacity|opacities|alpha)$/`, is
+    gone with it).
+  - **What's KEPT, deliberately**: the store field (`opacity`, `setOpacity`,
+    `OPACITY_DEFAULT`) is still there, un-exported and un-editable — `previewTokens.ts`'s
+    `alphaOf()`/`tintOf()` helpers (soft icon/badge fills used all over `specimens.tsx`)
+    read it as one of two fallback tiers, and ripping it out was extra risk for zero
+    user-facing gain since neither helper is reachable from any live editing surface
+    either way. This is NOT the same as the `styleDirection`/`selectedAtoms`/`currentStep`
+    "Removed fields" below — those are gone from the store entirely; `opacity` just went
+    quiet.
+  - **The Figma plugin needs no code change to stay working**: its `tokens.opacity` import
+    is already gated (`if (tokens.opacity) { … }` in `code.ts`), so a payload that no longer
+    carries the field just skips creating that variable collection — verified against the
+    sibling plugin repo, not assumed. Its dead `COLLECTIONS.opacity` / import-emit / docs-
+    page-section code is a separate, optional cleanup, not a correctness requirement.
 
 **Important:** This is **not a wizard** — no global step counter, no Continue/Back, no locked
 steps. `currentStep`, `styleDirection`, `selectedAtoms` stay removed. The old
@@ -854,7 +887,7 @@ src/
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 48)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 49)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, checkContrast, isAccessible, accessibleSolidTone (chroma-js)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
@@ -911,7 +944,6 @@ Key fields — always use the store, never local state for cross-view data:
 | `radius` | Record<string, string> | Foundations · Border Radius |
 | `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
 | `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
-| `opacity` | Record<string, string> (steps 0–100, `%` values) | Foundations · Opacity |
 | `shadows` | Record<string, string> (xs–2xl CSS box-shadows) | Foundations · Shadow |
 | `grid` | Record<string, string> (columns/gutter/margin/container + breakpoints) | Foundations · Grid |
 | `sizes` | Record<string, string> (component heights xs–2xl) | Foundations · Sizes |
@@ -926,7 +958,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 48`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 49`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **"Linked to accent" means a gradient stop REFERENCES a primitive — not that it's frozen.**
 > `GradientStop.tone` is the accent-ramp step the stop reads; `color` is only a cache of
@@ -1205,7 +1237,7 @@ Store uses `persist` middleware with `version: 48`. If you add fields, bump the 
 > Rules now that it's reconnected:
 > - **The flag is persisted and part of `DesignSnapshot`** — it decides what the neutral ramp
 >   IS, so a saved system has to carry it. It is NOT local popover state again; that's how it
->   got lost.
+>   got lost. `linkStatesToAccent` (below) is the exact same kind of field, added later.
 > - **Editing the Neutral by hand unlinks it.** `useApplyGrayColor` clears the flag unless
 >   called with `fromLink`, so a hand-picked neutral is never silently overwritten by the
 >   next accent edit. The accent applier writes the gray inline (it doesn't route through
@@ -1223,17 +1255,35 @@ Store uses `persist` middleware with `version: 48`. If you add fields, bump the 
 > - **`neutralFromBrand` moved to `colorUtils`** (pure colour math; the migration needs it
 >   without importing a component). `colorControls` re-exports it, and
 >   `tokenImport/materialize.ts`'s hand-copied duplicate is gone — one implementation.
-> - **States get a BUTTON, not a toggle.** `recommendStateColors` blends only CHROMA — each
->   state keeps its canonical lightness and HUE, because the hue is the semantics (a red
->   drifting toward a green accent stops reading as an error). Measured on a green accent
->   (C 0.112): hues moved ≤0.6° — pure 8-bit rounding — while chroma went 0.210→0.162,
->   0.170→0.141, 0.160→0.135, 0.181→0.146. It stays a one-shot because a state colour is a
->   deliberate brand decision far more often than a grey is; the button disables itself once
->   the states already equal the recommendation.
-> - **Both controls live in the scale-settings gear**, next to Neutral tint — NOT inline in
+> - **States are a toggle too now (`linkStatesToAccent`), not a one-shot button — this
+>   SUPERSEDES an earlier decision.** This file used to argue the opposite ("States get a
+>   BUTTON, not a toggle... a state colour is a deliberate brand decision far more often
+>   than a grey is"), on the theory that silently re-tinting error/warning/success/info on
+>   every accent edit was more surprising than useful. That was a judgment call, not a
+>   technical constraint, and it was overridden: both primitives now harmonize with the
+>   accent BY DEFAULT on a fresh system (`linkStatesToAccent: true` in
+>   `makeDesignDefaults()`, same as `linkNeutralToAccent`), with math identical to what the
+>   old button ran. `recommendStateColors` still blends only CHROMA — each state keeps its
+>   canonical lightness and HUE, because the hue is the semantics (a red drifting toward a
+>   green accent stops reading as an error). Measured on a green accent (C 0.112): hues
+>   moved ≤0.6° — pure 8-bit rounding — while chroma went 0.210→0.162, 0.170→0.141,
+>   0.160→0.135, 0.181→0.146. `useApplyAccentColor` re-runs it on every accent edit while
+>   linked (light AND dark ramps both re-anchor, same `generateColorScale`/
+>   `generateFamilyDarkScale` split every other primitive uses) and `useApplyStateColor`
+>   takes the same `fromLink` parameter `useApplyGrayColor` does — `changeFamilyBase` (the
+>   nav pencil / quick-edit strip's manual edit path) calls it with `fromLink` defaulting to
+>   `false`, so hand-picking a state unlinks it exactly like hand-picking the neutral does.
+>   Editing a single TONE inside a ramp (Token Details) does not unlink either primitive —
+>   that's a narrower "override one swatch" action on both, always was.
+> - **v49 backfills states the same way v47 backfilled the neutral: by DETECTION.** If all
+>   four stored states equal what `recommendStateColors(accent)` would produce, they were
+>   link-derived (or the old one-shot button was clicked right before upgrading) → relink;
+>   anything else was a deliberate pick → leave unlinked. Same reasoning: a flat default in
+>   either direction is wrong.
+> - **Both toggles live in the scale-settings gear**, next to Neutral tint — NOT inline in
 >   the quick-edit strip. A control that only renders while Accent is active shifts the ramp
 >   beside it 52px on that one family, which is exactly why the old wand was removed from
->   the strip; don't put it back there.
+>   the strip; don't put either toggle back there.
 
 > **Neutral is an intent.** The State Colors control carries **Neutral · Error · Success ·
 > Warning · Info** (`IntentRole`). Neutral has no primitive of its own — it IS the Base, so
@@ -1527,6 +1577,38 @@ Store uses `persist` middleware with `version: 48`. If you add fields, bump the 
 > built-in dark theme now correctly reads the dark accent twin, not the light one. This
 > was NOT a schema change — same refs, same shape, just the resolved HEX.
 
+> **UPDATE: `StatusSpecimen`'s alert/chip TEXT was reading Astryx's (and shadcn's) vivid
+> tone-9 solid as literal ink on a tone-3 tint, and it failed contrast badly.** Reported as
+> "Astryx manages status values better, make Categorical match it" — measuring the two
+> side by side showed the opposite: Categorical's `status.*-fg` (`{error.12}` etc.) is the
+> one that's correct, at 9.9–10.3:1 on a live system; Astryx's `status.error` used for the
+> SAME purpose measured **2.05–3.10:1** (fails WCAG AA's 4.5:1 text minimum, and warning/
+> success don't even clear the 3:1 non-text floor). Root cause: `status.error` IS Astryx's
+> real contract — a vivid tone-9 fill/icon colour, correct for the dozen other places
+> `PreviewTokens.errorColor` is used (a solid "Delete" button, focus rings, icons) — it was
+> simply never meant to be text sitting on its own pale tint, and Astryx's real contract has
+> no dedicated role for that (only `on-error` = `{on:error.9}`, solved ink for the SOLID,
+> a different surface entirely). shadcn's `destructive.fill` has the identical gap, and by
+> the source contract's own admission: "no paired -foreground in the source variables."
+> Fixed WITHOUT touching either role table (no fabricated "real-looking" Astryx/shadcn role
+> invented, and no export change — both still ship their real `status.error/destructive.fill`
+> tone-9 values byte-for-byte) — `PreviewTokens` gained `errorInk`/`warningInk`/`successInk`
+> (`previewTokens.ts`), tone 12 of each family in the previewed appearance, same maths
+> Categorical's own `-fg` roles already run, computed once so every architecture can use it.
+> `StatusSpecimen`'s `inkSlot()` wrapper still resolves the candidate list first (so the
+> caption keeps naming the architecture's own token — `status.error` for Astryx, honest
+> labelling per this file's own captioning rule) and only swaps in the accessible ink for
+> the rendered colour, gated on `t.archTokens` being set (non-flat) so flat's own matching,
+> already-tracked `content-error` gap (see "known, accepted residuals" above) is left alone
+> exactly as that note says — it's MATERIALIZED per-theme and needs a role-catalogue
+> migration, not a preview patch. **Two-tier fallback matters**: `errorInk` must fall back to
+> the plain global scale (`kind === 'dark' ? errorDarkScale : errorScale`) before a hardcoded
+> constant, same as `errorColor` above it — `pal` (`resolveThemePalette`) returns `undefined`
+> whenever `themeSources` doesn't reference a custom family for that slot, which is the
+> COMMON case (any system with no custom "+Theme" families has an empty `themeSources`), not
+> an edge case; a first pass that read `pal?.error?.[12]` with no second tier silently
+> produced `undefined` for exactly that common case and the bug looked unfixed.
+
 > **`GRAY_DARK_SCALE` (the hardcoded fallback constant) was ALSO a leftover pre-Radix
 > ramp — same bug class, one level lower.** It's `1: '#fafafa' … 12: '#0c0e12'`: light at
 > tone 1, `darkBackground` at tone 12 — the OLD mirrored convention, inverted relative to
@@ -1603,7 +1685,6 @@ interface ComponentDef {
   "gradientsDark": { "brand-cover": "linear-gradient(135deg, #7f56d9 0%, #e1bfff 100%)", "aurora": "...", ... },
   "gradientAssignments": { "cover": "brand-cover", "avatar": "aurora" },
   "radius": { "none": "0px", "sm": "4px", "md": "8px", "lg": "12px", "full": "9999px" },
-  "opacity": { "0": "0%", "5": "5%", ... "100": "100%" },
   "shadows": { "xs": "0 1px 2px rgba(10,13,18,0.05)", ... "2xl": "..." },
   "grid": { "columns": "12", "gutter": "24px", "margin": "32px", "container": "1280px", "breakpoint-sm": "640px", ... },
   "sizes": { "xs": "24px", "sm": "32px", "md": "40px", "lg": "48px", "xl": "56px", "2xl": "64px" },
@@ -1612,7 +1693,7 @@ interface ComponentDef {
 }
 ```
 
-`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **4**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **5**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. v5 REMOVED `opacity` (see "Opacity is retired" below) — the plugin's own import is already guarded (`if (tokens.opacity)`), so it degrades gracefully without a plugin-side change; the bump is a signal for anything else that might treat an absent field as a gap rather than "not part of this system." The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
 
 ---
 

@@ -27,6 +27,15 @@ export interface PreviewTokens {
   successColor?: string
   warningColor?: string
   infoColor?: string
+  // Accessible ink for text sitting ON that status's own muted/tint background
+  // (tone 12 of the same family, in the previewed appearance) — NOT the same
+  // thing as errorColor/warningColor/successColor above, which stay the vivid
+  // tone-9 "this is the danger colour" accent used for fills/icons/borders.
+  // Text needs a value that reads on a pale tint; the vivid tone does not
+  // reliably clear WCAG AA there. See SemanticSpecimens.tsx's StatusSpecimen.
+  errorInk?: string
+  warningInk?: string
+  successInk?: string
   // Full semantic map for the active preview theme — the per-category Semantic
   // specimens read token values from here so they track the selected theme
   // (light · dark · custom) instead of always reading themes.light.

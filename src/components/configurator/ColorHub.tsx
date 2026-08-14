@@ -29,6 +29,7 @@ export default function ColorHub({
   previewTheme,
   onPreviewThemeChange,
   focusFamilyKey,
+  onOpenAddTheme,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -38,6 +39,12 @@ export default function ColorHub({
   /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
    *  NewTokenWizard just created). */
   focusFamilyKey?: string | null
+  /** Forwarded to Step3 — see its own doc comment. Only reachable while
+   *  `colorTab === 'semantics'`, since that's the only tab with a "+ Theme"
+   *  trigger, but it's a required prop on this component regardless: the
+   *  panel it opens is docked in the shell's right aside, which Configurator
+   *  owns, so the callback has to exist before Semantics is ever visited. */
+  onOpenAddTheme: () => void
 }) {
   // Each tab is a FULL-HEIGHT cell of the 52px row, not a text label with a
   // hairline under it: the active one reads as a tinted block whose accent bar
@@ -116,6 +123,7 @@ export default function ColorHub({
             onFocusChange={onFocusChange}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
+            onOpenAddTheme={onOpenAddTheme}
           />
         </div>
       ) : (

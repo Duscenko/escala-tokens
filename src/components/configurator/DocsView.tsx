@@ -23,7 +23,7 @@ import { useSystemDoc, FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc } from './do
 export { OVERVIEW_KEY }
 
 /** The master list — Overview itself, first (mirrors a component category's
- *  first item being auto-opened), then the nine foundations, in the exact
+ *  first item being auto-opened), then the eight foundations, in the exact
  *  order `FOUNDATION_DOCS` defines them. */
 function docsRows() {
   return [
@@ -56,7 +56,7 @@ export default function DocsView({
 
   return (
     <div className="h-full flex min-h-0">
-      {/* Master list — Overview + the nine foundations. Same column shape
+      {/* Master list — Overview + the eight foundations. Same column shape
           Components' catalogue list uses (208px, grouped caption, active
           highlight), so the two destinations still read as one docs site
           even though they're separate top-nav entries now. */}

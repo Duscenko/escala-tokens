@@ -18,6 +18,20 @@ export function slugify(name: string): string {
     .replace(/[^a-z0-9-]/g, '')
 }
 
+/** Makes a string safe to interpolate into a markdown table cell (`| a | b |`).
+ *  A bare `|` inside a cell is a column boundary to every markdown parser, not
+ *  punctuation — it splits that one row into extra columns and misaligns the
+ *  header. Two real sources hit this: a component's TypeScript union type
+ *  (`"brand" | "danger" | "success"`, rendered verbatim into the Props table
+ *  by every "Copy Page" export) and free-typed project text (a description
+ *  containing "|" breaks the README/export tables it's interpolated into). A
+ *  literal newline is just as fatal — it closes the row early — so it's
+ *  collapsed to a space rather than escaped, since `\n` has no meaning to
+ *  preserve inside one cell. */
+export function mdCell(s: string): string {
+  return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
+}
+
 /**
  * Sanitizes an uploaded SVG before it reaches the store: parses it, requires an
  * <svg> root, strips script/foreignObject elements, event handlers and

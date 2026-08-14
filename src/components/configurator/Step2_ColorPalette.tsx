@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { generateColorScale, recommendStateColors, NAMING_SCHEMES, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
+import { generateColorScale, recommendStateColors, NAMING_SCHEMES, NEUTRAL_TINTS, type NeutralTint, type StateColors } from '../../lib/colorUtils'
 import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
@@ -30,8 +30,9 @@ export function ColorControls({
   linkNeutral,
   onLinkNeutral,
   linkedNeutralPreview,
-  onMatchStates,
-  statesMatched,
+  linkStates,
+  onLinkStates,
+  linkedStatesPreview,
 }: {
   contrastShift: number
   onShift: (n: number) => void
@@ -47,26 +48,28 @@ export function ColorControls({
   /** The hex the neutral becomes while linked — so the toggle can SHOW its
    *  consequence instead of describing it. */
   linkedNeutralPreview?: string
-  /** One-shot "harmonize the four state colours with the accent". Unlike the
-   *  neutral link this stays a button, not a toggle: a state colour is a
-   *  deliberate brand decision far more often than a grey is, so it shouldn't
-   *  silently move every time the accent does. */
-  onMatchStates?: () => void
-  /** True when the states already equal what `onMatchStates` would produce —
-   *  lets the button say "Matched" instead of inviting a no-op click. */
-  statesMatched?: boolean
+  /** Accent↔States link — the SAME contract as linkNeutral, for the four
+   *  status primitives. Used to be a one-shot "match states" button instead of
+   *  a toggle (a state colour read as a more deliberate brand decision than a
+   *  grey); now mirrors the neutral link exactly, so both harmonize by default
+   *  and both un-harmonize the same way — editing one by hand unlinks it. */
+  linkStates?: boolean
+  onLinkStates?: (v: boolean) => void
+  /** The four hexes the states become while linked, keyed by role — so the
+   *  toggle can SHOW its consequence instead of describing it. */
+  linkedStatesPreview?: StateColors
 }) {
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Harmony — the accent↔neutral link and the states one-shot. Lives HERE,
-          in the scale-settings popover, rather than inline in the quick-edit
+      {/* Harmony — the accent↔neutral and accent↔states links. Lives HERE, in
+          the scale-settings popover, rather than inline in the quick-edit
           strip: a control that only renders while Accent is active shifts the
-          ramp beside it 52px right on that one family, which is exactly why the
-          old "match states" wand was removed from the strip. The gear is always
-          present, and this sits next to Neutral tint — the setting that decides
-          how much accent hue a linked neutral even carries. */}
+          ramp beside it 52px right on that one family, which is exactly why
+          both were removed from the strip. The gear is always present, and
+          this sits next to Neutral tint — the setting that decides how much
+          accent hue a linked neutral even carries. */}
       {linkNeutral !== undefined && onLinkNeutral && (
         <div className="flex flex-col gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Harmony</span>
@@ -92,24 +95,34 @@ export function ColorControls({
               </span>
             </span>
           </button>
-          {onMatchStates && (
+          {onLinkStates && (
             <button
               type="button"
-              onClick={onMatchStates}
-              disabled={statesMatched}
-              className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-line text-left text-[12px] text-fg hover:border-line-strong disabled:opacity-45 disabled:hover:border-line transition-colors"
+              onClick={() => onLinkStates(!linkStates)}
+              aria-pressed={linkStates}
+              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border text-left transition-colors ${
+                linkStates ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
+              }`}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-fg-faint">
-                <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5" />
-              </svg>
+              <span aria-hidden className="flex -space-x-1 flex-shrink-0">
+                {(['error', 'warning', 'success', 'info'] as const).map((k) => (
+                  <span
+                    key={k}
+                    className="w-4 h-4 rounded-full ring-1 ring-black/10"
+                    style={{ background: linkedStatesPreview?.[k] ?? 'transparent' }}
+                  />
+                ))}
+              </span>
               <span className="min-w-0 flex-1">
-                {statesMatched ? 'States already match the accent' : 'Match Error · Warning · Success · Info to accent'}
+                <span className="block text-[12px] text-fg">States follow the accent</span>
+                <span className="block text-[11px] text-fg-faint leading-snug">
+                  {linkStates
+                    ? 'Error · Warning · Success · Info re-derived on every accent change. Hue stays put, only saturation follows.'
+                    : 'Error · Warning · Success · Info are set by hand and keep their own colour.'}
+                </span>
               </span>
             </button>
           )}
-          <span className="text-[10px] text-fg-faint leading-snug">
-            States keep their own hue — only saturation is harmonized, so red stays red.
-          </span>
         </div>
       )}
 

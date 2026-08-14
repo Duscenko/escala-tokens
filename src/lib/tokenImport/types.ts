@@ -72,7 +72,6 @@ export interface ImportIssue {
 export type FoundationKey =
   | 'spacing'
   | 'radius'
-  | 'opacity'
   | 'shadows'
   | 'grid'
   | 'sizes'

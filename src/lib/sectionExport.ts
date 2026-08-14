@@ -8,15 +8,16 @@ import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { generateTokenJSON } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
+import { mdCell } from './utils'
 
 type Store = ReturnType<typeof useDesignStore.getState>
 
 export type SectionKey =
   | 'color' | 'typography' | 'radius' | 'spacing'
-  | 'opacity' | 'shadow' | 'grid' | 'sizes' | 'icons'
+  | 'shadow' | 'grid' | 'sizes' | 'icons'
 
 // Order used when assembling the full-system ("all") export.
-export const ALL_SECTIONS: SectionKey[] = ['color', 'typography', 'spacing', 'radius', 'opacity', 'shadow', 'grid', 'sizes', 'icons']
+export const ALL_SECTIONS: SectionKey[] = ['color', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'icons']
 
 export type ExportFormat = 'css' | 'tailwind' | 'tokens' | 'md'
 export type ColorFormat = 'hex' | 'rgba' | 'hsl' | 'oklch'
@@ -70,11 +71,21 @@ export interface SectionExportOptions {
    *  EXPORTED name (`accent-dark-*`), matching tokenGenerator — a per-column
    *  quick export from the Primitives table ships exactly one appearance. */
   appearance?: 'light' | 'dark'
-  /** Whether the semantic (light) block ships alongside the primitives.
-   *  Omitted = yes. The wizard passes `false` when the run picked Primitives
-   *  but not Semantics — those are two separate collections there, and the
-   *  color section used to ship both regardless of which one was checked. */
+  /** Whether the semantic block ships alongside the primitives. Omitted = yes.
+   *  The wizard passes `false` when the run picked Primitives but not
+   *  Semantics — those are two separate collections there, and the color
+   *  section used to ship both regardless of which one was checked. */
   includeSemantics?: boolean
+  /** Which theme keys' semantic tokens ship, in order — the wizard's own
+   *  Semantics mode picker (`sel.modes`, a subset of `store.themeOrder`).
+   *  Omitted = `['light']` only. This existed nowhere until a real bug: the
+   *  wizard's Summary step counts variables across every CHECKED mode (so
+   *  "light, dark" ships as 222 variables), but `mdFor`'s color section read
+   *  `store.themes.light` as a literal — dark (and any custom theme) was
+   *  silently dropped from the Markdown file regardless of what Step 1 said
+   *  was included. Threaded through so the promised count and the actual file
+   *  agree, the same rule `families` already exists to keep for Primitives. */
+  modes?: string[]
 }
 
 /** Ordered color families present in the system: [name, scale].
@@ -108,7 +119,6 @@ const sortedEntries = (o: Record<string, string>) =>
 const SIMPLE: Partial<Record<SectionKey, { prefix: string; tailwind: string; get: (s: Store) => Record<string, string> }>> = {
   spacing: { prefix: 'spacing', tailwind: 'spacing', get: (s) => s.spacing },
   radius: { prefix: 'radius', tailwind: 'borderRadius', get: (s) => s.radius },
-  opacity: { prefix: 'opacity', tailwind: 'opacity', get: (s) => s.opacity },
   shadow: { prefix: 'shadow', tailwind: 'boxShadow', get: (s) => s.shadows },
   grid: { prefix: 'grid', tailwind: 'grid', get: (s) => s.grid },
   sizes: { prefix: 'size', tailwind: 'height', get: (s) => s.sizes },
@@ -217,7 +227,6 @@ function tokensFor(section: SectionKey): unknown {
     case 'typography': return { typography: full.typography }
     case 'spacing': return { spacing: full.spacing }
     case 'radius': return { radius: full.radius }
-    case 'opacity': return { opacity: full.opacity }
     case 'shadow': return { shadows: full.shadows }
     case 'grid': return { grid: full.grid }
     case 'sizes': return { sizes: full.sizes }
@@ -227,11 +236,15 @@ function tokensFor(section: SectionKey): unknown {
 
 // ── Markdown ──────────────────────────────────────────────────────────────────
 
+// Cells are escaped here, once, rather than at every call site — a value that
+// looks safe today (a hex, a token name) is one custom-font-name or
+// custom-color-label field away from carrying a literal `|` that would
+// silently misalign the row it lands in.
 function table(headers: string[], rows: string[][]): string {
   return [
-    `| ${headers.join(' | ')} |`,
+    `| ${headers.map(mdCell).join(' | ')} |`,
     `|${headers.map(() => '---').join('|')}|`,
-    ...rows.map((r) => `| ${r.join(' | ')} |`),
+    ...rows.map((r) => `| ${r.map(mdCell).join(' | ')} |`),
   ].join('\n')
 }
 
@@ -242,10 +255,16 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       parts.push(`\n### ${cap(name)}\n`)
       parts.push(table(['Token', 'Value'], sortedEntries(scale).map(([k, v]) => [`\`${name}-${toneLabel(store.colorNaming, Number(k))}\``, `\`${formatColor(v, cf)}\``])))
     })
-    const sem = opts.includeSemantics === false ? [] : Object.entries(store.themes.light ?? {}).filter(([, v]) => v)
-    if (sem.length) {
-      parts.push('\n### Semantic (light)\n')
-      parts.push(table(['Token', 'Value'], sem.map(([k, v]) => [`\`${k}\``, `\`${formatColor(v, cf)}\``])))
+    // One table per selected mode, not just light — see `modes` on
+    // `SectionExportOptions` for the bug this closes.
+    if (opts.includeSemantics !== false) {
+      const modes = opts.modes?.length ? opts.modes : ['light']
+      modes.forEach((mode) => {
+        const entries = Object.entries(store.themes[mode] ?? {}).filter(([, v]) => v)
+        if (!entries.length) return
+        parts.push(`\n### Semantic (${cap(mode)})\n`)
+        parts.push(table(['Token', 'Value'], entries.map(([k, v]) => [`\`${k}\``, `\`${formatColor(v, cf)}\``])))
+      })
     }
     return parts.join('\n')
   }
@@ -275,7 +294,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
 
 // Whole-system export — every section assembled into one document. Powers the
 // "Get MD" full AI-context window.
-function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat): string {
+function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   switch (format) {
     case 'css': {
       const lines: string[] = []
@@ -296,7 +315,12 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat): s
     case 'md': {
       const desc = store.projectDescription?.trim()
       const header = `# ${store.projectName} — design tokens\n${desc ? `\n${desc}\n` : ''}\n_Personalized design-system context. Use these tokens verbatim; don't invent new values._`
-      return `${header}\n\n${ALL_SECTIONS.map((s) => mdFor(s, store, cf)).join('\n\n---\n\n')}`
+      // `opts` carries `modes` through to the color section, same as the
+      // per-collection path — without it the whole-system "Get MD" export hit
+      // the identical dropped-dark-theme bug `modes` exists to fix, just via a
+      // different call path (this whole-system builder used to take no opts
+      // at all).
+      return `${header}\n\n${ALL_SECTIONS.map((s) => mdFor(s, store, cf, opts)).join('\n\n---\n\n')}`
     }
   }
 }
@@ -308,7 +332,7 @@ export function buildSectionExport(
   opts: SectionExportOptions = {},
 ): string {
   const store = useDesignStore.getState()
-  if (section === 'all') return buildFullExport(store, format, colorFormat)
+  if (section === 'all') return buildFullExport(store, format, colorFormat, opts)
   switch (format) {
     case 'css': return cssFor(section, store, colorFormat, opts)
     case 'tailwind': return tailwindFor(section, store, colorFormat, opts)
