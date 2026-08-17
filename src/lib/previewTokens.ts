@@ -6,7 +6,7 @@
 import type { CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
-import { withAlpha, readableInk } from './colorUtils'
+import { withAlpha, readableInk, darkShadowMap } from './colorUtils'
 import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
@@ -108,20 +108,9 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     successColor: (pal?.success?.[9]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[9]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[9]) || infoColor || '#2e90fa',
-    // Tone 12 of each family, same appearance — the accessible ink for text on
-    // that family's own tone-3 tint. Identical maths to what Categorical's own
-    // `status.critical-fg`/`warning-fg`/`success-fg` roles already resolve to;
-    // computed here so every architecture can use it, not just the one that
-    // happens to name it. Same two-tier fallback as errorColor/warningColor/
-    // successColor above: `pal` is only set once a theme actually references a
-    // family (resolveThemePalette returns undefined for an empty themeSources,
-    // the common case for a system with no custom "+Theme" families), so the
-    // usual path is the global scale — dark-appearance twin while previewing a
-    // dark-kind theme, exactly like `globalScales.dark` already threads through
-    // `resolveRole` above.
-    errorInk: pal?.error?.[12] || (kind === 'dark' ? globalScales.dark?.error : globalScales.error)?.[12] || errorColor,
-    warningInk: pal?.warning?.[12] || (kind === 'dark' ? globalScales.dark?.warning : globalScales.warning)?.[12] || warningColor,
-    successInk: pal?.success?.[12] || (kind === 'dark' ? globalScales.dark?.success : globalScales.success)?.[12] || successColor,
+    // No `errorInk`/`warningInk`/`successInk`: they only ever fed a preview-side
+    // contrast repair in StatusSpecimen, and repairing a colour in ONE preview
+    // is what made it disagree with every other one about the same token.
     semanticMap: semanticTokens,
     radius,
     spacing,
@@ -130,7 +119,14 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     panelBackground,
     pageBackground: (store.themeKinds?.[themeKey] ?? 'light') === 'light' ? store.pageBackground : undefined,
     sizes: store.sizes,
-    shadows: store.shadows,
+    // Shadows are the one foundation that can't ship a single value for both
+    // appearances: the ramp's near-black shadow colour IS the dark page, so in
+    // dark every elevation composited to within 0.36 of one 8-bit level of the
+    // background — invisible, not subtle. Derived here rather than at each call
+    // site so EVERY specimen (Card, Modal, Toast, the collage) gets a readable
+    // elevation in dark, not just the Shadow foundation's own preview.
+    shadows: kind === 'dark' ? darkShadowMap(store.shadows) : store.shadows,
+    grid: store.grid,
     opacity: store.opacity,
     iconPrefix: getIconLibrary(store.iconLibrary)?.iconifyPrefix ?? store.iconLibrary,
     coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),

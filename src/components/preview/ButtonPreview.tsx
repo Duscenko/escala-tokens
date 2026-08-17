@@ -27,15 +27,11 @@ export interface PreviewTokens {
   successColor?: string
   warningColor?: string
   infoColor?: string
-  // Accessible ink for text sitting ON that status's own muted/tint background
-  // (tone 12 of the same family, in the previewed appearance) — NOT the same
-  // thing as errorColor/warningColor/successColor above, which stay the vivid
-  // tone-9 "this is the danger colour" accent used for fills/icons/borders.
-  // Text needs a value that reads on a pale tint; the vivid tone does not
-  // reliably clear WCAG AA there. See SemanticSpecimens.tsx's StatusSpecimen.
-  errorInk?: string
-  warningInk?: string
-  successInk?: string
+  // (There is deliberately no `errorInk`/`warningInk`/`successInk` here. They
+  // existed so `StatusSpecimen` could swap a legible tone in when a status fg
+  // read under AA on its tint — which made that ONE specimen disagree with
+  // every other preview about what a token's colour is. Previews now render
+  // the real value and report a failing pair instead; see StatusSpecimen.)
   // Full semantic map for the active preview theme — the per-category Semantic
   // specimens read token values from here so they track the selected theme
   // (light · dark · custom) instead of always reading themes.light.
@@ -56,6 +52,11 @@ export interface PreviewTokens {
   sizes?: Record<string, string>
   // Elevation ramp from Foundations · Shadow (xs–2xl CSS box-shadows).
   shadows?: Record<string, string>
+  // Layout grid from Foundations · Grid — `columns`/`gutter`/`margin`/
+  // `container` plus every `breakpoint-*` min width, verbatim from the store
+  // (the Grid specimen derives WHICH breakpoints exist from these keys, so it
+  // can't drift from the tokens that ship).
+  grid?: Record<string, string>
   // Transparency steps from Foundations · Opacity ('10' → '10%').
   opacity?: Record<string, string>
   // Iconify prefix of the Foundations · Icons library (drives content glyphs).

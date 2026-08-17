@@ -81,7 +81,11 @@ function ExportGlyph() {
 }
 
 // The outline-pill shape for TopNav's secondary action (Plugin) — icon + a
-// label that hides under `sm`.
+// label that hides under `sm`. `rounded-[13px]`, not `rounded-full` — the
+// same proportional squircle every other 9-size (36px) chrome control uses
+// (ThemeToggle, the About button beside it, ColorPrimitives' gear), so the
+// whole action cluster on the right of the bar shares one corner language
+// instead of pills sitting next to circles sitting next to squircles.
 function NavPill({
   onClick, active, label, title, ariaLabel, children,
 }: {
@@ -97,7 +101,7 @@ function NavPill({
       onClick={onClick}
       aria-label={ariaLabel ?? label}
       title={title}
-      className={`h-9 px-3.5 rounded-full flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors border ${
+      className={`h-9 px-3.5 rounded-[13px] flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors border ${
         active
           ? 'border-line-strong bg-elevated text-fg'
           : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
@@ -128,7 +132,10 @@ function PrimaryPill({
       onClick={onClick}
       aria-label={ariaLabel ?? label}
       title={title}
-      className={`px-4 h-9 rounded-full text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
+      // Same `rounded-[13px]` as `NavPill` beside it — see that component's
+      // note. Export is the one filled pill in the row; it still has to
+      // share the row's corner language, not stand out as the one pill.
+      className={`px-4 h-9 rounded-[13px] text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
         active ? 'ring-2 ring-fg/30' : ''
       }`}
     >
@@ -261,7 +268,8 @@ export default function TopNav({
             onClick={onMenu}
             aria-label="About Escala Tokens"
             title="About · how it works · changelog · contact"
-            className="w-9 h-9 rounded-full flex items-center justify-center border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+            // Same `rounded-[13px]` squircle as `ThemeToggle` right beside it.
+            className="w-9 h-9 rounded-[13px] flex items-center justify-center border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
               <path d="M4 7h16M4 12h16M4 17h16" />

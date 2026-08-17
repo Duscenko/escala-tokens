@@ -5,7 +5,7 @@
 // here is what lands in Figma. All colors/radius/type resolve from PreviewTokens
 // — inline styles by design (see CLAUDE.md conventions).
 
-import { useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -991,12 +991,39 @@ function SwitchGroupSpecimen({ t }: { t: PreviewTokens }) {
 // what proves the track/fill/thumb tokens hold at every value rather than only
 // at the one hardcoded percentage, and the readout is the slider's own number,
 // so it can't lie.
+const SLIDER_DEFAULT = 60
+
 function SliderSpecimen({ t }: { t: PreviewTokens }) {
-  const [value, setValue] = useState(60)
+  // Starts at 0 and animates up to SLIDER_DEFAULT on mount — "step entry"
+  // motion (see CLAUDE.md's design principles), not decoration: it's what
+  // tells you this IS a live control the instant the panel opens, before
+  // anyone has touched it. `entered` gates a SEPARATE, slower transition for
+  // that one reveal; every interaction after it (drag, keyboard, click-to-
+  // jump) keeps the fast 0.12s the rest of the specimen already used, so the
+  // reveal doesn't leave the control feeling sluggish to actually use.
+  const [value, setValue] = useState(0)
+  const [entered, setEntered] = useState(false)
   const [drag, setDrag] = useState(false)
   const [hover, setHover] = useState(false)
   const [focus, setFocus] = useState(false)
   const trackRef = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion() ?? false
+
+  useEffect(() => {
+    if (reduce) { setValue(SLIDER_DEFAULT); setEntered(true); return }
+    // Double rAF: committing the 0% frame and the SLIDER_DEFAULT frame in the
+    // same tick (a plain `useEffect` can run before the browser has painted
+    // the initial 0%) gives the CSS transition nothing to interpolate FROM —
+    // it just snaps. Two frames guarantee the 0% frame is actually on screen
+    // before the target value is set. Both ids are cancelled on unmount so a
+    // fast tab-switch away mid-reveal can't call setState on an unmounted
+    // specimen.
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setValue(SLIDER_DEFAULT))
+    })
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
+  }, [reduce])
 
   const setFromX = (clientX: number) => {
     const el = trackRef.current
@@ -1060,12 +1087,22 @@ function SliderSpecimen({ t }: { t: PreviewTokens }) {
           cursor: drag ? 'grabbing' : 'grab', outline: 'none', touchAction: 'none',
         }}
       >
-        <span style={{
-          position: 'absolute', left: 0, width: `${value}%`, height: '100%', borderRadius: 999, background: t.brandSolid,
-          // No transition while dragging — a fill that eases behind the cursor
-          // reads as lag, not polish. Keyboard steps and click-to-jump ease.
-          transition: drag ? 'none' : 'width 0.12s ease-out',
-        }} />
+        <span
+          onTransitionEnd={(e) => { if (e.propertyName === 'width' && !entered) setEntered(true) }}
+          style={{
+            position: 'absolute', left: 0, width: `${value}%`, height: '100%', borderRadius: 999, background: t.brandSolid,
+            // No transition while dragging — a fill that eases behind the cursor
+            // reads as lag, not polish. Keyboard steps and click-to-jump ease at
+            // the fast 0.12s; the ONE reveal on mount gets 0.5s instead, slow
+            // enough to actually read as a fill sweeping in rather than a snap
+            // — `entered` flips true (via onTransitionEnd, above) the moment
+            // that sweep completes, so it can never fire again on a later drag.
+            // `reduce` always wins: prefers-reduced-motion means the mount
+            // jumps straight to SLIDER_DEFAULT with no animation at all, not a
+            // shorter one.
+            transition: drag || reduce ? 'none' : !entered ? 'width 0.5s ease-out' : 'width 0.12s ease-out',
+          }}
+        />
         <span style={{
           position: 'absolute', left: `${value}%`, top: '50%',
           // Scale lives in the same transform as the centering translate, so the
@@ -1074,7 +1111,17 @@ function SliderSpecimen({ t }: { t: PreviewTokens }) {
           width: 18, height: 18, borderRadius: 999, background: '#ffffff',
           border: `2px solid ${t.brandSolid}`,
           boxShadow: focus ? focusRing(t, t.brandSolid) : '0 1px 3px rgba(10,13,18,0.25)',
-          transition: drag ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out' : 'left 0.12s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out',
+          // Travels WITH the fill during the reveal (same 0.5s), so the thumb
+          // doesn't teleport to 60% while the bar is still sweeping toward it.
+          // Scale/shadow keep their own fast transition even here — those are
+          // hover/focus/press cues, unrelated to the mount reveal.
+          transition: drag
+            ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out'
+            : reduce
+            ? 'transform 0.12s ease-out, box-shadow 0.12s ease-out'
+            : !entered
+            ? 'left 0.5s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out'
+            : 'left 0.12s ease-out, transform 0.12s ease-out, box-shadow 0.12s ease-out',
         }} />
       </div>
     </div>

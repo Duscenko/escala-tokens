@@ -30,6 +30,8 @@ export default function ColorHub({
   onPreviewThemeChange,
   focusFamilyKey,
   onOpenAddTheme,
+  railCollapsed,
+  onToggleRail,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -45,6 +47,11 @@ export default function ColorHub({
    *  panel it opens is docked in the shell's right aside, which Configurator
    *  owns, so the callback has to exist before Semantics is ever visited. */
   onOpenAddTheme: () => void
+  /** Forwarded to ColorPrimitives — collapses its 198px left column. Owned by
+   *  `Configurator` because TopNav's brand block sizes its divider from the
+   *  same value; see ColorPrimitives' own note. */
+  railCollapsed?: boolean
+  onToggleRail?: () => void
 }) {
   // Each tab is a FULL-HEIGHT cell of the 52px row, not a text label with a
   // hairline under it: the active one reads as a tinted block whose accent bar
@@ -110,6 +117,8 @@ export default function ColorHub({
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             focusFamilyKey={focusFamilyKey}
+            railCollapsed={railCollapsed}
+            onToggleRail={onToggleRail}
           />
         </div>
       ) : colorTab === 'semantics' ? (

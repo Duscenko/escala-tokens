@@ -41,7 +41,12 @@ export default function ThemeToggle({
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       data-preview-theme={previewTheme}
-      className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full border border-line bg-app/70 backdrop-blur-sm text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+      // `rounded-[13px]`, the same squircle every other 9-size (36px) icon
+      // button in the app uses (ColorPrimitives' gear, PickerColor,
+      // StepGradients) — this control sits directly beside the About button
+      // in TopNav, and a circle next to a squircle at the same size read as
+      // an inconsistent corner language in one row.
+      className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-[13px] border border-line bg-app/70 backdrop-blur-sm text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
     >
       {isDark ? <SunIcon /> : <MoonIcon />}
     </button>

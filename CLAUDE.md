@@ -395,6 +395,34 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     theme references yet, derived via `familySlotFor()` (`lib/themeSources.ts`) from which
     theme slot references each family — a family minted by "Add theme" files itself under
     the right folder with zero bookkeeping.
+    - **That 198px column COLLAPSES to a 56px swatch strip**, handing ~142px to the token
+      table. The toggle lives in the `Groups` header's trailing slot — a slot that row's
+      `justify-between` already reserved around a lone label. Rules:
+      - **56px, not the 32px dead strip `PreviewPanel` collapses to.** That panel is a
+        read-only specimen, so collapsing costs only sight; this column is NAVIGATION, and
+        at 32px there's no room for the family swatches, i.e. switching families would mean
+        expanding first every single time. Keeping the chips is what makes it a collapse
+        rather than a hide — the same call `FoundationIconRail` already makes (drop the
+        labels, keep the glyphs). Verified: all 7 families stay clickable while collapsed.
+      - **Collapsed rows are ONE button that selects the family**, sized `w-10 h-8` — the
+        bare 18px swatch is not a target. Editing a colour stays behind the expanded state
+        and row 1's swatch, so a click in the strip can't mean two things depending on
+        where in the chip it lands. Folder *grouping* survives as a hairline rule between
+        groups; only the text headers go.
+      - **The state is LIFTED to `Configurator` (`colorRailCollapsed`), never local.**
+        TopNav's brand block continues this column's divider up through the header via
+        `brandWidth`, so a column that could shrink without the shell knowing would leave
+        that rule stopping at the header and restarting one row down. `ColorPrimitives`
+        exports `COLOR_RAIL_WIDTH`/`COLOR_RAIL_COLLAPSED_WIDTH` and `Configurator` sizes
+        `brandWidth` from those constants — a magic 198 in two files is a broken line
+        waiting to happen.
+      - **`TopNav`'s `railCollapsed` must be set for BOTH narrow-brand cases**, not just
+        the Components rail: at 56px the wordmark overflows its own block by ~67px
+        (measured) and spills past the divider. Hence
+        `(outerRailVisible && railCollapsed) || colorColumnCollapsed`.
+      - **Scoped to Primitives.** Semantics and Gradients keep their own full-width 198px
+        column, so `colorColumnWidth` re-widens on those tabs while the collapsed
+        preference is remembered for when you come back (verified: 56 → 198 → 56).
     - **The promoted quick-edit strip** sits above the table, contextual to the active
       family: a `<Family> color` label + hex field in a bordered pill (`HexCell` wrapped in
       a `rounded-[13px] border-line-strong` container — matches the weight of a `ColorSelect`
@@ -405,6 +433,29 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       only renders while Accent is active shifted the ramp beside it 52px on that one
       family, which is why neither toggle is in the strip itself. Read-only (hex field
       hidden, `ScaleRow` still shown) for Accent-Alpha.
+      - **A per-family "reset to default" sits at the pill's trailing edge** — the slot
+        `pr-1.5`/`gap-1` already reserved, and the same position the token tables put their
+        per-row reset, so it's a gesture already learned. Scope is deliberately ONE family,
+        not the colour system: `HomeActions`' "reset the whole system to defaults" was
+        removed from the UI on purpose (see the Navigation model note) and this does NOT
+        reintroduce it — it's the same class as the per-token reset icons that note
+        explicitly keeps.
+      - **The target comes from `makeDesignDefaults()`**, the same factory a brand-new
+        system is seeded from, never a hex table in the component — so "reset" can't drift
+        from what "default" means. Built once per mount (`useMemo`): the factory also
+        builds gradients and ramps, and there's no reason to redo that per render.
+      - **It routes through `changeFamilyBase`, not a direct setter.** A reset has to
+        cascade exactly like a hand-edit — the neutral/states links, the page derived from
+        the base — or the two paths drift into different results for the same hex.
+        Verified: resetting a green accent to `#9522e9` moved the linked neutral
+        `#767f6c → #776c7f` and the page `#fdfefb → #fefdff`, left the states alone
+        (their link was off), and left `primaryScale[9] === primaryDarkScale[9] ===
+        '#9522e9'` — i.e. the ramps genuinely regenerated with tone 9 still the anchor.
+      - **No button where there's no default to return to** — a custom family was invented
+        by the user, and an alpha twin is solved from its solid rather than set. Those
+        render nothing rather than a dead control. At the default the button is *disabled*,
+        not hidden: a control that vanishes once used reads as broken, while disabled says
+        "nothing to undo" (verified on Error, which ships at `#f04438`).
     - **"Edit in Picker Color" is gone** — with the quick-edit strip living on the same
       screen as the table, selecting a family in the nav already surfaces everything that
       link used to jump to. The `onEditInPicker`/`pickerFocusTarget` prop chain
@@ -534,6 +585,52 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       `status.*-fg` is tone 12 while `content.secondary` (which sits on the PAGE)
       correctly stays at 11 — the rule is about what the ink SITS ON, not about
       the role's importance.
+    - **`status.*-fg` is SOLVED against its own `-bg` (`{ink:<fam>.<tone>}`), not
+      pinned to tone 12.** Tone 12 is the right answer for the tone-3 tint the schema
+      ships — and ONLY for that. Nothing tied the ink to the fill, so re-pointing a
+      `-bg` left the ink behind: measured on a real hand-edited pair (bg `error.5` /
+      fg `error.9`) that read **3.30:1**, under AA, with nothing in the system
+      objecting. `{ink:…}` is a THIRD marker beside `{accent.solid}` and `{on:…}`,
+      substituted in `curatedRefs` and nowhere else.
+      - **It is NOT `{on:…}`, deliberately.** `{on:…}` picks between `INK_REFS`
+        (near-white / near-black), which is right for a SOLID fill and wrong here: a
+        status message is meant to read dark-red-on-pale-red, not black-on-pale-red.
+        `{ink:…}` keeps the FAMILY and solves only the step.
+      - **Targets AA — but never by falling back on the tone-12 TEXT END, and
+        that exception is a deliberate, informed accessibility tradeoff.**
+        Walking up, it returns the first tone clearing AA *below* tone 12; if AA
+        is only reachable AT 12, it drops to the subtlest tone clearing
+        `STATUS_INK_TARGET` (**3:1**) instead of snapping to near-black.
+        - **Why the two appearances need different treatment, measured:** on a
+          DARK ramp the tint IS the dark end, so a vivid tone clears AA on its
+          own — light path never triggers, dark resolves 10 / 9 / 9 at 5.26 /
+          6.60 / 5.74. On a LIGHT ramp the tint (3–5) and the vivid tones (9–11)
+          sit on the same side with too little luminance between them: tones
+          9–11 read **2.39–3.98:1** on the tint, and deepening the tint makes it
+          *worse*, not better (fg 11 vs bg 1→5 = 4.50 → 3.01). Nothing but tone
+          12 clears AA in light. That's ramp geometry, not a solver bug — don't
+          go looking for a bg tone that fixes it, there isn't one.
+        - **The owner reviewed those numbers and chose the vivid look over the AA
+          guarantee in light.** Result: light resolves 9 / 11 / 11 at **3.1 / 4.0
+          / 3.9 : 1** — under AA for body text, over WCAG's 3:1 floor for large
+          text and non-text. Dark is unaffected and still clears AA.
+        - **`ContrastFlag` still measures against AA, not this target**, so every
+          under-4.5 pair keeps reporting itself in the Status preview (verified:
+          three flags in light, zero in dark). The lowered target changes what
+          the system PICKS, never what it CLAIMS.
+        - **Scoped to this solver.** `solidInkPair` (ink on a solid brand fill)
+          still targets AA — a button label has no reason to inherit this.
+      - **That dark result is also the Astryx alignment.** Astryx's `status.error` is
+        tone 9, and solving for AA against the tone-3 tint lands on 9–10 in dark on
+        its own — so the two architectures converge without Categorical copying a
+        value that would fail as text (tone 9 on tone 3 in LIGHT measures ~3:1, which
+        is exactly the trap the earlier `StatusSpecimen` fix documents).
+      - **The system assigns, the user still overrides.** `architectureOverrides` are
+        applied AFTER the projection, so a hand-picked ref wins over the solved one —
+        same "hand-edit wins" contract as `linkNeutralToAccent`/`linkStatesToAccent`,
+        and "Reset to schema" hands the row back to the solver. Verified: the markers
+        collapse to plain `{family.tone}` refs, so nothing named `ink:` reaches the
+        table, the export or `refToView`'s grammar.
     - **Categorical's `status.*` dark column was a `13 − n` mirror, and it was the
       worst live contrast bug in the app**: `bg {error.11} / fg {error.7}` measured
       **1.76 / 1.09 / 1.29 : 1** — a mid-tone ink on a near-text-tone fill, i.e.
@@ -563,6 +660,53 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       re-pointing them needs a `clearSemantics`-style migration (the v43
       precedent) — don't change `Role.tone` without one. ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
+
+> **Saving a Kit asks "all themes or just one" — but only when that's a real
+> question.** `KitsPopover` (`HomeActions.tsx`) used to always save the FULL
+> current snapshot via `saveCurrentSystem()`, silently carrying every theme
+> the system had. Reported as: needs to ASK, since "save this kit" and "save
+> this one theme" are genuinely different intents once a system has more than
+> the default light/dark pair (e.g. a client hands you three brand themes and
+> you want ONE of them as its own standalone kit).
+> - **The choice only renders when `themeOrder.length > 1`.** With one theme
+>   there's nothing to choose between — showing a segmented control anyway
+>   would be a confirmation dialog for a decision that was never in doubt,
+>   which is exactly the kind of over-explaining CLAUDE.md's own design
+>   principles already warn against ("labels should be identifiers, not
+>   tutorials... skip the description when it's obvious from context").
+> - **"Just one theme" defaults to the PREVIEWED theme**, not always 'light'
+>   — `previewTheme` is threaded into `HomeActions`/`KitsPopover` as a prop
+>   (it's local state in `Configurator.tsx`, not store state, so it has to be
+>   passed down rather than read via `useDesignStore()`).
+> - **`scopeSnapshotToTheme(snapshot, themeKey)`** (`useDesignStore.ts`) is
+>   the actual narrowing: `themes`/`themeOrder`/`themeKinds`/`themeSources`
+>   keep only the chosen key, and `architectureOverrides` drops every mode
+>   entry that isn't it (an override is keyed `architecture → category.token
+>   → THEME KEY`, so leaving other themes' overrides in would orphan them —
+>   ref data pointing at a theme the saved kit no longer carries).
+> - **Every PRIMITIVE stays untouched, deliberately.** A theme is "a READING
+>   of the primitives, never a place to set colour" (see that note above) —
+>   scoping the reading down doesn't require touching what it reads FROM. A
+>   custom family minted only for a now-dropped theme survives in the kit as
+>   an unreferenced primitive rather than being cascade-pruned; once no
+>   theme's `themeSources` points at it, the family nav's own delete lock
+>   already opens on its own (the same "in use by theme X" rule every other
+>   family-deletion path follows) — that's the existing, discoverable
+>   cleanup path, not a reason to add a second, silent one here.
+> - **`saveCurrentSystemAsTheme(themeKey)` shares `buildSavedSystemEntry()`
+>   with `saveCurrentSystem()`** — same id rule (repo id when GitHub-
+>   connected, else a slug of the project name), so the popover's existing
+>   "reusing a name updates that kit" copy stays true for a scoped save too;
+>   this doesn't invent a second naming convention to learn.
+>   Verified: saving "just Dark" from a 3-theme system produced a snapshot
+>   with `themeOrder: ['dark']`, `themes`/`themeKinds` holding only `dark`,
+>   every stale `architectureOverrides` entry for the dropped themes gone,
+>   and `customColors` still carrying all 6 families untouched. Loading that
+>   kit back rendered the Semantics table with exactly one column and no
+>   crash — `themeOrder.length === 1` is already an ordinary resting state
+>   elsewhere in the app (every "> 1" guard, like the per-theme delete lock,
+>   already assumes 1 is valid), not a new case this feature had to teach
+>   the rest of the app to handle.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Kits in Variables' header and the Export wizard's own
   "Save this design system" card (see above) cover PART of the same ground — naming,
@@ -629,15 +773,37 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   plus Color's own hub). Each carries a 198px left column, and `p-8` framed them as
   floating cards whose column no longer lined up with the icon toolbar or `CenterHeader`
   above. Icons keeps its padding — it's an Iconify browser, not a token table. The shape
-  is the Color tables' — **row 1** = a `w-[198px] … border-r`
-  labelled control cell (`<Family> color` · `Gradient type` · `Preset` · `Base unit`)
-  beside a right cell showing *what that control produces* (the ramp · the gradient bar ·
-  the roundness slider + chip · the spacing scale · the elevation ramp), `pr-3` clearance
-  on the right edge; **row 2** = a `h-[52px]` labelled cell (`Groups` / `Collections`)
-  beside the active collection + search; **row 3** = the nav (`py-1.5 px-2`) against the
-  flush table. **Row 1 exists only where the section HAS a global control** — Color,
-  Gradients, Radius, Spacing and Shadow do; Typography, Sizes and Grid start at
-  the Collections row instead of inventing one.
+  is `VariablesTable`'s own — **row 1** = a `w-[198px] … border-r`
+  labelled control cell (`Preset` · `Base unit`) beside a right cell showing *what
+  that control produces* (the roundness slider + chip · the spacing scale · the
+  elevation ramp), `pr-3` clearance on the right edge; **row 2** = a `h-[52px]`
+  labelled cell (`Collections`) beside the active collection + search; **row 3** =
+  the nav (`py-1.5 px-2`) against the flush table. **Row 1 exists only where the
+  section HAS a global control** — Radius, Spacing and Shadow do; Typography, Sizes
+  and Grid start at the Collections row instead of inventing one.
+  **`ColorHub`'s own three tabs (Primitives/Semantics/Gradients) DIVERGE from this
+  row order — deliberately, and only there.** They used to match it exactly
+  (control-row first, `Groups`/`Collections`-row second), then got flipped: `Groups`
+  + the tab bar + search now sit in ROW 1, and the per-family/-architecture/-gradient
+  control strip sits in ROW 2, directly above the nav it edits — reported as wanting
+  the nav's own header sitting immediately above the nav, not interleaved with the
+  editing strip. Two things make this safe to do ONLY inside `ColorHub` and not to
+  `VariablesTable` too:
+  - **All three Color tabs share one `centerKey`** (`f-color` in `Configurator.tsx`),
+    so switching between them skips the foundation-level fade — see the "FASE 1
+    desync fix" note. That makes an identical row order across exactly those three
+    tabs load-bearing: a mismatch reads as a hard jump with no transition to soften
+    it. `VariablesTable`-based foundations (Radius/Spacing/Shadow/Typography/Sizes/
+    Grid) each get their OWN `centerKey` and a real fade when you switch to them, so
+    a different row order there isn't a "jump" the same way — it's just a different
+    foundation, already announced by the transition.
+  - **The swap was applied identically to all three** (`ColorPrimitives.tsx`,
+    `Step3_SemanticTokens.tsx`, `StepGradients.tsx`) — same border-weight logic too:
+    whichever row now sits directly above the nav + table keeps the full-strength
+    `border-line`; whichever sits between the two chrome rows drops to the lighter
+    `border-line/60`. Do not swap only one of the three, and do not swap
+    `VariablesTable` to "match" — that would just move the mismatch onto six
+    foundations instead of removing it from three.
   **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`/`footer`),
   so the gutter's CONTENT is per-section: Sizes · Shadow · Radius leave it empty
   (the column exists purely so their table's left edge lands on the same line as everyone
@@ -829,11 +995,49 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
      renders inline — not a real floating dialog) · **spacing**/**sizes** → Button at every
      `Size` (SM–XL, so it reads the `sizes` tokens live) + Card (reads `padding` live) —
      these sit ALONGSIDE the token tables' own comparative bars (`VariablesTable`'s
-     `preview` column + Sizes' "Component Sizes" bar block), not replacing them. Any other
-     foundation (Icons — which instead swaps via `iconLibraryKey`; Shadow, Grid)
+     `preview` column + Sizes' "Component Sizes" bar block), not replacing them. ·
+     **grid** → `GridPreview` (`preview/atoms/GridPreview.tsx`), the one specimen that
+     is NOT components — see its own note below · **shadow** → `ShadowPreview`
+     (`preview/atoms/ShadowPreview.tsx`): the ramp on six identical surfaces (no border —
+     the shadow is the only separator, or you're judging the border) plus the catalogue's
+     Card/DropdownMenu/Modal, which already resolve `sm`/`lg`/`2xl` through `shadowOf`.
+     Elevation is only judgeable by COMPARING steps, which the generic set (one `xs` on a
+     button) never allowed. Any other
+     foundation (Icons — which instead swaps via `iconLibraryKey`)
      falls back to the original generic Button/Badge/Switch/Form set. **Hidden in the
-     Components tab** (docs go full-width) and below `xl`; the rail becomes a drawer below
-     `md`.
+     Components tab** (docs go full-width) and below **`min-[1180px]`**; the rail becomes
+     a drawer below `md`.
+
+> **`xl:` is 1440px in this app, not 1280 — and that hid the preview panel on real
+> laptops.** Tailwind's breakpoints are rem-based (`xl` = 80rem) and `:root` sets
+> `font: 18px/1.45` (see the "Root font-size" note), so every `lg`/`xl` utility resolves
+> 12.5% higher than its name suggests: **`lg` = 1152px, `xl` = 1440px.** The preview aside
+> was gated `hidden xl:flex`, so the live specimen — half the point of a workspace whose
+> whole premise is "tweak on the left, watch it repaint on the right" — vanished on any
+> window under 1440. That's a MacBook Pro 16" on any scaled resolution below 1512, or
+> simply a window that isn't maximised. Reported as "on a 16-inch laptop that panel isn't
+> there."
+> - **The threshold is now an explicit `min-[1180px]:`** on both branches (the 400px
+>   `<aside>` and the 32px collapsed strip), so the number in the class is the number in
+>   CSS pixels. Don't "tidy" it back to `xl:`.
+> - **1180 is MEASURED, not chosen.** With the full 400px aside, nothing inside `main`
+>   overflows at that width across all eight foundations — Primitives keeps both the light
+>   and dark columns, Semantics keeps its mode columns, and every railed section keeps its
+>   198px gutter. The only casualties are `truncate` labels and Shadow's long CSS strings
+>   scrolling inside their own `<input>`, both of which already behaved that way.
+> - **The aside keeps ONE width (400px) instead of shrinking on narrow screens.** The
+>   collage's hard floor is **380px** — at 360 its tiles overflow their `p-4` — so there is
+>   no useful range to trade the center 20px for. If you ever do add a step, 380 is the
+>   floor, not a starting point.
+> - **The escape hatch is what makes the trade honest.** `previewCollapsed` and its 32px
+>   strip cross the same 1180 threshold, so anyone who wants the full table width on a
+>   small screen collapses it — verified at 1180, where Shadow's values go from clipped to
+>   fully visible.
+> - **Docs' and Components' "On this page" TOC deliberately stays on `xl:`.** Same root
+>   cause, different answer: lowering it to 1180 was tried and measured, and it drops the
+>   Docs article from 972 to 756px, at which point the Overview sheet's ramps
+>   (`min-w-[40rem]` in an `overflow-x-auto`) hide tones 11–12 behind a scroll. A TOC is
+>   navigation and the ramps are the content — don't trade the second for the first.
 - **Components ship complete**: `selectedComponents` defaults to every key; a checkbox *removes* one.
 - **Foundation progress** (`completedFoundations`) persists; "visited = done" — shown as ✓
   in the Home overview checklist.
@@ -869,6 +1073,133 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     carries the field just skips creating that variable collection — verified against the
     sibling plugin repo, not assumed. Its dead `COLLECTIONS.opacity` / import-emit / docs-
     page-section code is a separate, optional cleanup, not a correctness requirement.
+
+> **Grid's specimen is the LAYOUT, not components — the one preview that can't be
+> made of buttons.** Every other foundation's panel answers "what do my components look
+> like with this token"; a 12-column grid has no such answer, which is why Grid sat on the
+> generic Button/Badge/Switch/Form fallback and told the user nothing. `GridPreview`
+> (`preview/atoms/GridPreview.tsx`) draws two things a token TABLE structurally cannot:
+> - **The layout grid at every breakpoint.** `columns`/`gutter`/`margin`/`container` are
+>   GLOBAL tokens, but what they PRODUCE changes per viewport — and the interesting number,
+>   the CONTENT width, appears nowhere in the table. Above the container the cap sets the
+>   content and **`margin` stops mattering entirely**; frames past that point carry a
+>   `container` chip so that's visible rather than inferred. Verified live: at the default
+>   1280px container only `2xl` is capped; drop the container to 700px and everything from
+>   `md` up caps, i.e. four breakpoints lay out identically — which is exactly the kind of
+>   thing you cannot see in a column of numbers.
+> - **Breakpoint RANGES.** A breakpoint is a range, not a point, but its upper bound is the
+>   NEXT row's min width, so the table can't show where `md` stops. The last bar runs to the
+>   axis edge and is labelled `+`, never a fabricated upper number.
+>
+> Rules that keep it honest:
+> - **Frames are a true scale model, at any render size.** Both insets are percentages of
+>   the box they resolve against — `padding: %` against the frame (= the viewport),
+>   `column-gap: %` against the grid's content box (= the content width) — so nothing
+>   depends on how many CSS pixels the frame actually got. Measured against the real ratios:
+>   column/content is 0.04516 rendered vs 0.04514 real at `sm`, 0.06611 vs 0.06615 at `2xl`.
+>   **Don't put borders or padding on that inner grid** — it'd shift the content box the gap
+>   is solved against; the margin guides are absolutely positioned for exactly that reason.
+>   (Note when re-measuring: `getComputedStyle().columnGap` returns percentage gaps
+>   UNRESOLVED per CSSOM, so a reading of `4.17` there is `4.1667%`, not 4.17px.)
+> - **Which breakpoints exist is DERIVED** from the `breakpoint-*` keys, never listed — same
+>   rule as everywhere else, so the panel can't drift from the tokens that ship. A system
+>   whose breakpoints are all blank falls back to a single `container` frame rather than
+>   rendering an empty block.
+> - **Frame widths stay proportional to each other** (`viewport / widest`), because half of
+>   what makes a breakpoint set legible is their relative scale. This survives comfortably in
+>   the 400px aside: the narrowest is 640/1536 ≈ 42% of the width, still readable.
+> - **It doesn't repeat the Grid table's own `footer` overlay**, which draws the single
+>   abstract column strip. That one answers "what does one row of columns look like"; this
+>   answers "what does it become at each viewport." Don't collapse them into one.
+
+> **Shadows ship a DARK TWIN, because one value provably cannot serve both appearances.**
+> Reported as "you can't see anything in shadow dark" — and measuring it showed the shadows
+> weren't subtle, they were **mathematically identical to the background**. The ramp's colour
+> is `rgba(10,13,18,·)`, "near-black" chosen against a WHITE page; the dark page is `#0c0e12`
+> = `rgb(12,14,18)`. The shadow colour *is* the page. Composited, the LARGEST step moved the
+> pixel by **0.36 of one 8-bit level** — it rounds to the background. Across the ramp, dark
+> delivered an OKLab ΔL of 0.0003–0.0009 where light delivers 0.036–0.132.
+> `darkShadow()` / `darkShadowMap()` (`colorUtils.ts`) derive the twin. Two corrections,
+> because one is not enough:
+> - **Black, and much more of it** — pure black (on a near-black page there is no darker hue
+>   to reach for), alpha remapped `1 − (1 − a)^6`. That FORM matters: a plain multiplier
+>   clamps, so the Strong preset's 0.32 × 6 saturates at 1 and flattens the top of the ramp,
+>   while this approaches 1 asymptotically and keeps every step ordered.
+> - **A light rim, which is what actually makes it read.** Below a near-black page only ~5%
+>   of the luminance range exists, so a black shadow CANNOT match light-mode elevation
+>   however hard it's pushed — measured, even at gain 8 the largest step reaches ΔL 0.068
+>   against light's 0.132. **Up is the only direction with range left**, which is why every
+>   dark UI that reads as elevated (Material's surface tint, Linear/Vercel/GitHub's hairline)
+>   spends light rather than dark. One 1px white rim at α 0.06 buys ΔL **+0.059** — as much
+>   as the entire 48px black shadow — so the pair lands in light mode's perceptual range.
+>   The rim is listed FIRST because box-shadow paints earlier layers on top; last would bury
+>   it under the blurred layers, which is exactly what dulls it back out.
+>
+> Rules that keep it honest:
+> - **Light is byte-identical to before** — verified in the browser: the light ramp still
+>   computes to `rgba(10,13,18,0.05) 0px 1px 2px 0px` etc., no rim. This is strictly additive
+>   to dark, so no existing system is restyled and there's no migration.
+> - **Derived, not a second editable token set.** A shadow is a raw CSS string with no
+>   "reference" to resolve (unlike a gradient stop's `tone`), so there's nothing for a user
+>   to edit a dark twin *against* — and a hand-maintained parallel ramp is one more thing to
+>   drift. `darkShadow` re-colours in ONE pass over the string (no paren-aware layer
+>   splitting needed, since `rgba(…)`'s own commas don't matter if you never split), keeps
+>   the geometry exactly, and passes `none` through untouched.
+> - **It's applied in FOUR places and they must not diverge** — `resolvePreviewTokens`
+>   (so every specimen, not just Shadow's, gets readable elevation in dark), `Step7_Shadow`'s
+>   own swatches (they sit on CHROME surfaces, so they follow `useTheme()`, not
+>   `previewTheme` — you cannot edit a token you cannot see), `exporters.ts`' `.dark` block,
+>   and the wizard's `cssFor`. That last one is easy to miss: it's a SEPARATE CSS path from
+>   `exporters.ts`, and it shipped light-only shadows until it didn't. Verified by
+>   intercepting the wizard's own download blob: one `:root`, exactly one `.dark` block
+>   (the shadow lines merge into the semantics block rather than opening a second one), 12
+>   `--shadow-*` declarations = 6 light + 6 dark.
+> - **`shadowsDark` in tokens.json is ADDITIVE**, exactly like `gradientsDark` beside
+>   `gradients`: same keys, complete map, so a consumer never tests which entries exist and
+>   an older plugin ignores it — hence **no `schemaVersion` bump**.
+> - **Known gap, deliberate:** the wizard's **SCSS** output has no dark shadows. SCSS there
+>   has no theming scope at all (it drops semantics' dark modes too), so adding one for
+>   shadows alone would be inconsistent rather than complete. Fix it when SCSS grows themes.
+
+> **Token value fields scrub like Figma's — `ui/ScrubInput.tsx`, one component, every
+> table.** Drag the double-chevron handle left/right and the number follows; Shift ×10,
+> Alt ×0.1, and ArrowUp/Down on the input do the same thing from the keyboard. Used by
+> `VariablesTable` (Spacing · Radius · Sizes · Grid · Shadow) and Typography's own
+> `ValueInput`, which is the same field in a section that builds its rows by hand.
+> - **The handle is a separate hit target, not "drag anywhere on the field".** These are
+>   TEXT inputs — dragging across text means selecting text, and hijacking that would kill
+>   click-to-place-caret and double-click-to-select-word, the two things people actually do
+>   in these cells. Figma splits it the same way. Typing is completely unchanged.
+> - **Whether a row scrubs is read from its VALUE, never declared per table**
+>   (`isScrubbable`): strictly `number + optional unit` (`12`, `4px`, `1.5rem`, `100%`). A
+>   compound CSS value (`0 1px 2px rgba(…)`) has no single number to own and a font family
+>   has none at all, so Shadow's rows get a plain field — verified: no handle, and no
+>   reserved slot either, so Shadow keeps its full width for the long strings.
+> - **The slot is reserved per GROUP, from the UNFILTERED rows.** Per-row reservation would
+>   stagger the inputs in a mixed group; deriving it from the *visible* rows would make a
+>   search that leaves only non-numeric rows drop the slot and shift every input sideways
+>   mid-keystroke. Verified: Grid's four rows (incl. the unitless `12`) all sit at one x.
+> - **Round the TRAVEL, not the result.** `clientX` is fractional on a scaled/HiDPI display,
+>   and unrounded it leaks into the token — an early drag here produced `101.668px` for a
+>   whole-pixel spacing step. Quantising the travel and pricing each pixel at one step also
+>   keeps Shift honest: it moves in 10s *from where the value started* rather than snapping
+>   to the nearest absolute multiple of 10 the moment it's held.
+> - **`setPointerCapture` is best-effort and runs AFTER the drag state is armed.** It throws
+>   on a pointerId the browser no longer considers active, and a throw in `pointerdown`
+>   would abort the handler with no origin recorded and `document.body`'s cursor/user-select
+>   never restored. Capture (not window listeners) is right here because the gesture leaves
+>   the ~14px handle immediately.
+> - **`rem`/`em` step 0.1, everything else 1** — 1rem is a whole type step, so a
+>   pixel-per-rem drag would fly past every value worth landing on.
+> - **Clamped at 0 only when the value STARTED non-negative**, inferred from the value
+>   rather than hardcoded: every token in these tables is non-negative and a negative one is
+>   invalid CSS, but the inference keeps the component honest if it's ever pointed at
+>   something that can legitimately go below zero.
+> - **Watch what you drag in Spacing.** `spacing` only stores steps 1–8; 10/12/16 are
+>   DERIVED as `step × base`, and the base is inferred from `spacing-1` at mount. So
+>   scrubbing `spacing-1` silently rescales the three derived steps on the next visit. That
+>   is pre-existing behaviour, not something the scrub handle introduced — but the handle
+>   makes it a one-gesture accident, so it's worth knowing before "fixing" the derived rows.
 
 **Important:** This is **not a wizard** — no global step counter, no Continue/Back, no locked
 steps. `currentStep`, `styleDirection`, `selectedAtoms` stay removed. The old
@@ -944,7 +1275,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `radius` | Record<string, string> | Foundations · Border Radius |
 | `iconLibrary` | string (default `"lucide"`) | Foundations · Icon Library |
 | `customIcons` | { name, svg }[] — uploaded SVGs, sanitized via `sanitizeSvg()` (utils.ts) before storage; exported under `icons.custom` | Foundations · Icon Library |
-| `shadows` | Record<string, string> (xs–2xl CSS box-shadows) | Foundations · Shadow |
+| `shadows` | Record<string, string> (xs–2xl CSS box-shadows) — the LIGHT ramp. The dark twin is DERIVED (`darkShadowMap`), not stored: see "Shadows ship a DARK TWIN" | Foundations · Shadow |
 | `grid` | Record<string, string> (columns/gutter/margin/container + breakpoints) | Foundations · Grid |
 | `sizes` | Record<string, string> (component heights xs–2xl) | Foundations · Sizes |
 | `selectedComponents` | string[] (defaults to **all** `COMPONENT_KEYS`) | Components |
@@ -1133,8 +1464,8 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 >   `kind`, that's the bug back.**
 > - **The dialog is 360px (`PANEL_W`), not 256.** At 256 the 12-tone grid had ~136px for
 >   twelve cells plus gaps — sub-9px swatches, neither pickable nor readable. Its scrolling
->   body uses `.scrollbar-thin` (also in `index.css`); the platform default bar is about as
->   wide as a token swatch and dominated the panel.
+>   body used to opt into `.scrollbar-thin`; that's now just the global default (see below),
+>   kept as a class so the call site still reads intentionally.
 > - **Inside "Values", ramp labels use the platform UI font, not mono.** `accent` /
 >   `neutral-dark` are family labels; only genuine code identifiers (the Name row, the
 >   CSS-var chip, table token names) stay mono. `SystemRampGrid`'s row labels and 1–12 axis
@@ -1601,7 +1932,47 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > the rendered colour, gated on `t.archTokens` being set (non-flat) so flat's own matching,
 > already-tracked `content-error` gap (see "known, accepted residuals" above) is left alone
 > exactly as that note says — it's MATERIALIZED per-theme and needs a role-catalogue
-> migration, not a preview patch. **Two-tier fallback matters**: `errorInk` must fall back to
+> migration, not a preview patch.
+>
+> **SUPERSEDED TWICE, and the substitution is GONE. Do not bring it back in any form.**
+> The idea was: when a status fg reads under AA on its own tint, paint a legible tone
+> instead and disclose it. It was narrowed once (unconditional → measured), then removed
+> entirely, because **a colour repaired in one preview is a colour that disagrees with every
+> other preview about the same token** — reported twice, from opposite directions:
+> once when the Status preview showed `#ffbdb2` while the Color collage showed `#f36456`,
+> and again when it showed `#0c3b22` while the collage showed `#2ea064`.
+>
+> It cannot be fixed by moving the guard DOWN either: the collage renders `SPECIMENS`, which
+> is what the Figma plugin ships, so a preview-only contrast fudge there would make the
+> specimen disagree with the exported component (the collage's "never hand-rolled markup"
+> rule). The guard had nowhere correct to live, so:
+> - **Every slot renders the token's REAL value.** `ContrastFlag` reports a failing pair as a
+>   ratio badge (same vocabulary as the architecture picker's contrast strip) instead of
+>   repairing it. An honestly unreadable alert is information — it is exactly that unreadable
+>   in production, and the row it sits on is the row you'd go fix.
+> - **The "failure" was mostly a MODELLING error, not a token error.** Astryx/shadcn ship no
+>   text-on-tint role; their `status.error` / `destructive.fill` is a FILL for icons and solid
+>   buttons. Forcing it into a text slot is what made them fail. Those systems put neutral
+>   text on a muted tint and spend the severity colour on the DOT — so the fg list falls
+>   through to their own `text.primary` / `base.foreground`, and `sev.dot` carries the
+>   severity solid. Verified on Astryx: chip dots `#f04438 / #f79009 / #17b26a`, byte-identical
+>   to the Color collage's pills, and **zero contrast flags** — nothing needed nudging once the
+>   modelling was right. Categorical is unaffected (its `status.*-fg` IS the text role, so fg
+>   and dot resolve to the same token there).
+> - **A flag is a real finding, not decoration.** Verified on a hand-edited Categorical
+>   override (`success-fg {success.10}` on `success-bg {success.4}`): the alert renders the
+>   user's actual `#2ea064` — matching the picker and the collage — with a `2.6:1` badge.
+>   Before, that same override was silently repainted `#0c3b22` in this one view.
+> - **`PreviewTokens.errorInk`/`warningInk`/`successInk` were deleted** — they existed only to
+>   feed this substitution. Their absence is documented in `ButtonPreview.tsx` so they don't
+>   get re-added as an obvious-looking "missing" field.
+> - **Audited the rest of `specimens.tsx` for the same bug class** (a vivid state colour used
+>   as literal TEXT sitting on a TINT of itself) and found none: Dropzone's error state pairs
+>   `t.errorColor` text/icon with `soft()`/`softer()` backgrounds (5–10% alpha over the
+>   surface, not a muted-tone tint), measured 4.69–4.90:1, passes. PasswordStrength's meter
+>   text sits on plain `t.surface`, not a tint of itself — 4.72–5.10:1, passes. The failure is
+>   specific to the STATUS tint (a much stronger fill than a 5–10% overlay), not to "vivid
+>   colour as text" generally — don't generalize without measuring. **Two-tier fallback matters**: `errorInk` must fall back to
 > the plain global scale (`kind === 'dark' ? errorDarkScale : errorScale`) before a hardcoded
 > constant, same as `errorColor` above it — `pal` (`resolveThemePalette`) returns `undefined`
 > whenever `themeSources` doesn't reference a custom family for that slot, which is the
@@ -1686,6 +2057,7 @@ interface ComponentDef {
   "gradientAssignments": { "cover": "brand-cover", "avatar": "aurora" },
   "radius": { "none": "0px", "sm": "4px", "md": "8px", "lg": "12px", "full": "9999px" },
   "shadows": { "xs": "0 1px 2px rgba(10,13,18,0.05)", ... "2xl": "..." },
+  "shadowsDark": { "xs": "0 0 0 1px rgba(255,255,255,0.048), 0 1px 2px rgba(0,0,0,0.265)", ... },
   "grid": { "columns": "12", "gutter": "24px", "margin": "32px", "container": "1280px", "breakpoint-sm": "640px", ... },
   "sizes": { "xs": "24px", "sm": "32px", "md": "40px", "lg": "48px", "xl": "56px", "2xl": "64px" },
   "icons": { "library": "lucide", "name": "Lucide", "package": "lucide-react", "custom": [{ "name": "star", "svg": "<svg…>" }] },
@@ -1693,7 +2065,7 @@ interface ComponentDef {
 }
 ```
 
-`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **5**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. v5 REMOVED `opacity` (see "Opacity is retired" below) — the plugin's own import is already guarded (`if (tokens.opacity)`), so it degrades gracefully without a plugin-side change; the bump is a signal for anything else that might treat an absent field as a gap rather than "not part of this system." The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **5**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. v5 REMOVED `opacity` (see "Opacity is retired" below) — the plugin's own import is already guarded (`if (tokens.opacity)`), so it degrades gracefully without a plugin-side change; the bump is a signal for anything else that might treat an absent field as a gap rather than "not part of this system." `shadowsDark` was added WITHOUT a bump, on the `gradientsDark` precedent: a complete parallel map under the same keys is purely additive, so an older plugin ignoring it is the correct outcome (see "Shadows ship a DARK TWIN" above). The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
 
 ---
 
@@ -1750,6 +2122,28 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 - Animations: Framer Motion (`motion.div`, `AnimatePresence`) for transitions between states
 - No `console.log` in production code
 - TypeScript strict mode — no `any` unless absolutely necessary
+
+> **Scrollbars are thin and hover-revealed, APP-WIDE — a `*` rule in `index.css`, not a
+> per-panel opt-in.** Used to be `.scrollbar-thin`, applied to exactly two call sites
+> (`TokenDetailsModal`'s 360px dialog); every other `overflow-y-auto` — the 198px family
+> rail, every railed table's own scroll body, the whole center column — rendered the OS
+> default (14–17px, opaque), which is as wide as a token swatch in a dense editor screen.
+> Reported as "la barra de scroll está muy gorda." Fixed at the system, not the instance,
+> per this file's own rule for that.
+> - **Invisible at rest, thumb fades in on hover** (`transition: background 0.15s ease-out`
+>   on the WebKit thumb; Firefox's `scrollbar-color` has no separate thumb pseudo-element to
+>   transition, so it snaps, revealed by hovering the scrollable region). A permanently
+>   visible thin line still reads as one more border in a screen already dense with them —
+>   fading it in is what keeps a table's own borders the only lines that are always there.
+>   Verified: `getComputedStyle(nav).scrollbarColor` reads `transparent transparent` at
+>   rest and `rgb(64,64,64) transparent` (`--line-strong`, dark theme) while hovered.
+> - **`:hover` alone, no scrolling-state detection** — this project is desktop/laptop only
+>   (see the top of this file), so there's no touch-scroll case needing a different trigger.
+> - **`.scrollbar-thin` still exists and still works** — every element `*` matches includes
+>   it, so it's now a harmless synonym for the default rather than a second behaviour. Don't
+>   remove it; the two call sites that reference it by name still read as intentional.
+> - **6px, matching the pre-existing value** — not invented fresh, so nothing that already
+>   measured against the old `.scrollbar-thin` (like `PANEL_W` above) needed re-checking.
 
 ---
 

@@ -79,25 +79,51 @@
   color-scheme: light;
 }
 
-/* Slim scrollbar for dense floating panels — the default macOS/Windows bar is
-   as wide as a token swatch and dominates a 360px dialog. */
-.scrollbar-thin {
+/* Thin scrollbar, APP-WIDE — every `overflow-y-auto` in this dense,
+   desktop-only editor, not just the one dialog that used to opt in. The OS
+   default (14–17px, opaque) is as wide as a token swatch; in a 198px rail
+   column or a table's own scroll body it reads as chrome competing with the
+   content, not a hint that there's more below.
+   Track stays transparent and the THUMB stays invisible at rest, appearing
+   only while the pointer is over that scroll region — the same "present only
+   when useful" idea `SectionRail`'s hover states already use elsewhere.
+   A permanently-visible thin line still reads as one more border in a screen
+   already dense with them; fading it in is what keeps a dense table's own
+   borders as the only lines that are always there. Desktop-only per this
+   project's own constraint (no touch-scroll case to cover), so `:hover`
+   alone — no separate active/scrolling detection needed. */
+* {
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: transparent transparent;
 }
-.scrollbar-thin::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.scrollbar-thin::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
+*::-webkit-scrollbar-thumb {
+  background: transparent;
   border-radius: 999px;
+  transition: background 0.15s ease-out;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+}
+*::-webkit-scrollbar-thumb:hover {
   background: var(--fg-faint);
+}
+/* Firefox has no thumb-only pseudo-element to fade — `scrollbar-color` is the
+   whole bar or nothing, so hovering the SCROLLABLE REGION is what reveals it
+   there (CSS `:hover` already matches every ancestor the pointer is over, so
+   this fires on the scroll container itself whether the cursor is on its own
+   box or on content inside it). `.scrollbar-thin` (still referenced by
+   ColorPrimitives/colorControls/CLAUDE.md) is matched by `*` too, so it keeps
+   working unchanged — it's a harmless synonym for the global default now,
+   not a second behaviour. */
+*:hover {
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 .dark {

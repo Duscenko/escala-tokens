@@ -14,12 +14,41 @@
 
 import { type ReactNode } from 'react'
 import { fontFamilyOf, radiusOf, weightOf } from '../../../lib/previewTokens'
+import { checkContrast, WCAG_AA } from '../../../lib/colorUtils'
 import { TokenIcon, type IconConcept } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
 
 export type SemanticFocusKey = 'content' | 'icon' | 'action' | 'surface' | 'status' | 'border'
 
 type Slot = { css: string; label: string }
+
+/**
+ * Reports a fg/bg pair that reads under WCAG AA, INSTEAD of silently repairing
+ * it. Same vocabulary as the architecture picker's own contrast strip, so a
+ * ratio means the same thing in both places.
+ *
+ * A preview's job here is to tell the truth about the tokens: this pair really
+ * is that unreadable in production, and the row it's on is the row you'd go fix.
+ * Repairing it in the preview is what made this specimen disagree with the Color
+ * collage for the same token.
+ */
+function ContrastFlag({ fg, bg }: { fg: string; bg: string }) {
+  let ratio: number
+  try {
+    ratio = checkContrast(fg, bg)
+  } catch {
+    return null
+  }
+  if (ratio >= WCAG_AA) return null
+  return (
+    <span
+      title={`${ratio.toFixed(2)}:1 — under the WCAG AA minimum of ${WCAG_AA}:1 for this text on this fill. Re-point either token in the table to fix it.`}
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[9.5px] font-semibold tabular-nums flex-shrink-0 text-amber-700 dark:text-amber-400 bg-amber-500/15"
+    >
+      {ratio.toFixed(1)}:1
+    </span>
+  )
+}
 
 /**
  * Resolves one role to its live colour + the name it goes by in the ACTIVE
@@ -422,42 +451,56 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const r = radiusOf(t, 'md', '8px')
   const semi = weightOf(t, 'semibold', 600)
 
-  // The fg slot is TEXT sitting on the bg tint, so it needs a value solved for
-  // that — not every architecture names one. Categorical does (`*-fg`, tone
-  // 12); Astryx and shadcn only expose the vivid tone-9 "solid" colour
-  // (`status.error` / `destructive.fill`), meant for fills/icons, not text on
-  // a pale tint — measured on a live system, tone 9 on tone 3 read 2.05–3.10:1
-  // (fails WCAG AA's 4.5:1, and undershoots even the 3:1 non-text minimum for
-  // warning/success). `ink` is tone 12 of the SAME family (see PreviewTokens'
-  // errorInk/warningInk/successInk) — the identical value Categorical's own
-  // roles already resolve to — substituted in for every non-flat architecture
-  // so the caption still names the token that matched (honest labelling) while
-  // the colour actually reads. Flat's own equivalent gap (content-error, a
-  // separate, already-tracked contrast issue — see CLAUDE.md) is left alone:
-  // it's MATERIALIZED per-theme and needs a role-catalogue migration to fix,
-  // not a preview-only patch.
-  const inkSlot = (flat: string, arch: string | string[], fb: string, ink?: string): Slot => {
-    const resolved = s(flat, arch, fb)
-    return t.archTokens && ink ? { css: ink, label: resolved.label } : resolved
-  }
+  // **Nothing here substitutes a colour. Every slot renders the token's REAL
+  // value, and a failing pair is reported rather than repaired.**
+  //
+  // This replaced a guard that swapped in an accessible ink whenever the fg
+  // read under AA on its tint. That guard is unfixable by construction: it
+  // lived HERE, so `t.successColor` rendered one colour in this specimen and
+  // its true value in every other preview — measured on a live system, the
+  // Status alert showed `#0c3b22` while the Color collage's Success badge
+  // showed `#2ea064` for one token. And it can't simply be pushed down to the
+  // shared catalogue either: `SPECIMENS` is what the Figma plugin ships, so a
+  // preview-only contrast fudge there would make the specimen disagree with
+  // the exported component (see the collage's "never hand-rolled markup" rule).
+  //
+  // So the guard is gone in the direction this file's own rule already pointed:
+  // showing one colour under another colour's name teaches the wrong value, and
+  // an honestly unreadable alert is information — it is exactly as unreadable in
+  // production. `ContrastFlag` below surfaces the ratio instead.
+  //
+  // The severity ink each architecture ACTUALLY uses for text on its own tint:
+  //  · Categorical ships a real one (`status.*-fg`, contrast-solved via `{ink:}`)
+  //  · Astryx/shadcn ship none — their `status.error` / `destructive.fill` is a
+  //    FILL for icons and solid buttons. Forcing it into a text slot is what
+  //    made them "fail"; those systems put neutral text on a muted tint and
+  //    spend the severity colour on the dot. So their own `text.primary` /
+  //    `base.foreground` is next in the list — honest modelling, and it passes
+  //    without any nudge.
+  const criticalBg = s('background-error-primary', ['status.critical-bg', 'status.error-muted'], t.neutralFill)
+  const warningBg = s('background-warning-primary', ['status.warning-bg', 'status.warning-muted'], t.neutralFill)
+  const successBg = s('background-success-primary', ['status.success-bg', 'status.success-muted'], t.neutralFill)
 
-  const severities: { label: string; bg: Slot; fg: Slot; copy: string }[] = [
+  const severities: { label: string; bg: Slot; fg: Slot; dot: Slot; copy: string }[] = [
     {
       label: 'Critical',
-      bg: s('background-error-primary', ['status.critical-bg', 'status.error-muted'], t.neutralFill),
-      fg: inkSlot('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor, t.errorInk),
+      bg: criticalBg,
+      fg: s('content-error', ['status.critical-fg', 'text.primary', 'base.foreground'], t.errorColor),
+      dot: s('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor),
       copy: 'Could not save your changes',
     },
     {
       label: 'Warning',
-      bg: s('background-warning-primary', ['status.warning-bg', 'status.warning-muted'], t.neutralFill),
-      fg: inkSlot('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor, t.warningInk),
+      bg: warningBg,
+      fg: s('content-warning', ['status.warning-fg', 'text.primary', 'base.foreground'], t.warningColor || t.errorColor),
+      dot: s('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor),
       copy: 'Your free trial ends soon',
     },
     {
       label: 'Success',
-      bg: s('background-success-primary', ['status.success-bg', 'status.success-muted'], t.neutralFill),
-      fg: inkSlot('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText, t.successInk),
+      bg: successBg,
+      fg: s('content-success', ['status.success-fg', 'text.primary', 'base.foreground'], t.successColor || t.brandText),
+      dot: s('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText),
       copy: 'Payment confirmed',
     },
   ]
@@ -472,9 +515,14 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             <div key={sev.label} style={{ background: sev.bg.css, borderRadius: r, padding: '10px 12px' }}>
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: sev.fg.css, fontSize: 13, fontWeight: semi }}>{sev.copy}</span>
-                <Caption color={sev.fg.css}>{sev.fg.label}</Caption>
+                <span title={sev.fg.label} className="min-w-0">
+                  <Caption color={sev.fg.css}>{sev.fg.label}</Caption>
+                </span>
               </div>
-              <Caption color={sev.fg.css}>{sev.bg.label}</Caption>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <Caption color={sev.fg.css}>{sev.bg.label}</Caption>
+                <ContrastFlag fg={sev.fg.css} bg={sev.bg.css} />
+              </div>
             </div>
           ))}
         </div>
@@ -482,16 +530,23 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
       <Section t={t} title="Status chips">
         <div className="flex flex-wrap items-center gap-2">
+          {/* The DOT carries the severity solid, the text carries the text
+              role — which is the split those architectures actually ship, and
+              why nothing here needs a contrast fudge. On Categorical the two
+              resolve to the same token (`status.*-fg` is both), so the chip is
+              unchanged there; on Astryx/shadcn the dot keeps `status.error`
+              visible where it belongs while the label stays legible. */}
           {severities.map((sev) => (
             <span
               key={sev.label}
+              title={`${sev.label} — text ${sev.fg.label}, dot ${sev.dot.label}, fill ${sev.bg.label}`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: sev.bg.css, color: sev.fg.css,
                 borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi,
               }}
             >
-              <span style={{ width: 6, height: 6, borderRadius: 999, background: sev.fg.css }} />
+              <span style={{ width: 6, height: 6, borderRadius: 999, background: sev.dot.css }} />
               {sev.label}
             </span>
           ))}
@@ -508,7 +563,10 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             display: 'flex', alignItems: 'center', gap: 8,
           }}
         >
-          <span style={{ width: 7, height: 7, borderRadius: 999, background: severities[2].fg.css }} />
+          {/* The severity SOLID, not the text role — a toast dot is a mark on
+              an inverse surface, the one place the vivid tone is unambiguously
+              the right token. */}
+          <span style={{ width: 7, height: 7, borderRadius: 999, background: severities[2].dot.css }} />
           <span style={{ color: t.surface, fontSize: 13, flex: 1 }}>Changes saved.</span>
           <span style={{ color: t.surface, fontSize: 12, fontWeight: semi, textDecoration: 'underline' }}>Undo</span>
         </div>

@@ -4,7 +4,7 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
-import { toneLabel, withAlpha } from './colorUtils'
+import { toneLabel, withAlpha, darkShadow } from './colorUtils'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
@@ -96,7 +96,15 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     const darkGradients = kind === 'dark'
       ? gradients.filter((g) => g.stops.some((s) => s.darkColor))
       : []
-    if (!entries.length && !darkGradients.length) return
+    // Same treatment for elevation, and for a stronger reason: a gradient
+    // merely looks different on a dark page, whereas the shadow ramp's
+    // near-black colour IS the dark page — unoverridden it renders as nothing.
+    // `none` is skipped because its derivation is a no-op, so the None preset
+    // doesn't emit six dead declarations.
+    const darkShadows = kind === 'dark'
+      ? Object.entries(shadows).filter(([, v]) => v && v !== 'none')
+      : []
+    if (!entries.length && !darkGradients.length && !darkShadows.length) return
     const selector = theme === 'dark' ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`
     lines.push(`\n${selector} {`)
     if (entries.length) {
@@ -106,6 +114,10 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     if (darkGradients.length) {
       lines.push(`  /* Gradients — ${theme} */`)
       darkGradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g, 'dark')};`))
+    }
+    if (darkShadows.length) {
+      lines.push(`  /* Shadows — ${theme} */`)
+      darkShadows.forEach(([k, v]) => lines.push(`  --shadow-${k}: ${darkShadow(v)};`))
     }
     lines.push('}')
   })
@@ -210,9 +222,11 @@ ${Object.entries(radius).map(([k,v])=>`| \`--radius-${k}\` | \`${v}\` |`).join('
 
 ## Shadow
 
-| Token | Value |
-|-------|-------|
-${Object.entries(shadows).map(([k,v])=>`| \`--shadow-${k}\` | \`${v}\` |`).join('\n')}
+Elevation ships a dark twin: the ramp's near-black shadow colour is the dark page itself, so the light value renders as nothing there. The dark column is applied automatically under \`.dark\` — same \`--shadow-*\` name, no theme check needed.
+
+| Token | Light | Dark |
+|-------|-------|------|
+${Object.entries(shadows).map(([k,v])=>`| \`--shadow-${k}\` | \`${v}\` | ${v === 'none' ? '—' : `\`${darkShadow(v)}\``} |`).join('\n')}
 
 ---
 

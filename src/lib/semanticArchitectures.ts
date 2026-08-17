@@ -14,7 +14,7 @@
 //                 paired on-colors, light↔dark as a tone inversion (40↔80…)
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
-import { accessibleSolidTone, solidInkPair } from './colorUtils'
+import { accessibleSolidTone, solidInkPair, checkContrast, WCAG_AA } from './colorUtils'
 import type { ThemePalette } from '../store/useDesignStore'
 
 export type SemanticArchitecture = 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal'
@@ -147,12 +147,97 @@ function inkRefFor(fill: string | undefined, look: Look): string {
 }
 
 /**
+ * The tone of a family that reads as TEXT on that same family's own tint —
+ * `{ink:error.3}` is "the error tone that's legible on error.3".
+ *
+ * Distinct from `{on:…}` on purpose. `{on:…}` picks between INK_REFS
+ * (near-white / near-black), which is right for a SOLID fill but would strip
+ * the tint off a status message: `status.critical-fg` is meant to be dark red
+ * on pale red, not plain black on pale red. This keeps the family and solves
+ * only the step.
+ *
+ * Walks UP and takes the FIRST tone that clears `STATUS_INK_TARGET` — the
+ * subtlest ink that still passes, the same rule `accessibleVariants` follows,
+ * so the text keeps as much of the family's character as contrast allows.
+ * Falls back to the ramp's best step when nothing clears, mirroring
+ * `solidInkPair` rather than hardcoding 12 (on a mid-lightness family the
+ * argmax can beat the endpoint).
+ *
+ * Why solve it at all instead of pinning 12 as before: 12 is only correct for
+ * the tone-3 tint the schema ships. The moment the `-bg` is re-pointed, a fixed
+ * ink stops tracking it — measured on a hand-edited pair (bg error.5 / fg
+ * error.9) that combination read 3.30:1, under AA and invisible-ish, with
+ * nothing in the system objecting.
+ */
+/**
+ * Contrast the status ink is solved to — **3:1, DELIBERATELY BELOW AA, and it
+ * is not an oversight.**
+ *
+ * At AA (4.5) the solver lands on tone 12 in LIGHT, because on a light ramp the
+ * tint (3–5) and the vivid tones (9–11) sit on the same side and there is not
+ * enough luminance between them: measured across the three families, tone 10/11
+ * on tone 3 reads 2.39–3.98:1, and going DEEPER on the tint makes it worse, not
+ * better (fg 11 vs bg 1→5 = 4.50 → 3.01). The only pairing that clears AA in
+ * light is the dark text end. Dark has no such problem — its tint IS the dark
+ * end, so a vivid tone clears 5–6:1 easily, which is why the two appearances
+ * used to disagree in character.
+ *
+ * The owner of this system reviewed those measurements and chose the vivid look
+ * for both appearances over the AA guarantee. Consequences to keep in view
+ * before "fixing" this back:
+ *  · Light status text lands ~3.7–4.0:1 — under AA for body text, over the 3:1
+ *    floor WCAG sets for large text and non-text.
+ *  · `StatusSpecimen`'s `ContrastFlag` still measures against **AA**, not this
+ *    target, so anything under 4.5 keeps reporting itself. The lowered target
+ *    changes what the system PICKS, never what it CLAIMS.
+ *  · Scoped to this solver only. `solidInkPair` (the ink on a solid brand fill)
+ *    still targets AA — a button label has no reason to inherit this tradeoff.
+ */
+const STATUS_INK_TARGET = 3
+/** Radix's dedicated high-contrast TEXT step. Reaching it is what turns a
+ *  status message from tinted to near-black, so it's the thing being avoided —
+ *  not the AA guarantee itself. */
+const TEXT_END_TONE = 12
+
+function tintInkRef(fam: string, bgTone: number, look: Look): string {
+  const bg = look(fam, bgTone)
+  const ramp = rampOf(look, fam)
+  if (!bg) return `{${fam}.${TEXT_END_TONE}}`
+
+  let best = TEXT_END_TONE
+  let bestC = 0
+  let vivid = 0 // subtlest tone clearing STATUS_INK_TARGET
+  for (let t = 1; t <= 12; t++) {
+    const hex = ramp[t]
+    if (!hex) continue
+    const c = checkContrast(hex, bg)
+    if (c > bestC) { bestC = c; best = t }
+    if (!vivid && c >= STATUS_INK_TARGET) vivid = t
+    // AA, but only if it can be had WITHOUT falling back on the text end —
+    // that's the real distinction, and it's what keeps the two appearances
+    // from diverging in character. On a DARK ramp the tint is the dark end, so
+    // a vivid tone clears AA on its own (measured: 5.26 / 6.60 / 5.74) and
+    // this returns it. On a LIGHT ramp nothing but tone 12 ever clears AA
+    // (measured: tones 9–11 read 2.39–3.98 on the tint, and deepening the tint
+    // makes it worse), so light falls through to `vivid` below instead of
+    // snapping to near-black.
+    if (c >= WCAG_AA && t < TEXT_END_TONE) return `{${fam}.${t}}`
+  }
+  return `{${fam}.${vivid || best}}`
+}
+
+/**
  * A curated role table resolved for ONE theme, against that theme's OWN ramps.
  *
- * Two markers are substituted here, and only here:
+ * Three markers are substituted here, and only here:
  *  · `{accent.solid}`    → `{accent.<tone>}`, the accessible fill step
  *  · `{on:<fam>.<tone>}` → whichever INK_REF actually passes on that fill
  *    (`{on:accent.solid}` resolves the fill's tone first)
+ *  · `{ink:<fam>.<tone>}` → the same family's tone that reads on that tint
+ *
+ * All three collapse to a plain `{family.tone}` here, which is what makes the
+ * result editable: `architectureOverrides` are applied AFTER this, so the
+ * system assigns a sensible value by default and a hand-picked one still wins.
  */
 function curatedRefs(
   roles: { group: string; key: string; light: string; dark: string }[],
@@ -166,6 +251,8 @@ function curatedRefs(
       .replace(/\{(on:)?accent\.solid\}/g, (_m, on: string | undefined) => `{${on ?? ''}accent.${pair.tone}}`)
       .replace(/\{on:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
         inkRefFor(look(fam, Number(tone)), look))
+      .replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
+        tintInkRef(fam, Number(tone), look))
     return { group: r.group, key: r.key, ref }
   })
 }
@@ -257,12 +344,20 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    "component background" step in both. Contrast against the tone-12 ink
   //    survives the extra step: 10.04 / 10.79 / 10.64 light, 10.35 / 9.59 /
   //    10.02 dark (error / warning / success), worst case across three seeds.
-  { group: 'status', key: 'critical-bg', light: '{error.3}',    dark: '{error.3}' },
-  { group: 'status', key: 'critical-fg', light: '{error.12}',   dark: '{error.12}' },
-  { group: 'status', key: 'warning-bg',  light: '{warning.3}',  dark: '{warning.3}' },
-  { group: 'status', key: 'warning-fg',  light: '{warning.12}', dark: '{warning.12}' },
-  { group: 'status', key: 'success-bg',  light: '{success.3}',  dark: '{success.3}' },
-  { group: 'status', key: 'success-fg',  light: '{success.12}', dark: '{success.12}' },
+  //  • **The fg is SOLVED against its own bg (`{ink:…}`), not pinned.** It was a
+  //    fixed tone 12, which is the right answer for the tone-3 tint the schema
+  //    ships — and only for that. Re-point a `-bg` and a fixed ink stops
+  //    tracking it: measured on a hand-edited pair (bg `error.5` / fg
+  //    `error.9`) that read **3.30:1**, under AA, with nothing objecting. The
+  //    marker keeps the FAMILY (dark red on pale red, not black on pale red)
+  //    and solves only the step, so it still resolves to 12 for the shipped
+  //    tint — same values as before — and follows the bg wherever it's moved.
+  { group: 'status', key: 'critical-bg', light: '{error.3}',        dark: '{error.3}' },
+  { group: 'status', key: 'critical-fg', light: '{ink:error.3}',    dark: '{ink:error.3}' },
+  { group: 'status', key: 'warning-bg',  light: '{warning.3}',      dark: '{warning.3}' },
+  { group: 'status', key: 'warning-fg',  light: '{ink:warning.3}',  dark: '{ink:warning.3}' },
+  { group: 'status', key: 'success-bg',  light: '{success.3}',      dark: '{success.3}' },
+  { group: 'status', key: 'success-fg',  light: '{ink:success.3}',  dark: '{ink:success.3}' },
   // Border — strokes. `default` is tone 5, the same step Astryx's own
   // `border.default` resolves to, so the two namings agree on what a default
   // stroke IS. That also fixes an ordering this file used to carry and flag:
@@ -339,9 +434,18 @@ const ASTRYX_ROLES: { group: string; key: string; light: string; dark: string }[
   // dark — solved, not hardcoded: that hand-patched {neutral.12} was the
   // general rule (pick the ink by contrast) written once as a special case.
   { group: 'status', key: 'on-warning',    light: '{on:warning.9}', dark: '{on:warning.9}' },
-  // Border — strokes
+  // Border — strokes. `emphasized` was `{neutral.7}` — tone 7 sits deep
+  // enough into the ramp that it read as a heavy, near-solid stroke rather
+  // than an emphasized-but-still-subtle border (reported as "muy fuerte").
+  // Pinned to `{neutral.5}`, the same tone `default` already resolves to —
+  // deliberately: the user's own hand-edit (an `architectureOverrides` entry
+  // on `border.emphasized.light`) had already landed there, so this makes
+  // that the SCHEMA's own answer instead of a personal override sitting on
+  // top of a heavier one. Both border roles reading the same primitive today
+  // isn't a bug — nothing requires them to diverge, and they still can later
+  // (a future override, or a future schema change, re-splits them).
   { group: 'border', key: 'default',    light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  { group: 'border', key: 'emphasized', light: '{neutral.7}', dark: '{neutral-dark.7}' },
+  { group: 'border', key: 'emphasized', light: '{neutral.5}', dark: '{neutral-dark.5}' },
 ]
 
 /** Astryx resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
@@ -708,8 +812,22 @@ function applyOverrides(
       const modes = { ...tk.modes }
       const edited: Record<string, boolean> = {}
       for (const [mode, ref] of Object.entries(ov)) {
-        edited[mode] = Boolean(ref)
-        if (ref) modes[mode] = refToView(ref, lookFor(mode))
+        if (!ref) { edited[mode] = false; continue }
+        const view = refToView(ref, lookFor(mode))
+        modes[mode] = view
+        // "Edited" means the override actually DIFFERS from what the schema
+        // already produces — compared by LABEL (`neutral.5`), not the raw ref
+        // string, since that's the same equivalence the cell itself displays.
+        // An override whose label matches is a no-op that just happens to be
+        // sitting in storage — most often stale data from before the schema's
+        // OWN default moved onto that value (e.g. Astryx's `border.default`,
+        // pinned to `{neutral.5}` — see CLAUDE.md's border-realignment note).
+        // Flagging it as "modified" was a false positive: it painted the same
+        // strong accent-ui ring a genuine hand-edit gets, on a row that reads
+        // through the schema unchanged. Reported as "the border is too
+        // strong" — it wasn't the ring's styling that was wrong, it was firing
+        // on rows that were never really edited.
+        edited[mode] = view.label !== tk.modes[mode]?.label
       }
       return { ...tk, modes, edited }
     }),

@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
+import ScrubInput, { isScrubbable } from '../ui/ScrubInput'
 
 // Flush, filterable variables table shared by every token foundation (Radius ·
-// Spacing · Sizes · Opacity · Shadow · Grid) — a top bar (title · count ·
+// Spacing · Sizes · Shadow · Grid) — a top bar (title · count ·
 // search), pinned column headers and zebra rows of Token name · Value ·
 // Preview, with a per-row reset when the value drifts from the standard.
 //
@@ -117,7 +118,14 @@ export default function VariablesTable({
 
   const total = groups.reduce((n, g) => n + g.rows.length, 0)
   const filtered = groups
-    .map((g) => ({ ...g, rows: g.rows.filter((r) => !q || r.name.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)) }))
+    .map((g) => ({
+      ...g,
+      // Computed from the UNFILTERED rows on purpose: derived from the visible
+      // ones, a search that happens to leave only non-numeric rows would drop
+      // the handle slot and shift every input sideways mid-keystroke.
+      scrubbable: g.rows.some((r) => isScrubbable(r.value)),
+      rows: g.rows.filter((r) => !q || r.name.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)),
+    }))
     .filter((g) => g.rows.length > 0)
   const stacked = groups.length > 1
 
@@ -164,12 +172,16 @@ export default function VariablesTable({
               {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line">
-              <input
-                type="text"
+              {/* Reserved per GROUP, not per row: a group whose rows are all
+                  numeric (spacing, radius, sizes, grid) gets the slot on every
+                  row so the inputs stay on one x, and a group with none
+                  (Shadow's CSS strings) reserves nothing and keeps its full
+                  width for the value. */}
+              <ScrubInput
                 value={r.value}
-                onChange={(e) => r.onChange(e.target.value)}
-                aria-label={`${r.name} value`}
-                className="w-full bg-app text-[13px] font-mono text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors"
+                onChange={r.onChange}
+                ariaLabel={`${r.name} value`}
+                reserveHandle={g.scrubbable}
               />
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">{r.preview}</div>

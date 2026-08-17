@@ -1,4 +1,6 @@
 import { useDesignStore, SHADOW_DEFAULT } from '../../store/useDesignStore'
+import { darkShadow } from '../../lib/colorUtils'
+import { useTheme } from '../../lib/theme'
 import VariablesTable from './VariablesTable'
 import RailSelect from '../ui/RailSelect'
 
@@ -73,6 +75,14 @@ export function matchShadowPreset(shadows: Record<string, string>): string | nul
 export default function Step7_Shadow() {
   const { shadows, setShadows } = useDesignStore()
   const activePreset = matchShadowPreset(shadows)
+  // These swatches sit on CHROME surfaces (`bg-surface`), so they follow the
+  // chrome theme, not `previewTheme`. Without this they rendered the light
+  // ramp on a dark chrome — where the shadow colour IS the background, so the
+  // whole strip and every row preview showed nothing at all. You cannot edit a
+  // token you cannot see; `darkShadow` is the same derivation the preview and
+  // the export use, so what's shown here is what ships.
+  const chromeDark = useTheme() === 'dark'
+  const swatch = (value: string) => (chromeDark ? darkShadow(value) : value)
 
   return (
     // Same three rows as Radius — Shadow has a genuine global control (the
@@ -105,7 +115,7 @@ export default function Step7_Shadow() {
               <div key={step} className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
                 <div
                   className="w-full h-8 rounded-lg bg-surface border border-line/40"
-                  style={{ boxShadow: shadows[step] ?? 'none' }}
+                  style={{ boxShadow: swatch(shadows[step] ?? 'none') }}
                 />
                 <span className="text-[9px] font-mono text-fg-faint">{step}</span>
               </div>
@@ -134,7 +144,7 @@ export default function Step7_Shadow() {
                 preview: (
                   <div
                     className="w-9 h-9 rounded-lg bg-surface border border-line/40 flex-shrink-0"
-                    style={{ boxShadow: value }}
+                    style={{ boxShadow: swatch(value) }}
                   />
                 ),
               }

@@ -115,7 +115,12 @@ export default function DocsView({
         </motion.div>
       </div>
 
-      {/* On this page */}
+      {/* On this page — deliberately still `xl` (= 1440px under the 18px root),
+          NOT the shell preview's `min-[1180px]`. Tried lowering it to match and
+          measured the cost: the article drops from 972 to 756px, and the
+          Overview sheet's ramps (`min-w-[40rem]` inside an `overflow-x-auto`)
+          start hiding tones 11–12 behind a scroll. A TOC is navigation; the
+          ramps are the content — don't trade the second for the first. */}
       <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
         <OnThisPage entries={toc} scrollRoot={articleRef} />
       </div>

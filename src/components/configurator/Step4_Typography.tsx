@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import ScrubInput from '../ui/ScrubInput'
 import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
 import {
@@ -39,16 +40,13 @@ function ResetButton({ modified, onReset, title }: { modified: boolean; onReset:
   )
 }
 
-/** Inline px / numeric editor — reveals a border box on hover/focus. */
+/** Inline px / numeric editor — reveals a border box on hover/focus, and
+ *  carries the same scrub handle the token tables use (sizes and line heights
+ *  are exactly the values you want to drag). `ScrubInput` decides per value
+ *  whether there's a number to scrub, so the font-FAMILY rows that share this
+ *  component get a plain field with no handle and no reserved slot. */
 function ValueInput({ value, onChange, mono = true }: { value: string; onChange: (v: string) => void; mono?: boolean }) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`w-full bg-app text-[13px] ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors`}
-    />
-  )
+  return <ScrubInput value={value} onChange={onChange} mono={mono} />
 }
 
 // ── Google Font picker popover ──────────────────────────────────────────────

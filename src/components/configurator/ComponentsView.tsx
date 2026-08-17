@@ -146,7 +146,9 @@ export default function ComponentsView({
         </motion.div>
       </div>
 
-      {/* On this page */}
+      {/* On this page — stays on `xl` (1440px here, see DocsView's note). This
+          column has the tightest budget in the app (rail + master list +
+          article + TOC), so it's the last one that should drop its threshold. */}
       <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
         <OnThisPage entries={toc} scrollRoot={articleRef} />
       </div>

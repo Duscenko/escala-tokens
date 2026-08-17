@@ -492,6 +492,68 @@ export function captureSnapshot(state: DesignSnapshot): DesignSnapshot {
   )
 }
 
+/** Narrows a full snapshot down to ONE theme — the "save just this theme"
+ *  half of the Kits save flow (`KitsPopover`'s scope choice). Only the
+ *  THEME LAYER is trimmed: `themes`/`themeOrder`/`themeKinds`/`themeSources`
+ *  keep just the chosen key, and `architectureOverrides` drops every mode
+ *  entry that isn't it (an override is keyed `architecture →
+ *  category.token → theme key`, so a dropped theme would otherwise leave
+ *  orphaned override data pointing at a theme the saved kit no longer has).
+ *  Every PRIMITIVE stays untouched — accent/neutral/states/custom families,
+ *  typography, spacing, radius, shadows, grid, sizes, gradients, icons. A
+ *  theme is "a reading of the primitives" (see CLAUDE.md), never a place
+ *  that owns colour, so scoping the reading down doesn't require touching
+ *  what it reads FROM. This does mean a custom family minted only for a
+ *  DROPPED theme survives in the kit as an unreferenced primitive — left
+ *  alone deliberately rather than cascading the prune: the family is still
+ *  fully editable, and once no theme's `themeSources` points at it, the nav's
+ *  own delete lock already opens on its own (same "in use by theme X" rule
+ *  every other family-deletion path already follows) — that's the existing,
+ *  discoverable way to clean it up, not a silent extra deletion here. */
+export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string): DesignSnapshot {
+  if (!snapshot.themeOrder.includes(themeKey)) return snapshot
+  const architectureOverrides = Object.fromEntries(
+    Object.entries(snapshot.architectureOverrides).map(([arch, tokens]) => [
+      arch,
+      Object.fromEntries(
+        Object.entries(tokens)
+          .map(([tokenKey, modes]): [string, Record<string, string>] =>
+            [tokenKey, modes[themeKey] ? { [themeKey]: modes[themeKey] } : {}]
+          )
+          .filter(([, modes]) => Object.keys(modes).length > 0)
+      ),
+    ])
+  )
+  return {
+    ...snapshot,
+    themeOrder: [themeKey],
+    themes: { [themeKey]: snapshot.themes[themeKey] },
+    themeKinds: snapshot.themeKinds[themeKey] ? { [themeKey]: snapshot.themeKinds[themeKey] } : {},
+    themeSources: snapshot.themeSources[themeKey] ? { [themeKey]: snapshot.themeSources[themeKey] } : {},
+    architectureOverrides,
+  }
+}
+
+/** Builds the `SavedSystem` entry `saveCurrentSystem`/`saveCurrentSystemAsTheme`
+ *  both upsert — ONE place deciding the id (repo id when GitHub-connected, else
+ *  a stable slug of the project name) so the two save paths can never disagree
+ *  about which existing kit a save should update vs. create fresh. */
+function buildSavedSystemEntry(
+  state: Pick<DesignStore, 'githubRepo' | 'projectName' | 'projectDescription'>,
+  snapshot: DesignSnapshot,
+): SavedSystem {
+  const id = state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
+  return {
+    id,
+    name: state.projectName,
+    description: state.projectDescription,
+    repo: state.githubRepo ?? '',
+    savedAt: new Date().toISOString(),
+    snapshot,
+    source: state.githubRepo ? 'github' : 'local',
+  }
+}
+
 interface DesignStore {
   // Home / onboarding
   projectName: string
@@ -706,6 +768,13 @@ interface DesignStore {
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
   saveCurrentSystem: () => void
+  // Same save, scoped to ONE theme (see `scopeSnapshotToTheme`) — the "just
+  // this theme" half of the Kits save-scope choice, for systems carrying more
+  // than one theme. Uses the SAME id rule `saveCurrentSystem` does (repo id,
+  // else a slug of the project name) — the popover's own "reusing a name
+  // updates that kit" rule applies here exactly as it already does for a
+  // full save; this doesn't add a second naming convention.
+  saveCurrentSystemAsTheme: (themeKey: string) => void
   // Adopt an imported snapshot as the active system AND register it in the
   // local registry with 'imported' provenance (Import your design system flow).
   applyImportedSystem: (snapshot: DesignSnapshot) => void
@@ -982,21 +1051,21 @@ export const useDesignStore = create<DesignStore>()(
       saveCurrentSystem: () =>
         set((state) => {
           const snapshot = captureSnapshot(state as unknown as DesignSnapshot)
-          // A GitHub-backed system keeps its repo id so a local save updates the
-          // same entry; an unconnected one gets a stable slug id.
-          const id = state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
-          const entry: SavedSystem = {
-            id,
-            name: state.projectName,
-            description: state.projectDescription,
-            repo: state.githubRepo ?? '',
-            savedAt: new Date().toISOString(),
-            snapshot,
-            source: state.githubRepo ? 'github' : 'local',
-          }
+          const entry = buildSavedSystemEntry(state, snapshot)
           return {
-            savedSystems: state.savedSystems.some((s) => s.id === id)
-              ? state.savedSystems.map((s) => (s.id === id ? entry : s))
+            savedSystems: state.savedSystems.some((s) => s.id === entry.id)
+              ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
+              : [...state.savedSystems, entry],
+          }
+        }),
+      saveCurrentSystemAsTheme: (themeKey) =>
+        set((state) => {
+          const full = captureSnapshot(state as unknown as DesignSnapshot)
+          const snapshot = scopeSnapshotToTheme(full, themeKey)
+          const entry = buildSavedSystemEntry(state, snapshot)
+          return {
+            savedSystems: state.savedSystems.some((s) => s.id === entry.id)
+              ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
               : [...state.savedSystems, entry],
           }
         }),

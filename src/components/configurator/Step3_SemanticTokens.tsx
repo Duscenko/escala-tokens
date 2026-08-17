@@ -467,12 +467,19 @@ function MatrixRow({
         })}
 
         {/* Filter / edit toggle — opens the Token Details modal (see the
-            main component's render) rather than expanding inline. */}
+            main component's render) rather than expanding inline.
+            `sticky right-0` — see the arch table's matching cell for the full
+            reasoning (pinned corner, explicit background to occlude scrolled
+            mode columns, the tiny accepted double-tint trade-off on striped/
+            expanded rows). `isEven`/`expanded` repeat this row's own
+            `<div>` wrapper classes for the same reason. */}
         <button
           onClick={onToggle}
           aria-expanded={expanded}
           aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
-          className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors"
+          className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors sticky right-0 z-10 border-l border-line ${
+            expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+          }`}
         >
           <TuneIcon active={expanded} />
         </button>
@@ -870,25 +877,15 @@ export default function Step3_SemanticTokens({
     // foundation-level swap should animate. (`reduce` is still used by the
     // modals below.)
     <div className="h-full flex flex-col">
-      {/* ── Row 1 — architecture strip. Mirrors ColorPrimitives' quick-edit
-          row exactly: a 198px labelled cell holding the control (there a
-          family hex field, here the architecture dropdown) against a flex-1
-          cell showing what that choice produces (there the ScaleRow, here the live
-          WCAG contrast chips). Same 198px + border-r as the rows below, so
-          the left edge reads as one continuous column across all three. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token architecture</span>
-          <ArchitectureSelect />
-        </div>
-        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
-        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
-          <ArchContrastStrip kind={semanticArchitecture} />
-        </div>
-      </div>
-
-      {/* ── Row 2 — "Tokens" + the tab bar + search, on ONE line, matching
-          ColorPrimitives' "Groups" row (same h-[52px], same 198px split). ── */}
+      {/* ── Row 1 — "Groups" + the tab bar + search, on ONE line, matching
+          ColorPrimitives' own row 1 (same h-[52px], same 198px split). MOVED
+          ABOVE the architecture strip (was row 2) — same reorder as
+          ColorPrimitives: the nav's own header sits directly above the nav it
+          labels, not interleaved with the control strip. `border-line` (full
+          strength) since this now sits at the TOP of the chrome, above
+          another chrome row rather than above the nav — the strip below picks
+          up the lighter `/60` instead, matching whichever row sits directly
+          above the nav + table. ── */}
       <div className="flex items-stretch flex-shrink-0 border-b border-line">
         {/* No "+" here, unlike ColorPrimitives' matching "Groups" cell: adding
             a theme adds a COLUMN, so its trigger lives at the end of the
@@ -897,7 +894,7 @@ export default function Step3_SemanticTokens({
             why it belongs beside the nav label there. */}
         <div className="w-[198px] flex-shrink-0 flex items-center px-4 h-[52px] border-r border-line">
           {/* "Groups", not "Tokens" — the same word ColorPrimitives uses for
-              the same nav directly below it. Both list GROUPS (families there,
+              the same nav two rows below. Both list GROUPS (families there,
               semantic categories here); calling it something else on one tab
               made the two rails read as unrelated controls. */}
           <span className="text-[13px] font-semibold text-fg">Groups</span>
@@ -951,6 +948,28 @@ export default function Step3_SemanticTokens({
               </button>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ── Row 2 — architecture strip. Mirrors ColorPrimitives' quick-edit
+          row exactly: a 198px labelled cell holding the control (there a
+          family hex field, here the architecture dropdown) against a flex-1
+          cell showing what that choice produces (there the ScaleRow, here the
+          live WCAG contrast chips). Same 198px + border-r as the rows around
+          it, so the left edge reads as one continuous column across all
+          three. MOVED BELOW "Groups" (was row 1) — see that row's own note.
+          `border-line/60` (the lighter weight) since this now sits between
+          "Groups" above and the nav + table below, the same "chrome-to-chrome
+          is lighter, chrome-to-content is full-strength" rule the row order
+          swap carried over from ColorPrimitives. ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token architecture</span>
+          <ArchitectureSelect />
+        </div>
+        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
+        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
+          <ArchContrastStrip kind={semanticArchitecture} />
         </div>
       </div>
 
@@ -1054,8 +1073,18 @@ export default function Step3_SemanticTokens({
                     Hidden for Vibrancy/Tonal, whose light/dark are a fixed
                     binary transform with no per-theme concept (same rule the
                     per-column delete follows). Falls back to the decorative
-                    tune glyph so the column keeps its width either way. */}
-                <span className="flex items-center justify-center py-1.5">
+                    tune glyph so the column keeps its width either way.
+                    `sticky right-0` on top of the header's own `sticky top-0`
+                    — a corner cell doubly pinned, so it survives BOTH scroll
+                    axes. Reported as: adding a mode (a real, common action —
+                    every "+ Theme" click grows this row) must never push this
+                    control out of reach behind a horizontal scroll; extra
+                    modes should make the MIDDLE of the table scroll, not
+                    shove this column away. `bg-app` keeps scrolled mode
+                    columns from showing through underneath it; `border-l`
+                    gives the pinned edge a boundary that doesn't depend on
+                    which column happens to be scrolled under it. */}
+                <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                   {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
                     <button
                       onClick={onOpenAddTheme}
@@ -1123,13 +1152,30 @@ export default function Step3_SemanticTokens({
                         </button>
                       ))}
                       {/* Filter / edit toggle — opens the Token Details modal,
-                          same as the flat matrix (see the main component's render). */}
+                          same as the flat matrix (see the main component's render).
+                          `sticky right-0`, matching the header's corner cell — this
+                          is the per-row half of the same pin (see that cell's own
+                          comment). The background REPEATS the row wrapper's own
+                          `isOpen`/zebra classes rather than inheriting them: a
+                          sticky element paints its own layer on top of whatever's
+                          already there, so without an explicit, matching fill here
+                          the mode columns scrolling underneath would show through
+                          this one cell as they pass. (Known, accepted residual:
+                          since the row wrapper ALSO paints that same translucent
+                          tint underneath, the two composite to a hair darker right
+                          under this column specifically — 0.018 → ~0.036 opacity —
+                          imperceptible at this size, and the alternative (an
+                          untinted sticky cell cutting a flat notch through every
+                          striped row) reads as an actual rendering glitch, which
+                          this doesn't.) */}
                       <button
                         onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
                         aria-expanded={isOpen}
                         aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
                         disabled={!editable}
-                        className="group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors"
+                        className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors sticky right-0 z-10 border-l border-line ${
+                          isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+                        }`}
                       >
                         <TuneIcon active={isOpen} />
                       </button>
@@ -1231,8 +1277,13 @@ export default function Step3_SemanticTokens({
               })}
               {/* Trailing header cell = "add another mode" — see the arch
                   table's matching cell above. Flat always resolves an extra
-                  theme as a real column, so it's always live here. */}
-              <span className="flex items-center justify-center py-1.5">
+                  theme as a real column, so it's always live here.
+                  `sticky right-0` — same pinned-corner treatment as the arch
+                  table's matching cell; see that one's comment for why. Flat
+                  is if anything the MORE likely table to grow past the
+                  viewport, since it's the one with the full 89-role matrix
+                  and no architecture curating it down. */}
+              <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                 <button
                   onClick={onOpenAddTheme}
                   aria-label="Add a theme"

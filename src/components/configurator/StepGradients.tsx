@@ -208,7 +208,52 @@ export default function StepGradients({
 
   return (
     <div className="h-full flex flex-col">
-      {/* ── Row 1 — gradient type + the live bar it produces ── */}
+      {/* ── Row 1 — "Collections" + the tab bar + search, on one line. MOVED
+          ABOVE the gradient-type strip (was row 2) — same reorder as
+          ColorPrimitives/Step3: the nav's own header sits directly above the
+          nav it labels. `border-line` (full strength) — this now sits at the
+          top of the chrome, above another chrome row rather than above the
+          nav; the strip below picks up the lighter `/60` instead. ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+        <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
+          <span className="text-[13px] font-semibold text-fg">Collections</span>
+          <button
+            type="button"
+            onClick={create}
+            aria-label="New gradient"
+            title="Create a new gradient"
+            className="flex items-center justify-center w-6 h-6 rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
+          </button>
+        </div>
+        {/* Mirrors ColorPrimitives' matching row — pr-3 (12px) clearance. */}
+        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter gradients"
+            />
+            {query && (
+              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row 2 — gradient type + the live bar it produces. MOVED BELOW
+          "Collections" (was row 1) — see that row's own note. `border-line/60`
+          since this now sits between "Collections" above and the nav + table
+          below. ── */}
       <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
         <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
@@ -328,43 +373,6 @@ export default function StepGradients({
           ) : (
             <span className="text-sm text-fg-faint">No gradients yet — create one to get started.</span>
           )}
-        </div>
-      </div>
-
-      {/* ── Row 2 — "Collections" + the tab bar + search, on one line ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
-        <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
-          <span className="text-[13px] font-semibold text-fg">Collections</span>
-          <button
-            type="button"
-            onClick={create}
-            aria-label="New gradient"
-            title="Create a new gradient"
-            className="flex items-center justify-center w-6 h-6 rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
-          >
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
-          </button>
-        </div>
-        {/* Mirrors ColorPrimitives' matching row — pr-3 (12px) clearance. */}
-        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter gradients"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
         </div>
       </div>
 

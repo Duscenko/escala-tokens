@@ -6,6 +6,8 @@ import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE } from './atoms/SemanticSpecimens'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
+import { GridPreview } from './atoms/GridPreview'
+import { ShadowPreview } from './atoms/ShadowPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
 import { useDesignStore } from '../../store/useDesignStore'
 import type { SemanticFocus } from '../configurator/Step3_SemanticTokens'
@@ -34,13 +36,15 @@ const FOCUS_TITLE = SEMANTIC_SPECIMEN_TITLE
 // When no semantic focus is active, the panel instead tailors itself to the
 // active Variables foundation — same idea (a live specimen for what you're
 // editing), one level up. Only foundations with a dedicated set below get a
-// title here; anything else (Icons/Opacity/Shadow/Grid) keeps the generic one.
+// title here; anything else (Icons) keeps the generic one.
 const CATEGORY_TITLE: Record<string, string> = {
   color: 'Color preview',
   typography: 'Font preview',
   radius: 'Radius preview',
   spacing: 'Spacing preview',
   sizes: 'Sizes preview',
+  grid: 'Grid preview',
+  shadow: 'Shadow preview',
 }
 
 // ── Layout helpers ──────────────────────────────────────────────────────────
@@ -252,6 +256,18 @@ export default function PreviewPanel({
               <ModalSpec t={tokens} v={{}} />
             </Group>
           </>
+        ) : categoryKey === 'grid' ? (
+          /* Grid is the one foundation whose tokens produce no COMPONENT —
+             a button tells you nothing about a 12-column layout. Its specimen
+             is the layout itself, drawn at every breakpoint the system
+             defines. */
+          <GridPreview tokens={tokens} />
+        ) : categoryKey === 'shadow' ? (
+          /* Elevation can only be judged by comparing steps, which the generic
+             fallback (one `xs` on a button) never let you do. `t.shadows` is
+             already the dark twin here when a dark theme is previewed — see
+             `resolvePreviewTokens`. */
+          <ShadowPreview tokens={tokens} />
         ) : categoryKey === 'spacing' || categoryKey === 'sizes' ? (
           <>
             {/* The token tables already carry the comparative bars; these add

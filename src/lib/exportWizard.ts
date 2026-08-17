@@ -358,12 +358,24 @@ const modeScope = (mode: string) => (mode === 'light' ? ':root' : mode === 'dark
 function cssFor(sel: WizardSelection, collections: WizardCollection[], full: TokenJSON): string {
   const blocks: string[] = []
   const rootLines: string[] = []
+  // Dark-scope declarations that AREN'T semantic tokens. Only the elevation
+  // ramp so far, and it has to be here rather than in `:root`: the shadow
+  // colour is near-black, which on the dark page renders as nothing at all
+  // (see `darkShadow`). Shipping the light ramp alone would hand over a CSS
+  // file whose dark mode has no visible elevation — the same bug the preview
+  // had, just exported.
+  const darkLines: string[] = []
   for (const key of collections) {
     if (key === 'semantics') continue
     const lines = varLines(key, sel, full)
     if (!lines.length) continue
     rootLines.push(`/* ${key} */`, ...lines.map(([n, v]) => `--${n}: ${v};`))
+    if (key === 'shadow') {
+      const dark = Object.entries(full.shadowsDark ?? {}).filter(([, v]) => v && v !== 'none')
+      if (dark.length) darkLines.push('/* shadow — dark */', ...dark.map(([k, v]) => `--shadow-${k}: ${v};`))
+    }
   }
+  let darkEmitted = false
   if (collections.includes('semantics')) {
     for (const mode of sel.modes) {
       const theme = full.colors.themes[mode]
@@ -372,8 +384,18 @@ function cssFor(sel: WizardSelection, collections: WizardCollection[], full: Tok
         .filter(([, v]) => v)
         .map(([k, v]) => `--color-${k}: ${formatColor(v, sel.colorFormat)};`)
       if (mode === 'light') rootLines.push('/* semantics — light */', ...lines)
-      else blocks.push(`${modeScope(mode)} {\n${lines.map((l) => `  ${l}`).join('\n')}\n}`)
+      else {
+        // Merged into the SAME `.dark` block rather than appended as a second
+        // one — two `.dark {}` rules cascade correctly but read as an oversight.
+        const extra = mode === 'dark' ? darkLines : []
+        if (mode === 'dark') darkEmitted = true
+        blocks.push(`${modeScope(mode)} {\n${[...lines, ...extra].map((l) => `  ${l}`).join('\n')}\n}`)
+      }
     }
+  }
+  // Shadows can ship without semantics selected, so the block still needs a home.
+  if (darkLines.length && !darkEmitted) {
+    blocks.push(`.dark {\n${darkLines.map((l) => `  ${l}`).join('\n')}\n}`)
   }
   const root = rootLines.length ? `:root {\n${rootLines.map((l) => `  ${l}`).join('\n')}\n}` : ''
   return [root, ...blocks].filter(Boolean).join('\n\n')

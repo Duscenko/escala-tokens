@@ -1,6 +1,6 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import { getIconLibrary } from './iconLibraries'
-import { toneLabel, generateAlphaScale, type ColorNaming } from './colorUtils'
+import { toneLabel, generateAlphaScale, darkShadowMap, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture } from './semanticArchitectures'
@@ -242,6 +242,14 @@ export function generateTokenJSON() {
     })(),
     radius: store.radius,
     shadows: store.shadows,
+    // Dark twin of the elevation ramp — ADDITIVE, exactly like `gradientsDark`
+    // beside `gradients`: `shadows` is unchanged, this is a complete parallel
+    // map under the SAME keys, so a consumer never has to test which entries
+    // exist and an older plugin simply ignores the field (hence no
+    // schemaVersion bump). It exists because the ramp's near-black shadow
+    // colour IS the dark page: unoverridden, every elevation composites to
+    // within 0.36 of one 8-bit level of the background. See `darkShadow`.
+    shadowsDark: darkShadowMap(store.shadows),
     grid: store.grid,
     sizes: store.sizes,
     icons: {

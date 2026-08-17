@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
+import { useDesignStore, makeDesignDefaults } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
@@ -101,6 +101,52 @@ function toneDescription(tone: number): string {
 // point); a mid interactive step is unmistakably translucent while still
 // carrying the family's hue.
 const ALPHA_NAV_TONE = 5
+
+// ── The view's own left column, in its two states ────────────────────────────
+// Exported so `Configurator` can size TopNav's brand block from the SAME
+// numbers rather than re-hardcoding 198 — the brand block's right border IS
+// this column's divider continued up through the header, so a magic number in
+// two files is a broken line waiting to happen.
+export const COLOR_RAIL_WIDTH = 198
+// 56px = the nav's own `px-2` (16) + a 40px row that centres an 18px swatch.
+// Deliberately NOT the 32px dead strip `PreviewPanel` collapses to: that panel
+// is a read-only specimen, so collapsing it costs nothing but sight, whereas
+// this column is NAVIGATION — at 32px there's no room for the swatches and
+// switching families would mean expanding first, every time. Keeping the
+// swatches is what makes this a collapse rather than a hide (same call
+// `FoundationIconRail` already makes: drop the labels, keep the glyphs).
+export const COLOR_RAIL_COLLAPSED_WIDTH = 56
+
+/** The collapse/expand control. Lives in the "Groups" header's trailing slot —
+ *  that row was already `justify-between` around a lone label, i.e. the slot
+ *  was reserved and empty.
+ *  Same glyph as `PreviewPanel`'s own collapse button (a panel split by a
+ *  divider), not a directional chevron — a chevron reads as "step in this
+ *  direction," but this and `PreviewPanel`'s control do the identical job
+ *  (toggle a side column's width), so they need the identical icon, not two
+ *  icons for one action. `PreviewPanel` never flips its glyph either: it only
+ *  renders this button in the expanded state (the collapsed state is a
+ *  separate outer strip with its own chevron, a different affordance one
+ *  level up) — this one stays inline in both states, so the icon stays fixed
+ *  and only `aria-label`/`title` carry which way a click will go. */
+function RailToggle({ collapsed, onClick }: { collapsed: boolean; onClick?: () => void }) {
+  if (!onClick) return null
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? 'Expand the groups column' : 'Collapse the groups column'}
+      title={collapsed ? 'Expand groups' : 'Collapse groups — give the table more width'}
+      className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M9 4v16" />
+      </svg>
+    </button>
+  )
+}
 
 /** A family's chip in the nav. An alpha family gets the checkerboard treatment
  *  its table cells already use (see AlphaHexCell) instead of a solid chip of
@@ -555,6 +601,8 @@ export default function ColorPrimitives({
   onPreviewThemeChange,
   focusFamilyKey,
   tabBar,
+  railCollapsed = false,
+  onToggleRail,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
@@ -567,6 +615,15 @@ export default function ColorPrimitives({
    *  (matches the Figma reference: same line, 198px nav-aligned left portion
    *  + tabs/search on the right) instead of sitting in its own full-width row. */
   tabBar?: ReactNode
+  /** Collapses this view's own 198px left column (accent-color cell · Groups
+   *  header · family nav) to a swatch strip, handing the width to the token
+   *  table. LIFTED to `Configurator`, not local state, for one reason: the
+   *  TopNav brand block's right border is what continues this column's divider
+   *  up through the header (`brandWidth`), so if the column could shrink
+   *  without the shell knowing, that divider would stop at the header and
+   *  restart one row down — two unrelated rules instead of one. */
+  railCollapsed?: boolean
+  onToggleRail?: () => void
 }) {
   const store = useDesignStore()
   const {
@@ -898,6 +955,29 @@ export default function ColorPrimitives({
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [stripEditOpen])
 
+  // ── Reset a family to its factory colour ──
+  // Read from `makeDesignDefaults()` — the SAME factory a brand-new system is
+  // seeded from — rather than a hardcoded hex table here, so "reset" can never
+  // drift from what "default" actually means. Built once per mount: the factory
+  // also builds gradients and ramps, which there's no reason to redo per render.
+  const factory = useMemo(() => makeDesignDefaults(), [])
+  /** The factory base for a family, or null when there ISN'T one — a custom
+   *  family was invented by the user, so there's no default to return it to,
+   *  and an alpha twin is solved from its solid rather than set. Those two get
+   *  no button at all instead of a dead one. */
+  const defaultBaseFor = (f: Family): string | null => {
+    if (f.isAlpha || f.customKey) return null
+    switch (f.key) {
+      case 'accent': return factory.primaryColor
+      case 'neutral': return factory.grayBaseColor
+      case 'error': return factory.errorColor
+      case 'warning': return factory.warningColor
+      case 'success': return factory.successColor
+      case 'info': return factory.infoColor
+      default: return null
+    }
+  }
+
   const changeFamilyBase = (f: Family, hex: string) => {
     // Derived (Accent-Alpha) — nothing to set independently.
     if (f.isAlpha) return
@@ -1036,6 +1116,56 @@ export default function ColorPrimitives({
     // they render in the same place: the chrome appeared to jump while only
     // the content had actually changed.
     <div className="h-full flex flex-col">
+      {/* ── "Groups" shares a row with the tab pill bar + search — same line,
+          per the Figma reference — instead of each owning a separate row.
+          MOVED ABOVE the quick-edit strip (was row 2, now row 1) — reported as
+          wanting "Groups" over the accent-color cell and the tab bar/search
+          over the ramp, i.e. the nav's own header sits directly above the nav
+          it labels, and the strip that EDITS a family sits directly above the
+          table it edits, instead of the two being interleaved. The 198px left
+          portion still shares the same column every row in this view uses,
+          just one row earlier now. `border-line` (full strength, not the
+          `/60` this row used when it sat second) — this is now the row
+          directly above the nav + table, the same boundary weight the OTHER
+          row carried when IT was last. ── */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+        <div
+          className={`flex-shrink-0 flex items-center h-[52px] border-r border-line transition-[width] duration-200 ${
+            railCollapsed ? 'justify-center px-0' : 'justify-between px-4'
+          }`}
+          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
+        >
+          {!railCollapsed && <span className="text-[13px] font-semibold text-fg">Groups</span>}
+          <RailToggle collapsed={railCollapsed} onClick={onToggleRail} />
+        </div>
+        {/* items-stretch + no left padding: the active tab's tint has to reach
+            this cell's top, bottom and left edge to read as a block rather than
+            a floating pill (see ColorHub's tabBar). The search re-centers
+            itself with `self-center` since it shouldn't stretch. */}
+        {/* Same edge rule as the strip row's gear below: pr-3 (12px)
+            clearance, not flush. */}
+        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter tokens"
+            />
+            {query && (
+              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* ── Quick-edit strip — FULL WIDTH, matching the icon-toolbar row's
           width above it (not indented to just the table column). Promoted
           from Picker Color: names + edits whichever family is active in the
@@ -1044,11 +1174,61 @@ export default function ColorPrimitives({
           AlphaHexCell) — an alpha value is solved against its page, never
           independently set.
           The 198px/flex-1 split — and that `border-r` — is the SAME one
-          the Groups/nav row and the nav column below use; lining all three
+          the Groups row above and the nav column below use; lining all three
           up is what makes the left edge read as one continuous column
-          instead of the accent field floating unaligned above it. ── */}
+          instead of the accent field floating unaligned above it.
+          `border-line/60` (the lighter weight, not the full-strength one this
+          row used when it sat first) — it now sits between two header-ish
+          rows (Groups above, the nav + table below), so a lighter divider
+          here and a full-strength one just below it is what keeps the
+          "chrome vs. content" boundary reading as the stronger line. ── */}
       <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+        {/* Collapsed, this cell keeps ONLY the active family's swatch — still
+            the picker trigger (`onSwatchClick` below does the same job), so
+            the one action this cell owns survives the collapse. The label and
+            the hex field are what go: at 56px neither fits, and both are
+            recoverable in one click. */}
+        <div
+          className={`flex-shrink-0 border-r border-line flex flex-col justify-center transition-[width] duration-200 ${
+            railCollapsed ? 'items-center px-0 py-5' : 'gap-1.5 px-4 py-5'
+          }`}
+          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
+        >
+          {railCollapsed ? (
+            <div ref={stripEditRef} className="relative">
+              <FamilySwatch
+                family={family}
+                dark={darkPreview}
+                onClick={family.isAlpha ? undefined : () => setStripEditOpen((o) => !o)}
+              />
+              <AnimatePresence>
+                {stripEditOpen && !family.isAlpha && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.14, ease: 'easeOut' }}
+                    role="dialog"
+                    aria-label={`Edit ${family.label} color`}
+                    style={{ maxHeight: stripEditPlace.max }}
+                    className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                      stripEditPlace.up ? 'bottom-0' : 'top-0'
+                    }`}
+                  >
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                      <ColorPickerPanel
+                        value={family.base}
+                        onChange={(hex) => changeFamilyBase(family, hex)}
+                        suggestions
+                        palette={curatedPaletteFor(family.key)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+          <>
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{family.label} color</span>
           {family.isAlpha ? (
             <div className="w-full h-9 px-2.5 rounded-[13px] border border-line-strong bg-surface flex items-center">
@@ -1074,6 +1254,36 @@ export default function ColorPrimitives({
                     swatchLabel={`Open color picker for ${family.label}`}
                   />
                 </div>
+                {/* Reset to the factory colour. Trailing edge of the pill —
+                    the slot `pr-1.5`/`gap-1` already reserved, and the same
+                    place the token tables put their per-row reset, so the
+                    gesture is the one already learned there.
+                    Routed through `changeFamilyBase`, NOT a direct setter: a
+                    reset has to cascade exactly like a hand-edit (the neutral
+                    and states links, the page derived from the base), or the
+                    two would drift into different results for the same value.
+                    Disabled at the default rather than hidden — a control that
+                    vanishes once used reads as broken; disabled says "nothing
+                    to undo". */}
+                {(() => {
+                  const def = defaultBaseFor(family)
+                  if (!def) return null
+                  const atDefault = family.base.toLowerCase() === def.toLowerCase()
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => changeFamilyBase(family, def)}
+                      disabled={atDefault}
+                      aria-label={`Reset ${family.label} to the default color`}
+                      title={atDefault ? `${family.label} is at its default (${def})` : `Reset to default (${def})`}
+                      className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg hover:bg-elevated disabled:opacity-25 disabled:hover:text-fg-faint disabled:hover:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+                      </svg>
+                    </button>
+                  )
+                })()}
               </div>
               <AnimatePresence>
                 {stripEditOpen && (
@@ -1110,6 +1320,8 @@ export default function ColorPrimitives({
               </AnimatePresence>
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* No states-link toggle here either, same reason as the wand it
@@ -1132,6 +1344,7 @@ export default function ColorPrimitives({
             ariaLabel={`${family.label} scale`}
             joined
             numbersInside
+            checkerboard={family.isAlpha}
           />
         </div>
 
@@ -1198,46 +1411,47 @@ export default function ColorPrimitives({
         </div>
       </div>
 
-      {/* ── "Groups" shares a row with the tab pill bar + search — same line,
-          per the Figma reference — instead of each owning a separate row.
-          The 198px left portion aligns with the nav directly below it; the
-          right portion holds `tabBar` (passed down from ColorHub so it can
-          render here instead of its own full-width row) + search. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
-        <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
-          <span className="text-[13px] font-semibold text-fg">Groups</span>
-        </div>
-        {/* items-stretch + no left padding: the active tab's tint has to reach
-            this cell's top, bottom and left edge to read as a block rather than
-            a floating pill (see ColorHub's tabBar). The search re-centers
-            itself with `self-center` since it shouldn't stretch. */}
-        {/* Same edge rule as row 1's gear: pr-3 (12px) clearance, not flush. */}
-        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter tokens"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* ── nav + table, filling the remaining height ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-      <nav ref={navRef} aria-label="Color families" className="w-[198px] flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app">
-        {navFolders.map((folder) => {
+      <nav
+        ref={navRef}
+        aria-label="Color families"
+        className="flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app transition-[width] duration-200"
+        style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
+      >
+        {/* Collapsed: swatches only, grouped by a hairline instead of a text
+            header. The grouping is the one thing the folder labels carry that
+            the chips can't, so it survives as a rule rather than being dropped
+            outright. Each row is ONE button that selects the family (a 40×32
+            target, where the bare 18px swatch would not be) — editing a colour
+            stays behind the expanded state and the row-1 swatch, so a click
+            here can't mean two things depending on where in the chip it lands. */}
+        {railCollapsed ? (
+          navFolders.flatMap((folder) => folder.groups).map((group, gi, all) => (
+            <div key={`${group.label}-${gi}`} className="flex flex-col items-center gap-0.5">
+              {gi > 0 && <span className="w-6 h-px bg-line my-1.5 flex-shrink-0" aria-hidden />}
+              {group.items.map((f) => {
+                const isActive = family.key === f.key
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
+                    aria-current={isActive}
+                    title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
+                    aria-label={f.label}
+                    className={`w-10 h-8 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                      isActive ? 'bg-elevated shadow-sm' : 'hover:bg-elevated/50'
+                    }`}
+                  >
+                    <FamilySwatch family={f} dark={darkPreview} />
+                  </button>
+                )
+              })}
+            </div>
+          ))
+        ) : (
+        navFolders.map((folder) => {
           const folderCollapsed = collapsedGroups.has(folder.key)
           return (
           <div key={folder.key} className="flex flex-col">
@@ -1246,8 +1460,19 @@ export default function ColorPrimitives({
                 base palette's. */}
             {/* A THEME folder (not Base, not Custom) can be deleted from here
                 — see `themeToDelete`. The trash is hover-only so the rail stays
-                quiet, but it's always reachable by keyboard. */}
-            <div className="group/folder flex items-center gap-1 pr-1.5">
+                quiet, but it's always reachable by keyboard.
+                No `pr-*` on this wrapper: a reserved right gutter for the trash
+                button used to sit here unconditionally, so on Theme 1/Custom
+                (which never render it) the folder's own chevron landed ~7px
+                left of its child groups' chevrons — the base folder and its
+                Accents/Neutrals/States rows read as two different right edges
+                in one tree. Both the folder button and the group button below
+                already carry their own `px-2.5`, so with no extra wrapper
+                padding their trailing chevrons share the exact same inset
+                from the nav's edge. When the trash button DOES render, `gap-1`
+                alone separates it from the label — same flush-right pattern
+                every other trailing icon in this nav already uses. */}
+            <div className="group/folder flex items-center gap-1">
             <button
               type="button"
               onClick={() => toggleGroup(folder.key)}
@@ -1421,7 +1646,8 @@ export default function ColorPrimitives({
             </AnimatePresence>
           </div>
           )
-        })}
+        })
+        )}
           </nav>
 
           <div ref={tableRef} className="flex-1 min-w-0 h-full overflow-auto">

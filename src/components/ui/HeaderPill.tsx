@@ -23,7 +23,13 @@ export default function HeaderPill({
       onClick={onClick}
       title={title}
       {...aria}
-      className={`flex-shrink-0 flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[12px] font-medium text-fg whitespace-nowrap transition-colors ${
+      // `rounded-[10px]`, not `rounded-full`: the app's chrome buttons use a
+      // proportional squircle (~size/3), not a pill — same ratio as the 9-size
+      // icon buttons' `rounded-[13px]` (ColorPrimitives' gear, ThemeToggle) and
+      // the 40.5px foundation-rail buttons' `rounded-[13.5px]`, scaled to this
+      // pill's own h-7 (28px). A full-radius pill next to those squircle
+      // buttons read as two different corner languages in the same header row.
+      className={`flex-shrink-0 flex items-center gap-1.5 h-7 px-2.5 rounded-[10px] text-[12px] font-medium text-fg whitespace-nowrap transition-colors ${
         ghost
           ? 'hover:bg-elevated'
           : 'bg-surface border border-line hover:border-line-strong hover:bg-elevated/60'

@@ -28,6 +28,7 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
+import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/ColorPrimitives'
 import AddThemePanel from '../components/configurator/AddThemePanel'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
@@ -262,6 +263,13 @@ export default function Configurator() {
   // preview mirrors the semantic category only while the semantics tab is
   // active.
   const [colorTab, setColorTab] = useState<ColorTab>('primary')
+  // Primitives' own 198px left column (accent-color cell · Groups · family
+  // nav), collapsed to a swatch strip. Lifted for the same reason `colorTab`
+  // is: TopNav's brand block continues this column's divider up through the
+  // header (`brandWidth` below), so the shell has to know the width to keep
+  // that one rule unbroken. Not persisted — a per-session working preference,
+  // like `previewCollapsed`.
+  const [colorRailCollapsed, setColorRailCollapsed] = useState(false)
   // "+ Theme"'s panel — DOCKED in the right aside (see the render below),
   // swapped in for `PreviewPanel` the same way `SaveSidePanel` already is.
   // Lifted here (not local to Step3, where the trigger lives) because the
@@ -508,6 +516,8 @@ export default function Configurator() {
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
           onOpenAddTheme={() => setAddThemeOpen(true)}
+          railCollapsed={colorRailCollapsed}
+          onToggleRail={() => setColorRailCollapsed((c) => !c)}
         />
       </div>
     ) : RAILED_FOUNDATIONS.has(section.key) ? (
@@ -611,6 +621,15 @@ export default function Configurator() {
   // unbroken into that column, or the vertical line just stops at the header
   // and restarts one row down, reading as two unrelated rules instead of one.
   const colorColumnVisible = tab === 'foundations' && !exportMode && activeFoundation === 'color'
+  // …and that column can now COLLAPSE (Primitives only — Semantics and
+  // Gradients keep their own full-width 198px column), so the brand block has
+  // to track it or the divider stops at the header and restarts one row down.
+  // Read from ColorPrimitives' own exported constants rather than repeating
+  // the numbers, since a mismatch here is exactly a broken line.
+  const colorColumnCollapsed = colorColumnVisible && colorTab === 'primary' && colorRailCollapsed
+  const colorColumnWidth = colorColumnCollapsed
+    ? COLOR_RAIL_COLLAPSED_WIDTH
+    : COLOR_RAIL_WIDTH
 
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
@@ -638,8 +657,12 @@ export default function Configurator() {
         onExport={openSectionExport}
         exportOpen={sectionExportOpen}
         onMenu={() => openAbout('platform')}
-        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : colorColumnVisible ? 198 : null}
-        railCollapsed={outerRailVisible && railCollapsed}
+        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : colorColumnVisible ? colorColumnWidth : null}
+        // Drops the wordmark, leaving just the mark. Either narrow-brand-block
+        // case has to set this, not only the Components rail: at 56px the
+        // lockup overflows its own block by ~67px (measured) and the two lines
+        // spill past the divider they're supposed to sit inside.
+        railCollapsed={(outerRailVisible && railCollapsed) || colorColumnCollapsed}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
       />
@@ -688,11 +711,21 @@ export default function Configurator() {
                 job — naming what you're editing — is taken over by the
                 promoted per-family quick-edit strip inside ColorPrimitives. */}
             {tab === 'foundations' && !exportMode && (
-              // Left inset is pl-4, not the pr side's px-6/lg:px-8: it has to
-              // match the 16px `px-4` every 198px column below uses for its
-              // own label (Accent color / Groups / Tokens), so the icon rail's
-              // first icon lines up with them instead of sitting ~18px deeper.
-              <div className="flex items-center gap-4 pl-4 pr-6 lg:pr-8 h-[52px] border-b border-line/60 flex-shrink-0">
+              // Left inset is pl-4, matching the 16px `px-4` every 198px
+              // column below uses for its own label (Accent color / Groups /
+              // Tokens), so the icon rail's first icon lines up with them
+              // instead of sitting ~18px deeper.
+              // Right inset is pr-3 (12px) — the SAME trailing-clearance rule
+              // ColorPrimitives' row-1 gear and row-2 search already use (see
+              // their own comments), not the wider px-6/lg:px-8 this row had
+              // before. That mismatch was the actual bug: Kits (this row's own
+              // trailing control, via HomeActions' `ml-auto`) sat 12-20px
+              // further from the edge than the gear one row below it, so the
+              // two right-aligned controls didn't share a right edge at all.
+              // pr-3 is the minimum gap this app uses everywhere else for "a
+              // free-floating trailing control, not flush" — same reasoning,
+              // same number.
+              <div className="flex items-center gap-4 pl-4 pr-3 h-[52px] border-b border-line/60 flex-shrink-0">
                 <FoundationIconRail
                   active={activeFoundation}
                   onSelect={selectFoundation}
@@ -702,7 +735,7 @@ export default function Configurator() {
                   ]}
                 />
                 <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-                  <HomeActions />
+                  <HomeActions previewTheme={previewTheme} />
                 </div>
               </div>
             )}
@@ -735,20 +768,36 @@ export default function Configurator() {
             </div>
           </main>
 
-          {/* Right live preview (hidden in components tab — full width for docs) */}
+          {/* Right live preview (hidden in components tab — full width for docs)
+
+              The threshold is an EXPLICIT `min-[1180px]:`, not `xl:`. Tailwind's
+              breakpoints are rem-based and `:root` sets `font: 18px/…`, so `xl`
+              resolves to 80rem = **1440px** here, not the 1280 the utility name
+              implies. That hid the panel on every window below 1440 — including a
+              16" MacBook Pro on any scaled resolution under 1512, or full-screen
+              with the window not maximised — and the live specimen is half the
+              point of the workspace, not a wide-screen bonus.
+              1180 is MEASURED, not guessed: with the full 400px aside, nothing
+              inside `main` overflows down to that width (the Primitives table
+              still shows both light and dark columns, and every railed section
+              keeps its 198px gutter). Below it the token tables start clipping,
+              so that's where the panel genuinely has to go. The collage's own
+              floor is 380px (at 360 its tiles overflow), which is why the aside
+              keeps ONE width instead of shrinking — there is no useful range
+              between 380 and 400 to trade the center 20px for. */}
           {showPreview && (previewCollapsed ? (
             <button
               onClick={() => setPreviewCollapsed(false)}
               aria-label="Expand preview"
               title="Expand preview"
-              className="hidden xl:flex w-8 flex-shrink-0 items-center justify-center border-l border-line bg-app hover:bg-elevated/50 text-fg-faint hover:text-fg transition-colors"
+              className="hidden min-[1180px]:flex w-8 flex-shrink-0 items-center justify-center border-l border-line bg-app hover:bg-elevated/50 text-fg-faint hover:text-fg transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M15 6l-6 6 6 6" />
               </svg>
             </button>
           ) : (
-            <aside className="hidden xl:flex w-[400px] flex-shrink-0 overflow-hidden border-l border-line">
+            <aside className="hidden min-[1180px]:flex w-[400px] flex-shrink-0 overflow-hidden border-l border-line">
               {exportMode === 'save' ? (
                 // Save pairs the share/identity center with the system overview.
                 <SaveSidePanel

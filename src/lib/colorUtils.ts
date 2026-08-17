@@ -874,3 +874,80 @@ export function withAlpha(hex: string, alpha: number): string {
     return hex
   }
 }
+
+// ── Dark-appearance shadows ─────────────────────────────────────────────────
+/**
+ * The dark twin of a CSS box-shadow — same geometry, colours re-solved for a
+ * dark page. Same model the rest of the system already uses (every colour
+ * family ships a dark twin, every linked gradient stop resolves a `darkColor`);
+ * shadows were the one foundation still shipping ONE value for both
+ * appearances, and on a dark page that value renders as nothing at all.
+ *
+ * **The bug this exists to fix, measured.** The default ramp's shadow colour is
+ * `rgba(10,13,18,·)` — "near-black", chosen against a WHITE page. The dark page
+ * is `#0c0e12` = `rgb(12,14,18)`. The shadow colour *is* the page. Composited,
+ * the largest step moved the pixel by **0.36 of one 8-bit level** — it rounds
+ * to the background, so every elevation in dark was mathematically invisible,
+ * not merely subtle. (Light mode, for reference, delivers an OKLab ΔL of
+ * 0.036–0.132 across the ramp; dark was delivering 0.0003–0.0009.)
+ *
+ * Two corrections, because one isn't enough:
+ *
+ *  1. **Black, and much more of it.** The colour goes to pure black (on a
+ *     near-black page there is no darker hue to reach for) and the alpha is
+ *     remapped `1 − (1 − a)^DARK_ALPHA_GAIN`. That curve is used rather than a
+ *     multiplier because a multiplier clamps: the Strong preset's 0.32 × 6
+ *     saturates at 1 and flattens the top of the ramp, while this form
+ *     approaches 1 asymptotically and so keeps every step ordered.
+ *  2. **A light rim, which is what actually makes it read.** Below a near-black
+ *     page only ~5% of the luminance range exists, so a black shadow CANNOT
+ *     match light-mode elevation however hard it is pushed — measured, even at
+ *     gain 8 the largest step reaches ΔL 0.068 against light's 0.132. Up is the
+ *     only direction with range left, which is why every dark UI that reads as
+ *     elevated (Material's surface tint, Linear/Vercel/GitHub's hairline)
+ *     spends light rather than dark. One 1px white rim at α 0.06 buys ΔL
+ *     +0.059 — as much as the entire 48px black shadow — so the pair together
+ *     lands in the same perceptual range as light mode.
+ *
+ * The rim is listed FIRST because box-shadow paints earlier layers on top: last
+ * would put it under the blurred layers, which is what dulls it back out.
+ */
+const DARK_ALPHA_GAIN = 6
+/** Matches `rgb()`/`rgba()` and 3–8 digit hex. Anything else (a named colour,
+ *  `currentColor`) is left untouched rather than guessed at — it still gets the
+ *  rim, so an unparseable shadow degrades to "less visible", never to broken. */
+const SHADOW_COLOR_RE = /rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b/g
+
+const round2 = (n: number) => Math.round(n * 1000) / 1000
+
+export function darkShadow(css: string, opts: { rim?: boolean } = {}): string {
+  const value = (css ?? '').trim()
+  if (!value || value === 'none') return 'none'
+  const withRim = opts.rim !== false
+
+  let maxAlpha = 0
+  // One pass over every colour in the string — no need to split the
+  // comma-separated layers (which would mean a paren-aware splitter, since
+  // `rgba(…)` contains commas of its own).
+  const recolored = value.replace(SHADOW_COLOR_RE, (match) => {
+    let a: number
+    try {
+      a = chroma(match).alpha()
+    } catch {
+      return match
+    }
+    maxAlpha = Math.max(maxAlpha, a)
+    return `rgba(0,0,0,${round2(1 - Math.pow(1 - a, DARK_ALPHA_GAIN))})`
+  })
+  if (!withRim) return recolored
+
+  // Scaled with the shadow's own weight so the rim reads as part of the same
+  // ramp — an xs whisper and a 2xl lift shouldn't share one outline.
+  const rimAlpha = round2(Math.min(0.12, Math.max(0.03, 0.03 + 0.35 * maxAlpha)))
+  return `0 0 0 1px rgba(255,255,255,${rimAlpha}), ${recolored}`
+}
+
+/** `darkShadow` across a whole ramp — the shape the export and preview want. */
+export function darkShadowMap(shadows: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(shadows).map(([k, v]) => [k, darkShadow(v)]))
+}

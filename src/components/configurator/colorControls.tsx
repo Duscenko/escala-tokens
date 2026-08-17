@@ -682,7 +682,7 @@ function readableInkOn(hex: string): string {
 
 export function ScaleRow({
   scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default',
-  numbersInside = false, joined = false, ariaLabel, selectedIndex, recommendedIndex, onSelect,
+  numbersInside = false, joined = false, ariaLabel, selectedIndex, recommendedIndex, onSelect, checkerboard = false,
 }: {
   scale: Record<number, string>
   baseIndex?: number
@@ -716,6 +716,17 @@ export function ScaleRow({
    *  other caller (Picker Color, AddThemeModal) already relies on — adding
    *  interactivity never changes their rendering. */
   onSelect?: (tone: number, hex: string) => void
+  /** For a translucent scale (Accent-Alpha): paints the SAME `CHECKER` pattern
+   *  `FamilySwatch`'s nav chip and `AlphaHexCell`'s table cells already use
+   *  behind every cell, then layers the tone's real rgba on top — the one
+   *  visual language this app uses for "this is see-through," now consistent
+   *  across the nav chip, the table and this promoted quick-edit ramp. Without
+   *  it a translucent cell painted flat against `bg-app`/`bg-surface` reads as
+   *  just another solid swatch, and — worse — silently lies about the color:
+   *  step 2 of Accent-Alpha is `rgba(88,5,222,0.06)`, which paints as
+   *  near-white on the app's own near-white background, nowhere near what it
+   *  actually renders as once placed over real content. */
+  checkerboard?: boolean
 }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
@@ -752,7 +763,7 @@ export function ScaleRow({
             )}
             <Cell
               {...(onSelect ? { onClick: () => onSelect(k, color), type: 'button' as const } : {})}
-              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full ${corner} flex items-center justify-center overflow-hidden transition-transform ${
+              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full ${corner} relative flex items-center justify-center overflow-hidden transition-transform ${
                 // The anchor ring goes INSET when joined — an offset ring would
                 // punch a gap through the seams the joined variant exists to
                 // close. Tone 9 stays marked either way (see CLAUDE.md).
@@ -769,11 +780,28 @@ export function ScaleRow({
               } ${
                 onSelect ? 'hover:scale-105 cursor-pointer' : ''
               }`}
-              style={{ backgroundColor: color }}
+              style={checkerboard ? undefined : { backgroundColor: color }}
               title={isBase ? `Anchor — tone ${key} — ${color}` : `Tone ${key} — ${color}${isRecommended ? ' · recommended' : ''}`}
               aria-label={onSelect ? `Use tone ${key}${isRecommended ? ' (recommended)' : ''}${isSelected ? ' (selected)' : ''}` : undefined}
               aria-pressed={onSelect ? isSelected : undefined}
             >
+              {checkerboard && (
+                <>
+                  {/* Same two-layer trick as `AlphaHexCell`/`FamilySwatch`: a
+                      checker backdrop, then the real rgba painted on top of it
+                      — never composited into one flat color, so a cell stays
+                      provably translucent instead of a solid guess at what it
+                      "probably" looks like on white. Sized to the cell height,
+                      same ratio the other two callers scale their own swatch
+                      by (~cell-height ÷ 4). */}
+                  <span
+                    className="absolute inset-0"
+                    style={{ ...CHECKER, backgroundSize: numbersInside ? '10px 10px' : thin ? '4px 4px' : '7px 7px' }}
+                    aria-hidden
+                  />
+                  <span className="absolute inset-0" style={{ backgroundColor: color }} aria-hidden />
+                </>
+              )}
               {numbersInside ? (
                 /* The NUMBER only — never "9 Anchor". At 12 cells across the
                    center column the anchor cell has ~29px of room and the word
