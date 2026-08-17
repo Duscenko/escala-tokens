@@ -125,11 +125,23 @@ export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
   const gd = grayDarkScale
   const solid = primaryScale[accessibleSolidTone(primaryScale)] ?? primaryColor
 
+  // Every "· dark" chip below reads `gd` (grayDarkScale) at the SAME tone
+  // numbers the matching "· light" chip reads `g` at — identity, the same
+  // Radix rule every other dark ramp in this app follows (tone 1 = the dark
+  // PAGE, tone 12 = the dark ramp's near-white TEXT step). They used to be
+  // swapped (`fg={gd[1]} bg={gd[12]}` etc.) — text at tone 1 (near-black) ON a
+  // tone-12 (near-white) background — so every "dark" chip in every
+  // architecture's picker rendered as a LIGHT swatch. Verified against the
+  // live computed styles before the fix: the categorical dark chip painted
+  // `rgb(210,207,206)` behind `rgb(18,15,13)` text — a light-gray-on-near-
+  // black-text pair with nothing dark about it. Caught while reviewing
+  // Categorical specifically, but the bug was identical across flat/astryx/
+  // shadcn/categorical/vibrancy — same swap, same fix, everywhere below.
   if (kind === 'flat') {
     return (
       <>
         <PairChip label="text-primary / surface-1 · light" fg={g[12]} bg={g[2]} />
-        <PairChip label="text-primary / surface-1 · dark" fg={gd[1]} bg={gd[11]} />
+        <PairChip label="text-primary / surface-1 · dark" fg={gd[12]} bg={gd[2]} />
         <PairChip label="text-on-brand / action-primary" fg={g[1]} bg={solid} />
       </>
     )
@@ -138,7 +150,7 @@ export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
     return (
       <>
         <PairChip label="text.primary / background.body · light" fg={g[12]} bg={g[1]} />
-        <PairChip label="text.primary / background.body · dark" fg={gd[1]} bg={gd[12]} />
+        <PairChip label="text.primary / background.body · dark" fg={gd[12]} bg={gd[1]} />
         <PairChip label="accent.on-solid / accent.solid" fg={g[1]} bg={solid} />
       </>
     )
@@ -147,7 +159,7 @@ export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
     return (
       <>
         <PairChip label="foreground / background · light" fg={g[12]} bg={g[1]} />
-        <PairChip label="foreground / background · dark" fg={gd[1]} bg={gd[12]} />
+        <PairChip label="foreground / background · dark" fg={gd[12]} bg={gd[1]} />
         <PairChip label="primary-foreground / primary" fg={g[1]} bg={solid} />
       </>
     )
@@ -156,18 +168,18 @@ export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
     return (
       <>
         <PairChip label="content.primary · light → {neutral.12}" fg={g[12]} bg={g[1]} />
-        <PairChip label="content.primary · dark → {neutral-dark.1}" fg={gd[1]} bg={gd[12]} />
+        <PairChip label="content.primary · dark → {neutral-dark.12}" fg={gd[12]} bg={gd[1]} />
         <PairChip label="content.on-action / action.primary" fg={g[1]} bg={solid} />
       </>
     )
   }
   if (kind === 'vibrancy') {
     const secLight = compositeOver(g[12], 0.6, g[1])
-    const secDark = compositeOver(gd[1], 0.6, gd[12])
+    const secDark = compositeOver(gd[12], 0.6, gd[1])
     return (
       <>
         <PairChip label="label-secondary (60%) · light" fg={secLight} bg={g[1]} note="composited" />
-        <PairChip label="label-secondary (60%) · dark" fg={secDark} bg={gd[12]} note="composited" />
+        <PairChip label="label-secondary (60%) · dark" fg={secDark} bg={gd[1]} note="composited" />
         <PairChip label="opaque fallback → {neutral.8}" fg={g[8]} bg={g[1]} note="no backdrop-filter" />
       </>
     )
