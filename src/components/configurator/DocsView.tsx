@@ -56,11 +56,22 @@ export default function DocsView({
 
   return (
     <div className="h-full flex min-h-0">
-      {/* Master list — Overview + the eight foundations. Same column shape
-          Components' catalogue list uses (208px, grouped caption, active
-          highlight), so the two destinations still read as one docs site
-          even though they're separate top-nav entries now. */}
-      <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
+      {/* Master list — Overview + the eight foundations. Shares Components'
+          catalogue list's SHAPE (grouped caption, active highlight), but not
+          its width any more — Components' longest label ("Social Login
+          Button", 19 chars) genuinely needs more room than a foundation name
+          ever does ("Border Radius", the longest here, is 13). Narrowing
+          only this one to what it actually needs frees real width for the
+          article/ramps beside it, which is what the previous shared `w-52`
+          was costing: `w-52` resolves to 234px under this app's 18px root
+          font (13rem × 18, not the 208px a 16px-root reading implies — the
+          same drift `min-w-[40rem]` had on the Overview ramps, see that
+          fix's comment), so this column was ~74px wider than its own
+          content ever asked for. `w-[164px]` is measured, not eyeballed:
+          "Border Radius" renders at 82px, +20px row padding (`px-2.5`×2) +
+          24px rail padding (`p-3`×2) ≈ 126px floor; 164px leaves ~38px of
+          slack for a future longer label without reopening this. */}
+      <div className="w-[164px] flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-fg-faint uppercase tracking-widest px-1">Foundations</span>
           {docsRows().map((row) => {

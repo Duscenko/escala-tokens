@@ -323,7 +323,18 @@ color:      var(--color-content-on-brand);
               <div key={fam.label} className="flex flex-col gap-1.5">
                 <span className="text-[11px] text-fg-muted">{fam.label}</span>
                 <div className="overflow-x-auto">
-                  <div className="flex gap-1.5 min-w-[40rem]">
+                  {/* `min-w-[640px]`, not `min-w-[40rem]` — `:root` sets an
+                      18px base font (see CLAUDE.md's "Root font-size" note),
+                      so `rem` here silently meant 720px, not the 640px the
+                      Tailwind class name implies. That's 80px wider than the
+                      article's own content column ever needed to be: at a
+                      typical 1280px window this forced every ramp to scroll
+                      even though 640px fits inside the actual ~683px
+                      available. Reported as "the ramps don't [get to] resize"
+                      — they were pinned to a floor nobody intended. Literal
+                      px sidesteps the root-size trap the same way the
+                      preview-panel breakpoint fix already does elsewhere. */}
+                  <div className="flex gap-1.5 min-w-[640px]">
                     {Object.entries(fam.scale)
                       .sort(([a], [b]) => Number(a) - Number(b))
                       .map(([tone, hex]) => (
