@@ -104,8 +104,9 @@ function SystemRow({
 // downloading a file was never a reason to hit /api/tokens. ──────────────────
 export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, onOpenSave }: FigmaSyncViewProps = {}) {
   const {
-    projectName, setProjectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
+    projectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
     githubRepo, savedSystems, loadSystem, removeSavedSystem, renameSavedSystem,
+    renameActiveSystem,
   } = useDesignStore()
 
   const [isDeployed] = useState(isLiveEnvironment)
@@ -147,6 +148,47 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
     } else {
       setRenameError(result.error ?? 'Could not rename')
     }
+  }
+
+  // ── Renaming the ACTIVE system ────────────────────────────────────────────
+  // Two entry points, ONE action: the hero's name field and the Active row in
+  // the list below. Both go through `renameActiveSystem`, which also carries
+  // the saved registry entry across — `setProjectName` on its own left the
+  // entry behind under the old slug, which then showed up in this very list as
+  // a second, orphaned system.
+  //
+  // The hero holds a DRAFT and commits on blur/Enter rather than writing on
+  // every keystroke: the sync URL is derived from this name, so per-keystroke
+  // commits meant the URL (and the id of the saved entry) churned through
+  // every half-typed slug.
+  const [nameDraft, setNameDraft] = useState(projectName)
+  const [nameError, setNameError] = useState<string | null>(null)
+  // Re-sync the draft whenever the active system changes underneath us —
+  // loading another system from the list is exactly that.
+  useEffect(() => {
+    setNameDraft(projectName)
+    setNameError(null)
+  }, [projectName])
+
+  function commitName(next: string) {
+    if (next.trim() === projectName) {
+      setNameDraft(projectName)
+      setNameError(null)
+      return true
+    }
+    const result = renameActiveSystem(next)
+    if (result.ok) {
+      setNameError(null)
+      return true
+    }
+    setNameError(result.error ?? 'Could not rename')
+    return false
+  }
+
+  const [renamingActive, setRenamingActive] = useState(false)
+  const [activeDraft, setActiveDraft] = useState('')
+  function submitActiveRename() {
+    if (commitName(activeDraft)) setRenamingActive(false)
   }
 
   // `syncUrl` (not just `isDeployed`) is the real trigger: it changes whenever
@@ -232,20 +274,43 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <input
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                // Commit what the FIELD holds, not the `nameDraft` closure:
+                // this handler captures the value from the render it was
+                // attached in, so a blur landing before React re-renders (a
+                // paste-then-tab, a programmatic blur) would commit a stale
+                // name. `currentTarget.value` is always the real one.
+                onBlur={(e) => commitName(e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') {
+                    // Put the field back before blurring, or onBlur above
+                    // would read the typed value and commit the very edit
+                    // Escape is meant to abandon.
+                    const el = e.currentTarget
+                    setNameDraft(projectName)
+                    setNameError(null)
+                    el.value = projectName
+                    el.blur()
+                  }
+                }}
                 placeholder="Escala"
                 aria-label="Project name"
                 title="Renaming your project changes the sync URL below"
                 className="text-lg font-semibold text-fg bg-transparent outline-none border-b border-transparent hover:border-line-strong focus:border-line-strong min-w-0 flex-shrink"
-                style={{ width: `${Math.max(projectName.length, 4)}ch` }}
+                style={{ width: `${Math.max(nameDraft.length, 4)}ch` }}
               />
               <span className="text-lg font-semibold text-fg-faint flex-shrink-0">· Figma sync</span>
             </div>
-            <p className="flex items-center gap-1.5 text-sm text-fg-faint">
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
-              {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not synced yet'}
-            </p>
+            {nameError ? (
+              <p className="text-sm text-red-500">{nameError}</p>
+            ) : (
+              <p className="flex items-center gap-1.5 text-sm text-fg-faint">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
+                {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not synced yet'}
+              </p>
+            )}
           </div>
         </div>
 
@@ -349,10 +414,41 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
       <div className="flex flex-col gap-2">
         <h3 className="text-xs text-fg-faint uppercase tracking-wide px-1">Your design systems</h3>
         <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface/50 p-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-elevated/60">
-            <span className="text-xs font-medium text-fg truncate flex-1">{projectName || 'Untitled'}</span>
-            <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-emerald-500/15 text-emerald-500">Active</span>
-          </div>
+          {/* The active row renames too — same pencil → input → Save the other
+              rows use. It writes through `renameActiveSystem`, so the hero
+              name, the sync URL and the saved entry all move together. */}
+          {renamingActive ? (
+            <div className="flex flex-col gap-1 px-3 py-2 rounded-lg border border-line-strong bg-app">
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={activeDraft}
+                  onChange={(e) => setActiveDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submitActiveRename()
+                    if (e.key === 'Escape') { setRenamingActive(false); setNameError(null) }
+                  }}
+                  aria-label={`Rename ${projectName}`}
+                  className="flex-1 min-w-0 text-xs text-fg bg-transparent outline-none border-b border-line-strong"
+                />
+                <button onClick={submitActiveRename} className="text-[10px] font-medium text-emerald-500 hover:text-emerald-600 flex-shrink-0">Save</button>
+                <button onClick={() => { setRenamingActive(false); setNameError(null) }} className="text-[10px] text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
+              </div>
+              {nameError && <p className="text-[10px] text-red-500">{nameError}</p>}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 px-3 py-2 rounded-lg bg-elevated/60 group">
+              <span className="text-xs font-medium text-fg truncate flex-1">{projectName || 'Untitled'}</span>
+              <button
+                onClick={() => { setActiveDraft(projectName); setNameError(null); setRenamingActive(true) }}
+                aria-label={`Rename ${projectName}`}
+                className="p-1 rounded text-fg-faint hover:text-fg hover:bg-elevated transition-colors flex-shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              </button>
+              <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-emerald-500/15 text-emerald-500">Active</span>
+            </div>
+          )}
 
           {otherSystems.length === 0 ? (
             <div className="flex items-center justify-between gap-2 px-3 py-2">

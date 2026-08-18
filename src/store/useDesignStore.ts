@@ -775,6 +775,13 @@ interface DesignStore {
   // rejects rather than clobbers if that collides with a different entry. A
   // 'github'-sourced id stays pinned to its repo regardless of the new name.
   renameSavedSystem: (id: string, name: string) => { ok: boolean; error?: string }
+  // Renames the ACTIVE system: sets `projectName` AND carries its saved
+  // registry entry along. Both halves matter — `setProjectName` alone moves
+  // the live state only, so the entry keeps its old `local:<slug>` id and
+  // shows up as a SECOND, orphaned system named the old name (and the next
+  // save would overwrite its snapshot with unrelated state). Use this rather
+  // than `setProjectName` anywhere a rename is a deliberate action.
+  renameActiveSystem: (name: string) => { ok: boolean; error?: string }
   startNewSystem: () => void
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
@@ -1109,6 +1116,43 @@ export const useDesignStore = create<DesignStore>()(
           }
           result = { ok: true }
           return { savedSystems: state.savedSystems.map((s) => (s.id === id ? rename(s, newId) : s)) }
+        })
+        return result
+      },
+      // See the interface comment. Same `set`-with-closure shape
+      // `renameSavedSystem` uses (this store has no `get`).
+      renameActiveSystem: (name) => {
+        let result: { ok: boolean; error?: string } = { ok: false, error: 'Could not rename' }
+        set((state) => {
+          const trimmed = name.trim()
+          if (!trimmed) {
+            result = { ok: false, error: 'Name cannot be empty' }
+            return state
+          }
+          if (trimmed === state.projectName) {
+            result = { ok: true }
+            return state
+          }
+          // Same id rule as buildSavedSystemEntry — a GitHub-connected system's
+          // id is pinned to the repo, so only the display name moves there.
+          const localId = (n: string) => `local:${slugify(n) || 'design-system'}`
+          const prevId = state.githubRepo ?? localId(state.projectName)
+          const nextId = state.githubRepo ?? localId(trimmed)
+          if (nextId !== prevId && state.savedSystems.some((s) => s.id === nextId)) {
+            result = { ok: false, error: `A system named "${trimmed}" already exists` }
+            return state
+          }
+          result = { ok: true }
+          return {
+            projectName: trimmed,
+            // No-op when the active system was never saved — there's simply no
+            // entry matching prevId, which is the common case.
+            savedSystems: state.savedSystems.map((s) =>
+              s.id === prevId
+                ? { ...s, id: nextId, name: trimmed, snapshot: { ...s.snapshot, projectName: trimmed } }
+                : s,
+            ),
+          }
         })
         return result
       },
