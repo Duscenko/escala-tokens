@@ -19,7 +19,7 @@ type PublishState = 'idle' | 'publishing' | 'done' | 'error'
 // correct default — FigmaDownloadView has no such effect any more, since
 // downloading a file was never a reason to hit /api/tokens. ──────────────────
 export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncViewProps = {}) {
-  const { projectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt } = useDesignStore()
+  const { projectName, setProjectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt } = useDesignStore()
 
   const [isDeployed] = useState(isLiveEnvironment)
   // Per-system scoped endpoint (re-reads projectName each render so it stays current).
@@ -63,14 +63,34 @@ export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncView
 
       {/* ── Hero — status-first, not the install pitch FigmaDownloadView
           leads with: this screen exists for "is it connected / when did it
-          last sync", so that's the first thing on it. ── */}
+          last sync", so that's the first thing on it.
+          The project name is EDITABLE right here, not just displayed — the
+          sync URL below is `/api/tokens?project=<slugify(projectName)>`
+          (see `syncProjectId()` in `lib/figmaSync.ts`), so this is the one
+          thing on the page that actually changes it. Reported as confusing:
+          the name in the heading ("pink-2 · Figma sync") didn't match what
+          the user was doing (picking a new accent colour) and the URL never
+          moved when the colour did, which read as a bug rather than as "the
+          URL is scoped to something else entirely." Matches the same
+          editable-name pattern ExportView's own "Project" pill already uses,
+          so there's one convention for "rename the project" across the app,
+          not a second one invented here. ── */}
       <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/50 p-6">
         <div className="flex items-center gap-4">
           <FigmaLogo size={44} />
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-fg">
-              <span className="text-fg">{projectName}</span> · Figma sync
-            </h2>
+            <div className="flex items-center gap-1.5">
+              <input
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Escala"
+                aria-label="Project name"
+                title="Renaming your project changes the sync URL below"
+                className="text-lg font-semibold text-fg bg-transparent outline-none border-b border-transparent hover:border-line-strong focus:border-line-strong min-w-0 flex-shrink"
+                style={{ width: `${Math.max(projectName.length, 4)}ch` }}
+              />
+              <span className="text-lg font-semibold text-fg-faint flex-shrink-0">· Figma sync</span>
+            </div>
             <p className="flex items-center gap-1.5 text-sm text-fg-faint">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
               {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not synced yet'}
@@ -85,6 +105,16 @@ export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncView
             <p className="text-sm font-semibold text-fg">Your live sync URL</p>
             <p className="text-xs text-fg-faint leading-relaxed">
               In the plugin&apos;s <span className="text-fg-muted">Live Sync</span> tab, paste this endpoint and hit sync — your latest tokens are already published here.
+            </p>
+            {/* This is the whole "protocol": the URL is a function of the
+                PROJECT NAME above, full stop — never colours, themes, radius,
+                or anything else you edit. Editing a token republishes the
+                SAME URL's contents (see the publish status below); only
+                renaming the project changes which URL that is. Said
+                explicitly here so it reads as "by design" rather than as a
+                stale/broken URL the next time a colour edit doesn't move it. */}
+            <p className="text-[11px] text-fg-faint leading-relaxed">
+              This URL only changes when you rename the project (the field above) — never when you edit colours, themes, or any other token.
             </p>
             <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2 mt-1">
               <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
