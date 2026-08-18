@@ -470,7 +470,12 @@ export default function Configurator() {
     header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Check your connection and live sync URL.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <FigmaSyncView onClose={() => setExportMode(null)} onOpenDownload={() => setExportMode('figma-download')} />
+        <FigmaSyncView
+          onClose={() => setExportMode(null)}
+          onOpenDownload={() => setExportMode('figma-download')}
+          onOpenGithub={() => openExport('github')}
+          onOpenSave={() => openExport('save')}
+        />
       </div>
     )
     centerKey = 'export-figma-sync'

@@ -768,6 +768,13 @@ interface DesignStore {
   upsertSavedSystem: (entry: SavedSystem) => void
   removeSavedSystem: (id: string) => void // local-only; the repository is untouched
   loadSystem: (id: string) => void
+  // Renames a SAVED entry in place — name + snapshot.projectName only, never
+  // the live editor state (the active system renames through its own editable
+  // field, e.g. FigmaSyncView's hero input). A 'local:' id is derived from the
+  // name (see buildSavedSystemEntry), so renaming one changes its id too;
+  // rejects rather than clobbers if that collides with a different entry. A
+  // 'github'-sourced id stays pinned to its repo regardless of the new name.
+  renameSavedSystem: (id: string, name: string) => { ok: boolean; error?: string }
   startNewSystem: () => void
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
@@ -1051,6 +1058,60 @@ export const useDesignStore = create<DesignStore>()(
           // Clone so editing the loaded system never mutates the saved entry.
           return { ...deepClone(sys.snapshot), projectCreated: true }
         }),
+      // Renames a SAVED entry only — see the DesignStore interface comment for
+      // why this never touches live editor state. `set`'s updater form is the
+      // only way to both read current state and compute a result here (this
+      // store is created with `(set) => ({…})`, no `get`), so the result is
+      // captured via closure and returned after `set` resolves.
+      renameSavedSystem: (id, name) => {
+        let result: { ok: boolean; error?: string } = { ok: false, error: 'System not found' }
+        set((state) => {
+          const sys = state.savedSystems.find((s) => s.id === id)
+          if (!sys) return state
+          const trimmed = name.trim()
+          if (!trimmed) {
+            result = { ok: false, error: 'Name cannot be empty' }
+            return state
+          }
+          const rename = (entry: SavedSystem, newId: string): SavedSystem => ({
+            ...entry,
+            id: newId,
+            name: trimmed,
+            snapshot: { ...entry.snapshot, projectName: trimmed },
+          })
+          // GitHub-sourced ids are pinned to the repo (buildSavedSystemEntry's
+          // rule) — only the display name/slug changes, never `id`/`repo`.
+          if (sys.source === 'github') {
+            result = { ok: true }
+            return { savedSystems: state.savedSystems.map((s) => (s.id === id ? rename(s, id) : s)) }
+          }
+          // 'local:' ids are DERIVED from the name, so a rename changes it —
+          // reject rather than silently merge into a different existing entry.
+          const newId = `local:${slugify(trimmed) || 'design-system'}`
+          if (newId !== id) {
+            if (state.savedSystems.some((s) => s.id === newId)) {
+              result = { ok: false, error: `A system named "${trimmed}" already exists` }
+              return state
+            }
+            // The LIVE system owns an id too, whether or not it's been saved
+            // yet (same expression buildSavedSystemEntry/SaveSidePanel use).
+            // Checking only savedSystems missed exactly that case: renaming an
+            // entry to the name of an UNSAVED active system produced a second
+            // record on the active id — it vanished from every "other systems"
+            // list (filtered out as active) while still sitting in storage,
+            // and the next "Save changes" would overwrite its snapshot with
+            // the unrelated live state. Verified reproducible before this guard.
+            const activeId = state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
+            if (newId === activeId) {
+              result = { ok: false, error: `"${trimmed}" is your active design system` }
+              return state
+            }
+          }
+          result = { ok: true }
+          return { savedSystems: state.savedSystems.map((s) => (s.id === id ? rename(s, newId) : s)) }
+        })
+        return result
+      },
       startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true }),
       saveCurrentSystem: () =>
         set((state) => {

@@ -1,16 +1,100 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
+import { useDesignStore, type SavedSystem } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens, syncUrl as buildSyncUrl } from '../../lib/figmaSync'
+import { slugify } from '../../lib/utils'
 import { FigmaLogo, BackToEditor, relativeTime } from './figmaShared'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
   /** Cross-link to the sibling destination — see FigmaDownloadView's own note. */
   onOpenDownload?: () => void
+  /** Opens GitHubConnectView — surfaced as a nudge when unconnected, see below. */
+  onOpenGithub?: () => void
+  /** Opens Save & Share — used only by the systems list's empty state, to
+   *  create/import a system rather than rebuilding that flow here. */
+  onOpenSave?: () => void
 }
 
 type PublishState = 'idle' | 'publishing' | 'done' | 'error'
+
+/** Same beat `useAutoFigmaSync` debounces on — see the publish effect below. */
+const PUBLISH_DEBOUNCE_MS = 1500
+
+// One row in "Your design systems" for a NON-active saved entry — the active
+// one renders inline in the parent instead (just a name + badge, nothing
+// interactive), so this only ever has to handle load/rename/delete.
+function SystemRow({
+  sys, isRenaming, renameValue, renameError,
+  onStartRename, onRenameChange, onRenameSubmit, onRenameCancel,
+  onLoad, isConfirmingDelete, onStartDelete, onConfirmDelete, onCancelDelete,
+}: {
+  sys: SavedSystem
+  isRenaming: boolean
+  renameValue: string
+  renameError: string | null
+  onStartRename: () => void
+  onRenameChange: (v: string) => void
+  onRenameSubmit: () => void
+  onRenameCancel: () => void
+  onLoad: () => void
+  isConfirmingDelete: boolean
+  onStartDelete: () => void
+  onConfirmDelete: () => void
+  onCancelDelete: () => void
+}) {
+  if (isRenaming) {
+    return (
+      <div className="flex flex-col gap-1 px-3 py-2 rounded-lg border border-line-strong bg-app">
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => onRenameChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onRenameSubmit()
+              if (e.key === 'Escape') onRenameCancel()
+            }}
+            aria-label={`Rename ${sys.name}`}
+            className="flex-1 min-w-0 text-xs text-fg bg-transparent outline-none border-b border-line-strong"
+          />
+          <button onClick={onRenameSubmit} className="text-[10px] font-medium text-emerald-500 hover:text-emerald-600 flex-shrink-0">Save</button>
+          <button onClick={onRenameCancel} className="text-[10px] text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
+        </div>
+        {renameError && <p className="text-[10px] text-red-500">{renameError}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-elevated/60 transition-colors group">
+      <button onClick={onLoad} className="flex-1 min-w-0 text-left text-xs text-fg-muted hover:text-fg transition-colors truncate">
+        {sys.name}
+      </button>
+      {!isConfirmingDelete ? (
+        <>
+          {/* `relativeTime` (figmaShared), not a second local formatter: the
+              hero above already prints "Last published 5m ago" with it, and a
+              copied-in variant rendered "5 min ago" one card lower — two
+              vocabularies for one concept on one screen. */}
+          <span className="text-[10px] text-fg-faint flex-shrink-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity">saved {relativeTime(sys.savedAt)}</span>
+          <button onClick={onStartRename} aria-label={`Rename ${sys.name}`} className="p-1 rounded text-fg-faint hover:text-fg hover:bg-elevated transition-colors flex-shrink-0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+          <button onClick={onStartDelete} aria-label={`Remove ${sys.name}`} className="p-1 rounded text-fg-faint hover:text-red-500 hover:bg-elevated transition-colors flex-shrink-0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" /></svg>
+          </button>
+        </>
+      ) : (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[10px] text-fg-faint">Remove?</span>
+          <button onClick={onConfirmDelete} className="text-[10px] font-medium text-red-500 hover:text-red-600 transition-colors">Remove</button>
+          <button onClick={onCancelDelete} className="text-[10px] text-fg-faint hover:text-fg transition-colors">Cancel</button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── Sync status — a RECURRING check, not a procedure. This is the one place
 // that still auto-publishes on mount (moved verbatim from the retired
@@ -18,8 +102,11 @@ type PublishState = 'idle' | 'publishing' | 'done' | 'error'
 // "check my sync status" means, so publishing the instant it opens is the
 // correct default — FigmaDownloadView has no such effect any more, since
 // downloading a file was never a reason to hit /api/tokens. ──────────────────
-export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncViewProps = {}) {
-  const { projectName, setProjectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt } = useDesignStore()
+export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, onOpenSave }: FigmaSyncViewProps = {}) {
+  const {
+    projectName, setProjectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
+    githubRepo, savedSystems, loadSystem, removeSavedSystem, renameSavedSystem,
+  } = useDesignStore()
 
   const [isDeployed] = useState(isLiveEnvironment)
   // Per-system scoped endpoint (re-reads projectName each render so it stays current).
@@ -28,17 +115,81 @@ export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncView
   const [publishState, setPublishState] = useState<PublishState>('idle')
   const [copied, setCopied] = useState(false)
 
+  // ── "Your design systems" — see SystemRow above. Only one row is ever
+  // renaming/confirming a delete at a time, so this lives here rather than
+  // as local state per row (same shape SaveView's SavedSystemsList uses).
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+
+  // Same expression SaveSidePanel already uses to know which saved entry the
+  // live editor state corresponds to (SaveView.tsx) — one rule for "which
+  // system am I on," not a second one invented here.
+  const activeId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
+  const otherSystems = savedSystems.filter((s) => s.id !== activeId)
+
+  function startRename(sys: SavedSystem) {
+    setRenamingId(sys.id)
+    setRenameValue(sys.name)
+    setRenameError(null)
+  }
+  function cancelRename() {
+    setRenamingId(null)
+    setRenameError(null)
+  }
+  function submitRename() {
+    if (!renamingId) return
+    const result = renameSavedSystem(renamingId, renameValue)
+    if (result.ok) {
+      setRenamingId(null)
+      setRenameError(null)
+    } else {
+      setRenameError(result.error ?? 'Could not rename')
+    }
+  }
+
+  // `syncUrl` (not just `isDeployed`) is the real trigger: it changes whenever
+  // the ACTIVE system does — the hero's rename field or the "Your design
+  // systems" list's loadSystem() below — and this screen doesn't remount on
+  // either (same exportMode, same centerKey), so with only `isDeployed` in the
+  // deps this fired once and never noticed a switch.
+  //
+  // But `syncUrl` is derived from `projectName`, which the hero input sets on
+  // every KEYSTROKE — and each distinct slug is its own blob server-side
+  // (`put(\`tokens/<project>.json\`)` in api/tokens.ts). Publishing straight
+  // off the dep change wrote one blob per character typed ("g", "gh", "gho"…),
+  // polluting `?list=1` and, worse, the bare `/api/tokens` fallback, which
+  // serves whichever blob was written LAST to every plugin pinned to that URL.
+  // So: publish immediately on mount (opening this screen IS the status
+  // check), debounce every later change on the same 1.5s beat
+  // `useAutoFigmaSync` already uses for exactly this reason.
+  const publishedOnceRef = useRef(false)
+
   useEffect(() => {
     if (!isDeployed) return
     let cancelled = false
+    // Set synchronously in both branches so the card never claims the PREVIOUS
+    // system's "published" state while a new publish is still pending.
     setPublishState('publishing')
-    publishTokens().then((ok) => {
-      if (!cancelled) setPublishState(ok ? 'done' : 'error')
-    })
+    const run = () => {
+      publishTokens().then((ok) => {
+        if (!cancelled) setPublishState(ok ? 'done' : 'error')
+      })
+    }
+    if (!publishedOnceRef.current) {
+      publishedOnceRef.current = true
+      run()
+      return () => {
+        cancelled = true
+      }
+    }
+    const timer = setTimeout(run, PUBLISH_DEBOUNCE_MS)
     return () => {
       cancelled = true
+      clearTimeout(timer)
     }
-  }, [isDeployed])
+  }, [isDeployed, syncUrl])
 
   function copyUrl() {
     navigator.clipboard.writeText(syncUrl)
@@ -97,6 +248,24 @@ export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncView
             </p>
           </div>
         </div>
+
+        {/* Nudge, not a banner — same weight as the "download the plugin"
+            cross-link below, shown only while there's nothing to lose yet.
+            Sync has no login/session of its own (see `connected` above), so
+            this is the one place in the flow reminding people a system
+            living only in this browser's storage has exactly one copy. Lives
+            inside the identity card, not as a floating sibling — backup
+            status is a fact about THIS system, same as the name and the
+            publish dot above it. */}
+        {onOpenGithub && !githubRepo && (
+          <button
+            onClick={onOpenGithub}
+            className="self-start flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg transition-colors"
+          >
+            Not backed up to a repository — Connect GitHub
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5" /></svg>
+          </button>
+        )}
       </div>
 
       {isDeployed ? (
@@ -168,6 +337,58 @@ export default function FigmaSyncView({ onClose, onOpenDownload }: FigmaSyncView
           </p>
         </div>
       )}
+
+      {/* Managing several systems across several Figma files means the
+          question "which one am I about to paste into THIS file" needs an
+          answer right here, not two screens away in Save & Share. Reuses the
+          same registry/actions that screen's grid does — this is a second
+          VIEW of it, not a second copy. Loading a row re-publishes via the
+          effect above (syncUrl is in its deps), so clicking a system is the
+          whole "get me its info" step: load → auto-publish → copy from the
+          URL field above, which now reflects it. */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs text-fg-faint uppercase tracking-wide px-1">Your design systems</h3>
+        <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface/50 p-2">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-elevated/60">
+            <span className="text-xs font-medium text-fg truncate flex-1">{projectName || 'Untitled'}</span>
+            <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-emerald-500/15 text-emerald-500">Active</span>
+          </div>
+
+          {otherSystems.length === 0 ? (
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <p className="text-[11px] text-fg-faint">
+                {savedSystems.length === 0
+                  ? "You haven't saved this design system yet."
+                  : 'Save another system to switch between them here.'}
+              </p>
+              {onOpenSave && (
+                <button onClick={onOpenSave} className="text-[11px] text-fg-muted hover:text-fg transition-colors flex-shrink-0">
+                  {savedSystems.length === 0 ? 'Save it →' : 'Save & Share →'}
+                </button>
+              )}
+            </div>
+          ) : (
+            otherSystems.map((sys) => (
+              <SystemRow
+                key={sys.id}
+                sys={sys}
+                isRenaming={renamingId === sys.id}
+                renameValue={renameValue}
+                renameError={renamingId === sys.id ? renameError : null}
+                onStartRename={() => startRename(sys)}
+                onRenameChange={setRenameValue}
+                onRenameSubmit={submitRename}
+                onRenameCancel={cancelRename}
+                onLoad={() => loadSystem(sys.id)}
+                isConfirmingDelete={confirmingDeleteId === sys.id}
+                onStartDelete={() => setConfirmingDeleteId(sys.id)}
+                onConfirmDelete={() => { removeSavedSystem(sys.id); setConfirmingDeleteId(null) }}
+                onCancelDelete={() => setConfirmingDeleteId(null)}
+              />
+            ))
+          )}
+        </div>
+      </div>
 
       {onOpenDownload && (
         <button
