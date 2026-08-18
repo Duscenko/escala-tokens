@@ -19,7 +19,8 @@ import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/conf
 type Tab = 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ExportView from '../components/configurator/ExportView'
-import FigmaConnectView from '../components/configurator/FigmaConnectView'
+import FigmaSyncView from '../components/configurator/FigmaSyncView'
+import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsView from '../components/configurator/ComponentsView'
@@ -214,7 +215,7 @@ const GitHubIcon: ComponentType = () => (
   </svg>
 )
 
-type ExportMode = 'code' | 'md' | 'figma' | 'github' | 'save' | null
+type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
 function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string; right?: ReactNode }) {
@@ -465,14 +466,22 @@ export default function Configurator() {
       </div>
     )
     centerKey = 'export-github'
-  } else if (exportMode === 'figma') {
-    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Install the sync plugin and bring your tokens into Figma.' }
+  } else if (exportMode === 'figma-sync') {
+    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Check your connection and live sync URL.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <FigmaConnectView onClose={() => setExportMode(null)} />
+        <FigmaSyncView onClose={() => setExportMode(null)} onOpenDownload={() => setExportMode('figma-download')} />
       </div>
     )
-    centerKey = 'export-figma'
+    centerKey = 'export-figma-sync'
+  } else if (exportMode === 'figma-download') {
+    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Get the plugin and install it in Figma.' }
+    body = (
+      <div className="h-full overflow-y-auto">
+        <FigmaDownloadView onClose={() => setExportMode(null)} onOpenSync={() => setExportMode('figma-sync')} />
+      </div>
+    )
+    centerKey = 'export-figma-download'
   } else if (exportMode === 'md') {
     header = { Icon: DocIcon, title: 'Docs', subtitle: 'Your didactic README — preview, copy or download it.' }
     body = (
@@ -653,7 +662,8 @@ export default function Configurator() {
         nav={navActive}
         onNav={handleNav}
         exportMode={exportMode}
-        onGetFigma={() => openExport('figma')}
+        onOpenSync={() => openExport('figma-sync')}
+        onOpenDownload={() => openExport('figma-download')}
         onExport={openSectionExport}
         exportOpen={sectionExportOpen}
         onMenu={() => openAbout('platform')}
@@ -801,7 +811,7 @@ export default function Configurator() {
               {exportMode === 'save' ? (
                 // Save pairs the share/identity center with the system overview.
                 <SaveSidePanel
-                  onOpenFigma={() => openExport('figma')}
+                  onOpenFigma={() => openExport('figma-sync')}
                   onOpenGithub={() => openExport('github')}
                   onCollapse={() => setPreviewCollapsed(true)}
                 />

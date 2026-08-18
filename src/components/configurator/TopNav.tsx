@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { isLiveEnvironment } from '../../lib/figmaSync'
 import ThemeToggle from './ThemeToggle'
@@ -29,20 +30,27 @@ interface TopNavProps {
   /** Lit nav item, or null in the export/connect views. */
   nav: TopNavKey | null
   onNav: (key: TopNavKey) => void
-  exportMode: 'code' | 'md' | 'figma' | 'github' | 'save' | null
-  onGetFigma: () => void
+  exportMode: 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
+  /** Opens the sync-status screen — connection state, live sync URL,
+   *  auto-sync toggle. The higher-frequency of the two Sync-hub rows (see
+   *  `SyncHubPopover`), which is why the trigger pill itself reads "Sync". */
+  onOpenSync: () => void
+  /** Opens the download-and-install screen — a one-time procedure, split out
+   *  from `onOpenSync` so checking sync status doesn't mean re-scrolling past
+   *  install instructions you finished once already. */
+  onOpenDownload: () => void
   /** Opens the guided export wizard (CSS · Tailwind · Tokens · MD). Lives here,
    *  not in a per-foundation header, because exporting is TRANSVERSAL — it
    *  isn't a property of whichever foundation you happen to be editing, it's
    *  something you reach for from anywhere in the app. */
   onExport: () => void
   /** Whether the export wizard is currently open, for the pill's active state —
-   *  the same convention `exportMode === 'figma'`/`'github'` already uses for
-   *  the pills beside it. */
+   *  the same convention `exportMode === 'figma-sync'/'figma-download'/'github'`
+   *  already uses for the pills beside it. */
   exportOpen?: boolean
   /** Opens the About/corporate drawer (AboutMenu). Always available — it's
    *  reference material, not a project action, so it doesn't wait on
-   *  `projectCreated` the way Plugin/Export do. */
+   *  `projectCreated` the way Sync/Export do. */
   onMenu: () => void
   /** Mirrors the left rail's own collapsed state — when the rail shrinks to
    *  an icon strip, the brand block above it shrinks the same way, so the
@@ -80,14 +88,14 @@ function ExportGlyph() {
   )
 }
 
-// The outline-pill shape for TopNav's secondary action (Plugin) — icon + a
+// The outline-pill shape for TopNav's secondary action (Sync) — icon + a
 // label that hides under `sm`. `rounded-[13px]`, not `rounded-full` — the
 // same proportional squircle every other 9-size (36px) chrome control uses
 // (ThemeToggle, the About button beside it, ColorPrimitives' gear), so the
 // whole action cluster on the right of the bar shares one corner language
 // instead of pills sitting next to circles sitting next to squircles.
 function NavPill({
-  onClick, active, label, title, ariaLabel, children,
+  onClick, active, label, title, ariaLabel, children, ariaHasPopup, ariaExpanded,
 }: {
   onClick: () => void
   active?: boolean
@@ -95,11 +103,15 @@ function NavPill({
   title?: string
   ariaLabel?: string
   children: ReactNode
+  ariaHasPopup?: boolean
+  ariaExpanded?: boolean
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel ?? label}
+      aria-haspopup={ariaHasPopup}
+      aria-expanded={ariaExpanded}
       title={title}
       className={`h-9 px-3.5 rounded-[13px] flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors border ${
         active
@@ -110,6 +122,80 @@ function NavPill({
       {children}
       <span className="hidden sm:inline">{label}</span>
     </button>
+  )
+}
+
+// ── The Sync hub — a compact 2-row popover, same anchor/dismiss contract as
+// HomeActions.tsx's KitsPopover (outside-click + Escape, framer-motion fade+
+// slide). Routes, doesn't do work itself: Sync (check connection status/live
+// URL) and Download (get the plugin, one-time). These used to be three
+// numbered steps stacked on ONE screen (`FigmaConnectView`, retired) that
+// auto-published tokens on every open — including opens where you only
+// wanted to glance at the sync URL. Splitting means checking status doesn't
+// mean re-scrolling past install instructions you finished once already.
+function SyncHubPopover({
+  onClose, onOpenSync, onOpenDownload,
+}: {
+  onClose: () => void
+  onOpenSync: () => void
+  onOpenDownload: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+      transition={{ duration: 0.15 }}
+      className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-line bg-surface shadow-[0_16px_48px_-12px_rgba(0,0,0,0.28)] z-50 overflow-hidden p-1.5"
+      role="dialog"
+      aria-label="Figma sync"
+    >
+      <button
+        onClick={() => { onOpenSync(); onClose() }}
+        className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-elevated/60 transition-colors"
+      >
+        <span className="flex-shrink-0 mt-0.5">
+          <FigmaGlyph />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[13px] font-semibold text-fg">Sync</span>
+          <span className="block text-[11.5px] text-fg-faint leading-relaxed">Connection status and your live sync URL.</span>
+        </span>
+      </button>
+      <button
+        onClick={() => { onOpenDownload(); onClose() }}
+        className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-elevated/60 transition-colors"
+      >
+        <span className="flex-shrink-0 mt-0.5 text-fg-muted" aria-hidden>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
+            <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+          </svg>
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[13px] font-semibold text-fg">Download plugin</span>
+          <span className="block text-[11.5px] text-fg-faint leading-relaxed">Get the .zip and install it in Figma.</span>
+        </span>
+      </button>
+    </motion.div>
   )
 }
 
@@ -166,10 +252,11 @@ export function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onGetFigma, onExport, exportOpen = false,
+  nav, onNav, exportMode, onOpenSync, onOpenDownload, onExport, exportOpen = false,
   onMenu, railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
   const { projectCreated, autoSyncFigma } = useDesignStore()
+  const [syncHubOpen, setSyncHubOpen] = useState(false)
 
   return (
     <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
@@ -216,30 +303,50 @@ export default function TopNav({
         <div className="flex items-center gap-2 flex-shrink-0">
           {projectCreated && (
             <>
-              {/* ONE Figma control, not two. This used to be a "Sync" pill
-                  (publish-on-click, shown only in a live/deployed environment)
-                  standing next to a separate icon-only "Bring to Figma" button
-                  — same glyph twice, whenever both happened to render. They're
-                  merged: one pill, the Figma mark, labelled for what it DOES —
-                  gets you the plugin (`FigmaConnectView`, which auto-publishes
-                  on open) — not what used to be a separate manual-publish
-                  action. The small dot is the only thing that still varies by
-                  environment: it says auto-sync is live, it isn't a second
-                  glyph. */}
-              <NavPill
-                onClick={onGetFigma}
-                active={exportMode === 'figma'}
-                label="Plugin"
-                title="Get the Figma plugin & sync your tokens"
-                ariaLabel="Figma plugin"
-              >
-                <span className="relative inline-flex">
-                  <FigmaGlyph />
-                  {isLiveEnvironment() && autoSyncFigma && (
-                    <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
+              {/* ONE Figma control, one pill — but now it opens a 2-row hub
+                  instead of jumping straight into a screen. It used to go
+                  straight to `FigmaConnectView` (retired — see
+                  `figmaShared.tsx`), which stacked download+import+sync as
+                  three numbered steps on one page and auto-published tokens
+                  on every open, including opens where you only wanted the
+                  sync URL. Split into `FigmaSyncView`/`FigmaDownloadView` —
+                  see `SyncHubPopover` above — because "download the plugin"
+                  is a one-time procedure and "check my sync status" is a
+                  recurring one, and welding them together made the common
+                  case (checking status) pay the cost of re-reading the rare
+                  one (install instructions) every time. Labelled "Sync", not
+                  "Plugin": checking status is the higher-frequency of the
+                  two rows inside the hub, so that's what the trigger itself
+                  advertises. The small dot is unrelated to the hub — it's
+                  the SAME auto-sync-is-live signal it always was, still a
+                  property of the pill regardless of which row you'd open. */}
+              <div className="relative">
+                <NavPill
+                  onClick={() => setSyncHubOpen((v) => !v)}
+                  active={exportMode === 'figma-sync' || exportMode === 'figma-download' || syncHubOpen}
+                  label="Sync"
+                  title="Sync status or download the Figma plugin"
+                  ariaLabel="Figma sync"
+                  ariaHasPopup
+                  ariaExpanded={syncHubOpen}
+                >
+                  <span className="relative inline-flex">
+                    <FigmaGlyph />
+                    {isLiveEnvironment() && autoSyncFigma && (
+                      <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
+                    )}
+                  </span>
+                </NavPill>
+                <AnimatePresence>
+                  {syncHubOpen && (
+                    <SyncHubPopover
+                      onClose={() => setSyncHubOpen(false)}
+                      onOpenSync={onOpenSync}
+                      onOpenDownload={onOpenDownload}
+                    />
                   )}
-                </span>
-              </NavPill>
+                </AnimatePresence>
+              </div>
               {/* Export — the primary CTA now, in both style and position:
                   it took over the filled black pill and the rightmost slot
                   that used to belong to a standalone "Connect" GitHub button.

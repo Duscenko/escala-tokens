@@ -734,8 +734,8 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   200px, transparent over the brand gradient, uppercase group caption + `icon · label` rows
   (active = raised white row in the UI accent). It's fed ONE group — **Categories** (icons
   from `CATEGORY_ICONS` in `Configurator`), straight from `CATEGORIES` — and no global nav
-  and no action block; those live in `TopNav`: **Plugin** (outline pill, Figma glyph →
-  `FigmaConnectView`) and **Export** (the filled black pill — opens `ExportWizard`,
+  and no action block; those live in `TopNav`: **Sync** (outline pill, Figma glyph → a
+  2-row hub, see below) and **Export** (the filled black pill — opens `ExportWizard`,
   transversal, see above). **There is no standalone "Connect" GitHub button any more** —
   it used to sit here too (black pill, rightmost), competing with Export for the same
   "ship this system" slot. GitHub connect is reachable from INSIDE the export wizard
@@ -749,6 +749,39 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   rail, `ComponentsView` owns the 208px master list of that category's components (with the
   catalogue's include checkboxes). Don't fork the rail per section either — pass a
   different `groups` array.
+
+> **The Sync pill opens a hub, not a screen — `download` and `check status` were split
+> apart because they're different intents at different frequencies.** Used to be one
+> pill (`Plugin`) → one screen (`FigmaConnectView`, retired), three numbered steps
+> stacked top to bottom every time: download the plugin, import it into Figma, sync your
+> tokens. It also auto-published tokens the instant it mounted, on EVERY open — including
+> opens where you only wanted to glance at the sync URL or flip the auto-sync toggle.
+> Reported as wanting the flow split so checking status doesn't mean re-scrolling past
+> install steps you finished once already.
+> - **`SyncHubPopover`** (`TopNav.tsx`) is the same anchor/dismiss contract
+>   `HomeActions.tsx`'s `KitsPopover` already uses — outside-click + Escape,
+>   framer-motion fade+slide. Two rows, routes only, does no work itself: **Sync**
+>   (connection status + live sync URL) and **Download plugin** (the .zip + import
+>   instructions). The trigger pill is labelled "Sync", not "Plugin" — checking status
+>   is the higher-frequency of the two, so that's what the label advertises.
+> - **`FigmaSyncView.tsx`** is the one that kept the `useEffect` auto-publish-on-mount —
+>   opening THIS screen is what "check my sync status" means, so publishing the instant
+>   it opens is still the right default. Its hero leads with connection status
+>   (`figmaLastPublishAt` — Figma sync has no login/session identity the way GitHub does,
+>   so "has ever published" IS the connection signal) rather than the install pitch.
+> - **`FigmaDownloadView.tsx`** is Steps 1–2 unchanged, verbatim. **No auto-publish** —
+>   downloading a file was never a reason to hit `/api/tokens`.
+> - **Each screen cross-links to the other** ("Haven't installed the plugin yet? Download
+>   it" / "Already installed? Go to Sync") so landing on the wrong half first doesn't
+>   dead-end anyone — the split trades one linear onboarding path for two focused
+>   screens, and the cross-links are what keep a first-time visitor from getting stuck.
+> - **`figmaShared.tsx`** holds what both screens still need (`FigmaLogo`, `Step` — the
+>   numbered-procedure card Download still uses for its two real steps, `BackToEditor`,
+>   `relativeTime`) so neither view duplicates that markup. `exportMode` gained
+>   `'figma-sync' | 'figma-download'` in place of the old single `'figma'`;
+>   `SaveSidePanel`'s own "Bring to Figma" (`onOpenFigma`) routes to `'figma-sync'` —
+>   that button already sits next to a connection-status dot, so the status screen is
+>   the closer match to its existing intent than the download screen would be.
   - **Variables no longer uses it.** The outer 200px column reserved for foundation
     switching read as wasted width once a foundation's own content (Color's family tree) also
     wanted a left column, and text labels for 9 well-known icons were redundant once the
@@ -838,8 +871,9 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview since it carries its own
   live specimen), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
-  project name), `FigmaConnectView` (opened by TopNav's Plugin pill — download the plugin
-  zip + live-sync guide), or `GitHubConnectView` (opened by the Export wizard's "Connect
+  project name), `FigmaSyncView`/`FigmaDownloadView` (opened by TopNav's Sync pill's
+  2-row hub — connection status/live-sync guide, or the plugin zip + install steps,
+  see the Navigation model's Sync-hub note), or `GitHubConnectView` (opened by the Export wizard's "Connect
   GitHub" card or `SaveSidePanel`'s own button — no standalone TopNav entry point any more,
   see the Navigation model note; a successful push also upserts the system into
   `savedSystems`).
@@ -1214,7 +1248,7 @@ header or a stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaConnectView, GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaSyncView + FigmaDownloadView (figmaShared.tsx), GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
@@ -2080,9 +2114,9 @@ interface ComponentDef {
 - **Per-system scoping (Fase 2)** — each design system publishes to its own scoped key, derived from `slugify(projectName)`. The plugin syncs one system by pasting its scoped URL; switching systems no longer overwrites another's tokens. The plugin names its Figma variable collection after `project`, so different systems land in different collections.
 
 **Publishing flow** (`src/lib/figmaSync.ts` — the single source for POSTing tokens):
-- `syncProjectId()` = `slugify(projectName)`; `syncPath()`/`syncUrl()` build the scoped `/api/tokens?project=<id>` endpoint shown in FigmaConnectView / ExportView / HomeView.
-- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by the **Figma connect view** (auto-publishes on open — reachable from TopNav's **Plugin** pill) and the auto-sync subscription. There used to be a separate manual-publish **"Sync" pill** here too, live-environment-only, which put a second Figma glyph in the bar whenever it and the "Bring to Figma" icon button both rendered — merged into the one **Plugin** pill; publishing now happens by opening the connect view (which auto-publishes) rather than a standalone click-to-push action.
-- `useAutoFigmaSync()` (mounted in `Configurator.tsx`): while `autoSyncFigma` is on, debounce-republishes ~1.5s after edits stop. The change signal is the JSON of `generateTokenJSON()`, so the `figmaLastPublishAt` write can't loop. Toggle lives in `FigmaConnectView`.
+- `syncProjectId()` = `slugify(projectName)`; `syncPath()`/`syncUrl()` build the scoped `/api/tokens?project=<id>` endpoint shown in FigmaSyncView / ExportView / HomeView.
+- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by **`FigmaSyncView`** (auto-publishes on open — reachable from TopNav's **Sync** pill → the "Sync" row of its 2-row hub, see the Navigation model note) and the auto-sync subscription. There used to be a separate manual-publish "Sync" pill here too, live-environment-only, merged into one "Plugin" pill years ago to stop two Figma glyphs rendering in the bar at once — the pill has since split back into a hub (Sync/Download), but publishing is still tied to OPENING the sync screen, never a standalone click-to-push action, and the download screen has no publish call at all.
+- `useAutoFigmaSync()` (mounted in `Configurator.tsx`): while `autoSyncFigma` is on, debounce-republishes ~1.5s after edits stop. The change signal is the JSON of `generateTokenJSON()`, so the `figmaLastPublishAt` write can't loop. Toggle lives in `FigmaSyncView`.
 
 ---
 
@@ -2170,7 +2204,7 @@ npm run bundle:plugin  # → public/scalable-designs-figma-plugin.zip (commit it
 ## What's next (backlog)
 
 - [x] Components: live component previews rendered with user tokens (starter set: buttons, input, badge, toggle, sign-up card — extend `preview/atoms/` with more)
-- [x] Export: "Bring to Figma" — downloadable plugin zip + guided install + auto-publish to `/api/tokens` (`FigmaConnectView`)
+- [x] Export: "Bring to Figma" — downloadable plugin zip + guided install (`FigmaDownloadView`) + auto-publish to `/api/tokens` on open (`FigmaSyncView`), split via TopNav's Sync hub
 - [x] Export: "Save to GitHub" — PAT connect, repo pick/create, push tokens+css+README (`GitHubConnectView` + `lib/github.ts`)
 - [x] Foundations: Opacity / Shadow / Grid / Sizes token tables (`TokenTable` + Step6–9)
 - [x] Color: custom named color families with auto 1–12 scales (`customColors`)

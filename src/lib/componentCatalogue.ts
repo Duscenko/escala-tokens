@@ -964,6 +964,26 @@ export const COMPONENTS: ComponentDef[] = [
 // Mirrors the plugin's "❖ Category" divider pages, in the same order.
 export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation']
 
-// All component keys — used to seed the store so the system ships with every
-// component included by default (the user removes what they don't want).
+// All component keys — the full catalogue, offered alongside the curated
+// default below (see ESSENTIAL_COMPONENT_KEYS) for anyone who wants everything
+// from the start.
 export const COMPONENT_KEYS = COMPONENTS.map((c) => c.key)
+
+// The default selection for a brand-new system: one component per basic UI
+// need, instead of all 58 at once. A first-time export or Figma import should
+// read as a short, reviewable list — not a wall the user has to prune before
+// it means anything. The full catalogue is one click away in the picker; this
+// only changes what a system starts with.
+//
+// Deliberately NOT exhaustive — no variants (CloseButton, StatusBadge…), no
+// navigation beyond Tabs, no advanced form controls (Combobox, Slider…). Add
+// to this list only when it's genuinely a "day one" need for most systems;
+// everything else belongs in the full catalogue, selected on purpose.
+export const ESSENTIAL_COMPONENT_KEYS = [
+  'Button',
+  'Input', 'Select', 'Checkbox', 'Toggle',
+  'Badge',
+  'Card', 'Avatar', 'Modal', 'Tooltip', 'Divider',
+  'Toast',
+  'Tabs',
+] as const

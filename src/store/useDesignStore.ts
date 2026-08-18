@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { COMPONENT_KEYS } from '../lib/componentCatalogue'
+import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
@@ -468,7 +468,11 @@ export function makeDesignDefaults(): DesignSnapshot {
     gradients: makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
-    selectedComponents: [...COMPONENT_KEYS],
+    // A brand-new system starts with the curated essentials, not all 58 — see
+    // ESSENTIAL_COMPONENT_KEYS. Existing systems are untouched: this only runs
+    // for a store with no persisted state at all (migrate() above handles
+    // returning users, and never reaches for this constant).
+    selectedComponents: [...ESSENTIAL_COMPONENT_KEYS],
     completedFoundations: [],
     iconLibrary: 'lucide',
     customIcons: [],

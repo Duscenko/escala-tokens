@@ -52,7 +52,7 @@ function Chevron({ open }: { open: boolean }) {
   )
 }
 
-/** Inline code chip — same treatment FigmaConnectView uses for `manifest.json`. */
+/** Inline code chip — same treatment FigmaDownloadView uses for `manifest.json`. */
 function C({ children }: { children: ReactNode }) {
   return <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted font-mono">{children}</code>
 }

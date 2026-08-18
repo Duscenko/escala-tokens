@@ -591,7 +591,7 @@ export default function ExportWizard({
                         {/* Escala JSON is only useful if you know what reads it — shown
                             regardless of selection so it informs the choice, not just
                             confirms it after the fact. The download is the same asset
-                            FigmaConnectView offers, so there's still one place the plugin
+                            FigmaDownloadView offers, so there's still one place the plugin
                             package is defined, just a second entry point to grab it. */}
                         {isEscala && (
                           <div className="px-3 pb-3 pl-[42px] flex flex-col gap-1.5">
