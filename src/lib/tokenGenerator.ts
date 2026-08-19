@@ -158,11 +158,28 @@ export function generateTokenJSON() {
     const palette = resolveThemePalette(store.themeSources[name], kind, store)
     // Build from scratch (not a spread of the stored map) so only current
     // catalogue roles ship — stale keys from a prior architecture never leak.
+    // The stored map is still READ, per role, as `normalizeThemeValue`'s
+    // `current`: that's what preserves a hand-edited token.
+    //
+    // This used to pass `normalized[role.key]` — the map being built, which is
+    // empty on the very line that fills it, so `current` was ALWAYS undefined
+    // and normalizeThemeValue always fell through to `recHexFor` (the
+    // recommended default). Every manual edit in the Semantics table was
+    // silently discarded at export: the configurator showed the edited colour,
+    // tokens.json (and therefore Figma) carried the default. Reported as
+    // "cambié los tokens en la capa semantic y no se exportó tal cual".
+    //
+    // Reading the stored value does NOT reintroduce the stale-key leak the
+    // comment above guards: only ALL_ROLES keys are ever iterated, and
+    // normalizeThemeValue keeps `current` only when it's a real tone of THIS
+    // theme's resolved scale — a value left over from another palette fails
+    // that check and falls back to the recommendation.
+    const stored = store.themes[name] ?? {}
     const normalized: Record<string, string> = {}
     for (const role of ALL_ROLES) {
       const scale = sourceScaleFor(role, kind, globalScales, palette)
       if (!scale || Object.keys(scale).length === 0) continue
-      const hex = normalizeThemeValue(role, kind, scale, normalized[role.key])
+      const hex = normalizeThemeValue(role, kind, scale, stored[role.key])
       if (hex) normalized[role.key] = hex
     }
     orderedThemes[name] = normalized

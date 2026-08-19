@@ -6,12 +6,16 @@ import { type ComponentType, type Ref } from 'react'
 // action reads the same wherever it sits. `ghost` drops the surface for
 // secondary/destructive entries (Reset).
 export default function HeaderPill({
-  Icon, label, onClick, ghost, buttonRef, title, ...aria
+  Icon, label, onClick, ghost, danger, buttonRef, title, ...aria
 }: {
   Icon: ComponentType
   label: string
   onClick: () => void
   ghost?: boolean
+  /** Armed state for a destructive two-click action (Reset). Recolors in
+   *  place — the pill keeps its geometry so the row doesn't reflow when the
+   *  label changes to "Click to confirm". */
+  danger?: boolean
   buttonRef?: Ref<HTMLButtonElement>
   title?: string
   'aria-haspopup'?: boolean
@@ -29,13 +33,15 @@ export default function HeaderPill({
       // the 40.5px foundation-rail buttons' `rounded-[13.5px]`, scaled to this
       // pill's own h-7 (28px). A full-radius pill next to those squircle
       // buttons read as two different corner languages in the same header row.
-      className={`flex-shrink-0 flex items-center gap-1.5 h-7 px-2.5 rounded-[10px] text-[12px] font-medium text-fg whitespace-nowrap transition-colors ${
-        ghost
-          ? 'hover:bg-elevated'
-          : 'bg-surface border border-line hover:border-line-strong hover:bg-elevated/60'
+      className={`flex-shrink-0 flex items-center gap-1.5 h-7 px-2.5 rounded-[10px] text-[12px] font-medium whitespace-nowrap transition-colors ${
+        danger
+          ? 'bg-red-500/10 border border-red-500/40 text-red-600 dark:text-red-400'
+          : ghost
+            ? 'text-fg hover:bg-elevated'
+            : 'text-fg bg-surface border border-line hover:border-line-strong hover:bg-elevated/60'
       }`}
     >
-      <span className="text-fg-muted flex-shrink-0"><Icon /></span>
+      <span className={`flex-shrink-0 ${danger ? '' : 'text-fg-muted'}`}><Icon /></span>
       {label}
     </button>
   )

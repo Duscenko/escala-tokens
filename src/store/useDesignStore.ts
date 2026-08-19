@@ -120,7 +120,11 @@ export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c73
 // module is deliberately dependency-free, and importing the generator there
 // created an init-order cycle (makeDesignDefaults() runs at import time and
 // found generateColorScale still undefined).
-export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale('#9522e9', 'radix', 0, '#ffffff')
+/** The platform's default accent. Exported so "reset to defaults" and the
+ *  new-system dialog derive their purple from the SAME constant
+ *  `makeDesignDefaults` seeds, instead of each repeating the literal. */
+export const DEFAULT_ACCENT = '#9522e9'
+export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale(DEFAULT_ACCENT, 'radix', 0, '#ffffff')
 // The same ramp's DARK twin, for the same reason: a linked gradient stop is one
 // `tone` reference resolved into BOTH appearances, so a brand-new system's
 // gradients carry a dark version from the first render rather than rendering
@@ -422,7 +426,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     linkStatesToAccent: true,
     pageBackground: '#ffffff',
     darkBackground: '#0c0e12',
-    primaryColor: '#9522e9',
+    primaryColor: DEFAULT_ACCENT,
     primaryScale: {},
     primaryDarkScale: {},
     grayBaseColor: '#6c737f',
@@ -465,7 +469,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     panelBackground: 'solid',
     semanticArchitecture: 'astryx',
     architectureOverrides: {},
-    gradients: makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
+    gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
     savedColors: [],
     // A brand-new system starts with the curated essentials, not all 58 — see
@@ -783,6 +787,22 @@ interface DesignStore {
   // than `setProjectName` anywhere a rename is a deliberate action.
   renameActiveSystem: (name: string) => { ok: boolean; error?: string }
   startNewSystem: () => void
+  // Put every DESIGN foundation back to its default — the purple accent, the
+  // plain light/dark theme pair, Astryx semantics, and every other foundation
+  // `makeDesignDefaults` seeds — while leaving this system's IDENTITY and its
+  // connections alone.
+  //
+  // Deliberately narrower than `startNewSystem`, which also renames the
+  // project back to 'Escala' and drops githubRepo/figmaLastPublishAt. The
+  // Figma sync URL is DERIVED FROM THE PROJECT NAME (figmaSync's
+  // `syncProjectId` slugifies it), so a reset that renamed would silently
+  // repoint the endpoint and leave every installed plugin polling the old
+  // URL — a reset of the colours would read as a broken sync.
+  //
+  // Saved kits survive either way: `savedSystems` isn't part of
+  // `makeDesignDefaults()`, so spreading it can't clear the registry. Same
+  // for `autoSyncFigma` and `projectCreated`, which live outside the factory.
+  resetToDefaults: () => void
   // Save the current token state into the local registry without a GitHub push.
   // Reuses the connected repo's id when present, else a slug of the project name.
   saveCurrentSystem: () => void
@@ -1157,6 +1177,17 @@ export const useDesignStore = create<DesignStore>()(
         return result
       },
       startNewSystem: () => set({ ...makeDesignDefaults(), projectCreated: true }),
+      // See the interface comment for why identity/connection fields are
+      // carried over instead of reset.
+      resetToDefaults: () =>
+        set((state) => ({
+          ...makeDesignDefaults(),
+          projectName: state.projectName,
+          projectDescription: state.projectDescription,
+          githubRepo: state.githubRepo,
+          githubLastPushAt: state.githubLastPushAt,
+          figmaLastPublishAt: state.figmaLastPublishAt,
+        })),
       saveCurrentSystem: () =>
         set((state) => {
           const snapshot = captureSnapshot(state as unknown as DesignSnapshot)
@@ -1491,7 +1522,7 @@ export const useDesignStore = create<DesignStore>()(
           // saved snapshot) that predates the feature.
           const seedGradients = (state: any) => {
             if (!state || typeof state !== 'object') return
-            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients('#9522e9', DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE)
+            if (!Array.isArray(state.gradients)) state.gradients = makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE)
             if (!state.gradientAssignments) state.gradientAssignments = makeDefaultGradientAssignments()
             if (!Array.isArray(state.savedColors)) state.savedColors = []
           }
