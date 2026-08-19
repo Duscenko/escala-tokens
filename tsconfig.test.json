@@ -1,0 +1,40 @@
+{
+  /* The test + tooling project.
+   *
+   * Split from the app for one reason: the app must not be able to reach Node
+   * globals. If tests and `src` shared a project, `types: ["node"]` would leak
+   * `fs`, `process` and `__dirname` into browser code and the compiler would
+   * stop catching the one class of mistake it is best at catching.
+   *
+   * `scripts/` lives here too — the reference generators are Node programs, and
+   * before this they were typechecked by nothing at all.
+   *
+   * Every other option MIRRORS `tsconfig.app.json`. That is deliberate: this
+   * project pulls `src/lib/**` in as a dependency graph, and a stricter setting
+   * here would judge application code by rules the application build does not
+   * apply — failures that are real in one project and absent in the other.
+   */
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/__tests__/**/*.ts", "src/**/*.test.ts", "scripts/**/*.ts", "types/**/*.d.ts", "vitest.config.ts"]
+}

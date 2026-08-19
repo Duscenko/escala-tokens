@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
-  architectureLabel, buildArchitectureView, scaleLookup,
+  architectureLabel, architectureModeLabel, buildArchitectureView, scaleLookup,
   type ArchTokenValue, type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 import {
@@ -858,6 +858,18 @@ export default function Step3_SemanticTokens({
   // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
   // Categorical (one per theme, so "+ Theme" actually grows the table).
   const archModeKeys = archView?.modeKeys ?? ['light', 'dark']
+  /**
+   * The heading for one value column. A PER_THEME architecture's columns ARE
+   * the project's themes, so they take the user's own theme names; a fixed-mode
+   * architecture owns its column names, and only Carbon has keys a reader
+   * cannot decode (`g90` → "Gray 90"). Three call sites below share this — the
+   * header row, the tone-picker sections and the mode editor — and they must
+   * not be able to disagree.
+   */
+  const archModeLabel = (mode: string) =>
+    PER_THEME_ARCHITECTURES.has(semanticArchitecture)
+      ? themeDisplayName(mode)
+      : architectureModeLabel(semanticArchitecture, mode)
   const archGridStyle: React.CSSProperties = {
     // Last track = the edit toggle, mirroring the flat matrix's trailing column.
     gridTemplateColumns: `minmax(11rem,1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} 2.75rem`,
@@ -1023,7 +1035,7 @@ export default function Step3_SemanticTokens({
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
                 {archModeKeys.map((mode) => {
                   const isPreviewed = previewTheme === mode
-                  const label = PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode
+                  const label = archModeLabel(mode)
                   // Only a PER_THEME_ARCHITECTURES entry's columns are real
                   // theme columns (one per `themeOrder` entry, same as the
                   // flat matrix) — Vibrancy/Tonal's 'light'/'dark' are fixed
@@ -1410,7 +1422,7 @@ export default function Step3_SemanticTokens({
                 .filter((mode) => parseRef(t.modes[mode]?.label ?? ''))
                 .map((mode) => ({
                   key: mode,
-                  label: PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode,
+                  label: archModeLabel(mode),
                   kind: kindOf(mode),
                   content: (
                     <ArchModeEditor
@@ -1418,7 +1430,7 @@ export default function Step3_SemanticTokens({
                       scales={scales}
                       palette={resolvedPalettes[mode]}
                       kind={kindOf(mode)}
-                      label={PER_THEME_ARCHITECTURES.has(semanticArchitecture) ? themeDisplayName(mode) : mode}
+                      label={archModeLabel(mode)}
                       onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
                     />
                   ),

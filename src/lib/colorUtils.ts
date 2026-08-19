@@ -1,4 +1,11 @@
 import chroma from 'chroma-js'
+// The contrast formulas live in ONE place. `colorUtils` owns ramp construction;
+// `color/apca` owns the metrics. Do not reintroduce `chroma.contrast` here.
+import { wcagRatio, apcaLc } from './color/apca'
+// Every EMITTED hex goes through gamut mapping. `chroma.oklch(...).hex()` clips
+// per channel, which shifts hue (measured: up to 10°) and lightness (up to 0.06)
+// for out-of-gamut steps — see docs/color/P0-BASELINE.md, defect H6.
+import { oklchToHex } from './color/gamut'
 
 // ── Color-scale algorithms ───────────────────────────────────────────────────
 // Each algorithm builds a 12-tone ramp (light → dark) in OKLCH following the
@@ -123,37 +130,56 @@ export const STEP_ROLES: string[] = [
 const BG_WEIGHTS = [0, 0.03, 0.08, 0.16, 0.25, 0.35, 0.49, 0.63, 0.79]
 
 /**
- * Lightness (OKLCH) that hits `target` WCAG contrast against `bg`, searched in
+ * The contrast a text step must achieve, in BOTH metrics.
+ *
+ * WCAG 2.x is the compliance floor — it is what an accessibility audit checks,
+ * and it is not negotiable. APCA `Lc` is the perceptual floor — it is what a
+ * reader actually experiences, and it is the one WCAG gets wrong on dark pages.
+ * A step must clear both; whichever binds first is the one that shapes it.
+ */
+export type TextContrastTarget = { wcag: number; apcaLc: number }
+
+/**
+ * Lightness (OKLCH) whose EMITTED hex hits `target` against `bg`, searched in
  * the direction that moves AWAY from the page: darker for a light theme,
  * lighter for a dark one. Steps 11–12 are defined by their contrast, not by an
  * arbitrary lightness offset — that's what makes text legible on a tinted or
  * near-black page instead of only on pure white.
+ *
+ * The predicate is evaluated on the gamut-mapped 8-bit hex, i.e. on the value
+ * that actually ships. This used to be a continuous-precision WCAG search
+ * followed by a separate quantisation guard loop, because a float that cleared
+ * 4.50 could round to a hex at 4.49. Measuring what we emit removes the whole
+ * class of problem and the guard loop with it — quantisation makes the
+ * predicate a step function, which bisection handles perfectly well.
  */
-function lightnessForContrast(target: number, hue: number, chromaC: number, bg: string, towardDark: boolean): string {
+function lightnessForContrast(
+  target: TextContrastTarget,
+  hue: number,
+  chromaC: number,
+  bg: string,
+  towardDark: boolean,
+): string {
+  const meets = (hex: string) =>
+    wcagRatio(hex, bg) >= target.wcag && Math.abs(apcaLc(hex, bg)) >= target.apcaLc
+
   const bgL = chroma(bg).oklch()[0]
   let lo = towardDark ? 0 : bgL
   let hi = towardDark ? bgL : 1
-  let best = chroma.oklch(towardDark ? 0 : 1, chromaC, hue).hex()
+  // Seed with the extreme — the most contrast this hue and chroma can deliver.
+  // If even that misses the target (a pale hue on a pale page), the search
+  // clamps here rather than returning something arbitrary.
+  let best = oklchToHex(towardDark ? 0 : 1, chromaC, hue)
   for (let i = 0; i < 24; i++) {
     const mid = (lo + hi) / 2
-    const candidate = chroma.oklch(mid, chromaC, hue)
-    const ratio = chroma.contrast(candidate, bg)
-    if (ratio >= target) {
-      best = candidate.hex()
+    const hex = oklchToHex(mid, chromaC, hue)
+    if (meets(hex)) {
+      best = hex
       // Enough contrast — ease back toward the page for the subtler value.
       if (towardDark) lo = mid
       else hi = mid
     } else if (towardDark) hi = mid
     else lo = mid
-  }
-  // The search runs in continuous OKLCH but the result is quantised to an 8-bit
-  // hex, which can shave the ratio just under target (4.49 instead of 4.50).
-  // Nudge until the ACTUAL exported value clears it — the token has to pass,
-  // not the float behind it.
-  let guardL = chroma(best).oklch()[0]
-  for (let i = 0; i < 12 && chroma.contrast(best, bg) < target; i++) {
-    guardL = clamp01(guardL + (towardDark ? -0.01 : 0.01))
-    best = chroma.oklch(guardL, chromaC, hue).hex()
   }
   return best
 }
@@ -241,7 +267,7 @@ function buildScale(
       const linkedC = pageC + (baseC - pageC) * Math.pow(w, 1.15)
       const C = shapedC + (linkedC - shapedC) * chromaLink
       const H = baseH + (spec.hueShift?.(-(1 - w)) ?? 0)
-      out.push(chroma.oklch(clamp01(L), Math.max(0, C), H).hex())
+      out.push(oklchToHex(clamp01(L), Math.max(0, C), H))
       continue
     }
 
@@ -253,24 +279,34 @@ function buildScale(
       // at the floor) across the whole slider.
       const step = 0.045 * (1 + shift * 0.6)
       const H = baseH + (spec.hueShift?.(0.2) ?? 0)
-      out.push(chroma.oklch(clamp01(baseL + dir * step), baseC * spec.darkCmul, H).hex())
+      out.push(oklchToHex(clamp01(baseL + dir * step), baseC * spec.darkCmul, H))
       continue
     }
 
     // ── 11–12: text, defined by CONTRAST rather than a lightness offset, so it
     // stays legible on a tinted or near-black page instead of only on white.
-    // 11 targets WCAG AA (4.5:1); 12 goes near-max for high-contrast copy.
+    //
+    // Each step carries a WCAG target AND an APCA target, and must clear both.
+    // Step 11 used to target WCAG 4.5 alone — and landed there to two decimals,
+    // which is exactly the problem: on a dark page 4.50:1 is around Lc 32,
+    // less than half the Lc 75 that body copy needs. Every semantic role that
+    // points at ".11" inherited that. (docs/color/IMPLEMENTATION-LOG.md, H5.)
+    //
+    //   11 → WCAG 4.5 (AA) + Lc 75 (APCA body text)
+    //   12 → WCAG 12 (near-max) + Lc 90 (APCA preferred body text)
     //
     // The gain is ASYMMETRIC on purpose. Dialing contrast UP should be able to
     // reach AAA, but dialing it DOWN must not quietly ship unreadable text, so
-    // the negative side is much gentler: step 11 bottoms out at 3.5:1 (still
-    // AA-large) instead of the 3.4:1 the old symmetric 0.25 gain allowed, and
-    // tops out at 6.5:1. Step 12's gain is smaller again — its 12:1 baseline is
-    // already near the ceiling, and a target the search can't reach just clamps
-    // (which is what made the old +0.25 end of this slider a no-op).
+    // the negative side is much gentler. The APCA target is additionally
+    // FLOORED, so no slider position can take step 11 below large-text grade
+    // (Lc 60) or step 12 below body-text grade (Lc 75) — a WCAG-only slider had
+    // no way to express that, because 3.5:1 sounds survivable and Lc 20 is not.
     const isMaxTone = i === TONES
     const textGain = shift >= 0 ? (isMaxTone ? 0.18 : 0.45) : (isMaxTone ? 0.15 : 0.22)
-    const target = (isMaxTone ? 12 : 4.5) * (1 + shift * textGain)
+    const gain = 1 + shift * textGain
+    const target: TextContrastTarget = isMaxTone
+      ? { wcag: 12 * gain, apcaLc: Math.max(75, 90 * gain) }
+      : { wcag: 4.5 * gain, apcaLc: Math.max(60, 75 * gain) }
     const C = baseC * (i === TONES ? 0.42 : 0.72)
     const H = baseH + (spec.hueShift?.(i === TONES ? 1 : 0.6) ?? 0)
     out.push(lightnessForContrast(target, H, Math.max(0, C), page, towardDark))
@@ -456,7 +492,7 @@ export function backgroundFromBase(
     const [, c, hRaw] = chroma(baseHex).oklch()
     const h = Number.isNaN(hRaw) ? 0 : hRaw
     const spec = neutralTintSpec(tint)[appearance === 'dark' ? 'dark' : 'light']
-    return chroma.oklch(spec.l, Math.min(c * spec.mul, spec.cap), h).hex()
+    return oklchToHex(spec.l, Math.min(c * spec.mul, spec.cap), h)
   } catch {
     return appearance === 'dark' ? '#0c0e12' : '#ffffff'
   }
@@ -536,7 +572,7 @@ export function generateDarkColorScale(
     const pageC = darkBackground ? chroma(darkBackground).oklch()[1] : 0
     const linked = neutralTintSpec(tint).chromaLink > 0
     const baseC = linked ? Math.max(nC * 0.5, pageC) : nC * 0.5
-    base = chroma.oklch(baseL, baseC, nH).hex()
+    base = oklchToHex(baseL, baseC, nH)
   } catch { /* invalid neutral — fall back to the raw hex */ }
   return generateColorScale(base, algorithm, contrastShift, darkBackground, 'dark', tint)
 }
@@ -645,18 +681,31 @@ export function recommendStateColors(brandHex: string): StateColors {
     // Blend the state's own chroma with the brand's so the whole set shares a
     // saturation character without losing each role's recognizable hue.
     const blended = (c + brandC) / 2
-    out[key as keyof StateColors] = chroma.oklch(l, blended, Number.isNaN(h) ? 0 : h).hex()
+    out[key as keyof StateColors] = oklchToHex(l, blended, Number.isNaN(h) ? 0 : h)
   }
   return out
 }
 
+/**
+ * WCAG 2.x contrast ratio.
+ *
+ * SINGLE SOURCE OF TRUTH: the formula lives in `./color/apca.ts` and nowhere
+ * else. This used to call `chroma.contrast` directly, which meant the codebase
+ * carried two independent implementations of the same standard — provably
+ * identical today (verified bit-for-bit over 5 000 random pairs in
+ * `__tests__/no-duplication.test.ts`) but free to drift the moment either
+ * chroma-js or our own module changed.
+ *
+ * The wrapper stays because the name carries meaning at its ~18 call sites.
+ * It is an alias, not a second implementation.
+ */
 export function checkContrast(fg: string, bg: string): number {
-  return chroma.contrast(fg, bg)
+  return wcagRatio(fg, bg)
 }
 
 export function isAccessible(fg: string, bg: string, level: 'AA' | 'AAA' = 'AA'): boolean {
   const contrast = checkContrast(fg, bg)
-  return level === 'AA' ? contrast >= 4.5 : contrast >= 7
+  return level === 'AA' ? contrast >= WCAG_AA : contrast >= WCAG_AAA
 }
 
 /** WCAG 2.x thresholds for `C = (L_max + 0.05) / (L_min + 0.05)`. */
@@ -674,11 +723,30 @@ export const WCAG_AAA = 7
 // colour). Use `solidInkPair` when either can't be guaranteed; this stays for
 // the flat catalogue, which does resolve per-ramp.
 export function accessibleSolidTone(scale: Record<number, string>, start = BASE_TONE): number {
-  for (let t = start; t <= 12; t++) {
+  // The tone NEAREST the anchor whose white label clears BOTH floors.
+  //
+  // This used to walk UP from `start` and stop at the first pass, which encodes
+  // "higher index = darker fill". That is only true of a LIGHT ramp. In a dark
+  // ramp the tones get LIGHTER with index, so the walk never passed and fell
+  // through to 12 — the lightest tone in the scale, i.e. the single worst
+  // choice. Measured: a teal dark solid resolved to #c3ede6, white-on-white at
+  // 1.27:1.
+  //
+  // Searching outward from the anchor is orientation-independent: it finds the
+  // deeper tone in a light ramp and the darker (lower) tone in a dark one,
+  // without either the function or its callers having to know which they hold.
+  const ok = (t: number): boolean => {
     const hex = scale[t]
-    if (hex && checkContrast('#ffffff', hex) >= WCAG_AA) return t
+    return !!hex && checkContrast('#ffffff', hex) >= WCAG_AA && Math.abs(apcaLc('#ffffff', hex)) >= 75
   }
-  return 12
+  if (ok(start)) return start
+  for (let d = 1; d <= 11; d++) {
+    if (start + d <= 12 && ok(start + d)) return start + d
+    if (start - d >= 1 && ok(start - d)) return start - d
+  }
+  // Nothing in the ramp carries white. Return the anchor rather than an
+  // arbitrary extreme — the ink solver is what picks black in that case.
+  return start
 }
 
 /** A solid fill and the ink that is actually legible on it. */
@@ -711,20 +779,43 @@ export function solidInkPair(
   scale: Record<number, string>,
   inks: string[],
   start = BASE_TONE,
-  target = WCAG_AA,
+  target: number | TextContrastTarget = WCAG_AA,
 ): SolidInkPair {
+  // Accepts a bare WCAG number for the ~dozen legacy call sites, or the dual
+  // target. A number is promoted to "WCAG n + APCA body-text", because that is
+  // what the caller meant: every one of these solves ink for a LABEL sitting on
+  // a fill. Solving to WCAG alone is what left `on-error` at 3.55 and several
+  // `on-*` roles clearing AA at Lc 44 — legible on paper, not on screen.
+  const t: TextContrastTarget =
+    typeof target === 'number' ? { wcag: target, apcaLc: 75 } : target
+
   let best: SolidInkPair = { tone: start, ink: 0, contrast: -1 }
-  for (let t = start; t <= 12; t++) {
-    const fill = scale[t]
+  // Rank candidates by how far they are from BOTH floors, so a pair that clears
+  // WCAG while failing APCA never outranks one that is closer to satisfying
+  // both. Without this the fallback (when nothing clears) picks the highest
+  // WCAG ratio, which on a dark fill is exactly the wrong choice.
+  let bestScore = -Infinity
+
+  for (let tone = start; tone <= 12; tone++) {
+    const fill = scale[tone]
     if (!fill) continue
     for (let i = 0; i < inks.length; i++) {
-      let c: number
-      try { c = checkContrast(inks[i], fill) } catch { continue }
-      if (c > best.contrast) best = { tone: t, ink: i, contrast: c }
-      // First tone that clears the bar wins — walking further only darkens the
-      // fill for no accessibility gain, and the ramp's anchor (9) is the tone
-      // the system is actually built around.
-      if (c >= target) return { tone: t, ink: i, contrast: c }
+      let w: number
+      let lc: number
+      try {
+        w = checkContrast(inks[i], fill)
+        lc = Math.abs(apcaLc(inks[i], fill))
+      } catch { continue }
+
+      const score = Math.min(w / t.wcag, lc / t.apcaLc)
+      if (score > bestScore) {
+        bestScore = score
+        best = { tone, ink: i, contrast: w }
+      }
+      // First tone that clears BOTH bars wins — walking further only darkens
+      // the fill for no accessibility gain, and the ramp's anchor (9) is the
+      // tone the system is actually built around.
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w }
     }
   }
   return best
@@ -772,6 +863,10 @@ export function chromeAccent(
 export function readableAccent(hex: string, bg: string): string {
   try {
     let c = chroma(hex)
+    // CONTINUOUS-PRECISION contrast — the one remaining site. `c` is a
+    // chroma.Color being brightened in place, not an emitted token value, so
+    // there is no 8-bit hex to measure yet. (`lightnessForContrast` used to be
+    // the other one; it now measures the emitted hex directly.)
     for (let i = 0; i < 8 && chroma.contrast(c, bg) < 4.5; i++) c = c.brighten(0.4)
     return c.hex()
   } catch {
@@ -785,7 +880,7 @@ export function readableAccent(hex: string, bg: string): string {
 // a dark accent gets light ink automatically, in both light and dark themes.
 export function readableInk(bg: string, darkInk = '#0a0d12', lightInk = '#ffffff'): string {
   try {
-    return chroma.contrast(lightInk, bg) >= chroma.contrast(darkInk, bg) ? lightInk : darkInk
+    return checkContrast(lightInk, bg) >= checkContrast(darkInk, bg) ? lightInk : darkInk
   } catch {
     return lightInk
   }
@@ -832,10 +927,13 @@ export function accessibleVariants(hex: string, limit = 4): ColorSuggestion[] {
   // kept whenever it already satisfies the target at that chroma.
   const build = (target: number, c: number, label: string, note: string): ColorSuggestion => {
     const chromaC = Math.max(0, c)
-    const atBase = chroma.oklch(baseL, chromaC, baseH).hex()
+    const atBase = oklchToHex(baseL, chromaC, baseH)
     const out = checkContrast('#ffffff', atBase) >= target
       ? atBase
-      : lightnessForContrast(target, baseH, chromaC, '#ffffff', true)
+      // `accessibleVariants` suggests a BRAND colour that white text sits on,
+      // not a text step — so the APCA floor here is the label's, and it rides
+      // along with whatever WCAG target the caller asked for.
+      : lightnessForContrast({ wcag: target, apcaLc: 75 }, baseH, chromaC, '#ffffff', true)
     return { hex: out, label, note, contrast: checkContrast('#ffffff', out) }
   }
   const seeds: ColorSuggestion[] = [

@@ -1,0 +1,2080 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`contrastShift baseline > shift -0.5 1`] = `
+{
+  "1": "#ffffff",
+  "10": "#7454c0",
+  "11": "#8870cc",
+  "12": "#403463",
+  "2": "#f8f7fd",
+  "3": "#eeecfa",
+  "4": "#e3dff6",
+  "5": "#d6d0f3",
+  "6": "#c3b9ee",
+  "7": "#b0a0e8",
+  "8": "#9a82e2",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`contrastShift baseline > shift -1 1`] = `
+{
+  "1": "#ffffff",
+  "10": "#7858c5",
+  "11": "#917ad7",
+  "12": "#463969",
+  "2": "#fafafe",
+  "3": "#f3f1fb",
+  "4": "#e9e6f8",
+  "5": "#ddd8f4",
+  "6": "#cac1ef",
+  "7": "#b6a8ea",
+  "8": "#9e88e3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`contrastShift baseline > shift 0 1`] = `
+{
+  "1": "#ffffff",
+  "10": "#7050bc",
+  "11": "#775eb9",
+  "12": "#3b2e5d",
+  "2": "#f4f2fb",
+  "3": "#e8e5f8",
+  "4": "#dcd7f4",
+  "5": "#cec6f0",
+  "6": "#bcafec",
+  "7": "#aa98e7",
+  "8": "#977de1",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`contrastShift baseline > shift 0.5 1`] = `
+{
+  "1": "#ffffff",
+  "10": "#6c4cb7",
+  "11": "#4f338a",
+  "12": "#352857",
+  "2": "#edebf9",
+  "3": "#e0dbf5",
+  "4": "#d3cbf2",
+  "5": "#c5bbee",
+  "6": "#b3a5e9",
+  "7": "#a38fe5",
+  "8": "#9377e0",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`contrastShift baseline > shift 1 1`] = `
+{
+  "1": "#ffffff",
+  "10": "#6947b3",
+  "11": "#000000",
+  "12": "#000000",
+  "2": "#e4e0f6",
+  "3": "#d5cef2",
+  "4": "#c7bdee",
+  "5": "#baadeb",
+  "6": "#aa98e7",
+  "7": "#9c85e3",
+  "8": "#8f71df",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`neutral tint baseline > tint pure 1`] = `
+{
+  "bg": "#fdfdfd",
+  "neutral": "#757575",
+  "scale": {
+    "1": "#fdfdfd",
+    "10": "#686868",
+    "11": "#6c6b6c",
+    "12": "#363536",
+    "2": "#f1f1f1",
+    "3": "#e6e6e6",
+    "4": "#d9d9d9",
+    "5": "#cbcbcb",
+    "6": "#b8b8b8",
+    "7": "#a5a5a5",
+    "8": "#909090",
+    "9": "#757575",
+  },
+}
+`;
+
+exports[`neutral tint baseline > tint subtle 1`] = `
+{
+  "bg": "#fefdff",
+  "neutral": "#726c7f",
+  "scale": {
+    "1": "#fefdff",
+    "10": "#656070",
+    "11": "#6f6a78",
+    "12": "#37343c",
+    "2": "#f2f1f3",
+    "3": "#e6e5e8",
+    "4": "#d9d7dc",
+    "5": "#cac8cf",
+    "6": "#b6b4bd",
+    "7": "#a39fab",
+    "8": "#8d8998",
+    "9": "#726c7f",
+  },
+}
+`;
+
+exports[`neutral tint baseline > tint tinted 1`] = `
+{
+  "bg": "#fbf8ff",
+  "neutral": "#6e6388",
+  "scale": {
+    "1": "#fbf8ff",
+    "10": "#615876",
+    "11": "#6a627d",
+    "12": "#35313f",
+    "2": "#eeecf3",
+    "3": "#e2dfe9",
+    "4": "#d5d2de",
+    "5": "#c6c2d2",
+    "6": "#b2adc2",
+    "7": "#9f98b1",
+    "8": "#89819f",
+    "9": "#6e6388",
+  },
+}
+`;
+
+exports[`neutral tint baseline > tint vivid 1`] = `
+{
+  "bg": "#f8f1ff",
+  "neutral": "#695496",
+  "scale": {
+    "1": "#f8f1ff",
+    "10": "#5b4a81",
+    "11": "#655786",
+    "12": "#332c44",
+    "2": "#e9e5f7",
+    "3": "#ddd8ee",
+    "4": "#d0c9e4",
+    "5": "#c1b9d9",
+    "6": "#ada3ca",
+    "7": "#9a8dbc",
+    "8": "#8474ab",
+    "9": "#695496",
+  },
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > analogous — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e18b23",
+  "11": "#f7c374",
+  "12": "#f6e3b2",
+  "2": "#221412",
+  "3": "#2f1b17",
+  "4": "#40241d",
+  "5": "#522e22",
+  "6": "#6e3c27",
+  "7": "#8b4b28",
+  "8": "#ac5d25",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > analogous — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c36f00",
+  "11": "#916200",
+  "12": "#443302",
+  "2": "#ffefeb",
+  "3": "#ffe4de",
+  "4": "#fed8ce",
+  "5": "#facbbc",
+  "6": "#f5b9a0",
+  "7": "#efa682",
+  "8": "#e6925c",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > ant — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e58731",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#21150c",
+  "3": "#2e1d10",
+  "4": "#3d2614",
+  "5": "#503017",
+  "6": "#6b3f1a",
+  "7": "#874e1b",
+  "8": "#aa6018",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > ant — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c76b00",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fff1e4",
+  "3": "#fee7d6",
+  "4": "#fadbc5",
+  "5": "#f6ceb1",
+  "6": "#f0bc95",
+  "7": "#eaaa78",
+  "8": "#e39454",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > complementary — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e58731",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#0b1b20",
+  "3": "#0b262a",
+  "4": "#093332",
+  "5": "#0c4237",
+  "6": "#285734",
+  "7": "#526822",
+  "8": "#8b7300",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > complementary — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c76b00",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#e5f8ff",
+  "3": "#d4f2f8",
+  "4": "#c1ecea",
+  "5": "#b0e4d5",
+  "6": "#a4d7ae",
+  "7": "#abc57e",
+  "8": "#c0a942",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > default — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e2893b",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#20160e",
+  "3": "#2d1e12",
+  "4": "#3c2716",
+  "5": "#4f3119",
+  "6": "#6a401c",
+  "7": "#874e1d",
+  "8": "#a9601a",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > default — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c46d15",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fff1e7",
+  "3": "#fde7d8",
+  "4": "#f9dcc7",
+  "5": "#f5cfb3",
+  "6": "#efbd97",
+  "7": "#e9aa7a",
+  "8": "#e39555",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > derived page backgrounds 1`] = `
+{
+  "darkBg": "#110f0c",
+  "lightBg": "#fefdfc",
+  "neutral": "#7f766c",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > hueShift — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#df8c32",
+  "11": "#fac276",
+  "12": "#fae2b3",
+  "2": "#211511",
+  "3": "#2f1c17",
+  "4": "#3f251c",
+  "5": "#512e21",
+  "6": "#6d3d25",
+  "7": "#8a4b27",
+  "8": "#ac5d23",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > hueShift — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c07000",
+  "11": "#936100",
+  "12": "#463203",
+  "2": "#fff0eb",
+  "3": "#ffe5dd",
+  "4": "#fdd9cd",
+  "5": "#f9ccbb",
+  "6": "#f4b99f",
+  "7": "#eea781",
+  "8": "#e6925b",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > lightness — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e2893b",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#20160e",
+  "3": "#2d1e12",
+  "4": "#3c2716",
+  "5": "#4f3119",
+  "6": "#6a401c",
+  "7": "#874e1d",
+  "8": "#a9601a",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > lightness — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c46d15",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fff1e7",
+  "3": "#fde7d8",
+  "4": "#f9dcc7",
+  "5": "#f5cfb3",
+  "6": "#efbd97",
+  "7": "#e9aa7a",
+  "8": "#e39555",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > monochromatic — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e58731",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#21150c",
+  "3": "#2e1d10",
+  "4": "#3d2614",
+  "5": "#503017",
+  "6": "#6b3f1a",
+  "7": "#874e1b",
+  "8": "#aa6018",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > monochromatic — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c76b00",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fff1e4",
+  "3": "#fee7d6",
+  "4": "#fadbc5",
+  "5": "#f6ceb1",
+  "6": "#f0bc95",
+  "7": "#eaaa78",
+  "8": "#e39454",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > neutral ramp — dark 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#736f6c",
+  "11": "#cfcbc7",
+  "12": "#e6e4e2",
+  "2": "#151515",
+  "3": "#1c1b1b",
+  "4": "#232221",
+  "5": "#2b2a29",
+  "6": "#373534",
+  "7": "#44413f",
+  "8": "#534f4c",
+  "9": "#67625e",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > neutral ramp — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#716961",
+  "11": "#716b64",
+  "12": "#383531",
+  "2": "#f2f2f1",
+  "3": "#e8e6e5",
+  "4": "#dcdad7",
+  "5": "#cfccc9",
+  "6": "#bdb9b4",
+  "7": "#aca6a0",
+  "8": "#989189",
+  "9": "#7f766c",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > radix — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#df8b43",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#1c1714",
+  "3": "#291f18",
+  "4": "#39281b",
+  "5": "#4c321f",
+  "6": "#674121",
+  "7": "#855022",
+  "8": "#a8611e",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > radix — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#c16f23",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#faf3ee",
+  "3": "#f7e9df",
+  "4": "#f4ddcd",
+  "5": "#f0d0b9",
+  "6": "#ecbe9c",
+  "7": "#e7ab7d",
+  "8": "#e19558",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > saturation — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#f67c00",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#1d1712",
+  "3": "#2a1f16",
+  "4": "#3a2819",
+  "5": "#4d321d",
+  "6": "#684020",
+  "7": "#854f20",
+  "8": "#a8601c",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > saturation — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#ce6500",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fcf2eb",
+  "3": "#f9e8dc",
+  "4": "#f6ddcb",
+  "5": "#f2d0b7",
+  "6": "#edbd9a",
+  "7": "#e8ab7c",
+  "8": "#e29557",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > tailwind — dark family 1`] = `
+{
+  "1": "#110f0c",
+  "10": "#e88525",
+  "11": "#ffbf85",
+  "12": "#ffdfbd",
+  "2": "#20150d",
+  "3": "#2d1d11",
+  "4": "#3d2615",
+  "5": "#4f3118",
+  "6": "#6a3f1b",
+  "7": "#874e1c",
+  "8": "#a96019",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > amber (#d97706) > tailwind — light 1`] = `
+{
+  "1": "#fefdfc",
+  "10": "#ca6900",
+  "11": "#9d5b1e",
+  "12": "#4f2d0f",
+  "2": "#fff1e5",
+  "3": "#fee7d7",
+  "4": "#fadcc6",
+  "5": "#f5cfb2",
+  "6": "#f0bd96",
+  "7": "#eaaa79",
+  "8": "#e39555",
+  "9": "#d97706",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > analogous — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#4d6ef5",
+  "11": "#c3c8ff",
+  "12": "#e8e0ff",
+  "2": "#061822",
+  "3": "#041f2f",
+  "4": "#00283f",
+  "5": "#003152",
+  "6": "#003d70",
+  "7": "#00498f",
+  "8": "#0055b6",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > analogous — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#3751d6",
+  "11": "#625fc5",
+  "12": "#3a2c62",
+  "2": "#def5ff",
+  "3": "#cbebff",
+  "4": "#b5defd",
+  "5": "#9dd0fa",
+  "6": "#7dbcf7",
+  "7": "#5ea6f4",
+  "8": "#3f8bf0",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > ant — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3773f5",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#0d1626",
+  "3": "#111c33",
+  "4": "#142443",
+  "5": "#172c56",
+  "6": "#1b3873",
+  "7": "#1f4492",
+  "8": "#2251b7",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > ant — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#1d56d5",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#e5f2ff",
+  "3": "#d5e6ff",
+  "4": "#c3d9ff",
+  "5": "#aecaff",
+  "6": "#91b5fb",
+  "7": "#74a0f7",
+  "8": "#5387f2",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > complementary — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3773f5",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#1f1305",
+  "3": "#2d1606",
+  "4": "#3d190d",
+  "5": "#4f1a1d",
+  "6": "#631d3f",
+  "7": "#6f276c",
+  "8": "#6b3aa8",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > complementary — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#1d56d5",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#ffeedb",
+  "3": "#ffdeca",
+  "4": "#fdcbbc",
+  "5": "#fab6b5",
+  "6": "#ec99ba",
+  "7": "#d182cb",
+  "8": "#9e6fe2",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > default — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3b75ef",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#0f1623",
+  "3": "#121c31",
+  "4": "#152441",
+  "5": "#182c55",
+  "6": "#1c3872",
+  "7": "#204491",
+  "8": "#2251b6",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > default — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#2158d0",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#e7f2ff",
+  "3": "#d7e6ff",
+  "4": "#c4d9ff",
+  "5": "#afcafd",
+  "6": "#92b6f9",
+  "7": "#75a0f6",
+  "8": "#5387f1",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > derived page backgrounds 1`] = `
+{
+  "darkBg": "#0e0f13",
+  "lightBg": "#fdfdff",
+  "neutral": "#6c727f",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > hueShift — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#4d71ef",
+  "11": "#bfc9ff",
+  "12": "#e4e1ff",
+  "2": "#081822",
+  "3": "#081f2f",
+  "4": "#05273f",
+  "5": "#013052",
+  "6": "#003d70",
+  "7": "#00488f",
+  "8": "#0255b6",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > hueShift — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#3554d0",
+  "11": "#5c60c6",
+  "12": "#362d63",
+  "2": "#e0f5ff",
+  "3": "#ceeaff",
+  "4": "#b8ddfd",
+  "5": "#a1cffa",
+  "6": "#81bbf7",
+  "7": "#63a5f4",
+  "8": "#438bf0",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > lightness — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3b75ef",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#0f1623",
+  "3": "#121c31",
+  "4": "#152441",
+  "5": "#182c55",
+  "6": "#1c3872",
+  "7": "#204491",
+  "8": "#2251b6",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > lightness — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#2158d0",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#e7f2ff",
+  "3": "#d7e6ff",
+  "4": "#c4d9ff",
+  "5": "#afcafd",
+  "6": "#92b6f9",
+  "7": "#75a0f6",
+  "8": "#5387f1",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > monochromatic — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3773f5",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#0d1626",
+  "3": "#111c33",
+  "4": "#142443",
+  "5": "#172c56",
+  "6": "#1b3873",
+  "7": "#1f4492",
+  "8": "#2251b7",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > monochromatic — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#1d56d5",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#e5f2ff",
+  "3": "#d5e6ff",
+  "4": "#c3d9ff",
+  "5": "#aecaff",
+  "6": "#91b5fb",
+  "7": "#74a0f7",
+  "8": "#5387f2",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > neutral ramp — dark 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#6d7076",
+  "11": "#c9ccd1",
+  "12": "#e3e4e7",
+  "2": "#151515",
+  "3": "#1b1b1c",
+  "4": "#212223",
+  "5": "#292a2c",
+  "6": "#343638",
+  "7": "#404245",
+  "8": "#4e5055",
+  "9": "#60636a",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > neutral ramp — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#606570",
+  "11": "#686c76",
+  "12": "#33353a",
+  "2": "#f1f1f2",
+  "3": "#e5e6e8",
+  "4": "#d7d9dc",
+  "5": "#c8cacf",
+  "6": "#b4b7bd",
+  "7": "#9fa3ab",
+  "8": "#898e98",
+  "9": "#6c727f",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > radix — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#4076e9",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#13161c",
+  "3": "#161d2a",
+  "4": "#19243b",
+  "5": "#1c2d4f",
+  "6": "#1f396d",
+  "7": "#22458d",
+  "8": "#2452b4",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > radix — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#265aca",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#ecf2fb",
+  "3": "#dce6f9",
+  "4": "#c9d9f7",
+  "5": "#b3caf6",
+  "6": "#95b6f4",
+  "7": "#77a1f2",
+  "8": "#5588ef",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > saturation — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#246cff",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#11161f",
+  "3": "#141d2c",
+  "4": "#18243d",
+  "5": "#1b2d51",
+  "6": "#1e396f",
+  "7": "#21448f",
+  "8": "#2452b5",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > saturation — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#0037ff",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#ebf2ff",
+  "3": "#dae6fc",
+  "4": "#c7d9fa",
+  "5": "#b2caf8",
+  "6": "#94b6f6",
+  "7": "#76a1f3",
+  "8": "#5487f0",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > tailwind — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#3272fb",
+  "11": "#acceff",
+  "12": "#d2e7ff",
+  "2": "#0e1624",
+  "3": "#111c32",
+  "4": "#152442",
+  "5": "#182c55",
+  "6": "#1c3872",
+  "7": "#1f4491",
+  "8": "#2251b7",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > blue (#2563eb) > tailwind — light 1`] = `
+{
+  "1": "#fdfdff",
+  "10": "#1754db",
+  "11": "#3a67c5",
+  "12": "#1c3364",
+  "2": "#e6f2ff",
+  "3": "#d6e6ff",
+  "4": "#c3d9ff",
+  "5": "#afcafe",
+  "6": "#92b6fa",
+  "7": "#74a0f6",
+  "8": "#5387f2",
+  "9": "#2563eb",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > analogous — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#7b808c",
+  "11": "#cacbd6",
+  "12": "#e4e4ea",
+  "2": "#151617",
+  "3": "#1b1d1f",
+  "4": "#232628",
+  "5": "#2c2f32",
+  "6": "#383d42",
+  "7": "#464b52",
+  "8": "#565c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > analogous — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#616671",
+  "11": "#6a6b75",
+  "12": "#353439",
+  "2": "#eff2f3",
+  "3": "#e3e6e8",
+  "4": "#d5d9dc",
+  "5": "#c6cbcf",
+  "6": "#b2b8bd",
+  "7": "#9ea4ab",
+  "8": "#888f98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > ant — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#79808c",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151618",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f33",
+  "6": "#393d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > ant — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606671",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f0f1f4",
+  "3": "#e4e6e9",
+  "4": "#d6d9dd",
+  "5": "#c8cbd0",
+  "6": "#b3b7be",
+  "7": "#9fa4ac",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > complementary — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#79808c",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#171615",
+  "3": "#1f1d1b",
+  "4": "#282423",
+  "5": "#322d2d",
+  "6": "#413a3d",
+  "7": "#4f484e",
+  "8": "#5d5a64",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > complementary — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606671",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f3f1ef",
+  "3": "#e8e5e3",
+  "4": "#dcd7d6",
+  "5": "#cfc9c8",
+  "6": "#bcb4b7",
+  "7": "#a8a1a8",
+  "8": "#8f8c97",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > default — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#7a808b",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151617",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f33",
+  "6": "#3a3d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > default — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606671",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f0f1f3",
+  "3": "#e4e6e8",
+  "4": "#d7d9dc",
+  "5": "#c8cbcf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ac",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > derived page backgrounds 1`] = `
+{
+  "darkBg": "#0e0f13",
+  "lightBg": "#fcfdff",
+  "neutral": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > hueShift — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#7b808b",
+  "11": "#c9ccd6",
+  "12": "#e4e4ea",
+  "2": "#151617",
+  "3": "#1b1d1f",
+  "4": "#232628",
+  "5": "#2c2f32",
+  "6": "#393d42",
+  "7": "#464b52",
+  "8": "#565c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > hueShift — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#616671",
+  "11": "#6a6b75",
+  "12": "#353439",
+  "2": "#f0f2f3",
+  "3": "#e3e6e8",
+  "4": "#d6d9dc",
+  "5": "#c7cbcf",
+  "6": "#b2b7bd",
+  "7": "#9ea4ab",
+  "8": "#888f98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > lightness — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#7a808b",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151617",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f33",
+  "6": "#3a3d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > lightness — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606671",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f0f1f3",
+  "3": "#e4e6e8",
+  "4": "#d7d9dc",
+  "5": "#c8cbcf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ac",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > monochromatic — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#79808c",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151618",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f33",
+  "6": "#393d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > monochromatic — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606671",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f0f1f4",
+  "3": "#e4e6e9",
+  "4": "#d6d9dd",
+  "5": "#c8cbd0",
+  "6": "#b3b7be",
+  "7": "#9fa4ac",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > neutral ramp — dark 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#6d7075",
+  "11": "#c9ccd0",
+  "12": "#e3e4e7",
+  "2": "#151515",
+  "3": "#1b1b1c",
+  "4": "#212223",
+  "5": "#292a2c",
+  "6": "#343638",
+  "7": "#404245",
+  "8": "#4e5054",
+  "9": "#606369",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > neutral ramp — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606670",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f1f1f2",
+  "3": "#e5e6e7",
+  "4": "#d7d9dc",
+  "5": "#c8cacf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ab",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > radix — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#7a808b",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#161617",
+  "3": "#1c1d1e",
+  "4": "#242527",
+  "5": "#2d2f32",
+  "6": "#3a3d41",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > radix — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#606670",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f1f1f2",
+  "3": "#e5e6e7",
+  "4": "#d7d9dc",
+  "5": "#c8cacf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ab",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > saturation — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#768092",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151617",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f32",
+  "6": "#3a3d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > saturation — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#5c6677",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f1f1f2",
+  "3": "#e4e6e8",
+  "4": "#d7d9dc",
+  "5": "#c8cacf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ab",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > tailwind — dark family 1`] = `
+{
+  "1": "#0e0f13",
+  "10": "#79808c",
+  "11": "#c7ccd6",
+  "12": "#e1e5ea",
+  "2": "#151617",
+  "3": "#1c1d1f",
+  "4": "#242528",
+  "5": "#2d2f33",
+  "6": "#393d42",
+  "7": "#474b52",
+  "8": "#575c65",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > near-neutral (#6c737f) > tailwind — light 1`] = `
+{
+  "1": "#fcfdff",
+  "10": "#5f6672",
+  "11": "#676c75",
+  "12": "#33353a",
+  "2": "#f0f1f3",
+  "3": "#e4e6e9",
+  "4": "#d6d9dd",
+  "5": "#c8cbcf",
+  "6": "#b3b7bd",
+  "7": "#9fa4ac",
+  "8": "#898e98",
+  "9": "#6c737f",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > analogous — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#9563de",
+  "11": "#edbaff",
+  "12": "#ffd8ff",
+  "2": "#101623",
+  "3": "#151c30",
+  "4": "#1c2440",
+  "5": "#252c53",
+  "6": "#34366e",
+  "7": "#45408b",
+  "8": "#5c4bad",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > analogous — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#7b47c0",
+  "11": "#8a55aa",
+  "12": "#4c284f",
+  "2": "#e9f2ff",
+  "3": "#dbe6ff",
+  "4": "#cdd9ff",
+  "5": "#bdc9fb",
+  "6": "#abb3f5",
+  "7": "#9b9bef",
+  "8": "#8d7fe7",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > ant — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8b67e4",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#171323",
+  "3": "#1e192f",
+  "4": "#27203e",
+  "5": "#322750",
+  "6": "#41316b",
+  "7": "#513c87",
+  "8": "#6547a9",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > ant — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#724bc5",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f3efff",
+  "3": "#e8e2ff",
+  "4": "#dbd4fc",
+  "5": "#cec4f8",
+  "6": "#bbadf1",
+  "7": "#aa96eb",
+  "8": "#977ce3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > complementary — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8b67e4",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#191607",
+  "3": "#261c05",
+  "4": "#372003",
+  "5": "#4b2308",
+  "6": "#672522",
+  "7": "#7e2949",
+  "8": "#8c3683",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > complementary — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#724bc5",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f6f3dd",
+  "3": "#f3e5c9",
+  "4": "#f2d4b4",
+  "5": "#f3bfa3",
+  "6": "#f0a199",
+  "7": "#e384a2",
+  "8": "#c46bba",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > default — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8b69df",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#171421",
+  "3": "#1e1a2e",
+  "4": "#27203d",
+  "5": "#32284f",
+  "6": "#41326a",
+  "7": "#513c86",
+  "8": "#6547a9",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > default — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#714dc0",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f3efff",
+  "3": "#e7e2fe",
+  "4": "#dbd4fa",
+  "5": "#cec4f6",
+  "6": "#bbadf0",
+  "7": "#aa97ea",
+  "8": "#967ce3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > derived page backgrounds 1`] = `
+{
+  "darkBg": "#100e13",
+  "lightBg": "#fefdff",
+  "neutral": "#726c7f",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > hueShift — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#9266da",
+  "11": "#e8bcff",
+  "12": "#ffd8ff",
+  "2": "#121522",
+  "3": "#171c2f",
+  "4": "#1f233f",
+  "5": "#282b52",
+  "6": "#36366d",
+  "7": "#47408a",
+  "8": "#5d4aac",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > hueShift — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#784abc",
+  "11": "#8756ad",
+  "12": "#492952",
+  "2": "#ebf2ff",
+  "3": "#dee6ff",
+  "4": "#cfd8fd",
+  "5": "#c0c8fa",
+  "6": "#aeb2f4",
+  "7": "#9e9bee",
+  "8": "#8e7fe6",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > lightness — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8b69df",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#171421",
+  "3": "#1e1a2e",
+  "4": "#27203d",
+  "5": "#32284f",
+  "6": "#41326a",
+  "7": "#513c86",
+  "8": "#6547a9",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > lightness — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#714dc0",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f3efff",
+  "3": "#e7e2fe",
+  "4": "#dbd4fa",
+  "5": "#cec4f6",
+  "6": "#bbadf0",
+  "7": "#aa97ea",
+  "8": "#967ce3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > monochromatic — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8b67e4",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#171323",
+  "3": "#1e192f",
+  "4": "#27203e",
+  "5": "#322750",
+  "6": "#41316b",
+  "7": "#513c87",
+  "8": "#6547a9",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > monochromatic — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#724bc5",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f3efff",
+  "3": "#e8e2ff",
+  "4": "#dbd4fc",
+  "5": "#cec4f8",
+  "6": "#bbadf1",
+  "7": "#aa96eb",
+  "8": "#977ce3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > neutral ramp — dark 1`] = `
+{
+  "1": "#100e13",
+  "10": "#716e77",
+  "11": "#cdcbd3",
+  "12": "#e5e4e8",
+  "2": "#151515",
+  "3": "#1b1b1c",
+  "4": "#222223",
+  "5": "#2a292c",
+  "6": "#363539",
+  "7": "#424046",
+  "8": "#504e56",
+  "9": "#64616b",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > neutral ramp — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#656070",
+  "11": "#6f6a78",
+  "12": "#37343c",
+  "2": "#f2f1f3",
+  "3": "#e6e5e8",
+  "4": "#d9d7dc",
+  "5": "#cac8cf",
+  "6": "#b6b4bd",
+  "7": "#a39fab",
+  "8": "#8d8998",
+  "9": "#726c7f",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > radix — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8a6bda",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#16151b",
+  "3": "#1e1b28",
+  "4": "#272238",
+  "5": "#31294a",
+  "6": "#413366",
+  "7": "#513d83",
+  "8": "#6448a7",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > radix — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#7050bc",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f2f1fa",
+  "3": "#e7e4f6",
+  "4": "#dbd5f3",
+  "5": "#cdc5ef",
+  "6": "#bbafeb",
+  "7": "#a998e6",
+  "8": "#967de1",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > saturation — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#924cff",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#16151d",
+  "3": "#1e1b2a",
+  "4": "#27213a",
+  "5": "#31294c",
+  "6": "#413367",
+  "7": "#513d84",
+  "8": "#6448a8",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > saturation — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#7b15f4",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f2f0fd",
+  "3": "#e7e3f9",
+  "4": "#dbd5f5",
+  "5": "#cdc5f2",
+  "6": "#bbaeec",
+  "7": "#aa97e7",
+  "8": "#967ce1",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > tailwind — dark family 1`] = `
+{
+  "1": "#100e13",
+  "10": "#8c64e8",
+  "11": "#d3c3ff",
+  "12": "#e8e0ff",
+  "2": "#171422",
+  "3": "#1e192e",
+  "4": "#27203e",
+  "5": "#32274f",
+  "6": "#41326a",
+  "7": "#513c87",
+  "8": "#6547a9",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > violet (#7f56d9) > tailwind — light 1`] = `
+{
+  "1": "#fefdff",
+  "10": "#7248ca",
+  "11": "#755cb7",
+  "12": "#3a2e5c",
+  "2": "#f3efff",
+  "3": "#e7e2ff",
+  "4": "#dbd4fb",
+  "5": "#cec4f7",
+  "6": "#bbadf0",
+  "7": "#aa96ea",
+  "8": "#977ce3",
+  "9": "#7f56d9",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > analogous — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff4154",
+  "11": "#ffbca9",
+  "12": "#ffdec8",
+  "2": "#24101b",
+  "3": "#331524",
+  "4": "#44192e",
+  "5": "#591d38",
+  "6": "#792144",
+  "7": "#9b214e",
+  "8": "#c51d55",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > analogous — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#eb0036",
+  "11": "#c23516",
+  "12": "#622000",
+  "2": "#ffeaf9",
+  "3": "#ffddef",
+  "4": "#ffcde4",
+  "5": "#ffbbd6",
+  "6": "#ffa0c0",
+  "7": "#ff84a7",
+  "8": "#ff6087",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > ant — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff3d66",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#280f11",
+  "3": "#371417",
+  "4": "#49181e",
+  "5": "#5e1c25",
+  "6": "#7d1f30",
+  "7": "#9f203a",
+  "8": "#c71c46",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > ant — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e9004b",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffeaeb",
+  "3": "#ffdddf",
+  "4": "#ffcdd0",
+  "5": "#ffbbc0",
+  "6": "#ffa1a9",
+  "7": "#ff8491",
+  "8": "#ff6077",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > complementary — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff3d66",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#001d19",
+  "3": "#00281b",
+  "4": "#063416",
+  "5": "#224000",
+  "6": "#4e4a00",
+  "7": "#785100",
+  "8": "#b14c00",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > complementary — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e9004b",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#dafdf5",
+  "3": "#caf7e3",
+  "4": "#beeec7",
+  "5": "#bde2a2",
+  "6": "#cdca62",
+  "7": "#e6a800",
+  "8": "#fd7500",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > default — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff4368",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#261112",
+  "3": "#351518",
+  "4": "#471a1f",
+  "5": "#5c1e26",
+  "6": "#7c2130",
+  "7": "#9e223a",
+  "8": "#c71e46",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > default — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e5154e",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffebec",
+  "3": "#ffdedf",
+  "4": "#ffced1",
+  "5": "#ffbcc0",
+  "6": "#ffa1a9",
+  "7": "#ff8592",
+  "8": "#ff6178",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > derived page backgrounds 1`] = `
+{
+  "darkBg": "#130e0f",
+  "lightBg": "#fffdfd",
+  "neutral": "#7f6c72",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > hueShift — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff4459",
+  "11": "#ffbcad",
+  "12": "#ffdecd",
+  "2": "#241119",
+  "3": "#331522",
+  "4": "#441a2b",
+  "5": "#5a1e35",
+  "6": "#792141",
+  "7": "#9c224b",
+  "8": "#c51e53",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > hueShift — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e6173e",
+  "11": "#c33423",
+  "12": "#631e00",
+  "2": "#ffebf6",
+  "3": "#ffddec",
+  "4": "#ffcde1",
+  "5": "#ffbbd2",
+  "6": "#ffa1bc",
+  "7": "#ff85a4",
+  "8": "#ff6085",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > lightness — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff4368",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#261112",
+  "3": "#351518",
+  "4": "#471a1f",
+  "5": "#5c1e26",
+  "6": "#7c2130",
+  "7": "#9e223a",
+  "8": "#c71e46",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > lightness — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e5154e",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffebec",
+  "3": "#ffdedf",
+  "4": "#ffced1",
+  "5": "#ffbcc0",
+  "6": "#ffa1a9",
+  "7": "#ff8592",
+  "8": "#ff6178",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > monochromatic — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff3d66",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#280f11",
+  "3": "#371417",
+  "4": "#49181e",
+  "5": "#5e1c25",
+  "6": "#7d1f30",
+  "7": "#9f203a",
+  "8": "#c71c46",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > monochromatic — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e9004b",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffeaeb",
+  "3": "#ffdddf",
+  "4": "#ffcdd0",
+  "5": "#ffbbc0",
+  "6": "#ffa1a9",
+  "7": "#ff8491",
+  "8": "#ff6077",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > neutral ramp — dark 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#766d70",
+  "11": "#d2cacc",
+  "12": "#e8e3e4",
+  "2": "#161515",
+  "3": "#1c1b1b",
+  "4": "#232222",
+  "5": "#2c292a",
+  "6": "#393536",
+  "7": "#464042",
+  "8": "#554e50",
+  "9": "#6a6063",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > neutral ramp — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#706065",
+  "11": "#76696d",
+  "12": "#3b3336",
+  "2": "#f3f1f2",
+  "3": "#e8e5e6",
+  "4": "#dcd7d9",
+  "5": "#cfc8ca",
+  "6": "#bdb4b7",
+  "7": "#ac9fa3",
+  "8": "#98898e",
+  "9": "#7f6c72",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > radix — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff4c6b",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#1f1515",
+  "3": "#2e1a1b",
+  "4": "#411f22",
+  "5": "#572329",
+  "6": "#782732",
+  "7": "#9b283c",
+  "8": "#c52347",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > radix — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#e02651",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#fff0f0",
+  "3": "#ffe2e3",
+  "4": "#ffd2d4",
+  "5": "#ffc0c3",
+  "6": "#ffa5ac",
+  "7": "#ff8894",
+  "8": "#ff6379",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > saturation — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff3c66",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#211314",
+  "3": "#31181a",
+  "4": "#431d21",
+  "5": "#592128",
+  "6": "#7a2532",
+  "7": "#9c263c",
+  "8": "#c52147",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > saturation — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#ee0048",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffeeef",
+  "3": "#ffe1e2",
+  "4": "#ffd1d3",
+  "5": "#ffbec2",
+  "6": "#ffa4ab",
+  "7": "#ff8793",
+  "8": "#ff6278",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > tailwind — dark family 1`] = `
+{
+  "1": "#130e0f",
+  "10": "#ff3d66",
+  "11": "#ffbabe",
+  "12": "#ffdcdd",
+  "2": "#271012",
+  "3": "#361418",
+  "4": "#48191e",
+  "5": "#5d1d26",
+  "6": "#7d2030",
+  "7": "#9e213a",
+  "8": "#c71d46",
+  "9": "#ff0055",
+}
+`;
+
+exports[`ramp golden baseline > vivid-magenta (#ff0055) > tailwind — light 1`] = `
+{
+  "1": "#fffdfd",
+  "10": "#ee0048",
+  "11": "#c32f4b",
+  "12": "#651926",
+  "2": "#ffeaec",
+  "3": "#ffdddf",
+  "4": "#ffcdd0",
+  "5": "#ffbbc0",
+  "6": "#ffa1a9",
+  "7": "#ff8592",
+  "8": "#ff6078",
+  "9": "#ff0055",
+}
+`;

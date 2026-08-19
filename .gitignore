@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Generated colour-audit output — regenerate with `npm run color:report`.
+# Kept out of git deliberately: it is derived from src/lib/color* and would
+# otherwise be a 260 KB file that conflicts on every branch.
+reports/

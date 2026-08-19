@@ -8,6 +8,8 @@
 // render from, so they can never drift apart. The old standalone ButtonPreview
 // renderer was retired in favor of SPECIMENS.Button.
 
+import type { SemanticArchitecture } from '../../lib/semanticArchitectures'
+
 export interface PreviewTokens {
   surface: string // light canvas the buttons sit on (bg-primary ‖ #fff)
   brandSolid: string // accent fill (Primary)
@@ -71,7 +73,11 @@ export interface PreviewTokens {
   // edits as refs in `architectureOverrides`, NOT in `themes`, so `semanticMap`
   // alone can't show them; the per-category specimens read from here to caption
   // (and paint) the exact tokens the user is editing in that architecture.
-  architecture?: 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal'
+  // Imported, NOT restated. This union was written out by hand and then fell a
+  // member behind when Carbon was added — the compiler caught it only once the
+  // build started typechecking again (see docs/color/IMPLEMENTATION-LOG.md,
+  // P6b). Adding an architecture must not require remembering this line.
+  architecture?: SemanticArchitecture
   archTokens?: Record<string, string>
 }
 

@@ -6,6 +6,7 @@
 // their source ramp — the Figma plugin aliases them to primitives by hex.
 import { DEFAULT_GRAY_DARK_SCALE, type ThemePalette } from '../store/useDesignStore'
 import { accessibleSolidTone } from './colorUtils'
+import type { IntentClass } from './color/apca'
 
 // ── Source palettes a token can draw from ──────────────────────────────────
 export type ScaleSource = 'gray' | 'brand' | 'error' | 'warning' | 'success' | 'info'
@@ -56,6 +57,14 @@ export type Role = {
   // Radix ramp model existed, never removed once identity became correct.
   darkScale?: RoleScale
   darkTone?: number
+  /**
+   * What this role is FOR — the contrast thresholds it must satisfy.
+   * REQUIRED, deliberately: the reason `content-secondary` shipped at 3:1 for
+   * months is that nothing forced a role to declare its job, so nothing could
+   * check it. See `color/apca.ts` for the threshold table, and
+   * `docs/color/IMPLEMENTATION-LOG.md` for how it was found.
+   */
+  intent: IntentClass
   contrastAgainst: string | null
   isVariant: boolean
 }
@@ -78,17 +87,31 @@ export const ROLE_GROUPS: RoleGroup[] = [
     label: 'Content',
     description: 'Text and icon foreground colors across light and dark modes',
     roles: [
-      { key: 'content-primary',       label: 'content-primary',       description: 'Primary text — headings, body.',                scale: 'gray',    tone: 11, contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-secondary',     label: 'content-secondary',     description: 'Secondary text — labels, section headings.',    scale: 'gray',    tone: 9,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-tertiary',      label: 'content-tertiary',      description: 'Tertiary text — supporting / paragraph text.',  scale: 'gray',    tone: 8,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-quaternary',    label: 'content-quaternary',    description: 'Quaternary text — captions, footnotes.',        scale: 'gray',    tone: 7,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-inverse',       label: 'content-inverse',       description: 'Text on inverse / solid surfaces.',             scale: 'base',    tone: 1,  darkScale: 'gray', darkTone: 11, contrastAgainst: null, isVariant: false },
-      { key: 'content-disabled',      label: 'content-disabled',      description: 'Disabled text.',                                scale: 'gray',    tone: 6,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-brand',         label: 'content-brand',         description: 'Brand text — links, emphasis.',                 scale: 'brand',   tone: 8,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-brand-hover',   label: 'content-brand-hover',   description: 'Brand text hover state.',                       scale: 'brand',   tone: 9,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-error',         label: 'content-error',         description: 'Error text.',                                   scale: 'error',   tone: 8,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-warning',       label: 'content-warning',       description: 'Warning text.',                                 scale: 'warning', tone: 8,  contrastAgainst: 'background-primary', isVariant: false },
-      { key: 'content-success',       label: 'content-success',       description: 'Success text.',                                 scale: 'success', tone: 8,  contrastAgainst: 'background-primary', isVariant: false },
+      // The two ACCESSIBLE text levels. Everything a reader must be able to
+      // read lives here — headings, body, labels, captions, metadata.
+      // ── Foreground levels: TWO are perceivable, and that is a measured
+      // ceiling, not a preference. In the dark ramp steps 1–10 all sit below
+      // Lc 30 against the page (they are surfaces); text begins at 11. A
+      // four-level text hierarchy built on lightness alone is not achievable
+      // accessibly in any 12-step Radix-shaped scale.
+      //
+      // THE RULE: a token that must be SEEN resolves to step 11 or 12. Tokens
+      // at 9–10 are de-emphasis only and must never carry information. The two
+      // tokens below the fold keep their names — removing them would break
+      // every system in the field — but their descriptions now say so, instead
+      // of promising "supporting text" and "captions", which is how
+      // unreadable copy got shipped.
+      { key: 'content-primary',       label: 'content-primary',       description: 'Primary text — headings, body.',                scale: 'gray',    tone: 12, intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-secondary',     label: 'content-secondary',     description: 'Secondary text — labels, section headings, captions, metadata. The lower of the two accessible text levels.',    scale: 'gray',    tone: 11,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-tertiary',      label: 'content-tertiary',      description: 'NON-ESSENTIAL only — placeholder text, input hints, watermarks. Not captions or metadata: in dark mode this step sits at Lc 27 and cannot be read. Use content-secondary for anything a reader must read.',  scale: 'gray',    tone: 10,  intent: 'decorative', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-quaternary',    label: 'content-quaternary',    description: 'NON-ESSENTIAL only — decorative marks, disabled hints. Never carries information.',        scale: 'gray',    tone: 9,  intent: 'decorative', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-inverse',       label: 'content-inverse',       description: 'Ink on solid fills — brand buttons, status solids. White in both themes: the solid tone is SOLVED to carry it (see recToneFor).',             scale: 'base',    tone: 1,  intent: 'body-text', darkTone: 1, contrastAgainst: 'background-brand-solid', isVariant: false },
+      { key: 'content-disabled',      label: 'content-disabled',      description: 'Disabled text.',                                scale: 'gray',    tone: 6,  intent: 'decorative', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-brand',         label: 'content-brand',         description: 'Brand text — links, emphasis.',                 scale: 'brand',   tone: 11,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-brand-hover',   label: 'content-brand-hover',   description: 'Brand text hover state.',                       scale: 'brand',   tone: 12,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-error',         label: 'content-error',         description: 'Error text.',                                   scale: 'error',   tone: 11,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-warning',       label: 'content-warning',       description: 'Warning text.',                                 scale: 'warning', tone: 11,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'content-success',       label: 'content-success',       description: 'Success text.',                                 scale: 'success', tone: 11,  intent: 'body-text', contrastAgainst: 'background-primary', isVariant: false },
     ],
   },
   {
@@ -96,30 +119,30 @@ export const ROLE_GROUPS: RoleGroup[] = [
     label: 'Background',
     description: 'Surface and fill colors — page, containers and solid actions',
     roles: [
-      { key: 'background-primary',           label: 'background-primary',           description: 'Page background — the base canvas.',      scale: 'base',    tone: 1,  darkScale: 'gray', contrastAgainst: null, isVariant: false },
-      { key: 'background-primary-hover',     label: 'background-primary-hover',     description: 'Hover state for the primary background.', scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-secondary',         label: 'background-secondary',         description: 'Raised / secondary surface — cards.',     scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-secondary-hover',   label: 'background-secondary-hover',   description: 'Hover state for the secondary surface.',  scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'background-tertiary',          label: 'background-tertiary',          description: 'Sunken / nested surface.',                scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'background-quaternary',        label: 'background-quaternary',        description: 'Deepest nested surface.',                 scale: 'gray',    tone: 4,  contrastAgainst: null, isVariant: false },
-      { key: 'background-active',            label: 'background-active',            description: 'Active / selected row surface.',          scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-disabled',          label: 'background-disabled',          description: 'Disabled control fill.',                  scale: 'gray',    tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'background-disabled-subtle',   label: 'background-disabled-subtle',   description: 'Subtle disabled fill.',                   scale: 'gray',    tone: 2,  contrastAgainst: null, isVariant: false },
+      { key: 'background-primary',           label: 'background-primary',           description: 'Page background — the base canvas.',      scale: 'base',    tone: 1,  darkScale: 'gray', intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-primary-hover',     label: 'background-primary-hover',     description: 'Hover state for the primary background.', scale: 'gray',    tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-secondary',         label: 'background-secondary',         description: 'Raised / secondary surface — cards.',     scale: 'gray',    tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-secondary-hover',   label: 'background-secondary-hover',   description: 'Hover state for the secondary surface.',  scale: 'gray',    tone: 3,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-tertiary',          label: 'background-tertiary',          description: 'Sunken / nested surface.',                scale: 'gray',    tone: 3,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-quaternary',        label: 'background-quaternary',        description: 'Deepest nested surface.',                 scale: 'gray',    tone: 4,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-active',            label: 'background-active',            description: 'Active / selected row surface.',          scale: 'gray',    tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-disabled',          label: 'background-disabled',          description: 'Disabled control fill.',                  scale: 'gray',    tone: 3,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-disabled-subtle',   label: 'background-disabled-subtle',   description: 'Subtle disabled fill.',                   scale: 'gray',    tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
       // Deliberately inverted (see recDarkTone's `inverts` list): a modal scrim
       // reads its light tone (12, near-black) as "the dark veil colour" rather
       // than as a step position, so identity would flip it to near-WHITE in
       // dark mode. Mirroring keeps it dark in both appearances.
-      { key: 'background-overlay',           label: 'background-overlay',           description: 'Modal scrim behind dialogs.',            scale: 'gray',    tone: 12, contrastAgainst: null, isVariant: false },
-      { key: 'background-brand-primary',     label: 'background-brand-primary',     description: 'Subtle brand-tinted surface.',            scale: 'brand',   tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-brand-secondary',   label: 'background-brand-secondary',   description: 'Stronger brand-tinted surface.',          scale: 'brand',   tone: 3,  contrastAgainst: null, isVariant: false },
-      { key: 'background-brand-solid',       label: 'background-brand-solid',       description: 'Solid brand fill — primary buttons.',     scale: 'brand',   tone: 8,  contrastAgainst: null, isVariant: false },
-      { key: 'background-brand-solid-hover', label: 'background-brand-solid-hover', description: 'Solid brand fill hover state.',           scale: 'brand',   tone: 9,  contrastAgainst: null, isVariant: false },
-      { key: 'background-error-primary',     label: 'background-error-primary',     description: 'Subtle error surface.',                   scale: 'error',   tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-error-solid',       label: 'background-error-solid',       description: 'Solid error fill.',                       scale: 'error',   tone: 8,  contrastAgainst: null, isVariant: false },
-      { key: 'background-warning-primary',   label: 'background-warning-primary',   description: 'Subtle warning surface.',                 scale: 'warning', tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-warning-solid',     label: 'background-warning-solid',     description: 'Solid warning fill.',                     scale: 'warning', tone: 8,  contrastAgainst: null, isVariant: false },
-      { key: 'background-success-primary',   label: 'background-success-primary',   description: 'Subtle success surface.',                 scale: 'success', tone: 2,  contrastAgainst: null, isVariant: false },
-      { key: 'background-success-solid',     label: 'background-success-solid',     description: 'Solid success fill.',                     scale: 'success', tone: 8,  contrastAgainst: null, isVariant: false },
+      { key: 'background-overlay',           label: 'background-overlay',           description: 'Modal scrim behind dialogs.',            scale: 'gray',    tone: 12, intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-primary',     label: 'background-brand-primary',     description: 'Subtle brand-tinted surface.',            scale: 'brand',   tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-secondary',   label: 'background-brand-secondary',   description: 'Stronger brand-tinted surface.',          scale: 'brand',   tone: 3,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-solid',       label: 'background-brand-solid',       description: 'Solid brand fill — primary buttons.',     scale: 'brand',   tone: 9,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-brand-solid-hover', label: 'background-brand-solid-hover', description: 'Solid brand fill hover state.',           scale: 'brand',   tone: 10,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-error-primary',     label: 'background-error-primary',     description: 'Subtle error surface.',                   scale: 'error',   tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-error-solid',       label: 'background-error-solid',       description: 'Solid error fill.',                       scale: 'error',   tone: 9,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-warning-primary',   label: 'background-warning-primary',   description: 'Subtle warning surface.',                 scale: 'warning', tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-warning-solid',     label: 'background-warning-solid',     description: 'Solid warning fill.',                     scale: 'warning', tone: 9,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-success-primary',   label: 'background-success-primary',   description: 'Subtle success surface.',                 scale: 'success', tone: 2,  intent: 'surface', contrastAgainst: null, isVariant: false },
+      { key: 'background-success-solid',     label: 'background-success-solid',     description: 'Solid success fill.',                     scale: 'success', tone: 9,  intent: 'surface', contrastAgainst: null, isVariant: false },
     ],
   },
   {
@@ -127,14 +150,22 @@ export const ROLE_GROUPS: RoleGroup[] = [
     label: 'Border',
     description: 'Stroke colors for borders, dividers and separators',
     roles: [
-      { key: 'border-primary',        label: 'border-primary',        description: 'Default border — inputs, cards.',        scale: 'gray',  tone: 5, contrastAgainst: null, isVariant: false },
-      { key: 'border-secondary',      label: 'border-secondary',      description: 'Subtle border — dividers.',              scale: 'gray',  tone: 4, contrastAgainst: null, isVariant: false },
-      { key: 'border-tertiary',       label: 'border-tertiary',       description: 'Faint border — nested dividers.',        scale: 'gray',  tone: 3, contrastAgainst: null, isVariant: false },
-      { key: 'border-disabled',       label: 'border-disabled',       description: 'Disabled border.',                       scale: 'gray',  tone: 5, contrastAgainst: null, isVariant: false },
-      { key: 'border-brand',          label: 'border-brand',          description: 'Brand border — focus / active states.',  scale: 'brand', tone: 7, contrastAgainst: null, isVariant: false },
-      { key: 'border-brand-alt',      label: 'border-brand-alt',      description: 'Brand border; turns gray in dark mode.', scale: 'brand', tone: 8, darkScale: 'gray', darkTone: 9, contrastAgainst: null, isVariant: false },
-      { key: 'border-error',          label: 'border-error',          description: 'Error border — invalid inputs.',         scale: 'error', tone: 7, contrastAgainst: null, isVariant: false },
-      { key: 'border-error-subtle',   label: 'border-error-subtle',   description: 'Subtle error border.',                   scale: 'error', tone: 5, contrastAgainst: null, isVariant: false },
+      { key: 'border-primary',        label: 'border-primary',        description: 'Default border — inputs, cards.',        scale: 'gray',  tone: 5, intent: 'decorative', contrastAgainst: null, isVariant: false },
+      { key: 'border-secondary',      label: 'border-secondary',      description: 'Subtle border — dividers.',              scale: 'gray',  tone: 4, intent: 'decorative', contrastAgainst: null, isVariant: false },
+      { key: 'border-tertiary',       label: 'border-tertiary',       description: 'Faint border — nested dividers.',        scale: 'gray',  tone: 3, intent: 'decorative', contrastAgainst: null, isVariant: false },
+      { key: 'border-disabled',       label: 'border-disabled',       description: 'Disabled border.',                       scale: 'gray',  tone: 5, intent: 'decorative', contrastAgainst: null, isVariant: false },
+      // The control boundary — WCAG 1.4.11 (≥3:1) and APCA Lc 45. Added
+      // alongside the curated architectures' `border.strong`, so the flat
+      // catalogue is not the one layer left without a compliant option.
+      // Light gray.9 / dark gray.11 is deliberately NOT identity: in the dark
+      // ramp steps 1–10 are all surfaces (Lc < 30 vs the page) and text starts
+      // at 11, so there is no intermediate strong-border step. gray.10 is the
+      // trap — 3.82:1 satisfies 1.4.11 numerically at Lc 26.7.
+      { key: 'border-strong',         label: 'border-strong',         description: 'Control boundary — inputs, checkboxes, selects.', scale: 'gray',  tone: 9, darkTone: 11, intent: 'ui-component', contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'border-brand',          label: 'border-brand',          description: 'Brand border — focus / active states.',  scale: 'brand', tone: 9, intent: 'ui-component', darkTone: 11, contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'border-brand-alt',      label: 'border-brand-alt',      description: 'Brand border; turns gray in dark mode.', scale: 'brand', tone: 8, darkScale: 'gray', darkTone: 9, intent: 'decorative', contrastAgainst: null, isVariant: false },
+      { key: 'border-error',          label: 'border-error',          description: 'Error border — invalid inputs.',         scale: 'error', tone: 9, intent: 'ui-component', darkTone: 11, contrastAgainst: 'background-primary', isVariant: false },
+      { key: 'border-error-subtle',   label: 'border-error-subtle',   description: 'Subtle error border.',                   scale: 'error', tone: 5, intent: 'decorative', contrastAgainst: null, isVariant: false },
     ],
   },
 ]
@@ -243,10 +274,16 @@ export function recToneFor(role: Role, kind: 'light' | 'dark', scale: Record<num
   // accent's base tone 9 is too light for readable ink, so we deepen it. Doing
   // this in dark too keeps brand buttons legible for every accent, not just
   // dark-enough ones.
-  if (role.key === 'action-primary' || role.key === 'action-primary-hover') {
-    const solid = accessibleSolidTone(scale)
-    return role.key === 'action-primary' ? solid : Math.min(solid + 1, 12)
-  }
+  // Solid fills SOLVE their tone rather than pinning step 9. Step 9 is the
+  // taxonomy's "Solid", but for a bright accent it is too light to carry a
+  // label — which is what left `content-inverse` at 3.19:1 on 16 of 40 seeds.
+  // `accessibleSolidTone` walks up to the first tone whose white label clears
+  // BOTH floors; the hover variant is one deeper.
+  const SOLID_FILLS = new Set(['action-primary', 'background-brand-solid',
+    'background-error-solid', 'background-warning-solid', 'background-success-solid'])
+  const SOLID_HOVERS = new Set(['action-primary-hover', 'background-brand-solid-hover'])
+  if (SOLID_FILLS.has(role.key)) return accessibleSolidTone(scale)
+  if (SOLID_HOVERS.has(role.key)) return Math.min(accessibleSolidTone(scale) + 1, 12)
   if (kind === 'dark') {
     // Explicit dark tone wins (the Content/Background/Border catalogue pins it);
     // legacy roles without one fall back to the derived inversion.

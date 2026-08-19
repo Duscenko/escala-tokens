@@ -21,5 +21,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  /* Tests are NOT part of the shipped bundle, and they need Node globals the
+     app must never have. They are typechecked by ./tsconfig.test.json, which
+     `tsc -b` runs as part of the same build — excluding them here removes them
+     from the app graph, not from the build. */
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts"]
 }
