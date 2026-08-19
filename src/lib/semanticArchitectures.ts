@@ -1664,6 +1664,61 @@ export function buildArchitectureView(
 }
 
 // ── Export dispatcher ────────────────────────────────────────────────────────
+
+/**
+ * Export-only: resolves every plain `{family.tone}` ref in a CURATED
+ * projection (Astryx/shadcn/Categorical) into this THEME's actual hex, using
+ * that theme's own resolved palette — the exact substitution the table
+ * already applies for on-screen DISPLAY (`buildArchitectureView`'s
+ * `lookByTheme`, built the same way here), just baked into the exported
+ * value instead of left symbolic for a downstream reader to redo.
+ *
+ * This exists because 'family' in a projected ref is always the GENERIC
+ * vocabulary token ('neutral', 'accent'…) — `scaleLookup` is what re-points
+ * "neutral" at a custom style theme's own hand-picked family, but that
+ * re-pointing only happens inside the `look` CLOSURE at render time. Once
+ * `curatedRefs` serializes the ref as the plain string `{neutral.12}`, the
+ * fact that THIS theme's "neutral" is actually some other family is gone —
+ * a consumer reading tokens.json (the Figma plugin) can only resolve
+ * "neutral" against the GLOBAL neutral primitive, which is the wrong colour
+ * for a theme that overrides it. Reported as: a style theme (e.g. a custom
+ * "Blue-dark") showing plain gray in Figma instead of its own hue, while the
+ * web's own table renders it correctly right next to the broken import.
+ *
+ * Safe for the built-in light/dark case too — resolving to hex loses nothing
+ * there. A Figma alias to a primitive variable is already matched BY HEX
+ * VALUE (see the plugin's `primByHex`/`archValueRgba`), never by trusting
+ * this ref's text, so a literal and a symbolic ref that resolve to the same
+ * colour produce an identical Figma variable either way.
+ *
+ * Left untouched: Carbon (its `look` never consults a theme palette — always
+ * the global scales, so its refs were never theme-ambiguous) and
+ * Vibrancy/Tonal (no `{family.tone}` ref shape to resolve — see their own
+ * projections).
+ */
+function resolveCuratedForExport(
+  tokens: Record<string, Record<string, Record<string, string>>>,
+  input: ProjectionInput,
+  themeOrder: string[],
+): Record<string, Record<string, Record<string, string>>> {
+  const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
+    Object.fromEntries(themeOrder.map((t) =>
+      [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
+  const REF = /^\{([a-z-]+)\.(\d+)\}$/
+  const out: typeof tokens = {}
+  for (const [group, byKey] of Object.entries(tokens)) {
+    out[group] = {}
+    for (const [key, byTheme] of Object.entries(byKey)) {
+      out[group][key] = {}
+      for (const [theme, ref] of Object.entries(byTheme)) {
+        const m = REF.exec(ref)
+        out[group][key][theme] = m ? (lookByTheme[theme]?.(m[1], Number(m[2])) ?? ref) : ref
+      }
+    }
+  }
+  return out
+}
+
 /** The additive `colors.architecture` payload for tokens.json (null for flat —
  *  the flat shape already ships as colors.semantic/themes). */
 export function projectArchitecture(
@@ -1689,7 +1744,7 @@ export function projectArchitecture(
           if (ref) slot[mode] = ref
         }
       }
-      return { kind, tokens }
+      return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
     }
     case 'astryx': {
       const tokens = projectAstryx(input, themeOrder)
@@ -1701,7 +1756,7 @@ export function projectArchitecture(
           if (ref) slot[mode] = ref
         }
       }
-      return { kind, tokens }
+      return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
     }
     case 'shadcn': {
       const tokens = projectShadcn(input, themeOrder)
@@ -1713,7 +1768,7 @@ export function projectArchitecture(
           if (ref) slot[mode] = ref
         }
       }
-      return { kind, tokens }
+      return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
     }
     case 'carbon': {
       const tokens = projectCarbon(input)
