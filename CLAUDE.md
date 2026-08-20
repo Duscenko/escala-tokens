@@ -689,17 +689,26 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > data. **Verify before you 'fix' this class of report**: a fresh save measured 54 snapshot
 > keys with `typography.fontFamily: Roboto`, all 5 radius steps, 6 spacing, 6 shadow, 9
 > grid, 6 sizes, 3 gradients. The bug was the UI's silence, not the store.
-> - **The save moment names the SCOPE, from a derived list.** The helper text spells out
->   "all 8 foundations: Color · Typography · Border Radius · …" from `FOUNDATION_LABELS`
->   (= `FOUNDATION_DOCS.map(f => f.label)`), never a typed copy — so adding a foundation
->   stays the one-entry change that file promises, and the popover can't claim a scope the
->   Docs destination would contradict.
-> - **A kit row EXPANDS to real values, not a reassuring sentence.** `kitFacts(snapshot)`
->   reads the accent + family count, the font families, radius/spacing steps, the theme
->   list and the icon library straight off that kit's own snapshot, so the facts differ per
->   kit and a kit named after a font can be SEEN to carry it. "Includes typography" would
->   be one more thing to take on faith; `Roboto` sitting on the row is not. Only the open
+> - **A kit row EXPANDS to real values, and that is the ONLY thing that states the scope.**
+>   `kitFacts(snapshot)` reads the accent + family count, the font families, radius/spacing
+>   steps, the theme list and the icon library straight off that kit's own snapshot, so the
+>   facts differ per kit and a kit named after a font can be SEEN to carry it. Only the open
 >   kit's facts are built (`openKit === kit.id ? kitFacts(...) : null`).
+>   **A header sentence saying "saves all 8 foundations: Color · Typography · …" was tried
+>   and REMOVED — don't re-add it.** It's the weaker half of the same fix: a static line
+>   that never changes is one more claim to take on faith, and it said exactly what the
+>   first kit's own open summary proves with real values two rows below. Shipping both was
+>   the over-explaining this file's design principles warn about; the evidence won.
+> - **The FIRST kit starts open, the rest collapsed, with a chevron to toggle.** With the
+>   scope sentence gone this summary is the only thing distinguishing a kit from a palette,
+>   so it can't be something you have to go looking for — but opening all of them would
+>   bury the list. One at a time: the list scrolls inside a 256px box, and a second open kit
+>   pushes the one you just opened's actions out of view. The popover unmounts on close, so
+>   every open re-seeds on the top kit. The chevron LEADS and the colour dot moved inside
+>   the same button behind it — the glyph is what says the row discloses something (the
+>   position `AboutAccordion` and the preview panel's `DocRow` both use), the dot is the
+>   kit's identity, not a control, and putting both in one target means no half of the row
+>   looks clickable without being so.
 > - **Clicking a row expands; it no longer loads.** Two reasons, and the second is the
 >   load-bearing one: the row now owns three destinations (edit · review · sync), so "the
 >   row" can't mean one of them — and loading REPLACES the system on screen, unsaved edits

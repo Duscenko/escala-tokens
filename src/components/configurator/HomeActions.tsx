@@ -21,7 +21,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, DEFAULT_ACCENT, type DesignSnapshot } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
 import { useApplyAccentColor } from '../../lib/colorActions'
-import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import HeaderPill from '../ui/HeaderPill'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
@@ -59,12 +58,6 @@ function themeLabel(key: string): string {
   if (key === 'light' || key === 'dark') return key === 'light' ? 'Light' : 'Dark'
   return key.charAt(0).toUpperCase() + key.slice(1)
 }
-
-/** Every foundation a kit carries, named by the SAME list the Docs destination
- *  documents (`FOUNDATION_DOCS`) rather than a hand-typed copy — so adding a
- *  foundation stays the one-entry change CLAUDE.md promises, and this popover
- *  can't claim a scope the docs would contradict. */
-const FOUNDATION_LABELS = FOUNDATION_DOCS.map((f) => f.label)
 
 /**
  * What a saved kit actually CONTAINS, read straight off its own snapshot.
@@ -157,14 +150,23 @@ function KitsPopover({
   // pre-answered.
   const [name, setName] = useState('')
   const [justSaved, setJustSaved] = useState(false)
-  // Which kit's contents are expanded. One at a time — the list scrolls inside
-  // a 256px box, and two open kits would push the second one's actions out of
-  // view exactly when they're the reason it was opened.
-  const [openKit, setOpenKit] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   // Local kits only (GitHub-backed systems have their own push flow).
+  // Derived BEFORE `openKit` on purpose — that state seeds itself from the
+  // first kit and would otherwise be reading a variable declared below it.
   const kits = savedSystems.filter((s) => s.source !== 'github')
+
+  // Which kit's contents are expanded.
+  //  · **One at a time** — the list scrolls inside a 256px box, and a second
+  //    open kit would push the one you just opened's actions out of view.
+  //  · **The FIRST kit starts open.** With the scope sentence gone (see the
+  //    header), this summary is the only thing that says a kit is the whole
+  //    system rather than a palette — so it has to be visible without being
+  //    hunted for. Opening exactly one keeps the list scannable when there are
+  //    several. The popover unmounts on close, so every open re-seeds here,
+  //    which is the behaviour we want: come back, see the top kit's contents.
+  const [openKit, setOpenKit] = useState<string | null>(() => kits[0]?.id ?? null)
 
   // The scope question only exists to ASK — with one theme there's nothing to
   // choose between, and asking anyway would be a confirmation dialog for a
@@ -304,16 +306,13 @@ function KitsPopover({
             )}
           </div>
         )}
-        {/* Names the SCOPE before the storage detail. A kit has always been the
-            whole system, but the only thing this popover showed was a colour
-            dot and a hex, so it read as a palette manager — spelling the
-            foundations out here is the one place the misconception starts.
-            The list is derived (`FOUNDATION_LABELS`), never typed, so it can't
-            promise a foundation the app no longer has. */}
-        <p className="text-xs text-fg-faint leading-relaxed">
-          Saves the whole system — all {FOUNDATION_LABELS.length} foundations:{' '}
-          <span className="text-fg-muted">{FOUNDATION_LABELS.join(' · ')}</span>.
-        </p>
+        {/* No "saves all 8 foundations: Color · Typography · …" line here.
+            It was tried, and it's the weaker half of the same fix: a static
+            sentence that never changes is a claim to be taken on faith, and it
+            says the same thing the first kit's own OPEN summary below already
+            proves with real values off its snapshot. Showing both was the
+            over-explaining CLAUDE.md's design principles warn about — the
+            evidence wins, the sentence goes. */}
         <p className="text-xs text-fg-faint leading-relaxed">
           {hasMultipleThemes && scope === 'one'
             ? `Every primitive is kept; only the ${themeLabel(chosenTheme)} theme ships — the other themes stay out of this kit. Locally in your browser; reusing a name updates that kit.`
@@ -332,11 +331,6 @@ function KitsPopover({
               return (
               <li key={kit.id} className="flex flex-col rounded-lg">
               <div className="group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-elevated/60 transition-colors">
-                <span
-                  className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0"
-                  style={{ backgroundColor: kit.snapshot?.primaryColor ?? '#888' }}
-                  aria-hidden
-                />
                 {/* Click EXPANDS, it no longer loads.
                     Two reasons, and the second is the load-bearing one:
                     · This row now owns three destinations (edit · review ·
@@ -345,20 +339,43 @@ function KitsPopover({
                       edits and all, and it used to happen on a single
                       unlabelled click on the row you were only trying to read.
                       Making that an explicit "Edit" button is the safer half
-                      of the same change, not a cost of it. */}
+                      of the same change, not a cost of it.
+                    The chevron leads, and the colour dot moves INSIDE this
+                    button behind it: the glyph is what says the row discloses
+                    something (the same leading position `AboutAccordion` and
+                    the preview panel's `DocRow` use), while the dot is the
+                    kit's identity, not a control. Both belong to the one
+                    target, so there's no half of the row that looks clickable
+                    and isn't. */}
                 <button
                   onClick={() => setOpenKit((cur) => (cur === kit.id ? null : kit.id))}
                   aria-expanded={openKit === kit.id}
-                  className="flex-1 min-w-0 text-left"
+                  className="flex-1 min-w-0 flex items-center gap-2 text-left"
                 >
-                  <span className="block text-sm font-medium text-fg truncate">{kit.name}</span>
-                  <span className="block text-[11px] text-fg-faint">
-                    saved {timeAgo(kit.savedAt)}
-                    {/* Each kit publishes to ITS OWN endpoint — see
-                        `activeKitName`. Marking the live one is the whole
-                        point of surfacing sync here: otherwise you can't tell
-                        which kit the plugin in Figma is reading. */}
-                    {isActive && canSync && <span className="text-fg-muted"> · live</span>}
+                  <span className={`flex-shrink-0 transition-colors ${openKit === kit.id ? 'text-fg-muted' : 'text-fg-faint'}`}>
+                    <svg
+                      width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+                      className={`transition-transform duration-200 ${openKit === kit.id ? 'rotate-180' : ''}`}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </span>
+                  <span
+                    className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0"
+                    style={{ backgroundColor: kit.snapshot?.primaryColor ?? '#888' }}
+                    aria-hidden
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium text-fg truncate">{kit.name}</span>
+                    <span className="block text-[11px] text-fg-faint">
+                      saved {timeAgo(kit.savedAt)}
+                      {/* Each kit publishes to ITS OWN endpoint — see
+                          `activeKitName`. Marking the live one is the whole
+                          point of surfacing sync here: otherwise you can't tell
+                          which kit the plugin in Figma is reading. */}
+                      {isActive && canSync && <span className="text-fg-muted"> · live</span>}
+                    </span>
                   </span>
                 </button>
                 {/* Sync shortcut: load this kit AND publish it, without a trip
