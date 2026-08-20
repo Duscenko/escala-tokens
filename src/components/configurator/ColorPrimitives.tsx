@@ -1452,7 +1452,7 @@ export default function ColorPrimitives({
                     title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
                     aria-label={f.label}
                     className={`w-10 h-8 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                      isActive ? 'bg-elevated' : 'hover:bg-elevated/50'
+                      isActive ? 'bg-elevated shadow-sm' : 'hover:bg-elevated/50'
                     }`}
                   >
                     <FamilySwatch family={f} dark={darkPreview} />
@@ -1529,7 +1529,7 @@ export default function ColorPrimitives({
           // information, so it renders its families directly.
           const hideHeader = folder.key === CUSTOM_FOLDER
           return (
-            <div key={groupKey} className="flex flex-col gap-1 pl-2">
+            <div key={groupKey} className="flex flex-col gap-0.5 pl-2">
             {!hideHeader && (
             <button
               type="button"
@@ -1567,10 +1567,8 @@ export default function ColorPrimitives({
                       "select this family" trigger. */}
                   <div
                     aria-current={isActive}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
-                      isActive
-                        ? 'chrome-tab bg-elevated text-fg'
-                        : 'rounded-lg text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
+                      isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                     }`}
                   >
                     <FamilySwatch

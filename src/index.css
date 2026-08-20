@@ -199,32 +199,71 @@ body {
   }
 }
 
-/* Chrome-tab selection — convex top, concave bottom corners. The active
-   family/category in Color's Groups column used to be a closed rounded
-   rectangle + drop shadow; this silhouette sits lighter on the rail the
-   same way a Chrome tab sits on its strip. The corner overlays paint
-   `--app` (the rail) so the fill recedes; they stay inside the box so a
-   scrolling nav doesn't clip them. */
-.chrome-tab {
-  --chrome-r: 10px;
-  position: relative;
-  border-radius: var(--chrome-r) var(--chrome-r) 0 0;
+/* Color hub tabs — Chrome-style active silhouette for Primitives /
+   Semantics / Gradients. The strip sits slightly tinted; the active tab
+   lifts on `bg-app` with concave bottom corners so it reads lighter than
+   the old full-width tint block. */
+.color-hub-tab-strip {
+  background: color-mix(in srgb, var(--surface) 50%, var(--app));
+  gap: 1px;
+  padding: 0 6px;
 }
-.chrome-tab::before,
-.chrome-tab::after {
+.color-hub-tab {
+  position: relative;
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 36px;
+  padding-inline: 16px;
+  border: 0;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fg-faint);
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+}
+.color-hub-tab:hover {
+  color: var(--fg-muted);
+  background: color-mix(in srgb, var(--elevated) 35%, transparent);
+}
+.color-hub-tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--fg);
+}
+.color-hub-tab-active {
+  --tab-r: 10px;
+  z-index: 1;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+  border-radius: var(--tab-r) var(--tab-r) 0 0;
+  background: var(--app);
+  color: var(--fg);
+  font-weight: 600;
+}
+.color-hub-tab-active:hover {
+  background: var(--app);
+  color: var(--fg);
+}
+.color-hub-tab-active::before,
+.color-hub-tab-active::after {
   content: "";
   position: absolute;
   bottom: 0;
-  width: var(--chrome-r);
-  height: var(--chrome-r);
-  background: var(--app);
+  width: var(--tab-r);
+  height: var(--tab-r);
   pointer-events: none;
 }
-.chrome-tab::before {
-  left: 0;
-  border-top-right-radius: var(--chrome-r);
+.color-hub-tab-active::before {
+  left: calc(-1 * var(--tab-r));
+  border-radius: 0 0 var(--tab-r) 0;
+  box-shadow: calc(var(--tab-r) / 2) 0 0 0 var(--app);
 }
-.chrome-tab::after {
-  right: 0;
-  border-top-left-radius: var(--chrome-r);
+.color-hub-tab-active::after {
+  right: calc(-1 * var(--tab-r));
+  border-radius: 0 0 0 var(--tab-r);
+  box-shadow: calc(var(--tab-r) / -2) 0 0 0 var(--app);
 }

@@ -18,11 +18,9 @@ const TABS: { key: ColorTab; label: string }[] = [
 // foundation, switched by a three-tab pill bar. The bar is always pinned
 // above the content — same position for every tab.
 //
-// The tabs themselves are plain, spaced-out text with an underline on the
-// active one — not a segmented pill — matching the Figma reference exactly
-// (a pill-shaped `bg-elevated` container read as a heavier, more "controls
-// panel" chrome than the reference's quieter text-tab treatment, closer to
-// TopNav's own section nav than to a settings toggle).
+// The tabs themselves use a Chrome-style strip: the active tab lifts on
+// `bg-app` with concave bottom corners; inactive tabs stay flat on a lightly
+// tinted strip — lighter than the old full-width tint block + bottom bar.
 export default function ColorHub({
   colorTab,
   onColorTabChange,
@@ -57,35 +55,19 @@ export default function ColorHub({
   toolbar?: ReactNode
   toolbarWash?: string
 }) {
-  // Each tab is a FULL-HEIGHT cell of the 52px row, not a text label with a
-  // hairline under it: the active one reads as a tinted block whose accent bar
-  // sits on the row's bottom edge, flush against the table header below. That
-  // only works if the buttons stretch (`items-stretch` + `h-full`) — with
-  // `items-center` the tint would float as a pill inside the row instead.
-  //
-  // The three cells SPLIT the row evenly (`flex-1`, equal basis) rather than
-  // each hugging its own label. Sized to content they clustered at the left
-  // and left a wide dead gap before the search field, and because the labels
-  // differ in length the cells came out three different widths — a row of
-  // blocks that was neither filled nor even. Every call site wraps this in the
-  // same `flex-1 min-w-0` cell (Primitives, Semantics, Gradients), so one
-  // basis rule gives all three tabs an identical row. Padding drops to `px-4`
-  // and only guards the label at narrow widths now that width comes from the
-  // basis; `justify-center` is what actually centres the label in its share.
+  // Chrome-style tab strip — three equal cells, active one merges into the
+  // content panel below via matching `bg-app` + concave bottom corners.
   const tabBar = (
-    <div className="flex items-stretch h-full w-full">
+    <div className="color-hub-tab-strip flex items-end h-full w-full min-w-0">
       {TABS.map((t) => {
         const active = colorTab === t.key
         return (
           <button
             key={t.key}
+            type="button"
             onClick={() => onColorTabChange(t.key)}
             aria-pressed={active}
-            className={`relative h-full flex-1 min-w-0 px-4 flex items-center justify-center text-[15px] whitespace-nowrap transition-colors ${
-              active
-                ? 'font-semibold text-fg bg-accent-ui/[0.07]'
-                : 'font-medium text-fg-faint hover:text-fg-muted hover:bg-elevated/40'
-            }`}
+            className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
           >
             {/* The label is stacked over an invisible SEMIBOLD copy of itself,
                 which reserves the widest state's width. Without it, activating
@@ -96,9 +78,6 @@ export default function ColorHub({
               <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
               <span className="col-start-1 row-start-1">{t.label}</span>
             </span>
-            {active && (
-              <span aria-hidden className="absolute inset-x-0 bottom-0 h-[2px] bg-accent-ui" />
-            )}
           </button>
         )
       })}

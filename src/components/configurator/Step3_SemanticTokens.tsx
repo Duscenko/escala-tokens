@@ -1115,7 +1115,7 @@ export default function Step3_SemanticTokens({
       <div className="flex flex-1 min-h-0 items-stretch">
         <nav
           aria-label="Token categories"
-          className={`flex-shrink-0 h-full py-1.5 flex flex-col gap-1 overflow-y-auto bg-app transition-[width] duration-200 ${
+          className={`flex-shrink-0 h-full py-1.5 flex flex-col gap-0.5 overflow-y-auto bg-app transition-[width] duration-200 ${
             railCollapsed ? 'items-center px-2' : 'px-2'
           }`}
           style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
@@ -1128,14 +1128,10 @@ export default function Step3_SemanticTokens({
                   onClick={() => selectNavItem(item.key)}
                   aria-label={item.label}
                   aria-current={isActive}
-                  className={`flex items-center transition-colors ${
-                    railCollapsed ? 'w-10 h-8 justify-center rounded-lg' : 'w-full gap-2.5 px-2.5 py-2 text-left'
+                  className={`flex items-center rounded-lg transition-colors ${
+                    railCollapsed ? 'w-10 h-8 justify-center' : 'w-full gap-2.5 px-2.5 py-2 text-left'
                   } ${
-                    isActive
-                      ? railCollapsed
-                        ? 'bg-elevated text-accent-ui'
-                        : 'chrome-tab bg-elevated text-accent-ui'
-                      : `${railCollapsed ? '' : 'rounded-lg'} text-fg-muted hover:bg-elevated/50 hover:text-fg`
+                    isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
                   <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>

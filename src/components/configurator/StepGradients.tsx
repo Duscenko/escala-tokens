@@ -387,7 +387,7 @@ export default function StepGradients({
 
       {/* ── Row 3 — gradient nav + the stops table ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full py-1.5 px-2 flex flex-col gap-1 overflow-y-auto bg-app">
+        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full py-1.5 px-2 flex flex-col gap-0.5 overflow-y-auto bg-app">
           {visible.map((g) => {
             const active = g.id === selectedId
             const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id
@@ -397,10 +397,8 @@ export default function StepGradients({
                   type="button"
                   onClick={() => setSelectedId(g.id)}
                   aria-current={active}
-                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 text-left transition-colors ${
-                    active
-                      ? 'chrome-tab bg-elevated text-accent-ui'
-                      : 'rounded-lg text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
                   <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
