@@ -432,9 +432,35 @@ function MatrixRow({
     <div className={expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
       <div className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]" style={gridStyle}>
         {/* Name only — description + copyable var move into the expanded editor
-            so each row stays a single, compact line. */}
-        <div className="flex items-center gap-3 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
-          <button onClick={onToggle} aria-label={`Edit ${role.label} scale`} className="flex items-center gap-2.5 min-w-0 text-left flex-1">
+            so each row stays a single, compact line.
+            `sticky left-0` — the mirror of the trailing settings column's own
+            pin. A theme column is added by a single click and the matrix has
+            no width budget for many of them, so without this the FIRST thing
+            to scroll out of reach is the one column that says which row you're
+            reading.
+            It paints an OPAQUE `bg-app` (a sticky element gets its own layer,
+            so an unpainted one would let the value columns show through as
+            they pass underneath) and then RE-PAINTS this row's zebra/expanded
+            tint and its hover tint as two absolute overlays. That's the same
+            two-layer stack the row already builds (wrapper paints the stripe,
+            grid paints hover) reproduced on top of the opaque base — which is
+            why this cell, unlike the trailing one, neither double-tints on
+            striped rows nor goes dead on hover. `sticky` is itself a
+            positioned value, so the overlays anchor to this cell without
+            needing `relative`. */}
+        <div className="flex items-center gap-3 py-2.5 pl-4 pr-3 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
+          <span
+            aria-hidden
+            className={`absolute inset-0 pointer-events-none ${
+              expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+            }`}
+          />
+          <span aria-hidden className="absolute inset-0 pointer-events-none group-hover:bg-black/[0.025] dark:group-hover:bg-white/[0.04]" />
+          {/* `relative` so the label paints ABOVE the two tint overlays —
+              absolutely-positioned siblings otherwise sit on top of in-flow
+              content, and the expanded state's 40%-opacity blue would visibly
+              wash the token name. */}
+          <button onClick={onToggle} aria-label={`Edit ${role.label} scale`} className="relative flex items-center gap-2.5 min-w-0 text-left flex-1">
             {/* Color-token marker — a palette glyph, not a fill: the actual value
                 already shows in the Light/Dark columns, so a per-row swatch just
                 duplicated it. */}
@@ -483,6 +509,125 @@ function MatrixRow({
         >
           <TuneIcon active={expanded} />
         </button>
+      </div>
+    </div>
+  )
+}
+
+/** Floor for the pinned "Token name" track, shared by the flat matrix and the
+ *  architecture table so the two can't drift. 11rem = 198px at this app's 18px
+ *  root — the SAME 198px `ColorPrimitives`' family nav and this section's own
+ *  "Token architecture" / category-nav cells use, so the table's left edge
+ *  lands on the one column line every row above it already shares. */
+const NAME_MIN_TRACK = '11rem'
+
+const MAX_DOTS = 6
+const MIN_OVERFLOW = 52
+
+/**
+ * Horizontal-scroll position indicator for the token table — a row of dots
+ * floating at the bottom of the table column, carousel-style.
+ *
+ * It exists because the theme columns are the ONE axis of this table that grows
+ * without bound: every "+ Theme" adds a full column, and past three or four the
+ * matrix scrolls sideways with nothing on screen saying so. A vertical
+ * scrollbar is implied by the rows running off the bottom; a horizontal one on
+ * a table whose left column is now PINNED is not — the pinned names make the
+ * table look complete at any scroll offset, which is exactly what makes the
+ * hidden columns easy to miss. The dots are the cue that replaces the
+ * scrollbar the sticky column visually took away.
+ *
+ * Rules it keeps:
+ *  · **It renders NOTHING when everything fits.** An indicator that's always
+ *    there stops meaning "there's more" — at two themes on a normal window
+ *    there is no more, and the row is silent.
+ *  · **Dots are PROGRESS positions, not pages of content.** `active` is the
+ *    scroll offset mapped over the full scrollable range, so the last dot
+ *    genuinely lights at the end — a literal `scrollLeft / clientWidth` page
+ *    index can never reach its own last page when the final page is partial
+ *    (a 1.2-viewport-wide table has a max offset of 0.2 viewports, which
+ *    rounds to page 0 forever).
+ *  · **Capped at MAX_DOTS.** Ten themes should not produce ten dots; past the
+ *    cap it degrades into a segmented progress bar, which still answers
+ *    "how much further is there" without becoming its own dense control.
+ *  · **The visible dot is 5px; the BUTTON around it is 20px.** Same rule the
+ *    preview Slider's track follows — claim the target with padding, not by
+ *    drawing something fatter.
+ */
+function ScrollPager({
+  scrollRef,
+  watch,
+  reduce,
+}: {
+  scrollRef: React.RefObject<HTMLDivElement | null>
+  /** Re-measure when this changes. A ResizeObserver can't cover it: adding a
+   *  theme overflows the GRID TRACKS inside a block child whose own box width
+   *  never changes, so neither the scroll container nor its child resizes —
+   *  only `scrollWidth` moves, and nothing observes that. */
+  watch: string
+  reduce: boolean
+}) {
+  const [dots, setDots] = useState(0)
+  const [active, setActive] = useState(0)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth
+      // A sliver of overflow is not "there's more content" — sub-pixel track
+      // rounding alone lands around 18px here, and summoning an indicator for
+      // that trains people to ignore it. MIN_OVERFLOW is roughly a third of the
+      // narrowest value column (8.5rem), i.e. the point where something real is
+      // actually hidden.
+      if (max < MIN_OVERFLOW || el.clientWidth === 0) { setDots(0); setActive(0); return }
+      const n = Math.min(MAX_DOTS, Math.max(2, Math.ceil(el.scrollWidth / el.clientWidth)))
+      setDots(n)
+      setActive(Math.round((el.scrollLeft / max) * (n - 1)))
+    }
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => { el.removeEventListener('scroll', measure); ro.disconnect() }
+  }, [scrollRef, watch])
+
+  if (dots === 0) return null
+
+  return (
+    <div
+      role="group"
+      aria-label="Table scroll position"
+      className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-2"
+    >
+      {/* The pill is what lets the dots sit over scrolling rows and stay
+          readable without dimming them — `bg-app/80` + blur rather than a
+          solid bar, so the row underneath still reads as continuous. */}
+      <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-line/60 bg-app/80 px-1 py-0.5 backdrop-blur-sm opacity-60 hover:opacity-100 transition-opacity">
+        {Array.from({ length: dots }, (_, i) => {
+          const on = i === active
+          return (
+            <button
+              key={i}
+              onClick={() => {
+                const el = scrollRef.current
+                if (!el) return
+                const max = el.scrollWidth - el.clientWidth
+                el.scrollTo({ left: (i / (dots - 1)) * max, behavior: reduce ? 'auto' : 'smooth' })
+              }}
+              aria-label={`Scroll to position ${i + 1} of ${dots}`}
+              aria-current={on}
+              className="flex h-5 w-5 items-center justify-center"
+            >
+              <span
+                aria-hidden
+                className={`h-[5px] rounded-full ${reduce ? '' : 'transition-all duration-200'} ${
+                  on ? 'w-3 bg-accent-ui' : 'w-[5px] bg-fg-faint/50'
+                }`}
+              />
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -586,7 +731,14 @@ export default function Step3_SemanticTokens({
   const themeTracks = `${themeCols.map((t) => `${widthOf(t)}px`).join(' ')} 2.75rem`
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: nameWidth == null
-      ? `minmax(0,1fr) ${themeTracks}`
+      // `minmax(NAME_MIN_TRACK,1fr)`, not `minmax(0,1fr)`. The 1fr still takes
+      // every spare pixel exactly as before, so nothing changes at the widths
+      // this table normally runs at — but a `0` floor let the track collapse
+      // to literally nothing once the fixed theme tracks outgrew the pane,
+      // which is the case this column now has to survive: it's PINNED, so it
+      // has to still be there at full horizontal scroll. Same floor the arch
+      // table's own name track has always carried.
+      ? `minmax(${NAME_MIN_TRACK},1fr) ${themeTracks}`
       : `${nameWidth}px ${themeTracks} minmax(0,1fr)`,
   }
 
@@ -872,9 +1024,20 @@ export default function Step3_SemanticTokens({
     PER_THEME_ARCHITECTURES.has(semanticArchitecture)
       ? themeDisplayName(mode)
       : architectureModeLabel(semanticArchitecture, mode)
+  /** Everything that can change the table's `scrollWidth`, as one string for
+   *  `ScrollPager` to re-measure on. Not a ResizeObserver's job: the tracks
+   *  overflow a block child whose own box never changes size, so neither the
+   *  scroll container nor its child ever fires one. */
+  const scrollWatch = [
+    semanticArchitecture,
+    isFlat ? themeCols.join('|') : archModeKeys.join('|'),
+    nameWidth ?? 'auto',
+    themeCols.map(widthOf).join(','),
+    isFlat ? visibleRoles.length : archTokens.length,
+  ].join('/')
   const archGridStyle: React.CSSProperties = {
     // Last track = the edit toggle, mirroring the flat matrix's trailing column.
-    gridTemplateColumns: `minmax(11rem,1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} 2.75rem`,
+    gridTemplateColumns: `minmax(${NAME_MIN_TRACK},1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} 2.75rem`,
   }
 
   if (!ready) {
@@ -1024,17 +1187,26 @@ export default function Step3_SemanticTokens({
         {/* Token table — scrolls internally; column header stays pinned.
             `tableRef` is what the Token Details dialog docks against, so it
             opens beside the trailing settings column instead of over the
-            values it's editing. */}
+            values it's editing.
+            The wrapper exists to anchor `ScrollPager`: the dots have to sit at
+            the bottom of the VIEWPORT of the table, not at the bottom of its
+            (taller, wider) content, so they can't live inside the scrolling
+            element itself. */}
+        <div className="relative flex-1 min-w-0 flex">
         <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
             <div className="min-w-[28rem]">
               <div
-                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
+                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
                 style={archGridStyle}
               >
-                <span className="pl-4 py-3 border-r border-line">Token name</span>
+                {/* Pinned, matching the rows' own name cells below. `bg-app`
+                    is its own, not inherited: the header div's background
+                    scrolls with the header's content box, so without a fill
+                    here the mode labels would slide visibly under this one. */}
+                <span className="pl-4 py-3 border-r border-line sticky left-0 z-10 bg-app">Token name</span>
                 {archModeKeys.map((mode) => {
                   const isPreviewed = previewTheme === mode
                   const label = archModeLabel(mode)
@@ -1141,13 +1313,27 @@ export default function Step3_SemanticTokens({
                   return (
                   <div key={t.id} className={isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
                     <div
-                      className="grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]"
+                      // `group` so the pinned name cell can re-paint this row's
+                      // hover tint over its own opaque base (the flat matrix's
+                      // row already carried it).
+                      className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]"
                       style={archGridStyle}
                     >
-                      <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                      {/* Pinned name cell — the arch half of the same fix the
+                          flat matrix's `MatrixRow` carries; see its comment for
+                          the opaque-base + two-overlay layering and why the
+                          inner button needs `relative`. */}
+                      <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
+                        <span
+                          aria-hidden
+                          className={`absolute inset-0 pointer-events-none ${
+                            isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+                          }`}
+                        />
+                        <span aria-hidden className="absolute inset-0 pointer-events-none group-hover:bg-black/[0.025] dark:group-hover:bg-white/[0.04]" />
                         <button
                           onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
-                          className="flex items-center gap-2.5 min-w-0 text-left flex-1"
+                          className="relative flex items-center gap-2.5 min-w-0 text-left flex-1"
                           aria-label={`Edit ${t.name} scale`}
                         >
                           <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
@@ -1217,8 +1403,11 @@ export default function Step3_SemanticTokens({
           ) : (
           <div className="min-w-[26rem]">
             {/* Column header — one column per theme; custom themes are removable */}
-            <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10" style={gridStyle}>
-              <span className="group relative pl-4 py-3 border-r border-line">
+            <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
+              {/* Pinned — see the arch header's matching cell. `sticky` is a
+                  positioned value, so it still anchors the resize grip below
+                  exactly as `relative` did. */}
+              <span className="group pl-4 py-3 border-r border-line sticky left-0 z-10 bg-app">
                 Token name
                 <span
                   onPointerDown={(e) => {
@@ -1368,6 +1557,8 @@ export default function Step3_SemanticTokens({
             )}
           </div>
           )}
+        </div>
+        <ScrollPager scrollRef={tableRef} watch={scrollWatch} reduce={reduce} />
         </div>
       </div>
 
