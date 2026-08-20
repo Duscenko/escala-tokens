@@ -916,11 +916,32 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   here in the same frame it moves in the table). A `useMemo` keyed on the store object
 >   would work too but adds a dependency the linter can't see is load-bearing, for a case
 >   (`previewTheme` changing without a store change) that barely exists.
-> - **The wide doc bodies are reused VERBATIM, not forked into a narrow variant** — the
->   primitive ramps (`min-w-[640px]`) and the 89-role table (`min-w-[42rem]`) already carry
->   their own `overflow-x-auto`, so they scroll inside themselves at 400px. Verified: the
->   aside's `scrollWidth === clientWidth` with Color's Primitives section open. Any NEW doc
->   section must keep that guard or it will blow out this column.
+> - **The wide doc bodies are reused VERBATIM, not forked into a narrow variant** — every
+>   one carries its own `overflow-x-auto`, so nothing can blow out this column (verified:
+>   the aside's `scrollWidth === clientWidth` with Color's Primitives section open). Any
+>   NEW doc section must keep that guard. But scrolling is the FLOOR, not the goal, and the
+>   two wide bodies answer it differently on purpose:
+>   - **`PrimitiveRamp` reflows, via a CONTAINER QUERY** (`@container` +
+>     `@max-[640px]:…` in `foundationDocs.tsx`) — one renderer, two densities, no fork
+>     (a fork is what drifts once someone edits one copy). Above 640px it's the article's
+>     full form (`h-11`, `gap-1.5`, hex captions, `min-w-[640px]`); below, it drops the hex
+>     caption and falls to `h-8`/`gap-1` — **exactly `ScaleRow`'s density**, so the panel's
+>     ramps read as the same object the Color hub shows one column over rather than a
+>     shrunken copy of the article's. All twelve tones then fit 400px with no scroll at all.
+>     Shedding the hex is the right trade because the ramp's job here is the CURVE plus a
+>     nameable step: the swatch carries the curve, the tone number names the step, and the
+>     hex is still one hover away on the swatch's pre-existing `title`. Verified across
+>     naming schemes — `hundreds` ("950") measures 17px in a 26px cell.
+>     **640 is the threshold because 640 is what the full form needs**: the same number as
+>     the floor below it, not a second tuned constant. Both are literal px, deliberately —
+>     `:root` is 18px, so the `@2xl` container breakpoint would silently mean 756px, the
+>     identical trap that already bit this file's own `min-w-[40rem]` once.
+>   - **`RoleTable` keeps scrolling, and should.** Five real columns of tabular data can't
+>     reflow to 363px the way a ramp can; scrolling wide tables inside their own container
+>     is this codebase's documented answer. Its floor is `min-w-[672px]` — px for the same
+>     root-font-size reason (`42rem` silently meant 756px). That change is provably inert in
+>     the Docs article, whose column never drops below 756px, so the floor only ever bound
+>     in this panel, where it was demanding 84px of scrolling nobody asked for.
 > - **Tab state is LOCAL to the panel**, unlike `previewCollapsed` (which is lifted because
 >   TopNav sizes its brand divider from the column's width). Nothing outside reads it. It
 >   survives foundation switches — the panel is a separate tree from the centre column's

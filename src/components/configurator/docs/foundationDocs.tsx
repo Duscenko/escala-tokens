@@ -165,6 +165,65 @@ function Swatch({ hex, className = '' }: { hex: string; className?: string }) {
   )
 }
 
+/** One family's 1–12 ramp — swatch, tone number, hex.
+ *
+ *  **It sizes itself off its CONTAINER, not the viewport.** This block renders
+ *  in two columns that differ by ~350px: the Docs article (756–972px) and the
+ *  preview aside's Documentation tab (a 400px column, ~336px of content). A
+ *  single fixed floor can't serve both — `min-w-[640px]` is exactly right in
+ *  the article and forces two screens of horizontal scrolling in the panel,
+ *  which is what "the ramps don't have to be this big" reported.
+ *
+ *  A container query is what lets ONE renderer serve both, which matters more
+ *  than it looks: CLAUDE.md's rule for the panel is that the doc bodies are
+ *  reused verbatim rather than forked into a "narrow variant", and a fork is
+ *  precisely the thing that drifts once someone edits one copy.
+ *
+ *  What the compact form drops, and why that's the right shed:
+ *  · **The hex label goes, the swatch and tone number stay.** A hex at 8px
+ *    needs ~44px; twelve of those plus gaps needs the 640px floor. The ramp's
+ *    JOB here is to show the curve and let you name a step — the swatch carries
+ *    the curve, the number names the step, and the hex is still one hover away
+ *    on the swatch's `title` (already there, not added for this).
+ *  · **`h-8`/`gap-1`, which is not an invented density** — it's exactly
+ *    `ScaleRow`'s, the compact ramp the Color hub already uses everywhere. So
+ *    the panel's ramps read as the same object the editor shows, one column
+ *    over, rather than as a shrunken version of the article's.
+ *
+ *  **640px is the threshold because 640px is what the full form needs** — it is
+ *  the same number as the floor below it, not a second tuned constant. Literal
+ *  px in both, deliberately: `:root` is 18px here, so a `rem`-based container
+ *  breakpoint (`@2xl` = 42rem) would silently mean 756px (see CLAUDE.md's
+ *  "Root font-size" note — this file's own floor was already once bitten by
+ *  exactly that, `min-w-[40rem]` meaning 720px). */
+function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
+  return (
+    <div className="@container">
+      <div className="overflow-x-auto">
+        <div className="flex gap-1.5 min-w-[640px] @max-[640px]:gap-1 @max-[640px]:min-w-0">
+          {Object.entries(scale)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([tone, hex]) => (
+              <div key={tone} className="flex-1 min-w-0 flex flex-col items-center gap-1 @max-[640px]:gap-0.5">
+                <span
+                  className="w-full h-11 rounded-lg ring-1 ring-black/10 dark:ring-white/15 @max-[640px]:h-8 @max-[640px]:rounded-md"
+                  style={{ background: hex }}
+                  title={hex}
+                />
+                <span className="text-[9px] font-mono tabular-nums text-fg-faint">
+                  {toneLabel(naming, Number(tone))}
+                </span>
+                <span className="text-[8px] font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
+                  {hex.toUpperCase()}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** A value cell — swatch + monospace text, the shape both the ref and hex
  *  columns use so the four columns of a semantic table read as one grid. */
 function ValueCell({ hex, label }: { hex: string; label: string }) {
@@ -184,7 +243,18 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
   if (!rows.length) return null
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[42rem]">
+      {/* 672px, not `42rem` — the SAME root-font-size trap the primitive ramp's
+          floor was already fixed for (`:root` is 18px, so `42rem` silently
+          meant 756px, not the 672 the class name implies). Provably inert in
+          the Docs article, whose column never drops below 756px, so the floor
+          was never the binding constraint there; it only ever bound in the
+          preview aside's Documentation tab, where it was quietly demanding an
+          extra 84px of horizontal scrolling nobody asked for.
+          The table still scrolls sideways in that column and that's correct —
+          five real columns of tabular data can't reflow to 363px the way a
+          ramp can (see `PrimitiveRamp`), and scrolling wide tables inside their
+          own container is this codebase's documented answer. */}
+      <div className="min-w-[672px]">
         {/* Column captions. The dark pair is a single visual block, so its two
             captions sit inside the dark panel with the cells they label. */}
         <div className="grid items-end gap-x-3 pb-2" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
@@ -322,38 +392,7 @@ color:      var(--color-content-on-brand);
             {c.primitiveFamilies.map((fam) => (
               <div key={fam.label} className="flex flex-col gap-1.5">
                 <span className="text-[11px] text-fg-muted">{fam.label}</span>
-                <div className="overflow-x-auto">
-                  {/* `min-w-[640px]`, not `min-w-[40rem]` — `:root` sets an
-                      18px base font (see CLAUDE.md's "Root font-size" note),
-                      so `rem` here silently meant 720px, not the 640px the
-                      Tailwind class name implies. That's 80px wider than the
-                      article's own content column ever needed to be: at a
-                      typical 1280px window this forced every ramp to scroll
-                      even though 640px fits inside the actual ~683px
-                      available. Reported as "the ramps don't [get to] resize"
-                      — they were pinned to a floor nobody intended. Literal
-                      px sidesteps the root-size trap the same way the
-                      preview-panel breakpoint fix already does elsewhere. */}
-                  <div className="flex gap-1.5 min-w-[640px]">
-                    {Object.entries(fam.scale)
-                      .sort(([a], [b]) => Number(a) - Number(b))
-                      .map(([tone, hex]) => (
-                        <div key={tone} className="flex-1 min-w-0 flex flex-col items-center gap-1">
-                          <span
-                            className="w-full h-11 rounded-lg ring-1 ring-black/10 dark:ring-white/15"
-                            style={{ background: hex }}
-                            title={hex}
-                          />
-                          <span className="text-[9px] font-mono tabular-nums text-fg-faint">
-                            {toneLabel(c.colorNaming, Number(tone))}
-                          </span>
-                          <span className="text-[8px] font-mono text-fg-faint/80 truncate max-w-full">
-                            {hex.toUpperCase()}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
+                <PrimitiveRamp scale={fam.scale} naming={c.colorNaming} />
               </div>
             ))}
           </div>
