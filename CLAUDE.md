@@ -888,6 +888,53 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   on light until the toggle was clicked twice to resync. Any code that needs "is the preview
   dark right now" on first render must go through this init, not assume `previewTheme` starts
   `'light'`.
+> **The aside is a THREE-TAB reference, not just a specimen — `Preview` · `.MD` ·
+> `Documentation` (`PanelTabBar` in `PreviewPanel.tsx`).** It's the only column that is
+> always looking at the foundation you're editing, which makes it the cheapest place to
+> reach the two things that otherwise cost a navigation: the section's markdown (before:
+> open `ExportWizard`, pick a scope, pick a format) and its reference page (before: leave
+> Variables for the Docs destination and lose the editor). Both stay scoped to whatever
+> the centre column is on, so switching foundations moves all three tabs at once.
+> - **Nothing here is re-authored.** `.MD` is the exact string `buildSectionExport(section,
+>   'md')` hands the wizard; `Documentation` reads the same `FOUNDATION_DOCS` entry and
+>   calls the same `section.render(system)` bodies `FoundationArticle` does. So a
+>   foundation documented once is documented in both places, and the panel can't claim
+>   something the export or the docs site would contradict. What changes in the docs tab is
+>   the SHAPE only: the article's long single scroll becomes an accordion, which in a 400px
+>   column doubles as that page's own table of contents (closed by default — six labelled
+>   rows under the lead is a scannable index; six expanded sections would be a scroll with
+>   no map).
+> - **Only the active tab is MOUNTED.** `.MD` rebuilds its string and `Documentation` runs
+>   `useSystemDoc()` (89 roles + every family) — neither may run while you're looking at
+>   the specimen, in a panel that repaints on every token edit. This is also why `DocRow`
+>   renders nothing when closed instead of animating to `height: 0` with the body mounted,
+>   which is what `AboutAccordion` (the other reading-surface accordion, whose visual
+>   language this matches) correctly does for its four paragraphs.
+> - **`MarkdownPane` calls `useDesignStore()` for the SUBSCRIPTION, not the value**, and
+>   deliberately does not memoise: `buildSectionExport` reads `getState()` itself, so the
+>   bare call is what makes the pane live (verified — retinting the accent moves `accent-9`
+>   here in the same frame it moves in the table). A `useMemo` keyed on the store object
+>   would work too but adds a dependency the linter can't see is load-bearing, for a case
+>   (`previewTheme` changing without a store change) that barely exists.
+> - **The wide doc bodies are reused VERBATIM, not forked into a narrow variant** — the
+>   primitive ramps (`min-w-[640px]`) and the 89-role table (`min-w-[42rem]`) already carry
+>   their own `overflow-x-auto`, so they scroll inside themselves at 400px. Verified: the
+>   aside's `scrollWidth === clientWidth` with Color's Primitives section open. Any NEW doc
+>   section must keep that guard or it will blow out this column.
+> - **Tab state is LOCAL to the panel**, unlike `previewCollapsed` (which is lifted because
+>   TopNav sizes its brand divider from the column's width). Nothing outside reads it. It
+>   survives foundation switches — the panel is a separate tree from the centre column's
+>   `AnimatePresence` — and resets to `Preview` when the aside is handed to another panel
+>   (`SaveSidePanel`, `AddThemePanel`), which is the right moment to land back on the
+>   specimen.
+> - **The theme badge shows only on `Preview`.** The markdown ships every theme's values and
+>   the docs pages print light and dark side by side, so the badge would be claiming a scope
+>   those two tabs don't have.
+> - **`Documentation` carries "Full page →"** (`onOpenDocs` → Configurator's `openDocs`,
+>   the reverse of `FoundationArticle`'s own "Edit tokens" link). The accordion is a reading
+>   surface for this column, never a replacement — anything wanting the full width (the
+>   TOC, prev/next, side-by-side ramps) is one click away.
+
 - **Right = `PreviewPanel.tsx`**: a **persistent, sticky specimen** of whatever foundation
   is being edited — **expanded by default** (`previewCollapsed` starts `false`; the slim
   strip still lets anyone collapse it for width). It's a separate tree from the center

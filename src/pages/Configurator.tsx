@@ -441,6 +441,16 @@ export default function Configurator() {
     setTab('foundations')
     setActiveFoundation(key)
   }
+  /** Docs destination, opened at a specific foundation — the reverse of
+   *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
+   *  Documentation tab, whose accordion is a reading surface for the column,
+   *  not a replacement for the full-width page. */
+  const openDocs = (key: string) => {
+    commitVisit()
+    setExportMode(null)
+    setTab('docs')
+    setDocFoundationKey(key)
+  }
   const selectComponent = (c: ComponentDef) => {
     commitVisit()
     markFoundationComplete('components')
@@ -850,6 +860,7 @@ export default function Configurator() {
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}
+                  onOpenDocs={openDocs}
                 />
               )}
             </aside>
