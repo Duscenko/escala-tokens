@@ -513,8 +513,10 @@ export default function Step3_SemanticTokens({
   onPreviewThemeChange?: (theme: string) => void
   /** "+ Theme" — opens `AddThemePanel` DOCKED in the right-hand aside
    *  (Configurator owns that boolean and swaps it in for `PreviewPanel`), not
-   *  a modal this component renders itself. Every trigger just reports up. */
-  onOpenAddTheme: () => void
+   *  a modal this component renders itself. Every trigger just reports up.
+   *  Passing a theme key opens the SAME panel in edit mode for that theme
+   *  (rename it, re-point a slot) instead of a blank "create" form. */
+  onOpenAddTheme: (editKey?: string) => void
 }) {
   const store = useDesignStore()
   const {
@@ -1066,6 +1068,21 @@ export default function Step3_SemanticTokens({
                         <EyeIcon active={isPreviewed} />
                         <span className="truncate">{label}</span>
                       </button>
+                      {/* Opens the SAME `AddThemePanel` "+ Theme" mints, in
+                          edit mode — rename, or re-point a slot to another
+                          family. Every mode key here is a real theme
+                          (`themeSources[mode]` always resolves, even for
+                          Vibrancy/Tonal's fixed light/dark), so the edit
+                          affordance isn't gated on `isThemeCol` the way
+                          delete is. */}
+                      <button
+                        onClick={() => onOpenAddTheme(mode)}
+                        aria-label={`Edit theme ${label}`}
+                        title={`Edit theme ${label}`}
+                        className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                      </button>
                       {deletable && (
                         <button
                           onClick={() => setThemeToDelete(mode)}
@@ -1099,7 +1116,7 @@ export default function Step3_SemanticTokens({
                 <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                   {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
                     <button
-                      onClick={onOpenAddTheme}
+                      onClick={() => onOpenAddTheme()}
                       aria-label="Add a theme"
                       title="Add a theme — its roles resolve through the primary colors"
                       className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1257,13 +1274,26 @@ export default function Step3_SemanticTokens({
                       <EyeIcon active={isPreviewed} />
                       <span className="truncate">{displayName}</span>
                     </button>
-                    {/* No per-theme colour editing here, by design: a theme is a
-                        READING of the primitives, never a place to set colour.
-                        Editing a theme's accent in isolation would fork it from
-                        the primary it resolves through — the Figma model, where
-                        modes reference variables instead of holding their own
-                        values. Colour is edited in Primary Color; this table
-                        only maps roles to it. */}
+                    {/* No per-ROLE colour editing in this table, by design: a
+                        theme is a READING of the primitives, never a place to
+                        set colour. This edit button doesn't violate that — it
+                        opens `AddThemePanel` in edit mode, which only lets you
+                        rename the theme or re-point one of its six SLOTS
+                        (brand/gray/error/warning/success/info) to a different
+                        primitive family, the same "+ Theme" mechanism that
+                        created it. There was previously no way back into that
+                        panel once a theme existed — creating one was a
+                        one-shot form with no edit entry point, so a typo'd
+                        name or a slot you wanted pointed elsewhere meant
+                        deleting the theme and starting over. */}
+                    <button
+                      onClick={() => onOpenAddTheme(t)}
+                      aria-label={`Edit theme ${displayName}`}
+                      title={`Edit theme ${displayName}`}
+                      className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                    </button>
                     {canDelete && (
                       <button
                         onClick={() => setThemeToDelete(t)}
@@ -1297,7 +1327,7 @@ export default function Step3_SemanticTokens({
                   and no architecture curating it down. */}
               <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                 <button
-                  onClick={onOpenAddTheme}
+                  onClick={() => onOpenAddTheme()}
                   aria-label="Add a theme"
                   title="Add a theme — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"

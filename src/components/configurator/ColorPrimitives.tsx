@@ -700,18 +700,6 @@ export default function ColorPrimitives({
   // per-family trash already works. Nothing about the colours is destroyed —
   // only the theme and the semantic values mapped to it.
   const [themeToDelete, setThemeToDelete] = useState<string | null>(null)
-  // Collapsed nav sections — all expanded by default. Keys are the theme
-  // folder's key for a whole folder, or `<folder>/<group>` for one of its
-  // Accents/Neutrals/States groups, so the two levels collapse independently.
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
-  const toggleGroup = (key: string) => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
 
   // A family created elsewhere (NewTokenWizard) requests focus — switch to it
   // so the table actually shows the family + names the user just picked,
@@ -860,6 +848,37 @@ export default function ColorPrimitives({
           .filter((g) => g.items.length > 0),
       }))
   }, [families, homeOf, themeOrder])
+
+  // Collapsed nav sections. Keys are a whole folder's own key, or
+  // `<folder>/<group>` for one of its Accents/Neutrals/States groups, so the
+  // two levels collapse independently.
+  //
+  // Fresh-mount default: every THEME folder (not Base, not Custom) starts
+  // collapsed. `homeOf` above homes a "+ Theme"-minted family under its own
+  // theme's folder — so a system with two or three extra themes used to load
+  // Primitives with every one of them, plus their own Accents/Neutrals/States
+  // groups, already expanded: a wall of ramps before you'd picked which theme
+  // to even look at. Base (the globals every system starts with) and Custom
+  // stay open, since those are what a fresh system — or one with no extra
+  // themes yet — actually wants visible on first look. This is a LAZY
+  // initializer, not an effect: `navFolders` is already computed by the time
+  // render reaches this line, so the very first paint is already collapsed —
+  // no expand-then-snap-shut flash.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    const collapsed = new Set<string>()
+    navFolders.forEach((folder) => {
+      if (folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER) collapsed.add(folder.key)
+    })
+    return collapsed
+  })
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)

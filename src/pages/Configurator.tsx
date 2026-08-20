@@ -276,7 +276,13 @@ export default function Configurator() {
   // Lifted here (not local to Step3, where the trigger lives) because the
   // aside it docks into is a sibling Configurator renders, not something
   // Step3 has access to — same reason `colorTab`/`semanticFocus` are lifted.
-  const [addThemeOpen, setAddThemeOpen] = useState(false)
+  //
+  // `true` = "+ Theme" (create); a string = editing that existing theme's key.
+  // `AddThemePanel` already supported an `editKey` prop end-to-end (rename,
+  // re-point a slot to another family) — nothing here ever passed one, so
+  // there was no way to reach it: renaming a theme or fixing which family one
+  // of its slots resolved through meant deleting it and starting over.
+  const [addThemeOpen, setAddThemeOpen] = useState<boolean | string>(false)
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
@@ -529,7 +535,7 @@ export default function Configurator() {
           onFocusChange={setSemanticFocus}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
-          onOpenAddTheme={() => setAddThemeOpen(true)}
+          onOpenAddTheme={(editKey) => setAddThemeOpen(editKey ?? true)}
           railCollapsed={colorRailCollapsed}
           onToggleRail={() => setColorRailCollapsed((c) => !c)}
         />
@@ -830,8 +836,12 @@ export default function Configurator() {
                 // resumes it — losing in-progress colour picks to a glance at
                 // another tab would be a worse default than that.
                 <AddThemePanel
+                  editKey={typeof addThemeOpen === 'string' ? addThemeOpen : null}
                   onClose={() => setAddThemeOpen(false)}
-                  onRenamed={(oldKey, newKey) => { if (previewTheme === oldKey) changePreviewTheme(newKey) }}
+                  onRenamed={(oldKey, newKey) => {
+                    if (previewTheme === oldKey) changePreviewTheme(newKey)
+                    setAddThemeOpen((cur) => (cur === oldKey ? newKey : cur))
+                  }}
                 />
               ) : (
                 <PreviewPanel

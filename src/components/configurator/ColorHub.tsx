@@ -45,8 +45,10 @@ export default function ColorHub({
    *  `colorTab === 'semantics'`, since that's the only tab with a "+ Theme"
    *  trigger, but it's a required prop on this component regardless: the
    *  panel it opens is docked in the shell's right aside, which Configurator
-   *  owns, so the callback has to exist before Semantics is ever visited. */
-  onOpenAddTheme: () => void
+   *  owns, so the callback has to exist before Semantics is ever visited.
+   *  An `editKey` opens the panel already pointed at that existing theme
+   *  (rename it, re-point one of its slots) instead of a blank "create". */
+  onOpenAddTheme: (editKey?: string) => void
   /** Forwarded to ColorPrimitives — collapses its 198px left column. Owned by
    *  `Configurator` because TopNav's brand block sizes its divider from the
    *  same value; see ColorPrimitives' own note. */
