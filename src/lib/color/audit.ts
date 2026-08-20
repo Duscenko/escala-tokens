@@ -153,15 +153,15 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.subtle',    bg: 'surface.page',    intent: 'decorative' },
     { fg: 'content.accent',    bg: 'surface.page',    intent: 'body-text' },
     { fg: 'content.disabled',  bg: 'surface.page',    intent: 'decorative' },
-    { fg: 'content.link-default', bg: 'surface.page', intent: 'body-text' },
-    { fg: 'content.link-hover',   bg: 'surface.page', intent: 'body-text' },
-    { fg: 'content.on-action', bg: 'action.primary',  intent: 'body-text' },
+    { fg: 'content.link.default', bg: 'surface.page', intent: 'body-text' },
+    { fg: 'content.link.hover',   bg: 'surface.page', intent: 'body-text' },
+    { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
-    { fg: 'status.critical-on-solid', bg: 'status.critical-surface-solid', intent: 'body-text' },
+    { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'body-text' },
     // `decorative`, not `ui-component` — deliberately. NO tone in the Radix
     // border band (6–8) reaches WCAG 3:1 against the page in either appearance
     // (light tops out at 3.36 on tone 8; dark at 2.39). That is structural:
@@ -171,18 +171,18 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // See the "missing role" note in docs/color/IMPLEMENTATION-LOG.md.
     { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.strong',     bg: 'surface.page',    intent: 'ui-component' },
-    { fg: 'border.active',     bg: 'surface.page',    intent: 'ui-component' },
+    { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
-    // signalling selected/focused/active must use border.active, which is
+    // signalling selected/focused/active must use border.focus, which is
     // solved to clear both floors. See the note on CATEGORICAL_ROLES.
     { fg: 'border.accent',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.subtle',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.critical',   bg: 'surface.input',   intent: 'ui-component' },
     { fg: 'border.warning',    bg: 'surface.input',   intent: 'ui-component' },
     { fg: 'border.success',    bg: 'surface.input',   intent: 'ui-component' },
-    { fg: 'status.critical-fg', bg: 'status.critical-bg', intent: 'body-text' },
-    { fg: 'status.warning-fg',  bg: 'status.warning-bg',  intent: 'body-text' },
-    { fg: 'status.success-fg',  bg: 'status.success-bg',  intent: 'body-text' },
+    { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text' },
+    { fg: 'status.warning.content',  bg: 'status.warning.surface',  intent: 'large-text' },
+    { fg: 'status.success.content',  bg: 'status.success.surface',  intent: 'large-text' },
   ],
   carbon: [
     // Carbon's whole point: a component does not know which surface it landed

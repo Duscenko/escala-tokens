@@ -12,13 +12,14 @@ import {
 } from '../../lib/semanticRoles'
 import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
 import { resolveThemePalette } from '../../lib/themeSources'
-import { ArchitectureSelect, ArchContrastStrip } from './ArchitecturePicker'
+import { ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
   RailToggle, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
+import AddThemePanel from './AddThemePanel'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -643,9 +644,10 @@ export default function Step3_SemanticTokens({
   previewTheme,
   onPreviewThemeChange,
   tabBar,
-  onOpenAddTheme,
   railCollapsed = false,
   onToggleRail,
+  toolbar,
+  toolbarWash,
 }: {
   /** Color's three-tab bar, passed down (not pre-wrapped) so it renders on the
    *  SAME row as this table's "Tokens" header — exactly how ColorPrimitives
@@ -661,12 +663,6 @@ export default function Step3_SemanticTokens({
   /** Theme currently rendered in the right-hand preview (eye toggle). */
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
-  /** "+ Theme" — opens `AddThemePanel` DOCKED in the right-hand aside
-   *  (Configurator owns that boolean and swaps it in for `PreviewPanel`), not
-   *  a modal this component renders itself. Every trigger just reports up.
-   *  Passing a theme key opens the SAME panel in edit mode for that theme
-   *  (rename it, re-point a slot) instead of a blank "create" form. */
-  onOpenAddTheme: (editKey?: string) => void
   /** Collapses this tab's 198px left column to a 56px glyph strip — the SAME
    *  state Primitives' family rail uses (`colorRailCollapsed`, owned by
    *  `Configurator` because TopNav sizes its brand divider from the column's
@@ -675,6 +671,8 @@ export default function Step3_SemanticTokens({
    *  it expanded on Semantics would read as two different columns. */
   railCollapsed?: boolean
   onToggleRail?: () => void
+  toolbar?: ReactNode
+  toolbarWash?: string
 }) {
   const store = useDesignStore()
   const {
@@ -689,6 +687,21 @@ export default function Step3_SemanticTokens({
   } = store
 
   const reduce = useReducedMotion() ?? false
+
+  // "+ Theme" / edit-theme popover — same anchored, portaled pattern Color
+  // Agent uses. Lives here (not in Configurator's preview aside) so it still
+  // opens when that panel is collapsed or the viewport is below 1180px.
+  const addThemeAnchorRef = useRef<HTMLElement | null>(null)
+  const [addThemeOpen, setAddThemeOpen] = useState<boolean | string>(false)
+  const openAddTheme = (editKey: string | undefined, anchor: HTMLElement) => {
+    const next = editKey ?? true
+    if (addThemeOpen === next) {
+      setAddThemeOpen(false)
+      return
+    }
+    addThemeAnchorRef.current = anchor
+    setAddThemeOpen(next)
+  }
 
   // Self-seed any ramp that's still empty (state scales on a system built from
   // Home, which only generates brand + neutral) so the matrix never dead-ends
@@ -1076,15 +1089,10 @@ export default function Step3_SemanticTokens({
           another chrome row rather than above the nav — the strip below picks
           up the lighter `/60` instead, matching whichever row sits directly
           above the nav + table. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
-        {/* No "+" here, unlike ColorPrimitives' matching "Groups" cell: adding
-            a theme adds a COLUMN, so its trigger lives at the end of the
-            column headers (see the tables' trailing header cell) where the new
-            column actually appears. Primitives' + adds a row-group, which is
-            why it belongs beside the nav label there. */}
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
         <div
-          className={`flex-shrink-0 flex items-center h-[52px] border-r border-line transition-[width] duration-200 ${
-            railCollapsed ? 'justify-center px-0' : 'justify-between px-4'
+          className={`flex-shrink-0 flex items-center h-[52px] bg-app transition-[width] duration-200 ${
+            railCollapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
           }`}
           style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
         >
@@ -1095,13 +1103,71 @@ export default function Step3_SemanticTokens({
           {!railCollapsed && <span className="text-[13px] font-semibold text-fg">Groups</span>}
           <RailToggle collapsed={railCollapsed} onClick={onToggleRail} />
         </div>
-        {/* Mirrors ColorPrimitives' matching row — items-stretch, no left
-            padding (tab tint reaches the edge), pr-3 (12px) on the right so
-            the search field keeps clearance instead of sitting flush. */}
-        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
+        <div
+          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
+          style={{ background: toolbarWash }}
+        >
+          {toolbar}
+        </div>
+      </div>
+
+      {/* ── Body: categories flush under Groups; tabs · contrast · table on the right ── */}
+      <div className="flex flex-1 min-h-0 items-stretch">
+        <nav
+          aria-label="Token categories"
+          className={`flex-shrink-0 h-full py-1.5 flex flex-col gap-1 overflow-y-auto bg-app transition-[width] duration-200 ${
+            railCollapsed ? 'items-center px-2' : 'px-2'
+          }`}
+          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
+        >
+          {navItems.map((item) => {
+            const isActive = activeKey === item.key
+            return (
+              <div key={item.key} className={`relative group ${railCollapsed ? '' : 'w-full'}`}>
+                <button
+                  onClick={() => selectNavItem(item.key)}
+                  aria-label={item.label}
+                  aria-current={isActive}
+                  className={`flex items-center transition-colors ${
+                    railCollapsed ? 'w-10 h-8 justify-center rounded-lg' : 'w-full gap-2.5 px-2.5 py-2 text-left'
+                  } ${
+                    isActive
+                      ? railCollapsed
+                        ? 'bg-elevated text-accent-ui'
+                        : 'chrome-tab bg-elevated text-accent-ui'
+                      : `${railCollapsed ? '' : 'rounded-lg'} text-fg-muted hover:bg-elevated/50 hover:text-fg`
+                  }`}
+                >
+                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>
+                  {!railCollapsed && (
+                    <>
+                      <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
+                      {item.modified > 0 && (
+                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" aria-hidden />
+                      )}
+                    </>
+                  )}
+                </button>
+                {railCollapsed && item.modified > 0 && (
+                  <span
+                    className="pointer-events-none absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent-ui"
+                    aria-hidden
+                  />
+                )}
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 w-44 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-40 shadow-lg"
+                >
+                  {railCollapsed ? `${item.label} — ${item.description}` : item.description}
+                </span>
+              </div>
+            )
+          })}
+        </nav>
+
+        <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
+        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
           <div className="flex-1 min-w-0">{tabBar}</div>
-          {/* Panel background — Radix-style solid/translucent for raised
-              surfaces (cards, panels). Only relevant while viewing Background. */}
           {isFlat && activeCategory === 'background' && (
             <div className="self-center flex items-center gap-2 flex-shrink-0">
               <span className="text-[11px] text-fg-faint">Panel background</span>
@@ -1145,104 +1211,9 @@ export default function Step3_SemanticTokens({
             )}
           </div>
         </div>
-      </div>
-
-      {/* ── Row 2 — architecture strip. Mirrors ColorPrimitives' quick-edit
-          row exactly: a 198px labelled cell holding the control (there a
-          family hex field, here the architecture dropdown) against a flex-1
-          cell showing what that choice produces (there the ScaleRow, here the
-          live WCAG contrast chips). Same 198px + border-r as the rows around
-          it, so the left edge reads as one continuous column across all
-          three. MOVED BELOW "Groups" (was row 1) — see that row's own note.
-          `border-line/60` (the lighter weight) since this now sits between
-          "Groups" above and the nav + table below, the same "chrome-to-chrome
-          is lighter, chrome-to-content is full-strength" rule the row order
-          swap carried over from ColorPrimitives. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        {/* Collapsed, this cell keeps ONLY the architecture dropdown — the
-            caption is what goes, exactly as Primitives' matching strip drops
-            its label and hex field and keeps the family swatch. The control
-            this cell owns has to survive the collapse; the word naming it is
-            recoverable in one click. `ArchitectureSelect` renders its own
-            trigger, so at 56px it simply reads as the icon-width chip it
-            already is. */}
-        <div
-          className={`flex-shrink-0 border-r border-line flex flex-col justify-center py-5 transition-[width] duration-200 ${
-            railCollapsed ? 'items-center px-2' : 'gap-1.5 px-4'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
-          {!railCollapsed && (
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token architecture</span>
-          )}
-          <ArchitectureSelect compact={railCollapsed} />
-        </div>
-        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
-        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
+        <div className="flex items-center gap-4 pl-4 pr-3 h-[52px] flex-shrink-0 border-b border-line/60 min-w-0 overflow-x-auto">
           <ArchContrastStrip kind={semanticArchitecture} />
         </div>
-      </div>
-
-      {/* ── Row 3 — nav + table, filling the remaining height ── */}
-      <div className="flex-1 min-h-0 flex items-stretch">
-        {/* Category nav — same widths/border-r/bg-app as ColorPrimitives' family
-            nav, and it collapses with it. Collapsed each row is ONE 40×32
-            button carrying only its glyph (the bare 15px icon is not a target),
-            which is the same "drop the labels, keep the glyphs" call the
-            collapsed family rail and `FoundationIconRail` both make — a
-            category you can still switch to is what makes this a collapse
-            rather than a hide. The modified dot moves to a corner badge there,
-            since there's no row left for it to sit at the end of.
-            The tooltip earns its keep in BOTH states but says different things:
-            expanded the label already shows, so it carries the description;
-            collapsed it has to name the category first. */}
-        <nav
-          aria-label="Token categories"
-          className={`flex-shrink-0 h-full border-r border-line py-1.5 flex flex-col gap-0.5 bg-app overflow-y-auto transition-[width] duration-200 ${
-            railCollapsed ? 'items-center px-2' : 'px-2'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
-          {navItems.map((item) => {
-            const isActive = activeKey === item.key
-            return (
-              <div key={item.key} className={`relative group ${railCollapsed ? '' : 'w-full'}`}>
-                <button
-                  onClick={() => selectNavItem(item.key)}
-                  aria-label={item.label}
-                  aria-current={isActive}
-                  className={`flex items-center rounded-lg transition-colors ${
-                    railCollapsed ? 'w-10 h-8 justify-center' : 'w-full gap-2.5 px-2.5 py-2 text-left'
-                  } ${
-                    isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                  }`}
-                >
-                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>
-                  {!railCollapsed && (
-                    <>
-                      <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
-                      {item.modified > 0 && (
-                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" aria-hidden />
-                      )}
-                    </>
-                  )}
-                </button>
-                {railCollapsed && item.modified > 0 && (
-                  <span
-                    className="pointer-events-none absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent-ui"
-                    aria-hidden
-                  />
-                )}
-                <span
-                  role="tooltip"
-                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 w-44 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-40 shadow-lg"
-                >
-                  {railCollapsed ? `${item.label} — ${item.description}` : item.description}
-                </span>
-              </div>
-            )
-          })}
-        </nav>
 
         {/* Token table — scrolls internally; column header stays pinned.
             `tableRef` is what the Token Details dialog docks against, so it
@@ -1252,8 +1223,8 @@ export default function Step3_SemanticTokens({
             the bottom of the VIEWPORT of the table, not at the bottom of its
             (taller, wider) content, so they can't live inside the scrolling
             element itself. */}
-        <div className="relative flex-1 min-w-0 flex">
-        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
+        <div className="relative flex-1 min-w-0 flex min-h-0">
+        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto bg-app border-l border-line">
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
@@ -1308,7 +1279,7 @@ export default function Step3_SemanticTokens({
                           affordance isn't gated on `isThemeCol` the way
                           delete is. */}
                       <button
-                        onClick={() => onOpenAddTheme(mode)}
+                        onClick={(e) => openAddTheme(mode, e.currentTarget)}
                         aria-label={`Edit theme ${label}`}
                         title={`Edit theme ${label}`}
                         className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
@@ -1348,7 +1319,7 @@ export default function Step3_SemanticTokens({
                 <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                   {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
                     <button
-                      onClick={() => onOpenAddTheme()}
+                      onClick={(e) => openAddTheme(undefined, e.currentTarget)}
                       aria-label="Add a theme"
                       title="Add a theme — its roles resolve through the primary colors"
                       className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1536,7 +1507,7 @@ export default function Step3_SemanticTokens({
                         name or a slot you wanted pointed elsewhere meant
                         deleting the theme and starting over. */}
                     <button
-                      onClick={() => onOpenAddTheme(t)}
+                      onClick={(e) => openAddTheme(t, e.currentTarget)}
                       aria-label={`Edit theme ${displayName}`}
                       title={`Edit theme ${displayName}`}
                       className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
@@ -1576,7 +1547,7 @@ export default function Step3_SemanticTokens({
                   and no architecture curating it down. */}
               <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
                 <button
-                  onClick={() => onOpenAddTheme()}
+                  onClick={(e) => openAddTheme(undefined, e.currentTarget)}
                   aria-label="Add a theme"
                   title="Add a theme — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1619,6 +1590,7 @@ export default function Step3_SemanticTokens({
           )}
         </div>
         <ScrollPager scrollRef={tableRef} watch={scrollWatch} reduce={reduce} />
+        </div>
         </div>
       </div>
 
@@ -1730,6 +1702,18 @@ export default function Step3_SemanticTokens({
           />
         )}
       </AnimatePresence>
+      <AddThemePanel
+        open={addThemeOpen !== false}
+        editKey={typeof addThemeOpen === 'string' ? addThemeOpen : null}
+        onClose={() => setAddThemeOpen(false)}
+        anchorRef={addThemeAnchorRef}
+        appearance={kindOf(previewTheme ?? 'light')}
+        onCreated={(key) => onPreviewThemeChange?.(key)}
+        onRenamed={(oldKey, newKey) => {
+          if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
+          setAddThemeOpen((cur) => (cur === oldKey ? newKey : cur))
+        }}
+      />
     </div>
   )
 }

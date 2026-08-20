@@ -12,7 +12,6 @@ import {
   type OptionGroup,
 } from './colorControls'
 import { resolveThemePalette } from '../../lib/themeSources'
-import { ARCHITECTURE_OPTIONS, type SemanticArchitecture } from '../../lib/semanticArchitectures'
 import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
@@ -563,7 +562,7 @@ export function QuickEditSections({
     grayBaseColor,
     errorColor, warningColor, successColor, infoColor,
     customColors, removeCustomColor,
-    semanticArchitecture, setSemanticArchitecture, neutralTint,
+    neutralTint,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
     iconLibrary, setIconLibrary,
@@ -705,15 +704,7 @@ export function QuickEditSections({
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-faint">Token Architecture</span>
-          <Combo<SemanticArchitecture>
-            value={semanticArchitecture}
-            options={ARCHITECTURE_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
-            onChange={setSemanticArchitecture}
-            ariaLabel="Token architecture"
-          />
-        </div>
+
       </Group>
 
       {/* Typography card — heading & body family · base size · modular type scale */}

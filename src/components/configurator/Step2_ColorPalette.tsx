@@ -1,12 +1,23 @@
-import { useEffect, useCallback, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useCallback, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { generateColorScale, recommendStateColors, NAMING_SCHEMES, NEUTRAL_TINTS, type NeutralTint, type StateColors } from '../../lib/colorUtils'
+import { generateColorScale, recommendStateColors, NAMING_SCHEMES, NEUTRAL_TINTS, DEFAULT_NEUTRAL_TINT, previewHarmony, type NeutralTint, type StateColors } from '../../lib/colorUtils'
 import { useApplyAccentColor, useApplyGrayColor, useApplyPageBackground, useApplyDarkBackground } from '../../lib/colorActions'
 import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
   BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
+  usePopoverPlacement,
 } from './colorControls'
+import {
+  INDUSTRY_GROUP_LABEL, INDUSTRY_GROUP_ORDER, hexEq, industryFromHex, packById, packsInGroup,
+  sortAccentsByHue,
+  type IndustryGroupId,
+  type IndustryId,
+} from '../../lib/industryPacks'
+import { ColorAgentButton } from '../ui/shimmer-button'
+import { SparkleCircleIcon } from '../ui/icons'
+import { HarmonyFollows } from './HarmonyFollows'
 
 // ── Scale settings — Contrast shift ─────────────────────────────────────────
 // Drives how far every 1–12 ramp travels from the page; changing it regenerates
@@ -33,6 +44,9 @@ export function ColorControls({
   linkStates,
   onLinkStates,
   linkedStatesPreview,
+  accentHex,
+  onPickAccent,
+  appearance = 'light',
 }: {
   contrastShift: number
   onShift: (n: number) => void
@@ -58,11 +72,31 @@ export function ColorControls({
   /** The four hexes the states become while linked, keyed by role — so the
    *  toggle can SHOW its consequence instead of describing it. */
   linkedStatesPreview?: StateColors
+  /** Current accent — drives industry detection. Omit with `onPickAccent` to
+   *  hide the field guide (hosts that only expose contrast). */
+  accentHex?: string
+  onPickAccent?: (hex: string) => void
+  /** Previewed appearance — rings the matching Neutral page in HarmonyFollows. */
+  appearance?: 'light' | 'dark'
 }) {
   const fill = ((contrastShift + 1) / 2) * 100 // −1…1 → 0…100%
+  const derived = accentHex && neutralTint ? previewHarmony(accentHex, neutralTint) : null
 
   return (
     <div className="flex flex-col gap-5">
+      {accentHex && onPickAccent && (
+        <ScaleGuide
+          accentHex={accentHex}
+          onPickAccent={onPickAccent}
+          linkNeutral={linkNeutral}
+          onLinkNeutral={onLinkNeutral}
+          linkStates={linkStates}
+          onLinkStates={onLinkStates}
+          tint={neutralTint}
+          appearance={appearance}
+        />
+      )}
+
       {/* Harmony — the accent↔neutral and accent↔states links. Lives HERE, in
           the scale-settings popover, rather than inline in the quick-edit
           strip: a control that only renders while Accent is active shifts the
@@ -81,16 +115,21 @@ export function ColorControls({
               linkNeutral ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
             }`}
           >
-            <span
-              aria-hidden
-              className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
-              style={{ background: linkedNeutralPreview ?? 'transparent' }}
-            />
+            <span aria-hidden className="flex items-center gap-px flex-shrink-0">
+              <span
+                className={`w-4 h-4 rounded-l ring-1 ring-black/10 ${appearance === 'light' ? 'ring-2 ring-fg z-[1]' : ''}`}
+                style={{ background: derived?.pageLight ?? linkedNeutralPreview ?? 'transparent' }}
+              />
+              <span
+                className={`w-4 h-4 rounded-r ring-1 ring-black/10 ${appearance === 'dark' ? 'ring-2 ring-fg z-[1]' : ''}`}
+                style={{ background: derived?.pageDark ?? 'transparent' }}
+              />
+            </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[12px] text-fg">Neutral follows the accent</span>
               <span className="block text-[11px] text-fg-faint leading-snug">
                 {linkNeutral
-                  ? 'Re-derived on every accent change. Editing it by hand unlinks.'
+                  ? 'Light and dark pages re-derived on every accent change. Edit by hand to unlink.'
                   : 'The neutral is set by hand and keeps its own colour.'}
               </span>
             </span>
@@ -109,7 +148,7 @@ export function ColorControls({
                   <span
                     key={k}
                     className="w-4 h-4 rounded-full ring-1 ring-black/10"
-                    style={{ background: linkedStatesPreview?.[k] ?? 'transparent' }}
+                    style={{ background: derived?.states[k] ?? linkedStatesPreview?.[k] ?? 'transparent' }}
                   />
                 ))}
               </span>
@@ -117,7 +156,7 @@ export function ColorControls({
                 <span className="block text-[12px] text-fg">States follow the accent</span>
                 <span className="block text-[11px] text-fg-faint leading-snug">
                   {linkStates
-                    ? 'Error · Warning · Success · Info re-derived on every accent change. Hue stays put, only saturation follows.'
+                    ? 'Error · Warning · Success · Info pick up the accent chroma. Hue stays put in light and dark.'
                     : 'Error · Warning · Success · Info are set by hand and keep their own colour.'}
                 </span>
               </span>
@@ -196,25 +235,235 @@ export function ColorControls({
   )
 }
 
-// Anchored popover for the scale settings — mirrors QuickFoundationsPanel's
-// style exactly (no backdrop overlay; Esc/click-outside to dismiss). Entry
-// point is the filter-icon button in the Primitives header, which this must
-// render right next to (parent wraps both in a `relative` container).
+// Field + four accents. Not a chatbot — a terse recommendation sitting above
+// the Harmony toggles. Groups collapse so Market / Work / Life scan fast.
+function ScaleGuide({
+  accentHex,
+  onPickAccent,
+  linkNeutral,
+  onLinkNeutral,
+  linkStates,
+  onLinkStates,
+  tint,
+  appearance = 'light',
+}: {
+  accentHex: string
+  onPickAccent: (hex: string) => void
+  linkNeutral?: boolean
+  onLinkNeutral?: (v: boolean) => void
+  linkStates?: boolean
+  onLinkStates?: (v: boolean) => void
+  tint?: NeutralTint
+  appearance?: 'light' | 'dark'
+}) {
+  const detected = industryFromHex(accentHex)
+  const [browse, setBrowse] = useState<IndustryId | null>(null)
+  const [hoverHex, setHoverHex] = useState<string | null>(null)
+  const [openGroups, setOpenGroups] = useState<Set<IndustryGroupId>>(
+    () => new Set([packById(detected).group]),
+  )
+  const prevHex = useRef(accentHex)
+  useEffect(() => {
+    if (hexEq(prevHex.current, accentHex)) return
+    prevHex.current = accentHex
+    setBrowse((b) => {
+      if (b && packById(b).accents.some((a) => hexEq(a.hex, accentHex))) return b
+      return null
+    })
+    setOpenGroups(new Set([packById(industryFromHex(accentHex)).group]))
+  }, [accentHex])
+  const field = browse ?? detected
+  const pack = packById(field)
+  const canLink = Boolean(onLinkNeutral && onLinkStates)
+  const bothLinked = Boolean(linkNeutral && linkStates)
+
+  useEffect(() => {
+    const g = pack.group
+    setOpenGroups((prev) => (prev.has(g) ? prev : new Set(prev).add(g)))
+  }, [pack.group])
+
+  function toggleGroup(group: IndustryGroupId) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(group)) next.delete(group)
+      else next.add(group)
+      return next
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Industry</span>
+        {canLink && !bothLinked && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!linkNeutral) onLinkNeutral?.(true)
+              if (!linkStates) onLinkStates?.(true)
+            }}
+            className="text-[11px] text-accent-ui hover:text-fg underline underline-offset-2 transition-colors"
+          >
+            Link Neutral & States
+          </button>
+        )}
+      </div>
+
+      <div role="radiogroup" aria-label="Industry" className="flex flex-col gap-1.5">
+        {INDUSTRY_GROUP_ORDER.map((group) => {
+          const open = openGroups.has(group)
+          const rows = packsInGroup(group)
+          const activeInGroup = rows.some((p) => p.id === field)
+          return (
+            <div
+              key={group}
+              className={`rounded-lg border transition-colors ${
+                open ? 'border-line/80 bg-surface/40' : 'border-line/50'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleGroup(group)}
+                aria-expanded={open}
+                className="flex w-full items-center gap-2 px-2.5 py-2 text-left hover:bg-elevated/40 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg focus-visible:ring-inset"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className={`flex-shrink-0 text-fg-faint transition-transform duration-200 ease-out ${
+                    open ? 'rotate-90' : ''
+                  }`}
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+                <span className="flex-1 min-w-0 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+                  {INDUSTRY_GROUP_LABEL[group]}
+                </span>
+                {!open && activeInGroup && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" aria-hidden />
+                )}
+                <span className="text-[10px] tabular-nums text-fg-faint">{rows.length}</span>
+              </button>
+              {open && (
+                <div className="flex flex-col gap-0.5 px-1 pb-1.5">
+                  {rows.map((p) => {
+                    const active = p.id === field
+                    const accents = sortAccentsByHue(p.accents)
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex items-center gap-2 pl-2 pr-1.5 h-8 rounded-lg border transition-colors ${
+                          active ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-transparent hover:border-line'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setBrowse(p.id)}
+                          className={`flex-1 min-w-0 text-left text-[12px] truncate ${
+                            active ? 'text-fg' : 'text-fg-muted'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {accents.map((a) => {
+                            const swatchOn = hexEq(a.hex, accentHex)
+                            return (
+                              <button
+                                key={a.hex + a.label}
+                                type="button"
+                                title={a.label}
+                                aria-label={`${p.label} — ${a.label}`}
+                                aria-pressed={swatchOn}
+                                onClick={() => {
+                                  setBrowse(p.id)
+                                  onPickAccent(a.hex)
+                                }}
+                                onMouseEnter={() => setHoverHex(a.hex)}
+                                onMouseLeave={() => setHoverHex(null)}
+                                onFocus={() => setHoverHex(a.hex)}
+                                onBlur={() => setHoverHex(null)}
+                                className={`w-4 h-4 rounded-full transition-transform ${
+                                  swatchOn ? 'ring-2 ring-fg scale-110' : 'ring-1 ring-black/15 hover:scale-110'
+                                }`}
+                                style={{ background: a.hex }}
+                              />
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex flex-col gap-1.5 px-0.5">
+        <HarmonyFollows
+          accentHex={hoverHex ?? accentHex}
+          tint={tint ?? DEFAULT_NEUTRAL_TINT}
+          appearance={appearance}
+        />
+        <p className="text-[11px] text-fg-faint leading-snug">{pack.theory}</p>
+      </div>
+    </div>
+  )
+}
+
+const SCALE_SETTINGS_W = 360
+
+// Anchored popover for the scale settings — no backdrop; Esc/click-outside to
+// dismiss. Portaled to `document.body` and `position: fixed` off the gear's
+// measured rect: the Color hub (and Picker Color) wrap this trigger in
+// `overflow-hidden` ancestors, so `absolute top-full` was clipping the panel
+// with no way to scroll the rest. Same fix as the family export menu.
 export function ScaleSettingsModal({
   open,
   onClose,
   children,
+  anchorRef,
 }: {
   open: boolean
   onClose: () => void
   children: ReactNode
+  anchorRef: RefObject<HTMLElement | null>
 }) {
-  const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const place = usePopoverPlacement(anchorRef, open, { prefer: 480, max: 640 })
+  const [rect, setRect] = useState<DOMRect | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) return
+    const measure = () => {
+      const r = anchorRef.current?.getBoundingClientRect()
+      if (r) setRect(r)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [open, anchorRef])
 
   useEffect(() => {
     if (!open) return
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+      const t = e.target as Node
+      if (anchorRef.current?.contains(t) || panelRef.current?.contains(t)) return
+      onClose()
     }
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     document.addEventListener('mousedown', onDown)
@@ -223,29 +472,36 @@ export function ScaleSettingsModal({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
+  }, [open, onClose, anchorRef])
 
-  return (
-    <AnimatePresence>
-      {open && (
+  if (typeof document === 'undefined') return null
+
+  const panel = open && rect
+    ? (
         <motion.div
-          ref={ref}
+          ref={panelRef}
           initial={{ opacity: 0, y: -6, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -6, scale: 0.98 }}
           transition={{ duration: 0.14, ease: 'easeOut' }}
           role="dialog"
-          aria-label="Scale settings"
-          className="absolute right-0 top-full mt-2 z-30 w-80 rounded-2xl border border-line bg-app shadow-xl p-5 flex flex-col gap-6"
+          aria-label="Color Agent"
+          style={{
+            position: 'fixed',
+            left: Math.min(Math.max(8, rect.right - SCALE_SETTINGS_W), window.innerWidth - SCALE_SETTINGS_W - 8),
+            ...(place.up ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+            maxHeight: place.max,
+            width: SCALE_SETTINGS_W,
+          }}
+          className="z-50 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
         >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-fg">Contrast</h3>
-              <p className="text-xs text-fg-faint mt-0.5">
-                How far every 1–12 ramp travels from the page background.
-              </p>
+          <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3 flex-shrink-0 border-b border-line/60">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-fg">Color Agent</h3>
+              <p className="text-[11px] text-fg-faint mt-0.5 truncate">Industry packs, harmony, tint</p>
             </div>
             <button
+              type="button"
               onClick={onClose}
               aria-label="Close"
               className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
@@ -255,10 +511,16 @@ export function ScaleSettingsModal({
               </svg>
             </button>
           </div>
-          {children}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-5 pb-5 flex flex-col gap-6">
+            {children}
+          </div>
         </motion.div>
-      )}
-    </AnimatePresence>
+      )
+    : null
+
+  return createPortal(
+    <AnimatePresence>{panel}</AnimatePresence>,
+    document.body,
   )
 }
 
@@ -277,6 +539,7 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
     pageBackground, darkBackground, themeKinds,
   } = useDesignStore()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsAnchorRef = useRef<HTMLDivElement>(null)
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
   const applyPageBackground = useApplyPageBackground()
@@ -400,26 +663,18 @@ export default function Step2_ColorPalette({ previewTheme = 'light' }: { preview
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-fg">Primitives</h3>
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <button
-                type="button"
+            <div ref={settingsAnchorRef} className="relative">
+              <ColorAgentButton
+                active={settingsOpen}
                 onClick={() => setSettingsOpen((v) => !v)}
                 aria-haspopup="dialog"
                 aria-expanded={settingsOpen}
-                aria-label="Scale settings — algorithm, naming, contrast shift"
-                title="Scale settings"
-                className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                  settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
-                }`}
+                aria-label="Color Agent"
+                title="Color Agent"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-                  <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-                  <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-                </svg>
-              </button>
-              <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
+                <SparkleCircleIcon />
+              </ColorAgentButton>
+              <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} anchorRef={settingsAnchorRef}>
                 <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
               </ScaleSettingsModal>
             </div>

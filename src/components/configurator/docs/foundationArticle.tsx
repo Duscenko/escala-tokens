@@ -5,7 +5,7 @@
 
 import { type ReactNode } from 'react'
 import {
-  CopyButton, DocHeader, DocTitle, DocSection, CodeBlock, ShipsAs, CountBadge,
+  CopyButton, DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, ShipsAs, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
 import {
@@ -119,13 +119,6 @@ export function OverviewArticle({
   system, onOpen,
 }: { system: SystemDoc; onOpen: (key: string) => void }) {
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
-  const markdown = [
-    '# Design system reference',
-    '',
-    `${total} tokens across ${FOUNDATION_DOCS.length} foundations.`,
-    '',
-    ...FOUNDATION_DOCS.map((f) => `## ${f.label}\n\n${f.lead}\n\n- tokens.json: \`${f.ships.json}\`\n- variables.css: \`${f.ships.css}\`\n- Figma: ${f.ships.figma}`),
-  ].join('\n')
 
   return (
     <div className="flex flex-col gap-8">
@@ -133,7 +126,7 @@ export function OverviewArticle({
         section="Docs"
         kind="Foundations"
         title="Overview"
-        actions={<CopyButton text={markdown} label="Copy Page" />}
+        actions={<DownloadSkillButton />}
       />
 
       <DocTitle

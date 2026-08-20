@@ -42,6 +42,8 @@ export function syncUrl(): string {
  */
 export async function publishTokens(): Promise<boolean> {
   try {
+    // The blob IS generateTokenJSON() — nested `colors.architecture` included.
+    // The plugin GETs this URL and must not reshape it.
     const res = await fetch(syncPath(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

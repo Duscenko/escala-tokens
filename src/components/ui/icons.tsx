@@ -2,8 +2,8 @@
 // configurator, so every surface shows the same official mark. Both track
 // currentColor; size them per context.
 
-/** Sliders / "tune" — THE settings/filter icon: scale settings, per-row scale
- *  editors, picker toggles. Three rails with punched-out knobs. */
+/** Sliders / "tune" — per-row scale editors, picker toggles, algorithm
+ *  surfaces. The Color hub's scale-guide trigger uses SparkleCircleIcon. */
 export function SlidersIcon({ size = 15, className = '' }: { size?: number; className?: string }) {
   return (
     <svg
@@ -17,6 +17,24 @@ export function SlidersIcon({ size = 15, className = '' }: { size?: number; clas
       <circle cx="3" cy="5" r="1.7" fill="var(--app)" />
       <circle cx="7" cy="9" r="1.7" fill="var(--app)" />
       <circle cx="11" cy="4" r="1.7" fill="var(--app)" />
+    </svg>
+  )
+}
+
+/** Sparkle in a circle — the scale-guide mark (industry packs + harmony),
+ *  distinct from SlidersIcon which stays on per-row / algorithm editors. */
+export function SparkleCircleIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24" fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className} aria-hidden
+    >
+      <path
+        d="M11.7372 6.70975L11.1685 8.40303C10.9573 9.0472 10.5977 9.63262 10.1187 10.112C9.63979 10.5914 9.0549 10.9513 8.41132 11.1627L6.69797 11.732C6.64036 11.7509 6.59019 11.7876 6.55463 11.8368C6.51907 11.8859 6.49992 11.9451 6.49992 12.0058C6.49992 12.0665 6.51907 12.1256 6.55463 12.1748C6.59019 12.2239 6.64036 12.2606 6.69797 12.2796L8.41132 12.8488C9.04858 13.0609 9.62764 13.4188 10.1025 13.8942C10.5774 14.3695 10.935 14.949 11.1469 15.5869L11.7156 17.3018C11.7346 17.3594 11.7712 17.4097 11.8203 17.4452C11.8695 17.4808 11.9286 17.5 11.9892 17.5C12.0498 17.5 12.1089 17.4808 12.1581 17.4452C12.2072 17.4097 12.2438 17.3594 12.2628 17.3018L12.8531 15.6085C13.065 14.9707 13.4226 14.3911 13.8975 13.9158C14.3724 13.4405 14.9514 13.0825 15.5887 12.8704L17.302 12.3012C17.3596 12.2822 17.4098 12.2456 17.4454 12.1964C17.4809 12.1472 17.5001 12.0881 17.5001 12.0274C17.5001 11.9667 17.4809 11.9075 17.4454 11.8584C17.4098 11.8092 17.3596 11.7725 17.302 11.7536L15.6103 11.1627C14.9667 10.9513 14.3818 10.5914 13.9028 10.112C13.4239 9.63262 13.0643 9.0472 12.8531 8.40303L12.2844 6.68813C12.2633 6.6311 12.2247 6.58221 12.1741 6.54846C12.1236 6.51471 12.0637 6.49783 12.003 6.50022C11.9422 6.50262 11.8838 6.52418 11.8361 6.56182C11.7884 6.59945 11.7538 6.65123 11.7372 6.70975Z"
+        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      />
+      <rect x="2.5" y="2.5" width="19" height="19" rx="9.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   )
 }

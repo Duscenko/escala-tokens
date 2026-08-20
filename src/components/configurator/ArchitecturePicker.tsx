@@ -169,7 +169,7 @@ export function ArchPreview({ kind }: { kind: SemanticArchitecture }) {
       <>
         <PairChip label="content.primary · light → {neutral.12}" fg={g[12]} bg={g[1]} />
         <PairChip label="content.primary · dark → {neutral-dark.12}" fg={gd[12]} bg={gd[1]} />
-        <PairChip label="content.on-action / action.primary" fg={g[1]} bg={solid} />
+        <PairChip label="content.on-action / action.primary.default" fg={g[1]} bg={solid} />
       </>
     )
   }
@@ -226,6 +226,7 @@ export function ArchContrastStrip({ kind }: { kind: SemanticArchitecture }) {
  *  already carry it. */
 export function ArchitectureSelect({ compact = false }: { compact?: boolean } = {}) {
   const { semanticArchitecture, setSemanticArchitecture } = useDesignStore()
+  const singleOption = ARCHITECTURE_OPTIONS.length === 1
   const [open, setOpen] = useState(false)
   const reduce = useReducedMotion() ?? false
   const groupRef = useRef<HTMLDivElement>(null)
@@ -246,6 +247,28 @@ export function ArchitectureSelect({ compact = false }: { compact?: boolean } = 
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
+
+  // Categorical-only — no picker needed; show a static chip.
+  if (singleOption) {
+    const only = ARCHITECTURE_OPTIONS[0]
+    const active = semanticArchitecture === only.key ? only : ARCHITECTURE_OPTIONS.find((o) => o.key === semanticArchitecture) ?? only
+    return (
+      <div
+        className={`w-full h-9 rounded-[13px] border border-line-strong bg-surface flex items-center ${
+          compact ? 'justify-center px-0' : 'pl-2.5 pr-2.5 gap-1.5'
+        }`}
+        title={compact ? `Token architecture — ${active.label}` : active.label}
+        aria-label={`Token architecture — ${active.label}`}
+      >
+        <ArchGlyph kind={active.key} />
+        {!compact && (
+          <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-accent-ui">
+            {active.label}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   // Roving-tabindex radiogroup: arrows move AND select (native radio behavior).
   function onKeyDown(e: React.KeyboardEvent) {

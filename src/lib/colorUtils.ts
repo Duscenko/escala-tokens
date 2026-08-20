@@ -686,6 +686,27 @@ export function recommendStateColors(brandHex: string): StateColors {
   return out
 }
 
+/** What Neutral + States become for an accent — the same math `useApplyAccentColor`
+ *  runs when both links are on. Pages are appearance-split; state hues stay put. */
+export interface HarmonyPreview {
+  accent: string
+  neutral: string
+  pageLight: string
+  pageDark: string
+  states: StateColors
+}
+
+export function previewHarmony(accentHex: string, tint: NeutralTint = DEFAULT_NEUTRAL_TINT): HarmonyPreview {
+  const neutral = neutralFromBrand(accentHex, tint)
+  return {
+    accent: accentHex,
+    neutral,
+    pageLight: backgroundFromBase(neutral, 'light', tint),
+    pageDark: backgroundFromBase(neutral, 'dark', tint),
+    states: recommendStateColors(accentHex),
+  }
+}
+
 /**
  * WCAG 2.x contrast ratio.
  *

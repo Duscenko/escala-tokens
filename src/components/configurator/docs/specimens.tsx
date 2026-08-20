@@ -9,7 +9,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf } from '../../../lib/previewTokens'
+import { radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 
@@ -239,10 +239,10 @@ function InputSpecimen({ t, v, icons }: SpecimenProps) {
   const error = state === 'Error'
   const slots = ICON_SLOTS.Input
   const iconColor = disabled ? t.disabledText : (t.fgMuted ?? '#717680')
-  const accent = error ? t.errorColor : t.brandSolid
+  const accent = error ? t.errorColor : focusBorderOf(t)
   const border =
     error ? t.errorColor
-    : state === 'Focused' ? t.brandSolid
+    : state === 'Focused' ? focusBorderOf(t)
     : state === 'Hover' ? (t.fgMuted ?? '#717680')
     : (t.border ?? '#d0d5dd')
 
@@ -256,7 +256,7 @@ function InputSpecimen({ t, v, icons }: SpecimenProps) {
           display: 'flex', alignItems: 'center', gap: 8, height: h, padding: '0 12px',
           borderRadius: radiusOf(t, 'md', '8px'),
           border: `1px solid ${border}`,
-          background: disabled ? t.disabledBg : t.surface,
+          background: disabled ? t.disabledBg : inputSurfaceOf(t),
           boxShadow: state === 'Focused' ? `0 0 0 3px ${accent}26` : undefined,
         }}
       >
@@ -289,10 +289,10 @@ function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const disabled = state === 'Disabled'
   const error = state === 'Error'
   const sz = SELECT_SIZE_SPECS[v.Size ?? 'MD'] ?? SELECT_SIZE_SPECS.MD
-  const accent = error ? t.errorColor : t.brandSolid
+  const accent = error ? t.errorColor : focusBorderOf(t)
   const border =
     error ? t.errorColor
-    : state === 'Focused' ? t.brandSolid
+    : state === 'Focused' ? focusBorderOf(t)
     : state === 'Hover' ? (t.fgMuted ?? '#717680')
     : (t.border ?? '#d0d5dd')
   return (
@@ -303,7 +303,7 @@ function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
         width: 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: '0 12px',
         borderRadius: radiusOf(t, 'md', '8px'),
         border: `1px solid ${border}`,
-        background: disabled ? t.disabledBg : t.surface,
+        background: disabled ? t.disabledBg : inputSurfaceOf(t),
         boxShadow: state === 'Focused' ? `0 0 0 3px ${accent}26` : undefined,
         fontSize: sz.f, color: disabled ? t.disabledText : t.placeholderText,
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -397,7 +397,7 @@ function BadgeSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const sz = BADGE_SIZE_SPECS[v.Size ?? 'MD'] ?? BADGE_SIZE_SPECS.MD
   let bg = 'transparent'; let fg = c; let line = 'transparent'
   if (style === 'Solid') { bg = c; fg = t.onBrand }
-  else if (style === 'Soft') { bg = isNeutral ? t.neutralFill : soft(t, c); fg = isNeutral ? (t.fgMuted ?? c) : c }
+  else if (style === 'Soft') { bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c); fg = isNeutral ? (t.fgMuted ?? c) : c }
   else { line = c + '99' }
   return (
     <span
@@ -502,7 +502,7 @@ function CardSpecimen({ t }: { t: PreviewTokens }) {
       style={{
         ...baseFont(t), width: 280, padding: paddingOf(t),
         borderRadius: radiusOf(t, 'lg', '12px'),
-        ...panelStyle(t, t.semanticMap?.['background-secondary'] || t.surface),
+        ...panelStyle(t, t.neutralFill || t.surface),
         border: `1px solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: shadowOf(t, 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
         display: 'flex', flexDirection: 'column', gap: 8,
@@ -763,8 +763,8 @@ function InputGroupSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', width: 300, height: 40, borderRadius: radiusOf(t, 'md', '8px'), border: `1px solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
       <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, color: t.fgMuted, background: t.neutralFill, borderRight: `1px solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
-      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, background: t.surface, color: t.neutralText }}>escala.design</span>
-      <span style={{ display: 'flex', alignItems: 'center', padding: '0 14px', fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), background: t.surface, color: t.brandText, borderLeft: `1px solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
+      <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, background: inputSurfaceOf(t), color: t.neutralText }}>escala.design</span>
+      <span style={{ display: 'flex', alignItems: 'center', padding: '0 14px', fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), background: inputSurfaceOf(t), color: t.brandText, borderLeft: `1px solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
     </div>
   )
 }
@@ -773,16 +773,17 @@ function TextareaSpecimen({ t, v }: SpecimenProps) {
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
   const error = state === 'Error'
-  const border = error ? t.errorColor : state === 'Focused' ? t.brandSolid : (t.border ?? '#d0d5dd')
+  const focus = error ? t.errorColor : focusBorderOf(t)
+  const border = error ? t.errorColor : state === 'Focused' ? focusBorderOf(t) : (t.border ?? '#d0d5dd')
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: 280 }}>
       <span style={{ fontSize: 12, fontWeight: weightOf(t, 'medium', 500), color: disabled ? t.disabledText : t.neutralText }}>Description</span>
       <div
         style={{
           minHeight: 88, padding: '10px 12px', borderRadius: radiusOf(t, 'md', '8px'),
-          border: `1px solid ${border}`, background: disabled ? t.disabledBg : t.surface,
+          border: `1px solid ${border}`, background: disabled ? t.disabledBg : inputSurfaceOf(t),
           fontSize: 13, lineHeight: 1.5, color: disabled ? t.disabledText : t.placeholderText,
-          boxShadow: state === 'Focused' ? `0 0 0 3px ${(error ? t.errorColor : t.brandSolid)}26` : undefined,
+          boxShadow: state === 'Focused' ? `0 0 0 3px ${focus}26` : undefined,
         }}
       >
         Tell us about your design system…
@@ -1214,7 +1215,7 @@ function PasswordStrengthSpecimen({ t, v }: SpecimenProps) {
   const color = meta.level <= 1 ? t.errorColor : meta.level <= 2 ? (t.warningColor ?? '#f79009') : (t.successColor ?? '#17b26a')
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 8, width: 260 }}>
-      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusOf(t, 'md', '8px'), border: `1px solid ${t.border ?? '#d0d5dd'}`, background: t.surface, fontSize: 14, letterSpacing: 2, color: t.neutralText }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusOf(t, 'md', '8px'), border: `1px solid ${t.border ?? '#d0d5dd'}`, background: inputSurfaceOf(t), fontSize: 14, letterSpacing: 2, color: t.neutralText }}>
         ••••••••
       </div>
       <div style={{ display: 'flex', gap: 4 }} aria-hidden>

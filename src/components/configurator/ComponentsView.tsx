@@ -1,6 +1,5 @@
-// Components — the component catalogue: rail categories (owned by
-// `Configurator`'s outer `SectionRail`) → a master list of that category's
-// components → one canonical page per component, with an "On this page" TOC.
+// Components — the component catalogue: categories + rows live in
+// `ComponentsRail` (owned by Configurator); this view is the article + TOC.
 //
 // This used to be HALF of `DocumentationView` (the "Categories" branch,
 // alongside a "Foundations" branch). The two were split back into separate
@@ -10,38 +9,21 @@
 // (`docs/componentArticle.tsx`) is unchanged and still the single source for
 // what a component page contains.
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
-import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
+import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { OnThisPage } from './docs/blocks'
 import { ComponentArticle, componentToc } from './docs/componentArticle'
 
-function CatalogueCheck() {
-  return (
-    <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden>
-      <path d="M2 5.2 4 7.2 8 2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export default function ComponentsView({
-  previewTheme = 'light', category, search = '', active, onSelect,
+  previewTheme = 'light', active, onSelect,
 }: {
   previewTheme?: string
-  /** Active rail entry — a component category name, owned by Configurator's
-   *  outer `SectionRail`. */
-  category: string
-  /** Current value of the CenterHeader search box. This view never renders the
-   *  input itself — it sits on the header's line, next to the title. */
-  search?: string
   active: ComponentDef | null
   onSelect: (c: ComponentDef) => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
-  const selectedComponents = useDesignStore((s) => s.selectedComponents)
-  const toggleComponent = useDesignStore((s) => s.toggleComponent)
   const articleRef = useRef<HTMLDivElement>(null)
 
   const def = active ?? COMPONENTS[0]
@@ -50,84 +32,10 @@ export default function ComponentsView({
     articleRef.current?.scrollTo({ top: 0 })
   }, [def.key])
 
-  // Picking a CATEGORY opens its first component, unless the open one already
-  // belongs to it.
-  useEffect(() => {
-    if (def.category === category) return
-    const first = COMPONENTS.find((c) => c.category === category)
-    if (first) onSelect(first)
-  }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const q = search.trim().toLowerCase()
-  const groups = useMemo(() => {
-    // No search → only the category picked in the rail; searching spans every
-    // category, so nothing stays hidden behind the filter.
-    return CATEGORIES
-      .filter((cat) => (q ? true : cat === category))
-      .map((cat) => ({
-        cat,
-        items: COMPONENTS.filter(
-          (c) => c.category === cat && (!q || c.label.toLowerCase().includes(q) || c.key.toLowerCase().includes(q)),
-        ),
-      }))
-      .filter((g) => g.items.length > 0)
-  }, [q, category])
-
   const toc = componentToc(def)
 
   return (
     <div className="h-full flex min-h-0">
-      {/* Master list — grouped by category, with the catalogue's include
-          checkboxes. */}
-      <div className="w-52 flex-shrink-0 border-r border-line overflow-y-auto p-3 flex flex-col gap-3">
-        {groups.length === 0 && (
-          <p className="text-[11px] text-fg-faint px-1 pt-1 leading-relaxed">No components match “{search.trim()}”.</p>
-        )}
-        {groups.map(({ cat, items }) => (
-          <div key={cat} className="flex flex-col gap-0.5">
-            <span className="text-[10px] text-fg-faint uppercase tracking-widest px-1">{cat}</span>
-            {items.map((comp) => {
-              const isSelected = selectedComponents.includes(comp.key)
-              const isActive = comp.key === def.key
-              return (
-                <div
-                  key={comp.key}
-                  role="button"
-                  tabIndex={0}
-                  aria-current={isActive ? 'page' : undefined}
-                  onClick={() => onSelect(comp)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      onSelect(comp)
-                    }
-                  }}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[12px] cursor-pointer transition-all ${
-                    isActive
-                      ? 'bg-surface shadow-sm text-fg border border-line'
-                      : 'text-fg-muted hover:bg-elevated/40 hover:text-fg border border-transparent'
-                  }`}
-                >
-                  <span className="truncate">{comp.label}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleComponent(comp.key)
-                    }}
-                    className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                      isSelected ? 'bg-fg text-app' : 'bg-elevated border border-line-strong'
-                    }`}
-                    aria-label={isSelected ? `Remove ${comp.label} from the system` : `Add ${comp.label} to the system`}
-                  >
-                    {isSelected && <CatalogueCheck />}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
       {/* Page. Remount-and-fade on `key`, NOT an AnimatePresence exit→enter
           pair: `mode="wait"` holds the outgoing article until its exit
           completes, and that never resolved when this pattern was first tried
@@ -146,9 +54,7 @@ export default function ComponentsView({
         </motion.div>
       </div>
 
-      {/* On this page — stays on `xl` (1440px here, see DocsView's note). This
-          column has the tightest budget in the app (rail + master list +
-          article + TOC), so it's the last one that should drop its threshold. */}
+      {/* On this page — stays on `xl` (1440px here, see DocsView's note). */}
       <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
         <OnThisPage entries={toc} scrollRoot={articleRef} />
       </div>

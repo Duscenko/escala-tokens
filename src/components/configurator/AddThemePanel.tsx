@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
 import { resolveThemePalette, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import {
-  BASE_TONE, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, readableInk,
+  BASE_TONE, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony, readableInk,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
+import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import {
   SWATCH, ScaleRow, neutralFromBrand, usePopoverPlacement,
@@ -169,32 +170,229 @@ function SlotRow({
   )
 }
 
-/** "Add a theme" — DOCKED in the right-hand aside, the same slot `PreviewPanel`
- *  and `SaveSidePanel` occupy (Configurator swaps it in while this is open),
- *  not a centred modal with a backdrop. It used to be a `fixed inset-0` dialog
- *  blocking the whole screen for a task that's really "fill in six colours" —
- *  docking it in the persistent right column matches `SaveSidePanel`'s own
- *  precedent (identity + connections, docked, not modal) and means opening it
- *  doesn't block reading the semantic table you're about to point a new theme
- *  at. Configurator owns the open/closed boolean and mounts/unmounts this
- *  component directly — there's no internal `open` prop any more, since mount
- *  IS open. */
-export default function AddThemePanel({
+function uniqueKey(wanted: string, taken: Set<string>): string {
+  const base = wanted || 'theme'
+  let key = base
+  let n = 2
+  while (taken.has(key) || RESERVED_COLOR_KEYS.includes(key)) key = `${base}-${n++}`
+  return key
+}
+
+function titleCaseKey(key: string) {
+  return key.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
+function labelForAccent(hex: string): string {
+  const h = hex.slice(0, 7).toLowerCase()
+  return INDUSTRY_SPECTRUM.find((p) => p.hex.toLowerCase() === h)?.label ?? 'Theme'
+}
+
+function mintThemeFromAccent(
+  hex: string,
+  kind: 'light' | 'dark',
+  nameLabel: string,
+): { key: string } | { error: string } {
+  const s = useDesignStore.getState()
+  const label = nameLabel.trim() || labelForAccent(hex)
+  const baseKey = slugify(label)
+  if (!baseKey) return { error: 'Name the theme first.' }
+  if (nameLabel.trim() && s.themes[baseKey]) return { error: `"${baseKey}" already exists.` }
+  const key = nameLabel.trim()
+    ? baseKey
+    : uniqueKey(baseKey, new Set(Object.keys(s.themes)))
+
+  const chosen = (() => {
+    const h = previewHarmony(hex, s.neutralTint)
+    return {
+      brand: hex,
+      gray: h.neutral,
+      error: h.states.error,
+      warning: h.states.warning,
+      success: h.states.success,
+      info: h.states.info,
+    } as Record<FamilySlot, string>
+  })()
+  const globals: Record<FamilySlot, { key: string; hex: string }> = {
+    brand:   { key: 'accent',  hex: s.primaryColor },
+    gray:    { key: 'neutral', hex: s.grayBaseColor },
+    error:   { key: 'error',   hex: s.errorColor },
+    warning: { key: 'warning', hex: s.warningColor },
+    success: { key: 'success', hex: s.successColor },
+    info:    { key: 'info',    hex: s.infoColor },
+  }
+  const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
+  const scalesOf = (slot: FamilySlot, slotHex: string) => {
+    if (slot === 'gray') {
+      return {
+        scale: generateColorScale(slotHex, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint),
+        darkScale: generateDarkColorScale(slotHex, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint),
+      }
+    }
+    return {
+      scale: generateColorScale(slotHex, s.colorAlgorithm, s.contrastShift, s.pageBackground),
+      darkScale: generateFamilyDarkScale(slotHex, s.colorAlgorithm, s.contrastShift, s.darkBackground),
+    }
+  }
+
+  try {
+    const taken = new Set(s.customColors.map((c) => c.key))
+    const refs = {} as ThemeSources
+    for (const slot of FAMILY_SLOTS) {
+      const slotHex = chosen[slot]
+      const g = globals[slot]
+      if (eq(slotHex, g.hex)) { refs[slot] = g.key; continue }
+      const existing = s.customColors.find((c) => eq(c.base, slotHex))
+      if (existing) { refs[slot] = existing.key; continue }
+      const familyKey = uniqueKey(slot === 'brand' ? key : `${key}-${slot}`, taken)
+      taken.add(familyKey)
+      s.addCustomColor({
+        key: familyKey,
+        label: titleCaseKey(familyKey),
+        base: slotHex,
+        ...scalesOf(slot, slotHex),
+      })
+      refs[slot] = familyKey
+    }
+    s.addTheme(key, kind, refs)
+    return { key }
+  } catch {
+    return { error: 'One of the colors is invalid.' }
+  }
+}
+
+/** Same chrome as Primitives' Accent picker — curated, Follows, saved, accessible.
+ *  Identity (name + light/dark) sits in one row above; Add theme commits in a
+ *  pinned footer so nothing lands in the matrix until the user confirms. */
+function AddThemePicker({
+  kind: initialKind,
+  onCreated,
+  onClose,
+}: {
+  kind: 'light' | 'dark'
+  onCreated?: (key: string) => void
+  onClose: () => void
+}) {
+  const primaryColor = useDesignStore((s) => s.primaryColor)
+  const pageBackground = useDesignStore((s) => s.pageBackground)
+  const darkBackground = useDesignStore((s) => s.darkBackground)
+  const [draft, setDraft] = useState(primaryColor)
+  const [name, setName] = useState('')
+  const [kind, setKind] = useState<'light' | 'dark'>(initialKind)
+  const [err, setErr] = useState<string | null>(null)
+
+  function handleAdd() {
+    setErr(null)
+    const result = mintThemeFromAccent(draft, kind, name)
+    if ('error' in result) {
+      setErr(result.error)
+      return
+    }
+    onCreated?.(result.key)
+    onClose()
+  }
+
+  return (
+    <div className="flex flex-col min-h-0 flex-1">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3">
+        <div className="flex items-center gap-1.5">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setErr(null) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
+            placeholder="Name"
+            aria-label="Theme name"
+            autoFocus
+            spellCheck={false}
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none placeholder:text-fg-faint focus:border-fg transition-colors"
+          />
+          <div className="flex flex-shrink-0 rounded-lg border border-line overflow-hidden" role="group" aria-label="Theme mode">
+            {(['light', 'dark'] as const).map((k) => {
+              const on = kind === k
+              const bg = k === 'dark' ? darkBackground : pageBackground
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setKind(k)}
+                  aria-pressed={on}
+                  className={`px-2 py-1.5 text-[11px] font-medium capitalize transition-colors ${
+                    on ? '' : 'bg-surface text-fg-muted hover:text-fg'
+                  }`}
+                  style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
+                >
+                  {k}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Picker sits on the theme's own page colour — toggling Light/Dark
+            repaints this card so mode is obvious before Add. */}
+        <section
+          className={`${kind === 'dark' ? 'dark' : 'light'} rounded-xl border border-line p-3 transition-[background-color,border-color] duration-200`}
+          style={{ backgroundColor: kind === 'dark' ? darkBackground : pageBackground }}
+          aria-live="polite"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint mb-2.5">
+            {kind === 'dark' ? 'Dark theme' : 'Light theme'}
+          </p>
+          <ColorPickerPanel
+            value={draft}
+            onChange={setDraft}
+            suggestions
+            palette={curatedPaletteFor('accent')}
+            followAccent
+            linkOnPick={false}
+            appearance={kind}
+            fieldAppearance={kind}
+          />
+        </section>
+
+        {err ? <p className="text-[11px] text-red-500">{err}</p> : null}
+      </div>
+
+      <div className="flex-shrink-0 flex items-center justify-end gap-2 px-4 py-3 border-t border-line bg-app">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="px-4 py-1.5 rounded-lg text-xs font-medium bg-fg text-app hover:opacity-90 transition-opacity"
+        >
+          Add theme
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const ADD_THEME_W = 400
+
+type AddThemeFormProps = {
+  onClose: () => void
+  /** When set, the panel edits this existing theme instead of creating a new one. */
+  editKey?: string | null
+  /** When set (and editKey isn't), the form pre-fills from this theme's resolved
+   *  palette but still creates a brand-new theme on submit — a "Duplicate" flow
+   *  reusing the same load-a-palette logic edit mode already has. */
+  seedFrom?: string | null
+  /** Fired after a successful rename so callers can re-point their preview state. */
+  onRenamed?: (oldKey: string, newKey: string) => void
+}
+
+function AddThemeForm({
   onClose,
   editKey = null,
   seedFrom = null,
   onRenamed,
-}: {
-  onClose: () => void
-  // When set, the panel edits this existing theme instead of creating a new one.
-  editKey?: string | null
-  // When set (and editKey isn't), the form pre-fills from this theme's resolved
-  // palette but still creates a brand-new theme on submit — a "Duplicate" flow
-  // reusing the same load-a-palette logic edit mode already has.
-  seedFrom?: string | null
-  // Fired after a successful rename so callers can re-point their preview state.
-  onRenamed?: (oldKey: string, newKey: string) => void
-}) {
+}: AddThemeFormProps) {
   const store = useDesignStore()
   const {
     themes, addTheme, renameTheme, updateTheme, customColors, addCustomColor,
@@ -207,10 +405,8 @@ export default function AddThemePanel({
   // palette + mode are editable, but the key itself must stay stable.
   const nameLocked = editKey === 'light' || editKey === 'dark'
 
-  // Seeded once, at mount — Configurator mounts a FRESH instance per open (no
-  // internal `open` prop to re-seed on any more), so a lazy initializer here
-  // does what the old open-keyed `useEffect` did, just without needing the
-  // effect at all.
+  // Seeded once, at mount — the popover remounts this form per open (and
+  // keys it on editKey), so a lazy initializer here reseeds without an effect.
   const sourceKey = editKey ?? seedFrom
   const seed = useMemo(() => {
     if (!sourceKey) return null
@@ -237,12 +433,6 @@ export default function AddThemePanel({
   const [success, setSuccess] = useState(seed?.success ?? successColor)
   const [info, setInfo] = useState(seed?.info ?? infoColor)
   const [err, setErr] = useState<string | null>(null)
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   // Live scales, IN THE THEME'S OWN APPEARANCE. This used to call
   // `generateColorScale(hex, …, pageBackground)` unconditionally — the LIGHT
@@ -360,12 +550,10 @@ export default function AddThemePanel({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full bg-app">
-      {/* Header — swatch · title · hex, the SAME three-part shape the family
-          edit popover uses (see ColorPrimitives), h-[52px] to line up with
-          every other row-2 header (`PreviewPanel`, `SaveSidePanel`). The
-          swatch is the theme's accent, so the panel says which theme it is
-          before you read a word of it. */}
+    <div className="flex flex-col min-h-0 overflow-hidden w-full">
+      {/* Header — swatch · title · hex, same three-part shape the family
+          edit popover uses (see ColorPrimitives). The swatch is the theme's
+          accent, so the panel says which theme it is before you read a word. */}
       <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
         <span className={SWATCH} style={{ backgroundColor: brand }} />
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{isEdit ? 'Edit theme' : 'Add a theme'}</h2>
@@ -479,5 +667,123 @@ export default function AddThemePanel({
         </button>
       </div>
     </div>
+  )
+}
+
+/** "Add a theme" — portaled popover off the + / pencil trigger, so it
+ *  still opens when the preview aside is collapsed or the viewport is
+ *  under 1180px. Create uses the SAME `ColorPickerPanel` chrome Primitives
+ *  uses for Accent (curated, Follows, saved, accessible). Edit keeps the
+ *  name / mode / slot form. */
+export default function AddThemePanel({
+  open,
+  onClose,
+  anchorRef,
+  editKey = null,
+  seedFrom = null,
+  onRenamed,
+  onCreated,
+  appearance = 'light',
+}: AddThemeFormProps & {
+  open: boolean
+  anchorRef: RefObject<HTMLElement | null>
+  appearance?: 'light' | 'dark'
+  /** Fired once, when a new theme is minted from the create picker. */
+  onCreated?: (key: string) => void
+}) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const isEdit = !!editKey
+  const place = usePopoverPlacement(
+    anchorRef,
+    open && (editKey ?? 'new'),
+    isEdit ? { prefer: 560, max: 720 } : { prefer: 520, max: 600 },
+  )
+  const [rect, setRect] = useState<DOMRect | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) return
+    const measure = () => {
+      const r = anchorRef.current?.getBoundingClientRect()
+      if (r) setRect(r)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [open, anchorRef, editKey])
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (anchorRef.current?.contains(t) || panelRef.current?.contains(t)) return
+      // Slot pickers portal to body (overflow clip on this panel's body), so a
+      // click inside one is another `role="dialog"` — don't throw the form away.
+      if (t instanceof Element && t.closest('[role="dialog"]')) return
+      onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose, anchorRef])
+
+  if (typeof document === 'undefined') return null
+
+  const wantW = isEdit ? ADD_THEME_W : PICKER_W
+  const width = typeof window === 'undefined'
+    ? wantW
+    : Math.min(wantW, Math.max(280, window.innerWidth - 16))
+
+  const panel = open && rect
+    ? (
+        <motion.div
+          ref={panelRef}
+          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+          transition={{ duration: 0.14, ease: 'easeOut' }}
+          role="dialog"
+          aria-label={isEdit ? 'Edit theme' : 'Add a theme'}
+          style={{
+            position: 'fixed',
+            left: Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8),
+            ...(place.up ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+            maxHeight: place.max,
+            width,
+          }}
+          className="z-50 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
+        >
+          {isEdit ? (
+            <AddThemeForm
+              key={editKey ?? seedFrom ?? 'edit'}
+              onClose={onClose}
+              editKey={editKey}
+              seedFrom={seedFrom}
+              onRenamed={onRenamed}
+            />
+          ) : (
+            <AddThemePicker
+              key="new"
+              kind={appearance}
+              onCreated={onCreated}
+              onClose={onClose}
+            />
+          )}
+        </motion.div>
+      )
+    : null
+
+  return createPortal(
+    <AnimatePresence>{panel}</AnimatePresence>,
+    document.body,
   )
 }

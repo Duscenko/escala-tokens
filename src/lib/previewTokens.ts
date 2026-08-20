@@ -185,19 +185,21 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
       if (arch === 'categorical') {
         put('surface', 'surface.page')
         put('neutralFill', 'surface.layer-1')
-        put('brandSolid', 'action.primary')
+        put('brandSolid', 'action.primary.default')
         put('onBrand', 'content.on-action')
         put('brandText', 'content.accent')
         put('neutralText', 'content.primary')
         put('fgMuted', 'content.secondary')
         put('placeholderText', 'content.subtle')
         put('disabledBg', 'action.disabled')
-        put('disabledText', 'content.subtle')
-        put('border', 'border.default')
+        put('disabledText', 'content.disabled')
+        // `PreviewTokens.border` is the component stroke (inputs, selects) —
+        // categorical `border.strong`, not the decorative `border.default`.
+        put('border', 'border.strong')
         put('borderDefault', 'border.subtle')
-        put('errorColor', 'status.critical-fg')
-        put('warningColor', 'status.warning-fg')
-        put('successColor', 'status.success-fg')
+        put('errorColor', 'status.critical.content')
+        put('warningColor', 'status.warning.content')
+        put('successColor', 'status.success.content')
       } else if (arch === 'astryx') {
         put('surface', 'background.body')
         put('neutralFill', 'background.surface')
@@ -278,6 +280,34 @@ export function usePreviewTokens(themeKey = 'light'): PreviewTokens {
 }
 
 // ── Small resolution helpers shared by the preview atoms ───────────────────
+
+/** Resolved colour for one architecture token id, with a flat fallback. */
+export function archTokenOf(t: PreviewTokens, id: string, fallback: string): string {
+  return t.archTokens?.[id] ?? fallback
+}
+
+/** Form-field background — categorical `surface.input`, else page surface. */
+export function inputSurfaceOf(t: PreviewTokens): string {
+  return archTokenOf(t, 'surface.input', t.surface)
+}
+
+/** Focus ring / focused control stroke — categorical `border.focus`, else brand. */
+export function focusBorderOf(t: PreviewTokens): string {
+  return archTokenOf(t, 'border.focus', t.brandSolid)
+}
+
+/** Soft status badge/alert fill — categorical status surface, else tinted content. */
+export function statusSoftFillOf(t: PreviewTokens, colorName: string, contentHex: string): string {
+  const surfaces: Record<string, string> = {
+    Error: 'status.critical.surface',
+    Danger: 'status.critical.surface',
+    Warning: 'status.warning.surface',
+    Success: 'status.success.surface',
+  }
+  const surface = surfaces[colorName] ? archTokenOf(t, surfaces[colorName], '') : ''
+  return surface || tintOf(t, contentHex, '10', 0.1)
+}
+
 export function radiusOf(t: PreviewTokens, key: string, fallback: string): string {
   return t.radius?.[key] || fallback
 }

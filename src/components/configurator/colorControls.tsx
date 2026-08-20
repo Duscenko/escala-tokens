@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralTintSpec, type NeutralTint } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
+import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 
 // ── Gray flavor options for the neutral scale ──────────────────────────────
@@ -63,15 +64,15 @@ export const STATE_PRESETS: Record<IntentRole, { label: string; hex: string }[]>
 }
 
 // Which swatches `ColorPickerPanel`'s "Curated palette" bar offers for a given
-// family/slot. An ACCENT (and any custom family) gets the full brand spectrum —
-// every hue is a legitimate brand. An INTENT does not: the hue IS the meaning,
-// so a red drifting toward green stops reading as an error (the same rule
-// `recommendStateColors` follows when it blends chroma but never hue). Those
-// slots therefore offer `STATE_PRESETS`, the exact list the State Colors
-// dropdown already shows, so no two entry points can recommend different reds.
-// Neutral is in that map for the same reason — it's an intent (see CLAUDE.md),
-// and a rainbow bar under a gray ramp is as wrong as one under a red.
-// `undefined` ⇒ the panel's own BRAND_SPECTRUM default.
+// family/slot. Accent and custom families get `INDUSTRY_SPECTRUM` — the same
+// vetted hexes as the scale-guide agent, in `BRAND_SPECTRUM` hue order for
+// the bar. An INTENT does not: the hue IS the meaning, so a red drifting toward green
+// stops reading as an error (the same rule `recommendStateColors` follows when
+// it blends chroma but never hue). Those slots therefore offer `STATE_PRESETS`,
+// the exact list the State Colors dropdown already shows, so no two entry
+// points can recommend different reds. Neutral is in that map for the same
+// reason — it's an intent (see CLAUDE.md), and a rainbow bar under a gray
+// ramp is as wrong as one under a red.
 //
 // It lives HERE, beside `STATE_PRESETS`, rather than in either caller: both
 // Primitives' family pickers and "Add a theme"'s slot pickers need it, and a
@@ -79,7 +80,9 @@ export const STATE_PRESETS: Record<IntentRole, { label: string; hex: string }[]>
 // status preset lists in the first place.
 const INTENT_KEYS: readonly string[] = ['neutral', 'error', 'warning', 'success', 'info']
 export function curatedPaletteFor(familyKey: string) {
-  return INTENT_KEYS.includes(familyKey) ? STATE_PRESETS[familyKey as IntentRole] : undefined
+  return INTENT_KEYS.includes(familyKey)
+    ? STATE_PRESETS[familyKey as IntentRole]
+    : INDUSTRY_SPECTRUM
 }
 
 // The system's color chip — a rounded SQUARE, never a dot. Every swatch in

@@ -70,7 +70,7 @@ export function useApplyAccentColor() {
     setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
     setPageBackground, setDarkBackground,
     gradients, updateGradient,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint, linkStatesToAccent,
+    colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint,
   } = useDesignStore()
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
@@ -135,9 +135,12 @@ export function useApplyAccentColor() {
       // re-applied on every accent edit instead of a manual click. Unlinked, a
       // state's own colour is left untouched but its ramp still re-anchors when
       // the page moved, same as every other coloured family above.
-      if (linkStatesToAccent || pageMoved) {
+      // Read the flag live — a pack pick turns the link on in the same tick,
+      // and a closed-over value would skip the state re-derive.
+      const statesLinked = useDesignStore.getState().linkStatesToAccent
+      if (statesLinked || pageMoved) {
         const s = useDesignStore.getState()
-        const rec = linkStatesToAccent ? recommendStateColors(hex) : null
+        const rec = statesLinked ? recommendStateColors(hex) : null
         const nextError = rec?.error ?? s.errorColor
         const nextWarning = rec?.warning ?? s.warningColor
         const nextSuccess = rec?.success ?? s.successColor
@@ -184,7 +187,7 @@ export function useApplyAccentColor() {
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint, linkStatesToAccent])
+  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives

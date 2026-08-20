@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react'
 import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
@@ -29,9 +30,10 @@ export default function ColorHub({
   previewTheme,
   onPreviewThemeChange,
   focusFamilyKey,
-  onOpenAddTheme,
   railCollapsed,
   onToggleRail,
+  toolbar,
+  toolbarWash,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -41,14 +43,6 @@ export default function ColorHub({
   /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
    *  NewTokenWizard just created). */
   focusFamilyKey?: string | null
-  /** Forwarded to Step3 — see its own doc comment. Only reachable while
-   *  `colorTab === 'semantics'`, since that's the only tab with a "+ Theme"
-   *  trigger, but it's a required prop on this component regardless: the
-   *  panel it opens is docked in the shell's right aside, which Configurator
-   *  owns, so the callback has to exist before Semantics is ever visited.
-   *  An `editKey` opens the panel already pointed at that existing theme
-   *  (rename it, re-point one of its slots) instead of a blank "create". */
-  onOpenAddTheme: (editKey?: string) => void
   /** Collapses the hub's 198px left column to 56px. Forwarded to BOTH
    *  Primitives and Semantics — it's one column that changes what it LISTS per
    *  tab (families / token categories), so a collapse that only held on one of
@@ -58,6 +52,10 @@ export default function ColorHub({
    *  block sizes its divider from the same value; see `colorControls`' note. */
   railCollapsed?: boolean
   onToggleRail?: () => void
+  /** Foundation switcher + Reset/Save. Renders in the Groups header's band so
+   *  Groups sits under the Escala logo and this chrome starts at Groups' edge. */
+  toolbar?: ReactNode
+  toolbarWash?: string
 }) {
   // Each tab is a FULL-HEIGHT cell of the 52px row, not a text label with a
   // hairline under it: the active one reads as a tinted block whose accent bar
@@ -125,6 +123,8 @@ export default function ColorHub({
             focusFamilyKey={focusFamilyKey}
             railCollapsed={railCollapsed}
             onToggleRail={onToggleRail}
+            toolbar={toolbar}
+            toolbarWash={toolbarWash}
           />
         </div>
       ) : colorTab === 'semantics' ? (
@@ -138,16 +138,23 @@ export default function ColorHub({
             onFocusChange={onFocusChange}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
-            onOpenAddTheme={onOpenAddTheme}
             railCollapsed={railCollapsed}
             onToggleRail={onToggleRail}
+            toolbar={toolbar}
+            toolbarWash={toolbarWash}
           />
         </div>
       ) : (
         // Gradients owns the same three-row shell as the other two tabs now —
         // flush, no padding wrapper, tabBar rendered inside its own header row.
         <div className="flex-1 min-h-0">
-          <StepGradients tabBar={tabBar} previewTheme={previewTheme} onPreviewThemeChange={onPreviewThemeChange} />
+          <StepGradients
+            tabBar={tabBar}
+            previewTheme={previewTheme}
+            onPreviewThemeChange={onPreviewThemeChange}
+            toolbar={toolbar}
+            toolbarWash={toolbarWash}
+          />
         </div>
       )}
     </div>

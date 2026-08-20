@@ -25,6 +25,11 @@ import {
   type Role, type GlobalScales,
 } from '../../../lib/semanticRoles'
 import { toneLabel, type ColorNaming } from '../../../lib/colorUtils'
+import {
+  buildArchitectureView,
+  CATEGORICAL_ROLE_COMMENTS,
+} from '../../../lib/semanticArchitectures'
+import { themeContextFromStore } from '../../../lib/tokenGenerator'
 import { TYPE_SCALE_KEYS, FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
 import { RADIUS_STEPS } from '../StepRadius'
 import { SPACING_STEPS } from '../Step5_Spacing'
@@ -44,6 +49,8 @@ export const OVERVIEW_KEY = '__overview'
 export interface SystemDoc {
   scales: GlobalScales
   roles: ResolvedRole[]
+  /** Categorical architecture groups — same projection as the Color preview. */
+  categoricalCategories?: CategoricalCategoryDoc[]
   primitiveFamilies: { label: string; scale: Record<number, string> }[]
   colorNaming: ColorNaming
   typography: ReturnType<typeof useDesignStore.getState>['typography']
@@ -66,14 +73,88 @@ export type ResolvedRole = {
   darkHex: string
 }
 
+export type ResolvedCategoricalToken = {
+  id: string
+  role: string
+  lightRef: string
+  lightHex: string
+  darkRef: string
+  darkHex: string
+}
+
+export type CategoricalCategoryDoc = {
+  key: string
+  label: string
+  description: string
+  tokens: ResolvedCategoricalToken[]
+}
+
+function categoricalRoleLabel(comment: string): string {
+  return comment.match(/^\[ROLE: ([^\]]+)\]/)?.[1] ?? ''
+}
+
+function resolveCategoricalCategories(
+  store: ReturnType<typeof useDesignStore.getState>,
+): CategoricalCategoryDoc[] | undefined {
+  if (store.semanticArchitecture !== 'categorical') return undefined
+
+  const { themeNames, globalScales, resolvedPalettes } = themeContextFromStore(store)
+  const modeKeys = store.themeOrder.filter((t) => store.themes[t])
+  const modes = modeKeys.length ? modeKeys : themeNames.filter((t) => store.themes[t])
+  if (!modes.length) return undefined
+
+  const view = buildArchitectureView(
+    'categorical',
+    {
+      themes: store.themes,
+      themeKinds: store.themeKinds ?? {},
+      themePalettes: resolvedPalettes,
+      scales: globalScales,
+      accent: store.primaryColor,
+    },
+    store.errorColor,
+    store.architectureOverrides?.categorical ?? {},
+    modes,
+  )
+  if (!view) return undefined
+
+  const lightKey = modes.includes('light') ? 'light' : modes[0]
+  const darkKey = modes.includes('dark') ? 'dark' : modes[modes.length - 1]
+
+  return view.categories.map((cat) => ({
+    key: cat.key,
+    label: cat.label,
+    description: cat.description,
+    tokens: cat.tokens.map((tk) => {
+      const id = `${cat.key}.${tk.key}`
+      const l = tk.modes[lightKey]
+      const d = tk.modes[darkKey]
+      return {
+        id,
+        role: categoricalRoleLabel(CATEGORICAL_ROLE_COMMENTS[id] ?? ''),
+        lightRef: l?.label ?? '',
+        lightHex: l?.css ?? '',
+        darkRef: d?.label ?? '',
+        darkHex: d?.css ?? '',
+      }
+    }),
+  }))
+}
+
 export function useSystemDoc(): SystemDoc {
+  const store = useDesignStore()
   const {
     primaryScale, primaryDarkScale, grayLightScale, grayDarkScale,
     errorScale, errorDarkScale, warningScale, warningDarkScale,
     successScale, successDarkScale, infoScale, infoDarkScale,
     customColors, colorNaming, typography, spacing, padding, radius,
     shadows, grid, sizes, iconLibrary, customIcons, themeOrder,
-  } = useDesignStore()
+  } = store
+
+  const categoricalCategories = useMemo(
+    () => resolveCategoricalCategories(store),
+    [store],
+  )
 
   const scales: GlobalScales = useMemo(() => ({
     gray: grayLightScale,
@@ -147,7 +228,7 @@ export function useSystemDoc(): SystemDoc {
       warningScale, warningDarkScale, successScale, successDarkScale, infoScale, infoDarkScale, customColors])
 
   return {
-    scales, roles, primitiveFamilies, colorNaming, typography, spacing, padding,
+    scales, roles, categoricalCategories, primitiveFamilies, colorNaming, typography, spacing, padding,
     radius, shadows, grid, sizes, iconLibrary, customIcons,
     themeCount: themeOrder.length,
   }
@@ -322,6 +403,84 @@ function RoleGroup({ rows }: { rows: ResolvedRole[] }) {
   )
 }
 
+function CategoricalRoleBand({ rows }: { rows: ResolvedCategoricalToken[] }) {
+  if (!rows.length) return null
+  return (
+    <div className="flex flex-wrap rounded-xl overflow-hidden border border-line mb-5">
+      {rows.map((r) => (
+        <span
+          key={r.id}
+          className="flex-1 min-w-[8rem] px-3 py-2.5 text-[11px] text-center truncate"
+          style={{ background: r.lightHex }}
+          title={`${r.id} — ${r.lightHex}`}
+        >
+          <span className="mix-blend-luminosity text-black/70">{r.id}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
+  if (!rows.length) return null
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[672px]">
+        <div className="grid items-end gap-x-3 pb-2" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token names</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Primitives · light</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · light</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint pl-3">Primitives · dark</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · dark</span>
+        </div>
+        <div className="relative">
+          <div
+            className="dark absolute inset-y-0 rounded-xl bg-app"
+            style={{ left: 'calc(13rem + (100% - 13rem - 0.75rem * 4) / 4 * 2 + 0.75rem * 2)', right: 0 }}
+            aria-hidden
+          />
+          <div className="relative flex flex-col gap-1.5 py-2">
+            {rows.map((r) => (
+              <div key={r.id} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
+                <span className="flex flex-col gap-0.5 min-w-0">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <Swatch hex={r.lightHex} />
+                    <span className="truncate text-[12px] text-fg" title={r.id}>{r.id}</span>
+                  </span>
+                  {r.role && <span className="text-[10px] text-fg-faint truncate pl-[26px]" title={r.role}>{r.role}</span>}
+                </span>
+                <ValueCell hex={r.lightHex} label={r.lightRef} />
+                <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
+                <span className="dark pl-3"><ValueCell hex={r.darkHex} label={r.darkRef} /></span>
+                <span className="dark"><ValueCell hex={r.darkHex} label={r.darkHex.toUpperCase() || '—'} /></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CategoricalRoleGroup({ rows }: { rows: ResolvedCategoricalToken[] }) {
+  if (!rows.length) return null
+  return (
+    <>
+      <CategoricalRoleBand rows={rows} />
+      <CategoricalRoleTable rows={rows} />
+    </>
+  )
+}
+
+function renderCategoricalCategory(categoryKey: string, flatRows: (c: SystemDoc) => ResolvedRole[]) {
+  return (c: SystemDoc) => {
+    const cat = c.categoricalCategories?.find((x) => x.key === categoryKey)
+    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} />
+    const rows = flatRows(c)
+    return rows.length ? <RoleGroup rows={rows} /> : null
+  }
+}
+
 /** A flat key · value strip — used where a foundation's tokens are a plain map
  *  (grid settings, surface padding) and a chart would add nothing. */
 function KeyValues({ entries }: { entries: [string, string][] }) {
@@ -367,21 +526,26 @@ export const FOUNDATION_DOCS: FoundationDoc[] = [
   {
     key: 'color',
     label: 'Color',
-    lead: 'Two layers: twelve-step primitive ramps that hold the raw values, and semantic roles that name what each value is FOR. Designs reference the roles; only the roles reference the ramps.',
-    why: 'A hex in a component is a decision nobody can revisit. A role — `background-brand-solid` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content-primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: 'Reach for a semantic role first — `surface-*` for page and card levels, `action-*` for control fills, `status-*` for feedback, `text-*` / `icon-*` for ink, `border-*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text.',
+    lead: 'Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as Content, Action, Surface, Status and Border with nested role ids like `content.primary` and `action.primary.default`. Designs reference the roles; only the roles reference the ramps.',
+    why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
+    usage: 'Reach for a categorical semantic role first — `surface.*` for page and card levels, `action.*` for control fills, `status.*` for feedback, `content.*` for ink, `border.*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text.',
     usageCode: `/* semantic — what it is FOR */
-background: var(--color-background-brand-solid);
-color:      var(--color-content-on-brand);
+background: var(--color-action-primary-default);
+color:      var(--color-content-on-action);
 
 /* primitive — only when defining a role */
 --color-accent-9: #9522e9;`,
     ships: {
-      json: 'colors.primitive · colors.semantic · colors.semanticDark · colors.themes',
-      css: '--color-<role>  ·  --color-<family>-<tone>',
+      json: 'colors.primitive · colors.architecture (categorical) · colors.themes',
+      css: '--color-<group>-<role>  ·  --color-<family>-<tone>',
       figma: 'Variable collection "Color", one mode per theme',
     },
-    tokenCount: (c) => c.roles.length + c.primitiveFamilies.reduce((n, f) => n + Object.keys(f.scale).length, 0),
+    tokenCount: (c) => {
+      const semantic = c.categoricalCategories
+        ? c.categoricalCategories.reduce((n, cat) => n + cat.tokens.length, 0)
+        : c.roles.length
+      return semantic + c.primitiveFamilies.reduce((n, f) => n + Object.keys(f.scale).length, 0)
+    },
     sections: [
       {
         id: 'primitives',
@@ -399,46 +563,34 @@ color:      var(--color-content-on-brand);
         ),
       },
       {
-        id: 'brand',
-        title: 'Brand colors',
-        description: 'Primary colors establish the core brand identity of the interface, from weakest tints to strongest emphasis levels — used for primary actions, focus states and recognizable visual consistency across the product.',
-        render: (c) => <RoleGroup rows={c.roles.filter((r) => r.role.scale === 'brand')} />,
+        id: 'content',
+        title: 'Content',
+        description: 'Text & icon ink — primary to inverse. Every token here must maintain readable contrast against the surface backgrounds it sits on.',
+        render: renderCategoricalCategory('content', (c) => c.roles.filter((r) => r.role.key.startsWith('content-') || r.role.key.startsWith('text-') || r.role.key.startsWith('icon-'))),
       },
       {
-        id: 'state-error',
-        title: 'State · Error',
-        description: 'Error state colors provide clear visual signaling for failures, invalid inputs and critical system feedback, ensuring immediate recognition and strong contrast across all themes.',
-        render: (c) => <RoleGroup rows={c.roles.filter((r) => r.role.scale === 'error')} />,
+        id: 'action',
+        title: 'Action',
+        description: 'Interactive element fills — primary and secondary buttons, disabled states, and the accent-tinted secondary fill.',
+        render: renderCategoricalCategory('action', (c) => c.roles.filter((r) => r.role.key.startsWith('action-') || r.role.key.startsWith('background-brand-'))),
       },
       {
-        id: 'state-success',
-        title: 'State · Success',
-        description: 'Success state colors communicate positive outcomes, confirmations and completed actions, delivering reassuring feedback with clarity and consistency across the interface.',
-        render: (c) => <RoleGroup rows={c.roles.filter((r) => r.role.scale === 'success')} />,
+        id: 'surface',
+        title: 'Surface',
+        description: 'Page and layer backgrounds — from the root canvas through elevated panels, inputs, selection, overlays and accent washes.',
+        render: renderCategoricalCategory('surface', (c) => c.roles.filter((r) => r.role.key.startsWith('surface-') || r.role.key.startsWith('bg-'))),
       },
       {
-        id: 'state-warning',
-        title: 'State · Warning',
-        description: 'Warning state colors highlight caution, pending risks and notices that need attention without signaling failure, staying legible across all themes.',
-        render: (c) => <RoleGroup rows={c.roles.filter((r) => r.role.scale === 'warning')} />,
-      },
-      {
-        id: 'state-info',
-        title: 'State · Info',
-        description: 'Informational state colors carry neutral, non-urgent messaging — hints, tips and passive system notices.',
-        render: (c) => <RoleGroup rows={c.roles.filter((r) => r.role.scale === 'info')} />,
+        id: 'status',
+        title: 'Status',
+        description: 'Feedback fg/bg pairs per severity — critical, warning and success, each with subtle surface, solid fill and on-solid ink.',
+        render: renderCategoricalCategory('status', (c) => c.roles.filter((r) => ['error', 'warning', 'success', 'info'].includes(r.role.scale))),
       },
       {
         id: 'border',
         title: 'Border',
-        description: 'Border colors define edges, dividers and outlines with consistent contrast across themes, from subtle separators to strong emphasis strokes.',
-        render: (c) => <RoleGroup rows={borderRows(c)} />,
-      },
-      {
-        id: 'other',
-        title: 'Other roles',
-        description: 'Remaining semantic roles that fall outside the standard categories.',
-        render: (c) => <RoleGroup rows={otherRows(c)} />,
+        description: 'Strokes, focus rings and severity borders — from subtle dividers through component boundaries to validation states.',
+        render: renderCategoricalCategory('border', borderRows),
       },
     ],
   },
@@ -888,6 +1040,25 @@ export function foundationMarkdown(doc: FoundationDoc, c: SystemDoc): string {
     doc.usageCode,
     '```',
     '',
+  ]
+
+  if (doc.key === 'color' && c.categoricalCategories?.length) {
+    lines.push('## Semantic roles (Categorical)', '')
+    for (const cat of c.categoricalCategories) {
+      lines.push(`### ${cat.label}`, '')
+      if (cat.description) lines.push(cat.description, '')
+      lines.push(
+        '| Token | Role | Primitive · light | Hex · light | Primitive · dark | Hex · dark |',
+        '|---|---|---|---|---|---|',
+        ...cat.tokens.map((t) =>
+          `| \`${t.id}\` | ${t.role} | \`${t.lightRef}\` | \`${t.lightHex.toUpperCase() || '—'}\` | \`${t.darkRef}\` | \`${t.darkHex.toUpperCase() || '—'}\` |`,
+        ),
+        '',
+      )
+    }
+  }
+
+  lines.push(
     '## Ships as',
     '',
     '| Target | Name |',
@@ -897,6 +1068,6 @@ export function foundationMarkdown(doc: FoundationDoc, c: SystemDoc): string {
     `| Figma | ${doc.ships.figma} |`,
     '',
     `${doc.tokenCount(c)} tokens · ${doc.sections.length} section${doc.sections.length === 1 ? '' : 's'}: ${doc.sections.map((s) => s.title).join(' · ')}`,
-  ]
+  )
   return lines.join('\n')
 }

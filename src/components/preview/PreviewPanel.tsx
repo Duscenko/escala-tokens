@@ -244,19 +244,9 @@ function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab)
  *  not free, and there's no reason to pay it while someone is looking at the
  *  specimen. */
 function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: string }) {
-  // The subscription is the point, not the value: `buildSectionExport` pulls
-  // from `getState()` itself, so this call exists purely to re-render this pane
-  // whenever ANY design field changes — which is what keeps the markdown live
-  // while you edit (verified: retinting the accent moves `accent-9` here in the
-  // same frame it moves in the table).
-  //
-  // Deliberately not memoised. The only thing that could re-render this pane
-  // without changing the markdown is a `previewTheme` prop change, and the
-  // parent already subscribes to the same store via `usePreviewTokens` — so a
-  // memo would be guarding against a case that barely exists, at the cost of a
-  // dependency the linter can't see is load-bearing.
-  useDesignStore()
-  const md = buildSectionExport(section, 'md')
+  const store = useDesignStore()
+  const modes = store.themeOrder.filter((t) => store.themes[t])
+  const md = buildSectionExport(section, 'md', 'hex', { modes: modes.length ? modes : ['light'] })
 
   return (
     <div className="flex-1 min-h-0 min-w-0 flex flex-col">

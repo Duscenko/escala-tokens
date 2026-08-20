@@ -31,6 +31,12 @@
      hardcoded text-white: a light accent needs dark ink, and on dark chrome the
      accent brightens so it needs dark ink there too. */
   --color-accent-ink: var(--accent-ink);
+  --animate-agent-ring-drift: agent-ring-drift 10s linear infinite;
+  @keyframes agent-ring-drift {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 }
 
 :root {
@@ -185,4 +191,40 @@ body {
   border: 1px solid var(--line-strong);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-agent-ring-drift {
+    animation: none !important;
+  }
+}
+
+/* Chrome-tab selection — convex top, concave bottom corners. The active
+   family/category in Color's Groups column used to be a closed rounded
+   rectangle + drop shadow; this silhouette sits lighter on the rail the
+   same way a Chrome tab sits on its strip. The corner overlays paint
+   `--app` (the rail) so the fill recedes; they stay inside the box so a
+   scrolling nav doesn't clip them. */
+.chrome-tab {
+  --chrome-r: 10px;
+  position: relative;
+  border-radius: var(--chrome-r) var(--chrome-r) 0 0;
+}
+.chrome-tab::before,
+.chrome-tab::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: var(--chrome-r);
+  height: var(--chrome-r);
+  background: var(--app);
+  pointer-events: none;
+}
+.chrome-tab::before {
+  left: 0;
+  border-top-right-radius: var(--chrome-r);
+}
+.chrome-tab::after {
+  right: 0;
+  border-top-left-radius: var(--chrome-r);
 }

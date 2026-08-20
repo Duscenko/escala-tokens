@@ -125,6 +125,11 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   return { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes }
 }
 
+/** Shared theme/scale resolution for exports, docs and the preview overlay. */
+export function themeContextFromStore(store: ReturnType<typeof useDesignStore.getState>) {
+  return buildThemeContext(store)
+}
+
 /**
  * The Categorical architecture's SYMBOLIC ref tree — group → key → theme →
  * `"{family.tone}"` — i.e. `projectCategorical()`'s raw output, before

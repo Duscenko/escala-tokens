@@ -6,9 +6,14 @@ import chroma from 'chroma-js'
 import { toneLabel } from './colorUtils'
 import { fontStack } from './fonts'
 import { getIconLibrary } from './iconLibraries'
-import { generateTokenJSON } from './tokenGenerator'
+import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
 import { mdCell } from './utils'
+import {
+  buildArchitectureView,
+  CATEGORICAL_ROLE_COMMENTS,
+  type ArchTokenValue,
+} from './semanticArchitectures'
 
 type Store = ReturnType<typeof useDesignStore.getState>
 
@@ -248,6 +253,94 @@ function table(headers: string[], rows: string[][]): string {
   ].join('\n')
 }
 
+function categoricalRoleLabel(comment: string): string {
+  return comment.match(/^\[ROLE: ([^\]]+)\]/)?.[1] ?? ''
+}
+
+function modeValue(
+  modes: Record<string, ArchTokenValue>,
+  mode: string,
+  cf: ColorFormat,
+): [string, string] {
+  const v = modes[mode]
+  if (!v) return ['—', '—']
+  return [`\`${v.label}\``, `\`${formatColor(v.css, cf)}\``]
+}
+
+/** Categorical semantic tables — same projection the Color preview and Semantics
+ *  table render, grouped Content · Action · Surface · Status · Border. */
+function categoricalSemanticsMd(store: Store, cf: ColorFormat, modes: string[]): string {
+  const { themeNames, globalScales, resolvedPalettes } = themeContextFromStore(store)
+  const modeKeys = (modes.length ? modes : themeNames).filter((m) => store.themes[m])
+  if (!modeKeys.length) return ''
+
+  const view = buildArchitectureView(
+    'categorical',
+    {
+      themes: store.themes,
+      themeKinds: store.themeKinds ?? {},
+      themePalettes: resolvedPalettes,
+      scales: globalScales,
+      accent: store.primaryColor,
+    },
+    store.errorColor,
+    store.architectureOverrides?.categorical ?? {},
+    modeKeys,
+  )
+  if (!view) return ''
+
+  const parts = [
+    '\n### Semantic (Categorical)\n',
+    '_Nested role contract — matches the Color preview and Semantics table. Designs reference these roles; roles alias the primitive ramps per theme._\n',
+  ]
+
+  const lightDark = modeKeys.length === 2 && modeKeys.includes('light') && modeKeys.includes('dark')
+
+  for (const cat of view.categories) {
+    parts.push(`\n#### ${cat.label}\n`)
+    if (cat.description) parts.push(`_${cat.description}_\n`)
+
+    if (lightDark) {
+      parts.push(table(
+        ['Token', 'Role', 'Primitive · light', 'Hex · light', 'Primitive · dark', 'Hex · dark'],
+        cat.tokens.map((tk) => {
+          const id = `${cat.key}.${tk.key}`
+          const [lRef, lHex] = modeValue(tk.modes, 'light', cf)
+          const [dRef, dHex] = modeValue(tk.modes, 'dark', cf)
+          return [
+            `\`${id}\``,
+            categoricalRoleLabel(CATEGORICAL_ROLE_COMMENTS[id] ?? ''),
+            lRef,
+            lHex,
+            dRef,
+            dHex,
+          ]
+        }),
+      ))
+      continue
+    }
+
+    for (const mode of modeKeys) {
+      parts.push(`\n**${cap(mode)}**\n`)
+      parts.push(table(
+        ['Token', 'Role', 'Primitive', 'Hex'],
+        cat.tokens.map((tk) => {
+          const id = `${cat.key}.${tk.key}`
+          const [ref, hex] = modeValue(tk.modes, mode, cf)
+          return [
+            `\`${id}\``,
+            categoricalRoleLabel(CATEGORICAL_ROLE_COMMENTS[id] ?? ''),
+            ref,
+            hex,
+          ]
+        }),
+      ))
+    }
+  }
+
+  return parts.join('\n')
+}
+
 function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'color') {
     const parts = ['## Color']
@@ -255,16 +348,19 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       parts.push(`\n### ${cap(name)}\n`)
       parts.push(table(['Token', 'Value'], sortedEntries(scale).map(([k, v]) => [`\`${name}-${toneLabel(store.colorNaming, Number(k))}\``, `\`${formatColor(v, cf)}\``])))
     })
-    // One table per selected mode, not just light — see `modes` on
-    // `SectionExportOptions` for the bug this closes.
     if (opts.includeSemantics !== false) {
       const modes = opts.modes?.length ? opts.modes : ['light']
-      modes.forEach((mode) => {
-        const entries = Object.entries(store.themes[mode] ?? {}).filter(([, v]) => v)
-        if (!entries.length) return
-        parts.push(`\n### Semantic (${cap(mode)})\n`)
-        parts.push(table(['Token', 'Value'], entries.map(([k, v]) => [`\`${k}\``, `\`${formatColor(v, cf)}\``])))
-      })
+      if (store.semanticArchitecture === 'categorical') {
+        parts.push(categoricalSemanticsMd(store, cf, modes))
+      } else {
+        // Flat catalogue — one table per selected mode.
+        modes.forEach((mode) => {
+          const entries = Object.entries(store.themes[mode] ?? {}).filter(([, v]) => v)
+          if (!entries.length) return
+          parts.push(`\n### Semantic (${cap(mode)})\n`)
+          parts.push(table(['Token', 'Value'], entries.map(([k, v]) => [`\`${k}\``, `\`${formatColor(v, cf)}\``])))
+        })
+      }
     }
     return parts.join('\n')
   }

@@ -9,8 +9,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useDesignStore } from '../../store/useDesignStore'
-import { accessibleVariants, readableInk } from '../../lib/colorUtils'
-import { BRAND_SPECTRUM } from '../../lib/brandPalette'
+import { accessibleVariants, readableInk, DEFAULT_NEUTRAL_TINT } from '../../lib/colorUtils'
+import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
+import { HarmonyFollows } from '../configurator/HarmonyFollows'
 
 type HSVA = { h: number; s: number; v: number; a: number }
 
@@ -46,7 +47,14 @@ export function ColorPickerPanel({
   value,
   onChange,
   suggestions = false,
-  palette = BRAND_SPECTRUM,
+  palette = INDUSTRY_SPECTRUM,
+  followAccent = false,
+  appearance = 'light',
+  linkOnPick = true,
+  /** When set, the SV field's white/black corners follow the theme page being
+   *  authored (light page vs dark page) so toggling mode is visible in the
+   *  spectrum, not only in Follows. */
+  fieldAppearance,
 }: {
   value: string
   onChange: (hex: string) => void
@@ -56,14 +64,19 @@ export function ColorPickerPanel({
    *  single tone inside a ramp, or a gradient stop, has no white-ink guarantee
    *  to keep, so offering "more accessible" versions there would be noise. */
   suggestions?: boolean
-  /** What the "Curated palette" bar offers. Defaults to the full brand
-   *  spectrum, which is right for an accent (any hue is a valid brand) and
-   *  wrong for an intent: a red is what makes an error read as an error, so
-   *  Error's bar ships the curated REDS (`STATE_PRESETS`) and Neutral's the
-   *  gray flavors. Passed in by the caller rather than derived here — this
-   *  module is imported BY `colorControls`, so reading `STATE_PRESETS` back
-   *  out of it would be an import cycle. */
+  /** What the "Curated palette" bar offers. Defaults to `INDUSTRY_SPECTRUM` —
+   *  the same vetted hues the scale-guide agent ships (Market → Work → Life).
+   *  Intent families pass `STATE_PRESETS` instead. */
   palette?: { label: string; hex: string }[]
+  /** Accent family: show Neutral (light/dark) + States derived from the hex
+   *  under the cursor, and picking a curated swatch turns both harmony links on. */
+  followAccent?: boolean
+  appearance?: 'light' | 'dark'
+  /** When false, Follows still previews derived Neutral/States but curated
+   *  picks do not write the system-wide harmony links. Used when this panel
+   *  authors a new theme rather than the Accent family. */
+  linkOnPick?: boolean
+  fieldAppearance?: 'light' | 'dark'
 }) {
   // Only the user's own saved swatches live here now. The system's ramps used
   // to be listed below as a "Palette" block, but this picker's job is authoring
@@ -71,9 +84,10 @@ export function ColorPickerPanel({
   // different tasks. That grid moved to colorControls' `SystemRampGrid`, where
   // the semantic Token Details modal (which IS about choosing an existing
   // token) uses it instead.
-  const { savedColors, addSavedColor, removeSavedColor } = useDesignStore()
+  const { savedColors, addSavedColor, removeSavedColor, neutralTint } = useDesignStore()
   const [hsva, setHsva] = useState<HSVA>(() => toHsva(value))
   const [hexDraft, setHexDraft] = useState('')
+  const [hoverHex, setHoverHex] = useState<string | null>(null)
 
   // The colour this panel OPENED with — captured once, on mount, never
   // touched by the outside-resync effect below. Every call site that passes
@@ -105,6 +119,15 @@ export function ColorPickerPanel({
   function apply(next: HSVA) {
     setHsva(next)
     onChange(toHex(next))
+  }
+
+  function pickCurated(hex: string) {
+    if (followAccent && linkOnPick) {
+      const s = useDesignStore.getState()
+      s.setLinkNeutralToAccent(true)
+      s.setLinkStatesToAccent(true)
+    }
+    apply(toHsva(hex))
   }
 
   const svRef = useRef<HTMLDivElement>(null)
@@ -145,6 +168,8 @@ export function ColorPickerPanel({
   }
 
   const displayHex = (hexDraft || hex.replace(/^#/, '')).toUpperCase().replace(/^#/, '')
+  const fieldMode = fieldAppearance ?? appearance
+  const svLight = fieldMode === 'dark' ? '#2a2a2e' : '#ffffff'
 
   return (
     <div className="flex flex-col gap-3 w-full" onPointerDown={(e) => e.stopPropagation()}>
@@ -157,8 +182,8 @@ export function ColorPickerPanel({
         role="slider"
         aria-label="Saturation and brightness"
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #fff, transparent)' }} />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #000, transparent)' }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${svLight}, transparent)` }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to top, #000, transparent)` }} />
         <span
           className="absolute w-3.5 h-3.5 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow pointer-events-none"
           style={{ left: `${hsva.s * 100}%`, top: `${(1 - hsva.v) * 100}%`, background: chroma.hsv(hsva.h, hsva.s, hsva.v).hex() }}
@@ -203,11 +228,13 @@ export function ColorPickerPanel({
           jumping to a different hue family is a click instead of hunting the
           Hue slider for it. Sits BELOW the two sliders, not between them: Hue
           and Opacity are a pair of continuous axes for the colour you're
-          authoring, and slotting a discrete 17-step strip in the middle broke
-          that pair apart — it read as a third slider you could drag. Carries a
+          authoring, and slotting a discrete strip in the middle broke that
+          pair apart — it read as a third slider you could drag. Carries a
           visible caption for the same reason: unlabelled it looked like more
           slider chrome, where every OTHER block in this panel that you pick
           FROM (Saved, Accessible options) announces itself first.
+          Hexes match the scale-guide agent; order follows `BRAND_SPECTRUM`
+          (Blues → Pinks → Warm → Greens) so the strip reads as one rainbow.
           Same scope as `suggestions` — only useful while the value being
           edited is a family's own base — so it rides that flag rather than
           adding a second prop that would always be set together with it. */}
@@ -236,7 +263,11 @@ export function ColorPickerPanel({
                 <button
                   key={preset.hex}
                   type="button"
-                  onClick={() => apply(toHsva(preset.hex))}
+                  onClick={() => pickCurated(preset.hex)}
+                  onMouseEnter={() => followAccent && setHoverHex(preset.hex)}
+                  onMouseLeave={() => followAccent && setHoverHex(null)}
+                  onFocus={() => followAccent && setHoverHex(preset.hex)}
+                  onBlur={() => followAccent && setHoverHex(null)}
                   title={`${preset.label} — ${preset.hex.toUpperCase()}`}
                   aria-label={`Use ${preset.label}`}
                   aria-pressed={isSelected}
@@ -266,6 +297,13 @@ export function ColorPickerPanel({
               )
             })}
           </div>
+          {followAccent && (
+            <HarmonyFollows
+              accentHex={hoverHex ?? hex.slice(0, 7)}
+              tint={neutralTint ?? DEFAULT_NEUTRAL_TINT}
+              appearance={appearance}
+            />
+          )}
         </div>
       )}
 

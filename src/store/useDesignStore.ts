@@ -467,7 +467,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     sizes: { ...SIZES_DEFAULT },
     padding: { ...PADDING_DEFAULT },
     panelBackground: 'solid',
-    semanticArchitecture: 'astryx',
+    semanticArchitecture: 'categorical',
     architectureOverrides: {},
     gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
     gradientAssignments: makeDefaultGradientAssignments(),
@@ -1233,7 +1233,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 49,
+      version: 52,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1946,6 +1946,96 @@ export const useDesignStore = create<DesignStore>()(
           seedStatesLink(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedStatesLink(sys?.snapshot)
+          }
+        }
+        if (version < 50) {
+          // v49→v50: Categorical is the only visible semantic architecture.
+          // Content · Action · Surface · Status · Border stay as the editing
+          // groups; Astryx/shadcn/Vibrancy/Carbon/Tonal projections are retired
+          // from the picker (code kept for tests). Every stored choice moves to
+          // 'categorical' so the UI never shows a hidden architecture as selected.
+          const toCategorical = (state: any) => {
+            if (!state) return
+            if (state.semanticArchitecture !== 'categorical') state.semanticArchitecture = 'categorical'
+          }
+          toCategorical(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) toCategorical(sys?.snapshot)
+          }
+        }
+        if (version < 51) {
+          // v50→v51: nested Categorical contract — flat role ids become dotted paths
+          // (content.link.default, status.critical.surface, border.focus, …).
+          // Remap architectureOverrides so Token Detail edits survive the rename.
+          const RENAME: Record<string, string> = {
+            'content.link-default': 'content.link.default',
+            'content.link-hover': 'content.link.hover',
+            'action.primary': 'action.primary.default',
+            'action.primary-hover': 'action.primary.hover',
+            'action.primary-pressed': 'action.primary.pressed',
+            'action.neutral': 'action.secondary.default',
+            'action.secondary': 'action.secondary.accent',
+            'status.critical-bg': 'status.critical.surface',
+            'status.critical-fg': 'status.critical.content',
+            'status.critical-surface-solid': 'status.critical.surface-solid',
+            'status.critical-on-solid': 'status.critical.on-solid',
+            'status.warning-bg': 'status.warning.surface',
+            'status.warning-fg': 'status.warning.content',
+            'status.success-bg': 'status.success.surface',
+            'status.success-fg': 'status.success.content',
+            'border.active': 'border.focus',
+          }
+          const remapCategoricalOverrides = (state: any) => {
+            const cat = state?.architectureOverrides?.categorical
+            if (!cat || typeof cat !== 'object') return
+            const next: Record<string, unknown> = {}
+            for (const [id, modes] of Object.entries(cat)) {
+              next[RENAME[id] ?? id] = modes
+            }
+            state.architectureOverrides.categorical = next
+          }
+          remapCategoricalOverrides(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) remapCategoricalOverrides(sys?.snapshot)
+          }
+        }
+        if (version < 52) {
+          // v51→v52: idempotent override rename — legacy ids still in storage
+          // after v51 must map onto nested contract paths at rest, not only
+          // at read time in buildArchitectureView.
+          const RENAME: Record<string, string> = {
+            'content.link-default': 'content.link.default',
+            'content.link-hover': 'content.link.hover',
+            'action.primary': 'action.primary.default',
+            'action.primary-hover': 'action.primary.hover',
+            'action.primary-pressed': 'action.primary.pressed',
+            'action.neutral': 'action.secondary.default',
+            'action.secondary': 'action.secondary.accent',
+            'status.critical-bg': 'status.critical.surface',
+            'status.critical-fg': 'status.critical.content',
+            'status.critical-surface-solid': 'status.critical.surface-solid',
+            'status.critical-on-solid': 'status.critical.on-solid',
+            'status.warning-bg': 'status.warning.surface',
+            'status.warning-fg': 'status.warning.content',
+            'status.success-bg': 'status.success.surface',
+            'status.success-fg': 'status.success.content',
+            'border.active': 'border.focus',
+          }
+          const fixOverrides = (state: any) => {
+            const cat = state?.architectureOverrides?.categorical
+            if (!cat || typeof cat !== 'object') return
+            const next: Record<string, unknown> = { ...cat }
+            for (const [oldId, newId] of Object.entries(RENAME)) {
+              if (next[oldId]) {
+                if (!next[newId]) next[newId] = next[oldId]
+                delete next[oldId]
+              }
+            }
+            state.architectureOverrides.categorical = next
+          }
+          fixOverrides(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) fixOverrides(sys?.snapshot)
           }
         }
         return persisted

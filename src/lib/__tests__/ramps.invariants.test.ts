@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   generateColorScale, generateFamilyDarkScale, BASE_TONE, STEP_ROLES,
-  backgroundFromBase, neutralFromBrand, DEFAULT_NEUTRAL_TINT,
+  backgroundFromBase, neutralFromBrand, DEFAULT_NEUTRAL_TINT, previewHarmony,
+  recommendStateColors,
   type ColorAlgorithm,
 } from '../colorUtils'
 import { hexToOklch, inSrgbGamut } from '../color/gamut'
@@ -234,5 +235,16 @@ describe('Vibrancy dark mode (pre-existing defect, found 2026-08-19)', () => {
     const darkTone12L = 0.921 // grayDark tone 12 — what Vibrancy uses as `page`
     const vibrancyDarkPageL = darkTone12L
     expect(vibrancyDarkPageL).toBeLessThan(darkPageL)
+  })
+})
+
+describe('previewHarmony matches the appliers', () => {
+  it('splits the Neutral page by appearance and keeps state hues', () => {
+    const h = previewHarmony('#2e90fa', 'subtle')
+    expect(h.neutral.toLowerCase()).toBe(neutralFromBrand('#2e90fa', 'subtle').toLowerCase())
+    expect(h.pageLight.toLowerCase()).toBe(backgroundFromBase(h.neutral, 'light', 'subtle').toLowerCase())
+    expect(h.pageDark.toLowerCase()).toBe(backgroundFromBase(h.neutral, 'dark', 'subtle').toLowerCase())
+    expect(h.pageLight.toLowerCase()).not.toBe(h.pageDark.toLowerCase())
+    expect(h.states).toEqual(recommendStateColors('#2e90fa'))
   })
 })

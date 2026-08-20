@@ -20,7 +20,7 @@ import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
-  neutralFromBrand, recommendStateColors,
+  neutralFromBrand, recommendStateColors, checkContrast, accessibleSolidTone, readableInk,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
@@ -30,10 +30,11 @@ import {
   curatedPaletteFor, RailToggle, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
-import { SlidersIcon, PaletteIcon } from '../ui/icons'
+import { ColorAgentButton } from '../ui/shimmer-button'
+import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
-import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, WIZARD_FORMATS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
+import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_EXPORT_FORMATS, WIZARD_FORMATS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -68,9 +69,9 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-// ── Radix role bands — which tones (1-12) serve which purpose. Drives the
-// families table's group captions; the tone NUMBER always means this,
-// independent of whatever the active naming scheme displays for it. ────────
+// ── Radix role bands — which tones (1-12) serve which purpose. Shown once at
+// the bottom of the families table after the token rows; the Color Agent already
+// knows these groupings, so repeating them as row captions added noise. ───────
 const TONE_BANDS: { max: number; label: string }[] = [
   { max: 2, label: 'Backgrounds' },
   { max: 5, label: 'Interactive components' },
@@ -78,13 +79,8 @@ const TONE_BANDS: { max: number; label: string }[] = [
   { max: 10, label: 'Solid colors' },
   { max: 12, label: 'Accessible text' },
 ]
-function toneBand(tone: number): string {
-  return TONE_BANDS.find((b) => tone <= b.max)?.label ?? ''
-}
 
-// What a step is FOR — the Token Details dialog's Description, mirroring the
-// role descriptions Semantics shows in the same slot. Keyed off the tone
-// number (like TONE_BANDS), so it holds under any naming scheme.
+// What a step is FOR — mirrored in the table footer and the Token Details dialog.
 const TONE_DESCRIPTIONS: { max: number; text: string }[] = [
   { max: 2,  text: 'App background. Step 1 is the page itself; step 2 is a subtle surface on top of it.' },
   { max: 5,  text: 'Interactive component fills — 3 at rest, 4 on hover, 5 while active.' },
@@ -92,20 +88,250 @@ const TONE_DESCRIPTIONS: { max: number; text: string }[] = [
   { max: 10, text: 'Solid fills. Step 9 is the anchor — the family’s own colour, verbatim — and 10 is its hover.' },
   { max: 12, text: 'Accessible text on the page — 11 clears WCAG AA (≈4.5:1), 12 is the high-contrast step.' },
 ]
+
 function toneDescription(tone: number): string {
   return TONE_DESCRIPTIONS.find((b) => tone <= b.max)?.text ?? ''
+}
+
+function toneRangeLabel(max: number, index: number): string {
+  const min = index === 0 ? 1 : TONE_BANDS[index - 1].max + 1
+  return min === max ? `${min}` : `${min}–${max}`
+}
+
+/** WCAG badge — AA/AAA for text pairs, LG when only large text passes. */
+function WcagBadge({ fg, bg }: { fg: string; bg: string }) {
+  const r = checkContrast(fg, bg)
+  const cls =
+    r >= 4.5
+      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+      : r >= 3
+      ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+      : 'text-red-600 dark:text-red-400 bg-red-500/10'
+  const tag = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'LG' : '✕'
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[10px] font-semibold tabular-nums ${cls}`}>
+      {r.toFixed(2)}:1 {tag}
+    </span>
+  )
+}
+
+function WcagPairChip({ label, fg, bg }: { label: string; fg: string; bg: string }) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <span
+        className="w-9 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
+        style={{ backgroundColor: bg, color: fg }}
+        aria-hidden
+      >
+        Aa
+      </span>
+      <span className="flex flex-col min-w-0 gap-0.5">
+        <span className="font-mono text-[10.5px] text-fg-muted truncate" title={label}>{label}</span>
+        <WcagBadge fg={fg} bg={bg} />
+      </span>
+    </div>
+  )
+}
+
+const OVERVIEW_FAMILY_KEYS = ['accent', 'accent-alpha', 'neutral'] as const
+const OVERVIEW_STATE_KEYS = ['error', 'warning', 'success', 'info'] as const
+
+// Mid interactive step — unmistakably translucent in nav/overview swatches.
+const ALPHA_NAV_TONE = 5
+
+function overviewScale(family: Family, appearance: 'light' | 'dark') {
+  if (family.isAlpha) {
+    return appearance === 'light'
+      ? (family.solidLight ?? family.light)
+      : (family.solidDark ?? family.dark)
+  }
+  return appearance === 'light' ? family.light : family.dark
+}
+
+function OverviewSwatch({ family }: { family: Family }) {
+  if (family.isAlpha) {
+    const value = family.light[ALPHA_NAV_TONE] ?? family.base
+    return (
+      <span
+        className={`${SWATCH} relative overflow-hidden flex-shrink-0`}
+        style={{ ...CHECKER, backgroundSize: '5px 5px' }}
+        aria-hidden
+      >
+        <span className="absolute inset-0" style={{ backgroundColor: value }} />
+      </span>
+    )
+  }
+  return <span className={`${SWATCH} flex-shrink-0`} style={{ backgroundColor: family.base }} aria-hidden />
+}
+
+// Overview footer — one chrome recipe so borders never stack two grays.
+const overviewPanel = 'rounded-xl border border-line bg-surface overflow-hidden'
+const overviewDivide = 'divide-y divide-line/60'
+
+function RampPreviewBlock({
+  family,
+  namingLabels,
+  active,
+  compact = false,
+  embedded = false,
+}: {
+  family: Family
+  namingLabels: string[]
+  active?: boolean
+  compact?: boolean
+  /** Inside the shared ramp panel — no nested border/background. */
+  embedded?: boolean
+}) {
+  const light = family.isAlpha ? family.light : overviewScale(family, 'light')
+  const dark = family.isAlpha ? family.dark : overviewScale(family, 'dark')
+  const rowProps = {
+    labels: namingLabels,
+    joined: true as const,
+    numbersInside: true as const,
+    showNumbers: false as const,
+    size: compact ? ('thin' as const) : ('default' as const),
+    checkerboard: family.isAlpha,
+  }
+
+  return (
+    <div
+      className={`flex flex-col gap-3 p-4 transition-colors ${
+        embedded ? '' : overviewPanel
+      } ${active ? 'bg-accent-ui/[0.06]' : ''}`}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <OverviewSwatch family={family} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[13px] font-semibold text-fg truncate">{family.label}</span>
+            {active ? (
+              <span className="text-[9px] font-semibold uppercase tracking-widest text-accent-ui flex-shrink-0">Editing</span>
+            ) : null}
+          </div>
+          {family.isAlpha ? (
+            <p className="text-[10px] text-fg-faint mt-0.5">Translucent ramp · checkerboard shows alpha</p>
+          ) : (
+            <p className="text-[10px] font-mono text-fg-faint mt-0.5 truncate">{family.base.toUpperCase()}</p>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-2.5 gap-y-2 items-center">
+        <span className="text-[10px] font-medium text-fg-faint">Light</span>
+        <ScaleRow scale={light} ariaLabel={`${family.label} light scale`} {...rowProps} />
+        <span className="text-[10px] font-medium text-fg-faint">Dark</span>
+        <ScaleRow scale={dark} ariaLabel={`${family.label} dark scale`} {...rowProps} />
+      </div>
+    </div>
+  )
+}
+
+/** Scroll tail — scale roles, full system ramp board, WCAG pairs for accent. */
+function FamilyRampOverview({
+  families,
+  activeKey,
+  namingLabels,
+}: {
+  families: Family[]
+  activeKey: string
+  namingLabels: string[]
+}) {
+  const byKey = (key: string) => families.find((f) => f.key === key)
+  const accent = byKey('accent')
+  const neutral = byKey('neutral')
+  const core = OVERVIEW_FAMILY_KEYS.map((k) => byKey(k)).filter(Boolean) as Family[]
+  const states = OVERVIEW_STATE_KEYS.map((k) => byKey(k)).filter(Boolean) as Family[]
+
+  const accentLight = accent ? overviewScale(accent, 'light') : null
+  const accentDark = accent ? overviewScale(accent, 'dark') : null
+  const neutralLight = neutral ? overviewScale(neutral, 'light') : null
+  const neutralDark = neutral ? overviewScale(neutral, 'dark') : null
+
+  const solidLight = accentLight ? (accentLight[accessibleSolidTone(accentLight)] ?? accent!.base) : '#000'
+  const solidDark = accentDark ? (accentDark[accessibleSolidTone(accentDark)] ?? accent!.base) : '#000'
+
+  return (
+    <section className="border-t border-line bg-app">
+      <div className="px-4 py-6">
+        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint mb-1">Scale guide</h3>
+        <p className="text-[11px] text-fg-faint mb-3">Radix 1–12 — same meaning in every family below.</p>
+        <ul className="flex flex-col gap-2.5">
+          {TONE_BANDS.map((band, i) => (
+            <li key={band.max} className="flex gap-3 min-w-0">
+              <span className="w-9 flex-shrink-0 font-mono text-[11px] tabular-nums text-fg-faint pt-px">
+                {toneRangeLabel(band.max, i)}
+              </span>
+              <span className="text-[12px] leading-snug text-fg-muted min-w-0">
+                <span className="font-medium text-fg">{band.label}</span>
+                {' — '}
+                {TONE_DESCRIPTIONS.find((d) => d.max === band.max)?.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="border-t border-line/60 px-4 py-6 flex flex-col gap-4">
+        <div>
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
+          <p className="text-[11px] text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
+        </div>
+        <div className={`${overviewPanel} ${overviewDivide}`}>
+          {core.map((f) => (
+            <RampPreviewBlock
+              key={f.key}
+              embedded
+              family={f}
+              namingLabels={namingLabels}
+              active={f.key === activeKey}
+            />
+          ))}
+          {states.length > 0 ? (
+            <>
+              <div className="px-4 py-2.5">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">States</span>
+                <p className="text-[10px] text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
+              </div>
+              {states.map((f) => (
+                <RampPreviewBlock
+                  key={f.key}
+                  embedded
+                  compact
+                  family={f}
+                  namingLabels={namingLabels}
+                  active={f.key === activeKey}
+                />
+              ))}
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {accentLight && accentDark ? (
+        <div className="border-t border-line/60 px-4 py-6 flex flex-col gap-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">WCAG contrast</h3>
+          <p className="text-[11px] text-fg-faint">Live pairs from accent and neutral ramps.</p>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+            <WcagPairChip label="Accent text · light" fg={accentLight[12] ?? '#000'} bg={accentLight[1] ?? '#fff'} />
+            <WcagPairChip label="Accent text · dark" fg={accentDark[12] ?? '#fff'} bg={accentDark[1] ?? '#000'} />
+            <WcagPairChip label="Accent ink · solid light" fg={readableInk(solidLight)} bg={solidLight} />
+            <WcagPairChip label="Accent ink · solid dark" fg={readableInk(solidDark)} bg={solidDark} />
+            {neutralLight && neutralDark ? (
+              <>
+                <WcagPairChip label="Neutral text · light" fg={neutralLight[12] ?? '#000'} bg={neutralLight[1] ?? '#fff'} />
+                <WcagPairChip label="Neutral text · dark" fg={neutralDark[12] ?? '#fff'} bg={neutralDark[1] ?? '#000'} />
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  )
 }
 
 // The alpha tone the family NAV previews. Not the anchor (step 9 composites to
 // a near-opaque overlay, so it reads as a plain solid chip and defeats the
 // point); a mid interactive step is unmistakably translucent while still
 // carrying the family's hue.
-const ALPHA_NAV_TONE = 5
-
-/** A family's chip in the nav. An alpha family gets the checkerboard treatment
- *  its table cells already use (see AlphaHexCell) instead of a solid chip of
- *  its base — the two families sat side by side under Accents looking
- *  identical, so nothing on screen said which one was the translucent ramp. */
 function FamilySwatch({ family, dark, onClick }: {
   family: Family
   dark: boolean
@@ -290,7 +516,10 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
               <span className="text-[11px] font-normal text-fg-faint truncate">{label} · {appearance}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
-              {(isAlpha ? WIZARD_FORMATS.filter((f) => ALPHA_EXPORT_FORMATS.includes(f.key)) : WIZARD_FORMATS).map((f) => {
+                  {(isAlpha
+                    ? WIZARD_FORMATS.filter((f) => ALPHA_EXPORT_FORMATS.includes(f.key))
+                    : WIZARD_FORMATS.filter((f) => FAMILY_EXPORT_FORMATS.includes(f.key))
+                  ).map((f) => {
                 const copyDone = copied === f.key
                 const downloadDone = downloaded === f.key
                 const badge = MENU_FORMAT_BADGE[f.key]
@@ -396,7 +625,7 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
 
 // ── Editable hex cell (swatch + live hex field, draft pattern) ───────────────
 
-function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
+function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compact }: {
   value: string
   onChange: (hex: string) => void
   ariaLabel: string
@@ -407,6 +636,8 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
    *  open — there the swatch is a readout of the value beside it. */
   onSwatchClick?: () => void
   swatchLabel?: string
+  /** Tighter strip variant — no copy affordance (reset lives beside it). */
+  compact?: boolean
 }) {
   const [draft, setDraft] = useState(value.replace(/^#/, '').toUpperCase())
   const [focused, setFocused] = useState(false)
@@ -431,7 +662,7 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
     // `group/hex` scopes the hover to THIS cell, not the whole row (the row
     // itself is `group` for its own trailing "expand tone" button) — hovering
     // the dark column shouldn't reveal a copy icon on the light one.
-    <div className="group/hex flex items-center gap-2 min-w-0">
+    <div className={`group/hex flex items-center min-w-0 ${compact ? 'gap-1.5' : 'gap-2'}`}>
       {onSwatchClick ? (
         <button
           type="button"
@@ -439,11 +670,11 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
           aria-haspopup="dialog"
           aria-label={swatchLabel ?? 'Open color picker'}
           title={swatchLabel ?? 'Open color picker'}
-          className={`${SWATCH} transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
+          className={`${compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-black/10' : SWATCH} transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg`}
           style={{ backgroundColor: value }}
         />
       ) : (
-        <span className={SWATCH} style={{ backgroundColor: value }} />
+        <span className={compact ? 'w-4 h-4 rounded-[3px] flex-shrink-0 ring-1 ring-black/10' : SWATCH} style={{ backgroundColor: value }} />
       )}
       <input
         value={draft}
@@ -452,8 +683,14 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
         onBlur={() => setFocused(false)}
         spellCheck={false}
         aria-label={ariaLabel}
-        className="flex-1 min-w-0 bg-app text-[12px] font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors"
+        className={
+          compact
+            ? 'w-[4.25rem] flex-shrink-0 bg-transparent text-[11px] font-mono tabular-nums text-fg px-1 py-0 outline-none'
+            : 'flex-1 min-w-0 bg-app text-[12px] font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors'
+        }
       />
+      {!compact && (
+      <>
       {/* Hidden until the cell is hovered/focused — a copy icon sitting there
           permanently on every one of the 12×2 rows would out-noise the hex
           text it's next to. `focus-visible` keeps it reachable without a mouse. */}
@@ -475,6 +712,8 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
           </svg>
         )}
       </button>
+      </>
+      )}
     </div>
   )
 }
@@ -484,7 +723,7 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel }: {
 // so this has no input, just the swatch (over a checkerboard, so the
 // translucency itself stays legible instead of reading as a flat, wrong-
 // looking color) and the hex as static text. ──
-function AlphaHexCell({ value, solid, solidName }: { value: string; solid?: string; solidName?: string }) {
+function AlphaHexCell({ value, solid, solidName, compact }: { value: string; solid?: string; solidName?: string; compact?: boolean }) {
   // Split swatch when the solid twin is known: the LEFT half is the raw alpha
   // over the checkerboard (so the translucency is unmistakable), the RIGHT half
   // is the solid tone it composites to. Side by side they read as one fact —
@@ -494,12 +733,21 @@ function AlphaHexCell({ value, solid, solidName }: { value: string; solid?: stri
     ? `${value} — the alpha that renders as ${solidName} (${solid}) over its page. Derived, not directly editable.`
     : `${value} — derived, not directly editable`
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      <span className={`${SWATCH} relative overflow-hidden flex-shrink-0`} style={{ ...CHECKER, backgroundSize: '6px 6px' }} title={title}>
+    <div className={`flex items-center min-w-0 ${compact ? 'gap-1.5' : 'gap-2'}`}>
+      <span
+        className={`${compact ? 'w-4 h-4 rounded-[3px] ring-1 ring-black/10' : SWATCH} relative overflow-hidden flex-shrink-0`}
+        style={{ ...CHECKER, backgroundSize: compact ? '5px 5px' : '6px 6px' }}
+        title={title}
+      >
         <span className={`absolute inset-y-0 left-0 ${solid ? 'right-1/2' : 'right-0'}`} style={{ backgroundColor: value }} />
         {solid && <span className="absolute inset-y-0 left-1/2 right-0" style={{ backgroundColor: solid }} />}
       </span>
-      <span className="w-full min-w-0 truncate text-[12px] font-mono tabular-nums text-fg-muted px-1.5 py-1" title={title}>
+      <span
+        className={`min-w-0 truncate font-mono tabular-nums text-fg-muted ${
+          compact ? 'w-[4.25rem] flex-shrink-0 text-[11px]' : 'w-full text-[12px] px-1.5 py-1'
+        }`}
+        title={title}
+      >
         {value.replace(/^#/, '').toUpperCase()}
       </span>
     </div>
@@ -557,6 +805,8 @@ export default function ColorPrimitives({
   tabBar,
   railCollapsed = false,
   onToggleRail,
+  toolbar,
+  toolbarWash,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
@@ -578,6 +828,8 @@ export default function ColorPrimitives({
    *  restart one row down — two unrelated rules instead of one. */
   railCollapsed?: boolean
   onToggleRail?: () => void
+  toolbar?: ReactNode
+  toolbarWash?: string
 }) {
   const store = useDesignStore()
   const {
@@ -616,7 +868,10 @@ export default function ColorPrimitives({
   // tracking the accent everywhere. The toggle is in the scale-settings gear,
   // beside Neutral tint — the setting that decides how much accent hue the
   // linked neutral even carries.
-  const changeAccent = (hex: string) => applyAccentColor(hex, linkNeutralToAccent, previewTheme)
+  const changeAccent = (hex: string) => {
+    const linked = useDesignStore.getState().linkNeutralToAccent
+    applyAccentColor(hex, linked, previewTheme)
+  }
 
   // Harmonize the four state colours with the accent. `recommendStateColors`
   // blends only CHROMA — each state keeps its canonical lightness and hue,
@@ -645,6 +900,7 @@ export default function ColorPrimitives({
   // Scale-settings gear (algorithm/naming/contrast shift) — promoted from
   // Picker Color into the quick-edit strip below.
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsAnchorRef = useRef<HTMLDivElement>(null)
   // Theme folder pending deletion. The rail's per-family trash is LOCKED while
   // a theme references that family ("remove the theme first") — and until now
   // the only place to remove a theme was Semantics' column header, which is a
@@ -1004,12 +1260,14 @@ export default function ColorPrimitives({
               <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-              <ColorPickerPanel
-                value={editingFamily.base}
-                onChange={(hex) => changeFamilyBase(editingFamily, hex)}
-                suggestions
-                palette={curatedPaletteFor(editingFamily.key)}
-              />
+                      <ColorPickerPanel
+                        value={editingFamily.base}
+                        onChange={(hex) => changeFamilyBase(editingFamily, hex)}
+                        suggestions
+                        palette={curatedPaletteFor(editingFamily.key)}
+                        followAccent={editingFamily.key === 'accent'}
+                        appearance={darkPreview ? 'dark' : 'light'}
+                      />
             </div>
           </motion.div>
         </AnimatePresence>,
@@ -1101,41 +1359,21 @@ export default function ColorPrimitives({
           `/60` this row used when it sat second) — this is now the row
           directly above the nav + table, the same boundary weight the OTHER
           row carried when IT was last. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
         <div
-          className={`flex-shrink-0 flex items-center h-[52px] border-r border-line transition-[width] duration-200 ${
-            railCollapsed ? 'justify-center px-0' : 'justify-between px-4'
+          className={`flex-shrink-0 flex items-center h-[52px] bg-app transition-[width] duration-200 ${
+            railCollapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
           }`}
           style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
         >
           {!railCollapsed && <span className="text-[13px] font-semibold text-fg">Groups</span>}
           <RailToggle collapsed={railCollapsed} onClick={onToggleRail} />
         </div>
-        {/* items-stretch + no left padding: the active tab's tint has to reach
-            this cell's top, bottom and left edge to read as a block rather than
-            a floating pill (see ColorHub's tabBar). The search re-centers
-            itself with `self-center` since it shouldn't stretch. */}
-        {/* Same edge rule as the strip row's gear below: pr-3 (12px)
-            clearance, not flush. */}
-        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter tokens"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
+        <div
+          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
+          style={{ background: toolbarWash }}
+        >
+          {toolbar}
         </div>
       </div>
 
@@ -1155,250 +1393,50 @@ export default function ColorPrimitives({
           rows (Groups above, the nav + table below), so a lighter divider
           here and a full-strength one just below it is what keeps the
           "chrome vs. content" boundary reading as the stronger line. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        {/* Collapsed, this cell keeps ONLY the active family's swatch — still
-            the picker trigger (`onSwatchClick` below does the same job), so
-            the one action this cell owns survives the collapse. The label and
-            the hex field are what go: at 56px neither fits, and both are
-            recoverable in one click. */}
-        <div
-          className={`flex-shrink-0 border-r border-line flex flex-col justify-center transition-[width] duration-200 ${
-            railCollapsed ? 'items-center px-0 py-5' : 'gap-1.5 px-4 py-5'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
-          {railCollapsed ? (
-            <div ref={stripEditRef} className="relative">
-              <FamilySwatch
-                family={family}
-                dark={darkPreview}
-                onClick={family.isAlpha ? undefined : () => setStripEditOpen((o) => !o)}
-              />
-              <AnimatePresence>
-                {stripEditOpen && !family.isAlpha && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.14, ease: 'easeOut' }}
-                    role="dialog"
-                    aria-label={`Edit ${family.label} color`}
-                    style={{ maxHeight: stripEditPlace.max }}
-                    className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                      stripEditPlace.up ? 'bottom-0' : 'top-0'
-                    }`}
-                  >
-                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                      <ColorPickerPanel
-                        value={family.base}
-                        onChange={(hex) => changeFamilyBase(family, hex)}
-                        suggestions
-                        palette={curatedPaletteFor(family.key)}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-          <>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{family.label} color</span>
-          {family.isAlpha ? (
-            <div className="w-full h-9 px-2.5 rounded-[13px] border border-line-strong bg-surface flex items-center">
-              <AlphaHexCell
-                value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'}
-                solid={(darkPreview ? family.solidDark : family.solidLight)?.[BASE_TONE]}
-                solidName={solidRowName(BASE_TONE)}
-              />
-            </div>
-          ) : (
-            <div ref={stripEditRef} className="relative w-full">
-              <div className="h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-1">
-                {/* No separate chevron any more — the swatch itself opens this
-                    same popover (onSwatchClick), so a second trigger doing the
-                    identical thing was redundant. The hex text stays directly
-                    editable either way. */}
-                <div className="flex-1 min-w-0">
-                  <HexCell
-                    value={family.base}
-                    onChange={(hex) => changeFamilyBase(family, hex)}
-                    ariaLabel={`${family.label} base color`}
-                    onSwatchClick={() => setStripEditOpen((o) => !o)}
-                    swatchLabel={`Open color picker for ${family.label}`}
-                  />
-                </div>
-                {/* Reset to the factory colour. Trailing edge of the pill —
-                    the slot `pr-1.5`/`gap-1` already reserved, and the same
-                    place the token tables put their per-row reset, so the
-                    gesture is the one already learned there.
-                    Routed through `changeFamilyBase`, NOT a direct setter: a
-                    reset has to cascade exactly like a hand-edit (the neutral
-                    and states links, the page derived from the base), or the
-                    two would drift into different results for the same value.
-                    Disabled at the default rather than hidden — a control that
-                    vanishes once used reads as broken; disabled says "nothing
-                    to undo". */}
-                {(() => {
-                  const def = defaultBaseFor(family)
-                  if (!def) return null
-                  const atDefault = family.base.toLowerCase() === def.toLowerCase()
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => changeFamilyBase(family, def)}
-                      disabled={atDefault}
-                      aria-label={`Reset ${family.label} to the default color`}
-                      title={atDefault ? `${family.label} is at its default (${def})` : `Reset to default (${def})`}
-                      className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg hover:bg-elevated disabled:opacity-25 disabled:hover:text-fg-faint disabled:hover:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
-                      </svg>
-                    </button>
-                  )
-                })()}
-              </div>
-              <AnimatePresence>
-                {stripEditOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.14, ease: 'easeOut' }}
-                    role="dialog"
-                    aria-label={`Edit ${family.label} color`}
-                    style={{ maxHeight: stripEditPlace.max }}
-                    // Docked to the RIGHT of the 198px column, not under the
-                    // field. Opening downward put a ~540px panel straight over
-                    // the family nav and the first rows of the token table —
-                    // i.e. over the ramp this picker is editing, so you
-                    // couldn't watch the thing you were changing. `left-full
-                    // ml-4` lands its left edge on the column's own `border-r`
-                    // (the field is inset by the row's `px-4`), so it opens
-                    // into the canvas gutter and the table stays readable.
-                    className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                      stripEditPlace.up ? 'bottom-0' : 'top-0'
-                    }`}
-                  >
-                    <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                      <ColorPickerPanel
-                        value={family.base}
-                        onChange={(hex) => changeFamilyBase(family, hex)}
-                        suggestions
-                        palette={curatedPaletteFor(family.key)}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-          </>
-          )}
-        </div>
-
-        {/* No states-link toggle here either, same reason as the wand it
-            replaced: it only rendered while Accent was active, so the ramp
-            beside it started 52px further right on that ONE family and every
-            other family's ramp read as misaligned against it. The strip is the
-            same shape for every family now — both links live in the gear's
-            Harmony section instead (recommendStateColors / neutralFromBrand). */}
-        {/* pr-3 (12px), not the old px-6/lg:px-8 (24-32px) and not flush
-            either: the gear needs SOME clearance from the edge — sitting
-            dead flush like the table's trailing icon column (which has a
-            fixed-width cell to center within) reads as clipped for a
-            free-floating button with no such cell. 12px is the minimum gap
-            that still avoids that. */}
-        <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5 flex-wrap">
-        <div className="flex-1 min-w-[10rem]">
-          <ScaleRow
-            scale={darkPreview ? family.dark : family.light}
-            labels={namingLabels}
-            ariaLabel={`${family.label} scale`}
-            joined
-            numbersInside
-            checkerboard={family.isAlpha}
-          />
-        </div>
-
-        <div className="relative flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((o) => !o)}
-            aria-haspopup="dialog"
-            aria-expanded={settingsOpen}
-            aria-label="Contrast — how far every ramp travels from the page"
-            title="Contrast"
-            className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-              settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
-            }`}
-          >
-            <SlidersIcon />
-          </button>
-          <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-            <ColorControls
-              contrastShift={contrastShift}
-              onShift={setContrastShift}
-              neutralTint={neutralTint}
-              // Writing the level is only half of it: the page is DERIVED from
-              // the Neutral, so the tint has to re-run the same applier a base
-              // change does — one code path for "the base moved", whether the
-              // hex changed or how much of it survives. It reads the level from
-              // the store, hence the write first.
-              //
-              // `fromLink` is TRUE here even though the user clicked: this is a
-              // recompute, not a hand-picked neutral, so it must not unlink.
-              // And while linked the base itself moves — `brandSat` is a
-              // per-tint value, so the derived neutral changes with the level.
-              onTint={(t) => {
-                setNeutralTint(t)
-                applyGrayColor(linkNeutralToAccent ? neutralFromBrand(primaryColor, t) : grayBaseColor, previewTheme, true)
-              }}
-              tintPreview={(t) => backgroundFromBase(grayBaseColor, darkPreview ? 'dark' : 'light', t)}
-              linkNeutral={linkNeutralToAccent}
-              // Turning it ON derives immediately — a link that only takes
-              // effect on the NEXT accent edit reads as broken.
-              onLinkNeutral={(v) => {
-                setLinkNeutralToAccent(v)
-                if (v) applyGrayColor(neutralFromBrand(primaryColor, neutralTint), previewTheme, true)
-              }}
-              linkedNeutralPreview={neutralFromBrand(primaryColor, neutralTint)}
-              linkStates={linkStatesToAccent}
-              // Same immediate-derive contract as onLinkNeutral above, and the
-              // same `fromLink: true` reasoning `useApplyGrayColor` already
-              // documents: this is a recompute the link triggered, not a
-              // hand-picked state, so it must not itself unlink.
-              onLinkStates={(v) => {
-                setLinkStatesToAccent(v)
-                if (v) {
-                  applyStateColor('error', stateRecommendation.error, true)
-                  applyStateColor('warning', stateRecommendation.warning, true)
-                  applyStateColor('success', stateRecommendation.success, true)
-                  applyStateColor('info', stateRecommendation.info, true)
-                }
-              }}
-              linkedStatesPreview={stateRecommendation}
-            />
-          </ScaleSettingsModal>
-        </div>
-        </div>
-      </div>
-
-      {/* ── nav + table, filling the remaining height ── */}
-      <div className="flex-1 min-h-0 flex items-stretch">
+      {/* ── Body: folders flush under Groups; tabs · ramp · table on the right ── */}
+      <div className="flex flex-1 min-h-0 items-stretch">
       <nav
         ref={navRef}
         aria-label="Color families"
-        className="flex-shrink-0 h-full overflow-y-auto border-r border-line py-1.5 px-2 flex flex-col bg-app transition-[width] duration-200"
+        className="flex-shrink-0 h-full overflow-y-auto py-1.5 px-2 flex flex-col bg-app transition-[width] duration-200"
         style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
       >
-        {/* Collapsed: swatches only, grouped by a hairline instead of a text
-            header. The grouping is the one thing the folder labels carry that
-            the chips can't, so it survives as a rule rather than being dropped
-            outright. Each row is ONE button that selects the family (a 40×32
-            target, where the bare 18px swatch would not be) — editing a colour
-            stays behind the expanded state and the row-1 swatch, so a click
-            here can't mean two things depending on where in the chip it lands. */}
+        {railCollapsed ? (
+          <div ref={stripEditRef} className="relative flex items-center justify-center pb-3 mb-1 border-b border-line/60">
+            <FamilySwatch
+              family={family}
+              dark={darkPreview}
+              onClick={family.isAlpha ? undefined : () => setStripEditOpen((o) => !o)}
+            />
+            <AnimatePresence>
+              {stripEditOpen && !family.isAlpha && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.14, ease: 'easeOut' }}
+                  role="dialog"
+                  aria-label={`Edit ${family.label} color`}
+                  style={{ maxHeight: stripEditPlace.max }}
+                  className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                    stripEditPlace.up ? 'bottom-0' : 'top-0'
+                  }`}
+                >
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                    <ColorPickerPanel
+                      value={family.base}
+                      onChange={(hex) => changeFamilyBase(family, hex)}
+                      suggestions
+                      palette={curatedPaletteFor(family.key)}
+                      followAccent={family.key === 'accent'}
+                      appearance={darkPreview ? 'dark' : 'light'}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : null}
         {railCollapsed ? (
           navFolders.flatMap((folder) => folder.groups).map((group, gi, all) => (
             <div key={`${group.label}-${gi}`} className="flex flex-col items-center gap-0.5">
@@ -1414,7 +1452,7 @@ export default function ColorPrimitives({
                     title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
                     aria-label={f.label}
                     className={`w-10 h-8 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                      isActive ? 'bg-elevated shadow-sm' : 'hover:bg-elevated/50'
+                      isActive ? 'bg-elevated' : 'hover:bg-elevated/50'
                     }`}
                   >
                     <FamilySwatch family={f} dark={darkPreview} />
@@ -1491,7 +1529,7 @@ export default function ColorPrimitives({
           // information, so it renders its families directly.
           const hideHeader = folder.key === CUSTOM_FOLDER
           return (
-            <div key={groupKey} className="flex flex-col gap-0.5 pl-2">
+            <div key={groupKey} className="flex flex-col gap-1 pl-2">
             {!hideHeader && (
             <button
               type="button"
@@ -1529,8 +1567,10 @@ export default function ColorPrimitives({
                       "select this family" trigger. */}
                   <div
                     aria-current={isActive}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
-                      isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 transition-colors ${f.customKey ? 'pr-12' : 'pr-7'} ${
+                      isActive
+                        ? 'chrome-tab bg-elevated text-fg'
+                        : 'rounded-lg text-fg-muted hover:bg-elevated/50 hover:text-fg'
                     }`}
                   >
                     <FamilySwatch
@@ -1621,16 +1661,173 @@ export default function ColorPrimitives({
           )
         })
         )}
-          </nav>
+      </nav>
 
-          <div ref={tableRef} className="flex-1 min-w-0 h-full overflow-auto">
+      <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
+        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter tokens"
+            />
+            {query && (
+              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pl-4 pr-3 h-[52px] flex-shrink-0 border-b border-line/60">
+          {!railCollapsed && (
+            family.isAlpha ? (
+              <div className="flex-shrink-0 h-9 px-1.5 rounded-lg border border-line bg-surface flex items-center">
+                <AlphaHexCell
+                  compact
+                  value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'}
+                  solid={(darkPreview ? family.solidDark : family.solidLight)?.[BASE_TONE]}
+                  solidName={solidRowName(BASE_TONE)}
+                />
+              </div>
+            ) : (
+              <div ref={stripEditRef} className="relative flex-shrink-0">
+                <div className="h-9 flex items-stretch rounded-lg border border-line bg-surface overflow-hidden">
+                  <div className="flex items-center pl-1.5 pr-0.5">
+                    <HexCell
+                      compact
+                      value={family.base}
+                      onChange={(hex) => changeFamilyBase(family, hex)}
+                      ariaLabel={`${family.label} base color`}
+                      onSwatchClick={() => setStripEditOpen((o) => !o)}
+                      swatchLabel={`Open color picker for ${family.label}`}
+                    />
+                  </div>
+                  {(() => {
+                    const def = defaultBaseFor(family)
+                    if (!def) return null
+                    const atDefault = family.base.toLowerCase() === def.toLowerCase()
+                    return (
+                      <>
+                        <span className="w-px self-stretch bg-line/60 my-1.5 flex-shrink-0" aria-hidden />
+                        <button
+                          type="button"
+                          onClick={() => changeFamilyBase(family, def)}
+                          disabled={atDefault}
+                          aria-label={`Reset ${family.label} to the default color`}
+                          title={atDefault ? `${family.label} is at its default (${def})` : `Reset to default (${def})`}
+                          className="flex-shrink-0 w-7 flex items-center justify-center text-fg-muted hover:text-fg hover:bg-elevated disabled:opacity-35 disabled:hover:text-fg-muted disabled:hover:bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fg"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+                          </svg>
+                        </button>
+                      </>
+                    )
+                  })()}
+                </div>
+                <AnimatePresence>
+                  {stripEditOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.14, ease: 'easeOut' }}
+                      role="dialog"
+                      aria-label={`Edit ${family.label} color`}
+                      style={{ maxHeight: stripEditPlace.max }}
+                      className={`absolute left-0 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
+                        stripEditPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
+                      }`}
+                    >
+                      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                        <ColorPickerPanel
+                          value={family.base}
+                          onChange={(hex) => changeFamilyBase(family, hex)}
+                          suggestions
+                          palette={curatedPaletteFor(family.key)}
+                          followAccent={family.key === 'accent'}
+                          appearance={darkPreview ? 'dark' : 'light'}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          )}
+          <div className="flex-1 min-w-0">
+            <ScaleRow
+              scale={darkPreview ? family.dark : family.light}
+              labels={namingLabels}
+              ariaLabel={`${family.label} scale`}
+              joined
+              numbersInside
+              checkerboard={family.isAlpha}
+            />
+          </div>
+          <div ref={settingsAnchorRef} className="relative flex-shrink-0">
+            <ColorAgentButton
+              active={settingsOpen}
+              onClick={() => setSettingsOpen((o) => !o)}
+              aria-haspopup="dialog"
+              aria-expanded={settingsOpen}
+              aria-label="Color Agent"
+              title="Color Agent"
+            >
+              <SparkleCircleIcon />
+            </ColorAgentButton>
+            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} anchorRef={settingsAnchorRef}>
+              <ColorControls
+                contrastShift={contrastShift}
+                onShift={setContrastShift}
+                accentHex={primaryColor}
+                appearance={darkPreview ? 'dark' : 'light'}
+                onPickAccent={(hex) => {
+                  setLinkNeutralToAccent(true)
+                  setLinkStatesToAccent(true)
+                  applyAccentColor(hex, true, previewTheme)
+                }}
+                neutralTint={neutralTint}
+                onTint={(t) => {
+                  setNeutralTint(t)
+                  applyGrayColor(linkNeutralToAccent ? neutralFromBrand(primaryColor, t) : grayBaseColor, previewTheme, true)
+                }}
+                tintPreview={(t) => backgroundFromBase(grayBaseColor, darkPreview ? 'dark' : 'light', t)}
+                linkNeutral={linkNeutralToAccent}
+                onLinkNeutral={(v) => {
+                  setLinkNeutralToAccent(v)
+                  if (v) applyGrayColor(neutralFromBrand(primaryColor, neutralTint), previewTheme, true)
+                }}
+                linkedNeutralPreview={neutralFromBrand(primaryColor, neutralTint)}
+                linkStates={linkStatesToAccent}
+                onLinkStates={(v) => {
+                  setLinkStatesToAccent(v)
+                  if (v) {
+                    applyStateColor('error', stateRecommendation.error, true)
+                    applyStateColor('warning', stateRecommendation.warning, true)
+                    applyStateColor('success', stateRecommendation.success, true)
+                    applyStateColor('info', stateRecommendation.info, true)
+                  }
+                }}
+                linkedStatesPreview={stateRecommendation}
+              />
+            </ScaleSettingsModal>
+          </div>
+        </div>
+        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[24rem]">
               {/* Column header — light/dark eye toggles drive the preview theme.
                   Sticky so it survives scrolling the tone rows below: without
                   it, scrolling past row 1 hides the eye toggles, the per-column
                   export icon and the settings gear — the only way back to any
                   of them was scrolling back up. `z-10` keeps it above the row
-                  content (band captions included); `bg-app` (already set) is
+                  content (band captions removed); `bg-app` (already set) is
                   what keeps rows from showing through underneath it. */}
               <div className="sticky top-0 z-10 grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint" style={gridStyle}>
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
@@ -1680,33 +1877,15 @@ export default function ColorPrimitives({
                   const name = rowName(tone)
                   const expanded = expandedTone === tone
                   const isEven = i % 2 === 1
-                  // Radix role-ordering: a step means the same thing in both
-                  // appearances (1–2 app background … 9 solid … 11–12 text), so
-                  // the dark column reads the SAME step of the family's dark
-                  // ramp. `accent-25` is the subtlest background either way —
-                  // near-white in light, near-black in dark. No inversion: that
-                  // was the workaround for colours not having a dark ramp.
                   const darkTone = tone
-                  // A new role band starts here — caption it, so the 12 rows
-                  // read as 5 grouped ranges (Radix's own breakdown) instead of
-                  // an undifferentiated list. Keyed off the TONE, not the
-                  // active naming scheme's label, so it holds regardless of
-                  // whether the row name reads accent-9 or accent-700.
-                  const band = toneBand(tone)
-                  const newBand = i === 0 || band !== toneBand(visibleTones[i - 1])
                   return (
-                    <div key={tone}>
-                      {newBand && (
-                        <div className="px-4 pt-3 pb-1 border-t border-line/40 bg-surface/60">
-                          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{band}</span>
-                        </div>
-                      )}
-                      <div
-                        className={`grid items-stretch group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-                          newBand ? '' : 'border-t border-line/40'
-                        } ${isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}`}
-                        style={gridStyle}
-                      >
+                    <div
+                      key={tone}
+                      className={`grid items-stretch group border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+                        isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+                      }`}
+                      style={gridStyle}
+                    >
                         <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
                           <PaletteIcon size={14} />
                           <code className="font-mono text-[12px] text-fg-muted truncate">{name}</code>
@@ -1766,14 +1945,16 @@ export default function ColorPrimitives({
                             <SlidersIcon />
                           </button>
                         )}
-                      </div>
                     </div>
                   )
                 })
               )}
+
+              <FamilyRampOverview families={families} activeKey={activeFamily} namingLabels={namingLabels} />
             </div>
-          </div>
         </div>
+      </div>
+      </div>
 
       {/* Per-family colour picker — portaled out of the nav so the rail's
           scroll mask can't clip it (see `editRect`). Rendered once for

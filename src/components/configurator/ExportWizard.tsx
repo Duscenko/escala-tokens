@@ -98,14 +98,25 @@ function GitHubGlyph({ size = 12 }: { size?: number }) {
   )
 }
 
-function download(file: { name: string; content: string }) {
-  const mime = file.name.endsWith('.json') ? 'application/json' : 'text/plain'
-  const url = URL.createObjectURL(new Blob([file.content], { type: mime }))
+function download(file: { name: string; content: string; binary?: Uint8Array }) {
+  const mime = file.name.endsWith('.json') ? 'application/json'
+    : file.name.endsWith('.zip') ? 'application/zip'
+    : 'text/plain'
+  const blob = file.binary
+    ? new Blob([toArrayBuffer(file.binary)], { type: mime })
+    : new Blob([file.content], { type: mime })
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = file.name
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function toArrayBuffer(data: Uint8Array): ArrayBuffer {
+  const copy = new ArrayBuffer(data.byteLength)
+  new Uint8Array(copy).set(data)
+  return copy
 }
 
 export default function ExportWizard({
@@ -193,11 +204,11 @@ export default function ExportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [collections, modes, families, allFamilies, store],
   )
-  const isJson = format === 'w3c' || format === 'escala' || format === 'categorical-ai'
-  // Escala JSON and the Categorical AI-Guided format are each one document by
-  // contract, so structure can't split either.
-  const structureLocked = format === 'escala' || format === 'categorical-ai'
-  const isWholeDocument = format === 'escala' || format === 'categorical-ai'
+  const isJson = format === 'w3c' || format === 'escala'
+  // Escala JSON and Skill are each one document by contract, so structure
+  // can't split either.
+  const structureLocked = format === 'escala' || format === 'skill'
+  const isWholeDocument = format === 'escala' || format === 'skill'
   const canNext = step === 1
     ? collections.length > 0
       && (!collections.includes('semantics') || modes.length > 0)
@@ -559,6 +570,7 @@ export default function ExportWizard({
                   {WIZARD_FORMATS.map((f) => {
                     const on = format === f.key
                     const isEscala = f.key === 'escala'
+                    const isSkill = f.key === 'skill'
                     const badge = WIZARD_FORMAT_BADGE[f.key]
                     return (
                       <div
@@ -595,6 +607,16 @@ export default function ExportWizard({
                             confirms it after the fact. The download is the same asset
                             FigmaDownloadView offers, so there's still one place the plugin
                             package is defined, just a second entry point to grab it. */}
+                        {isSkill && (
+                          <div className="px-3 pb-3 pl-[42px]">
+                            <p className="text-[11px] text-fg-faint leading-relaxed">
+                              A Figma MCP skill zip — <code className="font-mono">SKILL.md</code> plus{' '}
+                              <code className="font-mono">references/</code>. Drop the folder into{' '}
+                              <code className="font-mono">.claude/skills/</code> or{' '}
+                              <code className="font-mono">.cursor/skills/</code>.
+                            </p>
+                          </div>
+                        )}
                         {isEscala && (
                           <div className="px-3 pb-3 pl-[42px] flex flex-col gap-1.5">
                             <p className="text-[11px] text-fg-faint leading-relaxed">
@@ -633,7 +655,7 @@ export default function ExportWizard({
                         onClick={() => !disabled && setStructure(s.key)}
                         disabled={disabled}
                         aria-pressed={on}
-                        title={disabled ? 'Escala JSON is a single document by contract' : undefined}
+                        title={disabled ? 'This format is a single document by contract' : undefined}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors ${
                           on ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
                         } ${disabled ? 'opacity-40 cursor-not-allowed hover:border-line' : ''}`}
@@ -711,12 +733,13 @@ export default function ExportWizard({
                     as <code className="font-mono">atoms</code>, off ships none.
                   </p>
                 )}
-                {format === 'categorical-ai' && (
+                {format === 'skill' && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Ships Categorical's role catalogue only — every color token, regardless of the collections
-                    picked above. Each leaf carries a real alias (<code className="font-mono">{'{neutral.12}'}</code>)
-                    and a <code className="font-mono">comment</code> field with usage and contrast guidance,
-                    meant to be handed to an AI assistant as design context.
+                    Skill ships a Figma MCP / Agent Skills package: <code className="font-mono">SKILL.md</code>{' '}
+                    (When to use, Instructions, Examples, edge cases) plus{' '}
+                    <code className="font-mono">references/tokens.md</code> and the semantic contract.
+                    Unzip and drop the folder into <code className="font-mono">.claude/skills/</code> or{' '}
+                    <code className="font-mono">.cursor/skills/</code>. Collections picked above are ignored.
                   </p>
                 )}
               </div>
@@ -733,7 +756,7 @@ export default function ExportWizard({
                   label="Collections"
                   value={
                     format === 'escala' ? 'All (Escala JSON is one document)'
-                      : format === 'categorical-ai' ? 'All color tokens (one document)'
+                      : format === 'skill' ? 'All (Skill is one package)'
                         : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
                   }
                 />
@@ -744,7 +767,7 @@ export default function ExportWizard({
                   />
                 )}
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
-                {(collections.includes('semantics') || format === 'categorical-ai') && (
+                {(collections.includes('semantics') || format === 'skill') && (
                   <SummaryRow label="Modes" value={modes.join(', ')} />
                 )}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />
@@ -865,7 +888,9 @@ export default function ExportWizard({
                 <div className="mt-3 rounded-xl border border-line bg-surface/40 overflow-hidden">
                   {files.map((f) => (
                     <div key={f.name} className="border-b border-line last:border-b-0">
-                      <div className="px-4 py-2 text-[11px] font-mono text-fg-faint bg-elevated/40">{f.name}</div>
+                      <div className="px-4 py-2 text-[11px] font-mono text-fg-faint bg-elevated/40">
+                        {f.binary ? `${f.name} · SKILL.md` : f.name}
+                      </div>
                       <pre className="px-4 py-3 text-[12px] leading-relaxed font-mono text-fg-muted whitespace-pre overflow-x-auto max-h-64">
                         {f.content}
                       </pre>

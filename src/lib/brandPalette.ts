@@ -57,13 +57,8 @@ export const PRESET_GROUPS: PresetGroup[] = [
 export const BRAND_PRESETS: string[] = PRESET_GROUPS.flatMap((g) => g.colors.map((c) => c.hex))
 
 // The same presets, reordered into ONE hue-continuous run — Blues → Pinks →
-// Warm → Greens — for `ColorPickerPanel`'s curated palette bar, where all 17
-// render as a single seamless strip and need to read as a spectrum, not a
-// shuffle. `PRESET_GROUPS`' own order (Greens first) stays untouched: it only
-// ever renders as labelled dropdown sections there, where group order doesn't
-// carry the same "does this look like a rainbow" requirement. Blues ends on
-// Purple and Greens ends on Cyan, so the strip's two ends both sit near blue —
-// it reads as a closed loop rather than a hard seam.
+// Warm → Greens — for dropdown sections and `INDUSTRY_SPECTRUM` (the picker
+// bar's rainbow order; same hexes as the scale-guide agent).
 export const BRAND_SPECTRUM: ColorPreset[] = ['Blues', 'Pinks', 'Warm', 'Greens'].flatMap(
   (label) => PRESET_GROUPS.find((g) => g.label === label)?.colors ?? [],
 )

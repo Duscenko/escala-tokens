@@ -17,7 +17,8 @@ import {
 } from './colorControls'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import { resolveThemePalette } from '../../lib/themeSources'
-import { SlidersIcon } from '../ui/icons'
+import { SparkleCircleIcon } from '../ui/icons'
+import { ColorAgentButton } from '../ui/shimmer-button'
 
 export type PickerFocusTarget = 'accent' | 'neutral' | 'error' | 'warning' | 'success' | 'info' | null
 
@@ -46,7 +47,7 @@ export default function PickerColor({
     infoColor, infoScale, infoDarkScale,
     customColors, removeCustomColor,
     themeKinds, themeSources,
-    colorNaming, contrastShift,
+    colorNaming, contrastShift, neutralTint,
     setContrastShift,
   } = store
   const applyAccentColor = useApplyAccentColor()
@@ -73,6 +74,7 @@ export default function PickerColor({
 
   const [linked, setLinked] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsAnchorRef = useRef<HTMLDivElement>(null)
 
   const savedGroup: OptionGroup | null = customColors.length
     ? {
@@ -163,22 +165,36 @@ export default function PickerColor({
             <LinkToggle active={linked} onClick={toggleLink} accentColor={brandRamp[BASE_TONE] ?? primaryColor} />
           </div>
           <ColorSelect label="Gray / Neutral" value={neutralBase} groups={neutralGroups} onChange={changeNeutral} allowCustom />
-          <div className="relative">
-            <button
-              type="button"
+          <div ref={settingsAnchorRef} className="relative">
+            <ColorAgentButton
+              active={settingsOpen}
               onClick={() => setSettingsOpen((o) => !o)}
               aria-haspopup="dialog"
               aria-expanded={settingsOpen}
-              aria-label="Contrast — how far every ramp travels from the page"
-              title="Contrast"
-              className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
-                settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
-              }`}
+              aria-label="Color Agent"
+              title="Color Agent"
             >
-              <SlidersIcon />
-            </button>
-            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-              <ColorControls contrastShift={contrastShift} onShift={setContrastShift} />
+              <SparkleCircleIcon />
+            </ColorAgentButton>
+            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} anchorRef={settingsAnchorRef}>
+              <ColorControls
+                contrastShift={contrastShift}
+                onShift={setContrastShift}
+                accentHex={accentBase}
+                appearance={darkPreview ? 'dark' : 'light'}
+                neutralTint={neutralTint}
+                onPickAccent={(hex) => {
+                  setLinked(true)
+                  useDesignStore.getState().setLinkNeutralToAccent(true)
+                  useDesignStore.getState().setLinkStatesToAccent(true)
+                  applyAccentColor(hex, true, previewTheme)
+                  const rec = recommendStateColors(hex)
+                  applyStateColor('error', rec.error, true)
+                  applyStateColor('warning', rec.warning, true)
+                  applyStateColor('success', rec.success, true)
+                  applyStateColor('info', rec.info, true)
+                }}
+              />
             </ScaleSettingsModal>
           </div>
         </div>

@@ -142,9 +142,11 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const secondary = s('content-secondary', ['content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
   const tertiary = s('content-tertiary', ['content.subtle', 'muted.foreground'], t.fgMuted || t.neutralText)
   const brandInk = s('content-brand', ['content.accent', 'text.accent', 'primary.fill'], t.brandText)
+  const link = s('content-brand', ['content.link.default', 'text.accent', 'primary.fill'], t.brandText)
+  const linkHover = s('content-brand', ['content.link.hover', 'text.accent', 'primary.fill'], t.brandText)
   const disabled = s('content-disabled', ['content.disabled', 'text.disabled'], t.disabledText)
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
-  const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
+  const fill = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
 
   const Line = ({ slot, size, weight, children }: { slot: Slot; size: number; weight: number; children: ReactNode }) => (
     <Row t={t} label={slot.label}>
@@ -164,6 +166,8 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             Tokens keep colour, type and spacing consistent across every surface.
           </Line>
           <Line slot={brandInk} size={13} weight={weightOf(t, 'semibold', 600)}>Read the documentation →</Line>
+          <Line slot={link} size={13} weight={weightOf(t, 'semibold', 600)}>Learn more in the docs</Line>
+          <Line slot={linkHover} size={13} weight={weightOf(t, 'semibold', 600)}>Learn more (hover)</Line>
           <Line slot={disabled} size={13} weight={400}>Unavailable option</Line>
         </div>
       </Section>
@@ -228,8 +232,8 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const disabled = s('content-disabled', ['icon.disabled', 'content.disabled', 'text.disabled'], t.disabledText)
   const accent = s('content-brand', ['icon.accent', 'content.accent', 'text.accent', 'primary.fill'], t.brandText)
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
-  const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
-  const surface = s('background-secondary', ['action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
+  const fill = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
+  const surface = s('background-secondary', ['action.secondary.default', 'action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
   const r = radiusOf(t, 'md', '8px')
 
   const hierarchy: { slot: Slot; concept: IconConcept }[] = [
@@ -305,13 +309,15 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 // ── Action — interactive fills: buttons, badges, inputs, controls ───────────
 export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
-  const primary = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
-  const neutral = s('background-secondary', ['action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
-  const secondary = s('background-brand-primary', ['action.secondary', 'accent.muted'], t.neutralFill)
+  const primary = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
+  const primaryHover = s('background-brand-solid-hover', ['action.primary.hover', 'accent.solid'], t.brandSolid)
+  const primaryPressed = s('background-brand-solid-hover', ['action.primary.pressed', 'accent.solid'], t.brandSolid)
+  const neutral = s('background-secondary', ['action.secondary.default', 'action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
+  const secondary = s('background-brand-primary', ['action.secondary.accent', 'action.secondary', 'accent.muted'], t.neutralFill)
   const disabled = s('action-disabled', ['action.disabled', 'background.muted', 'muted.fill'], t.disabledBg)
   const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
-  const brandInk = s('content-brand', ['content.accent', 'text.accent', 'primary.fill'], t.brandText)
-  const stroke = s('border-primary', ['border.default'], t.border || '#d0d5dd')
+  const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
+  const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
   const r = radiusOf(t, 'md', '8px')
   const semi = weightOf(t, 'semibold', 600)
 
@@ -335,16 +341,22 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             <Btn bg={primary.css} fg={onAction.css}>Primary</Btn>
           </Row>
           <Row t={t} label={secondary.label}>
-            <Btn bg={secondary.css} fg={brandInk.css}>Secondary</Btn>
+            <Btn bg={secondary.css} fg={labelInk.css}>Secondary</Btn>
           </Row>
           <Row t={t} label={neutral.label}>
-            <Btn bg={neutral.css} fg={t.neutralText}>Neutral</Btn>
+            <Btn bg={neutral.css} fg={labelInk.css}>Neutral</Btn>
           </Row>
           <Row t={t} label={stroke.label}>
-            <Btn bg="transparent" fg={t.neutralText} bd={stroke.css}>Outline</Btn>
+            <Btn bg="transparent" fg={labelInk.css} bd={stroke.css}>Outline</Btn>
           </Row>
           <Row t={t} label={disabled.label}>
             <Btn bg={disabled.css} fg={t.disabledText}>Disabled</Btn>
+          </Row>
+          <Row t={t} label={primaryHover.label}>
+            <Btn bg={primaryHover.css} fg={onAction.css}>Primary · hover</Btn>
+          </Row>
+          <Row t={t} label={primaryPressed.label}>
+            <Btn bg={primaryPressed.css} fg={onAction.css}>Primary · pressed</Btn>
           </Row>
         </div>
       </Section>
@@ -352,8 +364,8 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       <Section t={t} title="Badges">
         <div className="flex flex-wrap items-center gap-2">
           <span style={{ background: primary.css, color: onAction.css, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Solid</span>
-          <span style={{ background: secondary.css, color: brandInk.css, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Soft</span>
-          <span style={{ background: 'transparent', color: t.neutralText, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Outline</span>
+          <span style={{ background: secondary.css, color: labelInk.css, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Soft</span>
+          <span style={{ background: 'transparent', color: labelInk.css, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Outline</span>
         </div>
       </Section>
 
@@ -361,11 +373,11 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           one token moves every interactive surface at once. */}
       <Section t={t} title="Controls">
         <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: t.neutralText }}>
+          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: labelInk.css }}>
             <span style={{ width: 16, height: 16, borderRadius: radiusOf(t, 'sm', '4px'), background: primary.css, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: onAction.css, fontSize: 11, fontWeight: 700 }}>✓</span>
             Checkbox
           </span>
-          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: t.neutralText }}>
+          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: labelInk.css }}>
             <span style={{ width: 32, height: 18, borderRadius: 999, background: primary.css, position: 'relative', display: 'inline-block' }}>
               <span style={{ position: 'absolute', top: 2, left: 16, width: 14, height: 14, borderRadius: 999, background: onAction.css }} />
             </span>
@@ -392,6 +404,8 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const page = s('background-primary', ['surface.page', 'background.body', 'base.background'], t.surface)
   const layer1 = s('background-secondary', ['surface.layer-1', 'background.surface', 'card.fill'], t.neutralFill)
   const layer2 = s('background-tertiary', ['surface.layer-2', 'background.muted', 'muted.fill'], t.neutralFill)
+  const input = s('background-primary', ['surface.input', 'background.body', 'base.background'], t.surface)
+  const selected = s('background-brand-primary', ['surface.selected', 'accent.muted'], t.neutralFill)
   const accent = s('background-brand-primary', ['surface.accent', 'accent.muted'], t.neutralFill)
   const inverse = s('surface-inverse', ['surface.inverse', 'background.inverted'], t.neutralText)
   const stroke = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || t.border || '#e9eaeb')
@@ -409,6 +423,18 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             <div style={{ background: layer2.css, borderRadius: radiusOf(t, 'sm', '6px'), padding: 12, marginTop: 8 }}>
               <Caption color={t.fgMuted || '#717680'}>{layer2.label}</Caption>
             </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section t={t} title="Input & selected">
+        <div className="flex flex-col gap-2.5">
+          <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
+            <Caption color={t.fgMuted || '#717680'}>{input.label}</Caption>
+          </div>
+          <div style={{ background: selected.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
+            <span style={{ color: t.neutralText, fontSize: 13 }}>Selected row</span>
+            <Caption color={t.fgMuted || '#717680'}>{selected.label}</Caption>
           </div>
         </div>
       </Section>
@@ -477,30 +503,33 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   //    spend the severity colour on the dot. So their own `text.primary` /
   //    `base.foreground` is next in the list — honest modelling, and it passes
   //    without any nudge.
-  const criticalBg = s('background-error-primary', ['status.critical-bg', 'status.error-muted'], t.neutralFill)
-  const warningBg = s('background-warning-primary', ['status.warning-bg', 'status.warning-muted'], t.neutralFill)
-  const successBg = s('background-success-primary', ['status.success-bg', 'status.success-muted'], t.neutralFill)
+  const criticalBg = s('background-error-primary', ['status.critical.surface', 'status.critical-bg', 'status.error-muted'], t.neutralFill)
+  const warningBg = s('background-warning-primary', ['status.warning.surface', 'status.warning-bg', 'status.warning-muted'], t.neutralFill)
+  const successBg = s('background-success-primary', ['status.success.surface', 'status.success-bg', 'status.success-muted'], t.neutralFill)
+
+  const criticalSolid = s('background-error-solid', ['status.critical.surface-solid', 'status.error', 'destructive.fill'], t.errorColor)
+  const onCriticalSolid = s('content-inverse', ['status.critical.on-solid', 'accent.on-solid', 'primary.foreground'], t.onBrand)
 
   const severities: { label: string; bg: Slot; fg: Slot; dot: Slot; copy: string }[] = [
     {
       label: 'Critical',
       bg: criticalBg,
-      fg: s('content-error', ['status.critical-fg', 'text.primary', 'base.foreground'], t.errorColor),
-      dot: s('content-error', ['status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor),
+      fg: s('content-error', ['status.critical.content', 'status.critical-fg', 'text.primary', 'base.foreground'], t.errorColor),
+      dot: s('content-error', ['status.critical.content', 'status.critical-fg', 'status.error', 'destructive.fill'], t.errorColor),
       copy: 'Could not save your changes',
     },
     {
       label: 'Warning',
       bg: warningBg,
-      fg: s('content-warning', ['status.warning-fg', 'text.primary', 'base.foreground'], t.warningColor || t.errorColor),
-      dot: s('content-warning', ['status.warning-fg', 'status.warning'], t.warningColor || t.errorColor),
+      fg: s('content-warning', ['status.warning.content', 'status.warning-fg', 'text.primary', 'base.foreground'], t.warningColor || t.errorColor),
+      dot: s('content-warning', ['status.warning.content', 'status.warning-fg', 'status.warning'], t.warningColor || t.errorColor),
       copy: 'Your free trial ends soon',
     },
     {
       label: 'Success',
       bg: successBg,
-      fg: s('content-success', ['status.success-fg', 'text.primary', 'base.foreground'], t.successColor || t.brandText),
-      dot: s('content-success', ['status.success-fg', 'status.success'], t.successColor || t.brandText),
+      fg: s('content-success', ['status.success.content', 'status.success-fg', 'text.primary', 'base.foreground'], t.successColor || t.brandText),
+      dot: s('content-success', ['status.success.content', 'status.success-fg', 'status.success'], t.successColor || t.brandText),
       copy: 'Payment confirmed',
     },
   ]
@@ -526,6 +555,19 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             </div>
           ))}
         </div>
+      </Section>
+
+      <Section t={t} title="Destructive solid">
+        <div
+          className="flex items-center justify-between gap-3"
+          style={{
+            background: criticalSolid.css, borderRadius: r, padding: '10px 12px',
+          }}
+        >
+          <span style={{ color: onCriticalSolid.css, fontSize: 13, fontWeight: semi }}>Delete project</span>
+          <Caption color={onCriticalSolid.css}>{onCriticalSolid.label}</Caption>
+        </div>
+        <Caption color={t.fgMuted || '#717680'}>{criticalSolid.label}</Caption>
       </Section>
 
       <Section t={t} title="Status chips">
@@ -579,9 +621,10 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const def = s('border-primary', ['border.default'], t.border || '#d0d5dd')
+  const strong = s('border-primary', ['border.strong', 'border.emphasized', 'border.input'], t.border || '#d0d5dd')
   const subtle = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || '#e9eaeb')
   const accent = s('border-brand', ['border.accent', 'border.ring'], t.brandSolid)
-  const active = s('border-brand', ['border.active', 'border.ring'], t.brandSolid)
+  const active = s('border-brand', ['border.focus', 'border.active', 'border.ring'], t.brandSolid)
   const critical = s('border-error', ['border.critical', 'destructive.fill'], t.errorColor)
   const r = radiusOf(t, 'md', '8px')
 
@@ -606,7 +649,7 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           1px stroke tells you nothing about whether an input reads. */}
       <Section t={t} title="Inputs">
         <div className="flex flex-col gap-2">
-          <Field slot={def} text="Default" />
+          <Field slot={strong} text="Default" />
           <Field slot={active} text="Focused" ring />
           <Field slot={critical} text="Invalid" />
         </div>

@@ -6,7 +6,7 @@ import { chromeAccent, readableInk, solidInkPair } from '../lib/colorUtils'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
-import SectionRail, { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
+import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
@@ -23,14 +23,16 @@ import FigmaSyncView from '../components/configurator/FigmaSyncView'
 import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
 import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
+import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { OVERVIEW_KEY } from '../components/configurator/DocsView'
+import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
+import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
 import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/colorControls'
-import AddThemePanel from '../components/configurator/AddThemePanel'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
@@ -42,7 +44,7 @@ import StepRadius from '../components/configurator/StepRadius'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
-import { COMPONENTS, CATEGORIES, type ComponentDef } from '../lib/componentCatalogue'
+import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
@@ -188,6 +190,15 @@ const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 // Docs (the token reference) — a ruled page, distinct from DocIcon's plain
 // sheet (the README export).
 const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
+
+/** Docs rail rows — Overview first, then foundations in catalogue order. */
+const DOCS_RAIL_ROWS: DocsRailRow[] = [
+  { key: OVERVIEW_KEY, label: 'Overview', Icon: RulesIcon },
+  ...FOUNDATION_DOCS.map((d) => {
+    const section = FOUNDATIONS.find((f) => f.key === d.key)
+    return { key: d.key, label: d.label, Icon: section?.Icon }
+  }),
+]
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
 const SaveIcon: ComponentType = () => (
@@ -271,18 +282,6 @@ export default function Configurator() {
   // that one rule unbroken. Not persisted — a per-session working preference,
   // like `previewCollapsed`.
   const [colorRailCollapsed, setColorRailCollapsed] = useState(false)
-  // "+ Theme"'s panel — DOCKED in the right aside (see the render below),
-  // swapped in for `PreviewPanel` the same way `SaveSidePanel` already is.
-  // Lifted here (not local to Step3, where the trigger lives) because the
-  // aside it docks into is a sibling Configurator renders, not something
-  // Step3 has access to — same reason `colorTab`/`semanticFocus` are lifted.
-  //
-  // `true` = "+ Theme" (create); a string = editing that existing theme's key.
-  // `AddThemePanel` already supported an `editKey` prop end-to-end (rename,
-  // re-point a slot to another family) — nothing here ever passed one, so
-  // there was no way to reach it: renaming a theme or fixing which family one
-  // of its slots resolved through meant deleting it and starting over.
-  const [addThemeOpen, setAddThemeOpen] = useState<boolean | string>(false)
   // Single preview theme shared across the whole workspace — Home's Quick edit
   // Theme row, the Semantic table's column eye toggles, the Components/Docs
   // playground and the right-hand Components Preview all read and write the
@@ -351,11 +350,6 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // Components' outer-rail selection — which component CATEGORY is active.
-  // Lifted here (not local to ComponentsView) so it survives leaving the
-  // Components tab and coming back, matching `activeComponent`'s own
-  // persistence.
-  const [componentCategory, setComponentCategory] = useState<string>(CATEGORIES[0])
   // Docs' master-list selection — a foundation key, or OVERVIEW_KEY for the
   // whole-system sheet. Lifted for the same reason: survives leaving the Docs
   // tab and coming back instead of resetting to Overview every visit.
@@ -483,7 +477,6 @@ export default function Configurator() {
     markFoundationComplete('components')
     setExportMode(null)
     setTab('components')
-    setComponentCategory(c.category)
     setActiveComponent(c)
   }
   const changeTab = (t: Tab) => {
@@ -496,6 +489,27 @@ export default function Configurator() {
     commitVisit()
     setExportMode(mode)
   }
+
+  const foundationsToolbar = (
+    <>
+      <FoundationIconRail
+        active={activeFoundation}
+        onSelect={selectFoundation}
+        groups={[
+          { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+          { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+        ]}
+      />
+      <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+        <HomeActions
+          previewTheme={previewTheme}
+          onOpenEditor={() => selectFoundation('color')}
+          onReviewInDocs={() => openDocs(OVERVIEW_KEY)}
+        />
+      </div>
+    </>
+  )
+
   // ── Resolve center header + body for the current mode ──
   let header: { Icon: ComponentType; title: string; subtitle: string; right?: ReactNode }
   let body: ReactNode
@@ -572,9 +586,10 @@ export default function Configurator() {
           onFocusChange={setSemanticFocus}
           previewTheme={previewTheme}
           onPreviewThemeChange={changePreviewTheme}
-          onOpenAddTheme={(editKey) => setAddThemeOpen(editKey ?? true)}
           railCollapsed={colorRailCollapsed}
           onToggleRail={() => setColorRailCollapsed((c) => !c)}
+          toolbar={foundationsToolbar}
+          toolbarWash={toolbarWash}
         />
       </div>
     ) : RAILED_FOUNDATIONS.has(section.key) ? (
@@ -621,8 +636,6 @@ export default function Configurator() {
     body = (
       <ComponentsView
         previewTheme={previewTheme}
-        category={componentCategory}
-        search={componentSearch}
         active={activeComponent}
         onSelect={selectComponent}
       />
@@ -662,15 +675,10 @@ export default function Configurator() {
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
   const railVisible = projectCreated && !exportMode
-  // The OUTER vertical SectionRail only persists for Components/Documentation
-  // now — Variables switches foundations via the horizontal FoundationIconRail
-  // docked in the header instead, so there's no left column to reserve width
-  // for there. TopNav's brand-block divider follows this, not `railVisible`.
-  // Components is the only section with an outer SectionRail (its category
-  // list): Variables switches via the horizontal FoundationIconRail, and Docs
-  // is one self-contained page (its master list IS the whole "rail" it needs
-  // — see DocsView) with no outer column to reserve width for.
-  const outerRailVisible = railVisible && tab === 'components'
+  // Components and Docs share the outer left rail (gradient shows through;
+  // TopNav brand block tracks its width). Variables uses the horizontal
+  // FoundationIconRail instead — no outer column there.
+  const outerRailVisible = railVisible && (tab === 'components' || tab === 'docs')
   // Color is the one foundation with its own internal 198px column (family
   // nav / token categories / gradient list — see ColorPrimitives, Step3,
   // StepGradients). It's not an outer rail, so `outerRailVisible` above stays
@@ -701,6 +709,8 @@ export default function Configurator() {
     if (key === 'variables') selectFoundation('color')
     else changeTab(key)
   }
+
+  const colorCanvas = tab === 'foundations' && !exportMode && activeFoundation === 'color'
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -740,73 +750,41 @@ export default function Configurator() {
             width for a foundation's own sub-nav (Color's family Groups tree,
             promoted inside ColorPrimitives). */}
         {railVisible && tab === 'components' && (
-          <SectionRail
-            ariaLabel="Components"
-            title="Components"
-            active={componentCategory}
-            onSelect={setComponentCategory}
+          <ComponentsRail
+            icons={CATEGORY_ICONS}
+            active={activeComponent}
+            onSelect={selectComponent}
+            search={componentSearch}
             collapsed={railCollapsed}
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
-            groups={[
-              {
-                label: 'Categories',
-                items: CATEGORIES.map((cat) => ({ key: cat, label: cat, Icon: CATEGORY_ICONS[cat] })),
-              },
-            ]}
+          />
+        )}
+        {railVisible && tab === 'docs' && (
+          <DocsRail
+            rows={DOCS_RAIL_ROWS}
+            activeKey={docFoundationKey}
+            onSelect={setDocFoundationKey}
+            collapsed={railCollapsed}
+            onToggleCollapse={() => setRailCollapsed((v) => !v)}
           />
         )}
 
         {/* ── Layer 1: the content surface, flush under the top bar ──
-            No gap/rounding/lift here: the rail is separated by a single hairline,
-            the exact seam the Generator uses between its own two columns. That
-            also puts CenterHeader's title on the same line as the rail's group
-            caption. */}
-        <div className="flex-1 min-w-0 flex overflow-hidden bg-app border-l border-line">
+            Color's Groups column IS the outer rail (under the logo, gradient
+            shows through), so this wrapper stays transparent there. Every
+            other view paints `bg-app` and the hairline from the first column. */}
+        <div className={`flex-1 min-w-0 flex overflow-hidden ${colorCanvas ? '' : 'bg-app border-l border-line'}`}>
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
-            {/* Foundation switcher — horizontal icon toolbar + collection
-                actions, replacing the outer SectionRail for Variables. Shown
-                for every foundation (it's the persistent switcher); the text
-                header below it is skipped for Color specifically, since its
-                job — naming what you're editing — is taken over by the
-                promoted per-family quick-edit strip inside ColorPrimitives. */}
-            {tab === 'foundations' && !exportMode && (
-              // Left inset is pl-4, matching the 16px `px-4` every 198px
-              // column below uses for its own label (Accent color / Groups /
-              // Tokens), so the icon rail's first icon lines up with them
-              // instead of sitting ~18px deeper.
-              // Right inset is pr-3 (12px) — the SAME trailing-clearance rule
-              // ColorPrimitives' row-1 gear and row-2 search already use (see
-              // their own comments), not the wider px-6/lg:px-8 this row had
-              // before. That mismatch was the actual bug: Kits (this row's own
-              // trailing control, via HomeActions' `ml-auto`) sat 12-20px
-              // further from the edge than the gear one row below it, so the
-              // two right-aligned controls didn't share a right edge at all.
-              // pr-3 is the minimum gap this app uses everywhere else for "a
-              // free-floating trailing control, not flush" — same reasoning,
-              // same number.
+            {/* Foundation switcher. On Color it lives in Groups' own 52px band
+                (see ColorHub) so Groups can sit under the logo. Other
+                foundations keep the full-width row. */}
+            {tab === 'foundations' && !exportMode && !colorCanvas && (
               <div
                 className="flex items-center gap-4 pl-4 pr-3 h-[52px] border-b border-line/60 flex-shrink-0"
                 style={{ background: toolbarWash }}
               >
-                <FoundationIconRail
-                  active={activeFoundation}
-                  onSelect={selectFoundation}
-                  groups={[
-                    { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-                    { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-                  ]}
-                />
-                <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-                  <HomeActions
-                    previewTheme={previewTheme}
-                    onOpenEditor={() => selectFoundation('color')}
-                    // Docs' whole-system Overview — every foundation's sections
-                    // in one column, i.e. the page that answers "what is in
-                    // this system" for a kit you just loaded.
-                    onReviewInDocs={() => openDocs(OVERVIEW_KEY)}
-                  />
-                </div>
+                {foundationsToolbar}
               </div>
             )}
             {!(tab === 'foundations' && activeFoundation === 'color' && !exportMode) && (
@@ -874,23 +852,6 @@ export default function Configurator() {
                   onOpenFigma={() => openExport('figma-sync')}
                   onOpenGithub={() => openExport('github')}
                   onCollapse={() => setPreviewCollapsed(true)}
-                />
-              ) : addThemeOpen && !exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? (
-                // "+ Theme" docked here instead of a centred modal — see
-                // AddThemePanel's own doc comment. Gated on the exact screen
-                // it was opened from (mirrors `focus` below) so navigating away
-                // hands the aside back to PreviewPanel rather than leaving a
-                // stranded panel over unrelated foundations; `addThemeOpen`
-                // itself is left set, so coming straight back to Semantics
-                // resumes it — losing in-progress colour picks to a glance at
-                // another tab would be a worse default than that.
-                <AddThemePanel
-                  editKey={typeof addThemeOpen === 'string' ? addThemeOpen : null}
-                  onClose={() => setAddThemeOpen(false)}
-                  onRenamed={(oldKey, newKey) => {
-                    if (previewTheme === oldKey) changePreviewTheme(newKey)
-                    setAddThemeOpen((cur) => (cur === oldKey ? newKey : cur))
-                  }}
                 />
               ) : (
                 <PreviewPanel

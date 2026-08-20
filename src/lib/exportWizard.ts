@@ -1,17 +1,22 @@
 // ── Export wizard (Source → Format → Export) ────────────────────────────────
 // The guided whole-system export behind Variables' "Export" pill: pick WHAT
-// ships (collections + semantic modes), HOW (W3C DTCG · Escala JSON · CSS ·
-// SCSS, single or per-collection files), then download/copy the result.
+// ships (collections + semantic modes), HOW (W3C DTCG · Escala JSON · Markdown
+// · Skill), then download/copy the result.
+//
+// Four formats on purpose — more than that is choice paralysis. CSS / SCSS /
+// Tailwind stay available from Save (`variables.css`) and from transforming
+// W3C tokens; they are not a second decision at export time. The old
+// Categorical-AI JSON is folded into Skill (SKILL.md + tokens.md).
 //
 // Everything derives from ONE call to `generateTokenJSON()` — the same payload
 // the Figma plugin imports — so wizard output can never disagree with
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
-import { generateTokenJSON, flattenScale, buildCategoricalSymbolicTokens } from './tokenGenerator'
-import { buildSectionExport, formatColor, type ColorFormat, type SectionKey } from './sectionExport'
-import { CATEGORICAL_ROLE_COMMENTS } from './semanticArchitectures'
+import { generateTokenJSON, flattenScale } from './tokenGenerator'
+import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
+import { buildSkillExport } from './skillExport'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'typography' | 'spacing'
@@ -23,7 +28,7 @@ export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'radius', 'shadow', 'grid', 'sizes', 'icons',
 ]
 
-export type WizardFormat = 'w3c' | 'escala' | 'css' | 'scss' | 'tailwind' | 'md' | 'categorical-ai'
+export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill'
 export type WizardStructure = 'single' | 'per-collection'
 
 /** The `sectionExport` slice each collection maps onto — Tailwind and Markdown
@@ -66,7 +71,9 @@ export interface WizardSelection {
 export interface WizardFile {
   name: string
   content: string
-  language: 'json' | 'css' | 'scss' | 'js' | 'md'
+  language: 'json' | 'css' | 'scss' | 'js' | 'md' | 'zip'
+  /** When set, download this instead of `content` (Skill zip). */
+  binary?: Uint8Array
 }
 
 type TokenJSON = ReturnType<typeof generateTokenJSON>
@@ -74,20 +81,13 @@ type TokenJSON = ReturnType<typeof generateTokenJSON>
 export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[] = [
   { key: 'w3c', label: 'W3C Design Tokens', hint: 'Standard format with $value, $type' },
   { key: 'escala', label: 'Escala JSON', hint: 'The exact tokens.json the Figma plugin imports' },
-  // Markdown sits right after Escala JSON, not at the bottom of the list —
-  // it's the other format most people reach for here (design context to hand
-  // an AI assistant), so it shouldn't read as an afterthought below three
-  // CSS-flavoured formats it has nothing to do with.
   { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
-  { key: 'css', label: 'CSS Custom Properties', hint: '--token-name: value' },
-  { key: 'scss', label: 'SCSS Variables', hint: '$token-name: value' },
-  { key: 'tailwind', label: 'Tailwind config', hint: 'theme.extend snippet' },
-  {
-    key: 'categorical-ai',
-    label: 'Categorical Semantic (AI-Guided)',
-    hint: 'Real aliases + [ROLE] usage/contrast comments per token',
-  },
+  { key: 'skill', label: 'Skill', hint: 'Figma MCP skill — SKILL.md + references' },
 ]
+
+/** Formats that make sense for one primitive ramp (ColumnExportMenu). Skill is
+ *  a whole-system package — offering it on a single Accent column would lie. */
+export const FAMILY_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala', 'md']
 
 // Badge shown next to a format's label in the full wizard's Format step
 // (ExportWizard). Only the formats where "why would I pick this one" isn't
@@ -104,11 +104,12 @@ export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[
 // - Markdown's audience isn't a tool that IMPORTS it, it's an AI assistant
 //   reading it as context — naming the assistants makes that concrete instead
 //   of leaving "design context for AI" to mean nothing more specific.
+// - Skill is the installable package those same assistants load as a skill.
 export const WIZARD_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = {
   escala: 'Recommended · Escala Plugin',
   w3c: 'Compatible with other plugins & Figma',
   md: 'Claude · Codex',
-  'categorical-ai': 'Design context for AI',
+  skill: 'Figma MCP · Cursor · Claude',
 }
 
 // ── Primitive families ───────────────────────────────────────────────────────
@@ -298,52 +299,6 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
   }
 }
 
-// ── Categorical Semantic (AI-Guided) ─────────────────────────────────────────
-// A DTCG-flavoured sibling of the W3C format above, scoped to Categorical's
-// role catalogue: every leaf carries a REAL alias ("$value": "{neutral.12}"),
-// not resolved hex, plus a `comment` field with `[ROLE: ...]` usage/contrast
-// guidance authored once in `CATEGORICAL_ROLE_COMMENTS`
-// (semanticArchitectures.ts). Nested by mode first (same shape `w3cSemantics`
-// already uses), then by the catalogue's own group.key — so a system with
-// more than light/dark still ships every mode it has, honoring the same
-// `modes` picker Step 1 already offers for the flat semantics collection.
-// Built from `buildCategoricalSymbolicTokens()`, which shares its theme/scale
-// resolution with `generateTokenJSON()` — this can never disagree with what
-// `colors.architecture` ships when Categorical is the active architecture.
-type CategoricalAiLeaf = { $value: string; comment: string; alpha?: number }
-
-// Internal role name → the name this format ships it under. The only
-// deliberate rename: `border.active` already IS a measured, WCAG/APCA-solved
-// focus ring (see semanticArchitectures.ts) — this just calls it what a focus
-// ring is usually called, without duplicating the role or its math.
-const CATEGORICAL_AI_RENAME: Record<string, string> = {
-  'border.active': 'border.focus',
-}
-
-function categoricalAiTree(modes: string[]): Record<string, Record<string, Record<string, CategoricalAiLeaf>>> {
-  const { tokens } = buildCategoricalSymbolicTokens()
-  const out: Record<string, Record<string, Record<string, CategoricalAiLeaf>>> = {}
-  for (const mode of modes) {
-    const modeOut: Record<string, Record<string, CategoricalAiLeaf>> = {}
-    for (const [group, keys] of Object.entries(tokens)) {
-      for (const [key, byTheme] of Object.entries(keys)) {
-        const ref = byTheme[mode]
-        if (!ref) continue
-        const id = `${group}.${key}`
-        const [outGroup, outKey] = (CATEGORICAL_AI_RENAME[id] ?? id).split('.')
-        modeOut[outGroup] ??= {}
-        const leaf: CategoricalAiLeaf = { $value: ref, comment: CATEGORICAL_ROLE_COMMENTS[id] ?? '' }
-        // The one leaf whose guidance needs a real numeric field alongside the
-        // ref, not just prose — everything else stays a plain {$value, comment}.
-        if (id === 'surface.overlay') leaf.alpha = 0.5
-        modeOut[outGroup][outKey] = leaf
-      }
-    }
-    out[mode] = modeOut
-  }
-  return out
-}
-
 // Root keys per collection in the W3C tree (also the per-collection filenames).
 const W3C_ROOT: Record<WizardCollection, string> = {
   primitives: 'color', semantics: 'semantic', typography: 'typography',
@@ -376,109 +331,6 @@ function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON
   return w3cSection(key, full)
 }
 
-// ── CSS / SCSS ───────────────────────────────────────────────────────────────
-
-// Flat `name: value` lines per collection; CSS and SCSS differ only in sigil.
-function varLines(key: WizardCollection, sel: WizardSelection, full: TokenJSON): [string, string][] {
-  const cf = sel.colorFormat
-  switch (key) {
-    case 'primitives':
-      return Object.entries(pickedPrimitives(full, sel.primitiveFamilies, sel.primitiveAppearance)).map(([n, v]) => [`color-${n}`, formatColor(v, cf)])
-    case 'typography': {
-      const t = full.typography
-      return [
-        ['font-family-heading', `'${t.headingFontFamily ?? t.fontFamily}'`],
-        ['font-family-body', `'${t.fontFamily}'`],
-        ...Object.entries(t.sizes).map(([k, v]) => [`font-size-${k}`, v] as [string, string]),
-        ...Object.entries(t.lineHeights ?? {}).map(([k, v]) => [`line-height-${k}`, v] as [string, string]),
-        ...Object.entries(t.weights).map(([k, v]) => [`font-weight-${k}`, String(v)] as [string, string]),
-      ]
-    }
-    case 'spacing': return Object.entries(full.spacing).map(([k, v]) => [`spacing-${k}`, v])
-    case 'radius': return Object.entries(full.radius).map(([k, v]) => [`radius-${k}`, v])
-    case 'shadow': return Object.entries(full.shadows).map(([k, v]) => [`shadow-${k}`, v])
-    case 'grid': return Object.entries(full.grid).map(([k, v]) => [`grid-${k}`, v])
-    case 'sizes': return Object.entries(full.sizes).map(([k, v]) => [`size-${k}`, v])
-    case 'icons': return []
-    case 'semantics': return [] // handled per-mode below
-  }
-}
-
-// Semantic modes map onto CSS scopes: light = :root, dark = .dark, custom
-// themes = [data-theme="<key>"] — matching how the app itself applies themes.
-const modeScope = (mode: string) => (mode === 'light' ? ':root' : mode === 'dark' ? '.dark' : `[data-theme="${mode}"]`)
-
-function cssFor(sel: WizardSelection, collections: WizardCollection[], full: TokenJSON): string {
-  const blocks: string[] = []
-  const rootLines: string[] = []
-  // Dark-scope declarations that AREN'T semantic tokens. Only the elevation
-  // ramp so far, and it has to be here rather than in `:root`: the shadow
-  // colour is near-black, which on the dark page renders as nothing at all
-  // (see `darkShadow`). Shipping the light ramp alone would hand over a CSS
-  // file whose dark mode has no visible elevation — the same bug the preview
-  // had, just exported.
-  const darkLines: string[] = []
-  for (const key of collections) {
-    if (key === 'semantics') continue
-    const lines = varLines(key, sel, full)
-    if (!lines.length) continue
-    rootLines.push(`/* ${key} */`, ...lines.map(([n, v]) => `--${n}: ${v};`))
-    if (key === 'shadow') {
-      const dark = Object.entries(full.shadowsDark ?? {}).filter(([, v]) => v && v !== 'none')
-      if (dark.length) darkLines.push('/* shadow — dark */', ...dark.map(([k, v]) => `--shadow-${k}: ${v};`))
-    }
-  }
-  let darkEmitted = false
-  if (collections.includes('semantics')) {
-    for (const mode of sel.modes) {
-      const theme = full.colors.themes[mode]
-      if (!theme) continue
-      const lines = Object.entries(theme)
-        .filter(([, v]) => v)
-        .map(([k, v]) => `--color-${k}: ${formatColor(v, sel.colorFormat)};`)
-      if (mode === 'light') rootLines.push('/* semantics — light */', ...lines)
-      else {
-        // Merged into the SAME `.dark` block rather than appended as a second
-        // one — two `.dark {}` rules cascade correctly but read as an oversight.
-        const extra = mode === 'dark' ? darkLines : []
-        if (mode === 'dark') darkEmitted = true
-        blocks.push(`${modeScope(mode)} {\n${[...lines, ...extra].map((l) => `  ${l}`).join('\n')}\n}`)
-      }
-    }
-  }
-  // Shadows can ship without semantics selected, so the block still needs a home.
-  if (darkLines.length && !darkEmitted) {
-    blocks.push(`.dark {\n${darkLines.map((l) => `  ${l}`).join('\n')}\n}`)
-  }
-  const root = rootLines.length ? `:root {\n${rootLines.map((l) => `  ${l}`).join('\n')}\n}` : ''
-  return [root, ...blocks].filter(Boolean).join('\n\n')
-}
-
-function scssFor(sel: WizardSelection, collections: WizardCollection[], full: TokenJSON): string {
-  const lines: string[] = []
-  for (const key of collections) {
-    if (key === 'semantics') continue
-    const vars = varLines(key, sel, full)
-    if (!vars.length) continue
-    lines.push(`// ${key}`, ...vars.map(([n, v]) => `$${n}: ${v};`), '')
-  }
-  if (collections.includes('semantics')) {
-    for (const mode of sel.modes) {
-      const theme = full.colors.themes[mode]
-      if (!theme) continue
-      const prefix = mode === 'light' ? '' : `${mode}-`
-      lines.push(
-        `// semantics — ${mode}`,
-        ...Object.entries(theme)
-          .filter(([, v]) => v)
-          .map(([k, v]) => `$${prefix}color-${k}: ${formatColor(v, sel.colorFormat)};`),
-        '',
-      )
-    }
-  }
-  return lines.join('\n').trimEnd()
-}
-
 // ── Public entry ─────────────────────────────────────────────────────────────
 
 export function buildWizardExport(sel: WizardSelection): WizardFile[] {
@@ -505,12 +357,14 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
   }
 
-  if (sel.format === 'categorical-ai') {
-    // NOT sliced by `collections`, same reasoning as 'escala' above: this is a
-    // whole-document contract (the semantic role tree + its guidance
-    // comments), not something a partial collection pick makes sense against.
-    const tree = categoricalAiTree(sel.modes.length ? sel.modes : ['light', 'dark'])
-    return [{ name: `${slug}.categorical.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
+  if (sel.format === 'skill') {
+    const pack = buildSkillExport(sel.colorFormat)
+    return [{
+      name: `${pack.name}.zip`,
+      content: pack.skillMd,
+      language: 'zip',
+      binary: pack.zip,
+    }]
   }
 
   if (sel.format === 'w3c') {
@@ -526,64 +380,29 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
   }
 
-  if (sel.format === 'tailwind' || sel.format === 'md') {
-    // Delegate to the section builders — same renderers the per-section export
-    // window used, so a Tailwind/MD slice reads identically wherever it's taken.
-    const ext = sel.format === 'tailwind' ? 'js' : 'md'
-    const sections = [...new Set(ordered.map((k) => SECTION_OF[k]))]
-    // Primitives and semantics collapse onto ONE 'color' section here, so the
-    // section builders need to be told which half (and which families) this
-    // run actually picked — otherwise a primitives-only, Accent-only export
-    // would still render every family plus the whole semantic layer.
-    // `modes` matters for the identical reason: the Summary step counts
-    // variables across every MODE the run checked (light+dark ships as one
-    // number), and `mdFor`'s color section used to read the store's light
-    // theme as a literal, silently dropping dark (and any custom theme) from
-    // the file regardless of what Step 1 said was included — the promised
-    // count and the actual file disagreed for Markdown specifically. Omitted
-    // when semantics isn't selected; `mdFor` never reads it in that case.
-    const colorOpts = {
-      families: ordered.includes('primitives') ? sel.primitiveFamilies : [],
-      appearance: sel.primitiveAppearance,
-      includeSemantics: ordered.includes('semantics'),
-      modes: ordered.includes('semantics') ? sel.modes : undefined,
-    }
-    if (sel.structure === 'per-collection') {
-      return sections
-        .map((s) => ({
-          name: `${s}.${ext}`,
-          content: buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat, colorOpts),
-          language: ext as 'js' | 'md',
-        }))
-        .filter((f) => f.content.trim().length > 0)
-    }
-    // Whole-system when every collection is checked, otherwise stitch the
-    // picked ones. Checking `ordered.length` against every WizardCollection
-    // (not just distinct SECTIONS) matters: Primitives and Semantics both
-    // map to 'color', so checking only 9 of the 10 collections — Primitives
-    // but not Semantics, say — still covered all 9 distinct sections and
-    // used to take this branch too, which ignores `includeSemantics`
-    // entirely and would have leaked a semantic table into a run that never
-    // asked for one. A family filter still forces the partial path even with
-    // all ten checked, for the same reason — an unscoped color section is
-    // part of what "every section, unscoped" means.
-    const isAll = ordered.length === ALL_WIZARD_COLLECTIONS.length && !sel.primitiveFamilies && !sel.primitiveAppearance
-    const content = isAll
-      ? buildSectionExport('all', sel.format, sel.colorFormat, colorOpts)
-      : sections.map((s) => buildSectionExport(s, sel.format as 'tailwind' | 'md', sel.colorFormat, colorOpts)).join(
-          sel.format === 'md' ? '\n\n---\n\n' : '\n\n',
-        )
-    return [{ name: `${slug}.${ext}`, content, language: ext as 'js' | 'md' }]
+  // Markdown — delegate to the section builders so a slice reads identically
+  // wherever it's taken (preview .MD tab, wizard, Copy Page).
+  const sections = [...new Set(ordered.map((k) => SECTION_OF[k]))]
+  const colorOpts = {
+    families: ordered.includes('primitives') ? sel.primitiveFamilies : [],
+    appearance: sel.primitiveAppearance,
+    includeSemantics: ordered.includes('semantics'),
+    modes: ordered.includes('semantics') ? sel.modes : undefined,
   }
-
-  const build = sel.format === 'css' ? cssFor : scssFor
-  const ext = sel.format
   if (sel.structure === 'per-collection') {
-    return ordered
-      .map((key) => ({ name: `${key}.${ext}`, content: build(sel, [key], full), language: ext }))
+    return sections
+      .map((s) => ({
+        name: `${s}.md`,
+        content: buildSectionExport(s, 'md', sel.colorFormat, colorOpts),
+        language: 'md' as const,
+      }))
       .filter((f) => f.content.trim().length > 0)
   }
-  return [{ name: `${slug}.${ext}`, content: build(sel, ordered, full), language: ext }]
+  const isAll = ordered.length === ALL_WIZARD_COLLECTIONS.length && !sel.primitiveFamilies && !sel.primitiveAppearance
+  const content = isAll
+    ? buildSectionExport('all', 'md', sel.colorFormat, colorOpts)
+    : sections.map((s) => buildSectionExport(s, 'md', sel.colorFormat, colorOpts)).join('\n\n---\n\n')
+  return [{ name: `${slug}.md`, content, language: 'md' }]
 }
 
 /** One primitive family, one appearance, one format — the payload behind the
@@ -623,11 +442,10 @@ export function buildFamilyExport(
 // wizard pipeline about a bucket only this one popover needs to reach.
 //
 // Only the formats that can be built CORRECTLY from a bare `Record<number,
-// string>` are offered — see `ALPHA_EXPORT_FORMATS` below. Tailwind and
-// Markdown delegate to `sectionExport`'s builders, which have zero concept of
-// alpha primitives; faking support there would repeat the exact bug this
-// function exists to fix, just in two formats instead of six.
-export const ALPHA_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala', 'css', 'scss']
+// string>` are offered — see `ALPHA_EXPORT_FORMATS` below. Markdown and Skill
+// have no alpha concept in `sectionExport`; faking support there would repeat
+// the exact bug this function exists to fix.
+export const ALPHA_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala']
 
 export function buildAlphaFamilyExport(
   /** The alpha Family's own `tokenPrefix` (e.g. `accent-a`, `<custom>-a`) —
@@ -636,7 +454,7 @@ export function buildAlphaFamilyExport(
   tokenPrefix: string,
   scale: Record<number, string>,
   format: WizardFormat,
-  colorFormat: ColorFormat = 'hex',
+  _colorFormat: ColorFormat = 'hex',
 ): WizardFile[] {
   // Escala JSON is the documented exception for the solid path too — it ships
   // the whole document by contract, and `colors.primitiveAlpha` is already
@@ -668,15 +486,5 @@ export function buildAlphaFamilyExport(
     }]
   }
 
-  // css / scss — same `--color-<name>` / `$color-<name>` naming
-  // `varLines`/`exporters.ts` already use for every other primitive, so an
-  // alpha ramp's variables read as siblings of the solid ones, not a
-  // different convention.
-  const lines = Object.entries(flat).map(([n, v]) => [`color-${n}`, formatColor(v, colorFormat)] as const)
-  if (format === 'css') {
-    const body = lines.map(([n, v]) => `  --${n}: ${v};`).join('\n')
-    return [{ name: 'escala.css', content: `:root {\n${body}\n}`, language: 'css' }]
-  }
-  const body = lines.map(([n, v]) => `$${n}: ${v};`).join('\n')
-  return [{ name: 'escala.scss', content: body, language: 'scss' }]
+  return []
 }

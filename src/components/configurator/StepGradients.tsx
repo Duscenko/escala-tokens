@@ -72,11 +72,13 @@ function AssignSelect({ label, value, onChange, gradients }: {
 }
 
 export default function StepGradients({
-  tabBar, previewTheme = 'light', onPreviewThemeChange,
+  tabBar, previewTheme = 'light', onPreviewThemeChange, toolbar, toolbarWash,
 }: {
   tabBar?: ReactNode
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
+  toolbar?: ReactNode
+  toolbarWash?: string
 } = {}) {
   const {
     gradients, gradientAssignments, primaryColor, primaryScale, primaryDarkScale,
@@ -214,8 +216,8 @@ export default function StepGradients({
           nav it labels. `border-line` (full strength) — this now sits at the
           top of the chrome, above another chrome row rather than above the
           nav; the strip below picks up the lighter `/60` instead. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
-        <div className="w-[198px] flex-shrink-0 flex items-center justify-between px-4 h-[52px] border-r border-line">
+      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
+        <div className="w-[198px] flex-shrink-0 flex items-center justify-between pl-3 pr-2 h-[52px] bg-app">
           <span className="text-[13px] font-semibold text-fg">Collections</span>
           <button
             type="button"
@@ -227,26 +229,11 @@ export default function StepGradients({
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
           </button>
         </div>
-        {/* Mirrors ColorPrimitives' matching row — pr-3 (12px) clearance. */}
-        <div className="flex-1 min-w-0 flex items-stretch gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter gradients"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
+        <div
+          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
+          style={{ background: toolbarWash }}
+        >
+          {toolbar}
         </div>
       </div>
 
@@ -255,7 +242,7 @@ export default function StepGradients({
           since this now sits between "Collections" above and the nav + table
           below. ── */}
       <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
+        <div className="w-[198px] flex-shrink-0 flex flex-col justify-center gap-1.5 px-4 py-5 bg-app">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
           {selected ? (
             <RailSelect
@@ -276,6 +263,27 @@ export default function StepGradients({
           )}
         </div>
         {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
+        <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line">
+        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
+          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              aria-label="Filter gradients"
+            />
+            {query && (
+              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
+          </div>
+        </div>
         <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
           {selected ? (
             <>
@@ -374,11 +382,12 @@ export default function StepGradients({
             <span className="text-sm text-fg-faint">No gradients yet — create one to get started.</span>
           )}
         </div>
+        </div>
       </div>
 
       {/* ── Row 3 — gradient nav + the stops table ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
+        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full py-1.5 px-2 flex flex-col gap-1 overflow-y-auto bg-app">
           {visible.map((g) => {
             const active = g.id === selectedId
             const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id
@@ -388,8 +397,10 @@ export default function StepGradients({
                   type="button"
                   onClick={() => setSelectedId(g.id)}
                   aria-current={active}
-                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 text-left transition-colors ${
+                    active
+                      ? 'chrome-tab bg-elevated text-accent-ui'
+                      : 'rounded-lg text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
                   <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
@@ -415,7 +426,7 @@ export default function StepGradients({
           )}
         </nav>
 
-        <div className="flex-1 min-w-0 overflow-auto">
+        <div className="flex-1 min-w-0 overflow-auto bg-app border-l border-line">
           {selected ? (
             <div className="min-w-[28rem]">
               <div

@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { buildArchitectureView, CATEGORICAL_ROLE_COMMENTS } from '../semanticArchitectures'
+import {
+  buildArchitectureView,
+  CATEGORICAL_ROLE_COMMENTS,
+  categoricalNestedPath,
+  projectArchitecture,
+} from '../semanticArchitectures'
 import { buildSystem } from '../color/audit'
-import { buildCategoricalSymbolicTokens } from '../tokenGenerator'
+import { buildCategoricalSymbolicTokens, generateTokenJSON } from '../tokenGenerator'
 import { buildWizardExport } from '../exportWizard'
+import { unzipStore } from '../zipStore'
 
 /**
- * Categorical is a fixed 39-role catalogue. P8 expanded it from 29 and added
- * the "Categorical Semantic (AI-Guided)" export — real aliases plus [ROLE]
- * guidance per token.
+ * Categorical ships a nested role contract: dotted ids internally
+ * (`content.link.default`, `status.critical.surface`, …). The Skill export
+ * carries that contract as Agent Skills markdown.
  */
 
 const system = buildSystem('violet/radix', '#7f56d9', 'radix')
@@ -32,6 +38,13 @@ describe('the categorical catalogue is complete', () => {
     const extra = Object.keys(CATEGORICAL_ROLE_COMMENTS).filter((id) => !roleIds.includes(id))
     expect(extra, `stale comments for ${extra.join(', ')}`).toEqual([])
   })
+
+  it('nests dotted keys under their group segments', () => {
+    expect(categoricalNestedPath('content', 'link.default')).toEqual(['content', 'link', 'default'])
+    expect(categoricalNestedPath('status', 'critical.surface')).toEqual(['status', 'critical', 'surface'])
+    expect(categoricalNestedPath('action', 'primary.default')).toEqual(['action', 'primary', 'default'])
+    expect(categoricalNestedPath('surface', 'page')).toEqual(['surface', 'page'])
+  })
 })
 
 describe('buildCategoricalSymbolicTokens matches the architecture view', () => {
@@ -39,7 +52,8 @@ describe('buildCategoricalSymbolicTokens matches the architecture view', () => {
     const { themeOrder, tokens } = buildCategoricalSymbolicTokens()
     expect(themeOrder.length).toBeGreaterThanOrEqual(2)
     for (const id of roleIds) {
-      const [group, key] = id.split('.')
+      const [group, ...rest] = id.split('.')
+      const key = rest.join('.')
       for (const theme of themeOrder) {
         expect(tokens[group]?.[key]?.[theme], `${id} · ${theme}`).toMatch(/^\{[^}]+\}$/)
       }
@@ -47,42 +61,139 @@ describe('buildCategoricalSymbolicTokens matches the architecture view', () => {
   })
 })
 
-describe('the AI-Guided export format', () => {
+describe('generateTokenJSON is the live-sync payload the plugin GETs', () => {
+  it('ships nested categorical keys, not the pre-v51 flat ids', () => {
+    const json = generateTokenJSON()
+    expect(json.colors.semanticArchitecture).toBe('categorical')
+    const arch = json.colors.architecture as {
+      kind: string
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    expect(arch.kind).toBe('categorical')
+    expect(arch.tokens.action['primary.default']).toBeDefined()
+    expect(arch.tokens.action.primary).toBeUndefined()
+    expect(arch.tokens.status['critical.surface']).toBeDefined()
+    expect(arch.tokens.status['critical-bg']).toBeUndefined()
+    expect(arch.tokens.status['critical.content']).toBeDefined()
+    expect(arch.tokens.content['on-action']).toBeDefined()
+    expect(arch.tokens.border.strong).toBeDefined()
+    for (const id of roleIds) {
+      const [group, ...rest] = id.split('.')
+      const key = rest.join('.')
+      const light = arch.tokens[group]?.[key]?.light
+      expect(light, id).toMatch(/^(#[0-9a-fA-F]{6}|\{[a-z0-9-]+\.\d+\})$/)
+    }
+  })
+})
+
+describe('projectArchitecture keeps nested override ids', () => {
+  const input = {
+    themes: {},
+    themeKinds: { light: 'light', dark: 'dark' },
+    themePalettes: {},
+    scales: system.scales,
+    accent: system.accent,
+  } as never
+
+  it('applies action.primary.default instead of truncating at primary', () => {
+    const baseline = projectArchitecture('categorical', input, system.errorSeed, {}, ['light', 'dark']) as {
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    const edited = projectArchitecture('categorical', input, system.errorSeed, {
+      'action.primary.default': { light: '{accent.1}' },
+    }, ['light', 'dark']) as {
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    expect(baseline.tokens.action['primary.default']).toBeDefined()
+    expect(baseline.tokens.action.primary).toBeUndefined()
+    expect(edited.tokens.action['primary.default'].light)
+      .not.toBe(baseline.tokens.action['primary.default'].light)
+  })
+
+  it('rewrites legacy action.primary overrides onto primary.default', () => {
+    const nested = projectArchitecture('categorical', input, system.errorSeed, {
+      'action.primary.default': { light: '{accent.1}' },
+    }, ['light', 'dark']) as {
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    const legacy = projectArchitecture('categorical', input, system.errorSeed, {
+      'action.primary': { light: '{accent.1}' },
+    }, ['light', 'dark']) as {
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    expect(legacy.tokens.action['primary.default'].light)
+      .toBe(nested.tokens.action['primary.default'].light)
+  })
+})
+
+describe('the Skill export format', () => {
   const files = buildWizardExport({
     collections: [],
     modes: ['light', 'dark'],
-    format: 'categorical-ai',
+    format: 'skill',
     structure: 'single',
     colorFormat: 'hex',
     includeAliases: true,
     includeComponents: false,
   })
 
-  it('ships one JSON document with mode-first nesting', () => {
+  it('ships a Figma MCP skill zip (SKILL.md + references/)', () => {
     expect(files).toHaveLength(1)
-    expect(files[0].name).toMatch(/\.categorical\.tokens\.json$/)
-    const tree = JSON.parse(files[0].content) as Record<string, Record<string, Record<string, { $value: string; comment: string; alpha?: number }>>>
-    expect(Object.keys(tree).sort()).toEqual(['dark', 'light'])
-    for (const mode of ['light', 'dark']) {
-      expect(Object.keys(tree[mode]).sort()).toEqual(['action', 'border', 'content', 'status', 'surface'])
-      for (const id of roleIds) {
-        const [group, key] = id.split('.')
-        const outKey = id === 'border.active' ? 'focus' : key
-        const leaf = tree[mode][group]?.[outKey]
-        expect(leaf?.$value, `${mode} ${id}`).toMatch(/^\{[^}]+\}$/)
-        expect(leaf?.comment, `${mode} ${id}`).toMatch(/^\[ROLE:/)
-      }
+    expect(files[0].name).toMatch(/\.zip$/)
+    expect(files[0].language).toBe('zip')
+    expect(files[0].binary?.length).toBeGreaterThan(100)
+
+    const md = files[0].content
+    expect(md).toMatch(/^---\nname: /)
+    expect(md).toContain('description:')
+    expect(md).toContain('compatibility:')
+    expect(md).toContain('mcp-server: figma')
+    expect(md).toContain('## When to use')
+    expect(md).toContain('## Instructions')
+    expect(md).toContain('## Examples')
+    expect(md).toContain('## Common edge cases')
+    expect(md).toContain('figma-use')
+    expect(md).toContain('Color Semantics')
+
+    const desc = md.match(/^description: "([^"]*)"/m)?.[1] ?? ''
+    expect(desc.length).toBeGreaterThan(0)
+    expect(desc.length).toBeLessThanOrEqual(1024)
+    const name = md.match(/^name: ([a-z0-9-]+)$/m)?.[1] ?? ''
+    expect(name).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    expect(name.length).toBeLessThanOrEqual(64)
+
+    const unzipped = unzipStore(files[0].binary!)
+    const paths = unzipped.map((f) => f.path)
+    expect(paths).toContain(`${name}/SKILL.md`)
+    expect(paths).toContain(`${name}/references/tokens.md`)
+    expect(paths).toContain(`${name}/references/semantic-contract.md`)
+  })
+
+  it('puts every categorical role in the semantic-contract reference', () => {
+    const unzipped = unzipStore(files[0].binary!)
+    const contract = new TextDecoder().decode(
+      unzipped.find((f) => f.path.endsWith('semantic-contract.md'))!.data,
+    )
+    for (const id of roleIds) {
+      expect(contract, id).toContain(`\`${id}\``)
+      expect(contract, id).toContain(CATEGORICAL_ROLE_COMMENTS[id]!)
     }
+    expect(contract).toContain('`Content/primary`')
+    expect(contract).toContain('`Action/primary.default`')
+    expect(contract).toContain('`var(--color-content-link-default)`')
+    expect(contract).toContain('`border.focus`')
+    expect(contract).not.toContain('`border.active`')
   })
 
-  it('renames border.active to border.focus in the shipped keys', () => {
-    const tree = JSON.parse(files[0].content)
-    expect(tree.light.border.active).toBeUndefined()
-    expect(tree.light.border.focus.$value).toMatch(/^\{accent\.\d+\}$/)
-  })
-
-  it('carries alpha on surface.overlay', () => {
-    const tree = JSON.parse(files[0].content)
-    expect(tree.light.surface.overlay.alpha).toBe(0.5)
+  it('nests content.link and action.primary in the contract list', () => {
+    const unzipped = unzipStore(files[0].binary!)
+    const contract = new TextDecoder().decode(
+      unzipped.find((f) => f.path.endsWith('semantic-contract.md'))!.data,
+    )
+    expect(contract).toContain('`content.link.default`')
+    expect(contract).toContain('`content.link.hover`')
+    expect(contract).toContain('`action.primary.default`')
+    expect(contract).toContain('`status.critical.surface`')
+    expect(contract).toContain('`status.critical.content`')
   })
 })

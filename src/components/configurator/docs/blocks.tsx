@@ -10,6 +10,7 @@
 // pre-merge Documentation/Components split once did.
 
 import { useState, type ReactNode } from 'react'
+import { buildSkillExport } from '../../../lib/skillExport'
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,44 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         <>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2" /></svg>
           {label}
+        </>
+      )}
+    </button>
+  )
+}
+
+/** Same Skill zip the Export wizard ships — SKILL.md + token references.
+ *  Overview is the full-system sheet, so download is more useful than copy. */
+export function DownloadSkillButton() {
+  const [done, setDone] = useState(false)
+  function download() {
+    const pack = buildSkillExport()
+    const copy = new ArrayBuffer(pack.zip.byteLength)
+    new Uint8Array(copy).set(pack.zip)
+    const url = URL.createObjectURL(new Blob([copy], { type: 'application/zip' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${pack.name}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+    setDone(true)
+    setTimeout(() => setDone(false), 2000)
+  }
+  return (
+    <button
+      onClick={download}
+      title="Download the Figma MCP / Agent Skill zip — unzip into .claude/skills or .cursor/skills"
+      className="flex items-center gap-1.5 text-[11px] text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
+    >
+      {done ? (
+        <><span className="text-emerald-500">✓</span> Downloaded</>
+      ) : (
+        <>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden>
+            <path d="M5.5 1.5v6M3 5.5l2.5 2.5L8 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M1.5 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          Download Skill
         </>
       )}
     </button>
