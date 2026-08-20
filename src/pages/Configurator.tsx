@@ -427,6 +427,33 @@ export default function Configurator() {
       ? `linear-gradient(160deg, ${s[12] ?? '#1c1c1c'} 0%, #0a0a0a 48%)`
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
+  // ── Foundation-switcher toolbar wash — same brand-derived language as Layer
+  // 0, scoped to just the Reset/Save row instead of the whole canvas. That row
+  // sits on the opaque `bg-app` surface two levels up (unlike SectionRail,
+  // which is deliberately transparent so Layer 0 shows through it), so without
+  // its own background it reads as flat white/black no matter what the accent
+  // is — reported as wanting the same accent-derived gradient feel there too,
+  // "para crear un lindo contraste" between the icon rail and the Reset/Save
+  // pills sitting at its trailing edge.
+  // Built from `--accent-ui`, not the raw ramp or `primaryColor`. `uiAccent` is
+  // already the "no-text graphical mark" token this file computes two blocks
+  // up — solved for contrast against the chrome PAGE, exactly the case
+  // CLAUDE.md's own accent-derivation note reserves it for ("small graphical
+  // marks that need to be visible on the chrome... the /[0.06]-[0.08] tints").
+  // A ramp tone (2 or 3) was tried first and was nearly invisible: those steps
+  // are Radix's near-white "background" band, meant to disappear, so fading
+  // one to transparent over a wide row read as plain white — no contrast at
+  // all, the opposite of what was asked for. `color-mix` at 10% sits just
+  // above that established 6-8% range (a gradient's peak has to read where a
+  // flat fill's average already does) and still stays a wash, not a swatch.
+  // LEFT-TO-RIGHT, not the page backdrop's 160deg diagonal: the row is 52px
+  // tall and full-width, so a wash has to travel horizontally to read as
+  // anything more than a flat tint. Tinted behind the icon rail, fading to
+  // transparent by ~45% width — roughly where that cluster ends — so the
+  // Reset/Save pills sit on a neutral patch and keep their own border as
+  // their contrast, rather than competing with more colour behind them.
+  const toolbarWash = `linear-gradient(90deg, color-mix(in srgb, ${uiAccent} 10%, transparent) 0%, transparent 45%)`
+
   // ── Navigation handlers (selecting anything leaves export mode) ──
   // Marking happens on *leave*: a foundation counts as visited for the
   // progress checklist once the user navigates away from it.
@@ -758,7 +785,10 @@ export default function Configurator() {
               // pr-3 is the minimum gap this app uses everywhere else for "a
               // free-floating trailing control, not flush" — same reasoning,
               // same number.
-              <div className="flex items-center gap-4 pl-4 pr-3 h-[52px] border-b border-line/60 flex-shrink-0">
+              <div
+                className="flex items-center gap-4 pl-4 pr-3 h-[52px] border-b border-line/60 flex-shrink-0"
+                style={{ background: toolbarWash }}
+              >
                 <FoundationIconRail
                   active={activeFoundation}
                   onSelect={selectFoundation}

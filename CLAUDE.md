@@ -1610,6 +1610,15 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 >   ON `bg-elevated` (active table rows) lands ≈3.8:1 — fine as a UI component, short of AA
 >   for body text. Fixing it means moving those rows onto an accent tint instead of
 >   `bg-elevated`; that's a visual-design change, not a token one.
+> - **A background WASH (no text, no swatch) also reaches for `bg-accent-ui`, not a ramp
+>   tone.** The foundation-switcher toolbar row (Reset/Save's row, `Configurator.tsx`'s
+>   `toolbarWash`) fades `color-mix(in srgb, var(--accent-ui) 10%, transparent)` left to
+>   right behind the icon rail — the same "no-text graphical mark" case this whole section
+>   covers, just a gradient instead of a dot or underline. A Radix ramp tone (2 or 3) was
+>   tried first and read as invisible: those steps are the near-white "background" band,
+>   built to disappear, so fading one to transparent over a wide row was indistinguishable
+>   from plain white. 10% sits just above the app's established `/[0.06]-[0.08]` tint range
+>   on purpose — a gradient's PEAK has to read where a flat fill's average already does.
 > - `CenterHeader`'s `accentColor` takes `uiAccent` — it used to re-derive the same
 >   expression inline, which is how it drifted into being the most visible 3:1 failure.
 >   Anything else needing "the chrome accent" reads the var or that variable, never
