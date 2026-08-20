@@ -5,7 +5,7 @@
 // by the picker UI, the token export and the README without cycles.
 //
 //   flat        — the existing shape (colors.semantic / colors.themes)
-//   categorical — LIGHTWEIGHT: a fixed 29-role catalogue (Content · Action ·
+//   categorical — LIGHTWEIGHT: a fixed 39-role catalogue (Content · Action ·
 //                 Surface · Status · Border), light/dark primitive refs inside
 //                 each token (DTCG-style) — deliberately NOT the 89 flat roles
 //   vibrancy    — Apple HIG roles: labels/fills/separators as alpha layers over
@@ -52,8 +52,8 @@ export const ARCHITECTURE_OPTIONS: {
   {
     key: 'categorical',
     label: 'Categorical Semantic',
-    desc: 'Lightweight — 29 curated roles, light/dark built in.',
-    tip: 'A minimal, fixed catalogue of 29 roles grouped by function — Content, Action, Surface, Status, Border — with the light and dark primitive reference inside each token. Best when you want a lean system that tooling walks as a token tree (DTCG, Style Dictionary, Figma modes).',
+    desc: 'Lightweight — 39 curated roles, light/dark built in.',
+    tip: 'A minimal, fixed catalogue of 39 roles grouped by function — Content, Action, Surface, Status, Border — with the light and dark primitive reference inside each token. Best when you want a lean system that tooling walks as a token tree (DTCG, Style Dictionary, Figma modes).',
   },
   {
     key: 'vibrancy',
@@ -313,7 +313,7 @@ function projectCurated(
 }
 
 // ── Categorical ──────────────────────────────────────────────────────────────
-// LIGHTWEIGHT by contract: a fixed, curated 29-role catalogue — NOT a
+// LIGHTWEIGHT by contract: a fixed, curated 39-role catalogue — NOT a
 // projection of the 89 flat roles. Content · Action · Surface · Status ·
 // Border, every leaf carrying its light + dark primitive reference. Tones
 // follow the same math the flat catalogue uses (gray hierarchy inverts onto
@@ -342,16 +342,43 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
   { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
+  // Disabled ink — tone 7, matching Astryx's own `text.disabled`. Categorical
+  // used to have none at all (a fixed tone here would need re-verifying per
+  // custom accent, same trap as everything else in this file), and the preview
+  // panel fell back to Astryx's value for this slot; adopting the same tone
+  // natively means that fallback is no longer needed.
+  { group: 'content', key: 'disabled', light: '{neutral.7}', dark: '{neutral-dark.7}' },
+  // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
+  // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
+  // solved for AA as text (same bug class as shadcn's `muted.foreground` fix
+  // below). 11/12 are the ramp's two genuine text steps, same as `content.accent`.
+  { group: 'content', key: 'link-default', light: '{accent.11}', dark: '{accent.11}' },
+  { group: 'content', key: 'link-hover',   light: '{accent.12}', dark: '{accent.12}' },
   // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
   { group: 'action', key: 'primary',   light: '{accent.solid}', dark: '{accent.solid}' },
   { group: 'action', key: 'neutral',   light: '{neutral.3}',    dark: '{neutral-dark.3}' },
   { group: 'action', key: 'secondary', light: '{accent.3}',     dark: '{accent.3}' },
   { group: 'action', key: 'disabled',  light: '{neutral.2}',    dark: '{neutral-dark.2}' },
+  // Hover/pressed on the primary fill — fixed one/two steps past the solid,
+  // matching the flat catalogue's own `background-brand-solid-hover` (9→10)
+  // convention. Known, accepted simplification: unlike `action.primary` itself
+  // these are fixed tones, not re-solved from `accent.solid`'s resolved step —
+  // for the rare accent whose solid lands above tone 9 (see `solidInkPair`),
+  // hover could read lighter than default. Not fixed here; same class of
+  // residual this file already accepts elsewhere for simple fixed-step roles.
+  { group: 'action', key: 'primary-hover',   light: '{accent.10}', dark: '{accent.10}' },
+  { group: 'action', key: 'primary-pressed', light: '{accent.11}', dark: '{accent.11}' },
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
   { group: 'surface', key: 'layer-2', light: '{neutral.3}',  dark: '{neutral-dark.3}' },
   { group: 'surface', key: 'accent',  light: '{accent.2}',   dark: '{accent.2}' },
+  // Form background — same tone as the page, named separately so a form field
+  // has its own token to point at rather than reusing "page" by coincidence.
+  { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.1}' },
+  // Accent-tinted row/item selection — one step up from `surface.accent`,
+  // the same tone `action.secondary` already uses for a component-level fill.
+  { group: 'surface', key: 'selected', light: '{accent.3}', dark: '{accent.3}' },
   // Deliberately inverted, like the flat catalogue's `*-inverse`: an inverse
   // surface is dark on a light page and light on a dark one, by definition.
   { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.12}' },
@@ -395,6 +422,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'status', key: 'warning-fg',  light: '{ink:warning.3}',  dark: '{ink:warning.3}' },
   { group: 'status', key: 'success-bg',  light: '{success.3}',      dark: '{success.3}' },
   { group: 'status', key: 'success-fg',  light: '{ink:success.3}',  dark: '{ink:success.3}' },
+  // Solid critical fill (badges, destructive buttons) — solved solid, same
+  // convention as shadcn `destructive.fill` and Astryx `status.error`.
+  { group: 'status', key: 'critical-surface-solid', light: '{error.solid}',     dark: '{error.solid}' },
+  { group: 'status', key: 'critical-on-solid',       light: '{on:error.solid}', dark: '{on:error.solid}' },
   // Border — strokes. `default` is tone 5, the same step Astryx's own
   // `border.default` resolves to, so the two namings agree on what a default
   // stroke IS. That also fixes an ordering this file used to carry and flag:
@@ -437,9 +468,12 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // `.10` is the trap: it satisfies the letter of 1.4.11 while remaining hard
   // to see, which is exactly what the dual-metric rule exists to catch.
   { group: 'border', key: 'active',   light: '{accent.9}',  dark: '{accent.11}' },
-  { group: 'border', key: 'critical', light: '{error.8}',   dark: '{error.7}' },
-  { group: 'border', key: 'warning',  light: '{warning.8}', dark: '{warning.7}' },
-  { group: 'border', key: 'success',  light: '{success.8}', dark: '{success.7}' },
+  { group: 'border', key: 'critical', light: '{error.9}',   dark: '{error.11}' },
+  // Warning/success ramps are lighter than error at tone 9 — measured worst
+  // case across seeds: .9 reads 2.29:1 / Lc 44.4 on the page, .10 still under
+  // 3:1. Tone 11 is the first step that clears both floors in light AND dark.
+  { group: 'border', key: 'warning',  light: '{warning.11}', dark: '{warning.11}' },
+  { group: 'border', key: 'success',  light: '{success.11}', dark: '{success.11}' },
 ]
 
 /**
@@ -454,6 +488,57 @@ export function projectCategorical(
   themeOrder: string[] = ['light', 'dark'],
 ): Record<string, Record<string, Record<string, string>>> {
   return projectCurated(CATEGORICAL_ROLES, input, themeOrder)
+}
+
+/**
+ * One `[ROLE: ...]` guidance line per `CATEGORICAL_ROLES` entry, keyed
+ * `"group.key"`. Hand-authored, not extracted from the source comments above
+ * (those are prose for a future maintainer; these are usage/restriction text
+ * for a consumer of the export). Feeds the "Categorical Semantic (AI-Guided)"
+ * export format — see `exportWizard.ts`. Every value quotes the REAL ref this
+ * file resolves to, so the guidance can never claim a tone the token doesn't
+ * actually ship.
+ */
+export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
+  'content.primary': '[ROLE: Primary Text] Main body and heading ink. Must clear WCAG AA (4.5:1) against every surface.* token — this is what {neutral.12} is generated to guarantee.',
+  'content.on-action': "[ROLE: Button Text] Ink for the label sitting on action.primary. Solved per theme against that fill's actual resolved tone — never assumed white — so a pale accent still ships a readable label.",
+  'content.secondary': '[ROLE: Secondary Text] Supporting copy, descriptions, captions. Holds WCAG AA (4.5:1) against standard surfaces, one step lighter than content.primary.',
+  'content.subtle': '[ROLE: De-emphasis Text] Placeholders and watermarks ONLY — not a third readable body-text tier. In dark mode this measures roughly Lc 21 against the page; do not use it to convey information.',
+  'content.inverse': '[ROLE: Inverted Text] Ink for anything sitting on surface.inverse or another dark/solid fill outside the accent.',
+  'content.accent': '[ROLE: Accent Text] Brand-tinted text — emphasis, active nav, non-link accent copy. Low-contrast text step (~4.5:1 AA against the page).',
+  'content.disabled': '[ROLE: Disabled Text] Ink for disabled controls and copy. Exempt from the strict AA rule other content.* tokens carry — it must communicate inactivity, not remain fully legible.',
+  'content.link-default': '[ROLE: Link Text] Interactive/clickable text. Uses the ramp’s low-contrast TEXT step, not the solid-hover step — a link must clear AA as text, which a fill-oriented tone is not guaranteed to do.',
+  'content.link-hover': '[ROLE: Link Text Hover] Hover/focus state for content.link-default. One step further into the ramp’s high-contrast text tone for a visible but still-accessible shift.',
+  'action.primary': '[ROLE: Primary CTA Fill] Main call-to-action background. Solved per theme so the fill can always carry an accessible label (content.on-action) — not pinned to a fixed tone.',
+  'action.neutral': '[ROLE: Neutral Action Fill] Background for a neutral (non-brand) interactive control, e.g. a secondary/ghost button.',
+  'action.secondary': '[ROLE: Secondary CTA Fill] Subtle accent-tinted background for a secondary button. Pair with content.primary for the label, not content.on-action.',
+  'action.disabled': '[ROLE: Disabled Action Fill] Background for a disabled button or control. No contrast floor — disabled state is communicated visually, not via legibility.',
+  'action.primary-hover': '[ROLE: Primary CTA Hover] Hover state for action.primary. One ramp step further than the resolved solid.',
+  'action.primary-pressed': '[ROLE: Primary CTA Pressed] Active/pressed state for action.primary. One further ramp step than action.primary-hover.',
+  'surface.page': '[ROLE: Base Background] Root application background, elevation 0. content.primary and content.secondary are generated to hold WCAG AA against this token specifically.',
+  'surface.layer-1': '[ROLE: Container Background] Elevation 1 — cards, panels, grouped content. One step off the page for a visible but subtle distinction.',
+  'surface.layer-2': '[ROLE: Elevated Background] Elevation 2 — popovers, dropdowns, floating menus. Pair with an actual shadow/elevation token in implementation; the color step alone doesn’t convey floating.',
+  'surface.accent': '[ROLE: Accent Wash] Ambient accent-tinted background — a section or card that leans brand without being an interactive fill.',
+  'surface.input': '[ROLE: Form Background] Background for text fields and other data-entry controls. Same tone as surface.page by design — named separately so a form field has its own token to point at.',
+  'surface.selected': '[ROLE: Selected State Background] Background for a selected/active row, item, or option. Must hold WCAG AA (4.5:1) against content.primary sitting on it.',
+  'surface.inverse': '[ROLE: Inverted Background] High-contrast background for tooltips, snackbars, and similar overlays. Always pairs with content.inverse for its text.',
+  'surface.overlay': '[ROLE: Scrim] Semi-transparent layer that dims surface.page behind a modal or drawer. Stays dark in BOTH appearances by design — a scrim dims, it doesn’t invert. Ships at roughly 50% opacity over the page.',
+  'status.critical-bg': '[ROLE: Critical Feedback Background] Subtle tinted background for an error alert or banner. Pair with status.critical-fg for the text, never a fixed ink.',
+  'status.critical-fg': '[ROLE: Critical Feedback Text] Error text, solved per theme to hold WCAG AA against status.critical-bg specifically — re-pointing the background keeps this token correct automatically.',
+  'status.warning-bg': '[ROLE: Warning Feedback Background] Subtle tinted background for a warning alert or banner. Pair with status.warning-fg.',
+  'status.warning-fg': '[ROLE: Warning Feedback Text] Warning text, solved per theme to hold WCAG AA against status.warning-bg.',
+  'status.success-bg': '[ROLE: Success Feedback Background] Subtle tinted background for a success alert or banner. Pair with status.success-fg.',
+  'status.success-fg': '[ROLE: Success Feedback Text] Success text, solved per theme to hold WCAG AA against status.success-bg.',
+  'status.critical-surface-solid': '[ROLE: Critical Solid Fill] Solid fill for a destructive button or a severity badge. Requires status.critical-on-solid for its label — never a bare white assumption.',
+  'status.critical-on-solid': '[ROLE: Critical Solid Ink] Label ink for status.critical-surface-solid, solved per theme against that exact fill so a custom error color that can’t carry white still ships a readable label.',
+  'border.default': '[ROLE: Structural Border] Decorative dividers, table rules, card edges. No contrast floor — do NOT use as the visible boundary of an interactive control, see border.strong.',
+  'border.strong': '[ROLE: Component Border] Default stroke for inputs, selects, and other bounded controls. Must clear WCAG 1.4.11 (≥3:1) AND APCA Lc 45 against the surface it sits on — verified per theme, light and dark deliberately use different ramp steps to both clear it.',
+  'border.accent': '[ROLE: Decorative Brand Border] Tinted card edge or grouping stroke for brand emphasis. NOT a state indicator — anything communicating selected/focused/active must use border.active instead.',
+  'border.subtle': '[ROLE: Subtle Border] Lighter decorative divider, one step below border.default. No contrast floor.',
+  'border.active': '[ROLE: Focus / Active Ring] Accessibility-critical: keyboard focus indicator and active/selected control state. Must clear WCAG 1.4.11 (≥3:1) AND APCA Lc 45 — verified per theme; the naive same-tone-both-themes approach fails this on a dark ramp.',
+  'border.critical': '[ROLE: Critical Border] Stroke for an input or control in an error state.',
+  'border.warning': '[ROLE: Warning Border] Stroke for an input or control in a warning state.',
+  'border.success': '[ROLE: Success Border] Stroke for an input or control in a success/valid state.',
 }
 
 // ── Astryx ───────────────────────────────────────────────────────────────────

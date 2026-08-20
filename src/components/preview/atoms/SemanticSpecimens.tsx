@@ -142,7 +142,7 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const secondary = s('content-secondary', ['content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
   const tertiary = s('content-tertiary', ['content.subtle', 'muted.foreground'], t.fgMuted || t.neutralText)
   const brandInk = s('content-brand', ['content.accent', 'text.accent', 'primary.fill'], t.brandText)
-  const disabled = s('content-disabled', ['text.disabled'], t.disabledText)
+  const disabled = s('content-disabled', ['content.disabled', 'text.disabled'], t.disabledText)
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
 
@@ -225,7 +225,7 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const primary = s('content-primary', ['icon.primary', 'content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const secondary = s('content-secondary', ['icon.secondary', 'content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
-  const disabled = s('content-disabled', ['icon.disabled', 'text.disabled'], t.disabledText)
+  const disabled = s('content-disabled', ['icon.disabled', 'content.disabled', 'text.disabled'], t.disabledText)
   const accent = s('content-brand', ['icon.accent', 'content.accent', 'text.accent', 'primary.fill'], t.brandText)
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const fill = s('background-brand-solid', ['action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)

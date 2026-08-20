@@ -193,9 +193,11 @@ export default function ExportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [collections, modes, families, allFamilies, store],
   )
-  const isJson = format === 'w3c' || format === 'escala'
-  // Escala JSON is one document by contract, so structure can't split it.
-  const structureLocked = format === 'escala'
+  const isJson = format === 'w3c' || format === 'escala' || format === 'categorical-ai'
+  // Escala JSON and the Categorical AI-Guided format are each one document by
+  // contract, so structure can't split either.
+  const structureLocked = format === 'escala' || format === 'categorical-ai'
+  const isWholeDocument = format === 'escala' || format === 'categorical-ai'
   const canNext = step === 1
     ? collections.length > 0
       && (!collections.includes('semantics') || modes.length > 0)
@@ -699,7 +701,7 @@ export default function ExportWizard({
                     </div>
                   </div>
                 )}
-                {isJson && format !== 'w3c' && (
+                {format === 'escala' && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
                     Escala JSON is the exact payload the Figma plugin imports — keys and values ship verbatim,
                     and it always ships the WHOLE document (typography, spacing, radius…) regardless of the
@@ -707,6 +709,14 @@ export default function ExportWizard({
                     Components are the one part Step 1's toggle controls: on ships{' '}
                     {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
                     as <code className="font-mono">atoms</code>, off ships none.
+                  </p>
+                )}
+                {format === 'categorical-ai' && (
+                  <p className="px-3 py-2 text-[12px] text-fg-muted">
+                    Ships Categorical's role catalogue only — every color token, regardless of the collections
+                    picked above. Each leaf carries a real alias (<code className="font-mono">{'{neutral.12}'}</code>)
+                    and a <code className="font-mono">comment</code> field with usage and contrast guidance,
+                    meant to be handed to an AI assistant as design context.
                   </p>
                 )}
               </div>
@@ -721,16 +731,22 @@ export default function ExportWizard({
               <div className="mt-5 rounded-xl border border-line bg-surface/50 overflow-hidden">
                 <SummaryRow
                   label="Collections"
-                  value={format === 'escala' ? 'All (Escala JSON is one document)' : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')}
+                  value={
+                    format === 'escala' ? 'All (Escala JSON is one document)'
+                      : format === 'categorical-ai' ? 'All color tokens (one document)'
+                        : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
+                  }
                 />
-                {format !== 'escala' && collections.includes('primitives') && (
+                {!isWholeDocument && collections.includes('primitives') && (
                   <SummaryRow
                     label="Families"
                     value={allFamilies ? 'All' : famMeta.filter((f) => families.includes(f.key)).map((f) => f.label).join(', ')}
                   />
                 )}
-                {format !== 'escala' && <SummaryRow label="Variables" value={String(varCount)} />}
-                {collections.includes('semantics') && <SummaryRow label="Modes" value={modes.join(', ')} />}
+                {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
+                {(collections.includes('semantics') || format === 'categorical-ai') && (
+                  <SummaryRow label="Modes" value={modes.join(', ')} />
+                )}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />
                 <SummaryRow label="Structure" value={files.length > 1 ? `${files.length} files` : 'Single file'} />
                 {/* Mirrors `w3cTreeFor`'s own condition exactly — aliases only ever

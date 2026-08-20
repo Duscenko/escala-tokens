@@ -8,8 +8,9 @@
 // tokens.json: primitives arrive pre-flattened (`accent-500`, `neutral-dark-300`),
 // themes pre-normalized onto their source ramps.
 
-import { generateTokenJSON, flattenScale } from './tokenGenerator'
+import { generateTokenJSON, flattenScale, buildCategoricalSymbolicTokens } from './tokenGenerator'
 import { buildSectionExport, formatColor, type ColorFormat, type SectionKey } from './sectionExport'
+import { CATEGORICAL_ROLE_COMMENTS } from './semanticArchitectures'
 import { useDesignStore } from '../store/useDesignStore'
 
 export type WizardCollection =
@@ -22,7 +23,7 @@ export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'radius', 'shadow', 'grid', 'sizes', 'icons',
 ]
 
-export type WizardFormat = 'w3c' | 'escala' | 'css' | 'scss' | 'tailwind' | 'md'
+export type WizardFormat = 'w3c' | 'escala' | 'css' | 'scss' | 'tailwind' | 'md' | 'categorical-ai'
 export type WizardStructure = 'single' | 'per-collection'
 
 /** The `sectionExport` slice each collection maps onto — Tailwind and Markdown
@@ -81,6 +82,11 @@ export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[
   { key: 'css', label: 'CSS Custom Properties', hint: '--token-name: value' },
   { key: 'scss', label: 'SCSS Variables', hint: '$token-name: value' },
   { key: 'tailwind', label: 'Tailwind config', hint: 'theme.extend snippet' },
+  {
+    key: 'categorical-ai',
+    label: 'Categorical Semantic (AI-Guided)',
+    hint: 'Real aliases + [ROLE] usage/contrast comments per token',
+  },
 ]
 
 // Badge shown next to a format's label in the full wizard's Format step
@@ -102,6 +108,7 @@ export const WIZARD_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = {
   escala: 'Recommended · Escala Plugin',
   w3c: 'Compatible with other plugins & Figma',
   md: 'Claude · Codex',
+  'categorical-ai': 'Design context for AI',
 }
 
 // ── Primitive families ───────────────────────────────────────────────────────
@@ -291,6 +298,52 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
   }
 }
 
+// ── Categorical Semantic (AI-Guided) ─────────────────────────────────────────
+// A DTCG-flavoured sibling of the W3C format above, scoped to Categorical's
+// role catalogue: every leaf carries a REAL alias ("$value": "{neutral.12}"),
+// not resolved hex, plus a `comment` field with `[ROLE: ...]` usage/contrast
+// guidance authored once in `CATEGORICAL_ROLE_COMMENTS`
+// (semanticArchitectures.ts). Nested by mode first (same shape `w3cSemantics`
+// already uses), then by the catalogue's own group.key — so a system with
+// more than light/dark still ships every mode it has, honoring the same
+// `modes` picker Step 1 already offers for the flat semantics collection.
+// Built from `buildCategoricalSymbolicTokens()`, which shares its theme/scale
+// resolution with `generateTokenJSON()` — this can never disagree with what
+// `colors.architecture` ships when Categorical is the active architecture.
+type CategoricalAiLeaf = { $value: string; comment: string; alpha?: number }
+
+// Internal role name → the name this format ships it under. The only
+// deliberate rename: `border.active` already IS a measured, WCAG/APCA-solved
+// focus ring (see semanticArchitectures.ts) — this just calls it what a focus
+// ring is usually called, without duplicating the role or its math.
+const CATEGORICAL_AI_RENAME: Record<string, string> = {
+  'border.active': 'border.focus',
+}
+
+function categoricalAiTree(modes: string[]): Record<string, Record<string, Record<string, CategoricalAiLeaf>>> {
+  const { tokens } = buildCategoricalSymbolicTokens()
+  const out: Record<string, Record<string, Record<string, CategoricalAiLeaf>>> = {}
+  for (const mode of modes) {
+    const modeOut: Record<string, Record<string, CategoricalAiLeaf>> = {}
+    for (const [group, keys] of Object.entries(tokens)) {
+      for (const [key, byTheme] of Object.entries(keys)) {
+        const ref = byTheme[mode]
+        if (!ref) continue
+        const id = `${group}.${key}`
+        const [outGroup, outKey] = (CATEGORICAL_AI_RENAME[id] ?? id).split('.')
+        modeOut[outGroup] ??= {}
+        const leaf: CategoricalAiLeaf = { $value: ref, comment: CATEGORICAL_ROLE_COMMENTS[id] ?? '' }
+        // The one leaf whose guidance needs a real numeric field alongside the
+        // ref, not just prose — everything else stays a plain {$value, comment}.
+        if (id === 'surface.overlay') leaf.alpha = 0.5
+        modeOut[outGroup][outKey] = leaf
+      }
+    }
+    out[mode] = modeOut
+  }
+  return out
+}
+
 // Root keys per collection in the W3C tree (also the per-collection filenames).
 const W3C_ROOT: Record<WizardCollection, string> = {
   primitives: 'color', semantics: 'semantic', typography: 'typography',
@@ -450,6 +503,14 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // no-ops, same as unchecking every component individually.
     const payload = sel.includeComponents ? full : { ...full, atoms: [] }
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
+  }
+
+  if (sel.format === 'categorical-ai') {
+    // NOT sliced by `collections`, same reasoning as 'escala' above: this is a
+    // whole-document contract (the semantic role tree + its guidance
+    // comments), not something a partial collection pick makes sense against.
+    const tree = categoricalAiTree(sel.modes.length ? sel.modes : ['light', 'dark'])
+    return [{ name: `${slug}.categorical.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
   }
 
   if (sel.format === 'w3c') {

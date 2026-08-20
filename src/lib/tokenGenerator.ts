@@ -3,7 +3,7 @@ import { getIconLibrary } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
-import { projectArchitecture } from './semanticArchitectures'
+import { projectArchitecture, projectCategorical } from './semanticArchitectures'
 import { gradientToCss, gradientSlug } from './gradients'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
@@ -35,29 +35,15 @@ export function flattenScale(
   return result
 }
 
-export function generateTokenJSON() {
-  const store = useDesignStore.getState()
-  const { typography, colorNaming } = store
-
-  // Merge all color scales into a single primitive map with prefixed keys.
-  // Only include secondary scales if they've been populated (non-empty objects).
-  const primitive: Record<string, string> = {
-    ...flattenScale('accent', store.primaryScale, colorNaming),
-    ...flattenScale('neutral', store.grayLightScale, colorNaming),
-    ...(Object.keys(store.errorScale).length
-      ? flattenScale('error', store.errorScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.warningScale).length
-      ? flattenScale('warning', store.warningScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.successScale).length
-      ? flattenScale('success', store.successScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.infoScale).length
-      ? flattenScale('info', store.infoScale, colorNaming)
-      : {}),
-  }
-
+/**
+ * Everything `projectArchitecture()` (and the "Categorical Semantic
+ * (AI-Guided)" export builder, `buildCategoricalSymbolicTokens` below) needs
+ * to resolve semantic values against the current primitives. Shared so
+ * `generateTokenJSON()` and that export builder can never compute two
+ * different answers for the same theme/scale — "everything derives from one
+ * source" applies to this resolution step too, not just the final JSON call.
+ */
+function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   // Dark-appearance ramps — EVERY family ships both scales (the Radix model),
   // because dark-theme semantics resolve from the dark twin (see
   // sourceScaleFor). Without them the plugin has nothing to alias a dark brand
@@ -66,55 +52,6 @@ export function generateTokenJSON() {
   const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
     ([t, kind]) => kind === 'dark' && store.themes[t],
   ) || Boolean(store.themes.dark)
-  if (hasDarkTheme) {
-    const dark: [string, Record<number, string> | undefined][] = [
-      ['neutral-dark', grayDarkScale],
-      ['accent-dark', store.primaryDarkScale],
-      ['error-dark', store.errorDarkScale],
-      ['warning-dark', store.warningDarkScale],
-      ['success-dark', store.successDarkScale],
-      ['info-dark', store.infoDarkScale],
-    ]
-    for (const [name, scale] of dark) {
-      if (scale && Object.keys(scale).length) Object.assign(primitive, flattenScale(name, scale, colorNaming))
-    }
-  }
-
-  // Custom color families adopt the same prefixed structure (teal-1 … teal-12),
-  // dark twin included.
-  store.customColors.forEach((c) => {
-    Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
-    if (hasDarkTheme && c.darkScale && Object.keys(c.darkScale).length) {
-      Object.assign(primitive, flattenScale(`${c.key}-dark`, c.darkScale, colorNaming))
-    }
-  })
-
-  // Alpha twins (Radix custom-palette architecture): the overlay colour that
-  // reproduces each solid step when composited over its page — solved from
-  // `solid = α·overlay + (1−α)·page` and verified to rebuild the solid exactly.
-  // Background-dependent by construction, and therefore per appearance: a light
-  // ramp layers black over the light page, a dark ramp layers white over the
-  // dark one. Hence both `*-a*` and `*-dark-a*`.
-  const primitiveAlpha: Record<string, string> = {}
-  const alphaOf = (name: string, scale: Record<number, string>) => {
-    if (!Object.keys(scale).length) return
-    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground, 'light'), colorNaming))
-  }
-  const alphaDarkOf = (name: string, scale?: Record<number, string>) => {
-    if (!hasDarkTheme || !scale || !Object.keys(scale).length) return
-    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, store.darkBackground, 'dark'), colorNaming))
-  }
-  alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
-  alphaOf('neutral', store.grayLightScale); alphaDarkOf('neutral', grayDarkScale)
-  alphaOf('error', store.errorScale);      alphaDarkOf('error', store.errorDarkScale)
-  alphaOf('warning', store.warningScale);  alphaDarkOf('warning', store.warningDarkScale)
-  alphaOf('success', store.successScale);  alphaDarkOf('success', store.successDarkScale)
-  alphaOf('info', store.infoScale);        alphaDarkOf('info', store.infoDarkScale)
-  store.customColors.forEach((c) => { alphaOf(c.key, c.scale); alphaDarkOf(c.key, c.darkScale) })
-
-  // No per-theme namespaced ramps any more: a theme REFERENCES a family, and
-  // every family already shipped above under its own key. The theme's semantics
-  // therefore alias the same primitive variables the families export.
 
   // Themes in the user's column order (themeOrder), with any stragglers appended.
   // The plugin maps each theme to one variable-collection mode (column), so this
@@ -184,6 +121,108 @@ export function generateTokenJSON() {
     }
     orderedThemes[name] = normalized
   }
+
+  return { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes }
+}
+
+/**
+ * The Categorical architecture's SYMBOLIC ref tree — group → key → theme →
+ * `"{family.tone}"` — i.e. `projectCategorical()`'s raw output, before
+ * `resolveCuratedForExport` turns it into hex. Powers the "Categorical
+ * Semantic (AI-Guided)" export format (see `exportWizard.ts`), which needs
+ * real aliases (`"$value": "{neutral.12}"`), not resolved colour. Shares
+ * `buildThemeContext` with `generateTokenJSON()`, so this can never disagree
+ * with the hex `colors.architecture` ships when Categorical is the active
+ * architecture.
+ */
+export function buildCategoricalSymbolicTokens(): {
+  themeOrder: string[]
+  tokens: Record<string, Record<string, Record<string, string>>>
+} {
+  const store = useDesignStore.getState()
+  const { themeNames, globalScales, resolvedPalettes } = buildThemeContext(store)
+  const tokens = projectCategorical(
+    { themes: {}, themeKinds: store.themeKinds, themePalettes: resolvedPalettes, scales: globalScales, accent: store.primaryColor },
+    themeNames,
+  )
+  return { themeOrder: themeNames, tokens }
+}
+
+export function generateTokenJSON() {
+  const store = useDesignStore.getState()
+  const { typography, colorNaming } = store
+  const { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes } = buildThemeContext(store)
+
+  // Merge all color scales into a single primitive map with prefixed keys.
+  // Only include secondary scales if they've been populated (non-empty objects).
+  const primitive: Record<string, string> = {
+    ...flattenScale('accent', store.primaryScale, colorNaming),
+    ...flattenScale('neutral', store.grayLightScale, colorNaming),
+    ...(Object.keys(store.errorScale).length
+      ? flattenScale('error', store.errorScale, colorNaming)
+      : {}),
+    ...(Object.keys(store.warningScale).length
+      ? flattenScale('warning', store.warningScale, colorNaming)
+      : {}),
+    ...(Object.keys(store.successScale).length
+      ? flattenScale('success', store.successScale, colorNaming)
+      : {}),
+    ...(Object.keys(store.infoScale).length
+      ? flattenScale('info', store.infoScale, colorNaming)
+      : {}),
+  }
+
+  if (hasDarkTheme) {
+    const dark: [string, Record<number, string> | undefined][] = [
+      ['neutral-dark', grayDarkScale],
+      ['accent-dark', store.primaryDarkScale],
+      ['error-dark', store.errorDarkScale],
+      ['warning-dark', store.warningDarkScale],
+      ['success-dark', store.successDarkScale],
+      ['info-dark', store.infoDarkScale],
+    ]
+    for (const [name, scale] of dark) {
+      if (scale && Object.keys(scale).length) Object.assign(primitive, flattenScale(name, scale, colorNaming))
+    }
+  }
+
+  // Custom color families adopt the same prefixed structure (teal-1 … teal-12),
+  // dark twin included.
+  store.customColors.forEach((c) => {
+    Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
+    if (hasDarkTheme && c.darkScale && Object.keys(c.darkScale).length) {
+      Object.assign(primitive, flattenScale(`${c.key}-dark`, c.darkScale, colorNaming))
+    }
+  })
+
+  // Alpha twins (Radix custom-palette architecture): the overlay colour that
+  // reproduces each solid step when composited over its page — solved from
+  // `solid = α·overlay + (1−α)·page` and verified to rebuild the solid exactly.
+  // Background-dependent by construction, and therefore per appearance: a light
+  // ramp layers black over the light page, a dark ramp layers white over the
+  // dark one. Hence both `*-a*` and `*-dark-a*`.
+  const primitiveAlpha: Record<string, string> = {}
+  const alphaOf = (name: string, scale: Record<number, string>) => {
+    if (!Object.keys(scale).length) return
+    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground, 'light'), colorNaming))
+  }
+  const alphaDarkOf = (name: string, scale?: Record<number, string>) => {
+    if (!hasDarkTheme || !scale || !Object.keys(scale).length) return
+    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, store.darkBackground, 'dark'), colorNaming))
+  }
+  alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
+  alphaOf('neutral', store.grayLightScale); alphaDarkOf('neutral', grayDarkScale)
+  alphaOf('error', store.errorScale);      alphaDarkOf('error', store.errorDarkScale)
+  alphaOf('warning', store.warningScale);  alphaDarkOf('warning', store.warningDarkScale)
+  alphaOf('success', store.successScale);  alphaDarkOf('success', store.successDarkScale)
+  alphaOf('info', store.infoScale);        alphaDarkOf('info', store.infoDarkScale)
+  store.customColors.forEach((c) => { alphaOf(c.key, c.scale); alphaDarkOf(c.key, c.darkScale) })
+
+  // No per-theme namespaced ramps any more: a theme REFERENCES a family, and
+  // every family already shipped above under its own key. The theme's semantics
+  // therefore alias the same primitive variables the families export.
+  // (themeNames/globalScales/resolvedPalettes/orderedThemes are all resolved
+  // above, by the shared `buildThemeContext` call.)
 
   // Semantic architecture projection (Alias/Semantics picker). Additive: the
   // flat shape above always ships (plugin contract, schemaVersion 3); a

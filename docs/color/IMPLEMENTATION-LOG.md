@@ -1403,3 +1403,36 @@ re-duplicate any of it.
 | **Vibrancy dark mode** | inverted. Pre-existing, documented, untouched. |
 
 Each is an `it.fails` in the suite, so none of them can be forgotten.
+
+# P8 — Categorical expanded + AI-Guided export
+
+**In progress → landed 2026-08-20 · Token output changed: yes** — 10 new
+Categorical roles and a new export format.
+
+## What landed
+
+| change | why |
+|---|---|
+| **29 → 39 roles** | `content.disabled`, links, action hover/pressed, `surface.input` / `surface.selected`, destructive solid pair, validation borders — gaps a consuming app would otherwise guess |
+| **`CATEGORICAL_ROLE_COMMENTS`** | One `[ROLE: …]` guidance string per token for AI assistants |
+| **`buildCategoricalSymbolicTokens()`** | Shares `buildThemeContext()` with `generateTokenJSON()` so symbolic refs cannot disagree with the hex export |
+| **Export format `categorical-ai`** | `{slug}.categorical.tokens.json` — mode-first tree, real `{family.tone}` aliases, `comment` on every leaf; `border.active` ships as `border.focus` |
+
+## Contrast fixes the audit caught while wiring
+
+| token | was | now |
+|---|---|---|
+| `status.critical-surface-solid` | `{error.9}` | `{error.solid}` |
+| `status.critical-on-solid` | `{ink:error.9}` | `{on:error.solid}` |
+| `border.critical` | `{error.8}` / `{error.7}` | `{error.9}` / `{error.11}` |
+| `border.warning` / `border.success` | tone 8–9 | **tone 11** — yellow/green ramps do not reach 3:1 at 9 on a white page |
+
+Curated audit pairings extended for the new roles. **3 560 → 3 760 pairs, still 0 WCAG / 0 APCA failures.**
+
+## Verification
+
+| | |
+|---|---|
+| suite | **281 passing**, 3 `it.fails` |
+| new tests | `categorical.test.ts` 6 |
+| build | `npm run build` green |

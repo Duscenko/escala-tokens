@@ -8,12 +8,12 @@
  * These values are HAND-TUNED by the Tailwind team. There is no algorithm to
  * port — see `tailwind.ts` for what that means for custom brand seeds.
  *
- * Source: tailwindcss@4.3.3
+ * Source: tailwindcss@4.3.0
  */
 
 import type { ReferenceScale } from './scaleMatch'
 
-export const TAILWIND_SOURCE_VERSION = '4.3.3'
+export const TAILWIND_SOURCE_VERSION = '4.3.0'
 
 /** The stop numbers every family carries, ascending. */
 export const TAILWIND_STOPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const
