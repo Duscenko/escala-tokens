@@ -16,11 +16,12 @@
 // opened the exact same ExportWizard as the Export pill, just pre-checked to
 // whole-system. Export's own Step 1 still selects every collection manually.
 
-import { useEffect, useRef, useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore, DEFAULT_ACCENT } from '../../store/useDesignStore'
+import { useDesignStore, DEFAULT_ACCENT, type DesignSnapshot } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
 import { useApplyAccentColor } from '../../lib/colorActions'
+import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import HeaderPill from '../ui/HeaderPill'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
@@ -59,11 +60,77 @@ function themeLabel(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1)
 }
 
+/** Every foundation a kit carries, named by the SAME list the Docs destination
+ *  documents (`FOUNDATION_DOCS`) rather than a hand-typed copy — so adding a
+ *  foundation stays the one-entry change CLAUDE.md promises, and this popover
+ *  can't claim a scope the docs would contradict. */
+const FOUNDATION_LABELS = FOUNDATION_DOCS.map((f) => f.label)
+
+/**
+ * What a saved kit actually CONTAINS, read straight off its own snapshot.
+ *
+ * This exists because a kit has always saved the WHOLE system — `captureSnapshot`
+ * copies every key of `makeDesignDefaults()`, so typography, radius, spacing,
+ * shadows, grid, sizes, gradients and icons were all in there — and the popover
+ * said none of it. The only per-kit signal on screen was a colour dot pulled
+ * from `primaryColor`, and the footer read `Active: #9522e9`. Both point at
+ * colour, so the popover *looked* like a palette manager; reported as "Save is
+ * only saving the color part", which was never true of the data.
+ *
+ * The fix is EVIDENCE, not a reassuring sentence: these are real values off the
+ * snapshot, so they differ per kit and a kit named after a font can be seen to
+ * actually carry it. A claim that a kit "includes typography" would be one more
+ * thing to take on faith; `Roboto` sitting on the row is not.
+ */
+function kitFacts(snapshot: DesignSnapshot | undefined) {
+  if (!snapshot) return null
+  const t = snapshot.typography
+  const heading = t?.headingFontFamily
+  const body = t?.fontFamily
+  return {
+    accent: snapshot.primaryColor ?? '',
+    themes: snapshot.themeOrder ?? [],
+    // One family when they match, "Heading / Body" when they don't — the
+    // distinction is a real typography decision, and collapsing it would hide
+    // exactly the kind of thing someone opens a kit to check.
+    fonts: !body ? null : heading && heading !== body ? `${heading} / ${body}` : body,
+    radius: snapshot.radius?.md ?? null,
+    spacing: snapshot.spacing?.['2'] ?? null,
+    icons: snapshot.iconLibrary ?? null,
+    // 6 globals (accent · neutral · the four states) plus whatever the user
+    // minted — the same arithmetic ColorPrimitives' own family nav does.
+    families: 6 + (snapshot.customColors?.length ?? 0),
+  }
+}
+
+/** One `label: value` line of a kit's contents. A `<dl>` row, not a two-column
+ *  grid: the labels are four short words and a fixed track would either clip
+ *  "Themes" or waste the width the values need in a 360px popover. */
+function KitFact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-2 text-[11px] leading-relaxed">
+      <dt className="w-[46px] flex-shrink-0 text-fg-faint">{label}</dt>
+      <dd className="flex-1 min-w-0 text-fg-muted truncate">{children}</dd>
+    </div>
+  )
+}
+
 // ── Save popover — name & save the current system, reopen a previous kit ─────
 // Named "Save" in the UI; the saved entries are still "kits" (the store's
 // `savedSystems` registry) and the internal flow is unchanged — the rename is
 // about the ACTION the button performs, which is what a header pill labels.
-function KitsPopover({ onClose, previewTheme }: { onClose: () => void; previewTheme: string }) {
+function KitsPopover({
+  onClose, previewTheme, onOpenEditor, onReviewInDocs,
+}: {
+  onClose: () => void
+  previewTheme: string
+  /** Where "Load & edit" lands — the Variables Generator. */
+  onOpenEditor?: () => void
+  /** Where "Load & review" lands — Docs' whole-system Overview sheet, which is
+   *  every foundation's sections in one column. That's the page that answers
+   *  "what is in this system", which is the question a saved kit raises. */
+  onReviewInDocs?: () => void
+}) {
   const {
     setProjectName, primaryColor, projectName,
     savedSystems, saveCurrentSystem, saveCurrentSystemAsTheme, loadSystem, removeSavedSystem,
@@ -90,6 +157,10 @@ function KitsPopover({ onClose, previewTheme }: { onClose: () => void; previewTh
   // pre-answered.
   const [name, setName] = useState('')
   const [justSaved, setJustSaved] = useState(false)
+  // Which kit's contents are expanded. One at a time — the list scrolls inside
+  // a 256px box, and two open kits would push the second one's actions out of
+  // view exactly when they're the reason it was opened.
+  const [openKit, setOpenKit] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   // Local kits only (GitHub-backed systems have their own push flow).
@@ -233,9 +304,19 @@ function KitsPopover({ onClose, previewTheme }: { onClose: () => void; previewTh
             )}
           </div>
         )}
+        {/* Names the SCOPE before the storage detail. A kit has always been the
+            whole system, but the only thing this popover showed was a colour
+            dot and a hex, so it read as a palette manager — spelling the
+            foundations out here is the one place the misconception starts.
+            The list is derived (`FOUNDATION_LABELS`), never typed, so it can't
+            promise a foundation the app no longer has. */}
+        <p className="text-xs text-fg-faint leading-relaxed">
+          Saves the whole system — all {FOUNDATION_LABELS.length} foundations:{' '}
+          <span className="text-fg-muted">{FOUNDATION_LABELS.join(' · ')}</span>.
+        </p>
         <p className="text-xs text-fg-faint leading-relaxed">
           {hasMultipleThemes && scope === 'one'
-            ? `Saves every primitive plus just the ${themeLabel(chosenTheme)} theme — the others stay out of this kit. Locally in your browser; reusing a name updates that kit.`
+            ? `Every primitive is kept; only the ${themeLabel(chosenTheme)} theme ships — the other themes stay out of this kit. Locally in your browser; reusing a name updates that kit.`
             : 'Saved locally in your browser. Reusing a name updates that kit.'}
         </p>
       </div>
@@ -247,15 +328,27 @@ function KitsPopover({ onClose, previewTheme }: { onClose: () => void; previewTh
           <ul className="p-2 flex flex-col gap-0.5">
             {kits.map((kit) => {
               const isActive = kit.name.trim().toLowerCase() === activeKitName
+              const facts = openKit === kit.id ? kitFacts(kit.snapshot) : null
               return (
-              <li key={kit.id} className="group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-elevated/60 transition-colors">
+              <li key={kit.id} className="flex flex-col rounded-lg">
+              <div className="group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-elevated/60 transition-colors">
                 <span
                   className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0"
                   style={{ backgroundColor: kit.snapshot?.primaryColor ?? '#888' }}
                   aria-hidden
                 />
+                {/* Click EXPANDS, it no longer loads.
+                    Two reasons, and the second is the load-bearing one:
+                    · This row now owns three destinations (edit · review ·
+                      sync), so "the row" can't mean one of them any more.
+                    · Loading replaces the system currently on screen, unsaved
+                      edits and all, and it used to happen on a single
+                      unlabelled click on the row you were only trying to read.
+                      Making that an explicit "Edit" button is the safer half
+                      of the same change, not a cost of it. */}
                 <button
-                  onClick={() => { loadSystem(kit.id); onClose() }}
+                  onClick={() => setOpenKit((cur) => (cur === kit.id ? null : kit.id))}
+                  aria-expanded={openKit === kit.id}
                   className="flex-1 min-w-0 text-left"
                 >
                   <span className="block text-sm font-medium text-fg truncate">{kit.name}</span>
@@ -298,6 +391,78 @@ function KitsPopover({ onClose, previewTheme }: { onClose: () => void; previewTh
                     <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
                   </svg>
                 </button>
+              </div>
+
+              {/* Expanded — what this kit HOLDS, then where to take it.
+                  Mounted only while open (not animated to `height: 0` with the
+                  body live) for the same reason the preview aside's docs
+                  accordion is: there's no reason to build every kit's summary
+                  to show one. */}
+              <AnimatePresence initial={false}>
+                {openKit === kit.id && facts && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mx-2 mb-1.5 mt-0.5 rounded-lg border border-line bg-app/70 px-2.5 py-2 flex flex-col gap-2">
+                      <dl className="flex flex-col gap-1">
+                        <KitFact label="Color">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span
+                              className="w-2.5 h-2.5 rounded-[3px] ring-1 ring-black/10 flex-shrink-0"
+                              style={{ backgroundColor: facts.accent }}
+                              aria-hidden
+                            />
+                            <code className="font-mono">{facts.accent.toUpperCase()}</code>
+                            <span className="text-fg-faint">· {facts.families} families</span>
+                          </span>
+                        </KitFact>
+                        {facts.fonts && <KitFact label="Type">{facts.fonts}</KitFact>}
+                        {(facts.radius || facts.spacing) && (
+                          <KitFact label="Scale">
+                            {[facts.radius && `radius ${facts.radius}`, facts.spacing && `spacing ${facts.spacing}`]
+                              .filter(Boolean).join(' · ')}
+                          </KitFact>
+                        )}
+                        <KitFact label="Themes">
+                          {facts.themes.length
+                            ? `${facts.themes.length} — ${facts.themes.map(themeLabel).join(', ')}`
+                            : '—'}
+                        </KitFact>
+                        {facts.icons && <KitFact label="Icons">{facts.icons}</KitFact>}
+                      </dl>
+
+                      {/* Two destinations, spelled out, because they're the two
+                          things you do with a saved system and they land in
+                          different places. Both LOAD first — the editor and the
+                          docs both render the live store, so there is no way to
+                          show a kit without making it the current one. The
+                          buttons say "Load and …" for exactly that reason:
+                          this is the moment the system on screen is replaced,
+                          and it should not be a surprise. */}
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        <button
+                          onClick={() => { loadSystem(kit.id); onOpenEditor?.(); onClose() }}
+                          title={`Load ${kit.name} and open it in the Variables Generator`}
+                          className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
+                        >
+                          Load & edit
+                        </button>
+                        <button
+                          onClick={() => { loadSystem(kit.id); onReviewInDocs?.(); onClose() }}
+                          title={`Load ${kit.name} and read its foundations in Docs`}
+                          className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
+                        >
+                          Load & review
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               </li>
               )
             })}
@@ -378,7 +543,14 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
 }
 
 // ── The pill row itself (header rightSlot on Home) — Reset · Save ───────────
-export default function HomeActions({ previewTheme = 'light' }: { previewTheme?: string }) {
+export default function HomeActions({
+  previewTheme = 'light', onOpenEditor, onReviewInDocs,
+}: {
+  previewTheme?: string
+  /** Forwarded to the Save popover's per-kit actions — see `KitsPopover`. */
+  onOpenEditor?: () => void
+  onReviewInDocs?: () => void
+}) {
   const [kitsOpen, setKitsOpen] = useState(false)
   const kitsBtn = useRef<HTMLButtonElement>(null)
   const resetToDefaults = useDesignStore((s) => s.resetToDefaults)
@@ -461,7 +633,14 @@ export default function HomeActions({ previewTheme = 'light' }: { previewTheme?:
           aria-expanded={kitsOpen}
         />
         <AnimatePresence>
-          {kitsOpen && <KitsPopover onClose={() => setKitsOpen(false)} previewTheme={previewTheme} />}
+          {kitsOpen && (
+            <KitsPopover
+              onClose={() => setKitsOpen(false)}
+              previewTheme={previewTheme}
+              onOpenEditor={onOpenEditor}
+              onReviewInDocs={onReviewInDocs}
+            />
+          )}
         </AnimatePresence>
       </div>
     </div>

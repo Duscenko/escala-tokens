@@ -679,6 +679,36 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       precedent) — don't change `Role.tone` without one. ·
   **Gradients** (`StepGradients`). `colorTab` is local `useState` in `Configurator`.
 
+> **A Kit has ALWAYS been the whole system — the popover just never said so, and
+> that read as a bug.** `captureSnapshot` copies every key of `makeDesignDefaults()`
+> (`SNAPSHOT_KEYS` is derived from it), so typography, radius, spacing, shadows, grid,
+> sizes, gradients and icons were in every saved kit from the start. But the only per-kit
+> signal on screen was a colour dot pulled from `primaryColor`, and the footer read
+> `Active: #9522e9` — both point at colour, so `KitsPopover` *looked* like a palette
+> manager. Reported as "Save is only saving the color part", which was never true of the
+> data. **Verify before you 'fix' this class of report**: a fresh save measured 54 snapshot
+> keys with `typography.fontFamily: Roboto`, all 5 radius steps, 6 spacing, 6 shadow, 9
+> grid, 6 sizes, 3 gradients. The bug was the UI's silence, not the store.
+> - **The save moment names the SCOPE, from a derived list.** The helper text spells out
+>   "all 8 foundations: Color · Typography · Border Radius · …" from `FOUNDATION_LABELS`
+>   (= `FOUNDATION_DOCS.map(f => f.label)`), never a typed copy — so adding a foundation
+>   stays the one-entry change that file promises, and the popover can't claim a scope the
+>   Docs destination would contradict.
+> - **A kit row EXPANDS to real values, not a reassuring sentence.** `kitFacts(snapshot)`
+>   reads the accent + family count, the font families, radius/spacing steps, the theme
+>   list and the icon library straight off that kit's own snapshot, so the facts differ per
+>   kit and a kit named after a font can be SEEN to carry it. "Includes typography" would
+>   be one more thing to take on faith; `Roboto` sitting on the row is not. Only the open
+>   kit's facts are built (`openKit === kit.id ? kitFacts(...) : null`).
+> - **Clicking a row expands; it no longer loads.** Two reasons, and the second is the
+>   load-bearing one: the row now owns three destinations (edit · review · sync), so "the
+>   row" can't mean one of them — and loading REPLACES the system on screen, unsaved edits
+>   and all, which used to happen on a single unlabelled click on a row you were only
+>   trying to read. `Load & edit` (→ Variables · Color) and `Load & review` (→ Docs'
+>   whole-system Overview) say the word "Load" for exactly that reason. Both must load:
+>   the editor and the docs both render the LIVE store, so there is no way to show a kit
+>   without making it current.
+>
 > **Saving a Kit asks "all themes or just one" — but only when that's a real
 > question.** `KitsPopover` (`HomeActions.tsx`) used to always save the FULL
 > current snapshot via `saveCurrentSystem()`, silently carrying every theme

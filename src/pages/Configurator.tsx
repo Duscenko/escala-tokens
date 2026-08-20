@@ -768,7 +768,14 @@ export default function Configurator() {
                   ]}
                 />
                 <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-                  <HomeActions previewTheme={previewTheme} />
+                  <HomeActions
+                    previewTheme={previewTheme}
+                    onOpenEditor={() => selectFoundation('color')}
+                    // Docs' whole-system Overview — every foundation's sections
+                    // in one column, i.e. the page that answers "what is in
+                    // this system" for a kit you just loaded.
+                    onReviewInDocs={() => openDocs(OVERVIEW_KEY)}
+                  />
                 </div>
               </div>
             )}
