@@ -87,6 +87,54 @@ export function curatedPaletteFor(familyKey: string) {
 // so the shape can't drift apart again.
 export const SWATCH = 'w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring-black/10'
 
+// ── The Color hub's left column, in its two states ──────────────────────────
+// Lives HERE, not in one tab, because the column is shared: Primitives lists
+// families, Semantics lists token categories, and both collapse the same rail
+// to the same widths. It's also what `Configurator` sizes TopNav's brand block
+// from — the brand block's right border IS this column's divider continued up
+// through the header, so a magic number in two files is a broken line waiting
+// to happen.
+export const COLOR_RAIL_WIDTH = 198
+// 56px = the nav's own `px-2` (16) + a 40px row that centres an 18px swatch or
+// a 15px glyph. Deliberately NOT the 32px dead strip `PreviewPanel` collapses
+// to: that panel is a read-only specimen, so collapsing it costs nothing but
+// sight, whereas this column is NAVIGATION — at 32px there's no room for the
+// swatches/icons and switching would mean expanding first, every time. Keeping
+// them is what makes this a collapse rather than a hide (the same call
+// `FoundationIconRail` already makes: drop the labels, keep the glyphs).
+export const COLOR_RAIL_COLLAPSED_WIDTH = 56
+
+/** The collapse/expand control. Lives in the "Groups" header's trailing slot —
+ *  that row was already `justify-between` around a lone label, i.e. the slot
+ *  was reserved and empty.
+ *  Same glyph as `PreviewPanel`'s own collapse button (a panel split by a
+ *  divider), not a directional chevron — a chevron reads as "step in this
+ *  direction," but this and `PreviewPanel`'s control do the identical job
+ *  (toggle a side column's width), so they need the identical icon, not two
+ *  icons for one action. `PreviewPanel` never flips its glyph either: it only
+ *  renders this button in the expanded state (the collapsed state is a
+ *  separate outer strip with its own chevron, a different affordance one
+ *  level up) — this one stays inline in both states, so the icon stays fixed
+ *  and only `aria-label`/`title` carry which way a click will go. */
+export function RailToggle({ collapsed, onClick }: { collapsed: boolean; onClick?: () => void }) {
+  if (!onClick) return null
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? 'Expand the groups column' : 'Collapse the groups column'}
+      title={collapsed ? 'Expand groups' : 'Collapse groups — give the table more width'}
+      className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M9 4v16" />
+      </svg>
+    </button>
+  )
+}
+
 export type Option = { label: string; hex: string }
 // `badge` marks a group's provenance in the dropdown — 'Tested' for the
 // curated presets vs the user's own 'Saved' customs.

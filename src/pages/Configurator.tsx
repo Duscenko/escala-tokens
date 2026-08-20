@@ -29,7 +29,7 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
-import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/ColorPrimitives'
+import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/colorControls'
 import AddThemePanel from '../components/configurator/AddThemePanel'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import ExportWizard from '../components/configurator/ExportWizard'
@@ -651,12 +651,14 @@ export default function Configurator() {
   // unbroken into that column, or the vertical line just stops at the header
   // and restarts one row down, reading as two unrelated rules instead of one.
   const colorColumnVisible = tab === 'foundations' && !exportMode && activeFoundation === 'color'
-  // …and that column can now COLLAPSE (Primitives only — Semantics and
-  // Gradients keep their own full-width 198px column), so the brand block has
+  // …and that column can COLLAPSE on Primitives AND Semantics (Gradients keeps
+  // its full width — its rail is the gradient list, whose rows are named
+  // swatches with nothing glyph-sized to collapse to), so the brand block has
   // to track it or the divider stops at the header and restarts one row down.
-  // Read from ColorPrimitives' own exported constants rather than repeating
-  // the numbers, since a mismatch here is exactly a broken line.
-  const colorColumnCollapsed = colorColumnVisible && colorTab === 'primary' && colorRailCollapsed
+  // Read from `colorControls`' own exported constants rather than repeating the
+  // numbers, since a mismatch here is exactly a broken line.
+  const colorColumnCollapsed =
+    colorColumnVisible && colorTab !== 'gradients' && colorRailCollapsed
   const colorColumnWidth = colorColumnCollapsed
     ? COLOR_RAIL_COLLAPSED_WIDTH
     : COLOR_RAIL_WIDTH

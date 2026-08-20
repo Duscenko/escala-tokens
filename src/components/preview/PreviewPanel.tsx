@@ -189,10 +189,24 @@ const PANEL_TABS: { key: PanelTab; label: string }[] = [
  *  segmented pill: this column is 400px of reading surface and a pill reads as
  *  a heavier "controls panel" chrome (the same call `ColorHub`'s own note
  *  documents). The invisible semibold copy under each label reserves the
- *  widest state's width, so activating a tab doesn't nudge its neighbours. */
+ *  widest state's width, so activating a tab doesn't nudge its neighbours.
+ *
+ *  **`h-[52px]`, the app's one row-2 height** — the same rule `CenterHeader`,
+ *  `SaveSidePanel` and this panel's own header already follow, and the same
+ *  height `ColorHub`'s Primitives/Semantics/Gradients tabs occupy. At the `h-9`
+ *  this started as, two tab bars sitting one column apart rendered at visibly
+ *  different heights, which made this one read as a lesser, secondary strip
+ *  rather than the same control.
+ *
+ *  The LABEL, though, stays at `text-[12px]` while ColorHub's runs `text-[15px]`
+ *  — matched height, not matched type. That column is ~800px wide for three
+ *  short words; this one is 400px for three cells of 133px, and "Documentation"
+ *  at 15px measures ~118px before padding, so matching the type size would
+ *  truncate the very label that needs the room. Height is what makes the rows
+ *  line up; type size is what makes them fit. */
 function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab) => void }) {
   return (
-    <div role="tablist" aria-label="Panel view" className="flex items-stretch h-9 border-b border-line flex-shrink-0">
+    <div role="tablist" aria-label="Panel view" className="flex items-stretch h-[52px] border-b border-line flex-shrink-0">
       {PANEL_TABS.map((t) => {
         const active = tab === t.key
         return (

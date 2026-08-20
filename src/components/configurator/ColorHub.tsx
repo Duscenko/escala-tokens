@@ -49,9 +49,13 @@ export default function ColorHub({
    *  An `editKey` opens the panel already pointed at that existing theme
    *  (rename it, re-point one of its slots) instead of a blank "create". */
   onOpenAddTheme: (editKey?: string) => void
-  /** Forwarded to ColorPrimitives — collapses its 198px left column. Owned by
-   *  `Configurator` because TopNav's brand block sizes its divider from the
-   *  same value; see ColorPrimitives' own note. */
+  /** Collapses the hub's 198px left column to 56px. Forwarded to BOTH
+   *  Primitives and Semantics — it's one column that changes what it LISTS per
+   *  tab (families / token categories), so a collapse that only held on one of
+   *  them read as two different columns. Gradients still keeps its full width:
+   *  its rail is the gradient list, whose rows are named swatches with nothing
+   *  glyph-sized to collapse to. Owned by `Configurator` because TopNav's brand
+   *  block sizes its divider from the same value; see `colorControls`' note. */
   railCollapsed?: boolean
   onToggleRail?: () => void
 }) {
@@ -135,6 +139,8 @@ export default function ColorHub({
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             onOpenAddTheme={onOpenAddTheme}
+            railCollapsed={railCollapsed}
+            onToggleRail={onToggleRail}
           />
         </div>
       ) : (

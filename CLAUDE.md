@@ -412,7 +412,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       - **The state is LIFTED to `Configurator` (`colorRailCollapsed`), never local.**
         TopNav's brand block continues this column's divider up through the header via
         `brandWidth`, so a column that could shrink without the shell knowing would leave
-        that rule stopping at the header and restarting one row down. `ColorPrimitives`
+        that rule stopping at the header and restarting one row down. `colorControls`
         exports `COLOR_RAIL_WIDTH`/`COLOR_RAIL_COLLAPSED_WIDTH` and `Configurator` sizes
         `brandWidth` from those constants — a magic 198 in two files is a broken line
         waiting to happen.
@@ -420,9 +420,27 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
         the Components rail: at 56px the wordmark overflows its own block by ~67px
         (measured) and spills past the divider. Hence
         `(outerRailVisible && railCollapsed) || colorColumnCollapsed`.
-      - **Scoped to Primitives.** Semantics and Gradients keep their own full-width 198px
-        column, so `colorColumnWidth` re-widens on those tabs while the collapsed
-        preference is remembered for when you come back (verified: 56 → 198 → 56).
+      - **Primitives AND Semantics collapse; Gradients does not.** This SUPERSEDES an
+        earlier "scoped to Primitives" decision — there is ONE column here that changes
+        what it LISTS per tab (families / token categories), so a collapse that held on
+        one tab and silently reverted on the next read as two different columns. Semantics
+        collapses all three of its 198px cells the same way Primitives does: the `Groups`
+        header keeps only the toggle, the `Token architecture` strip keeps only
+        `ArchitectureSelect`'s glyph (`compact` prop — same "drop the label, keep the
+        glyph" shed, and the popover it opens is untouched, so the architecture is still
+        fully selectable while collapsed), and the category nav becomes a strip of `w-10
+        h-8` glyph buttons whose tooltip now LEADS with the category name, since the label
+        it used to sit beside is gone. Gradients stays wide on purpose: its rail is the
+        gradient list, whose rows are named swatches with nothing glyph-sized to collapse
+        to — so `colorColumnWidth` re-widens there while the preference is remembered for
+        when you come back. Verified end to end: 56 → 198 → 56 on Semantics, brand block
+        56px → 198px on Gradients → 56px back on Semantics, and Primitives still 56 after
+        the round trip.
+      - **`RailToggle` and the two width constants live in `colorControls`**, not in
+        either tab. They were `ColorPrimitives`-local while only Primitives collapsed; the
+        moment a second tab needed them, the choice was a sibling import (Step3 →
+        ColorPrimitives) or a forked copy. Same reason `TokenDetailsModal`/
+        `DeleteThemeModal` already live there.
     - **The promoted quick-edit strip** sits above the table, contextual to the active
       family: a `<Family> color` label + hex field in a bordered pill (`HexCell` wrapped in
       a `rounded-[13px] border-line-strong` container — matches the weight of a `ColorSelect`
@@ -948,6 +966,16 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   `AnimatePresence` — and resets to `Preview` when the aside is handed to another panel
 >   (`SaveSidePanel`, `AddThemePanel`), which is the right moment to land back on the
 >   specimen.
+> - **The tab row is `h-[52px]`, the app's one row-2 height** — the same rule
+>   `CenterHeader`, `SaveSidePanel` and this panel's own header follow, and the height
+>   `ColorHub`'s Primitives/Semantics/Gradients tabs occupy, so the two tab bars land on
+>   one line across the shell. It shipped at `h-9` first and read as a lesser, secondary
+>   strip beside the centre column's taller one. **The LABEL still runs `text-[12px]`
+>   against ColorHub's `text-[15px]` — matched height, not matched type**: that column is
+>   ~800px for three short words, this one is 400px split into 133px cells, and
+>   "Documentation" at 15px measures ~118px before padding. Height is what lines the rows
+>   up; type size is what keeps the longest label from truncating (measured: 91px in a
+>   133px cell at 12px).
 > - **The theme badge shows only on `Preview`.** The markdown ships every theme's values and
 >   the docs pages print light and dark side by side, so the badge would be claiming a scope
 >   those two tabs don't have.

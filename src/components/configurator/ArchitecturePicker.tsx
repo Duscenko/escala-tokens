@@ -217,7 +217,14 @@ export function ArchContrastStrip({ kind }: { kind: SemanticArchitecture }) {
  * so switching tabs doesn't move the control. The radio cards that used to be
  * an always-expandable accordion row now live inside its popover.
  */
-export function ArchitectureSelect() {
+/** @param compact Renders glyph-only, for the Color hub's COLLAPSED left rail
+ *  (56px). Same shed every other control in that column makes — drop the
+ *  label, keep the glyph — rather than letting the trigger truncate its own
+ *  label to nothing and still spend width on a chevron. The popover it opens
+ *  is unchanged, so the architecture is still fully selectable while
+ *  collapsed; only the trigger's caption goes, and `title`/`aria-label`
+ *  already carry it. */
+export function ArchitectureSelect({ compact = false }: { compact?: boolean } = {}) {
   const { semanticArchitecture, setSemanticArchitecture } = useDesignStore()
   const [open, setOpen] = useState(false)
   const reduce = useReducedMotion() ?? false
@@ -262,21 +269,27 @@ export function ArchitectureSelect() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Change token architecture"
-        title="Change token architecture"
-        className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-1.5 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+        title={compact ? `Token architecture — ${architectureLabel(semanticArchitecture)}` : 'Change token architecture'}
+        className={`w-full h-9 rounded-[13px] border border-line-strong bg-surface flex items-center hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+          compact ? 'justify-center px-0' : 'pl-2.5 pr-1.5 gap-1.5 text-left'
+        }`}
       >
         <ArchGlyph kind={semanticArchitecture} />
-        <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-accent-ui">
-          {architectureLabel(semanticArchitecture)}
-        </span>
-        <svg
-          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-          strokeLinecap="round" strokeLinejoin="round"
-          className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}
-          aria-hidden
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        {!compact && (
+          <>
+            <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-accent-ui">
+              {architectureLabel(semanticArchitecture)}
+            </span>
+            <svg
+              width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+              strokeLinecap="round" strokeLinejoin="round"
+              className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`}
+              aria-hidden
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </>
+        )}
       </button>
 
       <AnimatePresence>
