@@ -610,10 +610,11 @@ export default function ExportWizard({
                         {isSkill && (
                           <div className="px-3 pb-3 pl-[42px]">
                             <p className="text-[11px] text-fg-faint leading-relaxed">
-                              A Figma MCP skill zip — <code className="font-mono">SKILL.md</code> plus{' '}
-                              <code className="font-mono">references/</code>. Drop the folder into{' '}
+                              A Figma MCP skill zip — <code className="font-mono">SKILL.md</code> at the zip root plus{' '}
+                              <code className="font-mono">references/</code> (color tokens, foundations, semantic contract).
+                              Unzip into a folder named after the skill inside{' '}
                               <code className="font-mono">.claude/skills/</code> or{' '}
-                              <code className="font-mono">.cursor/skills/</code>.
+                              <code className="font-mono">.cursor/skills/</code>. Figma Make: upload the zip as-is.
                             </p>
                           </div>
                         )}
@@ -736,10 +737,10 @@ export default function ExportWizard({
                 {format === 'skill' && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
                     Skill ships a Figma MCP / Agent Skills package: <code className="font-mono">SKILL.md</code>{' '}
-                    (When to use, Instructions, Examples, edge cases) plus{' '}
-                    <code className="font-mono">references/tokens.md</code> and the semantic contract.
-                    Unzip and drop the folder into <code className="font-mono">.claude/skills/</code> or{' '}
-                    <code className="font-mono">.cursor/skills/</code>. Collections picked above are ignored.
+                    at the zip root (token catalog for all five semantic groups plus foundations) and{' '}
+                    <code className="font-mono">references/tokens.md</code>,{' '}
+                    <code className="font-mono">foundations.md</code>, and the semantic contract.
+                    Unzip into a folder with that skill name, or upload the zip to Figma Make. Collections picked above are ignored.
                   </p>
                 )}
               </div>

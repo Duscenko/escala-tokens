@@ -80,7 +80,6 @@ export default function VariablesTable({
   searchLabel = 'Filter tokens',
   wideValues = false,
   railed = false,
-  railTop,
   railBody,
   footer,
 }: {
@@ -93,14 +92,12 @@ export default function VariablesTable({
   wideValues?: boolean
   /**
    * Renders the 198px left gutter the Color hub and Typography use, so this
-   * table's left edge lands on the SAME line as theirs. Opt-in per section:
-   * a section with no rail CONTENT (Radius · Sizes · Opacity · Shadow) still
-   * wants the gutter for alignment, while Spacing and Grid fill it with a real
-   * collections nav. Off only for a table rendered outside a foundation page.
+   * table's left edge lands on the SAME line as theirs. Opt-in per section.
+   * FoundationWorkbench already owns the Groups | icon-rail band above, so
+   * this gutter is only the nav column beside the table — no second "Collections"
+   * header row stacked under Groups.
    */
   railed?: boolean
-  /** Rail content beside the top bar — h-[52px] cell. */
-  railTop?: ReactNode
   /** Rail content beside the rows — fills the remaining height. */
   railBody?: ReactNode
   /**
@@ -130,14 +127,14 @@ export default function VariablesTable({
   const stacked = groups.length > 1
 
   const topBar = (
-    <div className={`flex items-center justify-between gap-3 h-[52px] ${railed ? 'pl-4 pr-3' : 'px-4 border-b border-line'} bg-app flex-shrink-0`}>
+    <div className="foundation-layer-bar flex items-center justify-between gap-3 h-[52px] pl-4 pr-3 flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className={railed ? 'text-[11px] font-semibold uppercase tracking-widest text-fg-muted truncate' : 'text-sm text-fg truncate'}>{title}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{total}</span>
         </div>
         <div className="flex items-center gap-3 min-w-0">
           {toolbar}
-          <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-44 focus-within:border-line-strong transition-colors">
+          <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-44 focus-within:border-fg transition-colors">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
               <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -211,20 +208,19 @@ export default function VariablesTable({
     )
   }
 
-  // Railed — a 198px gutter runs the full height beside BOTH the top bar and
-  // the rows, so the table's left edge lands on the same line as the Color
-  // hub's and Typography's navs.
+  // Railed — nav fills the 198px column under Groups (FoundationWorkbench
+  // already painted that header). Title + search sit on the table side only,
+  // matching Color's body (families | tabs+search, not a second header row).
   return (
-    <div className="flex flex-col bg-app flex-1 min-h-0">
-      <div className="flex items-stretch flex-shrink-0 border-b border-line">
-        <div className="w-[198px] flex-shrink-0 flex items-center px-4 h-[52px] border-r border-line">{railTop}</div>
-        <div className="flex-1 min-w-0">{topBar}</div>
-      </div>
+    <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
         <div className="w-[198px] flex-shrink-0 border-r border-line bg-app overflow-y-auto">{railBody}</div>
-        <div className="flex-1 min-w-0 overflow-auto">
-          {rows}
-          {footer && <div className="px-4 py-6">{footer}</div>}
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          {topBar}
+          <div className="flex-1 min-w-0 overflow-auto">
+            {rows}
+            {footer && <div className="px-4 py-6">{footer}</div>}
+          </div>
         </div>
       </div>
     </div>

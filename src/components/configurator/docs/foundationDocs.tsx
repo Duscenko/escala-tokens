@@ -35,7 +35,7 @@ import { RADIUS_STEPS } from '../StepRadius'
 import { SPACING_STEPS } from '../Step5_Spacing'
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { fontStack } from '../../../lib/fonts'
-import { getIconLibrary } from '../../../lib/iconLibraries'
+import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
 
 /** The Overview page — the whole-system reference sheet the old Design Rules
  *  view was. Not a foundation key, so it can never collide with one. */
@@ -944,9 +944,9 @@ gap: var(--grid-gutter);
     lead: 'The icon set this system standardizes on, plus any custom SVGs uploaded alongside it. One library, so stroke weight, corner treatment and optical size stay consistent across the product.',
     why: 'Mixed icon sets are visible from across the room even when nobody can say why: two libraries almost never share a stroke weight or a grid. Naming the library as a token means engineers install the same package the design references, and every preview in this app re-renders through it the moment it changes.',
     usage: 'Use the library\'s own glyph names. Upload a custom SVG only for marks the library genuinely lacks (a product logo, a domain-specific symbol) — every custom icon is one more thing that has to be redrawn if the library ever changes.',
-    usageCode: `import { Search } from "lucide-react"
+    usageCode: `import SearchLg from "@untitledui/icons/SearchLg"
 
-<Search size={16} strokeWidth={2} />`,
+<SearchLg size={16} />`,
     ships: {
       json: 'icons.library · icons.name · icons.package · icons.custom[]',
       css: '—  (icons ship as a package reference, not a variable)',
@@ -958,17 +958,14 @@ gap: var(--grid-gutter);
         id: 'library',
         title: 'Library',
         description: 'The set every preview, component doc and export references.',
-        render: (c) => {
-          const lib = getIconLibrary(c.iconLibrary)
-          return (
+        render: () => (
             <KeyValues entries={[
-              ['library', c.iconLibrary],
-              ['name', lib?.label ?? c.iconLibrary],
-              ['npm', lib?.npm ?? '—'],
-              ['iconify', lib?.iconifyPrefix ?? '—'],
+              ['library', UNTITLED_LIBRARY.key],
+              ['name', UNTITLED_LIBRARY.label],
+              ['npm', UNTITLED_LIBRARY.npm],
+              ['repo', UNTITLED_LIBRARY.repo],
             ]} />
-          )
-        },
+          ),
       },
       {
         id: 'custom',

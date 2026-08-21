@@ -15,15 +15,14 @@
 // is the snippet for the variant on screen — which neither half could claim.
 
 import { useState } from 'react'
-import { useDesignStore } from '../../../store/useDesignStore'
 import { COMPONENTS, type ComponentDef, type VariantAxis } from '../../../lib/componentCatalogue'
-import { getIconLibrary } from '../../../lib/iconLibraries'
+import { agentContextMarkdown } from '../../../lib/agentContext'
+import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
-import { mdCell } from '../../../lib/utils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues } from './specimens'
 import {
-  CopyButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
+  CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
   ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager,
   type TocEntry,
 } from './blocks'
@@ -53,42 +52,6 @@ function variantIndex(def: ComponentDef, values: AxisValues): number {
 
 function fileNameFor(def: ComponentDef): string {
   return `${def.key.toLowerCase().replace(/\s+/g, '-')}.tsx`
-}
-/** The whole page as portable markdown — the "Copy Page" affordance, which
- *  only Documentation used to offer. Now also carries the Figma sets, since
- *  this page documents them too. */
-function pageMarkdown(def: ComponentDef): string {
-  const lines = [
-    `# ${def.label}`,
-    '',
-    `> ${def.description}`,
-    '',
-    def.usage,
-    '',
-  ]
-  if (def.axes.length) {
-    lines.push('## Variants', '', '| Variant | Options | Default |', '|---|---|---|')
-    def.axes.forEach((a) => lines.push(`| ${mdCell(a.name)} | ${mdCell(a.values.join(' · '))} | ${mdCell(a.values[0])} |`))
-    lines.push('')
-  }
-  if (def.props.length) {
-    // `p.type` is a TypeScript union rendered verbatim (`"brand" | "danger" |
-    // "success"`) — its own `|`s are column boundaries to a markdown table,
-    // not punctuation, so without escaping every union-typed prop split its
-    // row into extra columns and misaligned the ones after it.
-    lines.push('## Props', '', '| Prop | Type | Description |', '|---|---|---|')
-    def.props.forEach((p) => lines.push(`| \`${mdCell(p.name)}\` | \`${mdCell(p.type)}\` | ${mdCell(p.description)} |`))
-    lines.push('')
-  }
-  lines.push('## Accessibility', '', def.accessibility, '')
-  lines.push(
-    '## Figma',
-    '',
-    def.figmaSets.length
-      ? def.figmaSets.map((s) => `- ${s}`).join('\n')
-      : 'Not in the Figma library yet — documented and exported, component set on the plugin roadmap.',
-  )
-  return lines.join('\n')
 }
 // ── Axis controls (the catalogue playground's rail) ──────────────────────────
 
@@ -160,11 +123,9 @@ function Hero({ def, tokens }: { def: ComponentDef; tokens: PreviewTokens }) {
   const [view, setView] = useState<'preview' | 'code'>('preview')
 
   // Icon slots (Button/Input) render live glyphs from the Foundations library.
-  const iconLibrary = useDesignStore((s) => s.iconLibrary)
   const slots = ICON_SLOTS[def.key]
-  const lib = getIconLibrary(iconLibrary)
   const icons = slots
-    ? { prefix: lib?.iconifyPrefix ?? iconLibrary, leading: leadingIcon, trailing: trailingIcon }
+    ? { prefix: UNTITLED_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
     : undefined
 
   const Specimen = SPECIMENS[def.key]
@@ -247,7 +208,7 @@ function Hero({ def, tokens }: { def: ComponentDef; tokens: PreviewTokens }) {
           </div>
           {slots ? (
             <p className="text-[10px] text-fg-faint leading-relaxed px-1 pt-2">
-              Icons come live from your Foundations set — <span className="font-medium text-fg-muted">{lib?.label ?? iconLibrary}</span>. Switch the library and these update.
+              Icons come from Untitled UI — <span className="font-medium text-fg-muted">{UNTITLED_LIBRARY.label}</span>.
             </p>
           ) : (
             <p className="text-[10px] text-fg-faint leading-relaxed px-1 pt-2">
@@ -453,10 +414,6 @@ export function componentToc(def: ComponentDef): TocEntry[] {
 export function ComponentArticle({
   def, tokens, onOpen,
 }: { def: ComponentDef; tokens: PreviewTokens; onOpen: (c: ComponentDef) => void }) {
-  const selectedComponents = useDesignStore((s) => s.selectedComponents)
-  const toggleComponent = useDesignStore((s) => s.toggleComponent)
-  const selected = selectedComponents.includes(def.key)
-
   const heroCode = snippetFor(def, axisDefaults(def))
   const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
   const idx = COMPONENTS.findIndex((c) => c.key === def.key)
@@ -465,27 +422,11 @@ export function ComponentArticle({
 
   return (
     <div className="flex flex-col gap-8">
-      {/* "Add to system" sits in the page header now, not only in the catalogue
-          list: reading the docs and deciding to ship the component is one
-          thought, and it used to need two separate sections of the app. */}
       <DocHeader
         section="Components"
         kind={def.category}
         title={def.label}
-        actions={
-          <>
-            <CopyButton text={pageMarkdown(def)} label="Copy Page" />
-            <button
-              onClick={() => toggleComponent(def.key)}
-              aria-pressed={selected}
-              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap ${
-                selected ? 'bg-fg text-app' : 'bg-elevated text-fg-muted border border-line-strong'
-              }`}
-            >
-              {selected ? '✓ Added to system' : 'Add to system'}
-            </button>
-          </>
-        }
+        actions={<CopyAgentContextButton text={agentContextMarkdown(def, heroCode, tokens)} />}
       />
 
       <DocTitle title={def.label} eyebrow={def.category} lead={def.description} />

@@ -12,6 +12,8 @@ import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { radiusOf, fontFamilyOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
+import { UNTITLED_CORE } from '../../../lib/iconLibraries'
+import { findUntitledIcon, untitledIconMaskUrl } from '../../../lib/untitledIcons'
 
 export type AxisValues = Record<string, string>
 
@@ -63,13 +65,9 @@ function SpecimenSpinner({ size, color, track }: { size: number; color: string; 
   )
 }
 
-// ── Icons — wired to the Foundations icon library ─────────────────────────────
-// A live glyph from the chosen library, via the Iconify API + CSS mask so it
-// takes any color. Concept names are resolved per library (names differ across
-// sets — verified against api.iconify.design), so toggling the library in
-// Foundations re-renders these with that set's real glyph.
-
-const ICONIFY = 'https://api.iconify.design'
+// ── Icons — Untitled UI, bundled locally ─────────────────────────────────────
+// Specimens render Untitled glyphs from the pre-built catalog. Concept names
+// map through UNTITLED_CORE so Button/Input slots stay stable.
 
 export type IconConcept =
   | 'star' | 'arrow' | 'search' | 'eye'
@@ -77,47 +75,18 @@ export type IconConcept =
   | 'home' | 'box' | 'grid' | 'image' | 'text' | 'settings' | 'palette'
   | 'bookmark' | 'heart' | 'share' | 'user' | 'users' | 'zap' | 'check'
 
-// concept → per-library icon name (`_` = the name shared by most libraries).
-const ICON_NAMES: Record<IconConcept, Record<string, string>> = {
-  star:     { _: 'star' },
-  arrow:    { _: 'arrow-right' },
-  search:   { _: 'magnifying-glass', lucide: 'search', 'material-symbols': 'search' },
-  eye:      { _: 'eye', 'radix-icons': 'eye-open', 'material-symbols': 'visibility' },
-  plus:     { _: 'plus', 'material-symbols': 'add' },
-  upload:   { _: 'upload', heroicons: 'arrow-up-tray', ph: 'upload-simple' },
-  info:     { _: 'info', heroicons: 'information-circle', 'radix-icons': 'info-circled' },
-  success:  { _: 'check-circle', lucide: 'circle-check', 'radix-icons': 'check-circled' },
-  warning:  { _: 'warning', lucide: 'triangle-alert', heroicons: 'exclamation-triangle', 'radix-icons': 'exclamation-triangle' },
-  error:    { _: 'x-circle', lucide: 'circle-x', 'radix-icons': 'cross-circled', 'material-symbols': 'cancel' },
-  home:     { _: 'home', lucide: 'house', ph: 'house' },
-  box:      { _: 'box', heroicons: 'cube', ph: 'cube', 'material-symbols': 'deployed-code' },
-  grid:     { _: 'grid', lucide: 'layout-grid', heroicons: 'squares-2x2', ph: 'squares-four', 'material-symbols': 'grid-view' },
-  image:    { _: 'image', heroicons: 'photo' },
-  text:     { _: 'text', lucide: 'type', heroicons: 'document-text', ph: 'text-t', 'material-symbols': 'text-fields' },
-  settings: { _: 'gear', lucide: 'settings', heroicons: 'cog-6-tooth', 'material-symbols': 'settings' },
-  palette:  { _: 'palette', heroicons: 'swatch', 'radix-icons': 'color-wheel' },
-  bookmark: { _: 'bookmark', ph: 'bookmark-simple' },
-  heart:    { _: 'heart', 'material-symbols': 'favorite' },
-  share:    { _: 'share', lucide: 'share-2', 'radix-icons': 'share-1', 'material-symbols': 'share' },
-  user:     { _: 'user', 'radix-icons': 'person', 'material-symbols': 'person' },
-  users:    { _: 'users', heroicons: 'user-group', 'radix-icons': 'avatar', 'material-symbols': 'group' },
-  zap:      { _: 'zap', heroicons: 'bolt', ph: 'lightning', 'radix-icons': 'lightning-bolt', 'material-symbols': 'bolt' },
-  check:    { _: 'check' },
+export function iconName(_prefix: string, concept: IconConcept): string {
+  return UNTITLED_CORE[concept] ?? concept
 }
 
-export function iconName(prefix: string, concept: IconConcept): string {
-  const m = ICON_NAMES[concept]
-  return m[prefix] ?? m._
-}
-
-// PascalCase component name for the copy snippet (leadingIcon={<Star />}).
+// PascalCase export name for copy snippets (`import SearchLg from "@untitledui/icons/SearchLg"`).
 export const ICON_COMPONENT: Record<IconConcept, string> = {
-  star: 'Star', arrow: 'ArrowRight', search: 'Search', eye: 'Eye',
-  plus: 'Plus', upload: 'Upload', info: 'Info', success: 'CheckCircle',
-  warning: 'AlertTriangle', error: 'XCircle', home: 'Home', box: 'Box',
-  grid: 'LayoutGrid', image: 'Image', text: 'Type', settings: 'Settings',
-  palette: 'Palette', bookmark: 'Bookmark', heart: 'Heart', share: 'Share',
-  user: 'User', users: 'Users', zap: 'Zap', check: 'Check',
+  star: 'Star01', arrow: 'ArrowRight', search: 'SearchLg', eye: 'Eye',
+  plus: 'Plus', upload: 'Upload01', info: 'InfoCircle', success: 'CheckCircle',
+  warning: 'AlertTriangle', error: 'XCircle', home: 'Home01', box: 'Cube01',
+  grid: 'Grid01', image: 'Image01', text: 'Type01', settings: 'Settings01',
+  palette: 'Palette', bookmark: 'Bookmark', heart: 'Heart', share: 'Share01',
+  user: 'User01', users: 'Users01', zap: 'Zap', check: 'Check',
 }
 
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
@@ -128,15 +97,17 @@ export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconCo
 
 export interface IconOpts { prefix: string; leading: boolean; trailing: boolean }
 
-function PreviewIcon({ prefix, concept, size = 16, color }: { prefix: string; concept: IconConcept; size?: number; color: string }) {
-  const url = `${ICONIFY}/${prefix}/${iconName(prefix, concept)}.svg`
+function PreviewIcon({ concept, size = 16, color }: { prefix?: string; concept: IconConcept; size?: number; color: string }) {
+  const icon = findUntitledIcon(UNTITLED_CORE[concept] ?? '')
+  const mask = icon ? untitledIconMaskUrl(icon) : undefined
   return (
     <span
       aria-hidden
       style={{
         width: size, height: size, display: 'inline-block', flexShrink: 0,
         backgroundColor: color,
-        maskImage: `url("${url}")`, WebkitMaskImage: `url("${url}")`,
+        maskImage: mask,
+        WebkitMaskImage: mask,
         maskSize: 'contain', WebkitMaskSize: 'contain',
         maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
         maskPosition: 'center', WebkitMaskPosition: 'center',
@@ -145,11 +116,9 @@ function PreviewIcon({ prefix, concept, size = 16, color }: { prefix: string; co
   )
 }
 
-/** A glyph resolved from the Foundations · Icons library (t.iconPrefix) — the
- *  content icons in every specimen/collage render through this, so switching
- *  the icon library re-renders them with that set's real glyph. */
+/** A glyph resolved from the bundled Untitled UI catalog. */
 export function TokenIcon({ t, concept, size = 16, color }: { t: PreviewTokens; concept: IconConcept; size?: number; color: string }) {
-  return <PreviewIcon prefix={t.iconPrefix ?? 'lucide'} concept={concept} size={size} color={color} />
+  return <PreviewIcon concept={concept} size={size} color={color} />
 }
 
 export interface SpecimenProps { t: PreviewTokens; v: AxisValues; icons?: IconOpts }

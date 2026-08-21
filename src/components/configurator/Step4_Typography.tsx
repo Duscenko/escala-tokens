@@ -390,45 +390,10 @@ export default function Step4_Typography() {
   return (
     // No floating card (border/rounded-xl) and no enter animation — matches
     // VariablesTable's flush treatment (the other 6 foundations) and the
-    // Color hub's tables, none of which re-animate on every render either.
-    <div className="flex flex-col bg-app flex-1 min-h-0">
-      {/* Top bar — the SAME shape the Color hub's row 2 uses (ColorPrimitives'
-          "Groups", StepGradients' "Collections"): a 198px labelled cell that
-          lines up with the nav directly below it, then a flex-1 cell holding
-          the active collection + search with the same pr-3 edge clearance.
-          It used to be one undivided `justify-between` bar, so the rail's left
-          edge started 198px into a row that had no matching division — the
-          column read as unaligned against every other foundation table. */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line bg-app">
-        <div className="w-[198px] flex-shrink-0 flex items-center px-4 h-[52px] border-r border-line">
-          <span className="text-[13px] font-semibold text-fg">Collections</span>
-        </div>
-        {/* No "<active> <count>" summary here: the nav row directly below is
-            already selected and already prints both, so it read as the same
-            fact twice on one screen. Search sits alone, right-aligned, exactly
-            as the Color tables place it. */}
-        <div className="flex-1 min-w-0 flex items-center justify-end gap-3 pl-4 pr-3">
-        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search…"
-            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-            aria-label="Filter typography tokens"
-          />
-          {query && (
-            <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-          )}
-        </div>
-        </div>
-      </div>
-
-      {/* Body: side nav + tables */}
+    // Color hub's tables. FoundationWorkbench paints Groups | icon-rail
+    // above this, so the body is nav | search+tables — same split Color uses
+    // under its Groups band.
+    <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
         {/* Same rail metrics as ColorPrimitives' family nav — py-1.5 px-2, not
             a uniform p-2 — so the two sections' first row starts at the same y. */}
@@ -451,18 +416,39 @@ export default function Step4_Typography() {
           })}
         </nav>
 
-        <div className="flex-1 min-w-0 overflow-auto">
-          <div className="min-w-[30rem]">
-            {!anyVisible ? (
-              <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
-            ) : (
-              <>
-                {showFamily && familyTable()}
-                {showWeight && weightTable()}
-                {showSize && sizeTable()}
-                {showLineHeight && lineHeightTable()}
-              </>
-            )}
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="foundation-layer-bar flex items-center justify-end gap-3 h-[52px] pl-4 pr-3 flex-shrink-0">
+            <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search…"
+                className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+                aria-label="Filter typography tokens"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0 overflow-auto">
+            <div className="min-w-[30rem]">
+              {!anyVisible ? (
+                <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
+              ) : (
+                <>
+                  {showFamily && familyTable()}
+                  {showWeight && weightTable()}
+                  {showSize && sizeTable()}
+                  {showLineHeight && lineHeightTable()}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

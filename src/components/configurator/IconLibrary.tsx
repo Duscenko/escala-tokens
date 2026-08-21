@@ -1,86 +1,43 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useMemo, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { ICON_LIBRARIES, SAMPLE_GLYPHS, getIconLibrary, type IconLibraryDef } from '../../lib/iconLibraries'
+import {
+  ICON_AI_SOURCES,
+  UNTITLED_LIBRARY,
+  DEFAULT_ICON_AI_SOURCE,
+  type IconAiSource,
+} from '../../lib/iconLibraries'
+import { searchUntitledIcons, untitledIconSvg, copyUntitledIcon, type UntitledIcon } from '../../lib/untitledIcons'
 import { sanitizeSvg, slugify } from '../../lib/utils'
 
-const ICONIFY = 'https://api.iconify.design'
 const MAX_CUSTOM_ICONS = 50
 const MAX_SVG_BYTES = 32 * 1024
 
-// ── Live icon browser (Iconify API — one endpoint covers every library) ──────
-
-/** Monochrome icon via CSS mask, so it tracks currentColor in both themes. */
-function MaskedIcon({ prefix, name, size = 22 }: { prefix: string; name: string; size?: number }) {
-  const url = `${ICONIFY}/${prefix}/${name}.svg`
+function UntitledGlyph({ icon, size = 22 }: { icon: UntitledIcon; size?: number }) {
   return (
     <span
       aria-hidden
-      style={{
-        width: size,
-        height: size,
-        display: 'inline-block',
-        backgroundColor: 'currentColor',
-        maskImage: `url(${url})`,
-        WebkitMaskImage: `url(${url})`,
-        maskSize: 'contain',
-        WebkitMaskSize: 'contain',
-        maskRepeat: 'no-repeat',
-        WebkitMaskRepeat: 'no-repeat',
-        maskPosition: 'center',
-        WebkitMaskPosition: 'center',
-      }}
+      className="inline-block [&>svg]:w-full [&>svg]:h-full"
+      style={{ width: size, height: size }}
+      dangerouslySetInnerHTML={{ __html: untitledIconSvg(icon) }}
     />
   )
 }
 
-function IconBrowser({ libraryKey }: { libraryKey: string }) {
-  const lib = getIconLibrary(libraryKey)
-  const prefix = lib?.iconifyPrefix ?? 'lucide'
+function IconBrowser() {
   const [query, setQuery] = useState('')
-  const [icons, setIcons] = useState<string[]>([])
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [copied, setCopied] = useState<string | null>(null)
+  const [copied, setCopied] = useState<{ name: string; kind: 'svg' | 'name' } | null>(null)
+  const icons = useMemo(() => searchUntitledIcons(query, 60), [query])
 
-  // Search (debounced) or default collection sample when the query is empty.
-  useEffect(() => {
-    const controller = new AbortController()
-    const t = setTimeout(async () => {
-      setState('loading')
-      try {
-        let names: string[]
-        if (query.trim()) {
-          const res = await fetch(
-            `${ICONIFY}/search?query=${encodeURIComponent(query.trim())}&prefix=${prefix}&limit=60`,
-            { signal: controller.signal },
-          )
-          const data = await res.json()
-          names = (data.icons ?? []).map((i: string) => i.split(':')[1] ?? i)
-        } else {
-          const res = await fetch(`${ICONIFY}/collection?prefix=${prefix}`, { signal: controller.signal })
-          const data = await res.json()
-          const fromCats = data.categories ? (Object.values(data.categories) as string[][]).flat() : []
-          names = [...(data.uncategorized ?? []), ...fromCats].slice(0, 60)
-        }
-        setIcons(names)
-        setState('ready')
-      } catch {
-        if (!controller.signal.aborted) setState('error')
-      }
-    }, query ? 300 : 0)
-    return () => { clearTimeout(t); controller.abort() }
-  }, [prefix, query])
-
-  function copyName(name: string) {
-    navigator.clipboard.writeText(name)
-    setCopied(name)
+  async function copy(icon: UntitledIcon, kind: 'svg' | 'name') {
+    await copyUntitledIcon(icon, kind)
+    setCopied({ name: icon.name, kind })
     setTimeout(() => setCopied(null), 1500)
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-fg">Browse {lib?.label ?? 'icons'}</h3>
+        <h3 className="text-base font-semibold text-fg">Browse {UNTITLED_LIBRARY.label}</h3>
         <div className="relative w-56">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-faint pointer-events-none" aria-hidden>
             <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35" />
@@ -89,7 +46,7 @@ function IconBrowser({ libraryKey }: { libraryKey: string }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${lib?.count ?? ''} icons…`}
+            placeholder={`Search ${UNTITLED_LIBRARY.count} icons…`}
             aria-label="Search icons"
             className="w-full bg-surface border border-line focus:border-fg rounded-lg pl-8 pr-3 py-1.5 text-xs text-fg outline-none transition-colors"
           />
@@ -97,45 +54,41 @@ function IconBrowser({ libraryKey }: { libraryKey: string }) {
       </div>
 
       <div className="rounded-xl border border-line bg-surface/40 p-4 min-h-44">
-        {state === 'loading' && (
-          <p className="text-xs text-fg-faint text-center py-12">Loading icons…</p>
-        )}
-        {state === 'error' && (
-          <p className="text-xs text-fg-faint text-center py-12">
-            Couldn't reach the icon service — check your connection and try again.
-          </p>
-        )}
-        {state === 'ready' && icons.length === 0 && (
+        {icons.length === 0 ? (
           <p className="text-xs text-fg-faint text-center py-12">No icons match “{query}”.</p>
-        )}
-        {state === 'ready' && icons.length > 0 && (
+        ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1">
-            {icons.map((name) => (
+            {icons.map((icon) => {
+              const justCopied = copied?.name === icon.name
+              return (
               <button
-                key={name}
-                onClick={() => copyName(name)}
-                title={copied === name ? 'Copied!' : `${name} — click to copy`}
+                key={icon.name}
+                onClick={(e) => copy(icon, e.shiftKey ? 'name' : 'svg')}
+                title={justCopied
+                  ? (copied.kind === 'svg' ? 'SVG copied — paste in Figma' : `${icon.name} copied`)
+                  : `${icon.name} — click to copy SVG (paste in Figma). Shift-click copies the export name.`}
                 className="flex flex-col items-center gap-1 p-2 rounded-lg text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
               >
-                {copied === name ? (
-                  <span className="w-[22px] h-[22px] flex items-center justify-center text-emerald-500 text-sm">✓</span>
+                {justCopied ? (
+                  <span className="w-[22px] h-[22px] flex items-center justify-center text-emerald-500 text-[9px] font-semibold uppercase tracking-wide">
+                    {copied.kind === 'svg' ? 'SVG' : 'OK'}
+                  </span>
                 ) : (
-                  <MaskedIcon prefix={prefix} name={name} />
+                  <UntitledGlyph icon={icon} />
                 )}
-                <span className="text-[9px] text-fg-faint truncate w-full text-center">{name}</span>
+                <span className="text-[9px] text-fg-faint truncate w-full text-center">{icon.name}</span>
               </button>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
       <p className="text-[11px] text-fg-faint">
-        Live from the {lib?.label} set via Iconify — click an icon to copy its name.
+        Click copies SVG — paste into Figma. Shift-click copies the export name.
       </p>
     </div>
   )
 }
-
-// ── Custom icons (user-uploaded SVG assets) ──────────────────────────────────
 
 function CustomIcons() {
   const { customIcons, addCustomIcon, removeCustomIcon } = useDesignStore()
@@ -199,7 +152,6 @@ function CustomIcons() {
             <div key={icon.name} className="group relative flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-elevated/60 transition-colors">
               <span
                 className="w-[22px] h-[22px] text-fg-muted [&>svg]:w-full [&>svg]:h-full"
-                // Sanitized by sanitizeSvg() before it ever reaches the store.
                 dangerouslySetInnerHTML={{ __html: icon.svg }}
               />
               <span className="text-[9px] text-fg-faint truncate w-full text-center">{icon.name}</span>
@@ -219,40 +171,28 @@ function CustomIcons() {
   )
 }
 
-// Foundation section: pick the icon set the design system standardizes on. The
-// choice is persisted (store.iconLibrary) and surfaced in tokens.json + README.
-function GlyphStrip() {
-  return (
-    <div className="flex items-center gap-2.5 text-fg-muted">
-      {SAMPLE_GLYPHS.map((g) => (
-        <svg key={g.name} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d={g.path} />
-        </svg>
-      ))}
-    </div>
-  )
-}
-
-function LibraryCard({ lib, selected, onSelect }: { lib: IconLibraryDef; selected: boolean; onSelect: () => void }) {
+function AiSourceRow({ source, selected, onSelect }: { source: IconAiSource; selected: boolean; onSelect: () => void }) {
   return (
     <button
+      type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`text-left rounded-xl border p-3.5 flex flex-col gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+      className={`text-left rounded-xl border p-3.5 flex flex-col gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
         selected
           ? 'border-fg bg-fg/5 shadow-sm'
           : 'border-line bg-surface/40 hover:border-line-strong hover:bg-surface'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-fg">{lib.label}</h3>
-            <span className="text-[10px] uppercase tracking-wider text-fg-faint">{lib.style}</span>
+            <h3 className="text-sm font-semibold text-fg">{source.label}</h3>
+            {source.default ? (
+              <span className="text-[10px] uppercase tracking-wider text-fg-faint">Default</span>
+            ) : null}
           </div>
-          <p className="text-[11px] text-fg-muted leading-snug line-clamp-2">{lib.description}</p>
+          <p className="text-[11px] text-fg-muted leading-snug mt-0.5">{source.description}</p>
         </div>
-        {/* Selected check */}
         <span
           className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
             selected ? 'bg-fg text-app' : 'border border-line-strong'
@@ -265,48 +205,58 @@ function LibraryCard({ lib, selected, onSelect }: { lib: IconLibraryDef; selecte
           )}
         </span>
       </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <GlyphStrip />
-        <code className="text-[10px] font-mono text-fg-faint truncate">{lib.npm}</code>
-      </div>
+      <code className="text-[10px] font-mono text-fg-faint truncate">{source.repo.replace('https://github.com/', '')}</code>
     </button>
   )
 }
 
 export default function IconLibrary() {
-  const { iconLibrary, setIconLibrary } = useDesignStore()
+  const { iconAiSource, setIconAiSource } = useDesignStore()
+  const selectedSource = iconAiSource ?? DEFAULT_ICON_AI_SOURCE
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-5"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {ICON_LIBRARIES.map((lib) => (
-          <LibraryCard
-            key={lib.key}
-            lib={lib}
-            selected={iconLibrary === lib.key}
-            onSelect={() => setIconLibrary(lib.key)}
-          />
-        ))}
+    <div className="flex flex-col gap-5">
+      <div className="rounded-xl border border-line bg-surface/40 p-4 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-sm font-semibold text-fg">{UNTITLED_LIBRARY.label}</h2>
+          <span className="text-[10px] uppercase tracking-wider text-fg-faint">{UNTITLED_LIBRARY.style} · {UNTITLED_LIBRARY.count}</span>
+        </div>
+        <p className="text-[12px] text-fg-muted leading-relaxed">{UNTITLED_LIBRARY.description}</p>
+        <p className="text-[11px] text-fg-faint">
+          <code className="font-mono text-fg-muted">npm i {UNTITLED_LIBRARY.npm}</code>
+          {' · '}
+          <a href={UNTITLED_LIBRARY.repo} target="_blank" rel="noreferrer" className="hover:text-fg-muted underline-offset-2 hover:underline">
+            GitHub
+          </a>
+        </p>
       </div>
 
-      <p className="text-xs text-fg-faint leading-relaxed">
-        Your selection is saved with your tokens and noted in the generated <code className="font-mono text-fg-muted">tokens.json</code> and{' '}
-        <code className="font-mono text-fg-muted">README.md</code>, so engineers install the same set.
-      </p>
-
       <div className="border-t border-line pt-6">
-        <IconBrowser libraryKey={iconLibrary} />
+        <IconBrowser />
+      </div>
+
+      <div className="border-t border-line pt-6 flex flex-col gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-fg">For AI-generated UI</h3>
+          <p className="text-[12px] text-fg-muted leading-relaxed mt-1">
+            Escala always previews Untitled UI. This choice is written into your Skill and README so a model can install the same family when it generates screens.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {ICON_AI_SOURCES.map((source) => (
+            <AiSourceRow
+              key={source.key}
+              source={source}
+              selected={selectedSource === source.key}
+              onSelect={() => setIconAiSource(source.key)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="border-t border-line pt-6">
         <CustomIcons />
       </div>
-    </motion.div>
+    </div>
   )
 }

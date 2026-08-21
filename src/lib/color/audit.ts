@@ -170,7 +170,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // as `ui-component` reports a failure against a job it was never given.
     // See the "missing role" note in docs/color/IMPLEMENTATION-LOG.md.
     { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
-    { fg: 'border.strong',     bg: 'surface.page',    intent: 'ui-component' },
+    // Layout stroke — light still clears 1.4.11 at {neutral.9}; dark sits in
+    // the quiet 4–6 band by design. Control boundaries use border.focus.
+    { fg: 'border.strong',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
     // signalling selected/focused/active must use border.focus, which is

@@ -2,12 +2,12 @@ import type { RailGroup } from './SectionRail'
 
 // ── Horizontal foundation switcher (Variables tab only) ──────────────────────
 // Replaces the outer SectionRail for Variables specifically: a compact row of
-// icon-only buttons docked at the top of the canvas, freeing the left column
-// for a foundation's own sub-nav (Color's family Groups tree). Takes the same
-// `groups` shape SectionRail does — same Variables/Styles split, same data —
-// just rendered as a row instead of a labeled vertical list. Components and
-// Documentation keep the vertical SectionRail; this component doesn't apply
-// there.
+// icon-only buttons docked in Groups' adjacent 52px band (ColorHub for Color,
+// FoundationWorkbench for every other foundation). Frees the left column for
+// a foundation's own sub-nav. Takes the same `groups` shape SectionRail does —
+// same Variables/Styles split, same data — just rendered as a row instead of a
+// labeled vertical list. Components and Documentation keep the vertical
+// SectionRail; this component doesn't apply there.
 
 export default function FoundationIconRail({
   groups, active, onSelect,

@@ -37,6 +37,13 @@
       transform: rotate(360deg);
     }
   }
+  /* Magic UI Rainbow Button — ink on the dark (light chrome) / white (dark chrome) fill. */
+  --color-primary-foreground: var(--rainbow-ink);
+  --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
+  @keyframes rainbow {
+    0% { background-position: 0%; }
+    100% { background-position: 200%; }
+  }
 }
 
 :root {
@@ -53,6 +60,12 @@
   --accent-ui: #7f56d9;
   --accent-solid: #7f56d9;
   --accent-ink: #ffffff;
+  --rainbow-ink: #fafafa;
+  --color-1: oklch(66.2% 0.225 25.9);
+  --color-2: oklch(60.4% 0.26 302);
+  --color-3: oklch(69.6% 0.165 251);
+  --color-4: oklch(80.2% 0.134 225);
+  --color-5: oklch(90.7% 0.231 133);
 
   font: 18px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0.18px;
@@ -81,6 +94,7 @@
   --fg-faint: #737373;
   --line: #e5e5e5;
   --line-strong: #d4d4d4;
+  --rainbow-ink: #fafafa;
 
   color-scheme: light;
 }
@@ -144,6 +158,12 @@
   --line-strong: #404040;
 
   color-scheme: dark;
+  --rainbow-ink: #171717;
+  --color-1: oklch(66.2% 0.225 25.9);
+  --color-2: oklch(60.4% 0.26 302);
+  --color-3: oklch(69.6% 0.165 251);
+  --color-4: oklch(80.2% 0.134 225);
+  --color-5: oklch(90.7% 0.231 133);
 }
 
 body {
@@ -194,19 +214,33 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-agent-ring-drift {
+  .animate-agent-ring-drift,
+  .animate-rainbow {
     animation: none !important;
+  }
+  .color-hub-tab {
+    transition: none;
   }
 }
 
-/* Color hub tabs — Chrome-style active silhouette for Primitives /
-   Semantics / Gradients. The strip sits slightly tinted; the active tab
-   lifts on `bg-app` with concave bottom corners so it reads lighter than
-   the old full-width tint block. */
+/* Foundation layer bar — the 52px strip under Groups (Color's
+   Primitives/Semantics/Gradients, Typography's search, every railed
+   table header). Recessed on `--surface` so it sits BETWEEN the Groups
+   chrome (app) and the table (app): one clear depth step, light and dark.
+   Active Color tabs lift back onto `--app` and cover the bottom hairline. */
+.foundation-layer-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Color hub tabs — Chrome-style active silhouette. The strip inherits the
+   recessed well from `.foundation-layer-bar`; the active tab lifts on
+   `bg-app` with concave bottom corners and overlaps the well's hairline
+   so it merges into the table. */
 .color-hub-tab-strip {
-  background: color-mix(in srgb, var(--surface) 50%, var(--app));
+  background: transparent;
   gap: 1px;
-  padding: 0 6px;
+  padding: 0 8px;
 }
 .color-hub-tab {
   position: relative;
@@ -222,13 +256,13 @@ body {
   font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   cursor: pointer;
   transition: color 150ms ease-out, background-color 150ms ease-out;
 }
 .color-hub-tab:hover {
-  color: var(--fg-muted);
-  background: color-mix(in srgb, var(--elevated) 35%, transparent);
+  color: var(--fg);
+  background: color-mix(in srgb, var(--elevated) 70%, transparent);
 }
 .color-hub-tab:focus-visible {
   outline: none;
@@ -237,12 +271,13 @@ body {
 .color-hub-tab-active {
   --tab-r: 10px;
   z-index: 1;
-  margin-bottom: -1px;
-  padding-bottom: 1px;
   border-radius: var(--tab-r) var(--tab-r) 0 0;
   background: var(--app);
   color: var(--fg);
   font-weight: 600;
+  /* Cover the well's 1px hairline so the tab becomes the page. */
+  margin-bottom: -1px;
+  padding-bottom: 1px;
 }
 .color-hub-tab-active:hover {
   background: var(--app);

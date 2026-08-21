@@ -339,7 +339,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // hover could read lighter than default. Not fixed here; same class of
   // residual this file already accepts elsewhere for simple fixed-step roles.
   { group: 'action', key: 'primary.hover',   light: '{accent.10}', dark: '{accent.10}' },
-  { group: 'action', key: 'primary.pressed', light: '{accent.11}', dark: '{accent.11}' },
+  // Dark pressed is a recessed step (6), not a lighter one — measured by eye
+  // on a dark layout, {accent.11} read as a hover-again, not as "down".
+  { group: 'action', key: 'primary.pressed', light: '{accent.11}', dark: '{accent.6}' },
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
@@ -351,9 +353,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Accent-tinted row/item selection — one step up from `surface.accent`,
   // the same tone `action.secondary` already uses for a component-level fill.
   { group: 'surface', key: 'selected', light: '{accent.3}', dark: '{accent.3}' },
-  // Deliberately inverted, like the flat catalogue's `*-inverse`: an inverse
-  // surface is dark on a light page and light on a dark one, by definition.
-  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral-dark.12}' },
+  // Inverse surface is dark-on-light and light-on-dark by definition — but
+  // dark does NOT take the ramp's lightest step. `{neutral-dark.12}` flashes
+  // near-white on a dark page; `{neutral.4}` (the light ramp's quiet gray) is
+  // the muted inverse chip that actually reads as "inverted" in a layout.
+  { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral.4}' },
   // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
   { group: 'surface', key: 'overlay', light: '{neutral.12}', dark: '{neutral-dark.1}' }, // pair with opacity.60
   // Status — feedback fg/bg pairs (critical = error family). The fg's ONLY job
@@ -373,18 +377,20 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    step: still clears WCAG AA against the tone-3 tint (~4.5–4.7:1 measured
   //    across seeds) while keeping the severity hue visible. Deliberate product
   //    choice — chromatic legibility over contrast headroom.
-  //  • **Dark fg stays tone 12** — on a dark-mode tint the ramp's light end is
-  //    the only step that reads as coloured ink; 11 would sit too close to the bg.
+  //  • **Dark fg is a chromatic step too** (critical 10, warning/success 11),
+  //    not tone 12. Tone 12 on a dark tint reads as near-white ink and loses
+  //    the severity hue; 10/11 keep the colour visible in a dark layout.
   { group: 'status', key: 'critical.surface', light: '{error.3}',        dark: '{error.3}' },
-  { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.12}' },
+  { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.10}' },
   { group: 'status', key: 'warning.surface',  light: '{warning.3}',      dark: '{warning.3}' },
-  { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.12}' },
+  { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
   { group: 'status', key: 'success.surface',  light: '{success.3}',      dark: '{success.3}' },
-  { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.12}' },
-  // Solid critical fill (badges, destructive buttons) — solved solid, same
-  // convention as shadcn `destructive.fill` and Astryx `status.error`.
-  { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.solid}' },
-  { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.solid}' },
+  { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.11}' },
+  // Solid critical fill (badges, destructive buttons). Light solves the fill
+  // (`{error.solid}`). Dark uses the ramp's light end so a destructive solid
+  // still reads as coloured on a dark page; ink is solved against that step.
+  { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.12}' },
+  { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.12}' },
   // Border — strokes. `default` is tone 5, the same step Astryx's own
   // `border.default` resolves to, so the two namings agree on what a default
   // stroke IS. That also fixes an ordering this file used to carry and flag:
@@ -399,14 +405,12 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // checkboxes, radios, selects, unfilled buttons.
   //
   // The light/dark tones are DELIBERATELY not the same step, which breaks the
-  // system's usual identity rule. Measured across eight seeds, neutral vs page:
-  //     light  .8 → WCAG 2.96 Lc 55.7 ✗ | .9 → WCAG 4.17 Lc 68.2 ✓
-  //     dark   .9 → WCAG 3.16 Lc 21.2 ✗ | .10 → WCAG 3.82 Lc 26.7 ✗ | .11 ✓
-  // In the dark ramp steps 1–10 are ALL surfaces (Lc < 30 against the page) and
-  // text starts at 11 — there is no intermediate "strong border" step to use.
-  // `{neutral-dark.10}` is the trap: it satisfies 1.4.11 numerically at 3.82:1
-  // while sitting at Lc 26.7, i.e. still hard to see.
-  { group: 'border', key: 'strong',   light: '{neutral.9}', dark: '{neutral-dark.11}' },
+  // system's usual identity rule. Light `{neutral.9}` is the 1.4.11 control
+  // boundary. Dark used to jump to `{neutral-dark.11}` for the same floor —
+  // on a dark layout that stroke reads as a second text colour. `{neutral-dark.6}`
+  // is the quiet grouping edge that matches the rest of the dark page; use
+  // `border.focus` when the stroke is the only thing saying "this is a control".
+  { group: 'border', key: 'strong',   light: '{neutral.9}', dark: '{neutral-dark.6}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
   // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -415,7 +419,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // at {accent.8} reads 1.97:1 in dark, which is correct for emphasis and
   // wrong for state.
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
-  { group: 'border', key: 'subtle',   light: '{neutral.3}', dark: '{neutral-dark.3}' },
+  { group: 'border', key: 'subtle',   light: '{neutral.3}', dark: '{neutral-dark.4}' },
   // Focus ring — WCAG 1.4.11 wants ≥3:1 against the page, and APCA wants Lc 45.
   // Light `{accent.9}` clears both (WCAG 3.14–7.45, Lc 57–85). Dark used to be
   // `{accent.8}` and cleared NEITHER (WCAG 1.97–4.00, Lc 9.5–28.5). Measured
@@ -464,7 +468,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.layer-2': '[ROLE: Elevated Background] Elevation level 2. Popovers, dropdowns, modals. Pair with box-shadow in CSS — the color step alone does not convey floating.',
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
-  'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse for text inside.",
+  'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral.4} — a muted inverse chip, not the dark ramp's near-white step.",
   'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at alpha 0.5.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
@@ -478,20 +482,20 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'content.link.hover': '[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.',
   'action.primary.default': "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
   'action.primary.hover': '[ROLE: Primary CTA Hover] Interactive hover state — one primitive step darker (light) or lighter (dark) than action.primary.default.',
-  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Active/pressed state — one further step from hover toward higher contrast with the default fill.',
+  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Active/pressed state. Light {accent.11} (one step past hover). Dark {accent.6} — recessed, darker than the solid, so press reads as down not as a second hover.',
   'action.secondary.default': '[ROLE: Secondary CTA Default] Neutral subtle button fill. Label text must be content.primary, not content.on-action.',
   'action.secondary.accent': '[ROLE: Secondary Accent Fill] Accent-tinted secondary button background. Pair with content.primary for the label.',
   'action.disabled': '[ROLE: Disabled Action Fill] Disabled button/control background. No contrast floor — communicates inactive state visually.',
   'status.critical.surface': "[ROLE: Feedback Background Subtle] Tinted background for error alerts and banners. Pair with status.critical.content — never a fixed ink on the bg alone.",
-  'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for destructive badges and buttons. Pair with status.critical.on-solid for label ink.",
-  'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Light uses {error.11} for chromatic severity (~AA floor); dark uses {error.12}.',
+  'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for destructive badges and buttons. Pair with status.critical.on-solid. Light solves {error.solid}; dark uses {error.12} so the fill still reads as coloured on a dark page.",
+  'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Light {error.11} for chromatic severity (~AA floor); dark {error.10} so the hue stays visible on a dark tint.',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
   'status.warning.surface': '[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.',
-  'status.warning.content': '[ROLE: Feedback Text] Warning message ink on status.warning.surface. Light {warning.11}, dark {warning.12}.',
+  'status.warning.content': '[ROLE: Feedback Text] Warning message ink on status.warning.surface. Light and dark both {warning.11} — chromatic severity, not the near-white {warning.12} in dark.',
   'status.success.surface': '[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.',
-  'status.success.content': '[ROLE: Feedback Text] Success message ink on status.success.surface. Light {success.11}, dark {success.12}.',
-  'border.subtle': '[ROLE: Structural Border] Aesthetic dividers (hr, table rules). Not critical for accessibility.',
-  'border.strong': '[ROLE: Component Border] Default stroke for inputs and selects. MUST reach ≥3:1 against the surface (WCAG 1.4.11) — verified per theme.',
+  'status.success.content': '[ROLE: Feedback Text] Success message ink on status.success.surface. Light and dark both {success.11} — chromatic severity, not the near-white {success.12} in dark.',
+  'border.subtle': '[ROLE: Structural Border] Aesthetic dividers (hr, table rules). Light {neutral.3}, dark {neutral-dark.4}. Not critical for accessibility.',
+  'border.strong': '[ROLE: Component Border] Default layout stroke for cards and grouping. Light {neutral.9}. Dark {neutral-dark.6} so the edge stays quiet on a dark page — use border.focus when the stroke is the only control affordance (WCAG 1.4.11).',
   'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. Must contrast strongly against backgrounds — solved per theme (light {accent.9}, dark {accent.11}).',
   'border.default': '[ROLE: Structural Border Default] Decorative card edges and dividers. No contrast floor — not for control boundaries.',
   'border.accent': '[ROLE: Decorative Brand Border] Brand-tinted grouping stroke. NOT a state indicator — use border.focus for focus/selected/active.',

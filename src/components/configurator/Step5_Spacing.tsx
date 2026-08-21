@@ -173,7 +173,6 @@ export default function Step5_Spacing() {
         title={active.label}
         searchLabel="Filter spacing tokens"
         railed
-        railTop={<span className="text-[13px] font-semibold text-fg">Collections</span>}
         railBody={
           <nav aria-label="Spacing collections" className="py-1.5 px-2 flex flex-col gap-0.5">
             {SPACING_COLLECTIONS.map((c) => {

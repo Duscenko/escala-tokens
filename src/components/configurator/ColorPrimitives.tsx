@@ -12,7 +12,7 @@
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
 // never disagree.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults } from '../../store/useDesignStore'
@@ -27,7 +27,7 @@ import {
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
-  curatedPaletteFor, RailToggle, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
+  curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
@@ -168,6 +168,15 @@ function OverviewSwatch({ family }: { family: Family }) {
 const overviewPanel = 'rounded-xl border border-line bg-surface overflow-hidden'
 const overviewDivide = 'divide-y divide-line/60'
 
+/** Same column tracks as the tone table + sticky header — overview ramps must
+ *  use this or the light/dark headers drift over the swatches when scrolling. */
+const PRIMITIVE_TABLE_GRID: CSSProperties = {
+  gridTemplateColumns: 'minmax(9rem,1.1fr) repeat(2, minmax(8.5rem,1fr)) 2.75rem',
+}
+
+/** Quick-edit strip height — sticky column header sticks below this offset. */
+const QUICK_EDIT_STRIP_HEIGHT = 52
+
 function RampPreviewBlock({
   family,
   namingLabels,
@@ -193,13 +202,16 @@ function RampPreviewBlock({
     checkerboard: family.isAlpha,
   }
 
+  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line min-w-0'
+
   return (
     <div
-      className={`flex flex-col gap-3 p-4 transition-colors ${
-        embedded ? '' : overviewPanel
+      className={`grid items-stretch transition-colors ${
+        embedded ? '' : `${overviewPanel} p-4`
       } ${active ? 'bg-accent-ui/[0.06]' : ''}`}
+      style={PRIMITIVE_TABLE_GRID}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
         <OverviewSwatch family={family} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -215,12 +227,15 @@ function RampPreviewBlock({
           )}
         </div>
       </div>
-      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-2.5 gap-y-2 items-center">
-        <span className="text-[10px] font-medium text-fg-faint">Light</span>
+      <div className={rampCell}>
         <ScaleRow scale={light} ariaLabel={`${family.label} light scale`} {...rowProps} />
-        <span className="text-[10px] font-medium text-fg-faint">Dark</span>
+      </div>
+      <div className={rampCell}>
         <ScaleRow scale={dark} ariaLabel={`${family.label} dark scale`} {...rowProps} />
       </div>
+      <span className="flex items-center justify-center text-fg-faint/40" aria-hidden>
+        <SlidersIcon />
+      </span>
     </div>
   )
 }
@@ -270,12 +285,12 @@ function FamilyRampOverview({
         </ul>
       </div>
 
-      <div className="border-t border-line/60 px-4 py-6 flex flex-col gap-4">
-        <div>
+      <div className="border-t border-line/60">
+        <div className="px-4 pt-6 pb-3">
           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
           <p className="text-[11px] text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
         </div>
-        <div className={`${overviewPanel} ${overviewDivide}`}>
+        <div className={`border-t border-line ${overviewDivide}`}>
           {core.map((f) => (
             <RampPreviewBlock
               key={f.key}
@@ -287,9 +302,11 @@ function FamilyRampOverview({
           ))}
           {states.length > 0 ? (
             <>
-              <div className="px-4 py-2.5">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">States</span>
-                <p className="text-[10px] text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
+              <div className="grid items-center bg-elevated/20 border-t border-line/60" style={PRIMITIVE_TABLE_GRID}>
+                <div className="col-span-4 px-4 py-2.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">States</span>
+                  <p className="text-[10px] text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
+                </div>
               </div>
               {states.map((f) => (
                 <RampPreviewBlock
@@ -804,9 +821,6 @@ export default function ColorPrimitives({
   focusFamilyKey,
   tabBar,
   railCollapsed = false,
-  onToggleRail,
-  toolbar,
-  toolbarWash,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
@@ -815,21 +829,13 @@ export default function ColorPrimitives({
    *  changes to a new value. */
   focusFamilyKey?: string | null
   /** The Primitives/Semantics/Gradients tab pill bar, rendered by ColorHub —
-   *  passed down instead of pre-wrapped so it can share a row with "Groups"
-   *  (matches the Figma reference: same line, 198px nav-aligned left portion
-   *  + tabs/search on the right) instead of sitting in its own full-width row. */
+   *  passed down instead of pre-wrapped so it can share a row with search
+   *  on the table side. Groups | icon-rail lives in FoundationWorkbench. */
   tabBar?: ReactNode
-  /** Collapses this view's own 198px left column (accent-color cell · Groups
-   *  header · family nav) to a swatch strip, handing the width to the token
-   *  table. LIFTED to `Configurator`, not local state, for one reason: the
-   *  TopNav brand block's right border is what continues this column's divider
-   *  up through the header (`brandWidth`), so if the column could shrink
-   *  without the shell knowing, that divider would stop at the header and
-   *  restart one row down — two unrelated rules instead of one. */
+  /** Collapses this view's own 198px left column to a swatch strip. LIFTED
+   *  to `Configurator` so TopNav's brand block and FoundationWorkbench's
+   *  Groups cell track the same width. */
   railCollapsed?: boolean
-  onToggleRail?: () => void
-  toolbar?: ReactNode
-  toolbarWash?: string
 }) {
   const store = useDesignStore()
   const {
@@ -1334,9 +1340,7 @@ export default function ColorPrimitives({
     )
   })() : null
 
-  const gridStyle: React.CSSProperties = {
-    gridTemplateColumns: 'minmax(9rem,1.1fr) repeat(2, minmax(8.5rem,1fr)) 2.75rem',
-  }
+  const gridStyle = PRIMITIVE_TABLE_GRID
 
   return (
     // No enter animation on the tab panel itself. The three Color tabs now
@@ -1347,52 +1351,6 @@ export default function ColorPrimitives({
     // they render in the same place: the chrome appeared to jump while only
     // the content had actually changed.
     <div className="h-full flex flex-col">
-      {/* ── "Groups" shares a row with the tab pill bar + search — same line,
-          per the Figma reference — instead of each owning a separate row.
-          MOVED ABOVE the quick-edit strip (was row 2, now row 1) — reported as
-          wanting "Groups" over the accent-color cell and the tab bar/search
-          over the ramp, i.e. the nav's own header sits directly above the nav
-          it labels, and the strip that EDITS a family sits directly above the
-          table it edits, instead of the two being interleaved. The 198px left
-          portion still shares the same column every row in this view uses,
-          just one row earlier now. `border-line` (full strength, not the
-          `/60` this row used when it sat second) — this is now the row
-          directly above the nav + table, the same boundary weight the OTHER
-          row carried when IT was last. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div
-          className={`flex-shrink-0 flex items-center h-[52px] bg-app transition-[width] duration-200 ${
-            railCollapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
-          {!railCollapsed && <span className="text-[13px] font-semibold text-fg">Groups</span>}
-          <RailToggle collapsed={railCollapsed} onClick={onToggleRail} />
-        </div>
-        <div
-          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
-          style={{ background: toolbarWash }}
-        >
-          {toolbar}
-        </div>
-      </div>
-
-      {/* ── Quick-edit strip — FULL WIDTH, matching the icon-toolbar row's
-          width above it (not indented to just the table column). Promoted
-          from Picker Color: names + edits whichever family is active in the
-          nav, with a wand to re-harmonize Neutral + States off Accent and
-          the scale-settings gear. Read-only for Accent-Alpha (see
-          AlphaHexCell) — an alpha value is solved against its page, never
-          independently set.
-          The 198px/flex-1 split — and that `border-r` — is the SAME one
-          the Groups row above and the nav column below use; lining all three
-          up is what makes the left edge read as one continuous column
-          instead of the accent field floating unaligned above it.
-          `border-line/60` (the lighter weight, not the full-strength one this
-          row used when it sat first) — it now sits between two header-ish
-          rows (Groups above, the nav + table below), so a lighter divider
-          here and a full-strength one just below it is what keeps the
-          "chrome vs. content" boundary reading as the stronger line. ── */}
       {/* ── Body: folders flush under Groups; tabs · ramp · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
       <nav
@@ -1662,9 +1620,9 @@ export default function ColorPrimitives({
       </nav>
 
       <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
-        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
+        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
           <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
               <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -1682,7 +1640,16 @@ export default function ColorPrimitives({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 pl-4 pr-3 h-[52px] flex-shrink-0 border-b border-line/60">
+        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
+            <div className="min-w-[24rem]">
+              {/* Quick-edit strip lives inside the scroll surface so its sticky
+                  stack lines up with the column header — the tone-9 anchor ring
+                  used to paint over "light"/"dark" when overview ramps scrolled
+                  under a header that shared the same z-index. */}
+              <div
+                className="sticky top-0 z-20 flex items-center gap-2 pl-4 pr-3 border-b border-line/60 bg-app isolate"
+                style={{ height: QUICK_EDIT_STRIP_HEIGHT }}
+              >
           {!railCollapsed && (
             family.isAlpha ? (
               <div className="flex-shrink-0 h-9 px-1.5 rounded-lg border border-line bg-surface flex items-center">
@@ -1759,7 +1726,7 @@ export default function ColorPrimitives({
               </div>
             )
           )}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             <ScaleRow
               scale={darkPreview ? family.dark : family.light}
               labels={namingLabels}
@@ -1817,22 +1784,22 @@ export default function ColorPrimitives({
               />
             </ScaleSettingsModal>
           </div>
-        </div>
-        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[24rem]">
+              </div>
               {/* Column header — light/dark eye toggles drive the preview theme.
                   Sticky so it survives scrolling the tone rows below: without
                   it, scrolling past row 1 hides the eye toggles, the per-column
                   export icon and the settings gear — the only way back to any
-                  of them was scrolling back up. `z-10` keeps it above the row
-                  content (band captions removed); `bg-app` (already set) is
-                  what keeps rows from showing through underneath it. */}
-              <div className="sticky top-0 z-10 grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint" style={gridStyle}>
+                  of them was scrolling back up. Sits under the quick-edit strip
+                  (`top` offset) and above scrolling rows (`z-10`). */}
+              <div
+                className="sticky z-10 grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint"
+                style={{ ...gridStyle, top: QUICK_EDIT_STRIP_HEIGHT }}
+              >
                 <span className="pl-4 py-3 border-r border-line">Token name</span>
                 {(['light', 'dark'] as const).map((col) => {
                   const isPreviewed = previewTheme === col
                   return (
-                    <span key={col} className={`flex items-center px-1.5 py-2 border-r border-line min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                    <span key={col} className={`flex items-center px-2.5 py-2 border-r border-line min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       <button
                         onClick={() => onPreviewThemeChange?.(col)}
                         aria-pressed={isPreviewed}

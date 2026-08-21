@@ -28,3 +28,7 @@ dist-ssr
 # Kept out of git deliberately: it is derived from src/lib/color* and would
 # otherwise be a 260 KB file that conflicts on every branch.
 reports/
+
+# Untitled UI glyph catalog — regenerate with `npm run gen:untitled-icons`.
+# Untitled's license allows using the icons, not redistributing the set.
+src/generated/untitled-icons.ts

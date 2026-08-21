@@ -7,7 +7,6 @@ import type { CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { withAlpha, readableInk, darkShadowMap } from './colorUtils'
-import { getIconLibrary } from './iconLibraries'
 import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -128,7 +127,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     shadows: kind === 'dark' ? darkShadowMap(store.shadows) : store.shadows,
     grid: store.grid,
     opacity: store.opacity,
-    iconPrefix: getIconLibrary(store.iconLibrary)?.iconifyPrefix ?? store.iconLibrary,
+    iconPrefix: 'untitled',
     coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),
     avatarGradient: gradientCssFor(store.gradientAssignments?.avatar ?? null),
   }

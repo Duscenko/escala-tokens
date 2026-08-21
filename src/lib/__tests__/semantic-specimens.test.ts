@@ -53,7 +53,8 @@ function mockStore(system: ReturnType<typeof buildSystem>) {
     shadows: {},
     grid: {},
     opacity: {},
-    iconLibrary: 'lucide',
+    iconLibrary: 'untitled',
+    iconAiSource: 'untitled',
     gradients: [],
     gradientAssignments: {},
     customColors: [],
@@ -125,13 +126,13 @@ describe('semantic preview wiring', () => {
     const l = light.archTokens!
     const d = dark.archTokens!
 
-    // Page inverts; status fg uses tone 12 in dark (tone 11 in light).
+    // Page inverts; status fg uses a chromatic dark step (not the near-white 12).
     expect(d['surface.page']).not.toBe(l['surface.page'])
     expect(d['status.success.content']).not.toBe(l['status.success.content'])
     expect(d['status.critical.content']).not.toBe(l['status.critical.content'])
     expect(d['status.warning.content']).not.toBe(l['status.warning.content'])
 
-    // Component border uses a higher dark-ramp step (neutral-dark.11 vs neutral.9).
+    // Dark layout stroke is quieter (neutral-dark.6 vs light neutral.9).
     expect(d['border.strong']).not.toBe(l['border.strong'])
 
     // Collage fields still track arch roles in dark — the wiring, not the hex parity.

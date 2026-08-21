@@ -61,7 +61,6 @@ export default function Step8_Grid() {
         title={active.label}
         searchLabel="Filter grid tokens"
         railed
-        railTop={<span className="text-[13px] font-semibold text-fg">Collections</span>}
         railBody={
           <nav aria-label="Grid collections" className="py-1.5 px-2 flex flex-col gap-0.5">
             {GRID_GROUPS.map((g) => {

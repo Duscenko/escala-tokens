@@ -1,5 +1,5 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
-import { getIconLibrary } from './iconLibraries'
+import { getIconAiSource, UNTITLED_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -314,12 +314,15 @@ export function generateTokenJSON() {
     grid: store.grid,
     sizes: store.sizes,
     icons: {
-      library: store.iconLibrary,
-      name: getIconLibrary(store.iconLibrary)?.label ?? store.iconLibrary,
-      package: getIconLibrary(store.iconLibrary)?.npm ?? '',
-      // Iconify collection prefix — the Figma plugin fetches the library's
-      // core glyphs from api.iconify.design and imports them as components.
-      prefix: getIconLibrary(store.iconLibrary)?.iconifyPrefix ?? store.iconLibrary,
+      library: UNTITLED_LIBRARY.key,
+      name: UNTITLED_LIBRARY.label,
+      package: UNTITLED_LIBRARY.npm,
+      repo: UNTITLED_LIBRARY.repo,
+      prefix: UNTITLED_LIBRARY.key,
+      aiSource: (() => {
+        const src = getIconAiSource(store.iconAiSource)
+        return { key: src.key, label: src.label, repo: src.repo, npm: src.npm }
+      })(),
       custom: store.customIcons,
     },
     style: null,

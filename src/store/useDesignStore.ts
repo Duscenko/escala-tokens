@@ -13,6 +13,7 @@ import { slugify } from '../lib/utils'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
 // store's constants), so a value import here would create a runtime cycle.
 import type { SemanticArchitecture } from '../lib/semanticArchitectures'
+import { aiSourceFromLegacyLibrary, type IconAiSourceKey } from '../lib/iconLibraries'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -378,6 +379,7 @@ export interface DesignSnapshot {
   selectedComponents: string[]
   completedFoundations: string[]
   iconLibrary: string
+  iconAiSource: IconAiSourceKey
   customIcons: { name: string; svg: string }[]
   figmaLastPublishAt: string | null
   githubRepo: string | null
@@ -478,7 +480,8 @@ export function makeDesignDefaults(): DesignSnapshot {
     // returning users, and never reaches for this constant).
     selectedComponents: [...ESSENTIAL_COMPONENT_KEYS],
     completedFoundations: [],
-    iconLibrary: 'lucide',
+    iconLibrary: 'untitled',
+    iconAiSource: 'untitled',
     customIcons: [],
     figmaLastPublishAt: null,
     githubRepo: null,
@@ -757,9 +760,12 @@ interface DesignStore {
   markFoundationComplete: (key: string) => void
   resetFoundationsProgress: () => void
 
-  // Icon Library — the icon set the system standardizes on (surfaced in export/MD)
+  // Icon Library — Untitled UI is the bundled set. `iconAiSource` is the
+  // GitHub repo written into Skill / README for generated UI.
   iconLibrary: string
   setIconLibrary: (key: string) => void
+  iconAiSource: IconAiSourceKey
+  setIconAiSource: (key: IconAiSourceKey) => void
 
   // Custom icons — user-uploaded SVGs (sanitized before they reach the store)
   customIcons: { name: string; svg: string }[]
@@ -1056,8 +1062,9 @@ export const useDesignStore = create<DesignStore>()(
         ),
       resetFoundationsProgress: () => set({ completedFoundations: [] }),
 
-      // Icon Library (default: Lucide — clean, ubiquitous line icons)
-      setIconLibrary: (key) => set({ iconLibrary: key }),
+      // Icon Library — Untitled UI is the only bundled set.
+      setIconLibrary: (_key) => set({ iconLibrary: 'untitled' }),
+      setIconAiSource: (key) => set({ iconAiSource: key }),
 
       addCustomIcon: (name, svg) =>
         set((state) =>
@@ -1233,7 +1240,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 52,
+      version: 53,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1275,7 +1282,7 @@ export const useDesignStore = create<DesignStore>()(
           }
           // v6→v7: Icon Library foundation added; seed the default set.
           if (!persisted.iconLibrary) {
-            persisted.iconLibrary = 'lucide'
+            persisted.iconLibrary = 'untitled'
           }
           // v7→v8: rename default project name from "Apollo" to "DS.by.MD".
           if (persisted.projectName === 'Apollo') {
@@ -2036,6 +2043,22 @@ export const useDesignStore = create<DesignStore>()(
           fixOverrides(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) fixOverrides(sys?.snapshot)
+          }
+        }
+        if (version < 53) {
+          // v52→v53: Untitled UI is the only bundled icon set. Iconify libraries
+          // become an AI-context recommendation (`iconAiSource`). Heroicons
+          // selections are preserved as that recommendation.
+          const migrateIcons = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (!state.iconAiSource) {
+              state.iconAiSource = aiSourceFromLegacyLibrary(state.iconLibrary)
+            }
+            state.iconLibrary = 'untitled'
+          }
+          migrateIcons(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) migrateIcons(sys?.snapshot)
           }
         }
         return persisted

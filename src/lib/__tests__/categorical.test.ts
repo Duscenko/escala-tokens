@@ -45,6 +45,19 @@ describe('the categorical catalogue is complete', () => {
     expect(categoricalNestedPath('action', 'primary.default')).toEqual(['action', 'primary', 'default'])
     expect(categoricalNestedPath('surface', 'page')).toEqual(['surface', 'page'])
   })
+
+  it('uses the layout-tuned dark steps as catalogue defaults', () => {
+    const label = (group: string, key: string) =>
+      view.categories.find((c) => c.key === group)?.tokens.find((t) => t.key === key)?.modes.dark.label
+    expect(label('surface', 'inverse')).toBe('neutral.4')
+    expect(label('action', 'primary.pressed')).toBe('accent.6')
+    expect(label('border', 'subtle')).toBe('neutral-dark.4')
+    expect(label('border', 'strong')).toBe('neutral-dark.6')
+    expect(label('status', 'critical.content')).toBe('error.10')
+    expect(label('status', 'warning.content')).toBe('warning.11')
+    expect(label('status', 'success.content')).toBe('success.11')
+    expect(label('status', 'critical.surface-solid')).toBe('error.12')
+  })
 })
 
 describe('buildCategoricalSymbolicTokens matches the architecture view', () => {
@@ -164,9 +177,42 @@ describe('the Skill export format', () => {
 
     const unzipped = unzipStore(files[0].binary!)
     const paths = unzipped.map((f) => f.path)
-    expect(paths).toContain(`${name}/SKILL.md`)
-    expect(paths).toContain(`${name}/references/tokens.md`)
-    expect(paths).toContain(`${name}/references/semantic-contract.md`)
+    expect(paths).toContain('SKILL.md')
+    expect(paths).toContain('references/tokens.md')
+    expect(paths).toContain('references/foundations.md')
+    expect(paths).toContain('references/semantic-contract.md')
+    expect(md).toContain('## Token catalog')
+    expect(md).toContain('#### Content')
+    expect(md).toContain('#### Action')
+    expect(md).toContain('#### Surface')
+    expect(md).toContain('#### Status')
+    expect(md).toContain('#### Border')
+    expect(md).toContain('`Action/primary/default`')
+    expect(md).toContain('`Content/primary`')
+    expect(md).toContain('Spacing')
+    expect(md).toContain('step/{n}')
+
+    const tokensMd = new TextDecoder().decode(
+      unzipped.find((f) => f.path === 'references/tokens.md')!.data,
+    )
+    expect(tokensMd).toContain('Color Primitives')
+    expect(tokensMd).toContain('### Content')
+    expect(tokensMd).toContain('### Action')
+    expect(tokensMd).toContain('`Content/primary`')
+    expect(tokensMd).toContain('`Action/primary/default`')
+
+    const foundationsMd = new TextDecoder().decode(
+      unzipped.find((f) => f.path === 'references/foundations.md')!.data,
+    )
+    expect(foundationsMd).toContain('## Spacing')
+    expect(foundationsMd).toContain('## Radius')
+    expect(foundationsMd).toContain('## Shadows')
+    expect(foundationsMd).toContain('/Shadow/')
+    expect(foundationsMd).toContain('## Icons')
+    expect(foundationsMd).toContain('https://github.com/untitleduico/icons')
+    expect(md).toContain('### Icons')
+    expect(md).toContain('https://github.com/untitleduico/icons')
+    expect(md).toContain('When generating UI for this product, use icons from')
   })
 
   it('puts every categorical role in the semantic-contract reference', () => {
@@ -179,7 +225,7 @@ describe('the Skill export format', () => {
       expect(contract, id).toContain(CATEGORICAL_ROLE_COMMENTS[id]!)
     }
     expect(contract).toContain('`Content/primary`')
-    expect(contract).toContain('`Action/primary.default`')
+    expect(contract).toContain('`Action/primary/default`')
     expect(contract).toContain('`var(--color-content-link-default)`')
     expect(contract).toContain('`border.focus`')
     expect(contract).not.toContain('`border.active`')

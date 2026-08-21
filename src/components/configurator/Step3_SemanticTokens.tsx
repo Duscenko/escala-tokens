@@ -16,7 +16,7 @@ import { ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
-  RailToggle, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
+  COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import AddThemePanel from './AddThemePanel'
@@ -645,13 +645,8 @@ export default function Step3_SemanticTokens({
   onPreviewThemeChange,
   tabBar,
   railCollapsed = false,
-  onToggleRail,
-  toolbar,
-  toolbarWash,
 }: {
-  /** Color's three-tab bar, passed down (not pre-wrapped) so it renders on the
-   *  SAME row as this table's "Tokens" header — exactly how ColorPrimitives
-   *  places it next to "Groups". Both tabs sit in one position across tabs. */
+  /** Color's three-tab bar — Groups | icon-rail lives in FoundationWorkbench. */
   tabBar?: ReactNode
   /** Reports which semantic GROUP is selected so the shell can point the
    *  preview at it. Deliberately NOT the same value as the nav's own category
@@ -670,9 +665,6 @@ export default function Step3_SemanticTokens({
    *  changes what it LISTS per tab, so collapsing it on Primitives and finding
    *  it expanded on Semantics would read as two different columns. */
   railCollapsed?: boolean
-  onToggleRail?: () => void
-  toolbar?: ReactNode
-  toolbarWash?: string
 }) {
   const store = useDesignStore()
   const {
@@ -1080,37 +1072,6 @@ export default function Step3_SemanticTokens({
     // foundation-level swap should animate. (`reduce` is still used by the
     // modals below.)
     <div className="h-full flex flex-col">
-      {/* ── Row 1 — "Groups" + the tab bar + search, on ONE line, matching
-          ColorPrimitives' own row 1 (same h-[52px], same 198px split). MOVED
-          ABOVE the architecture strip (was row 2) — same reorder as
-          ColorPrimitives: the nav's own header sits directly above the nav it
-          labels, not interleaved with the control strip. `border-line` (full
-          strength) since this now sits at the TOP of the chrome, above
-          another chrome row rather than above the nav — the strip below picks
-          up the lighter `/60` instead, matching whichever row sits directly
-          above the nav + table. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div
-          className={`flex-shrink-0 flex items-center h-[52px] bg-app transition-[width] duration-200 ${
-            railCollapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
-          {/* "Groups", not "Tokens" — the same word ColorPrimitives uses for
-              the same nav two rows below. Both list GROUPS (families there,
-              semantic categories here); calling it something else on one tab
-              made the two rails read as unrelated controls. */}
-          {!railCollapsed && <span className="text-[13px] font-semibold text-fg">Groups</span>}
-          <RailToggle collapsed={railCollapsed} onClick={onToggleRail} />
-        </div>
-        <div
-          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
-          style={{ background: toolbarWash }}
-        >
-          {toolbar}
-        </div>
-      </div>
-
       {/* ── Body: categories flush under Groups; tabs · contrast · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
         <nav
@@ -1162,7 +1123,7 @@ export default function Step3_SemanticTokens({
         </nav>
 
         <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
-        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
+        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
           <div className="flex-1 min-w-0">{tabBar}</div>
           {isFlat && activeCategory === 'background' && (
             <div className="self-center flex items-center gap-2 flex-shrink-0">
@@ -1183,7 +1144,7 @@ export default function Step3_SemanticTokens({
               </div>
             </div>
           )}
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
               <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

@@ -3,7 +3,7 @@
 
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
-import { getIconLibrary } from './iconLibraries'
+import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { toneLabel, withAlpha, darkShadow } from './colorUtils'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
@@ -129,7 +129,7 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
   const {
     projectName, projectDescription, primaryColor, primaryScale, grayLightScale, errorScale, warningScale,
     successScale, infoScale, customColors, themes, themeOrder, typography, spacing, padding, radius,
-    shadows, grid, sizes, selectedComponents, iconLibrary, customIcons, githubRepo, colorNaming, panelBackground,
+    shadows, grid, sizes, selectedComponents, iconAiSource, customIcons, githubRepo, colorNaming, panelBackground,
     gradients, gradientAssignments,
   } = store
   const gradientSlugById = (id: string | null) => {
@@ -151,7 +151,8 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
       : ''
   const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const headingFont = typography.headingFontFamily ?? typography.fontFamily
-  const lib = getIconLibrary(iconLibrary)
+  const ai = getIconAiSource(iconAiSource)
+  const iconsBlock = iconAiContext(iconAiSource)
 
   return `# ${projectName} — Design System
 
@@ -165,7 +166,7 @@ ${projectDescription.trim() ? `\n${projectDescription.trim()}\n` : ''}
 - **Panel background:** ${cap(panelBackground)}
 - **Heading font:** ${headingFont}
 - **Body font:** ${typography.fontFamily}
-- **Icons:** ${lib?.label ?? iconLibrary}${lib?.npm ? ` (\`${lib.npm}\`)` : ''}
+- **Icons:** ${ai.label} — ${ai.repo}
 - **Components:** ${selectedComponents.length > 0 ? selectedComponents.join(', ') : 'none selected'}${githubRepo ? `\n- **Repository:** [${githubRepo}](https://github.com/${githubRepo})` : ''}
 
 ---
@@ -261,10 +262,7 @@ Assigned surfaces: ${[
 
 ---
 
-## Icons
-
-- **Library:** ${lib?.label ?? iconLibrary}
-- **Package:** \`${lib?.npm ?? '—'}\`${lib?.site ? `\n- **Site:** ${lib.site}` : ''}${customIcons.length ? `\n- **Custom icons:** ${customIcons.map((i) => `\`${i.name}\``).join(', ')} (SVGs embedded in \`tokens.json\`)` : ''}
+${iconsBlock.markdown}${customIcons.length ? `\n- **Custom icons:** ${customIcons.map((i) => `\`${i.name}\``).join(', ')} (SVGs embedded in \`tokens.json\`)` : ''}
 
 ---
 

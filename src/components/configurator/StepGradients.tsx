@@ -72,13 +72,11 @@ function AssignSelect({ label, value, onChange, gradients }: {
 }
 
 export default function StepGradients({
-  tabBar, previewTheme = 'light', onPreviewThemeChange, toolbar, toolbarWash,
+  tabBar, previewTheme = 'light', onPreviewThemeChange,
 }: {
   tabBar?: ReactNode
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
-  toolbar?: ReactNode
-  toolbarWash?: string
 } = {}) {
   const {
     gradients, gradientAssignments, primaryColor, primaryScale, primaryDarkScale,
@@ -210,37 +208,9 @@ export default function StepGradients({
 
   return (
     <div className="h-full flex flex-col">
-      {/* ── Row 1 — "Collections" + the tab bar + search, on one line. MOVED
-          ABOVE the gradient-type strip (was row 2) — same reorder as
-          ColorPrimitives/Step3: the nav's own header sits directly above the
-          nav it labels. `border-line` (full strength) — this now sits at the
-          top of the chrome, above another chrome row rather than above the
-          nav; the strip below picks up the lighter `/60` instead. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 flex items-center justify-between pl-3 pr-2 h-[52px] bg-app">
-          <span className="text-[13px] font-semibold text-fg">Collections</span>
-          <button
-            type="button"
-            onClick={create}
-            aria-label="New gradient"
-            title="Create a new gradient"
-            className="flex items-center justify-center w-6 h-6 rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors"
-          >
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
-          </button>
-        </div>
-        <div
-          className="flex-1 min-w-0 flex items-center gap-4 pl-4 pr-3 h-[52px] bg-app border-l border-line"
-          style={{ background: toolbarWash }}
-        >
-          {toolbar}
-        </div>
-      </div>
-
-      {/* ── Row 2 — gradient type + the live bar it produces. MOVED BELOW
-          "Collections" (was row 1) — see that row's own note. `border-line/60`
-          since this now sits between "Collections" above and the nav + table
-          below. ── */}
+      {/* ── Gradient type + the live bar it produces. Groups | icon-rail is
+          FoundationWorkbench. `border-line/60` since this sits between Groups
+          above and the nav + table below. ── */}
       <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
         <div className="w-[198px] flex-shrink-0 flex flex-col justify-center gap-1.5 px-4 py-5 bg-app">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
@@ -264,9 +234,9 @@ export default function StepGradients({
         </div>
         {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
         <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line">
-        <div className="flex items-stretch flex-shrink-0 h-[52px] border-b border-line gap-3 pr-3">
+        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
           <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-48 max-w-[45%] focus-within:border-line-strong transition-colors flex-shrink-0">
+          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
               <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
               <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -388,6 +358,14 @@ export default function StepGradients({
       {/* ── Row 3 — gradient nav + the stops table ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
         <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full py-1.5 px-2 flex flex-col gap-0.5 overflow-y-auto bg-app">
+          <button
+            type="button"
+            onClick={create}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-fg-muted hover:bg-elevated/50 hover:text-fg transition-colors"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
+            New gradient
+          </button>
           {visible.map((g) => {
             const active = g.id === selectedId
             const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id

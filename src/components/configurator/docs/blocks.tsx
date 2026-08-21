@@ -11,10 +11,14 @@
 
 import { useState, type ReactNode } from 'react'
 import { buildSkillExport } from '../../../lib/skillExport'
+import { SparkleCircleIcon } from '../../ui/icons'
+import { RainbowButton } from '../../ui/rainbow-button'
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
-export function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+export function CopyButton({
+  text, label = 'Copy', title,
+}: { text: string; label?: string; title?: string }) {
   const [copied, setCopied] = useState(false)
   async function copy() {
     await navigator.clipboard.writeText(text)
@@ -24,6 +28,7 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
   return (
     <button
       onClick={copy}
+      title={title}
       className="flex items-center gap-1.5 text-[11px] text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
     >
       {copied ? (
@@ -35,6 +40,51 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         </>
       )}
     </button>
+  )
+}
+
+const AGENT_CONTEXT_HINT =
+  'Copies this page as markdown for an AI agent: Figma set, live tokens (radius, padding, size, spacing, type), semantic color bindings, and the API. Paste it into Cursor or Claude so the agent can implement the component without guessing names or px.'
+
+/** Header CTA — Magic UI Rainbow Button (animated spectrum border + glow). */
+export function CopyAgentContextButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <RainbowButton type="button" size="sm" onClick={copy} className="relative z-10">
+        {copied ? (
+          <>
+            <span className="text-[11px] leading-none">✓</span>
+            Copied
+          </>
+        ) : (
+          <>
+            <SparkleCircleIcon size={14} />
+            Copy context to Agents
+          </>
+        )}
+      </RainbowButton>
+      <span className="relative group/hint inline-flex">
+        <button
+          type="button"
+          aria-label="What Copy context to Agents does"
+          className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-[10px] font-semibold leading-none hover:text-fg hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+        >
+          i
+        </button>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute right-0 top-full mt-2 w-60 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-2 text-left opacity-0 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100 transition-opacity duration-150 z-40 shadow-lg"
+        >
+          {AGENT_CONTEXT_HINT}
+        </span>
+      </span>
+    </div>
   )
 }
 
@@ -56,23 +106,25 @@ export function DownloadSkillButton() {
     setTimeout(() => setDone(false), 2000)
   }
   return (
-    <button
+    <RainbowButton
+      type="button"
+      size="sm"
       onClick={download}
-      title="Download the Figma MCP / Agent Skill zip — unzip into .claude/skills or .cursor/skills"
-      className="flex items-center gap-1.5 text-[11px] text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
+      title="Download the Figma MCP / Agent Skill zip — SKILL.md at the zip root; unzip into .claude/skills or .cursor/skills"
+      className="relative z-10"
     >
       {done ? (
-        <><span className="text-emerald-500">✓</span> Downloaded</>
+        <>
+          <span className="text-[11px] leading-none">✓</span>
+          Downloaded
+        </>
       ) : (
         <>
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden>
-            <path d="M5.5 1.5v6M3 5.5l2.5 2.5L8 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M1.5 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
+          <SparkleCircleIcon size={14} />
           Download Skill
         </>
       )}
-    </button>
+    </RainbowButton>
   )
 }
 

@@ -5,7 +5,7 @@
 import chroma from 'chroma-js'
 import { toneLabel } from './colorUtils'
 import { fontStack } from './fonts'
-import { getIconLibrary } from './iconLibraries'
+import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
 import { mdCell } from './utils'
@@ -157,9 +157,11 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     return lines
   }
   if (section === 'icons') {
-    const lib = getIconLibrary(store.iconLibrary)
-    const lines = [`/* Icon library — ${lib?.label ?? store.iconLibrary}${lib?.npm ? ` · ${lib.npm}` : ''} */`]
-    if (lib?.npm) lines.push(`/* Install: npm i ${lib.npm} */`)
+    const ai = getIconAiSource(store.iconAiSource)
+    const lines = [
+      `/* Icons — ${ai.label} · ${ai.repo} */`,
+      `/* Install: npm i ${ai.npm} */`,
+    ]
     if (store.customIcons.length) lines.push(`/* Custom icons: ${store.customIcons.map((i) => i.name).join(', ')} */`)
     return lines
   }
@@ -213,8 +215,8 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
 
 function tailwindFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'icons') {
-    const lib = getIconLibrary(store.iconLibrary)
-    return `// Icons aren't a Tailwind theme key — install the set and import per-icon.\n// ${lib?.label ?? store.iconLibrary}${lib?.npm ? `  ·  npm i ${lib.npm}` : ''}`
+    const ai = getIconAiSource(store.iconAiSource)
+    return `// Icons aren't a Tailwind theme key — install the set named in the Skill/README.\n// ${ai.label}  ·  ${ai.repo}\n// npm i ${ai.npm}`
   }
   return twConfig(twExtend(section, store, cf, opts))
 }
@@ -377,10 +379,11 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     ].join('\n')
   }
   if (section === 'icons') {
-    const lib = getIconLibrary(store.iconLibrary)
-    const lines = ['## Icons\n', `- **Library:** ${lib?.label ?? store.iconLibrary}`, lib?.npm ? `- **Package:** \`${lib.npm}\`` : '']
-    if (store.customIcons.length) lines.push(`- **Custom:** ${store.customIcons.map((i) => i.name).join(', ')}`)
-    return lines.filter(Boolean).join('\n')
+    const ctx = iconAiContext(store.iconAiSource)
+    const extra = store.customIcons.length
+      ? `\n- **Custom:** ${store.customIcons.map((i) => i.name).join(', ')}`
+      : ''
+    return `${ctx.markdown}${extra}`
   }
   const simple = SIMPLE[section]!
   return `## ${cap(section)}\n\n${table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``]))}`

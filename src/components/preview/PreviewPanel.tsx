@@ -487,7 +487,7 @@ export default function PreviewPanel({
   // be claiming a scope those tabs don't have.
   const themeBadge =
     tab === 'preview' && !iconLibraryKey && previewTheme && previewTheme !== 'light' ? previewTheme : null
-  const collageIconPrefix = getIconLibrary(useDesignStore((s) => s.iconLibrary))?.iconifyPrefix ?? 'lucide'
+  const collageIconPrefix = 'untitled'
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">

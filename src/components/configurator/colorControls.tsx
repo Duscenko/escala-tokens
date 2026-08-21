@@ -818,7 +818,9 @@ export function ScaleRow({
                 // The anchor ring goes INSET when joined — an offset ring would
                 // punch a gap through the seams the joined variant exists to
                 // close. Tone 9 stays marked either way (see CLAUDE.md).
-                isBase ? (joined ? 'ring-2 ring-inset ring-fg/30 relative z-10' : 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app') : ''
+                // `z-[1]` — local seam only. `z-10` leaked over sticky table
+                // headers when overview ramps scrolled underneath them.
+                isBase ? (joined ? 'ring-2 ring-inset ring-fg/30 relative z-[1]' : 'ring-2 ring-fg/25 ring-offset-1 ring-offset-app') : ''
               } ${
                 isSelected
                   ? 'ring-2 ring-accent-ui ring-offset-1 ring-offset-app'

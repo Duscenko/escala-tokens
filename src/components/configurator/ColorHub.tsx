@@ -1,4 +1,3 @@
-import { type ReactNode } from 'react'
 import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
@@ -29,9 +28,6 @@ export default function ColorHub({
   onPreviewThemeChange,
   focusFamilyKey,
   railCollapsed,
-  onToggleRail,
-  toolbar,
-  toolbarWash,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -49,11 +45,6 @@ export default function ColorHub({
    *  glyph-sized to collapse to. Owned by `Configurator` because TopNav's brand
    *  block sizes its divider from the same value; see `colorControls`' note. */
   railCollapsed?: boolean
-  onToggleRail?: () => void
-  /** Foundation switcher + Reset/Save. Renders in the Groups header's band so
-   *  Groups sits under the Escala logo and this chrome starts at Groups' edge. */
-  toolbar?: ReactNode
-  toolbarWash?: string
 }) {
   // Chrome-style tab strip — three equal cells, active one merges into the
   // content panel below via matching `bg-app` + concave bottom corners.
@@ -87,13 +78,8 @@ export default function ColorHub({
   return (
     <div className="h-full flex flex-col min-h-0">
       {colorTab === 'primary' ? (
-        // No standalone tabBar row here — Primitives shares that row with its
-        // own "Groups" nav header (same line, per the Figma reference), so
-        // ColorPrimitives places the tabs itself instead of receiving them
-        // pre-wrapped. Flush, no padding wrapper either — the family nav needs
-        // to reach the full height/left edge (it's the promoted sidebar now,
-        // in the position the outer SectionRail used to occupy). It owns its
-        // own padding + scroll internally for the table side.
+        // Flush — Groups | icon-rail is FoundationWorkbench. Tabs sit on the
+        // table-side header next to search, same slot on every Color tab.
         <div className="flex-1 min-h-0">
           <ColorPrimitives
             tabBar={tabBar}
@@ -101,9 +87,6 @@ export default function ColorHub({
             onPreviewThemeChange={onPreviewThemeChange}
             focusFamilyKey={focusFamilyKey}
             railCollapsed={railCollapsed}
-            onToggleRail={onToggleRail}
-            toolbar={toolbar}
-            toolbarWash={toolbarWash}
           />
         </div>
       ) : colorTab === 'semantics' ? (
@@ -118,9 +101,6 @@ export default function ColorHub({
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             railCollapsed={railCollapsed}
-            onToggleRail={onToggleRail}
-            toolbar={toolbar}
-            toolbarWash={toolbarWash}
           />
         </div>
       ) : (
@@ -131,8 +111,6 @@ export default function ColorHub({
             tabBar={tabBar}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
-            toolbar={toolbar}
-            toolbarWash={toolbarWash}
           />
         </div>
       )}

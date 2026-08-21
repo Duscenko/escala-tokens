@@ -15,8 +15,7 @@ import { resolveThemePalette } from '../../lib/themeSources'
 import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
-import { ICON_LIBRARIES } from '../../lib/iconLibraries'
-import { iconName, type IconConcept } from './docs/specimens'
+import { ICON_AI_SOURCES, getIconAiSource, type IconAiSourceKey } from '../../lib/iconLibraries'
 
 // Quick-edit foundations — shared by two hosts: the Components catalogue's
 // popover (default export) and Home's persistent right panel (QuickEditPanel).
@@ -95,28 +94,8 @@ function FontSelect({ value, onChange, ariaLabel }: { value: string; onChange: (
   )
 }
 
-// A sample glyph from an icon library, via the Iconify API + CSS mask so it
-// inherits the button's text color (same technique as the preview TokenIcon).
-function LibGlyph({ prefix, concept, size = 14 }: { prefix: string; concept: IconConcept; size?: number }) {
-  const url = `https://api.iconify.design/${prefix}/${iconName(prefix, concept)}.svg`
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size, height: size, display: 'inline-block', flexShrink: 0,
-        backgroundColor: 'currentColor',
-        maskImage: `url("${url}")`, WebkitMaskImage: `url("${url}")`,
-        maskSize: 'contain', WebkitMaskSize: 'contain',
-        maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
-        maskPosition: 'center', WebkitMaskPosition: 'center',
-      }}
-    />
-  )
-}
-
-// Icon-library dropdown — same open/close pattern as FontSelect, with a live
-// sample glyph per library so the sets are recognizable at a glance.
-function IconLibSelect({ value, onChange }: { value: string; onChange: (key: string) => void }) {
+// Icon-source dropdown — which GitHub repo the Skill / README tell an AI to use.
+function IconLibSelect({ value, onChange }: { value: string; onChange: (key: IconAiSourceKey) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -131,7 +110,7 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: str
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [open])
 
-  const current = ICON_LIBRARIES.find((l) => l.key === value) ?? ICON_LIBRARIES[0]
+  const current = getIconAiSource(value)
 
   return (
     <div ref={ref} className="relative">
@@ -140,10 +119,9 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: str
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Icon library"
+        aria-label="AI icon source"
         className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors ${ROW_H}`}
       >
-        <LibGlyph prefix={current.iconifyPrefix} concept="star" />
         <span className="flex-1 truncate">{current.label}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
           <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -159,19 +137,18 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: str
             role="listbox"
             className="absolute z-40 left-0 right-0 mt-1 rounded-lg border border-line-strong bg-app shadow-lg p-1"
           >
-            {ICON_LIBRARIES.map((lib) => (
+            {ICON_AI_SOURCES.map((src) => (
               <button
-                key={lib.key}
+                key={src.key}
                 type="button"
                 role="option"
-                aria-selected={lib.key === value}
-                onClick={() => { onChange(lib.key); setOpen(false) }}
+                aria-selected={src.key === value}
+                onClick={() => { onChange(src.key); setOpen(false) }}
                 className={`w-full flex items-center gap-2 text-left px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
-                  lib.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
+                  src.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
                 }`}
               >
-                <LibGlyph prefix={lib.iconifyPrefix} concept="star" />
-                <span className="flex-1 truncate">{lib.label}</span>
+                <span className="flex-1 truncate">{src.label}</span>
               </button>
             ))}
           </motion.div>
@@ -565,7 +542,7 @@ export function QuickEditSections({
     neutralTint,
     radius, setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
-    iconLibrary, setIconLibrary,
+    iconAiSource, setIconAiSource,
     padding, setPadding,
     shadows, setShadows,
   } = store
@@ -787,10 +764,9 @@ export function QuickEditSections({
         />
       </Group>
 
-      {/* Icons — the library every content glyph resolves from; full browser
-          in Foundations · Icons */}
+      {/* Icons — AI source for generated UI; the live catalog is always Untitled */}
       <Group accordion={accordion} defaultOpen={false} title="Icons" icon={IconsGlyph}>
-        <IconLibSelect value={iconLibrary} onChange={setIconLibrary} />
+        <IconLibSelect value={iconAiSource} onChange={setIconAiSource} />
       </Group>
 
       {/* Padding — per-side surface inset (cards, tiles, panels); also editable

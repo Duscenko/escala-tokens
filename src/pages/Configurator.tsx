@@ -1,5 +1,5 @@
 import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
 import { chromeAccent, readableInk, solidInkPair } from '../lib/colorUtils'
@@ -8,6 +8,7 @@ import { useLoadActiveFonts } from '../lib/fonts'
 import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
+import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
 
@@ -66,11 +67,6 @@ interface FoundationSection {
   Component: ComponentType
   Icon: ComponentType
 }
-
-// Foundations that render FLUSH (no `p-8`) because they carry a 198px left
-// column — the Color hub's row shape, which they all now follow. Icons is the
-// only remaining padded one: it's an Iconify browser, not a token table.
-const RAILED_FOUNDATIONS = new Set(['typography', 'radius', 'spacing', 'sizes', 'shadow', 'grid'])
 
 const FOUNDATIONS: FoundationSection[] = [
   {
@@ -244,6 +240,7 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 }
 
 export default function Configurator() {
+  const reduceMotion = useReducedMotion() ?? false
   // `selectedComponents`/`toggleComponent` are no longer read here — the
   // include checkbox moved into ComponentsView along with the master list.
   const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
@@ -570,41 +567,29 @@ export default function Configurator() {
     centerKey = 'export-save'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
-    // HomeActions (New/Import JSON/Kits) lives in the FoundationIconRail row
-    // above CenterHeader, not in centerRightSlot — see the icon-toolbar row in
-    // the render below. Export used to sit beside it, but it isn't a property
-    // of whichever foundation you're editing — it's transversal — so it moved
-    // to TopNav (see the Navigation model note there).
+    // HomeActions (Reset/Save) lives in the Groups | icon-rail band
+    // (ColorHub / FoundationWorkbench), not in CenterHeader — Variables
+    // foundations no longer render that header. Export is transversal, so it
+    // stays in TopNav.
     const Active = section.Component
+    // Inner body only — Groups | icon-rail is the STABLE shell
+    // (FoundationWorkbench, mounted outside the keyed motion below) so
+    // Color → Font doesn't remount the switcher.
     body = section.key === 'color' ? (
-      // Color hub manages its own per-tab scroll (Gradients scrolls; the Alias
-      // table self-scrolls with pinned headers) — no outer overflow here.
-      <div className="h-full min-h-0">
-        <ColorHub
-          colorTab={colorTab}
-          onColorTabChange={setColorTab}
-          onFocusChange={setSemanticFocus}
-          previewTheme={previewTheme}
-          onPreviewThemeChange={changePreviewTheme}
-          railCollapsed={colorRailCollapsed}
-          onToggleRail={() => setColorRailCollapsed((c) => !c)}
-          toolbar={foundationsToolbar}
-          toolbarWash={toolbarWash}
-        />
-      </div>
-    ) : RAILED_FOUNDATIONS.has(section.key) ? (
-      // Railed foundations own their internal scroll so their top bars +
-      // pinned column headers work — no outer overflow here. FLUSH, like the
-      // Color hub: `p-8` framed them as floating cards whose 198px column no
-      // longer lined up with the icon toolbar or CenterHeader above. The Color
-      // tables set the parameters every railed foundation follows.
-      <div className="h-full flex flex-col min-h-0">
-        <Active />
-      </div>
-    ) : (
+      <ColorHub
+        colorTab={colorTab}
+        onColorTabChange={setColorTab}
+        onFocusChange={setSemanticFocus}
+        previewTheme={previewTheme}
+        onPreviewThemeChange={changePreviewTheme}
+        railCollapsed={colorRailCollapsed}
+      />
+    ) : section.key === 'icons' ? (
       <div className="h-full overflow-y-auto p-8">
         <Active />
       </div>
+    ) : (
+      <Active />
     )
     centerKey = `f-${section.key}`
   } else if (tab === 'components') {
@@ -679,22 +664,19 @@ export default function Configurator() {
   // TopNav brand block tracks its width). Variables uses the horizontal
   // FoundationIconRail instead — no outer column there.
   const outerRailVisible = railVisible && (tab === 'components' || tab === 'docs')
-  // Color is the one foundation with its own internal 198px column (family
-  // nav / token categories / gradient list — see ColorPrimitives, Step3,
-  // StepGradients). It's not an outer rail, so `outerRailVisible` above stays
-  // false for it — but the brand block's divider still needs to continue
-  // unbroken into that column, or the vertical line just stops at the header
-  // and restarts one row down, reading as two unrelated rules instead of one.
-  const colorColumnVisible = tab === 'foundations' && !exportMode && activeFoundation === 'color'
-  // …and that column can COLLAPSE on Primitives AND Semantics (Gradients keeps
-  // its full width — its rail is the gradient list, whose rows are named
-  // swatches with nothing glyph-sized to collapse to), so the brand block has
-  // to track it or the divider stops at the header and restarts one row down.
-  // Read from `colorControls`' own exported constants rather than repeating the
-  // numbers, since a mismatch here is exactly a broken line.
-  const colorColumnCollapsed =
-    colorColumnVisible && colorTab !== 'gradients' && colorRailCollapsed
-  const colorColumnWidth = colorColumnCollapsed
+  // Every Variables foundation paints a 198px Groups column (Color owns it
+  // inside ColorHub; the rest wrap with FoundationWorkbench). It's not an
+  // outer SectionRail, so `outerRailVisible` above stays false — but the
+  // brand block's divider still needs to continue unbroken into that column.
+  const groupsColumnVisible = tab === 'foundations' && !exportMode
+  // Color's Groups column can COLLAPSE on Primitives AND Semantics (Gradients
+  // keeps its full width — its rail is the gradient list, whose rows are named
+  // swatches with nothing glyph-sized to collapse to). Other foundations stay
+  // at 198px. Read from `colorControls`' own exported constants rather than
+  // repeating the numbers, since a mismatch here is exactly a broken line.
+  const groupsColumnCollapsed =
+    groupsColumnVisible && activeFoundation === 'color' && colorTab !== 'gradients' && colorRailCollapsed
+  const groupsColumnWidth = groupsColumnCollapsed
     ? COLOR_RAIL_COLLAPSED_WIDTH
     : COLOR_RAIL_WIDTH
 
@@ -710,7 +692,7 @@ export default function Configurator() {
     else changeTab(key)
   }
 
-  const colorCanvas = tab === 'foundations' && !exportMode && activeFoundation === 'color'
+  const foundationCanvas = tab === 'foundations' && !exportMode
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -727,12 +709,12 @@ export default function Configurator() {
         onExport={openSectionExport}
         exportOpen={sectionExportOpen}
         onMenu={() => openAbout('platform')}
-        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : colorColumnVisible ? colorColumnWidth : null}
+        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : groupsColumnVisible ? groupsColumnWidth : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
         // spill past the divider they're supposed to sit inside.
-        railCollapsed={(outerRailVisible && railCollapsed) || colorColumnCollapsed}
+        railCollapsed={(outerRailVisible && railCollapsed) || groupsColumnCollapsed}
         previewTheme={previewTheme}
         onThemeChange={changePreviewTheme}
       />
@@ -770,24 +752,17 @@ export default function Configurator() {
         )}
 
         {/* ── Layer 1: the content surface, flush under the top bar ──
-            Color's Groups column IS the outer rail (under the logo, gradient
-            shows through), so this wrapper stays transparent there. Every
-            other view paints `bg-app` and the hairline from the first column. */}
-        <div className={`flex-1 min-w-0 flex overflow-hidden ${colorCanvas ? '' : 'bg-app border-l border-line'}`}>
+            Variables' Groups column IS the outer rail (under the logo), so
+            this wrapper stays transparent there. Components / Docs / export
+            views paint `bg-app` and the hairline from the first column. */}
+        <div className={`flex-1 min-w-0 flex overflow-hidden ${foundationCanvas ? '' : 'bg-app border-l border-line'}`}>
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
-            {/* Foundation switcher. On Color it lives in Groups' own 52px band
-                (see ColorHub) so Groups can sit under the logo. Other
-                foundations keep the full-width row. */}
-            {tab === 'foundations' && !exportMode && !colorCanvas && (
-              <div
-                className="flex items-center gap-4 pl-4 pr-3 h-[52px] border-b border-line/60 flex-shrink-0"
-                style={{ background: toolbarWash }}
-              >
-                {foundationsToolbar}
-              </div>
-            )}
-            {!(tab === 'foundations' && activeFoundation === 'color' && !exportMode) && (
+            {/* Foundation switcher lives in Groups' own 52px band so Groups
+                sits under the logo. No CenterHeader — the icons ARE the
+                section title. The band is OUTSIDE the keyed motion so
+                switching Color → Font fades the table, not the chrome. */}
+            {!foundationCanvas && (
               <CenterHeader
                 Icon={header.Icon}
                 title={header.title}
@@ -803,16 +778,42 @@ export default function Configurator() {
                   and this body both derive from `activeFoundation` in the same
                   render, so they must swap in the same commit. An exit-then-enter
                   sequence (mode="wait") would hold the OLD body on screen under the
-                  NEW header for the fade-out duration — a title/content mismatch. */}
-              <motion.div
-                key={centerKey}
-                className="h-full"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                {body}
-              </motion.div>
+                  NEW header for the fade-out duration — a title/content mismatch.
+                  Opacity only — a y-nudge on the whole canvas made Groups and
+                  the icon rail jump even after they were the same layout. */}
+              {foundationCanvas ? (
+                <FoundationWorkbench
+                  toolbar={foundationsToolbar}
+                  toolbarWash={toolbarWash}
+                  railCollapsed={groupsColumnCollapsed}
+                  onToggleRail={
+                    activeFoundation === 'color' && colorTab !== 'gradients'
+                      ? () => setColorRailCollapsed((c) => !c)
+                      : undefined
+                  }
+                  gutter={activeFoundation === 'icons'}
+                >
+                  <motion.div
+                    key={centerKey}
+                    className="h-full"
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    {body}
+                  </motion.div>
+                </FoundationWorkbench>
+              ) : (
+                <motion.div
+                  key={centerKey}
+                  className="h-full"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {body}
+                </motion.div>
+              )}
             </div>
           </main>
 

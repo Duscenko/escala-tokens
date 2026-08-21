@@ -293,6 +293,12 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         library: token(full.icons.name, 'string'),
       }
       if (full.icons.package) node.package = token(full.icons.package, 'string')
+      if (full.icons.repo) node.repo = token(full.icons.repo, 'string')
+      const ai = full.icons.aiSource
+      if (ai?.repo) {
+        node.aiSource = token(ai.repo, 'string')
+        node.aiPackage = token(ai.npm, 'string')
+      }
       return node as W3CNode
     }
     default: return {}
