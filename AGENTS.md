@@ -39,8 +39,8 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 src/store/useDesignStore.ts     state + persist
 src/lib/tokenGenerator.ts       store → Escala JSON
 src/lib/exportWizard.ts         w3c | escala | md | skill
-src/lib/agentBundle/            TokenJSON → Skill files/zip (no store)
-src/lib/skillExport.ts          store wrapper around agentBundle
+src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store)
+src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)
 src/lib/agentAccess/            MCP tools (resolve, catalogue, contrast)
 api/mcp.ts                      JSON-RPC + Blob read — do not fold into api/tokens.ts
 src/lib/color/                  ramps, APCA, gamut, CVD

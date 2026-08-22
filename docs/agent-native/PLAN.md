@@ -83,24 +83,17 @@ New handler, never a rewrite of `/api/tokens`. How to connect: [`MCP.md`](./MCP.
 
 `llms.txt` in a **generated** system (Phase 4) should point at *that* system's MCP URL, not Escala's.
 
-### Phase 4 — Five-layer export as product (1–2 weeks)
+### Phase 4 — Five-layer export as product (done)
 
-New `WizardFormat = 'agent-bundle'` beside `w3c | escala | md | skill`. Default zip:
+New `WizardFormat = 'agent-bundle'` beside `w3c | escala | md | skill`. Skill format is unchanged.
 
-```
-AGENTS.md                 # router: do not invent names; bind semantics
-llms.txt                  # MCP URL + file index
-SKILL.md                  # existing Figma skill (already built)
-skills/code/SKILL.md      # implement UI from tokens
-skills/a11y-audit/SKILL.md
-skills/migrate/SKILL.md   # hex/px → tokens
-templates/component/      # scaffolds bound to semantic contract
-checkers/token-lint.mjs   # generated from THIS system's token names
-```
+- [x] `buildAgentProductBundle(json)` composes `buildAgentSkillFiles` — no second Skill generator
+- [x] Zip: `AGENTS.md`, `llms.txt`, Skill files, `skills/{code,a11y-audit,migrate}/`, `templates/component/`, `checkers/token-lint.mjs`
+- [x] Templates and the checker are generated from **this** `TokenJSON` + catalogue
+- [x] Wizard + `buildAgentProductExport()` store wrapper
+- [ ] GitHub export (`lib/github.ts`) can grow the same builder later — one builder, two sinks
 
 `templates/` and `checkers/` are generated from the user's `TokenJSON` + catalogue, not generic stubs. A checker that does not know `Action/primary/default` is theatre.
-
-GitHub export (`lib/github.ts`) should grow the same files once the zip is stable — one builder, two sinks.
 
 ### Phase 5 — Validation (1 week)
 
@@ -120,8 +113,8 @@ GitHub export (`lib/github.ts`) should grow the same files once the zip is stabl
 
 ```
 0 freeze  →  1 context on disk  →  2 pure agentBundle  →  3 MCP  →  4 export format  →  5 CI + evals
-     ▲                ▲                     ▲        ▲
-     └──── 0–3 shipped ────────────────────────────────┘
+     ▲                ▲                     ▲        ▲            ▲
+     └──── 0–4 shipped ───────────────────────────────────────────┘
 ```
 
 Do not start Phase 4 templates until Phase 2 exists. Templates generated from a store-bound function cannot run in MCP or CI.

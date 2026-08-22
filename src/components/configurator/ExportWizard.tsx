@@ -207,8 +207,8 @@ export default function ExportWizard({
   const isJson = format === 'w3c' || format === 'escala'
   // Escala JSON and Skill are each one document by contract, so structure
   // can't split either.
-  const structureLocked = format === 'escala' || format === 'skill'
-  const isWholeDocument = format === 'escala' || format === 'skill'
+  const structureLocked = format === 'escala' || format === 'skill' || format === 'agent-bundle'
+  const isWholeDocument = format === 'escala' || format === 'skill' || format === 'agent-bundle'
   const canNext = step === 1
     ? collections.length > 0
       && (!collections.includes('semantics') || modes.length > 0)
@@ -743,6 +743,14 @@ export default function ExportWizard({
                     Unzip into a folder with that skill name, or upload the zip to Figma Make. Collections picked above are ignored.
                   </p>
                 )}
+                {format === 'agent-bundle' && (
+                  <p className="px-3 py-2 text-[12px] text-fg-muted">
+                    Agent bundle is the same Skill files plus <code className="font-mono">AGENTS.md</code>,{' '}
+                    <code className="font-mono">llms.txt</code>, code/a11y/migrate skills, component templates, and{' '}
+                    <code className="font-mono">checkers/token-lint.mjs</code> generated from this system&apos;s tokens.
+                    Drop the unzipped folder into the product repo. Collections picked above are ignored.
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -758,7 +766,8 @@ export default function ExportWizard({
                   value={
                     format === 'escala' ? 'All (Escala JSON is one document)'
                       : format === 'skill' ? 'All (Skill is one package)'
-                        : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
+                        : format === 'agent-bundle' ? 'All (Agent bundle is one package)'
+                          : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
                   }
                 />
                 {!isWholeDocument && collections.includes('primitives') && (
@@ -768,7 +777,7 @@ export default function ExportWizard({
                   />
                 )}
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
-                {(collections.includes('semantics') || format === 'skill') && (
+                {(collections.includes('semantics') || format === 'skill' || format === 'agent-bundle') && (
                   <SummaryRow label="Modes" value={modes.join(', ')} />
                 )}
                 <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />

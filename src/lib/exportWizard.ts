@@ -3,10 +3,10 @@
 // ships (collections + semantic modes), HOW (W3C DTCG · Escala JSON · Markdown
 // · Skill), then download/copy the result.
 //
-// Four formats on purpose — more than that is choice paralysis. CSS / SCSS /
-// Tailwind stay available from Save (`variables.css`) and from transforming
-// W3C tokens; they are not a second decision at export time. The old
-// Categorical-AI JSON is folded into Skill (SKILL.md + tokens.md).
+// Five formats: W3C · Escala JSON · Markdown · Skill (Figma package) ·
+// Agent bundle (Skill files plus AGENTS.md, task skills, templates, checker).
+// CSS / SCSS / Tailwind stay on Save (`variables.css`), not a sixth choice.
+// The old Categorical-AI JSON is folded into Skill (SKILL.md + tokens.md).
 //
 // Everything derives from ONE call to `generateTokenJSON()` — the same payload
 // the Figma plugin imports — so wizard output can never disagree with
@@ -16,7 +16,7 @@
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
-import { buildSkillExport } from './skillExport'
+import { buildAgentProductExport, buildSkillExport } from './skillExport'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'typography' | 'spacing'
@@ -28,7 +28,7 @@ export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'radius', 'shadow', 'grid', 'sizes', 'icons',
 ]
 
-export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill'
+export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill' | 'agent-bundle'
 export type WizardStructure = 'single' | 'per-collection'
 
 /** The `sectionExport` slice each collection maps onto — Tailwind and Markdown
@@ -83,6 +83,7 @@ export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[
   { key: 'escala', label: 'Escala JSON', hint: 'The exact tokens.json the Figma plugin imports' },
   { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
   { key: 'skill', label: 'Skill', hint: 'Figma MCP skill — SKILL.md + references' },
+  { key: 'agent-bundle', label: 'Agent bundle', hint: 'AGENTS.md + Skill + code/a11y skills + templates + token-lint' },
 ]
 
 /** Formats that make sense for one primitive ramp (ColumnExportMenu). Skill is
@@ -110,6 +111,7 @@ export const WIZARD_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = {
   w3c: 'Compatible with other plugins & Figma',
   md: 'Claude · Codex',
   skill: 'Figma MCP · Cursor · Claude',
+  'agent-bundle': 'Cursor · Claude · full agent package',
 }
 
 // ── Primitive families ───────────────────────────────────────────────────────
@@ -367,6 +369,16 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     const pack = buildSkillExport(sel.colorFormat)
     return [{
       name: `${pack.name}.zip`,
+      content: pack.skillMd,
+      language: 'zip',
+      binary: pack.zip,
+    }]
+  }
+
+  if (sel.format === 'agent-bundle') {
+    const pack = buildAgentProductExport(sel.colorFormat)
+    return [{
+      name: `${pack.name}-agent-bundle.zip`,
       content: pack.skillMd,
       language: 'zip',
       binary: pack.zip,

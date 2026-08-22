@@ -16,3 +16,4 @@ export {
   webCodeSyntax,
 } from './names'
 export { buildAgentBundle, buildAgentSkillFiles } from './skill'
+export { buildAgentProductBundle, buildAgentProductFiles, type ProductPackage } from './product'
