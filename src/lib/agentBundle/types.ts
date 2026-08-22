@@ -39,6 +39,7 @@ export interface TokenJSON {
   gradientAssignments?: Record<string, string | null>
   icons?: {
     aiSource?: { key?: string; label?: string; repo?: string; npm?: string }
+    custom?: { name?: string }[]
   }
   atoms?: string[]
 }

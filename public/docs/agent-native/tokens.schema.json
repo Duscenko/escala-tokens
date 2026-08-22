@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://escalatokens.com/docs/agent-native/tokens.schema.json",
+  "title": "Escala tokens.json",
+  "description": "Canonical payload from generateTokenJSON(). Not W3C DTCG. additionalProperties stay allowed so additive fields (schema v6+) validate. Required core matches plugin import. See CONTRACTS.md.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "project", "colors"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 3,
+      "description": "TOKEN_SCHEMA_VERSION in src/lib/tokenGenerator.ts. HEAD on main is 5. Working tree may be 6 (additive layout/type roles). Plugin SUPPORTED_SCHEMA_VERSION is 5 — newer still imports with a warning."
+    },
+    "project": {
+      "type": "string",
+      "description": "Display name. Blob key and sync URL use slugify(project)."
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["primitive"],
+      "properties": {
+        "background": { "type": "string", "description": "Page background the ramps and alpha twins are solved against." },
+        "primitive": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Flat prefixed ramps: accent-1…12, neutral-*, error-*, and -dark twins when a dark theme exists. Custom families use the same shape."
+        },
+        "primitiveAlpha": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Overlay twins (accent-a-1…). Background-dependent. Replaces the retired opacity scale (v5)."
+        },
+        "semantic": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Light-theme flat roles. Plugin compatibility slice. Prefer colors.themes / colors.architecture for new consumers."
+        },
+        "semanticDark": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "themes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "description": "Theme name → role id → hex. Role keys are the current catalogue only (no stale architecture keys)."
+        },
+        "themeOrder": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Figma Color Semantics mode / column order."
+        },
+        "panelBackground": { "type": "string" },
+        "semanticArchitecture": {
+          "type": "string",
+          "enum": ["flat", "astryx", "shadcn", "categorical", "vibrancy", "tonal", "carbon"]
+        },
+        "architecture": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Projected view. Always includes kind. Categorical tokens nest group → key → theme → hex.",
+          "properties": {
+            "kind": { "type": "string" },
+            "tokens": { "type": "object", "additionalProperties": true }
+          }
+        }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fontFamily": { "type": "string" },
+        "headingFontFamily": { "type": "string" },
+        "sizes": { "type": "object", "additionalProperties": { "type": "string" } },
+        "lineHeights": { "type": "object", "additionalProperties": { "type": "string" } },
+        "weights": { "type": "object", "additionalProperties": { "type": "number" } },
+        "roles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["desktop", "mobile"],
+            "properties": {
+              "desktop": { "$ref": "#/$defs/typeAlias" },
+              "mobile": { "$ref": "#/$defs/typeAlias" }
+            }
+          },
+          "description": "v6 additive. Semantic type roles alias primitives; they do not store a second px."
+        }
+      }
+    },
+    "spacing": { "type": "object", "additionalProperties": { "type": "string" } },
+    "spacingRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "v6 additive. Role → primitive step (e.g. inset-surface → \"5\")."
+    },
+    "padding": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Per-side inset. Resolved px of spacing-inset-surface on a fresh system."
+    },
+    "radius": { "type": "object", "additionalProperties": { "type": "string" } },
+    "radiusRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "v6 additive. Role → radius step (action → md)."
+    },
+    "gradients": { "type": "object", "additionalProperties": { "type": "string" } },
+    "gradientsDark": { "type": "object", "additionalProperties": { "type": "string" } },
+    "gradientAssignments": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "null"] },
+      "properties": {
+        "cover": { "type": ["string", "null"] },
+        "avatar": { "type": ["string", "null"] }
+      }
+    },
+    "shadows": { "type": "object", "additionalProperties": { "type": "string" } },
+    "shadowsDark": { "type": "object", "additionalProperties": { "type": "string" } },
+    "grid": { "type": "object", "additionalProperties": { "type": "string" } },
+    "gridFrame": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "v6 additive. Desktop/mobile aliases into spacing + breakpoint primitives.",
+      "properties": {
+        "desktop": { "$ref": "#/$defs/gridFrameAlias" },
+        "mobile": { "$ref": "#/$defs/gridFrameAlias" }
+      }
+    },
+    "breakpointRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "v6 additive. desktop | mobile → breakpoint step."
+    },
+    "sizes": { "type": "object", "additionalProperties": { "type": "string" } },
+    "sizeRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "v6 additive. control | compact | touch | hit | fab → size step."
+    },
+    "stroke": { "type": "object", "additionalProperties": { "type": "string" } },
+    "strokeRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "v6 additive."
+    },
+    "icons": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "library": { "type": "string" },
+        "name": { "type": "string" },
+        "package": { "type": "string" },
+        "repo": { "type": "string" },
+        "prefix": { "type": "string" },
+        "aiSource": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "key": { "type": "string" },
+            "label": { "type": "string" },
+            "repo": { "type": "string" },
+            "npm": { "type": "string" }
+          }
+        },
+        "custom": { "type": "array" }
+      }
+    },
+    "style": { "type": ["string", "null"] },
+    "atoms": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Canonical selected-component keys. Never 'components'."
+    }
+  },
+  "$defs": {
+    "typeAlias": {
+      "type": "object",
+      "required": ["family", "size", "weight"],
+      "additionalProperties": false,
+      "properties": {
+        "family": { "type": "string", "enum": ["display", "body"] },
+        "size": { "type": "string" },
+        "weight": { "type": "string" }
+      }
+    },
+    "gridFrameAlias": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "columns": { "type": "string" },
+        "gutter": { "type": "string" },
+        "margin": { "type": "string" },
+        "container": { "type": "string" }
+      }
+    }
+  }
+}

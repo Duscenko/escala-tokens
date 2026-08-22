@@ -16,12 +16,13 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Color math | `.claude/skills/color-science-core/SKILL.md` |
 | Agent copy envelope | `src/lib/aiContext.ts` (`agent-context/v1`) |
 | Skill zip builder | `src/lib/agentBundle/` (pure) · `src/lib/skillExport.ts` (store wrapper) |
+| MCP tools | `src/lib/agentAccess/` · `api/mcp.ts` · `docs/agent-native/MCP.md` |
 
 Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do not paste the whole file into context.
 
 ## Hard rules
 
-1. **`/api/tokens` is frozen.** New HTTP goes to a new path. CORS `*` and Blob stay.
+1. **`/api/tokens` is frozen.** Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay.
 2. **Additive schema only.** `TOKEN_SCHEMA_VERSION` is `5` on `main`; working tree may be `6`. Never rename keys. Canonical component field is `atoms`.
 3. **One contrast implementation** — `src/lib/color/apca.ts`. Never `chroma.contrast` on hex. Never emit via channel clipping (`gamut.oklchToHex`).
 4. **Color layer is DOM-free.** Vitest is `environment: 'node'`. `npm run build` typechecks tests (`tsconfig.test.json`); a green `npm test` does not.
@@ -40,6 +41,8 @@ src/lib/tokenGenerator.ts       store → Escala JSON
 src/lib/exportWizard.ts         w3c | escala | md | skill
 src/lib/agentBundle/            TokenJSON → Skill files/zip (no store)
 src/lib/skillExport.ts          store wrapper around agentBundle
+src/lib/agentAccess/            MCP tools (resolve, catalogue, contrast)
+api/mcp.ts                      JSON-RPC + Blob read — do not fold into api/tokens.ts
 src/lib/color/                  ramps, APCA, gamut, CVD
 src/lib/componentCatalogue.ts   58 components (props, a11y)
 api/tokens.ts                   publish / fetch Blob

@@ -70,24 +70,18 @@ Repo-only, no runtime. Risk: none.
 
 Unblocks Phase 3 and 4 with one generator. Do **not** change wizard UX until Phase 4.
 
-### Phase 3 — Access / MCP (3–5 days)
+### Phase 3 — Access / MCP (done)
 
-New handler, never a rewrite of `/api/tokens`.
+New handler, never a rewrite of `/api/tokens`. How to connect: [`MCP.md`](./MCP.md).
 
-Suggested tools (all read the Blob JSON + `componentCatalogue.ts`):
+- [x] `src/lib/agentAccess/` — tools + JSON-RPC (no store, no Blob)
+- [x] `api/mcp.ts` — `GET` discovery, `POST` JSON-RPC, Blob read only
+- [x] Tools: `get_tokens`, `resolve_token`, `list_components`, `get_component`, `list_icons`, `check_contrast`
+- [x] `check_contrast` imports `evaluate` from `lib/color/apca.ts`
+- [x] Schema at `/docs/agent-native/tokens.schema.json` (public copy, test-pinned to `docs/`)
+- [x] CORS `*` (same as tokens). Auth later if publishes go private.
 
-| Tool | Returns |
-|---|---|
-| `get_tokens` | Full Escala JSON for `project` |
-| `resolve_token` | One role → CSS / Figma / hex per theme |
-| `list_components` | Catalogue keys, categories, axes |
-| `get_component` | Props, a11y, semantic bindings |
-| `list_icons` | `icons.aiSource` + custom names |
-| `check_contrast` | WCAG + APCA via `lib/color/apca.ts` (import, do not reimplement) |
-
-Ship JSON Schema at a stable URL (`/docs/agent-native/tokens.schema.json` or `/api/agent/schema`). `llms.txt` in the **output** bundle points at the user's MCP endpoint, not Escala's.
-
-Auth: start public-read like `/api/tokens` (CORS `*`). Revisit if tokens become private.
+`llms.txt` in a **generated** system (Phase 4) should point at *that* system's MCP URL, not Escala's.
 
 ### Phase 4 — Five-layer export as product (1–2 weeks)
 
@@ -126,8 +120,8 @@ GitHub export (`lib/github.ts`) should grow the same files once the zip is stabl
 
 ```
 0 freeze  →  1 context on disk  →  2 pure agentBundle  →  3 MCP  →  4 export format  →  5 CI + evals
-     ▲                ▲                     ▲
-     └──── 0+1+2 shipped ───────────────────┘
+     ▲                ▲                     ▲        ▲
+     └──── 0–3 shipped ────────────────────────────────┘
 ```
 
 Do not start Phase 4 templates until Phase 2 exists. Templates generated from a store-bound function cannot run in MCP or CI.

@@ -24,12 +24,15 @@ The source of truth for a generated system is the live token payload, not this r
 
 ## Live access (HTTP)
 
-- `GET https://scalable-designs.vercel.app/api/tokens?project=<slug>` — published Escala JSON
+- `GET https://escalatokens.com/api/mcp` — MCP discovery (tools + schema URL)
+- `POST https://escalatokens.com/api/mcp` — MCP JSON-RPC (`initialize`, `tools/list`, `tools/call`)
+- [MCP tools](docs/agent-native/MCP.md)
+- `GET https://escalatokens.com/docs/agent-native/tokens.schema.json` — Escala JSON Schema
+- `GET https://scalable-designs.vercel.app/api/tokens?project=<slug>` — published Escala JSON (frozen)
 - `GET https://scalable-designs.vercel.app/api/tokens?list=1` — published systems
 - `POST https://scalable-designs.vercel.app/api/tokens?project=<slug>` — publish (configurator)
-- Also served at https://escalatokens.com
 
-This endpoint is frozen. Agent MCP will be a new path; see PLAN.md Phase 3.
+`/api/tokens` is frozen. Agents query tokens through `/api/mcp`.
 
 ## Code (do not invent a second copy)
 
@@ -37,6 +40,8 @@ This endpoint is frozen. Agent MCP will be a new path; see PLAN.md Phase 3.
 - `src/lib/aiContext.ts` — `agent-context/v1` envelope
 - `src/lib/agentBundle/` — TokenJSON → Skill files/zip (no store)
 - `src/lib/skillExport.ts` — store wrapper around agentBundle
+- `src/lib/agentAccess/` — MCP tools (no store)
+- `api/mcp.ts` — MCP HTTP + Blob read
 - `src/lib/componentCatalogue.ts` — components, props, a11y
 - `src/lib/color/apca.ts` — the only contrast math
 - `../scalable-designs-figma-plugin/src/code.ts` — Figma import (authoritative component sets)

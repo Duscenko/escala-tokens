@@ -16,7 +16,7 @@ File: `api/tokens.ts`. Consumer: Figma plugin (`scalable-designs-figma-plugin`),
 | `POST /api/tokens?project=<slug>` | Write `tokens/<slug>.json` |
 | `POST /api/tokens` | Legacy key `design-tokens.json` |
 
-Do not rename query params, change CORS (`*`), or require auth. New capabilities go to a **new** path (`/api/mcp`, `/api/agent/…`). Do not switch `@vercel/blob` to KV.
+Do not rename query params, change CORS (`*`), or require auth. New capabilities go to a **new** path. `/api/mcp` is that path (read-only JSON-RPC). Do not switch `@vercel/blob` to KV.
 
 Slug must stay aligned with the configurator (`slugify(projectName)`).
 
