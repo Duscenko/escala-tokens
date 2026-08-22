@@ -2,6 +2,11 @@
 /**
  * VENDORED — radix-ui/website · components/generate-radix-colors.tsx
  *
+ * Copyright (c) 2021 Radix
+ * SPDX-License-Identifier: MIT
+ * Upstream: https://github.com/radix-ui/website
+ * Full notice: see NOTICE at the repository root.
+ *
  * Kept as close to verbatim as it can be run. Two modifications, both recorded
  * here and in `src/lib/__tests__/radix.test.ts`:
  *
