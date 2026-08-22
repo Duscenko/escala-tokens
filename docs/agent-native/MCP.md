@@ -24,7 +24,7 @@ Read-only Model Context Protocol endpoint. Does **not** replace `/api/tokens`.
 {
   "mcpServers": {
     "escala-tokens": {
-      "url": "https://escalatokens.com/api/mcp"
+      "url": "https://www.escalatokens.com/api/mcp"
     }
   }
 }

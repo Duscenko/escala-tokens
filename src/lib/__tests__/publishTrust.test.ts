@@ -46,6 +46,7 @@ describe('publishTrust', () => {
   it('always allows the known production hosts even if Host is a preview', () => {
     const allowed = originsForHosts(['preview-abc.vercel.app'])
     expect(originAllowed('https://escalatokens.com', allowed)).toBe(true)
+    expect(originAllowed('https://www.escalatokens.com', allowed)).toBe(true)
     expect(originAllowed('https://scalable-designs.vercel.app', allowed)).toBe(true)
   })
 

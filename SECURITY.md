@@ -1,6 +1,6 @@
 # Security
 
-Report vulnerabilities privately to the repository owner (GitHub Security Advisory on this repo, or an email to the account that publishes [escalatokens.com](https://escalatokens.com)). Do not open a public issue for a live overwrite or token-leak report.
+Report vulnerabilities privately to the repository owner (GitHub Security Advisory on this repo, or an email to the account that publishes [www.escalatokens.com](https://www.escalatokens.com)). Do not open a public issue for a live overwrite or token-leak report.
 
 ## What this project stores, and where
 

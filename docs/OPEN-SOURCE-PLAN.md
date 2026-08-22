@@ -59,7 +59,7 @@ New README, in order:
 7. **Deploy your own** — Vercel + `BLOB_READ_WRITE_TOKEN`, and what changes if you self-host (your own origin in the MCP snippet).
 8. **License + credits** — Untitled UI icons, Radix/Tailwind/Carbon reference data, APCA.
 
-Every doc that names a URL uses `escalatokens.com`. `scalable-designs.vercel.app` survives in exactly one place: a compatibility note in `CONTRACTS.md` explaining that already-downloaded plugin zips still call it.
+Every user-facing URL is `https://www.escalatokens.com`. `scalable-designs.vercel.app` survives only as an Origin/allowlist leftover so preview deploys still work.
 
 ## Community files
 

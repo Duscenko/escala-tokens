@@ -10,6 +10,8 @@ File: `api/tokens.ts`. Consumer: Figma plugin (`scalable-designs-figma-plugin`),
 
 `/api/tokens` is a **live-sync cache**, not durable storage. The editor snapshot lives in the browser and, when the designer connects GitHub, in `.escala/system.json`. Do not add login to hold systems.
 
+The public site is **https://www.escalatokens.com**. Vercel is hosting only — do not document `*.vercel.app` as the product URL.
+
 | Method | Behavior |
 |---|---|
 | `GET /api/tokens?project=<slug>` | Public read of blob `tokens/<slug>.json`. Unauthenticated. Required. |

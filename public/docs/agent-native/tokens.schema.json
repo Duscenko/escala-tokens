@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://escalatokens.com/docs/agent-native/tokens.schema.json",
+  "$id": "https://www.escalatokens.com/docs/agent-native/tokens.schema.json",
   "title": "Escala tokens.json",
   "description": "Canonical payload from generateTokenJSON(). Not W3C DTCG. additionalProperties stay allowed so additive fields (schema v6+) validate. Required core matches plugin import. See CONTRACTS.md.",
   "type": "object",

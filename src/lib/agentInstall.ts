@@ -12,7 +12,8 @@ export type SkillAgent = 'cursor' | 'claude'
 export type McpClient = 'cursor' | 'claude' | 'vscode'
 
 export const CLI_PACKAGE = '@escala/cli'
-export const DEFAULT_PUBLISH_ORIGIN = 'https://escalatokens.com'
+/** Public site. Vercel is only the host — never put *.vercel.app in user-facing copy. */
+export const DEFAULT_PUBLISH_ORIGIN = 'https://www.escalatokens.com'
 
 export function mcpEndpoint(origin: string): string {
   const base = origin.replace(/\/$/, '') || DEFAULT_PUBLISH_ORIGIN

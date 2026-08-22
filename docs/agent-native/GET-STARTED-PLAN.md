@@ -108,7 +108,7 @@ Prefilled snippet using **this** project’s sync URL (same slug as Figma Sync):
 {
   "mcpServers": {
     "escala-tokens": {
-      "url": "https://escalatokens.com/api/mcp"
+      "url": "https://www.escalatokens.com/api/mcp"
     }
   }
 }
@@ -131,7 +131,7 @@ Create UI’s `skill` / `mcp init` commands are why their docs feel finished. Ou
 
 ```
 npx @escala/cli skill --from <published-slug> --client cursor
-npx @escala/cli mcp init --client cursor --url https://escalatokens.com/api/mcp
+npx @escala/cli mcp init --client cursor --url https://www.escalatokens.com/api/mcp
 ```
 
 Source: `src/lib/cliInstall.ts`. Package: `cli/package.json` (`@escala/cli`). Unzip remains the fallback when the system is not published.

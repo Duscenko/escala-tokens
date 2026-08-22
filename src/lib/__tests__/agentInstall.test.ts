@@ -3,6 +3,7 @@ import { skillName } from '../agentBundle/names'
 import { MCP_SERVER_NAME } from '../agentAccess/mcp'
 import {
   CLI_PACKAGE,
+  DEFAULT_PUBLISH_ORIGIN,
   cliMcpInitCommand,
   cliSkillCommand,
   mcpClaudeAddCommand,
@@ -38,6 +39,12 @@ const FIXTURE: TokenJSON = {
 }
 
 describe('agentInstall recipes', () => {
+  it('defaults the public origin to www.escalatokens.com, not a Vercel preview host', () => {
+    expect(DEFAULT_PUBLISH_ORIGIN).toBe('https://www.escalatokens.com')
+    expect(mcpEndpoint(DEFAULT_PUBLISH_ORIGIN)).toBe('https://www.escalatokens.com/api/mcp')
+    expect(DEFAULT_PUBLISH_ORIGIN).not.toMatch(/vercel\.app/)
+  })
+
   it('points MCP at /api/mcp on the given origin', () => {
     expect(mcpEndpoint('https://escalatokens.com')).toBe('https://escalatokens.com/api/mcp')
     expect(mcpEndpoint('https://escalatokens.com/')).toBe('https://escalatokens.com/api/mcp')
@@ -80,7 +87,7 @@ describe('agentInstall recipes', () => {
       kind: 'skill',
       slug: 'acme-app',
       client: 'cursor',
-      origin: 'https://escalatokens.com',
+      origin: DEFAULT_PUBLISH_ORIGIN,
     })
     expect(cliSkillCommand(slug, 'claude', 'https://preview.example')).toBe(
       `npx ${CLI_PACKAGE} skill --from acme-app --client claude --host https://preview.example`,
@@ -159,7 +166,7 @@ describe('cliInstall', () => {
     const code = await runCli(['skill', '--from', 'acme-app', '--client', 'cursor'], {
       cwd: '/repo',
       fetch: async (url) => {
-        expect(url).toBe(tokensUrl('https://escalatokens.com', 'acme-app'))
+        expect(url).toBe(tokensUrl(DEFAULT_PUBLISH_ORIGIN, 'acme-app'))
         return { ok: true, status: 200, json: async () => FIXTURE }
       },
       readFile: () => null,
@@ -190,7 +197,7 @@ describe('cliInstall', () => {
     expect(code).toBe(0)
     const json = JSON.parse(written.get('/repo/.cursor/mcp.json')!)
     expect(json.mcpServers.kept).toEqual({ url: 'https://kept' })
-    expect(json.mcpServers[MCP_SERVER_NAME].url).toBe('https://escalatokens.com/api/mcp')
+    expect(json.mcpServers[MCP_SERVER_NAME].url).toBe(`${DEFAULT_PUBLISH_ORIGIN}/api/mcp`)
   })
 
   it('returns 1 when the blob is missing', async () => {

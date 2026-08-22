@@ -8,7 +8,7 @@ This file is the source of truth for Claude Code CLI. Read it before making any 
 
 A web configurator that lets product designers build a minimal, custom design token system — no bloat, only what they choose. The output is a `tokens.json`, `variables.css`, and `README.md` that sync directly into Figma via a companion plugin.
 
-**Live URL:** https://scalable-designs.vercel.app
+**Live URL:** https://www.escalatokens.com
 **Stack:** React + Vite + TypeScript + Tailwind CSS v4 + Zustand + Framer Motion + Radix UI
 
 **Platform: desktop/laptop only, not a responsive site.** The user is a design engineer at
@@ -2308,7 +2308,7 @@ src/
 
 Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
-**Live sync URL for plugin:** `https://scalable-designs.vercel.app/api/tokens`
+**Live sync URL for plugin:** `https://www.escalatokens.com/api/tokens?project=<slug>`
 
 ---
 

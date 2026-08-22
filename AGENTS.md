@@ -2,6 +2,8 @@
 
 A desktop token configurator. Designers pick tokens; the app emits `tokens.json`, CSS, W3C, a Figma Skill zip, and syncs to a companion plugin.
 
+**Name: `escala-tokens`. Public URL: https://www.escalatokens.com.** Vercel is hosting only — never put `*.vercel.app` in user-facing copy. Folder, GitHub repo, and private npm name are `escala-tokens`. CLI stays `@escala/cli`.
+
 **Do not invent token names, hex, or px when a token exists.** Prefer semantic roles over primitive ramps. Bind paints to semantics only.
 
 ## Read this, then stop
@@ -25,7 +27,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 
 ## Hard rules
 
-1. **`/api/tokens` GET is frozen and public.** POST is same-origin plus a per-slug claim — not a user login. Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay. GitHub holds the editor (`.escala/system.json`); the blob is a live-sync cache.
+1. **`/api/tokens` GET is frozen and public.** POST is same-origin plus a per-slug claim — not a user login. Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay. GitHub holds the editor (`.escala/system.json`); the blob is a live-sync cache. User-facing URLs are `https://www.escalatokens.com`, never the Vercel preview host.
 2. **Additive schema only.** `TOKEN_SCHEMA_VERSION` is `5` on `main`; working tree may be `6`. Never rename keys. Canonical component field is `atoms`.
 3. **One contrast implementation** — `src/lib/color/apca.ts`. Never `chroma.contrast` on hex. Never emit via channel clipping (`gamut.oklchToHex`).
 4. **Color layer is DOM-free.** Vitest is `environment: 'node'`. `npm run build` typechecks tests (`tsconfig.test.json`); a green `npm test` does not.
