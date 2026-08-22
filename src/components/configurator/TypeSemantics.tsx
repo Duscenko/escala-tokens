@@ -1,0 +1,316 @@
+import { useEffect, useState, type ReactNode } from 'react'
+import { useDesignStore } from '../../store/useDesignStore'
+import { fontStack } from '../../lib/fonts'
+import {
+  FONT_WEIGHT_BASES,
+  TYPE_SCALE_KEYS,
+} from '../../lib/typographyStandard'
+import {
+  TYPE_ROLE_BY_KEY,
+  TYPE_ROLE_GROUPS,
+  TYPE_ROLES,
+  mergeTypeRoles,
+  resolveTypeStyle,
+  roleIsDefault,
+  typeRolesInGroup,
+  type TypeAlias,
+  type TypeFamilyRole,
+  type TypeRoleGroupId,
+  type TypeRoleModes,
+  type TypeWeightKey,
+} from '../../lib/typeRoles'
+
+export type TypeFocus = TypeRoleGroupId | 'all'
+
+const GRID = 'grid grid-cols-[minmax(8.5rem,1fr)_minmax(13rem,1.35fr)_minmax(13rem,1.35fr)_minmax(7rem,1fr)_2.5rem]'
+
+function rowClass(index: number) {
+  const isEven = index % 2 === 1
+  return `${GRID} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
+    isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+  }`
+}
+
+const FAMILY_OPTIONS: { value: TypeFamilyRole; label: string }[] = [
+  { value: 'display', label: 'Display' },
+  { value: 'body', label: 'Body' },
+]
+const WEIGHT_OPTIONS: { value: TypeWeightKey; label: string }[] = FONT_WEIGHT_BASES.map((b) => ({
+  value: b.key as TypeWeightKey,
+  label: b.label,
+}))
+const SIZE_OPTIONS = TYPE_SCALE_KEYS.map((k) => ({ value: k, label: k }))
+
+function AliasSelect<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+  ariaLabel: string
+}) {
+  return (
+    <select
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value as T)}
+      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-[11px] font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  )
+}
+
+function ViewportCell({
+  roleKey,
+  viewport,
+  alias,
+  onChange,
+}: {
+  roleKey: string
+  viewport: 'desktop' | 'mobile'
+  alias: TypeAlias
+  onChange: (next: TypeAlias) => void
+}) {
+  return (
+    <div className="flex items-center gap-1 px-2 py-2 border-r border-line min-w-0">
+      <AliasSelect
+        value={alias.size}
+        options={SIZE_OPTIONS}
+        onChange={(size) => onChange({ ...alias, size })}
+        ariaLabel={`${roleKey} ${viewport} size`}
+      />
+      <AliasSelect
+        value={alias.weight}
+        options={WEIGHT_OPTIONS}
+        onChange={(weight) => onChange({ ...alias, weight })}
+        ariaLabel={`${roleKey} ${viewport} weight`}
+      />
+      <AliasSelect
+        value={alias.family}
+        options={FAMILY_OPTIONS}
+        onChange={(family) => onChange({ ...alias, family })}
+        ariaLabel={`${roleKey} ${viewport} family`}
+      />
+    </div>
+  )
+}
+
+function ResetIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
+    </svg>
+  )
+}
+
+export default function TypeSemantics({
+  tabBar,
+  onFocusChange,
+  revealRole,
+}: {
+  tabBar?: ReactNode
+  onFocusChange?: (f: TypeFocus) => void
+  /** Preview specimen asked to open this role's row (`key` + `seq` so repeats work). */
+  revealRole?: { key: string; seq: number } | null
+}) {
+  const { typography, setTypography } = useDesignStore()
+  const roles = mergeTypeRoles(typography.roles)
+  const [group, setGroup] = useState<TypeFocus>('all')
+  const [query, setQuery] = useState('')
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
+  const [flashKey, setFlashKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    onFocusChange?.(group)
+  }, [group, onFocusChange])
+
+  useEffect(() => {
+    if (!revealRole?.key) return
+    const spec = TYPE_ROLE_BY_KEY[revealRole.key]
+    if (!spec) return
+    setQuery('')
+    setGroup((g) => (g === 'all' || g === spec.group ? g : spec.group))
+    setFlashKey(revealRole.key)
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const id = `type-role-${revealRole.key}`
+    const t0 = window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' })
+    }, 40)
+    const t1 = window.setTimeout(() => setFlashKey(null), 1400)
+    return () => {
+      window.clearTimeout(t0)
+      window.clearTimeout(t1)
+    }
+  }, [revealRole?.key, revealRole?.seq])
+
+  function patchRole(key: string, viewport: 'desktop' | 'mobile', alias: TypeAlias) {
+    const current = roles[key]
+    const next: TypeRoleModes = { ...current, [viewport]: alias }
+    setTypography({ ...typography, roles: { ...roles, [key]: next } })
+  }
+
+  function resetRole(key: string) {
+    const spec = TYPE_ROLES.find((r) => r.key === key)
+    if (!spec) return
+    setTypography({
+      ...typography,
+      roles: { ...roles, [key]: { desktop: { ...spec.desktop }, mobile: { ...spec.mobile } } },
+    })
+  }
+
+  const q = query.trim().toLowerCase()
+  const rows = typeRolesInGroup(group).filter((r) =>
+    !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
+  )
+
+  return (
+    <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
+      <div className="flex items-stretch flex-1 min-h-0">
+        <nav aria-label="Text role groups" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => setGroup('all')}
+            aria-current={group === 'all'}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+              group === 'all' ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+            }`}
+          >
+            <span className="text-[13px] flex-1 min-w-0 truncate">All</span>
+            <span className={`text-[11px] font-mono tabular-nums ${group === 'all' ? 'text-fg-muted' : 'text-fg-faint'}`}>{TYPE_ROLES.length}</span>
+          </button>
+          {TYPE_ROLE_GROUPS.map((g) => {
+            const n = typeRolesInGroup(g.id).length
+            const on = group === g.id
+            return (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => setGroup(g.id)}
+                aria-current={on}
+                title={g.hint}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  on ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                }`}
+              >
+                <span className="text-[13px] flex-1 min-w-0 truncate">{g.label}</span>
+                <span className={`text-[11px] font-mono tabular-nums ${on ? 'text-fg-muted' : 'text-fg-faint'}`}>{n}</span>
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
+            <div className="flex-1 min-w-0">{tabBar}</div>
+            <div className="self-center flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line flex-shrink-0">
+              {(['desktop', 'mobile'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setPreviewViewport(v)}
+                  aria-pressed={previewViewport === v}
+                  className={`px-2 py-1 rounded text-[11px] font-medium capitalize transition-colors ${
+                    previewViewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search…"
+                className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+                aria-label="Filter text roles"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0 overflow-auto">
+            <div className="min-w-[42rem]">
+              <div className={`${GRID} items-center px-0 bg-app sticky top-0 z-10 border-b border-line`}>
+                <div className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Role</div>
+                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Desktop</div>
+                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Mobile</div>
+                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
+                <div />
+              </div>
+              {rows.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{query}”.</div>
+              ) : rows.map((role, i) => {
+                const modes = roles[role.key]
+                const modified = !roleIsDefault(role.key, modes)
+                const style = resolveTypeStyle(modes[previewViewport], typography)
+                return (
+                  <div
+                    key={role.key}
+                    id={`type-role-${role.key}`}
+                    className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                  >
+                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <code className="font-mono text-[12px] text-fg-muted truncate">text-{role.key}</code>
+                        {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
+                      </span>
+                      <span className="text-[11px] text-fg-faint truncate">{role.description}</span>
+                    </div>
+                    <ViewportCell
+                      roleKey={role.key}
+                      viewport="desktop"
+                      alias={modes.desktop}
+                      onChange={(alias) => patchRole(role.key, 'desktop', alias)}
+                    />
+                    <ViewportCell
+                      roleKey={role.key}
+                      viewport="mobile"
+                      alias={modes.mobile}
+                      onChange={(alias) => patchRole(role.key, 'mobile', alias)}
+                    />
+                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
+                      <span
+                        className="text-fg truncate leading-none"
+                        style={{
+                          fontFamily: fontStack(style.family),
+                          fontSize: Math.min(parseInt(style.size, 10) || 16, 28),
+                          fontWeight: style.weight,
+                        }}
+                      >
+                        {role.label}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => resetRole(role.key)}
+                      disabled={!modified}
+                      title="Reset to standard"
+                      aria-label={`Reset ${role.label}`}
+                      className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+                    >
+                      <ResetIcon />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

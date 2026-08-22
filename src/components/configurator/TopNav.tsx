@@ -258,8 +258,12 @@ export default function TopNav({
   const { projectCreated, autoSyncFigma } = useDesignStore()
   const [syncHubOpen, setSyncHubOpen] = useState(false)
 
+  // z-30 (not 20): Sync/Download popovers hang below this bar. The Color
+  // primitives quick-edit strip is `sticky z-20 isolate` in the canvas —
+  // equal z-index paints later siblings on top, so the ramp and Color
+  // Agent used to cover the hub. This stacking context has to win.
   return (
-    <header className="relative z-20 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
+    <header className="relative z-30 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
           the mark (no wordmark) in step with the rail below it. */}

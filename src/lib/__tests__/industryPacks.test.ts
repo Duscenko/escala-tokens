@@ -8,6 +8,7 @@ import {
   industryFromHue,
   industryHeroesAreUnique,
   industryPacksAreCurated,
+  industryPacksUniqueWithinGroup,
   packById,
   sortAccentsByHue,
 } from '../industryPacks'
@@ -20,6 +21,7 @@ describe('industry packs', () => {
     }
     expect(industryPacksAreCurated()).toBe(true)
     expect(industryHeroesAreUnique()).toBe(true)
+    expect(industryPacksUniqueWithinGroup()).toBe(true)
     for (const pack of INDUSTRY_PACKS) {
       for (const a of pack.accents) {
         expect(BRAND_PRESETS.some((h) => hexEq(h, a.hex))).toBe(true)
@@ -30,7 +32,7 @@ describe('industry packs', () => {
   it('detects each hero hex as that field', () => {
     expect(industryFromHex('#ef6820')).toBe('food')
     expect(industryFromHex('#ee46bc')).toBe('fashion')
-    expect(industryFromHex('#f63d68')).toBe('hospitality')
+    expect(industryFromHex('#fb542b')).toBe('hospitality')
     expect(industryFromHex('#875bf7')).toBe('luxury')
     expect(industryFromHex('#2970ff')).toBe('business')
     expect(industryFromHex('#06aed4')).toBe('tech')
@@ -45,7 +47,7 @@ describe('industry packs', () => {
   it('breaks overlapping non-hero hexes toward the tighter pack', () => {
     // Blue is in Business (hero is Blue Dark) — mean ΔE stays with the blues.
     expect(industryFromHex('#2e90fa')).toBe('business')
-    expect(packById('art').accents.some((a) => hexEq(a.hex, '#7a5af8'))).toBe(true)
+    expect(packById('luxury').accents.some((a) => hexEq(a.hex, '#7a5af8'))).toBe(true)
   })
 
   it('maps hue bands onto fields', () => {

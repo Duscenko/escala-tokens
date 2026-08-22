@@ -244,7 +244,7 @@ export function ColorPickerPanel({
           {/* `rounded-lg`, matching the hex field below it — this strip reads
               as one more control in the panel's stack, and a pill among
               rounded-rect inputs looked like a stray slider. The corner clip
-              lives on the CONTAINER (`overflow-hidden`) so the 17 cells stay
+              lives on the CONTAINER (`overflow-hidden`) so the cells stay
               seamless and only the two ends round off. */}
           <div
             role="group"

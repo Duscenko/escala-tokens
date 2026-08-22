@@ -14,15 +14,28 @@ import {
   CATEGORICAL_ROLE_COMMENTS,
   type ArchTokenValue,
 } from './semanticArchitectures'
+import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
+import {
+  LAYOUT_ROLES,
+  layoutRoleCssVars,
+  mergeLayoutRoles,
+  extractBreakpoints,
+  BREAKPOINT_STEPS,
+  gridFrameRootCss,
+  gridFrameMobileCss,
+  breakpointMobileMax,
+  mergeGridFrame,
+  type LayoutFamily,
+} from './layoutTokens'
 
 type Store = ReturnType<typeof useDesignStore.getState>
 
 export type SectionKey =
   | 'color' | 'typography' | 'radius' | 'spacing'
-  | 'shadow' | 'grid' | 'sizes' | 'icons'
+  | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
 
 // Order used when assembling the full-system ("all") export.
-export const ALL_SECTIONS: SectionKey[] = ['color', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'icons']
+export const ALL_SECTIONS: SectionKey[] = ['color', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons']
 
 export type ExportFormat = 'css' | 'tailwind' | 'tokens' | 'md'
 export type ColorFormat = 'hex' | 'rgba' | 'hsl' | 'oklch'
@@ -127,6 +140,7 @@ const SIMPLE: Partial<Record<SectionKey, { prefix: string; tailwind: string; get
   shadow: { prefix: 'shadow', tailwind: 'boxShadow', get: (s) => s.shadows },
   grid: { prefix: 'grid', tailwind: 'grid', get: (s) => s.grid },
   sizes: { prefix: 'size', tailwind: 'height', get: (s) => s.sizes },
+  stroke: { prefix: 'stroke', tailwind: 'borderWidth', get: (s) => s.stroke ?? {} },
 }
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
@@ -154,6 +168,7 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     Object.entries(t.sizes).forEach(([k, v]) => lines.push(`--font-size-${k}: ${v};`))
     Object.entries(t.lineHeights ?? {}).forEach(([k, v]) => lines.push(`--line-height-${k}: ${v};`))
     Object.entries(t.weights).forEach(([k, v]) => lines.push(`--font-weight-${k}: ${v};`))
+    typeRoleCssVars(t.roles).forEach((l) => lines.push(`${l}`))
     return lines
   }
   if (section === 'icons') {
@@ -165,8 +180,44 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     if (store.customIcons.length) lines.push(`/* Custom icons: ${store.customIcons.map((i) => i.name).join(', ')} */`)
     return lines
   }
+  if (section === 'grid') {
+    const bps = extractBreakpoints(store.grid)
+    return [
+      ...BREAKPOINT_STEPS.map((s) => `--breakpoint-${s}: ${bps[s]};`),
+      ...layoutRoleCssVars('breakpoint', store.breakpointRoles),
+      ...gridFrameRootCss(store.gridFrame),
+    ]
+  }
   const simple = SIMPLE[section]!
-  return Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${v};`)
+  const lines = Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${v};`)
+  const family = layoutFamilyOf(section)
+  if (family) {
+    lines.push(...layoutRoleCssFor(family, store))
+  }
+  if (section === 'spacing') {
+    Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${v};`))
+  }
+  return lines
+}
+
+function layoutFamilyOf(section: SectionKey): LayoutFamily | null {
+  if (section === 'radius') return 'radius'
+  if (section === 'spacing') return 'spacing'
+  if (section === 'sizes') return 'size'
+  if (section === 'stroke') return 'stroke'
+  return null
+}
+
+function layoutRolesOf(family: LayoutFamily, store: Store): Record<string, string> {
+  if (family === 'radius') return store.radiusRoles
+  if (family === 'spacing') return store.spacingRoles
+  if (family === 'size') return store.sizeRoles
+  if (family === 'stroke') return store.strokeRoles
+  return store.breakpointRoles
+}
+
+function layoutRoleCssFor(family: LayoutFamily, store: Store): string[] {
+  return layoutRoleCssVars(family, layoutRolesOf(family, store))
 }
 
 function wrapRoot(lines: string[]): string {
@@ -174,7 +225,12 @@ function wrapRoot(lines: string[]): string {
 }
 
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
-  return wrapRoot(cssLines(section, store, cf, opts))
+  const root = wrapRoot(cssLines(section, store, cf, opts))
+  if (section !== 'grid') return root
+  const bps = extractBreakpoints(store.grid)
+  const max = breakpointMobileMax(store.breakpointRoles, bps)
+  const inner = gridFrameMobileCss(store.gridFrame).map((l) => `    ${l}`).join('\n')
+  return `${root}\n\n@media (max-width: ${max}) {\n  :root {\n${inner}\n  }\n}`
 }
 
 // ── Tailwind (theme.extend snippet) ──────────────────────────────────────────
@@ -206,9 +262,21 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
       fontSize: t.sizes,
       lineHeight: t.lineHeights ?? {},
       fontWeight: t.weights,
+      // Semantic text styles — consume as `fontSize: var(--text-label-font-size)`.
     }
   }
   if (section === 'icons') return {}
+  if (section === 'grid') {
+    const bps = extractBreakpoints(store.grid)
+    const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
+    return {
+      screens: {
+        ...Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, bps[s]])),
+        desktop: bps[cuts.desktop],
+        mobile: { max: breakpointMobileMax(store.breakpointRoles, bps) },
+      },
+    }
+  }
   const simple = SIMPLE[section]!
   return { [simple.tailwind]: simple.get(store) }
 }
@@ -232,11 +300,12 @@ function tokensFor(section: SectionKey): unknown {
   switch (section) {
     case 'color': return { colors: full.colors }
     case 'typography': return { typography: full.typography }
-    case 'spacing': return { spacing: full.spacing }
-    case 'radius': return { radius: full.radius }
+    case 'spacing': return { spacing: full.spacing, spacingRoles: full.spacingRoles, padding: full.padding }
+    case 'radius': return { radius: full.radius, radiusRoles: full.radiusRoles }
     case 'shadow': return { shadows: full.shadows }
-    case 'grid': return { grid: full.grid }
-    case 'sizes': return { sizes: full.sizes }
+    case 'grid': return { grid: full.grid, gridFrame: full.gridFrame, breakpointRoles: full.breakpointRoles }
+    case 'sizes': return { sizes: full.sizes, sizeRoles: full.sizeRoles }
+    case 'stroke': return { stroke: full.stroke, strokeRoles: full.strokeRoles }
     case 'icons': return { icons: full.icons }
   }
 }
@@ -376,6 +445,17 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       table(['Token', 'Size', 'Line height'], Object.keys(t.sizes).map((k) => [`\`${k}\``, `\`${t.sizes[k]}\``, `\`${t.lineHeights?.[k] ?? '—'}\``])),
       '\n### Weights\n',
       table(['Token', 'Weight'], Object.entries(t.weights).map(([k, v]) => [`\`${k}\``, `\`${v}\``])),
+      '\n### Text roles (semantics)\n',
+      table(
+        ['Role', 'Desktop', 'Mobile'],
+        TYPE_ROLES.map((r) => {
+          const m = mergeTypeRoles(t.roles)[r.key]
+          const fmt = (a: { family: string; size: string; weight: string }) =>
+            `\`${a.size}\` · ${a.weight} · ${a.family}`
+          return [`\`text-${r.key}\``, fmt(m.desktop), fmt(m.mobile)]
+        }),
+      ),
+      '\nDesktop CSS: `var(--text-label-font-size)`. Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives (`var(--font-size-text-sm)`).',
     ].join('\n')
   }
   if (section === 'icons') {
@@ -385,8 +465,61 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       : ''
     return `${ctx.markdown}${extra}`
   }
+  if (section === 'grid') {
+    const bps = extractBreakpoints(store.grid)
+    const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
+    const max = breakpointMobileMax(store.breakpointRoles, bps)
+    const f = mergeGridFrame(store.gridFrame)
+    const fmt = (k: 'columns' | 'gutter' | 'margin' | 'container', step: string) =>
+      k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : `var(--breakpoint-${step})`) : `var(--spacing-${step})`
+    return [
+      '## Grid\n',
+      '### Breakpoints\n',
+      table(['Token', 'Value'], BREAKPOINT_STEPS.map((s) => [`\`--breakpoint-${s}\``, `\`${bps[s]}\``])),
+      '\n### Viewport roles\n',
+      table(
+        ['Role', 'Aliases', 'Query'],
+        [
+          [`\`--breakpoint-desktop\``, `\`var(--breakpoint-${cuts.desktop})\``, `min-width: ${bps[cuts.desktop]}`],
+          [`\`--breakpoint-mobile\``, `\`calc(var(--breakpoint-${cuts.mobile}) - 1px)\``, `max-width: ${max}`],
+        ],
+      ),
+      '\nType mobile styles apply at `max-width: var(--breakpoint-mobile)`. `@media` itself must use the resolved px (`' + max + '`), because custom properties are not valid there.\n',
+      '\n### Frame\n',
+      table(
+        ['Token', 'Desktop', 'Mobile'],
+        (['columns', 'gutter', 'margin', 'container'] as const).map((k) => [
+          `\`--grid-${k}\``,
+          `\`${fmt(k, f.desktop[k])}\``,
+          `\`${fmt(k, f.mobile[k])}\``,
+        ]),
+      ),
+    ].join('\n')
+  }
   const simple = SIMPLE[section]!
-  return `## ${cap(section)}\n\n${table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``]))}`
+  const parts = [
+    `## ${cap(section)}\n`,
+    table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``])),
+  ]
+  const family = layoutFamilyOf(section)
+  if (family) {
+    const roles = mergeLayoutRoles(family, layoutRolesOf(family, store))
+    parts.push(
+      `\n### Semantics\n`,
+      '_Intent aliases — never raw px. Components bind these; they alias a primitive step._\n',
+      table(
+        ['Role', 'Aliases'],
+        LAYOUT_ROLES[family].map((r) => [`\`--${family}-${r.key}\``, `\`var(--${family}-${roles[r.key]})\``]),
+      ),
+    )
+  }
+  if (section === 'spacing') {
+    parts.push(
+      `\n### Surface padding\n`,
+      table(['Token', 'Value'], Object.entries(store.padding ?? {}).map(([k, v]) => [`\`--padding-${k}\``, `\`${v}\``])),
+    )
+  }
+  return parts.join('\n')
 }
 
 // ── Public entry ──────────────────────────────────────────────────────────────
@@ -403,7 +536,10 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      return wrapRoot(lines)
+      const bps = extractBreakpoints(store.grid)
+      const max = breakpointMobileMax(store.breakpointRoles, bps)
+      const inner = gridFrameMobileCss(store.gridFrame).map((l) => `    ${l}`).join('\n')
+      return `${wrapRoot(lines)}\n\n@media (max-width: ${max}) {\n  :root {\n${inner}\n  }\n}`
     }
     case 'tailwind':
       return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))

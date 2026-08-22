@@ -11,6 +11,9 @@ import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { tonalPalettes, buildArchitectureView } from './semanticArchitectures'
+import { fontStack } from './fonts'
+import { typeStyleCss } from './typeRoles'
+import { resolveLayoutRole, extractBreakpoints, type LayoutFamily } from './layoutTokens'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
 
@@ -118,6 +121,13 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     panelBackground,
     pageBackground: (store.themeKinds?.[themeKey] ?? 'light') === 'light' ? store.pageBackground : undefined,
     sizes: store.sizes,
+    stroke: store.stroke,
+    radiusRoles: store.radiusRoles,
+    spacingRoles: store.spacingRoles,
+    sizeRoles: store.sizeRoles,
+    strokeRoles: store.strokeRoles,
+    breakpointRoles: store.breakpointRoles,
+    gridFrame: store.gridFrame,
     // Shadows are the one foundation that can't ship a single value for both
     // appearances: the ramp's near-black shadow colour IS the dark page, so in
     // dark every elevation composited to within 0.36 of one 8-bit level of the
@@ -310,14 +320,70 @@ export function statusSoftFillOf(t: PreviewTokens, colorName: string, contentHex
 export function radiusOf(t: PreviewTokens, key: string, fallback: string): string {
   return t.radius?.[key] || fallback
 }
+export function radiusRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
+  return resolveLayoutRole('radius', t.radiusRoles, t.radius ?? {}, role, fallback || radiusOf(t, 'md', '16px'))
+}
+export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
+  return resolveLayoutRole('spacing', t.spacingRoles, t.spacing ?? {}, role, fallback)
+}
+export function sizeRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
+  return resolveLayoutRole('size', t.sizeRoles, t.sizes ?? {}, role, fallback)
+}
+export function strokeRoleOf(t: PreviewTokens, role: string, fallback = '1px'): string {
+  return resolveLayoutRole('stroke', t.strokeRoles, t.stroke ?? {}, role, fallback)
+}
+export function layoutRoleOf(t: PreviewTokens, family: LayoutFamily, role: string, fallback = ''): string {
+  const primitives = family === 'radius' ? t.radius
+    : family === 'spacing' ? t.spacing
+    : family === 'size' ? t.sizes
+    : family === 'stroke' ? t.stroke
+    : extractBreakpoints(t.grid)
+  const roles = family === 'radius' ? t.radiusRoles
+    : family === 'spacing' ? t.spacingRoles
+    : family === 'size' ? t.sizeRoles
+    : family === 'stroke' ? t.strokeRoles
+    : t.breakpointRoles
+  return resolveLayoutRole(family, roles, primitives ?? {}, role, fallback)
+}
 export function fontFamilyOf(t: PreviewTokens): string {
   return t.typography?.fontFamily || 'Inter, sans-serif'
 }
 export function weightOf(t: PreviewTokens, key: string, fallback: number): number {
   return t.typography?.weights?.[key] ?? fallback
 }
+
+/** CSS for a text role (`label`, `placeholder`, `button`, `heading-sm`, …).
+ *  Docs and Components specimens bind type through this — same contract as
+ *  `radiusOf` / semantic color roles — so a role edit retunes every preview. */
+export function typeStyleOf(
+  t: PreviewTokens,
+  role: string,
+  opts: { viewport?: 'desktop' | 'mobile'; leading?: boolean } = {},
+): CSSProperties {
+  const s = typeStyleCss(
+    {
+      fontFamily: t.typography?.fontFamily ?? 'Inter',
+      headingFontFamily: t.typography?.headingFontFamily,
+      sizes: t.typography?.sizes ?? {},
+      lineHeights: t.typography?.lineHeights,
+      weights: t.typography?.weights ?? {},
+    },
+    t.typography?.roles,
+    role,
+    opts,
+  )
+  const css: CSSProperties = {
+    fontFamily: fontStack(s.family),
+    fontSize: s.size,
+    fontWeight: s.weight,
+  }
+  if (s.lineHeight !== undefined) css.lineHeight = s.lineHeight
+  return css
+}
 /** CSS padding shorthand from the surface-padding token (top/right/bottom/left). */
 export function paddingOf(t: PreviewTokens, fallback = '20px'): string {
+  const fromRole = spacingRoleOf(t, 'inset-surface', '')
+  if (fromRole) return fromRole
   const p = t.padding
   if (!p) return fallback
   return `${p.top || fallback} ${p.right || fallback} ${p.bottom || fallback} ${p.left || fallback}`

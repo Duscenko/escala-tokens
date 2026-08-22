@@ -147,6 +147,8 @@ export const UNTITLED_CORE: Record<string, string> = {
   users: 'Users01',
   zap: 'Zap',
   check: 'Check',
+  chevron: 'ChevronDown',
+  close: 'XClose',
 }
 
 // Generic line glyphs shown as decorative previews — not the Untitled set.

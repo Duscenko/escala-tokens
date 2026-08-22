@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
@@ -28,6 +29,7 @@ export default function ColorHub({
   onPreviewThemeChange,
   focusFamilyKey,
   railCollapsed,
+  revealRole,
 }: {
   colorTab: ColorTab
   onColorTabChange: (t: ColorTab) => void
@@ -45,7 +47,13 @@ export default function ColorHub({
    *  glyph-sized to collapse to. Owned by `Configurator` because TopNav's brand
    *  block sizes its divider from the same value; see `colorControls`' note. */
   railCollapsed?: boolean
+  /** Preview specimen asked to open this token's row (`key` + `seq` so repeats work). */
+  revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
 }) {
+  useEffect(() => {
+    if (!revealRole?.key) return
+    onColorTabChange('semantics')
+  }, [revealRole?.key, revealRole?.seq])
   // Chrome-style tab strip — three equal cells, active one merges into the
   // content panel below via matching `bg-app` + concave bottom corners.
   const tabBar = (
@@ -101,6 +109,7 @@ export default function ColorHub({
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             railCollapsed={railCollapsed}
+            revealRole={revealRole}
           />
         </div>
       ) : (

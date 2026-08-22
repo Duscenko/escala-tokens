@@ -9,9 +9,13 @@ import {
 } from '../configurator/docs/foundationDocs'
 import { buildSectionExport, ALL_SECTIONS, type SectionKey } from '../../lib/sectionExport'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
-import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE } from './atoms/SemanticSpecimens'
+import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
+import { TypeRolesPreview } from './atoms/TypeRolesPreview'
+import { RadiusRolesPreview } from './atoms/RadiusRolesPreview'
+import { LayoutRolesPreview } from './atoms/LayoutRolesPreview'
+import type { TypeFocus } from '../configurator/TypeSemantics'
 import { GridPreview } from './atoms/GridPreview'
 import { ShadowPreview } from './atoms/ShadowPreview'
 import { getIconLibrary } from '../../lib/iconLibraries'
@@ -26,9 +30,6 @@ const SwitchSpec = SPECIMENS.Toggle
 const SliderSpec = SPECIMENS.Slider
 const StatusBadgeSpec = SPECIMENS.StatusBadge
 const ToastSpec = SPECIMENS.Toast
-const CardSpec = SPECIMENS.Card
-const ModalSpec = SPECIMENS.Modal
-const InputSpec = SPECIMENS.Input
 const InputGroupSpec = SPECIMENS.InputGroup
 const PasswordStrengthSpec = SPECIMENS.PasswordStrength
 const TabMenuSpec = SPECIMENS.TabMenu
@@ -90,18 +91,26 @@ function Tile({ tokens, children }: { tokens: PreviewTokens; children: ReactNode
 //    read as unrelated samples.
 // Keep the components token-driven catalogue SPECIMENS (never hand-rolled
 // markup) so this can't drift from what the plugin ships.
-function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefix: string }) {
+function ColorCollage({
+  tokens, iconPrefix, onEditGroup,
+}: {
+  tokens: PreviewTokens
+  iconPrefix: string
+  onEditGroup?: (key: SemanticFocusKey) => void
+}) {
   // Icons come from the system's OWN library, so the collage's lead button is
   // one more thing that repaints when a foundation changes.
   const icons = { prefix: iconPrefix, leading: true, trailing: true }
   return (
-    <div
-      className="flex flex-col gap-3.5 p-4"
-      style={{
-        background: tokens.surface,
-        borderRadius: 14,
-      }}
-    >
+    <div className="flex flex-col gap-3.5">
+      {onEditGroup && <SemanticGroupIndex onEditGroup={onEditGroup} />}
+      <div
+        className="flex flex-col gap-3.5 p-4"
+        style={{
+          background: tokens.surface,
+          borderRadius: 14,
+        }}
+      >
       {/* `Live` wraps whatever should respond to the cursor. It drives each
           specimen's OWN State axis from real pointer/focus events, so a hover
           here paints the exact variant the plugin ships — the collage is where
@@ -159,6 +168,7 @@ function ColorCollage({ tokens, iconPrefix }: { tokens: PreviewTokens; iconPrefi
         <TabMenuSpec t={tokens} v={{}} />
         <AvatarSpec t={tokens} v={{ Size: 'MD' }} />
       </div>
+      </div>
     </div>
   )
 }
@@ -184,51 +194,34 @@ const PANEL_TABS: { key: PanelTab; label: string }[] = [
   { key: 'docs', label: 'Documentation' },
 ]
 
-/** Same text-tab language `ColorHub` uses — full-height cells splitting the row
- *  evenly, active one tinted with a 2px accent bar on the bottom edge. Not a
- *  segmented pill: this column is 400px of reading surface and a pill reads as
- *  a heavier "controls panel" chrome (the same call `ColorHub`'s own note
- *  documents). The invisible semibold copy under each label reserves the
- *  widest state's width, so activating a tab doesn't nudge its neighbours.
- *
- *  **`h-[52px]`, the app's one row-2 height** — the same rule `CenterHeader`,
- *  `SaveSidePanel` and this panel's own header already follow, and the same
- *  height `ColorHub`'s Primitives/Semantics/Gradients tabs occupy. At the `h-9`
- *  this started as, two tab bars sitting one column apart rendered at visibly
- *  different heights, which made this one read as a lesser, secondary strip
- *  rather than the same control.
- *
- *  The LABEL, though, stays at `text-[12px]` while ColorHub's runs `text-[15px]`
- *  — matched height, not matched type. That column is ~800px wide for three
- *  short words; this one is 400px for three cells of 133px, and "Documentation"
- *  at 15px measures ~118px before padding, so matching the type size would
- *  truncate the very label that needs the room. Height is what makes the rows
- *  line up; type size is what makes them fit. */
+/** Same Chrome-style strip `ColorHub` uses for Primitives / Semantics /
+ *  Gradients: recessed `foundation-layer-bar`, active tab lifts on `bg-app`
+ *  with concave bottom corners. Height stays `h-[52px]` so this row lines up
+ *  with CenterHeader. Type stays 12px — "Documentation" at ColorHub's 15px
+ *  would truncate in a 400px column. */
 function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab) => void }) {
   return (
-    <div role="tablist" aria-label="Panel view" className="flex items-stretch h-[52px] border-b border-line flex-shrink-0">
-      {PANEL_TABS.map((t) => {
-        const active = tab === t.key
-        return (
-          <button
-            key={t.key}
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(t.key)}
-            className={`relative flex-1 min-w-0 px-2 flex items-center justify-center text-[12px] transition-colors ${
-              active
-                ? 'font-semibold text-fg bg-accent-ui/[0.07]'
-                : 'font-medium text-fg-faint hover:text-fg-muted hover:bg-elevated/40'
-            }`}
-          >
-            <span className="relative grid place-items-center min-w-0">
-              <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
-              <span className="col-start-1 row-start-1 truncate">{t.label}</span>
-            </span>
-            {active && <span aria-hidden className="absolute inset-x-0 bottom-0 h-[2px] bg-accent-ui" />}
-          </button>
-        )
-      })}
+    <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px]">
+      <div role="tablist" aria-label="Panel view" className="color-hub-tab-strip flex items-end h-full w-full min-w-0">
+        {PANEL_TABS.map((t) => {
+          const active = tab === t.key
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(t.key)}
+              className={`color-hub-tab color-hub-tab-compact ${active ? 'color-hub-tab-active' : ''}`}
+            >
+              <span className="relative grid place-items-center min-w-0">
+                <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
+                <span className="col-start-1 row-start-1 truncate">{t.label}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -432,13 +425,20 @@ function DocsPane({
 // ── Panel ─────────────────────────────────────────────────────────────────
 export default function PreviewPanel({
   focus = null,
+  typeFocus = null,
   categoryKey = null,
   previewTheme = 'light',
   iconLibraryKey = null,
   onCollapse,
   onOpenDocs,
+  onEditTypeRole,
+  onEditLayoutRole,
+  onEditColorToken,
+  onEditColorGroup,
 }: {
   focus?: SemanticFocus | 'all' | null
+  /** Active text-role group while Typography · Semantics is open. */
+  typeFocus?: TypeFocus | null
   /** Active Variables foundation key (`color`|`typography`|`radius`|…) — tailors
    *  the generic fallback below to a live specimen set for that foundation. */
   categoryKey?: string | null
@@ -452,6 +452,14 @@ export default function PreviewPanel({
    *  "Full page" escape hatch. Optional: without it the tab still reads, it
    *  just doesn't offer the link. */
   onOpenDocs?: (foundationKey: string) => void
+  /** Jump Typography · Semantics to a text-role row (preview specimen → table). */
+  onEditTypeRole?: (key: string) => void
+  /** Jump a layout foundation's Semantics table to a role row. */
+  onEditLayoutRole?: (key: string) => void
+  /** Jump Color · Semantics to a token row (`slot.label`). */
+  onEditColorToken?: (id: string) => void
+  /** Jump Color · Semantics to a group (collage overview → category). */
+  onEditColorGroup?: (key: SemanticFocusKey) => void
 }) {
   const tokens = usePreviewTokens(previewTheme)
   const specimen = focus && focus !== 'all' ? focus : null
@@ -537,9 +545,9 @@ export default function PreviewPanel({
         {iconLibraryKey ? (
           <IconSpecimenPreview libraryKey={iconLibraryKey} />
         ) : specimen ? (
-          SEMANTIC_SPECIMENS[specimen]({ tokens })
+          SEMANTIC_SPECIMENS[specimen]({ tokens, onEditToken: onEditColorToken })
         ) : categoryKey === 'color' ? (
-          <ColorCollage tokens={tokens} iconPrefix={collageIconPrefix} />
+          <ColorCollage tokens={tokens} iconPrefix={collageIconPrefix} onEditGroup={onEditColorGroup} />
         ) : categoryKey === 'typography' ? (
           <>
             <Group title="Button">
@@ -552,59 +560,35 @@ export default function PreviewPanel({
             <Group title="Font family">
               <FontFamilyPreview tokens={tokens} />
             </Group>
+
+            <Group title="Text roles">
+              <TypeRolesPreview
+                tokens={tokens}
+                focus={typeFocus && typeFocus !== 'all' ? typeFocus : 'all'}
+                onEditRole={onEditTypeRole}
+              />
+            </Group>
           </>
         ) : categoryKey === 'radius' ? (
-          <>
-            {/* Highest-visual-impact surfaces — every corner here reads the
-                same `radius` token live, from a pill button to a modal. */}
-            <Group title="Button">
-              <Tile tokens={tokens}>
-                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Card">
-              <CardSpec t={tokens} v={{}} />
-            </Group>
-
-            <Group title="Input">
-              <InputSpec t={tokens} v={{}} />
-            </Group>
-
-            <Group title="Modal">
-              <ModalSpec t={tokens} v={{}} />
-            </Group>
-          </>
+          <RadiusRolesPreview tokens={tokens} onEditRole={onEditLayoutRole} />
+        ) : categoryKey === 'spacing' ? (
+          <LayoutRolesPreview family="spacing" tokens={tokens} onEditRole={onEditLayoutRole} />
+        ) : categoryKey === 'sizes' ? (
+          <LayoutRolesPreview family="size" tokens={tokens} onEditRole={onEditLayoutRole} />
+        ) : categoryKey === 'stroke' ? (
+          <LayoutRolesPreview family="stroke" tokens={tokens} onEditRole={onEditLayoutRole} />
         ) : categoryKey === 'grid' ? (
           /* Grid is the one foundation whose tokens produce no COMPONENT —
              a button tells you nothing about a 12-column layout. Its specimen
              is the layout itself, drawn at every breakpoint the system
              defines. */
-          <GridPreview tokens={tokens} />
+          <GridPreview tokens={tokens} onEditRole={onEditLayoutRole} />
         ) : categoryKey === 'shadow' ? (
           /* Elevation can only be judged by comparing steps, which the generic
              fallback (one `xs` on a button) never let you do. `t.shadows` is
              already the dark twin here when a dark theme is previewed — see
              `resolvePreviewTokens`. */
           <ShadowPreview tokens={tokens} />
-        ) : categoryKey === 'spacing' || categoryKey === 'sizes' ? (
-          <>
-            {/* The token tables already carry the comparative bars; these add
-                real components so the effect reads, not just the px value. */}
-            <Group title="Button sizes">
-              <Tile tokens={tokens}>
-                <ButtonSpec t={tokens} v={{ Size: 'SM' }} />
-                <ButtonSpec t={tokens} v={{ Size: 'MD' }} />
-                <ButtonSpec t={tokens} v={{ Size: 'LG' }} />
-                <ButtonSpec t={tokens} v={{ Size: 'XL' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Card padding">
-              <CardSpec t={tokens} v={{}} />
-            </Group>
-          </>
         ) : (
           <>
             {/* The exact catalogue specimens (SPECIMENS — the same renderers the

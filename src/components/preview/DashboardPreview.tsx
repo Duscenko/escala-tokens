@@ -7,7 +7,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import chroma from 'chroma-js'
 import { withAlpha } from '../../lib/colorUtils'
-import { radiusOf, fontFamilyOf, weightOf, shadowOf } from '../../lib/previewTokens'
+import { radiusOf, fontFamilyOf, shadowOf, typeStyleOf } from '../../lib/previewTokens'
 import type { PreviewTokens } from './ButtonPreview'
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, "Roboto Mono", monospace'
@@ -44,6 +44,10 @@ interface Ctx {
   success: string
   warning: string
   info: string
+}
+
+function typeOf(t: PreviewTokens, role: string, leading = false): CSSProperties {
+  return typeStyleOf(t, role, { leading })
 }
 
 function makeCtx(t: PreviewTokens): Ctx {
@@ -105,21 +109,21 @@ function Hero({ c }: { c: Ctx }) {
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', width: '100%' }}>
-        <span style={{ background: badge.bg, color: badge.fg, fontFamily: c.body, fontSize: 12, fontWeight: weightOf(t, 'semibold', 600), padding: '2px 8px', borderRadius: radiusOf(t, 'sm', '2px') }}>
+        <span style={{ background: badge.bg, color: badge.fg, ...typeOf(t, 'caption'), padding: '2px 8px', borderRadius: radiusOf(t, 'sm', '2px') }}>
           New release
         </span>
-        <h3 style={{ margin: 0, fontFamily: c.heading, fontWeight: weightOf(t, 'bold', 700), fontSize: 23, lineHeight: '26.5px', letterSpacing: '-0.46px', color: t.neutralText }}>
+        <h3 style={{ margin: 0, ...typeStyleOf(t, 'heading-md'), color: t.neutralText }}>
           Ship a consistent<br />UI faster
         </h3>
-        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: c.muted }}>
+        <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: c.muted }}>
           A single token source for color, type, spacing, and shape, everywhere.
         </p>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
-        <span style={{ background: t.brandSolid, color: t.onBrand, fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), padding: '8px 16px', borderRadius: radiusOf(t, 'sm', '4px'), cursor: 'pointer' }}>
+        <span style={{ background: t.brandSolid, color: t.onBrand, ...typeOf(t, 'button'), padding: '8px 16px', borderRadius: radiusOf(t, 'sm', '4px'), cursor: 'pointer' }}>
           Get started
         </span>
-        <span style={{ color: t.brandText, fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), padding: '8px 16px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(t.brandSolid, 0.4)}`, cursor: 'pointer' }}>
+        <span style={{ color: t.brandText, ...typeOf(t, 'button'), padding: '8px 16px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(t.brandSolid, 0.4)}`, cursor: 'pointer' }}>
           Docs
         </span>
       </div>
@@ -132,9 +136,9 @@ function Stat({ c, label, value, delta, tone }: { c: Ctx; label: string; value: 
   const { t } = c
   return (
     <Card c={c} style={{ flex: 1, minWidth: 0, padding: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>{label}</span>
-      <span style={{ fontFamily: c.heading, fontSize: 26, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText, lineHeight: 1.15 }}>{value}</span>
-      <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), color: ink(tone, c.dark) }}>{delta}</span>
+      <span style={{ ...typeOf(t, 'caption'), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>{label}</span>
+      <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>{value}</span>
+      <span style={{ ...typeOf(t, 'caption'), color: ink(tone, c.dark) }}>{delta}</span>
     </Card>
   )
 }
@@ -144,7 +148,7 @@ function ChartCard({ c }: { c: Ctx }) {
   const { t } = c
   const tab = (label: string, active: boolean) => (
     <div style={{ position: 'relative', padding: '8px 12px' }}>
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: active ? t.neutralText : c.muted }}>{label}</span>
+      <span style={{ ...typeOf(t, 'button'), color: active ? t.neutralText : c.muted }}>{label}</span>
       {active && <span style={{ position: 'absolute', left: 12, right: 12, bottom: -1, height: 2, background: t.brandSolid }} />}
     </div>
   )
@@ -160,15 +164,15 @@ function ChartCard({ c }: { c: Ctx }) {
       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Overview · Last 12 weeks</span>
-            <span style={{ fontFamily: c.heading, fontSize: 32, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText, lineHeight: 1.1 }}>1,284</span>
+            <span style={{ ...typeOf(t, 'caption'), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Overview · Last 12 weeks</span>
+            <span style={{ ...typeStyleOf(t, 'display'), color: t.neutralText }}>1,284</span>
           </div>
           <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ maxWidth: '55%', flexShrink: 1 }} preserveAspectRatio="none" aria-hidden>
             <polyline points={`0,${h} ${path} ${w},${h}`} fill={withAlpha(t.brandSolid, 0.12)} stroke="none" />
             <polyline points={path} fill="none" stroke={t.brandSolid} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p style={{ margin: 0, fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: c.muted }}>
+        <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: c.muted }}>
           Sustained week-over-week growth, accelerating in the last sprint.
         </p>
       </div>
@@ -180,7 +184,7 @@ function ChartCard({ c }: { c: Ctx }) {
 function StatusBadge({ c, label, tone }: { c: Ctx; label: string; tone: string }) {
   const s = tint(tone, c)
   return (
-    <span style={{ background: s.bg, color: s.fg, fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(c.t, 'semibold', 600), letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' }}>{label}</span>
+    <span style={{ background: s.bg, color: s.fg, ...typeOf(c.t, 'caption'), letterSpacing: '0.4px', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' }}>{label}</span>
   )
 }
 
@@ -192,11 +196,11 @@ function InvoicesCard({ c }: { c: Ctx }) {
     { id: 'INV-1840', cust: 'Northwind', amt: '$1,200.00', st: 'PAID', tone: c.success },
     { id: 'INV-1839', cust: 'Linear Stage', amt: '$320.00', st: 'OVERDUE', tone: t.errorColor },
   ]
-  const th: CSSProperties = { fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted, padding: '8px 16px' }
+  const th: CSSProperties = { ...typeOf(t, 'caption'), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted, padding: '8px 16px' }
   return (
     <Card c={c} style={{ width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div style={{ borderBottom: `1px solid ${c.line}`, padding: '12px 20px' }}>
-        <span style={{ fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Recent invoices</span>
+        <span style={{ ...typeOf(t, 'caption'), letterSpacing: '0.6px', textTransform: 'uppercase', color: c.muted }}>Recent invoices</span>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <thead>
@@ -210,9 +214,9 @@ function InvoicesCard({ c }: { c: Ctx }) {
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.id} style={{ borderTop: i === 0 ? 'none' : `1px solid ${c.line}` }}>
-              <td style={{ padding: '13px 16px', fontFamily: MONO, fontSize: 11, color: t.neutralText }}>{r.id}</td>
-              <td style={{ padding: '13px 16px', fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'medium', 500), color: t.neutralText }}>{r.cust}</td>
-              <td style={{ padding: '13px 16px', fontFamily: MONO, fontSize: 13, fontWeight: 700, color: t.neutralText, textAlign: 'right' }}>{r.amt}</td>
+              <td style={{ padding: '13px 16px', ...typeOf(t, 'caption'), fontFamily: MONO, color: t.neutralText }}>{r.id}</td>
+              <td style={{ padding: '13px 16px', ...typeOf(t, 'body-sm'), color: t.neutralText }}>{r.cust}</td>
+              <td style={{ padding: '13px 16px', ...typeOf(t, 'body-sm'), fontFamily: MONO, fontWeight: 700, color: t.neutralText, textAlign: 'right' }}>{r.amt}</td>
               <td style={{ padding: '13px 16px' }}><StatusBadge c={c} label={r.st} tone={r.tone} /></td>
             </tr>
           ))}
@@ -246,8 +250,8 @@ function SettingRow({ c, title, desc, on }: { c: Ctx; title: string; desc: strin
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>{title}</span>
-        <span style={{ fontFamily: c.body, fontSize: 11, color: c.muted }}>{desc}</span>
+        <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{title}</span>
+        <span style={{ ...typeOf(t, 'helper'), color: c.muted }}>{desc}</span>
       </div>
       <Toggle c={c} on={on} />
     </div>
@@ -258,22 +262,22 @@ function SettingsCard({ c }: { c: Ctx }) {
   const checks: [string, boolean][] = [['A deployment fails on main', true], ['A new error type appears', true], ['Latency exceeds 500ms', false]]
   return (
     <Card c={c} style={{ width: '100%', boxSizing: 'border-box', padding: 21, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <span style={{ fontFamily: c.heading, fontSize: 19, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText }}>Workspace settings</span>
+      <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>Workspace settings</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0' }}>
         <SettingRow c={c} title="Email digests" desc="Weekly summary every Monday." on />
         <SettingRow c={c} title="Slack notifications" desc="Real-time alerts for incidents above P2." on={false} />
       </div>
       <div style={{ height: 1, background: c.line, width: '100%' }} />
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText, paddingTop: 4 }}>Notify me when</span>
+      <span style={{ ...typeOf(t, 'label'), color: t.neutralText, paddingTop: 4 }}>Notify me when</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {checks.map(([label, on]) => (
           <label key={label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <CheckBox c={c} on={on} />
-            <span style={{ fontFamily: c.body, fontSize: 13, color: t.neutralText }}>{label}</span>
+            <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{label}</span>
           </label>
         ))}
       </div>
-      <span style={{ fontFamily: c.body, fontSize: 11, color: c.muted, paddingTop: 4 }}>Changes save automatically.</span>
+      <span style={{ ...typeOf(t, 'helper'), color: c.muted, paddingTop: 4 }}>Changes save automatically.</span>
     </Card>
   )
 }
@@ -283,12 +287,12 @@ function SubscribeCard({ c }: { c: Ctx }) {
   const { t } = c
   return (
     <Card c={c} style={{ flex: 1, minWidth: 0, padding: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <span style={{ fontFamily: c.heading, fontSize: 19, fontWeight: weightOf(t, 'bold', 700), letterSpacing: '-0.3px', color: t.neutralText }}>Subscribe</span>
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'medium', 500), color: c.muted, marginTop: 8 }}>Email address</span>
-      <span style={{ boxSizing: 'border-box', width: '100%', padding: '11px 13px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(c.muted, 0.5)}`, background: c.page, fontFamily: c.body, fontSize: 13, color: c.placeholder }}>
+      <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>Subscribe</span>
+      <span style={{ ...typeOf(t, 'label'), color: c.muted, marginTop: 8 }}>Email address</span>
+      <span style={{ boxSizing: 'border-box', width: '100%', padding: '11px 13px', borderRadius: radiusOf(t, 'sm', '4px'), border: `1px solid ${withAlpha(c.muted, 0.5)}`, background: c.page, ...typeOf(t, 'placeholder'), color: c.placeholder }}>
         you@company.com
       </span>
-      <span style={{ boxSizing: 'border-box', width: '100%', textAlign: 'center', marginTop: 4, padding: '9px 16px', borderRadius: radiusOf(t, 'sm', '4px'), background: t.brandSolid, color: t.onBrand, fontFamily: c.body, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), cursor: 'pointer' }}>
+      <span style={{ boxSizing: 'border-box', width: '100%', textAlign: 'center', marginTop: 4, padding: '9px 16px', borderRadius: radiusOf(t, 'sm', '4px'), background: t.brandSolid, color: t.onBrand, ...typeOf(t, 'button'), cursor: 'pointer' }}>
         Notify me
       </span>
     </Card>
@@ -298,8 +302,8 @@ function StatusCard({ c, title, body, tone }: { c: Ctx; title: string; body: Rea
   const s = tint(tone, c)
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', background: s.bg, border: `1px solid ${s.border}`, borderRadius: radiusOf(c.t, 'sm', '4px'), padding: 17, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontFamily: c.body, fontSize: 13, fontWeight: weightOf(c.t, 'bold', 700), color: s.fg }}>{title}</span>
-      <span style={{ fontFamily: c.body, fontSize: 13, lineHeight: '20px', color: ink(tone, c.dark) }}>{body}</span>
+      <span style={{ ...typeOf(c.t, 'label'), color: s.fg }}>{title}</span>
+      <span style={{ ...typeStyleOf(c.t, 'body-sm', { leading: true }), color: ink(tone, c.dark) }}>{body}</span>
     </div>
   )
 }
@@ -316,7 +320,7 @@ function Chips({ c }: { c: Ctx }) {
       {chips.map(([label, color]) => {
         const s = tint(color, c)
         return (
-          <span key={label} style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.fg, fontFamily: c.body, fontSize: 10.5, fontWeight: weightOf(t, 'semibold', 600), padding: '5px 9px', borderRadius: 999 }}>{label}</span>
+          <span key={label} style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.fg, ...typeOf(t, 'caption'), padding: '5px 9px', borderRadius: 999 }}>{label}</span>
         )
       })}
     </div>
@@ -349,9 +353,9 @@ export default function DashboardPreview({ tokens }: { tokens: PreviewTokens }) 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${c.line}` }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <ThemeGlyph dark={c.dark} color={c.muted} />
-          <span style={{ fontFamily: c.body, fontSize: 10, fontWeight: weightOf(t, 'semibold', 600), color: c.muted }}>{c.dark ? 'dark' : 'light'}</span>
+          <span style={{ ...typeOf(t, 'caption'), color: c.muted }}>{c.dark ? 'dark' : 'light'}</span>
         </span>
-        <span style={{ fontFamily: MONO, fontSize: 10, color: c.muted, textTransform: 'uppercase' }}>{safe(t.surface).toUpperCase()} → {safe(t.neutralText).toUpperCase()}</span>
+        <span style={{ ...typeOf(t, 'caption'), fontFamily: MONO, color: c.muted, textTransform: 'uppercase' }}>{safe(t.surface).toUpperCase()} → {safe(t.neutralText).toUpperCase()}</span>
       </div>
 
       {/* Body */}

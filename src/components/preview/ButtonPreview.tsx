@@ -42,7 +42,14 @@ export interface PreviewTokens {
   spacing: Record<string, string>
   // Per-side surface padding (top/right/bottom/left) for padded surfaces.
   padding?: Record<string, string>
-  typography: { fontFamily: string; headingFontFamily?: string; sizes: Record<string, string>; weights: Record<string, number> }
+  typography: {
+    fontFamily: string
+    headingFontFamily?: string
+    sizes: Record<string, string>
+    lineHeights?: Record<string, string>
+    weights: Record<string, number>
+    roles?: Record<string, { desktop: { family: 'display' | 'body'; size: string; weight: string }; mobile: { family: 'display' | 'body'; size: string; weight: string } }>
+  }
   // Radix-style panel treatment for raised surfaces (surface-1: cards, panels).
   // 'page' reuses the primitives page background as the panel fill.
   panelBackground?: 'solid' | 'translucent' | 'page'
@@ -52,6 +59,13 @@ export interface PreviewTokens {
   // Component heights from Foundations · Sizes (xs–2xl) — Size axes resolve
   // control heights from here so previews track that foundation live.
   sizes?: Record<string, string>
+  stroke?: Record<string, string>
+  radiusRoles?: Record<string, string>
+  spacingRoles?: Record<string, string>
+  sizeRoles?: Record<string, string>
+  strokeRoles?: Record<string, string>
+  breakpointRoles?: Record<string, string>
+  gridFrame?: { desktop: { columns: string; gutter: string; margin: string; container: string }; mobile: { columns: string; gutter: string; margin: string; container: string } }
   // Elevation ramp from Foundations · Shadow (xs–2xl CSS box-shadows).
   shadows?: Record<string, string>
   // Layout grid from Foundations · Grid — `columns`/`gutter`/`margin`/

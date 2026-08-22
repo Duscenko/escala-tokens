@@ -7,6 +7,8 @@ import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { toneLabel, withAlpha, darkShadow } from './colorUtils'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
+import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMobileCss, breakpointMobileMax } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 
 // Panel (background-secondary: cards, panels, sections) tokens — translucent
@@ -15,7 +17,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 const PANEL_KEYS = ['background-secondary']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, colorNaming, panelBackground, pageBackground, gradients } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   const semanticTokens = themes.light ?? {}
   const translucent = panelBackground === 'translucent'
   const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
@@ -58,30 +60,58 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
+  lines.push('\n  /* Text roles — alias the primitive scale. Desktop, plus `-mobile`. */')
+  typeRoleCssVars(typography.roles).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
 
-  lines.push('\n  /* Padding — per-side surface inset */')
+  lines.push('\n  /* Padding — per-side surface inset (resolved px of spacing-inset-surface) */')
   Object.entries(padding).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
 
+  lines.push('\n  /* Sizes */')
+  Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
+
+  lines.push('\n  /* Stroke — border-width / ring spread, not paint */')
+  Object.entries(stroke ?? {}).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${v};`))
+
+  lines.push('\n  /* Layout roles — alias the primitive scale. Never raw px. */')
+  allLayoutRoleCssVars({
+    radius: mergeLayoutRoles('radius', radiusRoles),
+    spacing: mergeLayoutRoles('spacing', spacingRoles),
+    size: mergeLayoutRoles('size', sizeRoles),
+    stroke: mergeLayoutRoles('stroke', strokeRoles),
+    breakpoint: mergeLayoutRoles('breakpoint', breakpointRoles),
+  }).forEach((l) => lines.push(`  ${l}`))
+
   lines.push('\n  /* Shadow */')
   Object.entries(shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
 
-  lines.push('\n  /* Grid */')
-  Object.entries(grid).forEach(([k, v]) => lines.push(`  --grid-${k}: ${v};`))
+  lines.push('\n  /* Breakpoints — primitive min-widths */')
+  const bps = extractBreakpoints(grid)
+  BREAKPOINT_STEPS.forEach((step) => {
+    lines.push(`  --breakpoint-${step}: ${bps[step]};`)
+    lines.push(`  --grid-${breakpointKey(step)}: var(--breakpoint-${step});`)
+  })
 
-  lines.push('\n  /* Sizes */')
-  Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
+  lines.push('\n  /* Grid frame — desktop aliases. Mobile overrides below. */')
+  gridFrameRootCss(gridFrame).forEach((l) => lines.push(`  ${l}`))
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
     gradients.forEach((g) => lines.push(`  --gradient-${gradientSlug(g)}: ${gradientToCss(g)};`))
   }
 
+  lines.push('}')
+
+  const mobileMax = breakpointMobileMax(breakpointRoles, bps)
+  lines.push(`\n@media (max-width: ${mobileMax}) {`)
+  lines.push('  :root {')
+  gridFrameMobileCss(gridFrame).forEach((l) => lines.push(`    ${l}`))
+  lines.push('  }')
   lines.push('}')
 
   // Non-default themes — semantic tokens only. Dark keeps the `.dark` class
@@ -129,7 +159,7 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
   const {
     projectName, projectDescription, primaryColor, primaryScale, grayLightScale, errorScale, warningScale,
     successScale, infoScale, customColors, themes, themeOrder, typography, spacing, padding, radius,
-    shadows, grid, sizes, selectedComponents, iconAiSource, customIcons, githubRepo, colorNaming, panelBackground,
+    shadows, grid, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles, gridFrame, selectedComponents, iconAiSource, customIcons, githubRepo, colorNaming, panelBackground,
     gradients, gradientAssignments,
   } = store
   const gradientSlugById = (id: string | null) => {
@@ -197,6 +227,16 @@ ${Object.entries(typography.sizes).map(([k,v])=>`| \`--font-size-${k}\` | \`${v}
 ${Object.entries(typography.lineHeights ?? {}).map(([k,v])=>`| \`--line-height-${k}\` | \`${v}\` |`).join('\n')}
 ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`${v}\` |`).join('\n')}
 
+### Text roles
+
+| Role | Desktop | Mobile |
+|------|---------|--------|
+${TYPE_ROLES.map((r) => {
+  const m = mergeTypeRoles(typography.roles)[r.key]
+  const fmt = (a: { family: string; size: string; weight: string }) => `${a.size} · ${a.weight} · ${a.family}`
+  return `| \`text-${r.key}\` | \`${fmt(m.desktop)}\` | \`${fmt(m.mobile)}\` |`
+}).join('\n')}
+
 ---
 
 ## Spacing
@@ -204,6 +244,12 @@ ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`
 | Token | Value |
 |-------|-------|
 ${Object.entries(spacing).map(([k,v])=>`| \`--spacing-${k}\` | \`${v}\` |`).join('\n')}
+
+### Spacing roles
+
+| Role | Aliases |
+|------|---------|
+${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`var(--spacing-${mergeLayoutRoles('spacing', spacingRoles)[r.key]})\` |`).join('\n')}
 
 ### Padding — surface inset
 
@@ -219,6 +265,12 @@ ${Object.entries(padding).map(([k,v])=>`| \`--padding-${k}\` | \`${v}\` |`).join
 |-------|-------|
 ${Object.entries(radius).map(([k,v])=>`| \`--radius-${k}\` | \`${v}\` |`).join('\n')}
 
+### Radius roles
+
+| Role | Aliases |
+|------|---------|
+${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`var(--radius-${mergeLayoutRoles('radius', radiusRoles)[r.key]})\` |`).join('\n')}
+
 ---
 
 ## Shadow
@@ -233,9 +285,30 @@ ${Object.entries(shadows).map(([k,v])=>`| \`--shadow-${k}\` | \`${v}\` | ${v ===
 
 ## Grid
 
+Breakpoint primitives (min-width) plus desktop / mobile intent. Mobile max-width is \`calc(desktop − 1px)\` — never a raw 767. The layout frame aliases spacing and breakpoints.
+
 | Token | Value |
 |-------|-------|
-${Object.entries(grid).map(([k,v])=>`| \`--grid-${k}\` | \`${v}\` |`).join('\n')}
+${BREAKPOINT_STEPS.map((s) => `| \`--breakpoint-${s}\` | \`${extractBreakpoints(grid)[s]}\` |`).join('\n')}
+
+### Viewport roles
+
+| Role | Aliases | Query |
+|------|---------|-------|
+| \`--breakpoint-desktop\` | \`var(--breakpoint-${mergeLayoutRoles('breakpoint', breakpointRoles).desktop})\` | min-width |
+| \`--breakpoint-mobile\` | \`calc(var(--breakpoint-${mergeLayoutRoles('breakpoint', breakpointRoles).mobile}) - 1px)\` | max-width |
+
+### Frame
+
+| Token | Desktop | Mobile |
+|-------|---------|--------|
+${['columns', 'gutter', 'margin', 'container'].map((k) => {
+  const f = mergeGridFrame(gridFrame)
+  const d = f.desktop[k as 'columns']
+  const m = f.mobile[k as 'columns']
+  const fmt = (step: string) => k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : `var(--breakpoint-${step})`) : `var(--spacing-${step})`
+  return `| \`--grid-${k}\` | \`${fmt(d)}\` | \`${fmt(m)}\` |`
+}).join('\n')}
 
 ---
 
@@ -244,6 +317,28 @@ ${Object.entries(grid).map(([k,v])=>`| \`--grid-${k}\` | \`${v}\` |`).join('\n')
 | Token | Value |
 |-------|-------|
 ${Object.entries(sizes).map(([k,v])=>`| \`--size-${k}\` | \`${v}\` |`).join('\n')}
+
+### Size roles
+
+| Role | Aliases |
+|------|---------|
+${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`var(--size-${mergeLayoutRoles('size', sizeRoles)[r.key]})\` |`).join('\n')}
+
+---
+
+## Stroke
+
+Line weight — not paint. Color stays on \`border.*\`.
+
+| Token | Value |
+|-------|-------|
+${Object.entries(stroke ?? {}).map(([k,v])=>`| \`--stroke-${k}\` | \`${v}\` |`).join('\n')}
+
+### Stroke roles
+
+| Role | Aliases |
+|------|---------|
+${LAYOUT_ROLES.stroke.map((r) => `| \`--stroke-${r.key}\` | \`var(--stroke-${mergeLayoutRoles('stroke', strokeRoles)[r.key]})\` |`).join('\n')}
 
 ---
 
@@ -282,10 +377,10 @@ ${selectedComponents.length > 0
 .card {
   background: var(--color-surface-1);
   backdrop-filter: var(--panel-blur);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  border: var(--stroke-control) solid var(--color-border-strong);
+  border-radius: var(--radius-container);
   box-shadow: var(--shadow-sm);
-  padding: var(--spacing-4);
+  padding: var(--spacing-inset-surface);
 }
 \`\`\`
 

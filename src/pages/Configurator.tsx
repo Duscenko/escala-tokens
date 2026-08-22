@@ -33,8 +33,10 @@ import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
+import TypeHub, { type TypeTab } from '../components/configurator/TypeHub'
 import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/colorControls'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
+import { type TypeFocus } from '../components/configurator/TypeSemantics'
 import ExportWizard from '../components/configurator/ExportWizard'
 import { type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
@@ -45,6 +47,9 @@ import StepRadius from '../components/configurator/StepRadius'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
+import StepStroke from '../components/configurator/StepStroke'
+import LayoutHub from '../components/configurator/LayoutHub'
+import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 
@@ -63,6 +68,8 @@ interface FoundationSection {
   short: string // compact label for the icon rail
   hint: string
   title: string
+  /** Workbench column heading — names this family, not a generic “Groups”. */
+  variablesLabel: string
   subtitle: string
   Component: ComponentType
   Icon: ComponentType
@@ -75,6 +82,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Color',
     hint: 'Brand, neutrals & state scales',
     title: 'Color',
+    variablesLabel: 'Color Variables',
     subtitle: 'Map your semantic aliases and craft the gradients your system ships with.',
     Component: Step2_ColorPalette,
     // The same palette mark the token tables use for color rows — one official
@@ -85,9 +93,10 @@ const FOUNDATIONS: FoundationSection[] = [
     key: 'typography',
     label: 'Typography',
     short: 'Font',
-    hint: 'Fonts, sizes & weights',
+    hint: 'Primitive scale + text roles',
     title: 'Typography',
-    subtitle: 'Pair a heading and body font, then tune the size scale and weights.',
+    variablesLabel: 'Text Variables',
+    subtitle: 'Primitives for the scale, then semantic text styles — labels, placeholders, headings — mapped for desktop and mobile.',
     Component: Step4_Typography,
     Icon: ic('M8 7H16M12 7V17M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z'),
   },
@@ -97,7 +106,8 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Radius',
     hint: 'Corner-radius personality',
     title: 'Border Radius',
-    subtitle: 'Choose the corner-radius personality of your system — from sharp to pill.',
+    variablesLabel: 'Radius Variables',
+    subtitle: 'Primitives for the scale, then semantic aliases — action, container, overlay — mapped onto that ramp.',
     Component: StepRadius,
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
   },
@@ -107,7 +117,8 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Spacing',
     hint: 'Base spacing scale',
     title: 'Spacing',
-    subtitle: 'Set the base unit that drives every margin, padding and gap in your system.',
+    variablesLabel: 'Spacing Variables',
+    subtitle: 'Primitives for the 4px grid, then semantic aliases — gaps and insets — mapped onto that scale.',
     Component: Step5_Spacing,
     Icon: ic('M21 21V3M3 21V3M9 8V16C9 16.9319 9 17.3978 9.15224 17.7654C9.35523 18.2554 9.74458 18.6448 10.2346 18.8478C10.6022 19 11.0681 19 12 19C12.9319 19 13.3978 19 13.7654 18.8478C14.2554 18.6448 14.6448 18.2554 14.8478 17.7654C15 17.3978 15 16.9319 15 16V8C15 7.06812 15 6.60218 14.8478 6.23463C14.6448 5.74458 14.2554 5.35523 13.7654 5.15224C13.3978 5 12.9319 5 12 5C11.0681 5 10.6022 5 10.2346 5.15224C9.74458 5.35523 9.35523 5.74458 9.15224 6.23463C9 6.60218 9 7.06812 9 8Z'),
   },
@@ -117,6 +128,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Shadow',
     hint: 'Elevation levels',
     title: 'Shadow',
+    variablesLabel: 'Shadow Variables',
     subtitle: 'Tune the elevation ramp — from subtle cards to floating dialogs.',
     Component: Step7_Shadow,
     Icon: ic('M8 4h10a2 2 0 0 1 2 2v10M4 10a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z', '1.8'),
@@ -127,9 +139,10 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Grid',
     hint: 'Columns, gutters & breakpoints',
     title: 'Grid',
-    subtitle: 'Set the layout grid — columns, gutter, margins, container and breakpoints.',
+    variablesLabel: 'Grid Variables',
+    subtitle: 'Breakpoint primitives, then desktop / mobile aliases — the cut Type and the layout grid share.',
     Component: Step8_Grid,
-    Icon: ic('M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', '1.8'),
+    Icon: ic('M7.5 12h.01m8.99 0h.01M12 12h.01M12 16.5h.01m-.01-9h.01M3 7.8v8.4c0 1.68 0 2.52.327 3.162a3 3 0 0 0 1.311 1.311C5.28 21 6.12 21 7.8 21h8.4c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C21 18.72 21 17.88 21 16.2V7.8c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C18.72 3 17.88 3 16.2 3H7.8c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C3 5.28 3 6.12 3 7.8Z'),
   },
   {
     key: 'sizes',
@@ -137,9 +150,21 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Sizes',
     hint: 'Component size scale',
     title: 'Sizes',
-    subtitle: 'Standardize component heights — from compact controls to hero CTAs.',
+    variablesLabel: 'Size Variables',
+    subtitle: 'Control heights, then semantic aliases — compact, control, touch — mapped onto that ramp.',
     Component: Step9_Sizes,
     Icon: ic('M4 20V4M20 20V4M8 12h8M8 12l2.5-2.5M8 12l2.5 2.5M16 12l-2.5-2.5M16 12l-2.5 2.5', '1.8'),
+  },
+  {
+    key: 'stroke',
+    label: 'Stroke',
+    short: 'Stroke',
+    hint: 'Border width & focus ring',
+    title: 'Stroke',
+    variablesLabel: 'Stroke Variables',
+    subtitle: 'Line weight primitives, then semantic aliases — divider, control, focus — not paint.',
+    Component: StepStroke,
+    Icon: ic('M3 3h.01M3 12h.01M3 21h.01M3 16.5h.01M3 7.5h.01M7.5 3h.01m-.01 9h.01m-.01 9h.01M16.5 3h.01m-.01 9h.01m-.01 9h.01M21 3h.01M21 12h.01M21 21h.01M21 16.5h.01m-.01-9h.01M12 21V3'),
   },
   {
     key: 'icons',
@@ -147,16 +172,17 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Icons',
     hint: 'Best icon libraries',
     title: 'Icon Library',
+    variablesLabel: 'Icon Library',
     subtitle: 'Pick the icon set your system standardizes on — referenced in your tokens and docs.',
     Component: IconLibrary,
     Icon: ic('M20.5 7.27783L12 12.0001M12 12.0001L3.49997 7.27783M12 12.0001L12 21.5001M21 16.0586V7.94153C21 7.59889 21 7.42757 20.9495 7.27477C20.9049 7.13959 20.8318 7.01551 20.7354 6.91082C20.6263 6.79248 20.4766 6.70928 20.177 6.54288L12.777 2.43177C12.4934 2.27421 12.3516 2.19543 12.2015 2.16454C12.0685 2.13721 11.9315 2.13721 11.7986 2.16454C11.6484 2.19543 11.5066 2.27421 11.223 2.43177L3.82297 6.54288C3.52345 6.70928 3.37369 6.79248 3.26463 6.91082C3.16816 7.01551 3.09515 7.13959 3.05048 7.27477C3 7.42757 3 7.59889 3 7.94153V16.0586C3 16.4013 3 16.5726 3.05048 16.7254C3.09515 16.8606 3.16816 16.9847 3.26463 17.0893C3.37369 17.2077 3.52345 17.2909 3.82297 17.4573L11.223 21.5684C11.5066 21.726 11.6484 21.8047 11.7986 21.8356C11.9315 21.863 12.0685 21.863 12.2015 21.8356C12.3516 21.8047 12.4934 21.726 12.777 21.5684L20.177 17.4573C20.4766 17.2909 20.6263 17.2077 20.7354 17.0893C20.8318 16.9847 20.9049 16.8606 20.9495 16.7254C21 16.5726 21 16.4013 21 16.0586Z'),
   },
 ]
 
-// The "Variables" half of the rail (Styles = icons/shadow/grid) —
+// The "Variables" half of the rail (Styles = icons/shadow) —
 // also the exact category list HomeActions' "New" menu offers, so the two
 // can never drift apart.
-const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'shadow', 'grid'].includes(f.key))
+const VARIABLE_FOUNDATIONS = FOUNDATIONS.filter((f) => !['icons', 'shadow'].includes(f.key))
 
 // Component categories get icons too, so the Components/Documentation rail
 // reads exactly like the Variables one (same row shape, icon + label).
@@ -179,6 +205,7 @@ const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
   shadow: ['shadow'],
   grid: ['grid'],
   sizes: ['sizes'],
+  stroke: ['stroke'],
   icons: ['icons'],
 }
 
@@ -272,6 +299,11 @@ export default function Configurator() {
   // preview mirrors the semantic category only while the semantics tab is
   // active.
   const [colorTab, setColorTab] = useState<ColorTab>('primary')
+  const [typeTab, setTypeTab] = useState<TypeTab>('primary')
+  const [typeFocus, setTypeFocus] = useState<TypeFocus>('all')
+  const [typeReveal, setTypeReveal] = useState<{ key: string; seq: number } | null>(null)
+  const [layoutReveal, setLayoutReveal] = useState<{ key: string; seq: number } | null>(null)
+  const [colorReveal, setColorReveal] = useState<{ key: string; seq: number; as?: 'token' | 'group' } | null>(null)
   // Primitives' own 198px left column (accent-color cell · Groups · family
   // nav), collapsed to a swatch strip. Lifted for the same reason `colorTab`
   // is: TopNav's brand block continues this column's divider up through the
@@ -583,11 +615,32 @@ export default function Configurator() {
         previewTheme={previewTheme}
         onPreviewThemeChange={changePreviewTheme}
         railCollapsed={colorRailCollapsed}
+        revealRole={colorReveal}
+      />
+    ) : section.key === 'typography' ? (
+      <TypeHub
+        typeTab={typeTab}
+        onTypeTabChange={setTypeTab}
+        onFocusChange={setTypeFocus}
+        revealRole={typeReveal}
       />
     ) : section.key === 'icons' ? (
       <div className="h-full overflow-y-auto p-8">
         <Active />
       </div>
+    ) : section.key === 'radius' || section.key === 'spacing' || section.key === 'sizes' || section.key === 'stroke' ? (
+      <LayoutHub
+        family={section.key === 'sizes' ? 'size' : section.key}
+        Primitives={Active}
+        revealRole={layoutReveal}
+      />
+    ) : section.key === 'grid' ? (
+      <LayoutHub
+        family="breakpoint"
+        Primitives={Active}
+        Semantics={GridSemantics}
+        revealRole={layoutReveal}
+      />
     ) : (
       <Active />
     )
@@ -791,6 +844,7 @@ export default function Configurator() {
                       ? () => setColorRailCollapsed((c) => !c)
                       : undefined
                   }
+                  label={section.variablesLabel}
                   gutter={activeFoundation === 'icons'}
                 >
                   <motion.div
@@ -857,11 +911,27 @@ export default function Configurator() {
               ) : (
                 <PreviewPanel
                   focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticFocus : null}
+                  typeFocus={!exportMode && tab === 'foundations' && activeFoundation === 'typography' && typeTab === 'semantics' ? typeFocus : null}
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}
                   onOpenDocs={openDocs}
+                  onEditTypeRole={(key) => {
+                    setTypeTab('semantics')
+                    setTypeReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
+                  }}
+                  onEditLayoutRole={(key) => {
+                    setLayoutReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
+                  }}
+                  onEditColorToken={(key) => {
+                    setColorTab('semantics')
+                    setColorReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1, as: 'token' }))
+                  }}
+                  onEditColorGroup={(key) => {
+                    setColorTab('semantics')
+                    setColorReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1, as: 'group' }))
+                  }}
                 />
               )}
             </aside>

@@ -21,8 +21,7 @@ export function SlidersIcon({ size = 15, className = '' }: { size?: number; clas
   )
 }
 
-/** Sparkle in a circle — the scale-guide mark (industry packs + harmony),
- *  distinct from SlidersIcon which stays on per-row / algorithm editors. */
+/** Sparkle in a circle — AI / agent mark (context copy, Color Agent, scale guide). */
 export function SparkleCircleIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
   return (
     <svg

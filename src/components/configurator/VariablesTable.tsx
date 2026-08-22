@@ -77,6 +77,7 @@ export default function VariablesTable({
   title,
   groups,
   toolbar,
+  tabBar,
   searchLabel = 'Filter tokens',
   wideValues = false,
   railed = false,
@@ -87,6 +88,8 @@ export default function VariablesTable({
   groups: VariableGroup[]
   /** Rendered in the top bar between the title and the search box. */
   toolbar?: ReactNode
+  /** Color/Type hub tab strip — replaces the title when present. */
+  tabBar?: ReactNode
   searchLabel?: string
   /** Give the value column the room (long CSS values, e.g. shadow ramps). */
   wideValues?: boolean
@@ -127,12 +130,16 @@ export default function VariablesTable({
   const stacked = groups.length > 1
 
   const topBar = (
-    <div className="foundation-layer-bar flex items-center justify-between gap-3 h-[52px] pl-4 pr-3 flex-shrink-0">
+    <div className={`foundation-layer-bar flex ${tabBar ? 'items-stretch' : 'items-center justify-between'} gap-3 h-[52px] ${tabBar ? 'pr-3' : 'pl-4 pr-3'} flex-shrink-0`}>
+        {tabBar ? (
+          <div className="flex-1 min-w-0">{tabBar}</div>
+        ) : (
         <div className="flex items-center gap-2.5 min-w-0">
           <span className={railed ? 'text-[11px] font-semibold uppercase tracking-widest text-fg-muted truncate' : 'text-sm text-fg truncate'}>{title}</span>
           <span className="text-[11px] font-mono tabular-nums text-fg-faint">{total}</span>
         </div>
-        <div className="flex items-center gap-3 min-w-0">
+        )}
+        <div className="flex items-center gap-3 min-w-0 self-center">
           {toolbar}
           <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-44 focus-within:border-fg transition-colors">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">

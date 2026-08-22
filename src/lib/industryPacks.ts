@@ -46,8 +46,8 @@ export const INDUSTRY_PACKS: IndustryPack[] = [
     accents: [
       { label: 'Orange', hex: '#ef6820' },
       { label: 'Yellow', hex: '#eaaa08' },
-      { label: 'Rosé',   hex: '#f63d68' },
       { label: 'Green',  hex: '#16b364' },
+      { label: 'Rosé',   hex: '#f63d68' },
     ],
   },
   {
@@ -56,130 +56,130 @@ export const INDUSTRY_PACKS: IndustryPack[] = [
     group: 'market',
     theory: 'Cosmetic chroma — pink, berry, fuchsia. Seasonal, not corporate.',
     accents: [
-      { label: 'Pink',    hex: '#ee46bc' },
-      { label: 'Rosé',    hex: '#f63d68' },
-      { label: 'Fuchsia', hex: '#d444f1' },
-      { label: 'Purple',  hex: '#7a5af8' },
+      { label: 'Pink',     hex: '#ee46bc' },
+      { label: 'Fuchsia',  hex: '#d444f1' },
+      { label: 'Magenta',  hex: '#c026d3' },
+      { label: 'Grape',    hex: '#a855f7' },
     ],
   },
   {
     id: 'hospitality',
     label: 'Hospitality',
     group: 'market',
-    theory: 'Warm welcome — berry, citrus, tea. Invitation, not urgency.',
+    theory: 'Warm welcome — coral, mint, ice. Invitation, not urgency.',
     accents: [
-      { label: 'Rosé',   hex: '#f63d68' },
-      { label: 'Orange', hex: '#ef6820' },
-      { label: 'Yellow', hex: '#eaaa08' },
-      { label: 'Teal',   hex: '#15b79e' },
+      { label: 'Coral', hex: '#fb542b' },
+      { label: 'Mint',  hex: '#34d399' },
+      { label: 'Aqua',  hex: '#2dd4bf' },
+      { label: 'Ice',   hex: '#22d3ee' },
     ],
   },
   {
     id: 'luxury',
     label: 'Luxury',
     group: 'market',
-    theory: 'Jewel tones. Rare, not loud — violet, indigo, pink.',
+    theory: 'Jewel tones. Rare, not loud — violet, indigo, periwinkle.',
     accents: [
-      { label: 'Violet', hex: '#875bf7' },
-      { label: 'Purple', hex: '#7a5af8' },
-      { label: 'Indigo', hex: '#6172f3' },
-      { label: 'Pink',   hex: '#ee46bc' },
+      { label: 'Violet',     hex: '#875bf7' },
+      { label: 'Purple',     hex: '#7a5af8' },
+      { label: 'Indigo',     hex: '#6172f3' },
+      { label: 'Periwinkle', hex: '#818cf8' },
     ],
   },
   {
     id: 'business',
     label: 'Business',
     group: 'work',
-    theory: 'Trust and authority sit in blue through indigo.',
+    theory: 'Trust and authority sit in blue through cobalt.',
     accents: [
       { label: 'Blue Dark', hex: '#2970ff' },
       { label: 'Blue',      hex: '#2e90fa' },
-      { label: 'Indigo',    hex: '#6172f3' },
-      { label: 'Violet',    hex: '#875bf7' },
+      { label: 'Cobalt',    hex: '#1d4ed8' },
+      { label: 'Electric',  hex: '#4f46e5' },
     ],
   },
   {
     id: 'tech',
     label: 'Tech',
     group: 'work',
-    theory: 'Signal — cyan, electric blue. Screens, not navy boardrooms.',
+    theory: 'Signal — cyan, aqua, ice. Screens, not navy boardrooms.',
     accents: [
       { label: 'Cyan',       hex: '#06aed4' },
-      { label: 'Blue Light', hex: '#0ba5ec' },
-      { label: 'Indigo',     hex: '#6172f3' },
-      { label: 'Purple',     hex: '#7a5af8' },
+      { label: 'Aqua',       hex: '#2dd4bf' },
+      { label: 'Ice',        hex: '#22d3ee' },
+      { label: 'Periwinkle', hex: '#818cf8' },
     ],
   },
   {
     id: 'education',
     label: 'Education',
     group: 'work',
-    theory: 'Clarity and highlight — sky, cyan, a mark of yellow.',
+    theory: 'Clarity and highlight — sky, indigo, a mark of yellow.',
     accents: [
-      { label: 'Blue Light', hex: '#0ba5ec' },
-      { label: 'Cyan',       hex: '#06aed4' },
-      { label: 'Indigo',     hex: '#6172f3' },
-      { label: 'Yellow',     hex: '#eaaa08' },
+      { label: 'Sky',    hex: '#0ba5ec' },
+      { label: 'Indigo', hex: '#6172f3' },
+      { label: 'Yellow', hex: '#eaaa08' },
+      { label: 'Grape',  hex: '#a855f7' },
     ],
   },
   {
     id: 'energy',
     label: 'Energy',
     group: 'work',
-    theory: 'Heat and charge — fire orange, sun, earth.',
+    theory: 'Heat and charge — flame, amber, earth.',
     accents: [
-      { label: 'Orange Dark', hex: '#ff4405' },
-      { label: 'Orange',      hex: '#ef6820' },
-      { label: 'Yellow',      hex: '#eaaa08' },
-      { label: 'Moss',        hex: '#669f2a' },
+      { label: 'Flame',  hex: '#ff4405' },
+      { label: 'Orange', hex: '#ef6820' },
+      { label: 'Amber',  hex: '#f59e0b' },
+      { label: 'Moss',   hex: '#669f2a' },
     ],
   },
   {
     id: 'health',
     label: 'Health',
     group: 'life',
-    theory: 'Calm vitality — teal, green, cyan. Clinical without going cold.',
+    theory: 'Calm vitality — teal, emerald, cyan. Clinical without going cold.',
     accents: [
-      { label: 'Teal',       hex: '#15b79e' },
-      { label: 'Green',      hex: '#16b364' },
-      { label: 'Cyan',       hex: '#06aed4' },
-      { label: 'Blue Light', hex: '#0ba5ec' },
+      { label: 'Teal',    hex: '#15b79e' },
+      { label: 'Emerald', hex: '#0d9488' },
+      { label: 'Cyan',    hex: '#06aed4' },
+      { label: 'Aqua',    hex: '#2dd4bf' },
     ],
   },
   {
     id: 'nature',
     label: 'Nature',
     group: 'life',
-    theory: 'Growth. Moss and leaf — earthbound, not neon.',
+    theory: 'Growth. Moss, forest, mint — earthbound, not neon.',
     accents: [
-      { label: 'Moss',        hex: '#669f2a' },
-      { label: 'Green Light', hex: '#66c61c' },
-      { label: 'Green',       hex: '#16b364' },
-      { label: 'Teal',        hex: '#15b79e' },
+      { label: 'Moss',   hex: '#669f2a' },
+      { label: 'Green',  hex: '#16b364' },
+      { label: 'Forest', hex: '#15803d' },
+      { label: 'Mint',   hex: '#34d399' },
     ],
   },
   {
     id: 'recreation',
     label: 'Recreation',
     group: 'life',
-    theory: 'Motion outdoors — sun, lime, a hit of fire.',
+    theory: 'Motion outdoors — lime, coral, sun.',
     accents: [
-      { label: 'Green Light', hex: '#66c61c' },
-      { label: 'Orange',      hex: '#ef6820' },
-      { label: 'Yellow',      hex: '#eaaa08' },
-      { label: 'Orange Dark', hex: '#ff4405' },
+      { label: 'Lime',   hex: '#66c61c' },
+      { label: 'Coral',  hex: '#fb542b' },
+      { label: 'Orange', hex: '#ef6820' },
+      { label: 'Yellow', hex: '#eaaa08' },
     ],
   },
   {
     id: 'art',
     label: 'Art',
     group: 'life',
-    theory: 'Expression in fuchsia, purple, pink — hue as the signature.',
+    theory: 'Expression in fuchsia, magenta, grape — hue as the signature.',
     accents: [
       { label: 'Fuchsia', hex: '#d444f1' },
-      { label: 'Purple',  hex: '#7a5af8' },
+      { label: 'Magenta', hex: '#c026d3' },
       { label: 'Pink',    hex: '#ee46bc' },
-      { label: 'Violet',  hex: '#875bf7' },
+      { label: 'Grape',   hex: '#a855f7' },
     ],
   },
 ]
@@ -315,4 +315,14 @@ export function industryPacksAreCurated(): boolean {
 export function industryHeroesAreUnique(): boolean {
   const heroes = INDUSTRY_PACKS.map((p) => p.accents[0].hex.toLowerCase())
   return new Set(heroes).size === heroes.length
+}
+
+/** No repeated hex inside Market, Work, or Life — a click in an open group
+ *  cannot light up a twin swatch in a sibling row. */
+export function industryPacksUniqueWithinGroup(): boolean {
+  for (const group of INDUSTRY_GROUP_ORDER) {
+    const hexes = packsInGroup(group).flatMap((p) => p.accents.map((a) => a.hex.toLowerCase()))
+    if (new Set(hexes).size !== hexes.length) return false
+  }
+  return true
 }

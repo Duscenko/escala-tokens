@@ -1,7 +1,9 @@
+import { type ReactNode } from 'react'
 import { useDesignStore, SIZES_DEFAULT } from '../../store/useDesignStore'
 import VariablesTable from './VariablesTable'
+import { SIZE_STEPS } from '../../lib/layoutTokens'
 
-export default function Step9_Sizes() {
+export default function Step9_Sizes({ tabBar }: { tabBar?: ReactNode } = {}) {
   const { sizes, setSizes, primaryColor, primaryScale } = useDesignStore()
   const accent = primaryScale[9] ?? primaryColor
 
@@ -18,10 +20,12 @@ export default function Step9_Sizes() {
         title="Size tokens"
         searchLabel="Filter size tokens"
         railed
+        tabBar={tabBar}
         groups={[
           {
             valueLabel: 'Height',
-            rows: Object.entries(sizes).map(([key, value]) => {
+            rows: SIZE_STEPS.map((key) => {
+              const value = sizes[key] ?? SIZES_DEFAULT[key]
               const px = parseFloat(value) || 0
               const standard = SIZES_DEFAULT[key]
               return {
@@ -53,7 +57,8 @@ export default function Step9_Sizes() {
           <div className="flex flex-col gap-3">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Component sizes</span>
             <div className="flex items-end justify-center gap-4 rounded-xl border border-line bg-app p-6">
-              {Object.entries(sizes).map(([key, value]) => {
+              {SIZE_STEPS.map((key) => {
+                const value = sizes[key] ?? SIZES_DEFAULT[key]
                 const px = parseFloat(value) || 0
                 return (
                   <div key={key} className="flex flex-col items-center gap-2">

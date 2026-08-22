@@ -4,8 +4,10 @@
 // right. Content and token bodies come from `foundationDocs.tsx`.
 
 import { type ReactNode } from 'react'
+import { AIContextButton } from '../../ui/AIContextButton'
+import { withAgentEnvelope } from '../../../lib/aiContext'
 import {
-  CopyButton, DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, ShipsAs, CountBadge,
+  DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, ShipsAs, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
 import {
@@ -70,7 +72,10 @@ export function FoundationArticle({
         title={doc.label}
         actions={
           <>
-            <CopyButton text={foundationMarkdown(doc, system)} label="Copy Page" />
+            <AIContextButton
+              scope="variable"
+              markdown={() => withAgentEnvelope('variable', doc.label, foundationMarkdown(doc, system))}
+            />
             <EditPill label={doc.label} onEdit={() => onEdit(doc.key)} />
           </>
         }

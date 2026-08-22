@@ -2,6 +2,26 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
+import { mergeTypeRoles, type TypeRoleModes } from '../lib/typeRoles'
+import {
+  PADDING_STANDARD,
+  RADIUS_STANDARD,
+  SIZE_STANDARD,
+  SPACING_STANDARD,
+  STROKE_STANDARD,
+  GRID_STANDARD,
+  GRID_FRAME_STANDARD,
+  defaultLayoutRoles,
+  mergeLayoutRoles,
+  mergeGridFrame,
+  applyDesktopFrameToGrid,
+  nearestSpacingStep,
+  scaleRadiusFromLg,
+  SPACING_STEPS,
+  BREAKPOINT_STEPS,
+  breakpointKey,
+  type GridFrameModes,
+} from '../lib/layoutTokens'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
@@ -82,6 +102,8 @@ interface TypographyTokens {
   sizes: Record<string, string>
   lineHeights: Record<string, string>
   weights: Record<string, number>
+  /** Text roles aliasing the primitive scale, with Desktop and Mobile mappings. */
+  roles: Record<string, TypeRoleModes>
 }
 
 // ── Fixed neutral scales from the Figma design system ─────────────────────
@@ -256,27 +278,13 @@ export const SHADOW_DEFAULT: Record<string, string> = {
   '2xl': '0 24px 48px -12px rgba(10,13,18,0.18)',
 }
 
-export const GRID_DEFAULT: Record<string, string> = {
-  columns: '12',
-  gutter: '24px',
-  margin: '32px',
-  container: '1280px',
-  'breakpoint-sm': '640px',
-  'breakpoint-md': '768px',
-  'breakpoint-lg': '1024px',
-  'breakpoint-xl': '1280px',
-  'breakpoint-2xl': '1536px',
-}
+export const GRID_DEFAULT: Record<string, string> = { ...GRID_STANDARD }
 
-export const SIZES_DEFAULT: Record<string, string> = {
-  xs: '24px', sm: '32px', md: '40px', lg: '48px', xl: '56px', '2xl': '64px',
-}
+export const SIZES_DEFAULT: Record<string, string> = { ...SIZE_STANDARD }
+export const STROKE_DEFAULT: Record<string, string> = { ...STROKE_STANDARD }
 
-// Surface padding token — per-side inset for padded surfaces (cards, tiles,
-// panels) in the live previews and the export.
-export const PADDING_DEFAULT: Record<string, string> = {
-  top: '20px', right: '20px', bottom: '20px', left: '20px',
-}
+// Surface padding — resolved px of spacing step 5 (20px on the 4px grid).
+export const PADDING_DEFAULT: Record<string, string> = { ...PADDING_STANDARD }
 
 // ── Multi design system ──────────────────────────────────────────────────────
 // Everything needed to restore a design session. Excludes nav state,
@@ -348,8 +356,18 @@ export interface DesignSnapshot {
   shadows: Record<string, string>
   grid: Record<string, string>
   sizes: Record<string, string>
+  /** Border-width / ring-spread primitive ramp (none · sm · md · lg). */
+  stroke: Record<string, string>
   // Per-side surface padding (top/right/bottom/left) for padded surfaces.
   padding: Record<string, string>
+  /** Intent aliases → primitive step keys. Never raw px. */
+  radiusRoles: Record<string, string>
+  spacingRoles: Record<string, string>
+  sizeRoles: Record<string, string>
+  strokeRoles: Record<string, string>
+  breakpointRoles: Record<string, string>
+  /** Desktop / mobile layout recipes. Gutter/margin alias spacing; container aliases a breakpoint. */
+  gridFrame: GridFrameModes
   // Radix-style `panelBackground` — whether raised surfaces (surface-1: cards,
   // panels, sections) render solid, with alpha + backdrop blur, or reuse the
   // primitives page background (`pageBackground`).
@@ -457,17 +475,22 @@ export function makeDesignDefaults(): DesignSnapshot {
       sizes: { ...FONT_SIZE_STANDARD },
       lineHeights: { ...LINE_HEIGHT_STANDARD },
       weights: { ...FONT_WEIGHT_STANDARD },
+      roles: mergeTypeRoles(),
     },
-    spacing: { '1': '4px', '2': '8px', '3': '12px', '4': '16px', '6': '24px', '8': '32px' },
-    // Rounded preset (RADIUS_PRESETS[2] in StepRadius.tsx) — matches
-    // RADIUS_STANDARD there, so a fresh system and a per-token reset always
-    // land on the same values.
-    radius: { none: '0px', sm: '8px', md: '16px', lg: '24px', full: '9999px' },
+    spacing: { ...SPACING_STANDARD },
+    radius: { ...RADIUS_STANDARD },
     opacity: { ...OPACITY_DEFAULT },
     shadows: { ...SHADOW_DEFAULT },
     grid: { ...GRID_DEFAULT },
-    sizes: { ...SIZES_DEFAULT },
-    padding: { ...PADDING_DEFAULT },
+    sizes: { ...SIZE_STANDARD },
+    stroke: { ...STROKE_STANDARD },
+    padding: { ...PADDING_STANDARD },
+    radiusRoles: defaultLayoutRoles('radius'),
+    spacingRoles: defaultLayoutRoles('spacing'),
+    sizeRoles: defaultLayoutRoles('size'),
+    strokeRoles: defaultLayoutRoles('stroke'),
+    breakpointRoles: defaultLayoutRoles('breakpoint'),
+    gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     panelBackground: 'solid',
     semanticArchitecture: 'categorical',
     architectureOverrides: {},
@@ -716,10 +739,25 @@ interface DesignStore {
   setShadows: (s: Record<string, string>) => void
   setGrid: (g: Record<string, string>) => void
   setSizes: (s: Record<string, string>) => void
+  stroke: Record<string, string>
+  setStroke: (s: Record<string, string>) => void
 
   // Surface padding token (top/right/bottom/left)
   padding: Record<string, string>
   setPadding: (p: Record<string, string>) => void
+
+  radiusRoles: Record<string, string>
+  spacingRoles: Record<string, string>
+  sizeRoles: Record<string, string>
+  strokeRoles: Record<string, string>
+  breakpointRoles: Record<string, string>
+  gridFrame: GridFrameModes
+  setRadiusRoles: (r: Record<string, string>) => void
+  setSpacingRoles: (r: Record<string, string>) => void
+  setSizeRoles: (r: Record<string, string>) => void
+  setStrokeRoles: (r: Record<string, string>) => void
+  setBreakpointRoles: (r: Record<string, string>) => void
+  setGridFrame: (f: GridFrameModes) => void
 
   // Panel background — Radix-style treatment for raised surfaces (surface-1:
   // cards, panels, sections): solid, translucent, or the page background.
@@ -986,7 +1024,7 @@ export const useDesignStore = create<DesignStore>()(
           }
         }),
 
-      setTypography: (t) => set({ typography: t }),
+      setTypography: (t) => set({ typography: { ...t, roles: mergeTypeRoles(t.roles) } }),
 
       setSpacing: (s) => set({ spacing: s }),
       setRadius: (r) => set({ radius: r }),
@@ -996,6 +1034,19 @@ export const useDesignStore = create<DesignStore>()(
       setPadding: (p) => set({ padding: p }),
       setGrid: (g) => set({ grid: g }),
       setSizes: (s) => set({ sizes: s }),
+      setStroke: (s) => set({ stroke: s }),
+      setRadiusRoles: (r) => set({ radiusRoles: mergeLayoutRoles('radius', r) }),
+      setSpacingRoles: (r) => set({ spacingRoles: mergeLayoutRoles('spacing', r) }),
+      setSizeRoles: (r) => set({ sizeRoles: mergeLayoutRoles('size', r) }),
+      setStrokeRoles: (r) => set({ strokeRoles: mergeLayoutRoles('stroke', r) }),
+      setBreakpointRoles: (r) => set({ breakpointRoles: mergeLayoutRoles('breakpoint', r) }),
+      setGridFrame: (f) => set((state) => {
+        const frame = mergeGridFrame(f)
+        return {
+          gridFrame: frame,
+          grid: applyDesktopFrameToGrid(state.grid, frame, state.spacing),
+        }
+      }),
 
       setPanelBackground: (v) => set({ panelBackground: v }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
@@ -1240,7 +1291,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 53,
+      version: 56,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2059,6 +2110,86 @@ export const useDesignStore = create<DesignStore>()(
           migrateIcons(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) migrateIcons(sys?.snapshot)
+          }
+        }
+        if (version < 54) {
+          // v53→v54: Typography gains semantic text roles (label, placeholder,
+          // heading, …) that alias the primitive scale, with Desktop / Mobile
+          // mappings — Color's primitives/semantics split applied to type.
+          const seedRoles = (state: any) => {
+            if (!state?.typography || typeof state.typography !== 'object') return
+            state.typography.roles = mergeTypeRoles(state.typography.roles)
+          }
+          seedRoles(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedRoles(sys?.snapshot)
+          }
+        }
+        if (version < 55) {
+          // v54→v55: layout primitives densify (radius xs/xl, spacing 0+5,
+          // stroke weight ramp) and gain intent aliases — Color/Type's
+          // primitives→semantics split applied to radius/spacing/size/stroke.
+          const migrateLayout = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const base = parseFloat(state.spacing?.['1']) || 4
+            const spacing = { ...(state.spacing ?? {}) }
+            for (const step of SPACING_STEPS) {
+              if (!spacing[step]) spacing[step] = `${Number(step) * base}px`
+            }
+            state.spacing = spacing
+
+            const radius = { ...(state.radius ?? {}) }
+            const lg = parseFloat(radius.lg) || 24
+            const graded = scaleRadiusFromLg(lg, radius)
+            if (!radius.xs) radius.xs = graded.xs
+            if (!radius.xl) radius.xl = graded.xl
+            if (!radius.none) radius.none = '0px'
+            if (!radius.full) radius.full = '9999px'
+            state.radius = radius
+
+            if (!state.stroke || typeof state.stroke !== 'object') {
+              state.stroke = { ...STROKE_STANDARD }
+            } else {
+              state.stroke = { ...STROKE_STANDARD, ...state.stroke }
+            }
+
+            state.radiusRoles = mergeLayoutRoles('radius', state.radiusRoles)
+            state.spacingRoles = mergeLayoutRoles('spacing', state.spacingRoles)
+            state.sizeRoles = mergeLayoutRoles('size', state.sizeRoles)
+            state.strokeRoles = mergeLayoutRoles('stroke', state.strokeRoles)
+
+            if (!state.padding) {
+              state.padding = { ...PADDING_STANDARD }
+            } else {
+              const step = nearestSpacingStep(spacing, 20) ?? '5'
+              for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+                if (!state.padding[side]) state.padding[side] = spacing[step] ?? PADDING_STANDARD[side]
+              }
+            }
+          }
+          migrateLayout(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) migrateLayout(sys?.snapshot)
+          }
+        }
+        if (version < 56) {
+          // v55→v56: Grid gains the same primitives→semantics split. Breakpoint
+          // scale stays the Tailwind mins; desktop/mobile are aliases (mobile
+          // = calc(md − 1px)). Layout frame gets a 4-col mobile recipe.
+          const migrateGrid = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const grid = { ...(state.grid ?? {}) }
+            for (const step of BREAKPOINT_STEPS) {
+              const key = breakpointKey(step)
+              if (!grid[key]) grid[key] = GRID_STANDARD[key]
+            }
+            state.grid = grid
+            state.breakpointRoles = mergeLayoutRoles('breakpoint', state.breakpointRoles)
+            state.gridFrame = mergeGridFrame(state.gridFrame)
+          }
+          migrateGrid(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) migrateGrid(sys?.snapshot)
           }
         }
         return persisted

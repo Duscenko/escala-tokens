@@ -16,6 +16,7 @@ import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
 import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_AI_SOURCES, getIconAiSource, type IconAiSourceKey } from '../../lib/iconLibraries'
+import { PADDING_STANDARD } from '../../lib/layoutTokens'
 
 // Quick-edit foundations — shared by two hosts: the Components catalogue's
 // popover (default export) and Home's persistent right panel (QuickEditPanel).
@@ -774,7 +775,7 @@ export function QuickEditSections({
       <Group accordion={accordion} defaultOpen={false} title="Padding" icon={PaddingGlyph}>
         <div className="grid grid-cols-4 gap-1.5">
           {PADDING_SIDES.map((side) => {
-            const raw = padding?.[side.key] ?? '20px'
+            const raw = padding?.[side.key] ?? PADDING_STANDARD[side.key]
             const value = parseInt(raw, 10)
             return (
               <label key={side.key} className="relative" title={`Padding ${side.name.toLowerCase()}`}>
@@ -783,7 +784,7 @@ export function QuickEditSections({
                   type="number"
                   min={0}
                   max={99}
-                  value={Number.isFinite(value) ? value : 20}
+                  value={Number.isFinite(value) ? value : parseInt(PADDING_STANDARD[side.key], 10)}
                   onChange={(e) => {
                     const n = Math.max(0, Math.min(99, Number(e.target.value) || 0))
                     setPadding({ ...padding, [side.key]: `${n}px` })

@@ -302,3 +302,9 @@ body {
   border-radius: 0 0 0 var(--tab-r);
   box-shadow: calc(var(--tab-r) / -2) 0 0 0 var(--app);
 }
+
+/* Preview panel (400px): same silhouette, smaller type so "Documentation" fits. */
+.color-hub-tab-compact {
+  font-size: 12px;
+  padding-inline: 8px;
+}

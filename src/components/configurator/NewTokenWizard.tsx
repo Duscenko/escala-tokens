@@ -16,7 +16,7 @@ import { detectSeedKind, solidFromSeed, generateColorScale, generateFamilyDarkSc
 import { slugify } from '../../lib/utils'
 import { RESERVED_COLOR_KEYS, SIZES_DEFAULT, DEFAULT_THEME_SOURCES } from '../../store/useDesignStore'
 import { COLOR_FAMILY_PRESETS } from './QuickFoundationsPanel'
-import { RADIUS_PRESETS } from './StepRadius'
+import { RADIUS_PRESETS, scaleRadiusFromLg } from '../../lib/layoutTokens'
 import { BASE_PRESETS, SPACING_STEPS, buildSpacingFromBase } from './Step5_Spacing'
 import { FONT_PRESETS, fontStack, loadGoogleFont } from '../../lib/fonts'
 
@@ -178,7 +178,7 @@ export default function NewTokenWizard({
   const [radiusLg, setRadiusLg] = useState(pxToNum(RADIUS_PRESETS[1].values.lg))
   const radiusPreview = {
     ...tokens,
-    radius: { none: '0px', sm: `${Math.round(radiusLg / 3)}px`, md: `${Math.round((radiusLg * 2) / 3)}px`, lg: `${radiusLg}px`, full: '9999px' },
+    radius: scaleRadiusFromLg(radiusLg),
   }
 
   // ── Spacing ──

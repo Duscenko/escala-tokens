@@ -6,12 +6,25 @@
 
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
+import {
+  LAYOUT_ROLES,
+  STROKE_STANDARD,
+  defaultLayoutRoles,
+  mergeLayoutRoles,
+  resolveLayoutRole,
+  type LayoutFamily,
+} from './layoutTokens'
 
 export interface AgentFoundationTokens {
   radius: Record<string, string>
   spacing: Record<string, string>
   sizes?: Record<string, string>
   padding?: Record<string, string>
+  stroke?: Record<string, string>
+  radiusRoles?: Record<string, string>
+  spacingRoles?: Record<string, string>
+  sizeRoles?: Record<string, string>
+  strokeRoles?: Record<string, string>
   typography?: {
     fontFamily: string
     headingFontFamily?: string
@@ -21,7 +34,7 @@ export interface AgentFoundationTokens {
   shadows?: Record<string, string>
 }
 
-const RADIUS_ORDER = ['none', 'sm', 'md', 'lg', 'full']
+const RADIUS_ORDER = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'full']
 const SIZE_ORDER = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
 const PADDING_ORDER = ['top', 'right', 'bottom', 'left']
 
@@ -52,8 +65,43 @@ function figmaSpacing(key: string): string {
   return /^\d/.test(key) ? `step/${key}` : key
 }
 
-function val(map: Record<string, string> | undefined, key: string, fallback = '—'): string {
-  return map?.[key] || fallback
+function primitivesOf(t: AgentFoundationTokens, family: LayoutFamily): Record<string, string> {
+  if (family === 'radius') return t.radius
+  if (family === 'spacing') return t.spacing
+  if (family === 'size') return t.sizes ?? {}
+  return t.stroke ?? STROKE_STANDARD
+}
+
+function rolesOf(t: AgentFoundationTokens, family: LayoutFamily): Record<string, string> {
+  const stored = family === 'radius' ? t.radiusRoles
+    : family === 'spacing' ? t.spacingRoles
+    : family === 'size' ? t.sizeRoles
+    : t.strokeRoles
+  return mergeLayoutRoles(family, stored ?? defaultLayoutRoles(family))
+}
+
+function roleVal(t: AgentFoundationTokens, family: LayoutFamily, key: string, fallback = '—'): string {
+  return resolveLayoutRole(family, rolesOf(t, family), primitivesOf(t, family), key, fallback)
+}
+
+function semanticTable(t: AgentFoundationTokens, family: LayoutFamily, title: string): string[] {
+  const roles = rolesOf(t, family)
+  const lines = [
+    `### ${title} (semantics)`,
+    '',
+    'Intent aliases. Bind these in components — they point at a primitive step, never a new px.',
+    '',
+    '| Role | CSS | Aliases | Live |',
+    '|---|---|---|---|',
+  ]
+  for (const role of LAYOUT_ROLES[family]) {
+    const step = roles[role.key]
+    lines.push(
+      `| \`${role.key}\` | \`--${family}-${role.key}\` | \`var(--${family}-${step})\` | \`${roleVal(t, family, role.key)}\` |`,
+    )
+  }
+  lines.push('')
+  return lines
 }
 
 function ordered(map: Record<string, string> | undefined, order: string[]): [string, string][] {
@@ -62,13 +110,8 @@ function ordered(map: Record<string, string> | undefined, order: string[]): [str
   return [...order.filter((k) => k in map), ...rest].map((k) => [k, map[k]])
 }
 
-function nearestSpacing(spacing: Record<string, string>, targetPx: number): { key: string; value: string } | null {
-  const rows = Object.entries(spacing)
-    .map(([key, value]) => ({ key, value, n: parseFloat(value) }))
-    .filter((r) => Number.isFinite(r.n))
-  if (!rows.length) return null
-  return rows.reduce((best, r) =>
-    Math.abs(r.n - targetPx) < Math.abs(best.n - targetPx) ? r : best)
+function val(map: Record<string, string> | undefined, key: string, fallback = '—'): string {
+  return map?.[key] || fallback
 }
 
 function tokenTables(t: AgentFoundationTokens): string[] {
@@ -85,8 +128,8 @@ function tokenTables(t: AgentFoundationTokens): string[] {
   ordered(t.radius, RADIUS_ORDER).forEach(([k, v]) =>
     lines.push(`| \`${k}\` | \`--radius-${k}\` | \`${k}\` | \`${v}\` |`),
   )
+  lines.push('', ...semanticTable(t, 'radius', 'Radius roles'))
   lines.push(
-    '',
     '### Spacing (`Spacing` collection)',
     '',
     'Figma names nest under `step/` — a variable cannot start with a digit.',
@@ -115,6 +158,8 @@ function tokenTables(t: AgentFoundationTokens): string[] {
     )
   }
 
+  lines.push(...semanticTable(t, 'spacing', 'Spacing roles'))
+
   if (t.sizes && Object.keys(t.sizes).length) {
     lines.push(
       '',
@@ -126,7 +171,21 @@ function tokenTables(t: AgentFoundationTokens): string[] {
     ordered(t.sizes, SIZE_ORDER).forEach(([k, v]) =>
       lines.push(`| \`${k}\` | \`--size-${k}\` | \`${k}\` | \`${v}\` |`),
     )
+    lines.push('', ...semanticTable(t, 'size', 'Size roles'))
   }
+
+  lines.push(
+    '### Stroke (`Stroke` collection)',
+    '',
+    'Line weight — not paint. Color stays on `border.*`.',
+    '',
+    '| Step | CSS | Figma | Value |',
+    '|---|---|---|---|',
+  )
+  ordered(primitivesOf(t, 'stroke'), ['none', 'sm', 'md', 'lg']).forEach(([k, v]) =>
+    lines.push(`| \`${k}\` | \`--stroke-${k}\` | \`${k}\` | \`${v}\` |`),
+  )
+  lines.push('', ...semanticTable(t, 'stroke', 'Stroke roles'))
 
   if (t.typography) {
     const ty = t.typography
@@ -214,52 +273,48 @@ function sizeAxisMap(def: ComponentDef, t?: AgentFoundationTokens): string[] {
   })
   lines.push(
     '',
-    'Control corners: `border-radius: var(--radius-md)` (`' + val(t?.radius, 'md') + '`). Gaps: `--spacing-*`. Padded surfaces: `--padding-top` · `--padding-right` · `--padding-bottom` · `--padding-left` — not ad-hoc insets.',
+    'Control corners: `border-radius: var(--radius-action)` (`' + roleVal(t ?? { radius: {}, spacing: {} }, 'radius', 'action') + '`). Gaps: `var(--spacing-gap-*)`. Inset: `var(--spacing-inset-control)` / `var(--spacing-inset-surface)`. Stroke: `var(--stroke-control)` · focus ring: `var(--stroke-focus)`.',
     '',
   )
   return lines
 }
 
 function inputOtpRecipe(t: AgentFoundationTokens): string {
-  const rMd = val(t.radius, 'md', '16px')
-  const hSm = val(t.sizes, 'md', '40px')
-  const hMd = val(t.sizes, 'lg', '48px')
-  const hLg = val(t.sizes, 'xl', '56px')
+  const rAction = roleVal(t, 'radius', 'action', val(t.radius, 'md', '16px'))
+  const hSm = val(t.sizes, 'sm', '32px')
+  const hMd = val(t.sizes, 'md', '40px')
+  const hLg = val(t.sizes, 'lg', '48px')
   const fSm = val(t.typography?.sizes, 'text-md', '16px')
   const fMd = val(t.typography?.sizes, 'text-lg', '18px')
   const fLg = val(t.typography?.sizes, 'text-xl', '20px')
-  const gapSm = nearestSpacing(t.spacing, 6)
-  const gapMd = nearestSpacing(t.spacing, 8)
-  const gapLg = nearestSpacing(t.spacing, 10)
+  const gapTight = roleVal(t, 'spacing', 'gap-tight', '4px')
+  const gapControl = roleVal(t, 'spacing', 'gap-control', '8px')
+  const strokeControl = roleVal(t, 'stroke', 'control', '1px')
   const wSemi = t.typography?.weights?.semibold ?? 600
   const family = t.typography?.fontFamily ?? 'Inter'
-
-  const gapCell = (spec: { key: string; value: string } | null, fallback: string) =>
-    spec ? `\`var(--spacing-${spec.key})\` (${spec.value})` : fallback
 
   return [
     '### Reconstruct the set',
     '',
     'Component set name: `Input OTP`. Horizontal auto-layout of **6 cells** (`length` default). Cells are presentational; the control is one field.',
     '',
-    '**Do not** treat Size SM/MD/LG as `Size/sm` · `Size/md` · `Size/lg`. OTP cell **height** maps onto the Size collection like this (widths are local — they are not in Size):',
+    'Size SM/MD/LG map onto `Size/sm` · `Size/md` · `Size/lg`. Cells are square — width tracks the same Size step as height.',
     '',
-    '| Size variant | Width (local) | Height token | Type token | Gap token |',
-    '|---|---|---|---|---|',
-    `| \`SM\` | 34px | \`var(--size-md)\` = \`${hSm}\` | \`var(--font-size-text-md)\` = \`${fSm}\` | ${gapCell(gapSm, '6px')} |`,
-    `| \`MD\` | 40px | \`var(--size-lg)\` = \`${hMd}\` | \`var(--font-size-text-lg)\` = \`${fMd}\` | ${gapCell(gapMd, '8px')} |`,
-    `| \`LG\` | 46px | \`var(--size-xl)\` = \`${hLg}\` | \`var(--font-size-text-xl)\` = \`${fLg}\` | ${gapCell(gapLg, '10px')} |`,
+    '| Size variant | Width / height | Type token | Gap |',
+    '|---|---|---|---|',
+    `| \`SM\` | \`var(--size-sm)\` = \`${hSm}\` | \`var(--font-size-text-md)\` = \`${fSm}\` | \`var(--spacing-gap-tight)\` (\`${gapTight}\`) |`,
+    `| \`MD\` | \`var(--size-md)\` = \`${hMd}\` | \`var(--font-size-text-lg)\` = \`${fMd}\` | \`var(--spacing-gap-control)\` (\`${gapControl}\`) |`,
+    `| \`LG\` | \`var(--size-lg)\` = \`${hLg}\` | \`var(--font-size-text-xl)\` = \`${fLg}\` | \`var(--spacing-gap-control)\` (\`${gapControl}\`) |`,
     '',
     '### Box model (MD default)',
     '',
     '| CSS property | Token | Live |',
     '|---|---|---|',
     '| `display` | — | `flex` (row) |',
-    `| \`gap\` | \`var(--spacing-${gapMd?.key ?? '2'})\` | \`${gapMd?.value ?? '8px'}\` |`,
-    '| `width` (cell) | local — not in Size | `40px` |',
-    `| \`height\` (cell) | \`var(--size-lg)\` | \`${hMd}\` |`,
-    `| \`border-radius\` | \`var(--radius-md)\` | \`${rMd}\` |`,
-    '| `border-width` | — | `1.5px` |',
+    `| \`gap\` | \`var(--spacing-gap-control)\` | \`${gapControl}\` |`,
+    `| \`width\` / \`height\` | \`var(--size-md)\` | \`${hMd}\` |`,
+    `| \`border-radius\` | \`var(--radius-action)\` | \`${rAction}\` |`,
+    `| \`border-width\` | \`var(--stroke-control)\` | \`${strokeControl}\` |`,
     '| `border-style` | — | `solid` |',
     `| \`background\` | \`${cssColor('surface.input')}\` (\`${figmaVar('surface.input')}\`) | semantic |`,
     `| \`color\` (digit) | \`${cssColor('content.primary')}\` (\`${figmaVar('content.primary')}\`) | semantic |`,
@@ -272,11 +327,11 @@ function inputOtpRecipe(t: AgentFoundationTokens): string {
     '',
     '### Color by State',
     '',
-    'Stroke is 1.5px. Bind by **State**, not by painting accent/error hex:',
+    'Stroke weight is `var(--stroke-control)`. Focus ring spread is `var(--stroke-focus)`. Bind paint by **State**, not by painting accent/error hex:',
     '',
     '| State | `border-color` | Extra | Digits |',
     '|---|---|---|---|',
-    `| \`Default\` | first cell \`${cssColor('border.focus')}\` (\`${figmaVar('border.focus')}\`); others \`${cssColor('border.strong')}\` | \`box-shadow: 0 0 0 3px color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent)\` on the first cell | empty |`,
+    `| \`Default\` | first cell \`${cssColor('border.focus')}\` (\`${figmaVar('border.focus')}\`); others \`${cssColor('border.strong')}\` | \`box-shadow: 0 0 0 var(--stroke-focus) color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent)\` on the first cell | empty |`,
     `| \`Filled\` | \`${cssColor('border.strong')}\` (\`${figmaVar('border.strong')}\`) | none | six digits, e.g. \`824913\` |`,
     `| \`Error\` | \`${cssColor('border.critical')}\` (\`${figmaVar('border.critical')}\`) | none | six digits |`,
     '',
@@ -287,14 +342,14 @@ function inputOtpRecipe(t: AgentFoundationTokens): string {
     '```css',
     '.input-otp {',
     '  display: flex;',
-    `  gap: var(--spacing-${gapMd?.key ?? '2'}); /* ${gapMd?.value ?? '8px'} */`,
+    `  gap: var(--spacing-gap-control); /* ${gapControl} */`,
     '}',
     '.input-otp__cell {',
     '  box-sizing: border-box;',
-    '  width: 40px; /* local */',
-    `  height: var(--size-lg); /* ${hMd} */`,
-    `  border-radius: var(--radius-md); /* ${rMd} */`,
-    `  border: 1.5px solid ${cssColor('border.strong')};`,
+    `  width: var(--size-md); /* ${hMd} */`,
+    `  height: var(--size-md); /* ${hMd} */`,
+    `  border-radius: var(--radius-action); /* ${rAction} */`,
+    `  border: var(--stroke-control) solid ${cssColor('border.strong')};`,
     `  background: ${cssColor('surface.input')};`,
     '  display: inline-flex;',
     '  align-items: center;',
@@ -306,7 +361,7 @@ function inputOtpRecipe(t: AgentFoundationTokens): string {
     '}',
     '.input-otp__cell[data-focused] {',
     `  border-color: ${cssColor('border.focus')};`,
-    `  box-shadow: 0 0 0 3px color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent);`,
+    `  box-shadow: 0 0 0 var(--stroke-focus) color-mix(in srgb, ${cssColor('border.focus')} 15%, transparent);`,
     '}',
     '.input-otp__cell[data-error] {',
     `  border-color: ${cssColor('border.critical')};`,
@@ -316,9 +371,10 @@ function inputOtpRecipe(t: AgentFoundationTokens): string {
     '### Agent rules (Figma)',
     '',
     '- Load `figma-use` before mutating the file. Bind semantics; never primitives or raw hex.',
-    '- Corner radius on every cell: Figma `md` in the Radius collection (`--radius-md`).',
-    '- Variant property `Size` values are `SM` · `MD` · `LG` (uppercase). `State` values are `Default` · `Filled` · `Error`.',
-    '- One component set, not six loose components. Auto-layout gap tracks the Size row above.',
+    '- Corner radius on every cell: `Radius/action` (`--radius-action` → `--radius-md`).',
+    '- Stroke: `Stroke/control`. Focus ring spread: `Stroke/focus`. Paint: `Border/focus`.',
+    '- Variant property `Size` values are `SM` · `MD` · `LG` (uppercase) and map to `Size/sm` · `Size/md` · `Size/lg`. `State` values are `Default` · `Filled` · `Error`.',
+    '- One component set, not six loose components. Auto-layout gap tracks `--spacing-gap-*` above.',
     '- Autocomplete / a11y: `autocomplete="one-time-code"`. Cells are not six separate inputs.',
     '',
   ].join('\n')

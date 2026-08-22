@@ -2,12 +2,19 @@ export interface ColorScale {
   [key: number]: string
 }
 
+export interface TypeRoleAlias {
+  family: 'display' | 'body'
+  size: string
+  weight: string
+}
+
 export interface TypographyTokens {
   fontFamily: string
   headingFontFamily: string
   sizes: Record<string, string>
   lineHeights: Record<string, string>
   weights: Record<string, number>
+  roles?: Record<string, { desktop: TypeRoleAlias; mobile: TypeRoleAlias }>
 }
 
 export interface DesignTokens {

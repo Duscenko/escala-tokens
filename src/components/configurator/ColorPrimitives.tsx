@@ -174,8 +174,11 @@ const PRIMITIVE_TABLE_GRID: CSSProperties = {
   gridTemplateColumns: 'minmax(9rem,1.1fr) repeat(2, minmax(8.5rem,1fr)) 2.75rem',
 }
 
-/** Quick-edit strip height — sticky column header sticks below this offset. */
-const QUICK_EDIT_STRIP_HEIGHT = 52
+/** Quick-edit strip: Color Agent is `size-icon` (36px). Hex + ramp match that,
+ *  with 12px padding above/below so the row isn't flush to the chrome. */
+const STRIP_CONTROL_HEIGHT = 36
+const QUICK_EDIT_STRIP_PAD = 12
+const QUICK_EDIT_STRIP_HEIGHT = STRIP_CONTROL_HEIGHT + QUICK_EDIT_STRIP_PAD * 2
 
 function RampPreviewBlock({
   family,
@@ -1647,12 +1650,12 @@ export default function ColorPrimitives({
                   used to paint over "light"/"dark" when overview ramps scrolled
                   under a header that shared the same z-index. */}
               <div
-                className="sticky top-0 z-20 flex items-center gap-2 pl-4 pr-3 border-b border-line/60 bg-app isolate"
-                style={{ height: QUICK_EDIT_STRIP_HEIGHT }}
+                className="sticky top-0 z-20 flex items-center gap-2.5 pl-4 pr-3 border-b border-line/60 bg-app isolate"
+                style={{ height: QUICK_EDIT_STRIP_HEIGHT, paddingTop: QUICK_EDIT_STRIP_PAD, paddingBottom: QUICK_EDIT_STRIP_PAD }}
               >
           {!railCollapsed && (
             family.isAlpha ? (
-              <div className="flex-shrink-0 h-9 px-1.5 rounded-lg border border-line bg-surface flex items-center">
+              <div className="flex-shrink-0 h-9 px-1.5 rounded-[10px] border border-line bg-surface flex items-center">
                 <AlphaHexCell
                   compact
                   value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'}
@@ -1662,7 +1665,7 @@ export default function ColorPrimitives({
               </div>
             ) : (
               <div ref={stripEditRef} className="relative flex-shrink-0">
-                <div className="h-9 flex items-stretch rounded-lg border border-line bg-surface overflow-hidden">
+                <div className="h-9 flex items-stretch rounded-[10px] border border-line bg-surface overflow-hidden">
                   <div className="flex items-center pl-1.5 pr-0.5">
                     <HexCell
                       compact
@@ -1733,6 +1736,7 @@ export default function ColorPrimitives({
               ariaLabel={`${family.label} scale`}
               joined
               numbersInside
+              size="md"
               checkerboard={family.isAlpha}
             />
           </div>
@@ -1744,6 +1748,7 @@ export default function ColorPrimitives({
               aria-expanded={settingsOpen}
               aria-label="Color Agent"
               title="Color Agent"
+              className="h-9 w-9"
             >
               <SparkleCircleIcon />
             </ColorAgentButton>

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
-import { searchUntitledIcons, untitledIconSvg, copyUntitledIcon, type UntitledIcon } from '../../../lib/untitledIcons'
+import { searchUntitledIcons, untitledIconSvg, copyUntitledIcon, findUntitledIcon, type UntitledIcon } from '../../../lib/untitledIcons'
+
+const SEARCH_GLYPH = findUntitledIcon('SearchLg')
 
 function UntitledGlyph({ icon, size = 20 }: { icon: UntitledIcon; size?: number }) {
   return (
@@ -36,9 +38,11 @@ export function IconSpecimenPreview({ libraryKey: _libraryKey }: { libraryKey: s
       </div>
 
       <div className="relative">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-faint pointer-events-none" aria-hidden>
-          <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35" />
-        </svg>
+        {SEARCH_GLYPH && (
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-fg-faint">
+            <UntitledGlyph icon={SEARCH_GLYPH} size={13} />
+          </span>
+        )}
         <input
           type="search"
           value={query}

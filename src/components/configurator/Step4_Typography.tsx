@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import ScrubInput from '../ui/ScrubInput'
 import { useDesignStore } from '../../store/useDesignStore'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
@@ -199,7 +199,7 @@ const previewCell = 'flex items-center px-3 py-2 border-r border-line overflow-h
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-export default function Step4_Typography() {
+export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
   const { typography, setTypography } = useDesignStore()
 
   const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
@@ -417,8 +417,9 @@ export default function Step4_Typography() {
         </nav>
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          <div className="foundation-layer-bar flex items-center justify-end gap-3 h-[52px] pl-4 pr-3 flex-shrink-0">
-            <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
+          <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
+            <div className="flex-1 min-w-0">{tabBar}</div>
+            <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
                 <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

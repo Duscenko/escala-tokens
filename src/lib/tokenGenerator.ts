@@ -4,6 +4,8 @@ import { toneLabel, generateAlphaScale, darkShadowMap, type ColorNaming } from '
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
+import { mergeTypeRoles } from './typeRoles'
+import { mergeLayoutRoles, mergeGridFrame } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
@@ -19,7 +21,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 //     an older configurator's payload (still carrying the field) keeps
 //     importing fine — this bump is for anything that treats an ABSENT field
 //     as a real gap rather than "not part of this system."
-export const TOKEN_SCHEMA_VERSION = 5
+export const TOKEN_SCHEMA_VERSION = 6
 
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
@@ -282,10 +284,15 @@ export function generateTokenJSON() {
       sizes: typography.sizes,
       lineHeights: typography.lineHeights,
       weights: typography.weights,
+      roles: mergeTypeRoles(typography.roles),
     },
     spacing: store.spacing,
+    spacingRoles: mergeLayoutRoles('spacing', store.spacingRoles),
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
+    // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).
     padding: store.padding,
+    radius: store.radius,
+    radiusRoles: mergeLayoutRoles('radius', store.radiusRoles),
     // Named gradients (slug → CSS) + which one drives each preview surface.
     gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
     // The dark appearance, ADDITIVE and keyed by the SAME slugs — a consumer
@@ -301,7 +308,6 @@ export function generateTokenJSON() {
       }
       return { cover: slugOf(store.gradientAssignments.cover), avatar: slugOf(store.gradientAssignments.avatar) }
     })(),
-    radius: store.radius,
     shadows: store.shadows,
     // Dark twin of the elevation ramp — ADDITIVE, exactly like `gradientsDark`
     // beside `gradients`: `shadows` is unchanged, this is a complete parallel
@@ -312,7 +318,12 @@ export function generateTokenJSON() {
     // within 0.36 of one 8-bit level of the background. See `darkShadow`.
     shadowsDark: darkShadowMap(store.shadows),
     grid: store.grid,
+    gridFrame: mergeGridFrame(store.gridFrame),
+    breakpointRoles: mergeLayoutRoles('breakpoint', store.breakpointRoles),
     sizes: store.sizes,
+    sizeRoles: mergeLayoutRoles('size', store.sizeRoles),
+    stroke: store.stroke,
+    strokeRoles: mergeLayoutRoles('stroke', store.strokeRoles),
     icons: {
       library: UNTITLED_LIBRARY.key,
       name: UNTITLED_LIBRARY.label,

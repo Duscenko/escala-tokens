@@ -132,17 +132,33 @@
 
 ## Grid
 
+Breakpoint primitives (min-width) plus desktop / mobile intent. Mobile max-width is `calc(desktop − 1px)` — never a raw 767. The layout frame aliases spacing and breakpoints.
+
 | Token | Value |
 |-------|-------|
-| `--grid-columns` | `12` |
-| `--grid-gutter` | `24px` |
-| `--grid-margin` | `32px` |
-| `--grid-container` | `1280px` |
-| `--grid-breakpoint-sm` | `640px` |
-| `--grid-breakpoint-md` | `768px` |
-| `--grid-breakpoint-lg` | `1024px` |
-| `--grid-breakpoint-xl` | `1280px` |
-| `--grid-breakpoint-2xl` | `1536px` |
+| `--breakpoint-sm` | `640px` |
+| `--breakpoint-md` | `768px` |
+| `--breakpoint-lg` | `1024px` |
+| `--breakpoint-xl` | `1280px` |
+| `--breakpoint-2xl` | `1536px` |
+
+### Viewport roles
+
+| Role | Aliases | Query |
+|------|---------|-------|
+| `--breakpoint-desktop` | `var(--breakpoint-md)` | min-width |
+| `--breakpoint-mobile` | `calc(var(--breakpoint-md) - 1px)` | max-width |
+
+### Frame
+
+| Token | Desktop | Mobile |
+|-------|---------|--------|
+| `--grid-columns` | `12` | `4` |
+| `--grid-gutter` | `var(--spacing-6)` | `var(--spacing-4)` |
+| `--grid-margin` | `var(--spacing-8)` | `var(--spacing-4)` |
+| `--grid-container` | `var(--breakpoint-xl)` | `none` |
+
+`--grid-breakpoint-*` aliases `--breakpoint-*` for plugin/compat.
 
 ---
 

@@ -31,8 +31,23 @@ import {
 } from '../../../lib/semanticArchitectures'
 import { themeContextFromStore } from '../../../lib/tokenGenerator'
 import { TYPE_SCALE_KEYS, FONT_WEIGHT_BASES } from '../../../lib/typographyStandard'
-import { RADIUS_STEPS } from '../StepRadius'
-import { SPACING_STEPS } from '../Step5_Spacing'
+import { TYPE_ROLES, TYPE_ROLE_GROUPS, mergeTypeRoles, resolveTypeStyle, typeRolesInGroup } from '../../../lib/typeRoles'
+import {
+  LAYOUT_ROLE_GROUPS,
+  LAYOUT_ROLES,
+  RADIUS_STEPS,
+  SPACING_STEPS,
+  STROKE_STEPS,
+  BREAKPOINT_STEPS,
+  GRID_FRAME_FIELDS,
+  extractBreakpoints,
+  mergeGridFrame,
+  mergeLayoutRoles,
+  resolveGridFrame,
+  resolveLayoutRole,
+  breakpointMobileMax,
+  type LayoutFamily,
+} from '../../../lib/layoutTokens'
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { fontStack } from '../../../lib/fonts'
 import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
@@ -59,7 +74,14 @@ export interface SystemDoc {
   radius: Record<string, string>
   shadows: Record<string, string>
   grid: Record<string, string>
+  gridFrame: ReturnType<typeof mergeGridFrame>
   sizes: Record<string, string>
+  stroke: Record<string, string>
+  radiusRoles: Record<string, string>
+  spacingRoles: Record<string, string>
+  sizeRoles: Record<string, string>
+  strokeRoles: Record<string, string>
+  breakpointRoles: Record<string, string>
   iconLibrary: string
   customIcons: { name: string; svg: string }[]
   themeCount: number
@@ -148,7 +170,8 @@ export function useSystemDoc(): SystemDoc {
     errorScale, errorDarkScale, warningScale, warningDarkScale,
     successScale, successDarkScale, infoScale, infoDarkScale,
     customColors, colorNaming, typography, spacing, padding, radius,
-    shadows, grid, sizes, iconLibrary, customIcons, themeOrder,
+    shadows, grid, gridFrame, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
+    iconLibrary, customIcons, themeOrder,
   } = store
 
   const categoricalCategories = useMemo(
@@ -229,7 +252,9 @@ export function useSystemDoc(): SystemDoc {
 
   return {
     scales, roles, categoricalCategories, primitiveFamilies, colorNaming, typography, spacing, padding,
-    radius, shadows, grid, sizes, iconLibrary, customIcons,
+    radius, shadows, grid, gridFrame, sizes, stroke,
+    radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
+    iconLibrary, customIcons,
     themeCount: themeOrder.length,
   }
 }
@@ -493,6 +518,46 @@ function KeyValues({ entries }: { entries: [string, string][] }) {
   )
 }
 
+function LayoutRolesBlock({
+  family,
+  primitives,
+  roles,
+}: {
+  family: LayoutFamily
+  primitives: Record<string, string>
+  roles?: Record<string, string>
+}) {
+  const map = mergeLayoutRoles(family, roles)
+  return (
+    <div className="flex flex-col gap-5">
+      {LAYOUT_ROLE_GROUPS[family].map((g) => (
+        <div key={g.id} className="flex flex-col gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+          {LAYOUT_ROLES[family].filter((r) => r.group === g.id).map((role) => {
+            const step = map[role.key]
+            const live = family === 'breakpoint' && role.key === 'mobile'
+              ? `calc(${family}-${step} − 1px) · ${breakpointMobileMax(map, primitives)}`
+              : `${family}-${step} · ${resolveLayoutRole(family, map, primitives, role.key) || '—'}`
+            return (
+              <div key={role.key} className="flex items-baseline gap-4 min-w-0">
+                <span className="w-44 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                  {family}-{role.key}
+                </span>
+                <span className="flex-1 min-w-0 text-[12px] text-fg truncate">
+                  {role.description}
+                </span>
+                <span className="flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                  → {live}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Foundation definitions ───────────────────────────────────────────────────
 
 export interface DocSection {
@@ -599,19 +664,28 @@ color:      var(--color-content-on-action);
   {
     key: 'typography',
     label: 'Typography',
-    lead: 'A paired heading and body family, a size ramp from caption to display, a matching line-height per step, and four weights. Sizes and line-heights travel together — picking a step gives you both.',
-    why: 'Type is the layer where "close enough" compounds fastest: a 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes the size a CHOICE FROM A SET rather than a number someone typed, and pairing each size with its line-height means vertical rhythm survives a copy change.',
-    usage: 'Use `display-*` for page-level statements only, `text-*` for everything else. Never set a raw px size — if the ramp has no step that fits, the ramp is what needs editing, in Variables · Typography.',
-    usageCode: `font-family: var(--font-family-heading);
-font-size:   var(--text-display-sm);
-line-height: var(--leading-display-sm);
-font-weight: var(--font-weight-semibold);`,
+    lead: 'Two layers, same idea as Color. Primitives are the scale — display/body families, eleven sizes with matching line-heights, four weights. Semantics are named text styles (label, placeholder, heading, body, button) that alias those primitives, with a Desktop mapping and a Mobile mapping. Components reference the role; the role points at the scale.',
+    why: 'A 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes size a CHOICE FROM A SET. Pairing each size with its line-height keeps vertical rhythm. Roles — `text-label`, `text-placeholder` — are the decision you can re-point once: mobile is one step down, not a second hardcoded px in every component.',
+    usage: 'Reach for a text role first (`text-label`, `text-body-md`, `text-heading-lg`). Use a primitive (`text-sm`, `semibold`) only when defining a new role. Desktop CSS is `var(--text-label-font-size)`; mobile is `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives — never a raw px.',
+    usageCode: `/* semantic — what it is FOR */
+font-family: var(--text-label-font-family);
+font-size:   var(--text-label-font-size);
+font-weight: var(--text-label-font-weight);
+line-height: var(--text-label-line-height);
+
+@media (max-width: var(--breakpoint-mobile)) {
+  font-size:   var(--text-label-font-size-mobile);
+  line-height: var(--text-label-line-height-mobile);
+}
+
+/* primitive — only when defining a role */
+--font-size-text-sm: 14px;`,
     ships: {
-      json: 'typography.fontFamily · .headingFontFamily · .sizes · .lineHeights · .weights',
-      css: '--text-*  ·  --leading-*  ·  --font-weight-*  ·  --font-family-*',
-      figma: 'Text styles + a "Typography" variable collection',
+      json: 'typography.fontFamily · .sizes · .weights · .roles (desktop/mobile aliases)',
+      css: '--text-{role}-font-size  ·  --text-{role}-font-size-mobile  ·  --font-size-*',
+      figma: 'Text styles {project}/Type/{role} with Desktop · Mobile + a Typography variable collection',
     },
-    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 2,
+    tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 2 + TYPE_ROLES.length,
     sections: [
       {
         id: 'families',
@@ -694,6 +768,44 @@ font-weight: var(--font-weight-semibold);`,
           )
         },
       },
+      {
+        id: 'roles',
+        title: 'Text roles',
+        description: 'Semantic styles alias the primitive scale. Desktop and Mobile are two mappings of the same role — Color’s light/dark, for type.',
+        render: (c) => {
+          const roles = mergeTypeRoles(c.typography.roles)
+          return (
+            <div className="flex flex-col gap-5">
+              {TYPE_ROLE_GROUPS.map((g) => (
+                <div key={g.id} className="flex flex-col gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+                  {typeRolesInGroup(g.id).map((role) => {
+                    const style = resolveTypeStyle(roles[role.key].desktop, c.typography)
+                    return (
+                      <div key={role.key} className="flex items-baseline gap-4 min-w-0">
+                        <span className="w-36 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                          text-{role.key}
+                        </span>
+                        <span
+                          className="flex-1 min-w-0 truncate text-fg"
+                          style={{
+                            fontFamily: fontStack(style.family),
+                            fontSize: style.size,
+                            lineHeight: style.lineHeight,
+                            fontWeight: style.weight,
+                          }}
+                        >
+                          {role.description}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )
+        },
+      },
     ],
   },
 
@@ -701,20 +813,21 @@ font-weight: var(--font-weight-semibold);`,
   {
     key: 'radius',
     label: 'Border Radius',
-    lead: 'One ramp from sharp to pill. Radius is the fastest-read personality signal in an interface — sharp corners say precision, generous ones say approachable — so the system fixes it once rather than per component.',
-    why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising it means the personality is a single decision, and changing it re-shapes every component at once instead of becoming a find-and-replace.',
-    usage: 'Match the step to the size of the thing: `sm` for inline chips and inputs, `md` for buttons and cards, `lg` for panels and modals, `full` for pills and avatars. A nested corner should be a step smaller than its parent, not equal to it.',
-    usageCode: `border-radius: var(--radius-md);
+    lead: 'Two layers: a 7-step primitive ramp (none → full) that holds the raw px, and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
+    why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising the ramp once, then naming what each corner is FOR, means a personality change is one slider and a nested checkbox never copies a modal’s rounding.',
+    usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (xs) under `action` (md) is for. Do not invent a new px on a component.',
+    usageCode: `border-radius: var(--radius-action);
 
-/* nesting: child one step below parent */
-.card   { border-radius: var(--radius-lg); }
-.card >  .thumb { border-radius: var(--radius-md); }`,
+.card   { border-radius: var(--radius-container); }
+.card > .thumb { border-radius: var(--radius-control); }
+.modal  { border-radius: var(--radius-overlay); }
+.badge  { border-radius: var(--radius-pill); }`,
     ships: {
-      json: 'radius',
-      css: '--radius-*',
+      json: 'radius · radiusRoles',
+      css: '--radius-*  (steps + aliases)',
       figma: 'Number variables, bound to every component set\'s corner radius',
     },
-    tokenCount: () => RADIUS_STEPS.length,
+    tokenCount: () => RADIUS_STEPS.length + LAYOUT_ROLES.radius.length,
     sections: [
       {
         id: 'scale',
@@ -736,6 +849,14 @@ font-weight: var(--font-weight-semibold);`,
           </div>
         ),
       },
+      {
+        id: 'roles',
+        title: 'Radius roles',
+        description: 'Intent aliases. Each one points at a primitive step — never a new px.',
+        render: (c) => (
+          <LayoutRolesBlock family="radius" primitives={c.radius} roles={c.radiusRoles} />
+        ),
+      },
     ],
   },
 
@@ -743,18 +864,20 @@ font-weight: var(--font-weight-semibold);`,
   {
     key: 'spacing',
     label: 'Spacing',
-    lead: 'One scale grown from a base unit, driving every margin, padding and gap — plus a per-side surface padding for padded surfaces (cards, panels, the sign-up card).',
-    why: 'Spacing is what makes a layout read as deliberate. A scale removes the middle values that cause trouble: with 8 and 12 available and nothing between, nobody ships an 11. It also makes density adjustable as ONE decision — move the base unit and the whole interface breathes differently without a single component being touched.',
-    usage: 'Use the scale for gaps between things and for internal padding. Larger jumps between groups than within them is what creates hierarchy — the ramp below is ordered so neighbouring steps are safely distinguishable.',
-    usageCode: `gap:     var(--spacing-3);
-padding: var(--padding-top) var(--padding-right)
-         var(--padding-bottom) var(--padding-left);`,
+    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` — not a raw 20px collection.',
+    why: 'Spacing is what makes a layout read as deliberate. A scale removes the middle values that cause trouble: with 8 and 12 available and nothing between, nobody ships an 11. Semantics then name the job — gap between siblings vs inset inside a surface — so a card never copies a button’s padding by accident.',
+    usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-control` inside a button, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
+    usageCode: `gap:     var(--spacing-gap-group);
+padding: var(--spacing-inset-surface);
+
+.btn  { gap: var(--spacing-gap-tight); padding-inline: var(--spacing-inset-control); }
+.page { padding: var(--spacing-inset-page); }`,
     ships: {
-      json: 'spacing · padding',
-      css: '--spacing-*  ·  --padding-top|right|bottom|left',
+      json: 'spacing · spacingRoles · padding',
+      css: '--spacing-*  (steps + aliases)  ·  --padding-top|right|bottom|left',
       figma: 'Number variables, bound to auto-layout gaps and padding',
     },
-    tokenCount: (c) => SPACING_STEPS.length + Object.keys(c.padding ?? {}).length,
+    tokenCount: (c) => SPACING_STEPS.length + LAYOUT_ROLES.spacing.length + Object.keys(c.padding ?? {}).length,
     sections: [
       {
         id: 'scale',
@@ -786,6 +909,14 @@ padding: var(--padding-top) var(--padding-right)
         description: 'The per-side inset padded surfaces use. Four values, so a surface can breathe more at the top than the sides.',
         render: (c) => (
           <KeyValues entries={(['top', 'right', 'bottom', 'left'] as const).map((s) => [`padding-${s}`, c.padding?.[s] ?? '—'])} />
+        ),
+      },
+      {
+        id: 'roles',
+        title: 'Spacing roles',
+        description: 'Gap vs inset. Aliases of primitive steps — surface padding resolves to step 5 (20px on the 4px grid).',
+        render: (c) => (
+          <LayoutRolesBlock family="spacing" primitives={c.spacing} roles={c.spacingRoles} />
         ),
       },
     ],
@@ -852,45 +983,71 @@ padding: var(--padding-top) var(--padding-right)
   {
     key: 'grid',
     label: 'Grid',
-    lead: 'The layout frame: column count, gutter, page margin, max container width, and the breakpoints those switch at.',
-    why: 'A grid is the contract that lets two people lay out two different screens and have them line up. Tokenising it means "the container" is a value both design and code read, rather than a number that was right in the mockup and approximated in the build.',
-    usage: 'Lay out against columns and gutters, not fixed widths. The container caps the readable width; the margin is what protects content from the viewport edge below that cap.',
+    lead: 'Two layers, same idea as Type. Primitives are the Tailwind min-width ramp (sm–2xl). Semantics name the cut desktop and mobile share, plus a layout frame recipe per viewport — 12-col desktop, 4-col mobile. Components bind `--grid-*` and `--breakpoint-desktop` / `--breakpoint-mobile`; they never invent a 767.',
+    why: 'A grid is the contract that lets two people lay out two different screens and have them line up. Tokenising the cut as well as the frame means Type mobile and the 4-col recipe switch at the same width — not a hardcoded 767 in type and a 768 in the plugin.',
+    usage: 'Lay out against `--grid-columns`, `--grid-gutter`, `--grid-margin`, `--grid-container`. Query the viewport with `--breakpoint-desktop` (min-width) and `--breakpoint-mobile` (max-width = primitive − 1px). `@media` itself must use the resolved px — custom properties are not valid there.',
     usageCode: `max-width: var(--grid-container);
 padding-inline: var(--grid-margin);
 gap: var(--grid-gutter);
+grid-template-columns: repeat(var(--grid-columns), 1fr);
 
-@media (min-width: var(--grid-breakpoint-md)) { … }`,
+@media (max-width: var(--breakpoint-mobile)) { /* 4-col recipe already on :root */ }`,
     ships: {
-      json: 'grid',
-      css: '--grid-*',
+      json: 'grid · breakpointRoles · gridFrame',
+      css: '--breakpoint-*  ·  --breakpoint-desktop/mobile  ·  --grid-*',
       figma: 'Layout grid styles + number variables',
     },
-    tokenCount: (c) => Object.keys(c.grid).length,
+    tokenCount: (c) => BREAKPOINT_STEPS.length + LAYOUT_ROLES.breakpoint.length + GRID_FRAME_FIELDS.length * 2,
     sections: [
       {
         id: 'layout',
-        title: 'Layout',
-        description: 'Columns, gutter, margin and container — the frame every page is composed on.',
-        render: (c) => (
-          <div className="flex flex-col gap-4">
-            <KeyValues entries={Object.entries(c.grid).filter(([k]) => !k.startsWith('breakpoint'))} />
-            {/* Column overlay — the frame drawn, not just listed. */}
-            <div
-              className="rounded-xl border border-line overflow-hidden flex"
-              style={{ gap: c.grid.gutter ?? '24px', padding: c.grid.margin ?? '32px' }}
-            >
-              {Array.from({ length: Math.min(Number(c.grid.columns) || 12, 12) }).map((_, i) => (
-                <span key={i} className="flex-1 h-20 rounded bg-accent-ui/[0.14] border border-accent-ui/30" />
+        title: 'Frame',
+        description: 'Desktop is 12 columns with a container cap. Mobile is 4 columns, fluid. Gutter and margin alias spacing steps.',
+        render: (c) => {
+          const bps = extractBreakpoints(c.grid)
+          const frame = mergeGridFrame(c.gridFrame)
+          const desktop = resolveGridFrame('desktop', frame, c.spacing, bps)
+          const mobile = resolveGridFrame('mobile', frame, c.spacing, bps)
+          return (
+            <div className="flex flex-col gap-5">
+              {([
+                ['Desktop', desktop],
+                ['Mobile', mobile],
+              ] as const).map(([label, f]) => (
+                <div key={label} className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{label}</span>
+                    <span className="text-[10px] font-mono text-fg-faint">
+                      {f.columns} col · {f.gutter} gutter · {f.margin} margin · {f.container === 'none' ? 'fluid' : f.container}
+                    </span>
+                  </div>
+                  <div
+                    className="rounded-xl border border-line overflow-hidden flex"
+                    style={{ gap: f.gutter, padding: f.margin }}
+                  >
+                    {Array.from({ length: Math.min(f.columns, 12) }).map((_, i) => (
+                      <span key={i} className="flex-1 h-16 rounded bg-accent-ui/[0.14] border border-accent-ui/30" />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        ),
+          )
+        },
       },
       {
         id: 'breakpoints',
-        title: 'Breakpoints',
-        description: 'Where the layout re-flows. Named, so a media query in code and a frame in Figma mean the same width.',
-        render: (c) => <KeyValues entries={Object.entries(c.grid).filter(([k]) => k.startsWith('breakpoint'))} />,
+        title: 'Breakpoint primitives',
+        description: 'Min-widths. Semantics alias these — never a raw 767.',
+        render: (c) => <KeyValues entries={BREAKPOINT_STEPS.map((s) => [s, extractBreakpoints(c.grid)[s]])} />,
+      },
+      {
+        id: 'roles',
+        title: 'Viewport roles',
+        description: 'Desktop is min-width of the chosen step. Mobile is that step minus 1px, so the two ranges never overlap.',
+        render: (c) => (
+          <LayoutRolesBlock family="breakpoint" primitives={extractBreakpoints(c.grid)} roles={c.breakpointRoles} />
+        ),
       },
     ],
   },
@@ -899,20 +1056,20 @@ gap: var(--grid-gutter);
   {
     key: 'sizes',
     label: 'Sizes',
-    lead: 'The component height scale — one ramp shared by buttons, inputs, selects and every other control, so a row of mixed controls lines up without anyone measuring.',
-    why: 'Control height is the value most likely to be set per component and then never reconciled. One ramp means "medium" is the same 40px everywhere, which is what lets a button sit next to an input without a one-pixel step, and it makes density a single edit rather than a sweep.',
-    usage: 'Pick the step from the density of the surface, not the importance of the control — everything in one row shares a step. `xs`–`sm` for dense tables and toolbars, `md` as the default, `lg`–`2xl` for marketing and touch-first surfaces.',
-    usageCode: `height: var(--size-md);
+    lead: 'Two layers: an 8px control-height ramp (xs–2xl) and intent aliases — compact, control, touch, hit, fab. Touch is `lg` (48px); 44px is not a step.',
+    why: 'Control height is the value most likely to be set per component and then never reconciled. One ramp means "medium" is the same 40px everywhere. Semantics then name density and job, so a toolbar compact never copies a marketing CTA, and a close-button hit area is a named token rather than a magic 24.',
+    usage: 'Reach for a semantic first: `size-control` as the default, `size-compact` in dense tables, `size-touch` for mobile CTAs, `size-hit` for icon-only chrome, `size-fab` for floating actions. Size axis SM/MD/LG maps onto `size-sm` / `size-md` / `size-lg` honestly.',
+    usageCode: `height: var(--size-control);
 
-/* every control in a row shares one step */
-.toolbar .btn,
-.toolbar .input { height: var(--size-sm); }`,
+.toolbar .btn { height: var(--size-compact); }
+.cta          { height: var(--size-touch); }
+.close        { width: var(--size-hit); height: var(--size-hit); }`,
     ships: {
-      json: 'sizes',
-      css: '--size-*',
+      json: 'sizes · sizeRoles',
+      css: '--size-*  (steps + aliases)',
       figma: 'Number variables, bound to each component set\'s height',
     },
-    tokenCount: (c) => Object.keys(c.sizes).length,
+    tokenCount: (c) => Object.keys(c.sizes).length + LAYOUT_ROLES.size.length,
     sections: [
       {
         id: 'scale',
@@ -932,6 +1089,70 @@ gap: var(--grid-gutter);
               </div>
             ))}
           </div>
+        ),
+      },
+      {
+        id: 'roles',
+        title: 'Size roles',
+        description: 'Density and job. Touch is lg (48px) so it covers iOS HIG 44 without a 44px step.',
+        render: (c) => (
+          <LayoutRolesBlock family="size" primitives={c.sizes} roles={c.sizeRoles} />
+        ),
+      },
+    ],
+  },
+
+  // ── Stroke ─────────────────────────────────────────────────────────────────
+  {
+    key: 'stroke',
+    label: 'Stroke',
+    lead: 'Line weight — not paint. A 4-step primitive ramp (none · sm · md · lg = 0 / 1 / 2 / 4px) and intent aliases for divider, control border, and focus-ring spread. Color stays on `border.*`.',
+    why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and the focus ring is a WCAG 2.4.13 2px spread (`stroke-focus`) whose paint is still `border.focus`.',
+    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `box-shadow: 0 0 0 var(--stroke-focus) …border.focus…`. Never put a hex in a stroke token.',
+    usageCode: `border: var(--stroke-control) solid var(--color-border-strong);
+
+.hr { border-top: var(--stroke-divider) solid var(--color-border-subtle); }
+
+.input:focus {
+  box-shadow: 0 0 0 var(--stroke-focus)
+    color-mix(in srgb, var(--color-border-focus) 15%, transparent);
+}`,
+    ships: {
+      json: 'stroke · strokeRoles',
+      css: '--stroke-*  (steps + aliases)',
+      figma: 'Number variables for border-width and focus-ring spread',
+    },
+    tokenCount: () => STROKE_STEPS.length + LAYOUT_ROLES.stroke.length,
+    sections: [
+      {
+        id: 'scale',
+        title: 'Scale',
+        description: 'Hairline weights. `none` is 0 — a real step, so a border can be turned off without a magic 0px.',
+        render: (c) => (
+          <div className="flex flex-col gap-3">
+            {STROKE_STEPS.map((step) => {
+              const value = c.stroke[step] ?? '0px'
+              const px = parseFloat(value) || 0
+              return (
+                <div key={step} className="flex items-center gap-4">
+                  <span className="w-28 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                    {step} · {value}
+                  </span>
+                  <span className="flex-1 h-6 flex items-center">
+                    <span className="w-full rounded-full bg-accent-ui" style={{ height: Math.max(px, 1), opacity: step === 'none' ? 0.2 : 0.85 }} />
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        ),
+      },
+      {
+        id: 'roles',
+        title: 'Stroke roles',
+        description: 'Divider, control, focus. Paint is a Color semantic; these tokens are width only.',
+        render: (c) => (
+          <LayoutRolesBlock family="stroke" primitives={c.stroke} roles={c.strokeRoles} />
         ),
       },
     ],

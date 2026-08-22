@@ -262,15 +262,24 @@ function ScaleGuide({
   const [openGroups, setOpenGroups] = useState<Set<IndustryGroupId>>(
     () => new Set([packById(detected).group]),
   )
+  // A pick that originated in this guide — don't let detection jump groups.
+  // Art's Pink is also Fashion's hero, so industryFromHex would close Life
+  // and open Market on the same click that was meant to stay on Art.
+  const pickLock = useRef(false)
   const prevHex = useRef(accentHex)
   useEffect(() => {
     if (hexEq(prevHex.current, accentHex)) return
     prevHex.current = accentHex
+    if (pickLock.current) {
+      pickLock.current = false
+      return
+    }
     setBrowse((b) => {
       if (b && packById(b).accents.some((a) => hexEq(a.hex, accentHex))) return b
       return null
     })
-    setOpenGroups(new Set([packById(industryFromHex(accentHex)).group]))
+    const g = packById(industryFromHex(accentHex)).group
+    setOpenGroups((prev) => (prev.has(g) ? prev : new Set(prev).add(g)))
   }, [accentHex])
   const field = browse ?? detected
   const pack = packById(field)
@@ -289,6 +298,14 @@ function ScaleGuide({
       else next.add(group)
       return next
     })
+  }
+
+  function pickFromPack(id: IndustryId, hex: string) {
+    setBrowse(id)
+    setOpenGroups((prev) => new Set(prev).add(packById(id).group))
+    if (hexEq(hex, accentHex)) return
+    pickLock.current = true
+    onPickAccent(hex)
   }
 
   return (
@@ -356,10 +373,11 @@ function ScaleGuide({
                   {rows.map((p) => {
                     const active = p.id === field
                     const accents = sortAccentsByHue(p.accents)
+                    const picked = active ? p.accents.find((a) => hexEq(a.hex, accentHex)) : undefined
                     return (
                       <div
                         key={p.id}
-                        className={`flex items-center gap-2 pl-2 pr-1.5 h-8 rounded-lg border transition-colors ${
+                        className={`flex items-center gap-2 pl-2 pr-1.5 h-9 rounded-lg border transition-colors duration-150 ${
                           active ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-transparent hover:border-line'
                         }`}
                       >
@@ -367,33 +385,42 @@ function ScaleGuide({
                           type="button"
                           role="radio"
                           aria-checked={active}
-                          onClick={() => setBrowse(p.id)}
+                          onClick={() => {
+                            if (!p.accents.some((a) => hexEq(a.hex, accentHex))) {
+                              pickFromPack(p.id, p.accents[0].hex)
+                            } else {
+                              setBrowse(p.id)
+                            }
+                          }}
                           className={`flex-1 min-w-0 text-left text-[12px] truncate ${
                             active ? 'text-fg' : 'text-fg-muted'
                           }`}
                         >
                           {p.label}
+                          {picked && (
+                            <span className="ml-1.5 text-[10px] text-fg-faint">{picked.label}</span>
+                          )}
                         </button>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0" role="group" aria-label={`${p.label} accents`}>
                           {accents.map((a) => {
-                            const swatchOn = hexEq(a.hex, accentHex)
+                            const swatchOn = active && hexEq(a.hex, accentHex)
                             return (
                               <button
-                                key={a.hex + a.label}
+                                key={a.hex}
                                 type="button"
                                 title={a.label}
                                 aria-label={`${p.label} — ${a.label}`}
                                 aria-pressed={swatchOn}
-                                onClick={() => {
-                                  setBrowse(p.id)
-                                  onPickAccent(a.hex)
-                                }}
+                                onClick={() => pickFromPack(p.id, a.hex)}
+                                onMouseDown={(e) => e.stopPropagation()}
                                 onMouseEnter={() => setHoverHex(a.hex)}
                                 onMouseLeave={() => setHoverHex(null)}
                                 onFocus={() => setHoverHex(a.hex)}
                                 onBlur={() => setHoverHex(null)}
-                                className={`w-4 h-4 rounded-full transition-transform ${
-                                  swatchOn ? 'ring-2 ring-fg scale-110' : 'ring-1 ring-black/15 hover:scale-110'
+                                className={`relative w-[18px] h-[18px] rounded-full transition-transform duration-150 ease-out motion-reduce:transition-none ${
+                                  swatchOn
+                                    ? 'scale-110 ring-2 ring-fg ring-offset-1 ring-offset-app'
+                                    : 'ring-1 ring-black/15 hover:scale-110 motion-reduce:hover:scale-100'
                                 }`}
                                 style={{ background: a.hex }}
                               />
@@ -440,12 +467,18 @@ export function ScaleSettingsModal({
   anchorRef: RefObject<HTMLElement | null>
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   const place = usePopoverPlacement(anchorRef, open, { prefer: 480, max: 640 })
   const [rect, setRect] = useState<DOMRect | null>(null)
 
   useLayoutEffect(() => {
     if (!open) return
-    const measure = () => {
+    const measure = (e?: Event) => {
+      // The panel's own overflow scroll is not the anchor moving — re-pinning
+      // on every wheel tick inside Color Agent made the dialog jump under
+      // the cursor mid-click.
+      if (e && panelRef.current && e.target instanceof Node && panelRef.current.contains(e.target)) return
       const r = anchorRef.current?.getBoundingClientRect()
       if (r) setRect(r)
     }
@@ -460,25 +493,37 @@ export function ScaleSettingsModal({
 
   useEffect(() => {
     if (!open) return
-    function onDown(e: MouseEvent) {
-      const t = e.target as Node
-      if (anchorRef.current?.contains(t) || panelRef.current?.contains(t)) return
-      onClose()
+    function isInside(e: Event) {
+      const path = e.composedPath()
+      const panel = panelRef.current
+      const anchor = anchorRef.current
+      if (panel && path.includes(panel)) return true
+      if (anchor && path.includes(anchor)) return true
+      return false
     }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
-    document.addEventListener('mousedown', onDown)
+    function onDown(e: PointerEvent) {
+      if (isInside(e)) return
+      onCloseRef.current()
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onCloseRef.current() }
+    // Skip the pointer that opened the dialog (same tick as `open` flipping).
+    const id = window.setTimeout(() => {
+      document.addEventListener('pointerdown', onDown)
+    }, 0)
     document.addEventListener('keydown', onKey)
     return () => {
-      document.removeEventListener('mousedown', onDown)
+      window.clearTimeout(id)
+      document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose, anchorRef])
+  }, [open, anchorRef])
 
   if (typeof document === 'undefined') return null
 
   const panel = open && rect
     ? (
         <motion.div
+          key="color-agent"
           ref={panelRef}
           initial={{ opacity: 0, y: -6, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -486,6 +531,8 @@ export function ScaleSettingsModal({
           transition={{ duration: 0.14, ease: 'easeOut' }}
           role="dialog"
           aria-label="Color Agent"
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             position: 'fixed',
             left: Math.min(Math.max(8, rect.right - SCALE_SETTINGS_W), window.innerWidth - SCALE_SETTINGS_W - 8),

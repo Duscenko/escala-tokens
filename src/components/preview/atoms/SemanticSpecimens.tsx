@@ -13,24 +13,28 @@
 //    saying which token produced it doesn't help you edit tokens.
 
 import { type ReactNode } from 'react'
-import { fontFamilyOf, radiusOf, weightOf } from '../../../lib/previewTokens'
+import { radiusOf, typeStyleOf } from '../../../lib/previewTokens'
 import { checkContrast, WCAG_AA } from '../../../lib/colorUtils'
 import { TokenIcon, type IconConcept } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
+import { EditIcon } from './RoleEditCard'
 
 export type SemanticFocusKey = 'content' | 'icon' | 'action' | 'surface' | 'status' | 'border'
+
+export type SpecimenProps = {
+  tokens: PreviewTokens
+  /** Jump Color · Semantics to this token's table row (`slot.label`). */
+  onEditToken?: (id: string) => void
+}
 
 type Slot = { css: string; label: string }
 
 /**
  * Reports a fg/bg pair that reads under WCAG AA, INSTEAD of silently repairing
- * it. Same vocabulary as the architecture picker's own contrast strip, so a
- * ratio means the same thing in both places.
- *
- * A preview's job here is to tell the truth about the tokens: this pair really
- * is that unreadable in production, and the row it's on is the row you'd go fix.
- * Repairing it in the preview is what made this specimen disagree with the Color
- * collage for the same token.
+ * it. A preview's job here is to tell the truth about the tokens: this pair
+ * really is that unreadable in production, and the row it's on is the row you'd
+ * go fix. Repairing it in the preview is what made this specimen disagree with
+ * the Color collage for the same token.
  */
 function ContrastFlag({ fg, bg }: { fg: string; bg: string }) {
   let ratio: number
@@ -89,10 +93,14 @@ function slotOf(t: PreviewTokens, flatKey: string, archIds: string | string[], f
 // ── Shared chrome ───────────────────────────────────────────────────────────
 function Caption({ children, color }: { children: ReactNode; color: string }) {
   return (
-    <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color }} className="truncate">
+    <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, color }} className="truncate min-w-0">
       {children}
     </code>
   )
+}
+
+function typeOf(t: PreviewTokens, role: string, leading = false) {
+  return typeStyleOf(t, role, { leading })
 }
 
 function Frame({ t, children }: { t: PreviewTokens; children: ReactNode }) {
@@ -102,7 +110,7 @@ function Frame({ t, children }: { t: PreviewTokens; children: ReactNode }) {
         background: t.surface,
         border: `1px solid ${t.borderDefault || t.border || '#eaecf0'}`,
         borderRadius: 14,
-        fontFamily: fontFamilyOf(t),
+        ...typeOf(t, 'body-md'),
       }}
       className="p-5 flex flex-col gap-5"
     >
@@ -115,7 +123,7 @@ function Section({ t, title, children }: { t: PreviewTokens; title: string; chil
   return (
     <div className="flex flex-col gap-2.5">
       <span
-        style={{ fontSize: 10, letterSpacing: '0.08em', color: t.fgMuted || '#717680' }}
+        style={{ ...typeOf(t, 'caption'), letterSpacing: '0.08em', color: t.fgMuted || '#717680' }}
         className="uppercase"
       >
         {title}
@@ -125,18 +133,69 @@ function Section({ t, title, children }: { t: PreviewTokens; title: string; chil
   )
 }
 
-/** A specimen element beside the token name that drives it. */
-function Row({ t, label, children }: { t: PreviewTokens; label: string; children: ReactNode }) {
+/** Token id + the live swatch. The square is the edit hit — same chip language
+ *  as the Semantics table (rounded square, never a dot), so the preview and
+ *  the matrix agree on what a colour token looks like. */
+function TokenMark({
+  slot,
+  onEdit,
+  color,
+}: {
+  slot: Slot
+  onEdit?: (id: string) => void
+  color: string
+}) {
+  const swatch = (
+    <span
+      aria-hidden
+      className="block w-3.5 h-3.5 rounded-[3px] ring-1 ring-black/10 dark:ring-white/10"
+      style={{ backgroundColor: slot.css }}
+    />
+  )
+  const chipClass =
+    'inline-flex items-center justify-center w-6 h-6 rounded-md bg-surface border border-line flex-shrink-0'
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="min-w-0 flex items-center gap-2 flex-wrap">{children}</div>
-      <Caption color={t.fgMuted || '#717680'}>{label}</Caption>
+    <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
+      <Caption color={color}>{slot.label}</Caption>
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={() => onEdit(slot.label)}
+          title={`Edit ${slot.label} in the table`}
+          aria-label={`Edit ${slot.label} in the table`}
+          className={`${chipClass} hover:border-line-strong hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg active:scale-[0.97]`}
+        >
+          {swatch}
+        </button>
+      ) : (
+        <span className={chipClass}>{swatch}</span>
+      )}
+    </span>
+  )
+}
+
+/** Specimen left, token id + swatch right. The visual always keeps its width —
+ *  long ids like `action.primary.pressed` truncate instead of crushing buttons. */
+function Row({
+  t, slot, onEdit, children,
+}: {
+  t: PreviewTokens
+  slot: Slot
+  onEdit?: (id: string) => void
+  children: ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 flex-shrink-0">{children}</div>
+      <div className="min-w-0 flex-1 flex justify-end">
+        <TokenMark slot={slot} onEdit={onEdit} color={t.fgMuted || '#717680'} />
+      </div>
     </div>
   )
 }
 
 // ── Content — the text hierarchy, each line painted by its own ink ──────────
-export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function ContentSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const primary = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const secondary = s('content-secondary', ['content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
@@ -148,9 +207,9 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const fill = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
 
-  const Line = ({ slot, size, weight, children }: { slot: Slot; size: number; weight: number; children: ReactNode }) => (
-    <Row t={t} label={slot.label}>
-      <span style={{ color: slot.css, fontSize: size, fontWeight: weight, lineHeight: 1.35 }} className="truncate">
+  const Line = ({ slot, role, children }: { slot: Slot; role: string; children: ReactNode }) => (
+    <Row t={t} slot={slot} onEdit={onEditToken}>
+      <span style={{ color: slot.css, ...typeStyleOf(t, role) }} className="truncate">
         {children}
       </span>
     </Row>
@@ -160,15 +219,15 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
     <Frame t={t}>
       <Section t={t} title="Hierarchy">
         <div className="flex flex-col gap-2.5">
-          <Line slot={primary} size={22} weight={weightOf(t, 'bold', 700)}>Build your design system</Line>
-          <Line slot={secondary} size={15} weight={weightOf(t, 'semibold', 600)}>Foundations that scale</Line>
-          <Line slot={tertiary} size={13} weight={400}>
+          <Line slot={primary} role="heading-md">Build your design system</Line>
+          <Line slot={secondary} role="heading-xs">Foundations that scale</Line>
+          <Line slot={tertiary} role="body-sm">
             Tokens keep colour, type and spacing consistent across every surface.
           </Line>
-          <Line slot={brandInk} size={13} weight={weightOf(t, 'semibold', 600)}>Read the documentation →</Line>
-          <Line slot={link} size={13} weight={weightOf(t, 'semibold', 600)}>Learn more in the docs</Line>
-          <Line slot={linkHover} size={13} weight={weightOf(t, 'semibold', 600)}>Learn more (hover)</Line>
-          <Line slot={disabled} size={13} weight={400}>Unavailable option</Line>
+          <Line slot={brandInk} role="button">Read the documentation →</Line>
+          <Line slot={link} role="button">Learn more in the docs</Line>
+          <Line slot={linkHover} role="button">Learn more (hover)</Line>
+          <Line slot={disabled} role="body-sm">Unavailable option</Line>
         </div>
       </Section>
 
@@ -202,13 +261,14 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
         >
           <span
             className="flex items-center gap-2"
-            style={{ color: onFill.css, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600) }}
+            style={{ color: onFill.css, ...typeOf(t, 'button') }}
           >
             <TokenIcon t={t} concept="check" size={15} color={onFill.css} />
             Text on a brand fill
           </span>
-          <Caption color={onFill.css}>{onFill.label}</Caption>
+          <TokenMark slot={onFill} onEdit={onEditToken} color={onFill.css} />
         </div>
+        <TokenMark slot={fill} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
       </Section>
     </Frame>
   )
@@ -225,7 +285,7 @@ export function ContentSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 // in Foundations · Icons — never a hand-drawn SVG — so switching the library
 // re-renders this with that set's real glyphs, same as the Color collage and
 // the component docs.
-export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function IconSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const primary = s('content-primary', ['icon.primary', 'content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const secondary = s('content-secondary', ['icon.secondary', 'content.secondary', 'text.secondary', 'muted.foreground'], t.fgMuted || t.neutralText)
@@ -248,9 +308,9 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       <Section t={t} title="Hierarchy">
         <div className="flex flex-col gap-2.5">
           {hierarchy.map((g) => (
-            <Row key={g.slot.label} t={t} label={g.slot.label}>
+            <Row key={g.slot.label} t={t} slot={g.slot} onEdit={onEditToken}>
               <TokenIcon t={t} concept={g.concept} size={20} color={g.slot.css} />
-              <span style={{ color: g.slot.css, fontSize: 13 }} className="truncate">
+              <span style={{ color: g.slot.css, ...typeOf(t, 'body-sm') }} className="truncate">
                 {g.slot.label.split('.').pop()}
               </span>
             </Row>
@@ -261,31 +321,33 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       {/* Icon-only buttons are the strictest test: no label to fall back on,
           so the glyph ink has to carry the whole affordance on each fill. */}
       <Section t={t} title="On fills">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span
-            className="inline-flex items-center justify-center"
-            style={{ background: fill.css, borderRadius: r, width: 34, height: 34 }}
-            title={onFill.label}
-          >
-            <TokenIcon t={t} concept="plus" size={17} color={onFill.css} />
-          </span>
-          <span
-            className="inline-flex items-center justify-center"
-            style={{ background: surface.css, borderRadius: r, width: 34, height: 34 }}
-            title={primary.label}
-          >
-            <TokenIcon t={t} concept="share" size={17} color={primary.css} />
-          </span>
-          <span
-            className="inline-flex items-center gap-2"
-            style={{
-              background: surface.css, borderRadius: r, padding: '0 12px', height: 34,
-              color: primary.css, fontSize: 13, fontWeight: weightOf(t, 'semibold', 600),
-            }}
-          >
-            <TokenIcon t={t} concept="upload" size={15} color={primary.css} />
-            Upload
-          </span>
+        <div className="flex flex-col gap-2">
+          <Row t={t} slot={onFill} onEdit={onEditToken}>
+            <span
+              className="inline-flex items-center justify-center"
+              style={{ background: fill.css, borderRadius: r, width: 34, height: 34 }}
+            >
+              <TokenIcon t={t} concept="plus" size={17} color={onFill.css} />
+            </span>
+          </Row>
+          <Row t={t} slot={primary} onEdit={onEditToken}>
+            <span
+              className="inline-flex items-center justify-center"
+              style={{ background: surface.css, borderRadius: r, width: 34, height: 34 }}
+            >
+              <TokenIcon t={t} concept="share" size={17} color={primary.css} />
+            </span>
+            <span
+              className="inline-flex items-center gap-2"
+              style={{
+                background: surface.css, borderRadius: r, padding: '0 12px', height: 34,
+                color: primary.css, ...typeOf(t, 'button'),
+              }}
+            >
+              <TokenIcon t={t} concept="upload" size={15} color={primary.css} />
+              Upload
+            </span>
+          </Row>
         </div>
       </Section>
 
@@ -295,10 +357,10 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             { slot: accent, concept: 'info' as IconConcept, copy: 'Learn how tokens resolve' },
             { slot: secondary, concept: 'user' as IconConcept, copy: 'Signed in as designer' },
           ]).map((line) => (
-            <span key={line.copy} className="flex items-center gap-2 min-w-0">
+            <Row key={line.copy} t={t} slot={line.slot} onEdit={onEditToken}>
               <TokenIcon t={t} concept={line.concept} size={15} color={line.slot.css} />
-              <span style={{ color: line.slot.css, fontSize: 13 }} className="truncate">{line.copy}</span>
-            </span>
+              <span style={{ color: line.slot.css, ...typeOf(t, 'body-sm') }} className="truncate">{line.copy}</span>
+            </Row>
           ))}
         </div>
       </Section>
@@ -307,7 +369,7 @@ export function IconSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 }
 
 // ── Action — interactive fills: buttons, badges, inputs, controls ───────────
-export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const primary = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
   const primaryHover = s('background-brand-solid-hover', ['action.primary.hover', 'accent.solid'], t.brandSolid)
@@ -319,14 +381,23 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
   const r = radiusOf(t, 'md', '8px')
-  const semi = weightOf(t, 'semibold', 600)
 
   const Btn = ({ bg, fg, bd, children }: { bg: string; fg: string; bd?: string; children: ReactNode }) => (
     <span
       style={{
-        display: 'inline-flex', alignItems: 'center', height: 34, padding: '0 14px',
-        borderRadius: r, background: bg, color: fg,
-        border: `1px solid ${bd ?? 'transparent'}`, fontSize: 13, fontWeight: semi,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        height: 34,
+        padding: '0 14px',
+        borderRadius: r,
+        background: bg,
+        color: fg,
+        border: `1px solid ${bd ?? 'transparent'}`,
+        whiteSpace: 'nowrap',
+        ...typeOf(t, 'button'),
+        lineHeight: 1,
       }}
     >
       {children}
@@ -337,35 +408,35 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
     <Frame t={t}>
       <Section t={t} title="Buttons">
         <div className="flex flex-col gap-2">
-          <Row t={t} label={primary.label}>
+          <Row t={t} slot={primary} onEdit={onEditToken}>
             <Btn bg={primary.css} fg={onAction.css}>Primary</Btn>
           </Row>
-          <Row t={t} label={secondary.label}>
+          <Row t={t} slot={secondary} onEdit={onEditToken}>
             <Btn bg={secondary.css} fg={labelInk.css}>Secondary</Btn>
           </Row>
-          <Row t={t} label={neutral.label}>
+          <Row t={t} slot={neutral} onEdit={onEditToken}>
             <Btn bg={neutral.css} fg={labelInk.css}>Neutral</Btn>
           </Row>
-          <Row t={t} label={stroke.label}>
+          <Row t={t} slot={stroke} onEdit={onEditToken}>
             <Btn bg="transparent" fg={labelInk.css} bd={stroke.css}>Outline</Btn>
           </Row>
-          <Row t={t} label={disabled.label}>
+          <Row t={t} slot={disabled} onEdit={onEditToken}>
             <Btn bg={disabled.css} fg={t.disabledText}>Disabled</Btn>
           </Row>
-          <Row t={t} label={primaryHover.label}>
-            <Btn bg={primaryHover.css} fg={onAction.css}>Primary · hover</Btn>
+          <Row t={t} slot={primaryHover} onEdit={onEditToken}>
+            <Btn bg={primaryHover.css} fg={onAction.css}>Hover</Btn>
           </Row>
-          <Row t={t} label={primaryPressed.label}>
-            <Btn bg={primaryPressed.css} fg={onAction.css}>Primary · pressed</Btn>
+          <Row t={t} slot={primaryPressed} onEdit={onEditToken}>
+            <Btn bg={primaryPressed.css} fg={onAction.css}>Pressed</Btn>
           </Row>
         </div>
       </Section>
 
       <Section t={t} title="Badges">
         <div className="flex flex-wrap items-center gap-2">
-          <span style={{ background: primary.css, color: onAction.css, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Solid</span>
-          <span style={{ background: secondary.css, color: labelInk.css, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Soft</span>
-          <span style={{ background: 'transparent', color: labelInk.css, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi }}>Outline</span>
+          <span style={{ background: primary.css, color: onAction.css, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Solid</span>
+          <span style={{ background: secondary.css, color: labelInk.css, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Soft</span>
+          <span style={{ background: 'transparent', color: labelInk.css, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Outline</span>
         </div>
       </Section>
 
@@ -373,11 +444,13 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           one token moves every interactive surface at once. */}
       <Section t={t} title="Controls">
         <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: labelInk.css }}>
-            <span style={{ width: 16, height: 16, borderRadius: radiusOf(t, 'sm', '4px'), background: primary.css, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: onAction.css, fontSize: 11, fontWeight: 700 }}>✓</span>
+          <span className="inline-flex items-center gap-2" style={{ ...typeOf(t, 'label'), color: labelInk.css }}>
+            <span style={{ width: 16, height: 16, borderRadius: radiusOf(t, 'sm', '4px'), background: primary.css, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TokenIcon t={t} concept="check" size={11} color={onAction.css} />
+            </span>
             Checkbox
           </span>
-          <span className="inline-flex items-center gap-2" style={{ fontSize: 13, color: labelInk.css }}>
+          <span className="inline-flex items-center gap-2" style={{ ...typeOf(t, 'label'), color: labelInk.css }}>
             <span style={{ width: 32, height: 18, borderRadius: 999, background: primary.css, position: 'relative', display: 'inline-block' }}>
               <span style={{ position: 'absolute', top: 2, left: 16, width: 14, height: 14, borderRadius: 999, background: onAction.css }} />
             </span>
@@ -388,7 +461,7 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           style={{
             height: 36, borderRadius: r, border: `1px solid ${stroke.css}`,
             display: 'flex', alignItems: 'center', padding: '0 12px',
-            fontSize: 13, color: t.placeholderText || t.fgMuted,
+            ...typeOf(t, 'placeholder'), color: t.placeholderText || t.fgMuted,
           }}
         >
           Input field
@@ -399,7 +472,7 @@ export function ActionSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 }
 
 // ── Surface — the elevation stack, page → layers → overlay ──────────────────
-export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const page = s('background-primary', ['surface.page', 'background.body', 'base.background'], t.surface)
   const layer1 = s('background-secondary', ['surface.layer-1', 'background.surface', 'card.fill'], t.neutralFill)
@@ -408,6 +481,7 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const selected = s('background-brand-primary', ['surface.selected', 'accent.muted'], t.neutralFill)
   const accent = s('background-brand-primary', ['surface.accent', 'accent.muted'], t.neutralFill)
   const inverse = s('surface-inverse', ['surface.inverse', 'background.inverted'], t.neutralText)
+  const overlay = s('background-overlay', ['surface.overlay'], t.neutralText)
   const stroke = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || t.border || '#e9eaeb')
   const r = radiusOf(t, 'lg', '12px')
 
@@ -417,11 +491,11 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           layers actually sit on each other. */}
       <Section t={t} title="Elevation">
         <div style={{ background: page.css, border: `1px solid ${stroke.css}`, borderRadius: r, padding: 12 }}>
-          <Caption color={t.fgMuted || '#717680'}>{page.label}</Caption>
+          <TokenMark slot={page} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           <div style={{ background: layer1.css, border: `1px solid ${stroke.css}`, borderRadius: radiusOf(t, 'md', '8px'), padding: 12, marginTop: 8 }}>
-            <Caption color={t.fgMuted || '#717680'}>{layer1.label}</Caption>
+            <TokenMark slot={layer1} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
             <div style={{ background: layer2.css, borderRadius: radiusOf(t, 'sm', '6px'), padding: 12, marginTop: 8 }}>
-              <Caption color={t.fgMuted || '#717680'}>{layer2.label}</Caption>
+              <TokenMark slot={layer2} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
             </div>
           </div>
         </div>
@@ -430,11 +504,11 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       <Section t={t} title="Input & selected">
         <div className="flex flex-col gap-2.5">
           <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
-            <Caption color={t.fgMuted || '#717680'}>{input.label}</Caption>
+            <TokenMark slot={input} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
           <div style={{ background: selected.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
-            <span style={{ color: t.neutralText, fontSize: 13 }}>Selected row</span>
-            <Caption color={t.fgMuted || '#717680'}>{selected.label}</Caption>
+            <span style={{ color: t.neutralText, ...typeOf(t, 'body-sm') }}>Selected row</span>
+            <TokenMark slot={selected} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
         </div>
       </Section>
@@ -442,10 +516,10 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       <Section t={t} title="Accent & inverse">
         <div className="flex gap-2.5">
           <div style={{ flex: 1, minWidth: 0, background: accent.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '14px 12px' }}>
-            <Caption color={t.brandText}>{accent.label}</Caption>
+            <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
           </div>
           <div style={{ flex: 1, minWidth: 0, background: inverse.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '14px 12px' }}>
-            <Caption color={t.surface}>{inverse.label}</Caption>
+            <TokenMark slot={inverse} onEdit={onEditToken} color={t.surface} />
           </div>
         </div>
       </Section>
@@ -454,7 +528,7 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           a dimmed layer rather than as another flat swatch. */}
       <Section t={t} title="Overlay">
         <div style={{ position: 'relative', borderRadius: radiusOf(t, 'md', '8px'), overflow: 'hidden', background: layer1.css, height: 108 }}>
-          <div style={{ position: 'absolute', inset: 0, background: s('background-overlay', ['surface.overlay'], t.neutralText).css, opacity: 0.55 }} />
+          <div style={{ position: 'absolute', inset: 0, background: overlay.css, opacity: 0.55 }} />
           <div
             style={{
               position: 'absolute', left: 14, right: 14, top: 20,
@@ -462,20 +536,20 @@ export function SurfaceSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
               borderRadius: radiusOf(t, 'md', '8px'), padding: 12,
             }}
           >
-            <div style={{ fontSize: 13, fontWeight: weightOf(t, 'semibold', 600), color: t.neutralText }}>Dialog</div>
-            <div style={{ fontSize: 12, color: t.fgMuted, marginTop: 2 }}>Sits above the scrim</div>
+            <div style={{ ...typeOf(t, 'heading-xs'), color: t.neutralText }}>Dialog</div>
+            <div style={{ ...typeOf(t, 'body-sm', true), color: t.fgMuted, marginTop: 2 }}>Sits above the scrim</div>
           </div>
         </div>
+        <TokenMark slot={overlay} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
       </Section>
     </Frame>
   )
 }
 
 // ── Status — feedback, one alert per severity ───────────────────────────────
-export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const r = radiusOf(t, 'md', '8px')
-  const semi = weightOf(t, 'semibold', 600)
 
   // **Nothing here substitutes a colour. Every slot renders the token's REAL
   // value, and a failing pair is reported rather than repaired.**
@@ -543,13 +617,13 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
           {severities.map((sev) => (
             <div key={sev.label} style={{ background: sev.bg.css, borderRadius: r, padding: '10px 12px' }}>
               <div className="flex items-center justify-between gap-3">
-                <span style={{ color: sev.fg.css, fontSize: 13, fontWeight: semi }}>{sev.copy}</span>
-                <span title={sev.fg.label} className="min-w-0">
-                  <Caption color={sev.fg.css}>{sev.fg.label}</Caption>
+                <span style={{ color: sev.fg.css, ...typeOf(t, 'label') }}>{sev.copy}</span>
+                <span className="min-w-0">
+                  <TokenMark slot={sev.fg} onEdit={onEditToken} color={sev.fg.css} />
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <Caption color={sev.fg.css}>{sev.bg.label}</Caption>
+                <TokenMark slot={sev.bg} onEdit={onEditToken} color={sev.fg.css} />
                 <ContrastFlag fg={sev.fg.css} bg={sev.bg.css} />
               </div>
             </div>
@@ -564,10 +638,10 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
             background: criticalSolid.css, borderRadius: r, padding: '10px 12px',
           }}
         >
-          <span style={{ color: onCriticalSolid.css, fontSize: 13, fontWeight: semi }}>Delete project</span>
-          <Caption color={onCriticalSolid.css}>{onCriticalSolid.label}</Caption>
+          <span style={{ color: onCriticalSolid.css, ...typeOf(t, 'button') }}>Delete project</span>
+          <TokenMark slot={onCriticalSolid} onEdit={onEditToken} color={onCriticalSolid.css} />
         </div>
-        <Caption color={t.fgMuted || '#717680'}>{criticalSolid.label}</Caption>
+        <TokenMark slot={criticalSolid} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
       </Section>
 
       <Section t={t} title="Status chips">
@@ -585,7 +659,7 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: sev.bg.css, color: sev.fg.css,
-                borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: semi,
+                borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption'),
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: 999, background: sev.dot.css }} />
@@ -609,8 +683,8 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
               an inverse surface, the one place the vivid tone is unambiguously
               the right token. */}
           <span style={{ width: 7, height: 7, borderRadius: 999, background: severities[2].dot.css }} />
-          <span style={{ color: t.surface, fontSize: 13, flex: 1 }}>Changes saved.</span>
-          <span style={{ color: t.surface, fontSize: 12, fontWeight: semi, textDecoration: 'underline' }}>Undo</span>
+          <span style={{ color: t.surface, ...typeOf(t, 'body-sm'), flex: 1 }}>Changes saved.</span>
+          <span style={{ color: t.surface, ...typeOf(t, 'button'), textDecoration: 'underline' }}>Undo</span>
         </div>
       </Section>
     </Frame>
@@ -618,7 +692,7 @@ export function StatusSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 }
 
 // ── Border — strokes in the contexts where they're actually judged ──────────
-export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
+export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
   const def = s('border-primary', ['border.default'], t.border || '#d0d5dd')
   const strong = s('border-primary', ['border.strong', 'border.emphasized', 'border.input'], t.border || '#d0d5dd')
@@ -629,13 +703,13 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   const r = radiusOf(t, 'md', '8px')
 
   const Field = ({ slot, text, ring }: { slot: Slot; text: string; ring?: boolean }) => (
-    <Row t={t} label={slot.label}>
+    <Row t={t} slot={slot} onEdit={onEditToken}>
       <span
         style={{
           display: 'inline-flex', alignItems: 'center', height: 34, minWidth: 150, padding: '0 12px',
           borderRadius: r, border: `1px solid ${slot.css}`,
           boxShadow: ring ? `0 0 0 3px ${slot.css}33` : undefined,
-          fontSize: 13, color: t.placeholderText || t.fgMuted,
+          ...typeOf(t, 'placeholder'), color: t.placeholderText || t.fgMuted,
         }}
       >
         {text}
@@ -657,10 +731,10 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
 
       <Section t={t} title="Separators">
         <div className="flex flex-col gap-2">
-          <Row t={t} label={subtle.label}>
+          <Row t={t} slot={subtle} onEdit={onEditToken}>
             <span style={{ display: 'block', width: 180, height: 1, background: subtle.css }} />
           </Row>
-          <Row t={t} label={def.label}>
+          <Row t={t} slot={def} onEdit={onEditToken}>
             <span style={{ display: 'block', width: 180, height: 1, background: def.css }} />
           </Row>
         </div>
@@ -669,10 +743,10 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
       <Section t={t} title="Containers">
         <div className="flex gap-2.5">
           <div style={{ flex: 1, minWidth: 0, border: `1px solid ${subtle.css}`, borderRadius: r, padding: 12 }}>
-            <Caption color={t.fgMuted || '#717680'}>{subtle.label}</Caption>
+            <TokenMark slot={subtle} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
           <div style={{ flex: 1, minWidth: 0, border: `1px solid ${accent.css}`, borderRadius: r, padding: 12 }}>
-            <Caption color={t.brandText}>{accent.label}</Caption>
+            <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
           </div>
         </div>
       </Section>
@@ -680,13 +754,48 @@ export function BorderSpecimen({ tokens: t }: { tokens: PreviewTokens }) {
   )
 }
 
-export const SEMANTIC_SPECIMENS: Record<SemanticFocusKey, (p: { tokens: PreviewTokens }) => ReactNode> = {
+export const SEMANTIC_SPECIMENS: Record<SemanticFocusKey, (p: SpecimenProps) => ReactNode> = {
   content: ContentSpecimen,
   icon: IconSpecimen,
   action: ActionSpecimen,
   surface: SurfaceSpecimen,
   status: StatusSpecimen,
   border: BorderSpecimen,
+}
+
+export const SEMANTIC_GROUP_INDEX: { key: SemanticFocusKey; label: string }[] = [
+  { key: 'content', label: 'Content' },
+  { key: 'icon', label: 'Icon' },
+  { key: 'action', label: 'Action' },
+  { key: 'surface', label: 'Surface' },
+  { key: 'status', label: 'Status' },
+  { key: 'border', label: 'Border' },
+]
+
+/** Compact jump list for the Color overview (collage / All tokens). */
+export function SemanticGroupIndex({ onEditGroup }: { onEditGroup: (key: SemanticFocusKey) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Semantics</span>
+      <div className="flex flex-wrap gap-1">
+        {SEMANTIC_GROUP_INDEX.map((g) => (
+          <button
+            key={g.key}
+            type="button"
+            onClick={() => onEditGroup(g.key)}
+            title={`Edit ${g.label} tokens in the table`}
+            aria-label={`Edit ${g.label} tokens in the table`}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-[11px] text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+          >
+            {g.label}
+            <span className="text-fg-faint" aria-hidden>
+              <EditIcon />
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export const SEMANTIC_SPECIMEN_TITLE: Record<SemanticFocusKey, string> = {

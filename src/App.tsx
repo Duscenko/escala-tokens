@@ -5,6 +5,7 @@ import {
   AboutAccordion, AboutContact, COPYRIGHT_LINE, type AboutSection,
 } from './components/configurator/AboutMenu'
 import { TOKEN_SCHEMA_VERSION } from './lib/tokenGenerator'
+import { ToastHost } from './components/ui/Toast'
 
 // Escala is a dense token-editing workspace built for a laptop/desktop
 // keyboard-and-mouse session — not a responsive site (see CLAUDE.md's
@@ -75,6 +76,7 @@ function App() {
       <main className="hidden md:block min-h-screen bg-app text-fg">
         <Configurator />
       </main>
+      <ToastHost />
     </>
   )
 }

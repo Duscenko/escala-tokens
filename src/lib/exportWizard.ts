@@ -17,15 +17,16 @@ import { generateTokenJSON, flattenScale } from './tokenGenerator'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
 import { buildAgentProductExport, buildSkillExport } from './skillExport'
+import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, type LayoutFamily } from './layoutTokens'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'typography' | 'spacing'
-  | 'radius' | 'shadow' | 'grid' | 'sizes' | 'icons'
+  | 'radius' | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
 
 /** Every collection, in export order — also the "share the whole system" preset. */
 export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
   'primitives', 'semantics', 'typography', 'spacing',
-  'radius', 'shadow', 'grid', 'sizes', 'icons',
+  'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons',
 ]
 
 export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill' | 'agent-bundle'
@@ -37,7 +38,7 @@ export type WizardStructure = 'single' | 'per-collection'
 const SECTION_OF: Record<WizardCollection, SectionKey> = {
   primitives: 'color', semantics: 'color', typography: 'typography',
   spacing: 'spacing', radius: 'radius',
-  shadow: 'shadow', grid: 'grid', sizes: 'sizes', icons: 'icons',
+  shadow: 'shadow', grid: 'grid', sizes: 'sizes', stroke: 'stroke', icons: 'icons',
 }
 
 export interface WizardSelection {
@@ -180,19 +181,21 @@ export interface CollectionMeta {
 
 export function collectionMeta(full: TokenJSON = generateTokenJSON()): CollectionMeta[] {
   const t = full.typography
+  const typeRoleCount = Object.keys(t.roles ?? {}).length
   const typographyCount =
-    2 + Object.keys(t.sizes).length + Object.keys(t.lineHeights ?? {}).length + Object.keys(t.weights).length
+    2 + Object.keys(t.sizes).length + Object.keys(t.lineHeights ?? {}).length + Object.keys(t.weights).length + typeRoleCount
   const themeNames = full.colors.themeOrder
   const roleCount = Object.keys(full.colors.themes[themeNames[0]] ?? {}).length
   return [
     { key: 'primitives', label: 'Color · Primitives', count: Object.keys(full.colors.primitive).length },
     { key: 'semantics', label: 'Color · Semantics', count: roleCount * themeNames.length, modes: themeNames },
     { key: 'typography', label: 'Typography', count: typographyCount },
-    { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length },
-    { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length },
+    { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length + Object.keys(full.spacingRoles ?? {}).length },
+    { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length + Object.keys(full.radiusRoles ?? {}).length },
     { key: 'shadow', label: 'Shadow', count: Object.keys(full.shadows).length },
-    { key: 'grid', label: 'Grid', count: Object.keys(full.grid).length },
-    { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length },
+    { key: 'grid', label: 'Grid', count: Object.keys(full.grid).length + Object.keys(full.breakpointRoles ?? {}).length + 8 },
+    { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length + Object.keys(full.sizeRoles ?? {}).length },
+    { key: 'stroke', label: 'Stroke', count: Object.keys(full.stroke ?? {}).length + Object.keys(full.strokeRoles ?? {}).length },
     { key: 'icons', label: 'Icons', count: 1 + (full.icons.custom?.length ?? 0) },
   ]
 }
@@ -268,12 +271,42 @@ function w3cSemantics(full: TokenJSON, modes: string[], aliases: boolean, famili
 
 const isPx = (v: string) => /(px|rem|em|%)$/.test(v)
 
+function dimWithRoles(
+  family: LayoutFamily,
+  primitives: Record<string, string>,
+  roles: Record<string, string> | undefined,
+): W3CNode {
+  const dim = (o: Record<string, string>) =>
+    Object.fromEntries(Object.entries(o).map(([k, v]) => [k, token(v, isPx(v) ? 'dimension' : 'number')])) as Record<string, W3CNode>
+  const out = dim(primitives)
+  const map = mergeLayoutRoles(family, roles)
+  const root = family === 'size' ? 'size' : family
+  for (const role of LAYOUT_ROLES[family]) {
+    out[role.key] = token(`{${root}.${map[role.key]}}`, 'dimension')
+  }
+  return out as W3CNode
+}
+
 function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
   const dim = (o: Record<string, string>) =>
     Object.fromEntries(Object.entries(o).map(([k, v]) => [k, token(v, isPx(v) ? 'dimension' : 'number')])) as W3CNode
   switch (key) {
     case 'typography': {
       const t = full.typography
+      const roles = t.roles ?? {}
+      const roleNode: W3CNode = {}
+      for (const [key, modes] of Object.entries(roles)) {
+        const pack = (alias: { family: string; size: string; weight: string }): W3CNode => ({
+          fontFamily: token(`{typography.fontFamily.${alias.family === 'display' ? 'heading' : 'body'}}`, 'fontFamily'),
+          fontSize: token(`{typography.size.${alias.size}}`, 'dimension'),
+          fontWeight: token(`{typography.weight.${alias.weight}}`, 'fontWeight'),
+          lineHeight: token(`{typography.lineHeight.${alias.size}}`, 'dimension'),
+        })
+        ;(roleNode as Record<string, W3CNode>)[key] = {
+          desktop: pack(modes.desktop),
+          mobile: pack(modes.mobile),
+        }
+      }
       return {
         fontFamily: {
           heading: token(t.headingFontFamily ?? t.fontFamily, 'fontFamily'),
@@ -282,12 +315,39 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         size: dim(t.sizes),
         lineHeight: dim(t.lineHeights ?? {}),
         weight: Object.fromEntries(Object.entries(t.weights).map(([k, v]) => [k, token(v, 'fontWeight')])) as W3CNode,
+        role: roleNode,
       }
     }
-    case 'spacing': return dim(full.spacing)
-    case 'radius': return dim(full.radius)
-    case 'sizes': return dim(full.sizes)
-    case 'grid': return dim(full.grid)
+    case 'spacing': return dimWithRoles('spacing', full.spacing, full.spacingRoles)
+    case 'radius': return dimWithRoles('radius', full.radius, full.radiusRoles)
+    case 'sizes': return dimWithRoles('size', full.sizes, full.sizeRoles)
+    case 'stroke': return dimWithRoles('stroke', full.stroke ?? {}, full.strokeRoles)
+    case 'grid': {
+      const bps = extractBreakpoints(full.grid)
+      const cuts = mergeLayoutRoles('breakpoint', full.breakpointRoles)
+      const frame = mergeGridFrame(full.gridFrame)
+      const breakpoint: Record<string, W3CNode> = {}
+      for (const step of BREAKPOINT_STEPS) {
+        breakpoint[step] = token(bps[step], 'dimension')
+      }
+      breakpoint.desktop = token(`{grid.breakpoint.${cuts.desktop}}`, 'dimension')
+      breakpoint.mobile = token(`{grid.breakpoint.${cuts.mobile}}`, 'dimension')
+      const pack = (alias: { columns: string; gutter: string; margin: string; container: string }): W3CNode => ({
+        columns: token(Number(alias.columns), 'number'),
+        gutter: token(`{spacing.${alias.gutter}}`, 'dimension'),
+        margin: token(`{spacing.${alias.margin}}`, 'dimension'),
+        container: alias.container === 'none'
+          ? token('none', 'string')
+          : token(`{grid.breakpoint.${alias.container}}`, 'dimension'),
+      })
+      return {
+        breakpoint,
+        frame: {
+          desktop: pack(frame.desktop),
+          mobile: pack(frame.mobile),
+        },
+      }
+    }
     case 'shadow':
       return Object.fromEntries(Object.entries(full.shadows).map(([k, v]) => [k, token(v, 'shadow')])) as W3CNode
     case 'icons': {
@@ -311,7 +371,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
 const W3C_ROOT: Record<WizardCollection, string> = {
   primitives: 'color', semantics: 'semantic', typography: 'typography',
   spacing: 'spacing', radius: 'radius',
-  shadow: 'shadow', grid: 'grid', sizes: 'size', icons: 'icon',
+  shadow: 'shadow', grid: 'grid', sizes: 'size', stroke: 'stroke', icons: 'icon',
 }
 
 function w3cTreeFor(key: WizardCollection, sel: WizardSelection, full: TokenJSON): W3CNode {

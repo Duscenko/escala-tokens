@@ -12,7 +12,6 @@ import {
 } from '../../lib/semanticRoles'
 import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
 import { resolveThemePalette } from '../../lib/themeSources'
-import { ArchContrastStrip } from './ArchitecturePicker'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
@@ -88,6 +87,25 @@ export function focusForNavKey(key: string): SemanticFocus | null {
     case 'outlines': return 'border'
     default: return null
   }
+}
+
+const COLOR_FLASH = 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35'
+
+function flatCategoryForRole(key: string): SemanticCategory | null {
+  const group = ROLE_GROUPS.find((g) => g.roles.some((r) => r.key === key))
+  return (group?.category as SemanticCategory | undefined) ?? null
+}
+
+function archNavForToken(
+  id: string,
+  categories: { key: string; tokens: { key: string }[] }[],
+): string | null {
+  for (const c of categories) {
+    if (c.tokens.some((t) => `${c.key}.${t.key}` === id)) return c.key
+  }
+  const prefix = categories.filter((c) => id === c.key || id.startsWith(`${c.key}.`))
+  prefix.sort((a, b) => b.key.length - a.key.length)
+  return prefix[0]?.key ?? null
 }
 
 // Architectures whose refs resolve PER-THEME (one column per `themeOrder`
@@ -417,6 +435,7 @@ function MatrixRow({
   cols,
   modified,
   expanded,
+  flash,
   gridStyle,
   naming,
   onToggle,
@@ -426,6 +445,7 @@ function MatrixRow({
   cols: ThemeCol[]
   modified: boolean
   expanded: boolean
+  flash?: boolean
   gridStyle: React.CSSProperties
   naming: ColorNaming
   onToggle: () => void
@@ -433,7 +453,10 @@ function MatrixRow({
   const isEven = index % 2 === 1
 
   return (
-    <div className={expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
+    <div
+      id={`color-role-${role.key}`}
+      className={flash ? COLOR_FLASH : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}
+    >
       <div className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]" style={gridStyle}>
         {/* Name only — description + copyable var move into the expanded editor
             so each row stays a single, compact line.
@@ -456,7 +479,7 @@ function MatrixRow({
           <span
             aria-hidden
             className={`absolute inset-0 pointer-events-none ${
-              expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+              flash ? 'bg-accent-ui/[0.12]' : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
             }`}
           />
           <span aria-hidden className="absolute inset-0 pointer-events-none group-hover:bg-black/[0.025] dark:group-hover:bg-white/[0.04]" />
@@ -508,7 +531,7 @@ function MatrixRow({
           aria-expanded={expanded}
           aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
           className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors sticky right-0 z-10 border-l border-line ${
-            expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+            flash ? 'bg-accent-ui/[0.12]' : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
           }`}
         >
           <TuneIcon active={expanded} />
@@ -645,6 +668,7 @@ export default function Step3_SemanticTokens({
   onPreviewThemeChange,
   tabBar,
   railCollapsed = false,
+  revealRole,
 }: {
   /** Color's three-tab bar — Groups | icon-rail lives in FoundationWorkbench. */
   tabBar?: ReactNode
@@ -665,6 +689,8 @@ export default function Step3_SemanticTokens({
    *  changes what it LISTS per tab, so collapsing it on Primitives and finding
    *  it expanded on Semantics would read as two different columns. */
   railCollapsed?: boolean
+  /** Preview specimen asked to open this token / group (`key` + `seq` so repeats work). */
+  revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
 }) {
   const store = useDesignStore()
   const {
@@ -851,6 +877,7 @@ export default function Step3_SemanticTokens({
   const [activeCategory, setInternalCategory] = useState<SemanticCategory>('all')
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [flashKey, setFlashKey] = useState<string | null>(null)
   /** The token table's scroll container — the Token Details dialog's anchor. */
   const tableRef = useRef<HTMLDivElement>(null)
 
@@ -1025,6 +1052,57 @@ export default function Step3_SemanticTokens({
           })()
       ).filter((t) => !q || t.name.toLowerCase().includes(q))
     : []
+
+  useEffect(() => {
+    if (!revealRole?.key) return
+    setQuery('')
+
+    if (revealRole.as === 'group') {
+      const focus = revealRole.key as SemanticFocus
+      if (isFlat) {
+        const cat: SemanticCategory =
+          focus === 'border' ? 'border' : focus === 'content' || focus === 'icon' ? 'content' : 'background'
+        selectCategory(cat)
+      } else {
+        const exact = navItems.find((i) => i.key === focus)
+        const mapped = navItems.find((i) => i.key !== 'all' && focusForNavKey(i.key) === focus)
+        const iconFallback = navItems.find((i) => i.key === 'content')
+        const nav = exact?.key ?? mapped?.key ?? (focus === 'icon' ? iconFallback?.key : undefined) ?? 'all'
+        setArchCategory(nav)
+        onFocusChange?.(focusForNavKey(nav) ?? 'all')
+      }
+      return
+    }
+
+    const id = revealRole.key
+    if (isFlat) {
+      const cat = flatCategoryForRole(id)
+      if (cat) selectCategory(cat)
+      setExpandedRole(id)
+    } else {
+      const nav = archView ? archNavForToken(id, archView.categories) : null
+      if (nav) {
+        setArchCategory(nav)
+        onFocusChange?.(focusForNavKey(nav) ?? 'all')
+        setArchEditing(id)
+      }
+    }
+    setFlashKey(id)
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const t0 = window.setTimeout(() => {
+      document.getElementById(`color-role-${id}`)?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'center',
+      })
+    }, 80)
+    const t1 = window.setTimeout(() => setFlashKey(null), 1400)
+    return () => {
+      window.clearTimeout(t0)
+      window.clearTimeout(t1)
+    }
+    // Nav + projection are read at reveal time; seq is what retriggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealRole?.key, revealRole?.seq, revealRole?.as])
   // Name column keeps a real minimum — with flexible value columns it would
   // otherwise collapse to 0 on narrow panes (overflow-auto scrolls). Value
   // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
@@ -1072,7 +1150,7 @@ export default function Step3_SemanticTokens({
     // foundation-level swap should animate. (`reduce` is still used by the
     // modals below.)
     <div className="h-full flex flex-col">
-      {/* ── Body: categories flush under Groups; tabs · contrast · table on the right ── */}
+      {/* ── Body: categories flush under Groups; tabs · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
         <nav
           aria-label="Token categories"
@@ -1167,9 +1245,6 @@ export default function Step3_SemanticTokens({
               </button>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-4 pl-4 pr-3 h-[52px] flex-shrink-0 border-b border-line/60 min-w-0 overflow-x-auto">
-          <ArchContrastStrip kind={semanticArchitecture} />
         </div>
 
         {/* Token table — scrolls internally; column header stays pinned.
@@ -1298,8 +1373,13 @@ export default function Step3_SemanticTokens({
                   // Raw CSS (vibrancy alphas, blur) has no primitive to swap,
                   // so those rows stay display-only.
                   const editable = archModeKeys.some((m) => parseRef(t.modes[m]?.label ?? ''))
+                  const flash = flashKey === t.id
                   return (
-                  <div key={t.id} className={isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}>
+                  <div
+                    key={t.id}
+                    id={`color-role-${t.id}`}
+                    className={flash ? COLOR_FLASH : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}
+                  >
                     <div
                       // `group` so the pinned name cell can re-paint this row's
                       // hover tint over its own opaque base (the flat matrix's
@@ -1315,7 +1395,7 @@ export default function Step3_SemanticTokens({
                         <span
                           aria-hidden
                           className={`absolute inset-0 pointer-events-none ${
-                            isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
+                            flash ? 'bg-accent-ui/[0.12]' : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
                           }`}
                         />
                         <span aria-hidden className="absolute inset-0 pointer-events-none group-hover:bg-black/[0.025] dark:group-hover:bg-white/[0.04]" />
@@ -1377,7 +1457,7 @@ export default function Step3_SemanticTokens({
                         aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
                         disabled={!editable}
                         className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors sticky right-0 z-10 border-l border-line ${
-                          isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+                          flash ? 'bg-accent-ui/[0.12]' : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
                         }`}
                       >
                         <TuneIcon active={isOpen} />
@@ -1537,6 +1617,7 @@ export default function Step3_SemanticTokens({
                   })}
                   modified={isModified(role)}
                   expanded={expandedRole === role.key}
+                  flash={flashKey === role.key}
                   gridStyle={gridStyle}
                   naming={colorNaming}
                   onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}

@@ -5,14 +5,13 @@
 // They live here, shared, rather than in either article, because a foundation
 // and a component should still read as the same KIND of page even though they
 // now live under two separate top-nav destinations: same breadcrumb shape,
-// same Copy Page, same section headings, same code block, same TOC, same
+// same Copy context to Agents, same section headings, same code block, same TOC, same
 // prev/next. Two copies of these would let the two drift apart the way the
 // pre-merge Documentation/Components split once did.
 
 import { useState, type ReactNode } from 'react'
 import { buildSkillExport } from '../../../lib/skillExport'
-import { SparkleCircleIcon } from '../../ui/icons'
-import { RainbowButton } from '../../ui/rainbow-button'
+import { AIContextButton } from '../../ui/AIContextButton'
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -43,89 +42,14 @@ export function CopyButton({
   )
 }
 
-const AGENT_CONTEXT_HINT =
-  'Copies this page as markdown for an AI agent: Figma set, live tokens (radius, padding, size, spacing, type), semantic color bindings, and the API. Paste it into Cursor or Claude so the agent can implement the component without guessing names or px.'
-
-/** Header CTA — Magic UI Rainbow Button (animated spectrum border + glow). */
+/** Component article header — `AIContextButton` scoped to one catalogue page. */
 export function CopyAgentContextButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  async function copy() {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-  return (
-    <div className="flex items-center gap-1.5">
-      <RainbowButton type="button" size="sm" onClick={copy} className="relative z-10">
-        {copied ? (
-          <>
-            <span className="text-[11px] leading-none">✓</span>
-            Copied
-          </>
-        ) : (
-          <>
-            <SparkleCircleIcon size={14} />
-            Copy context to Agents
-          </>
-        )}
-      </RainbowButton>
-      <span className="relative group/hint inline-flex">
-        <button
-          type="button"
-          aria-label="What Copy context to Agents does"
-          className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-[10px] font-semibold leading-none hover:text-fg hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-        >
-          i
-        </button>
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute right-0 top-full mt-2 w-60 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-2 text-left opacity-0 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100 transition-opacity duration-150 z-40 shadow-lg"
-        >
-          {AGENT_CONTEXT_HINT}
-        </span>
-      </span>
-    </div>
-  )
+  return <AIContextButton scope="component" markdown={text} />
 }
 
-/** Same Skill zip the Export wizard ships — SKILL.md + token references.
- *  Overview is the full-system sheet, so download is more useful than copy. */
+/** Overview header — same chrome, global Skill markdown (zip still lives in Export). */
 export function DownloadSkillButton() {
-  const [done, setDone] = useState(false)
-  function download() {
-    const pack = buildSkillExport()
-    const copy = new ArrayBuffer(pack.zip.byteLength)
-    new Uint8Array(copy).set(pack.zip)
-    const url = URL.createObjectURL(new Blob([copy], { type: 'application/zip' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${pack.name}.zip`
-    a.click()
-    URL.revokeObjectURL(url)
-    setDone(true)
-    setTimeout(() => setDone(false), 2000)
-  }
-  return (
-    <RainbowButton
-      type="button"
-      size="sm"
-      onClick={download}
-      title="Download the Figma MCP / Agent Skill zip — SKILL.md at the zip root; unzip into .claude/skills or .cursor/skills"
-      className="relative z-10"
-    >
-      {done ? (
-        <>
-          <span className="text-[11px] leading-none">✓</span>
-          Downloaded
-        </>
-      ) : (
-        <>
-          <SparkleCircleIcon size={14} />
-          Download Skill
-        </>
-      )}
-    </RainbowButton>
-  )
+  return <AIContextButton scope="global" markdown={() => buildSkillExport().skillMd} />
 }
 
 // ── Page chrome ──────────────────────────────────────────────────────────────

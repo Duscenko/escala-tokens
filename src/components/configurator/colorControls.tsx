@@ -107,7 +107,7 @@ export const COLOR_RAIL_WIDTH = 198
 // `FoundationIconRail` already makes: drop the labels, keep the glyphs).
 export const COLOR_RAIL_COLLAPSED_WIDTH = 56
 
-/** The collapse/expand control. Lives in the "Groups" header's trailing slot —
+/** The collapse/expand control. Lives in the family-heading row's trailing slot —
  *  that row was already `justify-between` around a lone label, i.e. the slot
  *  was reserved and empty.
  *  Same glyph as `PreviewPanel`'s own collapse button (a panel split by a
@@ -126,8 +126,8 @@ export function RailToggle({ collapsed, onClick }: { collapsed: boolean; onClick
       type="button"
       onClick={onClick}
       aria-expanded={!collapsed}
-      aria-label={collapsed ? 'Expand the groups column' : 'Collapse the groups column'}
-      title={collapsed ? 'Expand groups' : 'Collapse groups — give the table more width'}
+      aria-label={collapsed ? 'Expand the variable list' : 'Collapse the variable list'}
+      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar — give the table more width'}
       className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-fg-faint hover:text-fg hover:bg-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -739,13 +739,16 @@ export function ScaleRow({
   baseIndex?: number
   showNumbers?: boolean
   labels?: string[]
-  size?: 'default' | 'thin'
+  /** `md` = `h-9`, same outer box as Color Agent (`size-icon`). Used by the
+   *  primitives quick-edit strip so hex · ramp · agent share one height. */
+  size?: 'default' | 'thin' | 'md'
   /** Renders the tone number INSIDE its swatch (instead of as a caption above)
    *  so the number doubles as a live contrast check against the tone itself.
-   *  Taller (`h-11`) to fit the label, but the SAME `rounded-md` corner as
-   *  every other ScaleRow — a one-off `rounded-[13px]` here (matched to the
-   *  ColorSelect dropdown above it) read as inconsistent with the state-color
-   *  ramps sitting directly below it, on the same tab. */
+   *  Default is `h-11`; the primitives strip passes `size="md"` (`h-9`) so the
+   *  ramp matches Color Agent and the hex chip. Same `rounded-md` as other
+   *  ScaleRows — a one-off `rounded-[13px]` here (matched to the ColorSelect
+   *  dropdown above it) read as inconsistent with the state-color ramps
+   *  sitting directly below it, on the same tab. */
   numbersInside?: boolean
   /** Renders the 12 tones as ONE continuous bar — no gaps between swatches,
    *  only the outer corners rounded — so the ramp reads as a single gradient
@@ -814,7 +817,7 @@ export function ScaleRow({
             )}
             <Cell
               {...(onSelect ? { onClick: () => onSelect(k, color), type: 'button' as const } : {})}
-              className={`${numbersInside ? 'h-11' : thin ? 'h-4' : 'h-8'} w-full ${corner} relative flex items-center justify-center overflow-hidden transition-transform ${
+              className={`${thin ? 'h-4' : numbersInside ? (size === 'md' ? 'h-9' : 'h-11') : 'h-8'} w-full ${corner} relative flex items-center justify-center overflow-hidden transition-transform ${
                 // The anchor ring goes INSET when joined — an offset ring would
                 // punch a gap through the seams the joined variant exists to
                 // close. Tone 9 stays marked either way (see CLAUDE.md).
