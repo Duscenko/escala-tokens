@@ -15,7 +15,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Brand / user | `.impeccable.md` |
 | Color math | `.claude/skills/color-science-core/SKILL.md` |
 | Agent copy envelope | `src/lib/aiContext.ts` (`agent-context/v1`) |
-| Skill zip builder | `src/lib/skillExport.ts` |
+| Skill zip builder | `src/lib/agentBundle/` (pure) · `src/lib/skillExport.ts` (store wrapper) |
 
 Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do not paste the whole file into context.
 
@@ -38,7 +38,8 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 src/store/useDesignStore.ts     state + persist
 src/lib/tokenGenerator.ts       store → Escala JSON
 src/lib/exportWizard.ts         w3c | escala | md | skill
-src/lib/skillExport.ts          Agent Skill zip (store-bound today)
+src/lib/agentBundle/            TokenJSON → Skill files/zip (no store)
+src/lib/skillExport.ts          store wrapper around agentBundle
 src/lib/color/                  ramps, APCA, gamut, CVD
 src/lib/componentCatalogue.ts   58 components (props, a11y)
 api/tokens.ts                   publish / fetch Blob

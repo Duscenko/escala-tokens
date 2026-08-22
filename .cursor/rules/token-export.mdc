@@ -11,5 +11,5 @@ alwaysApply: false
 - Additive keys only. Bump `TOKEN_SCHEMA_VERSION` only per `docs/agent-native/CONTRACTS.md`, and update `tokens.schema.json`.
 - `/api/tokens` query params, CORS, and Blob keys do not change. New agent/MCP routes are a new file.
 - Wizard formats today: `w3c | escala | md | skill`. Do not replace `skill`; add a format later (`agent-bundle`) beside it.
-- `skillExport.ts` is store-bound. New bundle builders must accept `TokenJSON` so they can run off Blob (see PLAN.md Phase 2).
+- Skill zip builders live in `src/lib/agentBundle/` and take `TokenJSON`. `skillExport.ts` is only the store wrapper. Do not put new formats back on the store.
 - CSS code syntax on Figma variables needs the `var()` wrapper.

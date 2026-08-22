@@ -35,7 +35,8 @@ This endpoint is frozen. Agent MCP will be a new path; see PLAN.md Phase 3.
 
 - `src/lib/tokenGenerator.ts` — schema version + JSON
 - `src/lib/aiContext.ts` — `agent-context/v1` envelope
-- `src/lib/skillExport.ts` — Skill zip
+- `src/lib/agentBundle/` — TokenJSON → Skill files/zip (no store)
+- `src/lib/skillExport.ts` — store wrapper around agentBundle
 - `src/lib/componentCatalogue.ts` — components, props, a11y
 - `src/lib/color/apca.ts` — the only contrast math
 - `../scalable-designs-figma-plugin/src/code.ts` — Figma import (authoritative component sets)

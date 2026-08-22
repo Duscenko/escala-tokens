@@ -61,14 +61,14 @@ Repo-only, no runtime. Risk: none.
 - [x] `llms.txt` — crawl/routing table
 - [ ] Optional later: a 3-line pointer at the top of `CLAUDE.md` once the current WIP lands
 
-### Phase 2 — `agentBundle/` (2–3 days)
+### Phase 2 — `agentBundle/` (done)
 
-1. Move markdown builders in `skillExport.ts` behind `(json: TokenJSON, opts) => files`.
-2. Leave `buildSkillExport()` calling the store, then the pure function.
-3. Parity test against today's Skill zip.
-4. Do **not** change wizard UX yet.
+- [x] `src/lib/agentBundle/` — `buildAgentBundle(json)` / `buildAgentSkillFiles(json)` (no store, no `tokenGenerator`)
+- [x] `buildSkillExport()` is a thin store wrapper — wizard + copy-context imports unchanged
+- [x] Parity test: JSON-only zip bytes === store wrapper (`src/lib/__tests__/agentBundle.test.ts`)
+- [x] Import-boundary test: `agentBundle/` must not import `useDesignStore` or `tokenGenerator`
 
-Unblocks Phase 3 and 4 with one generator.
+Unblocks Phase 3 and 4 with one generator. Do **not** change wizard UX until Phase 4.
 
 ### Phase 3 — Access / MCP (3–5 days)
 
@@ -126,8 +126,8 @@ GitHub export (`lib/github.ts`) should grow the same files once the zip is stabl
 
 ```
 0 freeze  →  1 context on disk  →  2 pure agentBundle  →  3 MCP  →  4 export format  →  5 CI + evals
-     ▲                ▲                     │
-     └──── you are here (0+1 shipped) ──────┘
+     ▲                ▲                     ▲
+     └──── 0+1+2 shipped ───────────────────┘
 ```
 
 Do not start Phase 4 templates until Phase 2 exists. Templates generated from a store-bound function cannot run in MCP or CI.

@@ -99,7 +99,7 @@ Plugin also *reads* optional `copy` / `borders` that the configurator does not e
 
 `src/lib/aiContext.ts` — `format: agent-context/v1`, `source: escala-tokens`, scopes `global | component | variable`.
 
-Do not invent a second front-matter dialect. Skill zip layout: `SKILL.md` at the archive root (Figma requirement), plus `references/`.
+Do not invent a second front-matter dialect. Skill zip layout: `SKILL.md` at the archive root (Figma requirement), plus `references/`. Builders live in `src/lib/agentBundle/` and take `TokenJSON` — do not re-bind them to the store.
 
 ## 8. What you may add without a bump
 
