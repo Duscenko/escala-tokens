@@ -95,11 +95,12 @@ New `WizardFormat = 'agent-bundle'` beside `w3c | escala | md | skill`. Skill fo
 
 `templates/` and `checkers/` are generated from the user's `TokenJSON` + catalogue, not generic stubs. A checker that does not know `Action/primary/default` is theatre.
 
-### Phase 5 — Validation (1 week)
+### Phase 5 — Validation (done)
 
-- GitHub Actions: `npm test` + `npm run build` (none exists today).
-- Agent evals: given the bundle, does the model emit `var(--color-action-primary-default)` instead of `#7f56d9`?
-- Optional axe on specimens — **not** in the color-layer Vitest project (`environment: 'node'` is load-bearing). New project or Playwright job.
+- [x] `.github/workflows/ci.yml` — `npm test` + `npm run eval` + `npm run build`
+- [x] `evals/agent-output/` — pass/fail corpus; `npm run eval` runs the **generated** `token-lint.mjs` on them (no live model)
+- [x] A pair that uses `#7f56d9` / raw `16px` fails; `var(--color-action-primary-default)` passes
+- [ ] axe / Playwright — still out of the color-layer Vitest project (`environment: 'node'` is load-bearing). Separate job if we ever add it.
 
 ## Guardrails while building this
 
@@ -113,11 +114,11 @@ New `WizardFormat = 'agent-bundle'` beside `w3c | escala | md | skill`. Skill fo
 
 ```
 0 freeze  →  1 context on disk  →  2 pure agentBundle  →  3 MCP  →  4 export format  →  5 CI + evals
-     ▲                ▲                     ▲        ▲            ▲
-     └──── 0–4 shipped ───────────────────────────────────────────┘
+     ▲                ▲                     ▲        ▲            ▲                ▲
+     └──── 0–5 shipped ────────────────────────────────────────────────────────────┘
 ```
 
-Do not start Phase 4 templates until Phase 2 exists. Templates generated from a store-bound function cannot run in MCP or CI.
+Axe on specimens is the only Phase 5 leftover — do not fold it into `vitest` `environment: 'node'`.
 
 ## Out of scope (until someone asks)
 

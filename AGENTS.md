@@ -17,6 +17,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Agent copy envelope | `src/lib/aiContext.ts` (`agent-context/v1`) |
 | Skill zip builder | `src/lib/agentBundle/` (pure) · `src/lib/skillExport.ts` (store wrapper) |
 | MCP tools | `src/lib/agentAccess/` · `api/mcp.ts` · `docs/agent-native/MCP.md` |
+| Evals | `evals/agent-output/` · `npm run eval` |
 
 Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do not paste the whole file into context.
 
@@ -52,6 +53,7 @@ api/tokens.ts                   publish / fetch Blob
 
 ```bash
 npm test                 # Vitest, node env — run before build
+npm run eval             # generated token-lint vs evals/agent-output
 npm run build            # tsc -b && vite
 npm run color:report     # reports/color-audit.json (gitignored)
 npm run bundle:plugin    # refresh public/scalable-designs-figma-plugin.zip

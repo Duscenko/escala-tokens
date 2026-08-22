@@ -1,0 +1,23 @@
+{
+  "project": "Eval",
+  "colors": {
+    "primitive": { "accent-6": "#7f56d9" },
+    "themeOrder": ["light", "dark"],
+    "semanticArchitecture": "categorical",
+    "architecture": {
+      "kind": "categorical",
+      "tokens": {
+        "action": {
+          "primary.default": { "light": "#7f56d9", "dark": "#9e77ed" }
+        },
+        "content": {
+          "on-action": { "light": "#ffffff", "dark": "#111111" }
+        }
+      }
+    }
+  },
+  "typography": { "fontFamily": "Inter", "sizes": { "text-md": "16px" }, "weights": { "medium": 500 } },
+  "spacing": { "4": "16px" },
+  "radius": { "md": "8px" },
+  "atoms": ["Button"]
+}

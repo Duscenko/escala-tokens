@@ -42,6 +42,7 @@ The source of truth for a generated system is the live token payload, not this r
 - `src/lib/skillExport.ts` — store wrapper around agentBundle
 - `src/lib/agentAccess/` — MCP tools (no store)
 - `api/mcp.ts` — MCP HTTP + Blob read
+- `evals/agent-output/` — pass/fail corpus for the generated checker
 - `src/lib/componentCatalogue.ts` — components, props, a11y
 - `src/lib/color/apca.ts` — the only contrast math
 - `../scalable-designs-figma-plugin/src/code.ts` — Figma import (authoritative component sets)
