@@ -201,8 +201,8 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
   // every KEYSTROKE — and each distinct slug is its own blob server-side
   // (`put(\`tokens/<project>.json\`)` in api/tokens.ts). Publishing straight
   // off the dep change wrote one blob per character typed ("g", "gh", "gho"…),
-  // polluting `?list=1` and, worse, the bare `/api/tokens` fallback, which
-  // serves whichever blob was written LAST to every plugin pinned to that URL.
+          // polluting leftover blobs. A bare `/api/tokens` (no ?project=) is
+          // rejected — each keystroke would still have created a new slug.
   // So: publish immediately on mount (opening this screen IS the status
   // check), debounce every later change on the same 1.5s beat
   // `useAutoFigmaSync` already uses for exactly this reason.

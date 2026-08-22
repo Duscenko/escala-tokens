@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { head, list } from '@vercel/blob'
+import { head } from '@vercel/blob'
 import { handleMcpMessage, mcpDiscovery } from '../src/lib/agentAccess/mcp'
 import type { TokenJSON } from '../src/lib/agentBundle/types'
+import { tokenBlobKey } from '../src/lib/publishTrust'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -9,46 +10,22 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, MCP-Protocol-Version',
 }
 
-const PREFIX = 'tokens/'
-const GLOBAL_KEY = 'design-tokens.json'
-
 function slugifyProject(raw: unknown): string | null {
   if (typeof raw !== 'string') return null
   const slug = raw.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   return slug || null
 }
 
-async function latestBlobUrl(): Promise<string | null> {
-  try {
-    const { blobs } = await list()
-    if (blobs.length === 0) return null
-    const newest = blobs.reduce((a, b) => (a.uploadedAt >= b.uploadedAt ? a : b))
-    return newest.url
-  } catch {
-    return null
-  }
-}
-
 async function loadTokens(project?: string | null): Promise<TokenJSON | null> {
   const slug = slugifyProject(project)
+  if (!slug) return null
   try {
-    const url = slug
-      ? (await head(`${PREFIX}${slug}.json`)).url
-      : await latestBlobUrl()
+    const url = (await head(tokenBlobKey(slug))).url
     if (!url) return null
     const raw = await fetch(url)
     if (!raw.ok) return null
     return (await raw.json()) as TokenJSON
   } catch {
-    if (!slug) {
-      try {
-        const url = (await head(GLOBAL_KEY)).url
-        const raw = await fetch(url)
-        return raw.ok ? ((await raw.json()) as TokenJSON) : null
-      } catch {
-        return null
-      }
-    }
     return null
   }
 }

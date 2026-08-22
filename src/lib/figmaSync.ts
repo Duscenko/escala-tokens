@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
 import { generateTokenJSON } from './tokenGenerator'
+import { DEFAULT_PUBLISH_ORIGIN } from './agentInstall'
+import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 
 // Single source of truth for the publish-to-Figma flow. Both the manual "Sync"
@@ -24,6 +26,15 @@ export function syncProjectId(): string {
   return slugify(useDesignStore.getState().projectName) || 'design-system'
 }
 
+/**
+ * Origin used for published URLs (Figma Sync and MCP). Same host for both so
+ * a project slug copied from Sync is valid on `resolve_token`.
+ */
+export function publishOrigin(): string {
+  if (typeof window === 'undefined') return DEFAULT_PUBLISH_ORIGIN
+  return window.location.origin || DEFAULT_PUBLISH_ORIGIN
+}
+
 /** Relative endpoint used for the POST (and what the plugin should GET). */
 export function syncPath(): string {
   return `/api/tokens?project=${encodeURIComponent(syncProjectId())}`
@@ -31,25 +42,45 @@ export function syncPath(): string {
 
 /** Absolute, copy-pasteable sync URL for the active system (for display). */
 export function syncUrl(): string {
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  return `${origin}${syncPath()}`
+  return `${publishOrigin()}${syncPath()}`
+}
+
+export function getStoredClaim(slug: string): string | null {
+  if (typeof localStorage === 'undefined') return null
+  return localStorage.getItem(claimStorageKey(slug))
+}
+
+export function setStoredClaim(slug: string, claim: string): void {
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(claimStorageKey(slug), claim)
 }
 
 /**
  * POST the current token set to this system's scoped endpoint so an installed
  * plugin picks it up on its next sync. Records the publish time on success.
  * Resolves to whether the publish succeeded (never throws).
+ *
+ * First successful publish to a slug returns a claim; later writes send it as
+ * `Authorization: Bearer`. The claim also lands in `.escala/system.json` when
+ * the system is pushed to GitHub, so another machine can recover it.
  */
 export async function publishTokens(): Promise<boolean> {
   try {
-    // The blob IS generateTokenJSON() — nested `colors.architecture` included.
-    // The plugin GETs this URL and must not reshape it.
+    const slug = syncProjectId()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    const claim = getStoredClaim(slug)
+    if (claim) headers.Authorization = `Bearer ${claim}`
+
     const res = await fetch(syncPath(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(generateTokenJSON()),
     })
     if (res.ok) {
+      const body = (await res.json().catch(() => null)) as { claim?: unknown } | null
+      if (typeof body?.claim === 'string' && body.claim) {
+        setStoredClaim(slug, body.claim)
+      }
       useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
     }
     return res.ok

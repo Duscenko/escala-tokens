@@ -1,22 +1,24 @@
 # Frozen contracts
 
-These are the seams that already have consumers (Figma plugin zips in the wild, persisted Zustand stores, Vitest color layer). Change them only with a version bump and a migration. See [`PLAN.md`](./PLAN.md) for the agent-native roadmap.
+These are the seams that already have consumers (the Figma plugin, persisted Zustand stores, Vitest color layer). Change them only with a version bump and a migration. See [`PLAN.md`](./PLAN.md) for the agent-native roadmap.
 
 Machine-readable shape: [`tokens.schema.json`](./tokens.schema.json). Source of the payload: `src/lib/tokenGenerator.ts` (`generateTokenJSON`, `TOKEN_SCHEMA_VERSION`).
 
-## 1. HTTP — `/api/tokens` is frozen
+## 1. HTTP — `/api/tokens`
 
 File: `api/tokens.ts`. Consumer: Figma plugin (`scalable-designs-figma-plugin`), including already-downloaded zips.
 
+`/api/tokens` is a **live-sync cache**, not durable storage. The editor snapshot lives in the browser and, when the designer connects GitHub, in `.escala/system.json`. Do not add login to hold systems.
+
 | Method | Behavior |
 |---|---|
-| `GET /api/tokens?project=<slug>` | Blob `tokens/<slug>.json` |
-| `GET /api/tokens` | Most recently published blob (legacy pin) |
-| `GET /api/tokens?list=1` | `{ systems: [{ project, updatedAt }] }` |
-| `POST /api/tokens?project=<slug>` | Write `tokens/<slug>.json` |
-| `POST /api/tokens` | Legacy key `design-tokens.json` |
+| `GET /api/tokens?project=<slug>` | Public read of blob `tokens/<slug>.json`. Unauthenticated. Required. |
+| `GET /api/tokens` | `400` — no global latest blob. |
+| `GET /api/tokens?list=1` | Query param kept. Response is `{ systems: [], listing: false }` — no enumeration. |
+| `POST /api/tokens?project=<slug>` | Write `tokens/<slug>.json` from this app only (`Origin` must match the deployment). First write issues a publish claim; later writes require `Authorization: Bearer`. |
+| `POST /api/tokens` | `400` — same as GET. There is no `design-tokens.json` key. |
 
-Do not rename query params, change CORS (`*`), or require auth. New capabilities go to a **new** path. `/api/mcp` is that path (read-only JSON-RPC). Do not switch `@vercel/blob` to KV.
+Do not rename query params or change CORS (`*`) — the plugin's GET is cross-origin. GET stays unauthenticated. POST is same-origin plus a per-slug claim; that is not a user account. New read capabilities still go to `/api/mcp`. Do not switch `@vercel/blob` to KV.
 
 Slug must stay aligned with the configurator (`slugify(projectName)`).
 
@@ -43,13 +45,16 @@ Rules:
 
 `src/types/tokens.ts` is a **partial** TypeScript view, not the contract. The contract is `generateTokenJSON()`'s return value.
 
-## 3. Persist — Zustand store
+## 3. Persist — Zustand store and GitHub
 
-File: `src/store/useDesignStore.ts`. State is persisted in the browser.
+File: `src/store/useDesignStore.ts`. Live state is persisted in the browser (`localStorage`). That is a session, not a backup.
 
-- New fields need a **migration** (default + backfill). Do not reshape existing keys in place.
+Durable save is a GitHub repo: `tokens.json` (export) + `.escala/system.json` (editor snapshot + publish claim). Restoring on another machine is "connect the same repo". Do not add a user-account store for this.
+
+- New Zustand fields need a **migration** (default + backfill). Do not reshape existing keys in place.
 - `generateTokenJSON()` must emit every new field you add to the store that a consumer should see. Docs / Skill / CSS exporters are not automatic.
 - `figmaLastPublishAt` is written by publish. Auto-sync hashes `generateTokenJSON()` so that write cannot loop.
+- `.escala/system.json` format is `escala-system/v1` (`src/lib/escalaSystem.ts`). Additive fields only.
 
 ## 4. Color layer — one implementation
 

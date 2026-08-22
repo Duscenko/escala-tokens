@@ -8,11 +8,12 @@ export { TOOL_SPECS }
 
 async function requireTokens(loadTokens: LoadTokens, project?: unknown): Promise<TokenJSON> {
   const slug = typeof project === 'string' && project.trim() ? project.trim() : null
+  if (!slug) {
+    throw new Error('project is required. Use the slug from /api/tokens?project=<slug>.')
+  }
   const json = await loadTokens(slug)
   if (!json) {
-    throw new Error(slug
-      ? `No tokens published for project "${slug}". Publish from the configurator or call get_tokens without a project for the latest set.`
-      : 'No tokens published yet.')
+    throw new Error(`No tokens published for project "${slug}". Publish from the configurator, then pass that slug.`)
   }
   return json
 }

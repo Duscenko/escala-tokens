@@ -404,9 +404,6 @@ export interface DesignSnapshot {
   githubLastPushAt: string | null
 }
 
-// A design system saved to the local registry. Saving requires a GitHub push,
-// so `id` is the repo full_name — pushing twice to the same repo overwrites
-// the entry, mirroring what happened to the repo's contents.
 export interface SavedSystem {
   id: string
   name: string

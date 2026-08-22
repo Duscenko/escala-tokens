@@ -9,7 +9,7 @@ The source of truth for a generated system is the live token payload, not this r
 - [AGENTS.md](AGENTS.md): Router — hard rules, where code lives, what not to invent
 - [Contracts](docs/agent-native/CONTRACTS.md): Frozen HTTP, schema versions, persist, color, naming
 - [Token JSON Schema](docs/agent-native/tokens.schema.json): Machine-readable `generateTokenJSON()` shape
-- [Agent-native plan](docs/agent-native/PLAN.md): Five layers (Context, Knowledge, Access, Generation, Validation)
+- [Get started (in-app Docs)](docs/agent-native/GET-STARTED-PLAN.md): Destinations (Figma / Code / AI), not file formats
 - [CLAUDE.md](CLAUDE.md): Deep reference — load by section, not as a system prompt
 - [Brand context](.impeccable.md): Users and aesthetic direction
 
@@ -28,9 +28,8 @@ The source of truth for a generated system is the live token payload, not this r
 - `POST https://escalatokens.com/api/mcp` — MCP JSON-RPC (`initialize`, `tools/list`, `tools/call`)
 - [MCP tools](docs/agent-native/MCP.md)
 - `GET https://escalatokens.com/docs/agent-native/tokens.schema.json` — Escala JSON Schema
-- `GET https://scalable-designs.vercel.app/api/tokens?project=<slug>` — published Escala JSON (frozen)
-- `GET https://scalable-designs.vercel.app/api/tokens?list=1` — published systems
-- `POST https://scalable-designs.vercel.app/api/tokens?project=<slug>` — publish (configurator)
+- `GET https://escalatokens.com/api/tokens?project=<slug>` — published Escala JSON (public read)
+- `POST https://escalatokens.com/api/tokens?project=<slug>` — publish from the configurator (same-origin + claim)
 
 `/api/tokens` is frozen. Agents query tokens through `/api/mcp`.
 

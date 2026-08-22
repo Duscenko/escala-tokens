@@ -67,7 +67,7 @@ Any new panel header uses that height too. Their actions use the shared `ui/Head
 and Import JSON used to sit here too and are retired, see the Navigation model note below).
 
 > **Export is a guided flow, not a dump — and there is only ONE of it.** `TopNav`'s Export
-> pill opens `ExportWizard` (Source → Format → Export), backed by `lib/exportWizard.ts`.
+> pill opens `ExportWizard` (Source → Where → Export), backed by `lib/exportWizard.ts`.
 > **It's TRANSVERSAL, not a per-foundation action** — it used to sit in the
 > `FoundationIconRail` row beside Kits, which meant it only existed while `tab ===
 > 'foundations'` and read as a property of whichever foundation you happened to be editing.
@@ -94,15 +94,19 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > `accent` and `accent-dark` are one family two ways, exactly like the Primitives table's
 > light/dark columns). Every family checked = `primitiveFamilies: undefined` = the
 > pre-scoping payload byte-for-byte, so the default export never changed;
-> step 2 picks the format (W3C DTCG · Escala JSON · CSS · SCSS · Tailwind · Markdown) and
-> single-vs-per-collection files; step 3 summarizes and downloads. Rules that keep it honest:
+> step 2 picks the **destination** (Figma → `escala`, Code → `w3c`, AI → `agent-bundle`;
+> Skill is a nested Figma Make toggle, Markdown left the wizard for Save / Copy context)
+> and, for W3C only, single-vs-per-collection files; step 3 summarizes and downloads. On
+> AI, step 3 shows the same Install panel as Docs → Use with AI (`npx @escala/cli`
+> plus unzip fallback). Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
 >   disagree with `tokens.json`. Counts on screen are counts in the file.
 > - **Primitives' per-column export icon exports one ramp; it doesn't fork the export
 >   pipeline.** `ColumnExportMenu` (`ColorPrimitives.tsx`) sits in the **light** and
 >   **dark** column headers — per column, deliberately, because an icon there can only
 >   mean "this family, this appearance", which is the only scope a single ramp is useful
->   in. It opens a FORMAT popover (the same `WIZARD_FORMATS` list); each row is a
+>   in. It opens a FORMAT popover (`FAMILY_FORMAT_OPTIONS` — W3C, Escala JSON, Markdown;
+>   not the wizard's destination radios); each row is a
 >   `role="group"` of a plain-text label plus TWO dedicated icon buttons — **copy**
 >   (clipboard) and **download** (`downloadOne`, saves to disk) — each running the exact
 >   same `buildFamilyExport()` call, just handed to `navigator.clipboard` vs. a Blob/anchor,
@@ -116,14 +120,14 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   `EXPORT_MENU_W` is **420px**, wide enough that no format's hint text truncates with two
 >   40px icon columns on the right — measured against the longest hint (Escala JSON's);
 >   don't shrink it back down without re-checking that one.
->   **This popover has its own display names, layered on top of `WIZARD_FORMATS` rather than
->   renaming it** (`MENU_FORMAT_LABEL`/`MENU_FORMAT_BADGE`): W3C Design Tokens reads "W3C
+>   **This popover has its own display names, layered on top of `FAMILY_FORMAT_OPTIONS` rather than
+>   renaming the wizard** (`MENU_FORMAT_LABEL`/`MENU_FORMAT_BADGE`): W3C Design Tokens reads "W3C
 >   Design" here with a "Figma native" badge (mirroring Escala JSON's "Figma plugin" badge —
 >   W3C's flat `$value`/`$type` tree is what Figma's own "Import variables" accepts with no
 >   plugin, same shape of claim as Escala JSON needing the Escala plugin specifically). The
->   full wizard's Format step and Summary row still read "W3C Design Tokens" in full — that
->   view has room and no reason to abbreviate; only this compact, two-icon-per-row popover
->   does. Not a second
+>   wizard's Where step reads destinations (Figma / Code & other tools / AI assistant) — that
+>   view has room and a different job; only this compact, two-icon-per-row popover
+>   names file formats. Not a second
 >   exporter either way: `buildFamilyExport()` assembles a normal `WizardSelection` and
 >   runs it through `buildWizardExport`, so both actions are byte-identical to running the
 >   wizard scoped the same way. Escala JSON is the one entry that ISN'T scoped
@@ -138,7 +142,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   re-derive them from) and flattens it with the SAME `flattenScale` `tokenGenerator` uses
 >   for `colors.primitiveAlpha` itself, so `accent-a-1`…`accent-a-12` here can never disagree
 >   with what's actually in tokens.json. **Only `ALPHA_EXPORT_FORMATS` (W3C · Escala JSON ·
->   CSS · SCSS) are offered for an alpha family** — `ColumnExportMenu` filters `WIZARD_FORMATS`
+>   CSS · SCSS) are offered for an alpha family** — `ColumnExportMenu` filters `FAMILY_FORMAT_OPTIONS`
 >   down to that list when `isAlpha`. Tailwind and Markdown stay OFF the list on purpose:
 >   both delegate to `sectionExport`'s builders, which have zero concept of alpha primitives,
 >   and faking support there would reproduce the exact "hands over the wrong thing" bug this
@@ -247,28 +251,27 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     foundation is still ONE entry in `FOUNDATION_DOCS`; the master list, the TOC and
     prev/next all still derive from it.
 - **Rules that keep it honest:**
-  - **Docs' master list is Overview, then the eight foundations, in `FOUNDATION_DOCS`
-    order** — mirrors a component category's master list exactly (one entry point opens a
-    list of items, Overview is simply the list's first item, not a special case). Adding a
-    foundation there is automatic; nothing in `DocsView.tsx` enumerates them by hand.
+  - **Docs' master list is Get started (Figma / Code / AI), then System reference
+    (`OVERVIEW_KEY`), then the foundations in `FOUNDATION_DOCS` order.** Get started is
+    destinations, not file formats. Adding a foundation is still automatic; nothing in
+    `DocsView.tsx` enumerates them by hand. Guide keys live in `docs/getStarted.ts`.
   - **`componentCategory` (Components' rail selection) and `docFoundationKey` (Docs' open
     row) are independent pieces of state in `Configurator.tsx`, one per destination —
     switching Components' category never touches `docFoundationKey` and vice versa.** Both
     are lifted (not local to their view) so leaving a tab and coming back resumes on the
     same place instead of resetting — verified: Docs → Shadow → Next → Grid → Variables
     Generator → Docs → still on Grid; Components → Content & Surfaces → Avatar → Variables
-    Generator → Components → still on Avatar.
+    Generator → Components → still on Avatar. Default Docs landing is Get started
+    (`GET_STARTED_KEY`).
   - **Every foundation page carries "Edit tokens" → `selectFoundation(key)`**, opening the
     very editor it documents (and switching to the Variables Generator tab to do it). That
     link is what makes Docs documentation OF the Variables Generator rather than a parallel
     description of it. Keep `FoundationDoc.key` equal to the `FOUNDATIONS` key or it breaks
     silently.
-  - **`Overview` (`OVERVIEW_KEY = '__overview'`) is the whole-system sheet**, rendering
-    every foundation's sections in one column for hand-off/print. It is NOT a foundation —
-    it's the master list's own first row, the same way a category's master list doesn't
-    duplicate the category's name as one of its own items. Its TOC is one entry per
-    FOUNDATION, not per section: eight foundations × their sections is a crowded rail
-    nobody can scan.
+  - **`System reference` (`OVERVIEW_KEY = '__overview'`) is the whole-system sheet**,
+    rendering every foundation's sections in one column for hand-off/print. It is NOT a
+    foundation and is no longer the first rail row. Its TOC is one entry per FOUNDATION,
+    not per section: eight foundations × their sections is a crowded rail nobody can scan.
   - **`Prose` renders `inline code` from backticks.** The foundation copy names tokens
     constantly; a `<p>` printing its own backticks reads as an unrendered markdown file.
     One rule only — don't grow it into a markdown parser.
@@ -2277,11 +2280,12 @@ interface ComponentDef {
 
 ## API — /api/tokens
 
-- `GET /api/tokens?project=<id>` → returns that system's tokens (Blob key `tokens/<id>.json`)
-- `GET /api/tokens` (no project) → returns the **most recently published** set across the global key + every `tokens/*.json` (so plugins pinned to the bare URL still get "whatever was published last")
-- `GET /api/tokens?list=1` → `{ systems: [{ project, updatedAt }] }` — every published system, newest first
-- `POST /api/tokens?project=<id>` → saves to `tokens/<id>.json`; `POST /api/tokens` (no project) → legacy global key `design-tokens.json`
-- CORS headers allow `*` — required for Figma plugin to fetch cross-origin
+- `GET /api/tokens?project=<id>` → returns that system's tokens (Blob key `tokens/<id>.json`). Public, unauthenticated.
+- `GET /api/tokens` (no project) → `400`. There is no global latest blob.
+- `GET /api/tokens?list=1` → `{ systems: [], listing: false }` — query param kept, enumeration disabled.
+- `POST /api/tokens?project=<id>` → write from this app only (`Origin` + per-slug claim after first publish). Not a user login. Durable save is GitHub (`.escala/system.json`).
+- `POST /api/tokens` (no project) → `400`. Same as GET.
+- CORS headers allow `*` — required for Figma plugin GET, not a reason to leave POST open.
 - Uses `@vercel/blob` (free tier, 1GB). Do NOT switch to KV — it requires paid plan.
 - **Per-system scoping (Fase 2)** — each design system publishes to its own scoped key, derived from `slugify(projectName)`. The plugin syncs one system by pasting its scoped URL; switching systems no longer overwrites another's tokens. The plugin names its Figma variable collection after `project`, so different systems land in different collections.
 

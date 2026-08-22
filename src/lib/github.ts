@@ -93,6 +93,24 @@ async function putFile(token: string, repo: string, file: RepoFile, message: str
   })
 }
 
+function fromBase64(b64: string): string {
+  const bin = atob(b64.replace(/\n/g, ''))
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))
+}
+
+/**
+ * Reads a file from the repo. Returns null on 404.
+ */
+export async function getFile(token: string, repo: string, path: string): Promise<string | null> {
+  try {
+    const data = await gh<{ content?: string }>(token, `/repos/${repo}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`)
+    if (!data.content) return null
+    return fromBase64(data.content)
+  } catch {
+    return null
+  }
+}
+
 /**
  * Pushes the design-system files sequentially (the Contents API rejects
  * concurrent writes to the same branch with 409s).

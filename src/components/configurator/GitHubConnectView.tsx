@@ -4,9 +4,11 @@ import { useDesignStore, captureSnapshot } from '../../store/useDesignStore'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
 import { slugify } from '../../lib/utils'
+import { ESCALA_SYSTEM_PATH, parseEscalaSystem, serializeEscalaSystem } from '../../lib/escalaSystem'
+import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSync'
 import {
   getStoredToken, setStoredToken, clearStoredToken,
-  validateToken, listRepos, createRepo, pushFiles,
+  validateToken, listRepos, createRepo, pushFiles, getFile,
   type GitHubUser, type GitHubRepo,
 } from '../../lib/github'
 
@@ -39,6 +41,8 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
   const [pushState, setPushState] = useState<PushState>('idle')
   const [pushLog, setPushLog] = useState<string[]>([])
   const [pushError, setPushError] = useState<string | null>(null)
+
+  const [restoreState, setRestoreState] = useState<'idle' | 'loading' | 'restored' | 'empty' | 'error'>('idle')
 
   const slug = slugify(projectName) || 'design-system'
 
@@ -81,6 +85,51 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
     setGithubRepo(null)
   }
 
+  async function restoreFromRepo(fullName: string) {
+    const ghToken = getStoredToken()
+    if (!ghToken) return
+    setRestoreState('loading')
+    try {
+      const raw = await getFile(ghToken, fullName, ESCALA_SYSTEM_PATH)
+      if (!raw) {
+        setRestoreState('empty')
+        return
+      }
+      const parsed = parseEscalaSystem(JSON.parse(raw))
+      if (!parsed) {
+        setRestoreState('error')
+        return
+      }
+      const live = captureSnapshot(parsed.snapshot)
+      useDesignStore.setState({
+        ...live,
+        projectCreated: true,
+        githubRepo: fullName,
+      })
+      useDesignStore.getState().upsertSavedSystem({
+        id: fullName,
+        name: live.projectName,
+        description: live.projectDescription,
+        repo: fullName,
+        savedAt: parsed.savedAt,
+        snapshot: live,
+        source: 'github',
+      })
+      if (parsed.publishClaim) {
+        setStoredClaim(parsed.publishSlug, parsed.publishClaim)
+      }
+      setRestoreState('restored')
+    } catch {
+      setRestoreState('error')
+    }
+  }
+
+  async function handlePickRepo(fullName: string) {
+    setGithubRepo(fullName || null)
+    setRestoreState('idle')
+    if (fullName) await restoreFromRepo(fullName)
+  }
+
   async function handleCreateRepo() {
     const token = getStoredToken()
     const name = slugify(newRepoName.trim() || `${slug}-design-system`)
@@ -109,6 +158,14 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
       { path: 'tokens.json', content: JSON.stringify(generateTokenJSON(), null, 2) },
       { path: 'variables.css', content: buildCSS(useDesignStore.getState()) },
       { path: 'README.md', content: buildMarkdown(useDesignStore.getState()) },
+      {
+        path: ESCALA_SYSTEM_PATH,
+        content: serializeEscalaSystem({
+          snapshot: captureSnapshot(useDesignStore.getState()),
+          publishSlug: syncProjectId(),
+          publishClaim: getStoredClaim(syncProjectId()) ?? undefined,
+        }),
+      },
     ]
     try {
       await pushFiles(token, githubRepo, files, `chore(tokens): update ${projectName} design tokens`, (path) =>
@@ -216,7 +273,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
 
         <select
           value={githubRepo ?? ''}
-          onChange={(e) => setGithubRepo(e.target.value || null)}
+          onChange={(e) => { void handlePickRepo(e.target.value) }}
           aria-label="Target repository"
           className="bg-app border border-line rounded-lg px-3 py-2 text-sm text-fg outline-none focus:border-fg transition-colors"
         >
@@ -246,6 +303,25 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
           </button>
         </div>
         {repoError && <p className="text-xs text-red-500">{repoError}</p>}
+        {restoreState === 'loading' && (
+          <p className="text-xs text-fg-faint">Looking for {ESCALA_SYSTEM_PATH}…</p>
+        )}
+        {restoreState === 'restored' && (
+          <p className="text-xs text-emerald-600">Restored the editor from this repo.</p>
+        )}
+        {restoreState === 'empty' && (
+          <p className="text-xs text-fg-faint">
+            No editor snapshot in this repo yet. First push will write {ESCALA_SYSTEM_PATH}.
+          </p>
+        )}
+        {restoreState === 'error' && (
+          <p className="text-xs text-red-500">Could not read {ESCALA_SYSTEM_PATH} from this repo.</p>
+        )}
+        {githubRepo && repos.find((r) => r.full_name === githubRepo)?.private === false && (
+          <p className="text-xs text-amber-600">
+            This repository is public. The publish claim in {ESCALA_SYSTEM_PATH} would be visible to anyone — use a private repo to save a system you care about.
+          </p>
+        )}
       </section>
 
       {/* ── Step 3: Push ── */}
@@ -256,9 +332,12 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
         </div>
         <p className="text-xs text-fg-faint leading-relaxed">
           Commits <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>,{' '}
-          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">variables.css</code> and{' '}
-          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code> to{' '}
+          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">variables.css</code>,{' '}
+          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code> and{' '}
+          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">{ESCALA_SYSTEM_PATH}</code> to{' '}
           <span className="text-fg-muted font-mono text-[11px]">{githubRepo ?? '—'}</span>.
+          The <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">.escala</code> file is the
+          editor — without it, this repo is an export, not a save. Keep the repo private: it can hold the publish claim.
           {githubLastPushAt && (
             <span> Last push: {new Date(githubLastPushAt).toLocaleString()}.</span>
           )}

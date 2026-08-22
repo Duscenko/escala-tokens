@@ -23,7 +23,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   {
     name: 'get_tokens',
     description:
-      'Return the published Escala TokenJSON for a project slug (same payload as GET /api/tokens?project=). Omit project to get the most recently published system.',
+      'Return the published Escala TokenJSON for a project slug (same payload as GET /api/tokens?project=). project is required.',
     inputSchema: {
       type: 'object',
       properties: {

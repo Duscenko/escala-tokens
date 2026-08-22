@@ -15,6 +15,8 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Brand / user | `.impeccable.md` |
 | Color math | `.claude/skills/color-science-core/SKILL.md` |
 | Agent copy envelope | `src/lib/aiContext.ts` (`agent-context/v1`) |
+| Install recipes (wizard + Docs + CLI) | `src/lib/agentInstall.ts` · `src/lib/cliInstall.ts` · `AgentInstallPanel.tsx` |
+| CLI (`npx @escala/cli`) | `src/cli/main.ts` · `cli/package.json` · `npm run build:cli` |
 | Skill zip builder | `src/lib/agentBundle/` (pure) · `src/lib/skillExport.ts` (store wrapper) |
 | MCP tools | `src/lib/agentAccess/` · `api/mcp.ts` · `docs/agent-native/MCP.md` |
 | Evals | `evals/agent-output/` · `npm run eval` |
@@ -23,7 +25,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 
 ## Hard rules
 
-1. **`/api/tokens` is frozen.** Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay.
+1. **`/api/tokens` GET is frozen and public.** POST is same-origin plus a per-slug claim — not a user login. Agent access is `GET|POST /api/mcp`. CORS `*` and Blob stay. GitHub holds the editor (`.escala/system.json`); the blob is a live-sync cache.
 2. **Additive schema only.** `TOKEN_SCHEMA_VERSION` is `5` on `main`; working tree may be `6`. Never rename keys. Canonical component field is `atoms`.
 3. **One contrast implementation** — `src/lib/color/apca.ts`. Never `chroma.contrast` on hex. Never emit via channel clipping (`gamut.oklchToHex`).
 4. **Color layer is DOM-free.** Vitest is `environment: 'node'`. `npm run build` typechecks tests (`tsconfig.test.json`); a green `npm test` does not.
@@ -39,7 +41,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 ```
 src/store/useDesignStore.ts     state + persist
 src/lib/tokenGenerator.ts       store → Escala JSON
-src/lib/exportWizard.ts         w3c | escala | md | skill
+src/lib/exportWizard.ts         destinations: escala | w3c | agent-bundle (skill nested)
 src/lib/agentBundle/            TokenJSON → Skill + agent-bundle zip (no store)
 src/lib/skillExport.ts          store wrappers (buildSkillExport, buildAgentProductExport)
 src/lib/agentAccess/            MCP tools (resolve, catalogue, contrast)
@@ -55,6 +57,8 @@ api/tokens.ts                   publish / fetch Blob
 npm test                 # Vitest, node env — run before build
 npm run eval             # generated token-lint vs evals/agent-output
 npm run build            # tsc -b && vite
+npm run cli -- --help    # @escala/cli (tsx; same code as the published bin)
+npm run build:cli        # bundle cli/dist/escala.js for npm publish
 npm run color:report     # reports/color-audit.json (gitignored)
 npm run bundle:plugin    # refresh public/scalable-designs-figma-plugin.zip
 ```

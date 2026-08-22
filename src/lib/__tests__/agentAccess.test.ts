@@ -134,6 +134,10 @@ describe('catalogue and contrast tools', () => {
 })
 
 describe('MCP JSON-RPC', () => {
+  it('get_tokens requires a project slug', async () => {
+    await expect(callTool('get_tokens', {}, load)).rejects.toThrow(/project is required/)
+  })
+
   it('initialize + tools/list + resolve_token', async () => {
     const init = await handleMcpMessage({
       jsonrpc: '2.0',

@@ -114,7 +114,7 @@ export function mcpDiscovery(origin = '') {
     protocol: 'mcp',
     transport: 'http-jsonrpc',
     endpoint: `${origin}/api/mcp`,
-    tokensEndpoint: `${origin}/api/tokens`,
+    tokensEndpoint: `${origin}/api/tokens?project=`,
     schema,
     tools: TOOL_SPECS.map((t) => t.name),
     instructions: 'POST JSON-RPC 2.0 (initialize, tools/list, tools/call). GET this URL for discovery. /api/tokens is frozen.',
