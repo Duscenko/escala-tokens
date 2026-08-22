@@ -1,0 +1,14 @@
+---
+description: Zustand persist migrations and Figma plugin field compatibility
+globs: src/store/**/*.ts,../scalable-designs-figma-plugin/src/**/*.ts
+alwaysApply: false
+---
+
+# Store and plugin
+
+- Persisted Zustand: add a field = add a default **and** a migration. Do not rename existing keys.
+- If the plugin or a published JSON should see it, add it to `generateTokenJSON()` in the same change.
+- Plugin `SUPPORTED_SCHEMA_VERSION` is 5. Newer payloads warn and still import. Unknown keys are ignored — keep it that way.
+- `code.ts` is authoritative for the 58 component sets. Update `componentCatalogue.ts` to match; do not invent a third list.
+- Do not change the plugin's fetch URL (`/api/tokens`). Refresh the downloadable zip with `npm run bundle:plugin` after plugin builds.
+- Optional plugin-only keys `copy` / `borders` are reserved. Do not reuse the names.

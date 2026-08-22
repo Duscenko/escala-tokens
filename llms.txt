@@ -1,0 +1,41 @@
+# Escala Tokens
+
+> Desktop design-token generator. Custom engine (not Style Dictionary). Output: Escala JSON, CSS variables, W3C DTCG, Agent Skill zip, Figma plugin sync.
+
+The source of truth for a generated system is the live token payload, not this repo's UI chrome.
+
+## Agent entry
+
+- [AGENTS.md](AGENTS.md): Router — hard rules, where code lives, what not to invent
+- [Contracts](docs/agent-native/CONTRACTS.md): Frozen HTTP, schema versions, persist, color, naming
+- [Token JSON Schema](docs/agent-native/tokens.schema.json): Machine-readable `generateTokenJSON()` shape
+- [Agent-native plan](docs/agent-native/PLAN.md): Five layers (Context, Knowledge, Access, Generation, Validation)
+- [CLAUDE.md](CLAUDE.md): Deep reference — load by section, not as a system prompt
+- [Brand context](.impeccable.md): Users and aesthetic direction
+
+## Knowledge
+
+- [Color science skill](.claude/skills/color-science-core/SKILL.md): WCAG, APCA, OKLab, gamut
+- [Color spaces](.claude/skills/color-science-core/references/color-spaces.md)
+- [Gamut mapping](.claude/skills/color-science-core/references/gamut-mapping.md)
+- [WCAG 2](.claude/skills/color-science-core/references/wcag2.md)
+- [APCA](.claude/skills/color-science-core/references/apca.md)
+- [Delta E](.claude/skills/color-science-core/references/delta-e.md)
+
+## Live access (HTTP)
+
+- `GET https://scalable-designs.vercel.app/api/tokens?project=<slug>` — published Escala JSON
+- `GET https://scalable-designs.vercel.app/api/tokens?list=1` — published systems
+- `POST https://scalable-designs.vercel.app/api/tokens?project=<slug>` — publish (configurator)
+- Also served at https://escalatokens.com
+
+This endpoint is frozen. Agent MCP will be a new path; see PLAN.md Phase 3.
+
+## Code (do not invent a second copy)
+
+- `src/lib/tokenGenerator.ts` — schema version + JSON
+- `src/lib/aiContext.ts` — `agent-context/v1` envelope
+- `src/lib/skillExport.ts` — Skill zip
+- `src/lib/componentCatalogue.ts` — components, props, a11y
+- `src/lib/color/apca.ts` — the only contrast math
+- `../scalable-designs-figma-plugin/src/code.ts` — Figma import (authoritative component sets)

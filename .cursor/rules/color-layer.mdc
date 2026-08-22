@@ -1,0 +1,20 @@
+---
+description: Color science non-negotiables — one WCAG/APCA, no clip, DOM-free
+globs: src/lib/color/**/*.ts,src/lib/colorUtils.ts,src/lib/**/__tests__/**/*ramp*,src/lib/**/__tests__/**/*contrast*,.claude/skills/color-science-core/**
+alwaysApply: false
+---
+
+# Color layer
+
+Enforced by `src/lib/__tests__/no-duplication.test.ts`.
+
+- Formulas live in `src/lib/color/apca.ts`. `checkContrast` aliases `wcagRatio`. Never reimplement in a skill, MCP tool, or checker.
+- Never `chroma.contrast` on hex. Only annotated `CONTINUOUS-PRECISION` sites may call it on a `chroma.Color`.
+- Emit with `gamut.oklchToHex`, not `chroma.oklch(l,c,h).hex()`.
+- One sRGB decode: `gamut.hexToLinearRgb`.
+- Report WCAG and APCA. APCA is directional `(foreground, background)`.
+- Categorical palettes: `cvd.validateCategorical()`. Do not eyeball.
+- `*Reference.ts` — regenerate, never edit.
+- Snapshots: read the ramp diff before `vitest -u`.
+- Skill `scripts/contrast.mjs` must stay equal to `lib/color`.
+- No jsdom. Vitest `environment: 'node'`.

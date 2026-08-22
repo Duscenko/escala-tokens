@@ -1,0 +1,15 @@
+---
+description: Token JSON, wizard export, /api/tokens, and Figma plugin contract
+globs: src/lib/tokenGenerator.ts,src/lib/exportWizard.ts,src/lib/exporters.ts,src/lib/sectionExport.ts,src/lib/skillExport.ts,src/lib/figmaSync.ts,api/tokens.ts
+alwaysApply: false
+---
+
+# Token export
+
+- `generateTokenJSON()` is the contract. Keep `colors.semantic` / `semanticDark` even when `themes` + `architecture` ship.
+- Canonical list field is `atoms`. Do not emit `components`.
+- Additive keys only. Bump `TOKEN_SCHEMA_VERSION` only per `docs/agent-native/CONTRACTS.md`, and update `tokens.schema.json`.
+- `/api/tokens` query params, CORS, and Blob keys do not change. New agent/MCP routes are a new file.
+- Wizard formats today: `w3c | escala | md | skill`. Do not replace `skill`; add a format later (`agent-bundle`) beside it.
+- `skillExport.ts` is store-bound. New bundle builders must accept `TokenJSON` so they can run off Blob (see PLAN.md Phase 2).
+- CSS code syntax on Figma variables needs the `var()` wrapper.

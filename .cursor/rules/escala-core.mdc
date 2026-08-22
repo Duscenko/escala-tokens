@@ -1,0 +1,17 @@
+---
+description: Escala agent router — hard rules, contracts, what not to invent
+alwaysApply: true
+---
+
+# Escala core
+
+Read `AGENTS.md` first. Frozen seams: `docs/agent-native/CONTRACTS.md`. Payload: `docs/agent-native/tokens.schema.json`. Deep reference: `CLAUDE.md` by section only.
+
+- Do not invent token names, hex, or px when a token exists. Semantics over primitives.
+- `/api/tokens` is frozen. New HTTP = new path.
+- Schema is additive. Field for selected components is `atoms`, never `components`.
+- One contrast implementation: `src/lib/color/apca.ts`. Color layer is DOM-free.
+- Persist: new Zustand keys need a migration and an emit in `generateTokenJSON()` if consumers should see them.
+- Figma = slashes (`Action/primary/default`). CSS = `var(--color-action-primary-default)`. JSON = dots.
+- Desktop editor only. No phone configurator layouts.
+- `*Reference.ts` is generated (`npm run gen:*`).
