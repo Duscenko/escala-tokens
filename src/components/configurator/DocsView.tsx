@@ -1,36 +1,48 @@
-// Docs — the token reference sheet: Overview plus one article per foundation.
-// The master list lives in `DocsRail` (owned by Configurator); this view is
-// the article + TOC.
+// Docs — Get started (destinations) plus the token reference sheet
+// (System reference + one article per foundation). The master list lives in
+// `DocsRail` (owned by Configurator); this view is the article + TOC.
 
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
+import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
+import { isGuideKey, type DocsExits } from './docs/getStarted'
 import { useSystemDoc, OVERVIEW_KEY, foundationDoc } from './docs/foundationDocs'
 
 export { OVERVIEW_KEY }
+export { GET_STARTED_KEY } from './docs/getStarted'
 
 export default function DocsView({
-  activeFoundationKey, onSelectFoundationKey, onEditFoundation,
+  activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits,
 }: {
-  /** Which row of the master list is open — OVERVIEW_KEY (the whole-system
-   *  sheet) or a foundation key. */
+  /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
+   *  (the whole-system sheet), or a foundation key. */
   activeFoundationKey: string
   onSelectFoundationKey: (key: string) => void
   /** Opens Variables · <foundation> — the "Edit tokens" link on a foundation
    *  page, which is what makes this documentation OF the editor. */
   onEditFoundation: (foundationKey: string) => void
+  /** Leaves Docs for Figma / Export / Save / GitHub — the Get started recipes. */
+  exits: DocsExits
 }) {
   const system = useSystemDoc()
   const articleRef = useRef<HTMLDivElement>(null)
 
-  const doc = activeFoundationKey !== OVERVIEW_KEY ? foundationDoc(activeFoundationKey) : undefined
+  const guide = isGuideKey(activeFoundationKey)
+  const doc = !guide && activeFoundationKey !== OVERVIEW_KEY
+    ? foundationDoc(activeFoundationKey)
+    : undefined
 
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
   }, [activeFoundationKey])
 
-  const toc = doc ? foundationToc(doc) : overviewToc()
+  const toc = guide
+    ? getStartedToc(activeFoundationKey)
+    : doc
+      ? foundationToc(doc)
+      : overviewToc()
 
   return (
     <div className="h-full flex min-h-0">
@@ -45,7 +57,13 @@ export default function DocsView({
           transition={{ duration: 0.18 }}
           className="max-w-4xl mx-auto px-6 lg:px-10 py-8"
         >
-          {doc ? (
+          {guide ? (
+            <GetStartedArticle
+              pageKey={activeFoundationKey}
+              onOpen={onSelectFoundationKey}
+              exits={exits}
+            />
+          ) : doc ? (
             <FoundationArticle
               doc={doc}
               system={system}

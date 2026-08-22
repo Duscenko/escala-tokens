@@ -32,4 +32,6 @@ Read-only Model Context Protocol endpoint. Does **not** replace `/api/tokens`.
 
 Public, no auth (same as `/api/tokens`). CORS `*`.
 
-Implementation: `src/lib/agentAccess/` (pure) + `api/mcp.ts` (Blob read).
+Human install recipe: `npx @escala/cli skill --from <slug>` and `npx @escala/cli mcp init` (Export wizard step 3 and Docs → Use with AI). Unzip + pasted JSON remain as fallbacks. Do not invent a second MCP URL.
+
+Implementation: `src/lib/agentAccess/` (pure) + `api/mcp.ts` (Blob read). `src/lib/agentInstall.ts` is the snippet/command builder. `src/lib/cliInstall.ts` is the installer.

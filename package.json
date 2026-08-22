@@ -15,6 +15,8 @@
     "gen:untitled-icons": "node scripts/fetch-untitled-icons.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "cli": "tsx src/cli/main.ts",
+    "build:cli": "node scripts/build-cli.mjs",
     "eval": "vitest run src/lib/__tests__/agentEvals.test.ts",
     "color:report": "tsx scripts/color-report.ts",
     "gen:radix-reference": "tsx scripts/gen-radix-reference.ts",

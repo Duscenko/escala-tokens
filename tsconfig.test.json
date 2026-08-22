@@ -36,5 +36,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/__tests__/**/*.ts", "src/**/*.test.ts", "scripts/**/*.ts", "types/**/*.d.ts", "vitest.config.ts"]
+  "include": ["src/**/__tests__/**/*.ts", "src/**/*.test.ts", "src/cli/**/*.ts", "scripts/**/*.ts", "types/**/*.d.ts", "vitest.config.ts"]
 }

@@ -1,12 +1,14 @@
-// ── Export wizard (Source → Format → Export) ────────────────────────────────
+// ── Export wizard (Source → Where → Export) ────────────────────────────────
 // The guided whole-system export behind Variables' "Export" pill: pick WHAT
-// ships (collections + semantic modes), HOW (W3C DTCG · Escala JSON · Markdown
-// · Skill), then download/copy the result.
+// ships (collections + semantic modes), WHERE it goes (Figma / code / AI),
+// then download/copy the result.
 //
-// Five formats: W3C · Escala JSON · Markdown · Skill (Figma package) ·
-// Agent bundle (Skill files plus AGENTS.md, task skills, templates, checker).
-// CSS / SCSS / Tailwind stay on Save (`variables.css`), not a sixth choice.
-// The old Categorical-AI JSON is folded into Skill (SKILL.md + tokens.md).
+// Three destinations, not five file formats. Internally the keys are still
+// WizardFormat: Figma → `escala`, Code → `w3c`, AI → `agent-bundle` (Skill zip
+// is a nested "Figma Make only" toggle, not a peer radio). Markdown left the
+// wizard — it already lives in Save (`README.md`) and Copy context.
+// CSS / SCSS / Tailwind stay on Save (`variables.css`), not a fourth destination.
+// The old Categorical-AI JSON is folded into the Skill slice of the AI zip.
 //
 // Everything derives from ONE call to `generateTokenJSON()` — the same payload
 // the Figma plugin imports — so wizard output can never disagree with
@@ -79,40 +81,52 @@ export interface WizardFile {
 
 type TokenJSON = ReturnType<typeof generateTokenJSON>
 
-export const WIZARD_FORMATS: { key: WizardFormat; label: string; hint: string }[] = [
-  { key: 'w3c', label: 'W3C Design Tokens', hint: 'Standard format with $value, $type' },
-  { key: 'escala', label: 'Escala JSON', hint: 'The exact tokens.json the Figma plugin imports' },
-  { key: 'md', label: 'Markdown', hint: 'Readable tables — design context for AI' },
-  { key: 'skill', label: 'Skill', hint: 'Figma MCP skill — SKILL.md + references' },
-  { key: 'agent-bundle', label: 'Agent bundle', hint: 'AGENTS.md + Skill + code/a11y skills + templates + token-lint' },
+export interface FormatOption {
+  key: WizardFormat
+  label: string
+  hint: string
+}
+
+/** Wizard step 2 — where the system is going, not what the file is called. */
+export const WIZARD_DESTINATIONS: FormatOption[] = [
+  { key: 'escala', label: 'Figma', hint: 'Escala plugin — variables land in the file you design in' },
+  { key: 'w3c', label: 'Code & other tools', hint: 'W3C JSON for Style Dictionary, Tokens Studio, Figma native import' },
+  { key: 'agent-bundle', label: 'AI assistant', hint: 'Full context for Cursor & Claude so the agent stops inventing hex' },
 ]
 
-/** Formats that make sense for one primitive ramp (ColumnExportMenu). Skill is
- *  a whole-system package — offering it on a single Accent column would lie. */
-export const FAMILY_EXPORT_FORMATS: WizardFormat[] = ['w3c', 'escala', 'md']
+/** @deprecated Wizard radios live on `WIZARD_DESTINATIONS`. Kept as an alias so
+ *  older imports keep compiling; do not add Markdown or Skill back here. */
+export const WIZARD_FORMATS = WIZARD_DESTINATIONS
 
-// Badge shown next to a format's label in the full wizard's Format step
-// (ExportWizard). Only the formats where "why would I pick this one" isn't
-// obvious from the hint alone get one:
-// - Escala JSON is the one the app itself is built around, so it's marked
-//   RECOMMENDED — but naming the plugin "Figma plugin" here reads as "the
-//   Figma plugin" (as in, Figma's own), when it's actually Escala's plugin
-//   FOR Figma. Same badge text problem `ColumnExportMenu`'s "Figma plugin"
-//   avoids because a badge in a table cell has no room to be misread as an
-//   entity name — this one, sitting right next to "Recommended", does.
-// - W3C is the interoperable choice — it needs to say so, or "Recommended"
-//   sitting on the row above it silently outranks the one format that isn't
-//   locked to this app at all.
-// - Markdown's audience isn't a tool that IMPORTS it, it's an AI assistant
-//   reading it as context — naming the assistants makes that concrete instead
-//   of leaving "design context for AI" to mean nothing more specific.
-// - Skill is the installable package those same assistants load as a skill.
+/** Per-column primitive export (ColorPrimitives). Markdown stays here — it is a
+ *  paste into a prompt, not a competing wizard destination. Skill does not:
+ *  a single Accent ramp is not a Skill package. */
+export const FAMILY_FORMAT_OPTIONS: FormatOption[] = [
+  { key: 'w3c', label: 'W3C Design Tokens', hint: 'Standard format with $value, $type' },
+  { key: 'escala', label: 'Escala JSON', hint: 'The exact tokens.json the Figma plugin imports' },
+  { key: 'md', label: 'Markdown', hint: 'Readable tables — paste into a chat' },
+]
+
+export const FAMILY_EXPORT_FORMATS: WizardFormat[] = FAMILY_FORMAT_OPTIONS.map((f) => f.key)
+
+export function isAiFormat(format: WizardFormat): boolean {
+  return format === 'agent-bundle' || format === 'skill'
+}
+
+export function wizardFormatLabel(format: WizardFormat): string {
+  if (format === 'skill') return 'AI assistant · Figma Make'
+  return WIZARD_DESTINATIONS.find((d) => d.key === format)?.label
+    ?? FAMILY_FORMAT_OPTIONS.find((d) => d.key === format)?.label
+    ?? format
+}
+
+// Badge next to a destination in the wizard. Figma is the one this app is
+// built around (filled). Code and AI are informational (outline).
 export const WIZARD_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = {
-  escala: 'Recommended · Escala Plugin',
-  w3c: 'Compatible with other plugins & Figma',
-  md: 'Claude · Codex',
-  skill: 'Figma MCP · Cursor · Claude',
-  'agent-bundle': 'Cursor · Claude · full agent package',
+  escala: 'Plugin',
+  w3c: 'W3C JSON',
+  'agent-bundle': 'Cursor · Claude',
+  skill: 'Figma Make',
 }
 
 // ── Primitive families ───────────────────────────────────────────────────────

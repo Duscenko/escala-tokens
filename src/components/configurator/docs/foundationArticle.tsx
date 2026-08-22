@@ -14,6 +14,7 @@ import {
   FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown,
   type FoundationDoc, type SystemDoc,
 } from './foundationDocs'
+import { GET_STARTED_KEY, colorPrev, introPager, overviewNext } from './getStarted'
 
 /** "Edit in Variables Generator" — the link that makes this a documentation OF
  *  the editor rather than a parallel description of it. It opens the very
@@ -46,6 +47,7 @@ export function foundationToc(doc: FoundationDoc): TocEntry[] {
 export function overviewToc(): TocEntry[] {
   return [
     { id: 'description', label: 'Overview' },
+    { id: 'start', label: 'Take it somewhere' },
     ...FOUNDATION_DOCS.map((f) => ({ id: `ov-${f.key}`, label: f.label })),
   ]
 }
@@ -60,7 +62,7 @@ export function FoundationArticle({
   onEdit: (foundationKey: string) => void
 }) {
   const idx = FOUNDATION_DOCS.findIndex((f) => f.key === doc.key)
-  const prev = FOUNDATION_DOCS[idx - 1]
+  const prev = idx === 0 ? colorPrev() : FOUNDATION_DOCS[idx - 1]
   const next = FOUNDATION_DOCS[idx + 1]
   const count = doc.tokenCount(system)
 
@@ -124,22 +126,37 @@ export function OverviewArticle({
   system, onOpen,
 }: { system: SystemDoc; onOpen: (key: string) => void }) {
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
+  const intro = introPager(OVERVIEW_KEY)
 
   return (
     <div className="flex flex-col gap-8">
       <DocHeader
         section="Docs"
-        kind="Foundations"
-        title="Overview"
+        kind="Reference"
+        title="System reference"
         actions={<DownloadSkillButton />}
       />
 
       <DocTitle
         title="System reference"
-        eyebrow="Foundation"
+        eyebrow="Reference"
         lead="The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage."
         meta={<CountBadge>{total} tokens</CountBadge>}
       />
+
+      <section id="start" className="flex flex-col gap-2 scroll-mt-4">
+        <p className="text-[13px] text-fg-muted leading-relaxed">
+          Looking for how this lands in Figma, code, or an AI assistant?{' '}
+          <button
+            type="button"
+            onClick={() => onOpen(GET_STARTED_KEY)}
+            className="text-fg font-medium hover:underline"
+          >
+            Get started
+          </button>
+          {' '}is the recipe. This page is the spec.
+        </p>
+      </section>
 
       {FOUNDATION_DOCS.map((f) => (
         <section key={f.key} className="flex flex-col gap-4">
@@ -159,6 +176,12 @@ export function OverviewArticle({
           ))}
         </section>
       ))}
+
+      <Pager
+        prev={intro.prev}
+        next={overviewNext()}
+        onOpen={onOpen}
+      />
     </div>
   )
 }

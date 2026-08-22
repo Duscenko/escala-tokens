@@ -26,5 +26,5 @@
      app must never have. They are typechecked by ./tsconfig.test.json, which
      `tsc -b` runs as part of the same build — excluding them here removes them
      from the app graph, not from the build. */
-  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts"]
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/cli/**"]
 }

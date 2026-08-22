@@ -34,7 +34,7 @@ import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
-import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_EXPORT_FORMATS, WIZARD_FORMATS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
+import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -408,13 +408,11 @@ function FamilySwatch({ family, dark, onClick }: {
 const EXPORT_MENU_W = 420
 
 // This popover's own shorthand for the format list — NOT a rename of
-// `WIZARD_FORMATS` itself, which still reads "W3C Design Tokens" everywhere
-// else (the full wizard has room for the whole name; this compact menu
-// doesn't once a row carries two action icons). `badge` mirrors Escala JSON's
+// `FAMILY_FORMAT_OPTIONS` itself. The wizard now speaks in destinations
+// (Figma / Code / AI); this compact menu still names file formats because a
+// single Accent ramp is a file, not a place. `badge` mirrors Escala JSON's
 // "Figma plugin" pill: W3C's flat $value/$type tree is what Figma's OWN
-// "Import variables" accepts with no plugin in the loop, same as Escala JSON
-// needs the Escala plugin specifically — two different "gets into Figma"
-// paths, each worth flagging the same way.
+// "Import variables" accepts with no plugin in the loop.
 const MENU_FORMAT_LABEL: Partial<Record<WizardFormat, string>> = { w3c: 'W3C Design' }
 const MENU_FORMAT_BADGE: Partial<Record<WizardFormat, string>> = { w3c: 'Figma native', escala: 'Figma plugin' }
 
@@ -537,8 +535,8 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
                   {(isAlpha
-                    ? WIZARD_FORMATS.filter((f) => ALPHA_EXPORT_FORMATS.includes(f.key))
-                    : WIZARD_FORMATS.filter((f) => FAMILY_EXPORT_FORMATS.includes(f.key))
+                    ? FAMILY_FORMAT_OPTIONS.filter((f) => ALPHA_EXPORT_FORMATS.includes(f.key))
+                    : FAMILY_FORMAT_OPTIONS
                   ).map((f) => {
                 const copyDone = copied === f.key
                 const downloadDone = downloaded === f.key

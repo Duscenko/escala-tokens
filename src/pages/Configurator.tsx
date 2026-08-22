@@ -26,9 +26,10 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
-import DocsView, { OVERVIEW_KEY } from '../components/configurator/DocsView'
+import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY } from '../components/configurator/DocsView'
 import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
 import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
+import { GUIDE_AI_KEY, GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -213,15 +214,8 @@ const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 // Docs (the token reference) — a ruled page, distinct from DocIcon's plain
 // sheet (the README export).
 const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
-
-/** Docs rail rows — Overview first, then foundations in catalogue order. */
-const DOCS_RAIL_ROWS: DocsRailRow[] = [
-  { key: OVERVIEW_KEY, label: 'Overview', Icon: RulesIcon },
-  ...FOUNDATION_DOCS.map((d) => {
-    const section = FOUNDATIONS.find((f) => f.key === d.key)
-    return { key: d.key, label: d.label, Icon: section?.Icon }
-  }),
-]
+const StartIcon = ic('M12 3l2.1 6.4H21l-5.4 3.9 2.1 6.4L12 16.8 6.3 19.7 8.4 13.3 3 9.4h6.9z', '1.8')
+const SparkIcon = ic('M12 3v3M12 18v3M3 12h3M18 12h3M6.2 6.2l2.1 2.1M15.7 15.7l2.1 2.1M17.8 6.2l-2.1 2.1M8.3 15.7l-2.1 2.1', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
 const SaveIcon: ComponentType = () => (
@@ -248,6 +242,19 @@ const GitHubIcon: ComponentType = () => (
     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
   </svg>
 )
+
+/** Docs rail — Get started first, then the token sheet, then foundations. */
+const DOCS_RAIL_ROWS: DocsRailRow[] = [
+  { key: GET_STARTED_KEY, label: 'Get started', Icon: StartIcon, heading: 'Start' },
+  { key: GUIDE_FIGMA_KEY, label: 'Use in Figma', Icon: FigmaIcon },
+  { key: GUIDE_CODE_KEY, label: 'Use in code', Icon: CodeIcon },
+  { key: GUIDE_AI_KEY, label: 'Use with AI', Icon: SparkIcon },
+  { key: OVERVIEW_KEY, label: 'System reference', Icon: RulesIcon, heading: 'Reference' },
+  ...FOUNDATION_DOCS.map((d) => {
+    const section = FOUNDATIONS.find((f) => f.key === d.key)
+    return { key: d.key, label: d.label, Icon: section?.Icon }
+  }),
+]
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 
@@ -379,10 +386,10 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // Docs' master-list selection — a foundation key, or OVERVIEW_KEY for the
-  // whole-system sheet. Lifted for the same reason: survives leaving the Docs
-  // tab and coming back instead of resetting to Overview every visit.
-  const [docFoundationKey, setDocFoundationKey] = useState<string>(OVERVIEW_KEY)
+  // Docs' master-list selection — a Get started key, OVERVIEW_KEY for the
+  // whole-system sheet, or a foundation key. Lifted so leaving Docs and
+  // coming back resumes on the same place instead of resetting.
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(GET_STARTED_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
 
@@ -690,13 +697,20 @@ export default function Configurator() {
       // also two different destinations.
       Icon: RulesIcon,
       title: 'Docs',
-      subtitle: 'The foundations you set in the Variables Generator — what each token is for, how to use it, and what it ships as.',
+      subtitle: 'Where this system goes — Figma, code, or an AI assistant — then the token reference.',
     }
     body = (
       <DocsView
         activeFoundationKey={docFoundationKey}
         onSelectFoundationKey={setDocFoundationKey}
         onEditFoundation={selectFoundation}
+        exits={{
+          onOpenFigmaDownload: () => openExport('figma-download'),
+          onOpenFigmaSync: () => openExport('figma-sync'),
+          onOpenExport: openSectionExport,
+          onOpenSave: () => openExport('save'),
+          onOpenGithub: () => openExport('github'),
+        }}
       />
     )
     // Constant, same reasoning as Components above.

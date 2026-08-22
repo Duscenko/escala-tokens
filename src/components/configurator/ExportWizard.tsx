@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
-  buildWizardExport, collectionMeta, primitiveFamilyMeta, selectionCount, WIZARD_FORMATS, WIZARD_FORMAT_BADGE,
+  buildWizardExport, collectionMeta, primitiveFamilyMeta, isAiFormat, selectionCount,
+  WIZARD_DESTINATIONS, WIZARD_FORMAT_BADGE, wizardFormatLabel,
   type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
-import { COLOR_FORMATS, type ColorFormat } from '../../lib/sectionExport'
+import { type ColorFormat } from '../../lib/sectionExport'
 import { slugify, FIGMA_PLUGIN_ZIP } from '../../lib/utils'
 import { COMPONENTS, CATEGORIES, COMPONENT_KEYS } from '../../lib/componentCatalogue'
+import AgentInstallPanel from './AgentInstallPanel'
 
-// ── Guided export (Source → Format → Export) ────────────────────────────────
+// ── Guided export (Source → Where → Export) ────────────────────────────────
 // Replaces the one-shot "here's your file" window with a three-step flow, so
-// what ships is a deliberate choice: WHICH collections and semantic modes, in
-// WHAT format and file structure, then the summary before anything downloads.
+// what ships is a deliberate choice: WHICH collections and semantic modes,
+// WHERE it goes (Figma / code / AI), then the summary before anything downloads.
 // Every step reads live counts from the real token payload, so the numbers on
 // screen are the numbers in the file.
 
@@ -20,7 +22,7 @@ type Step = 1 | 2 | 3
 
 const STEPS: { n: Step; label: string }[] = [
   { n: 1, label: 'Source' },
-  { n: 2, label: 'Format' },
+  { n: 2, label: 'Where' },
   { n: 3, label: 'Export' },
 ]
 
@@ -151,9 +153,9 @@ export default function ExportWizard({
   const [collections, setCollections] = useState<WizardCollection[]>(initialCollections)
   const [modes, setModes] = useState<string[]>(allModes)
   const [families, setFamilies] = useState<string[]>(famMeta.map((f) => f.key))
-  const [format, setFormat] = useState<WizardFormat>('w3c')
+  const [format, setFormat] = useState<WizardFormat>('escala')
   const [structure, setStructure] = useState<WizardStructure>('single')
-  const [colorFormat, setColorFormat] = useState<ColorFormat>('hex')
+  const [colorFormat] = useState<ColorFormat>('hex')
   const [includeAliases, setIncludeAliases] = useState(true)
   // Defaults to true — matches the pre-toggle behavior (every selected
   // component always shipped); this just adds the option to narrow or drop
@@ -204,11 +206,9 @@ export default function ExportWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [collections, modes, families, allFamilies, store],
   )
-  const isJson = format === 'w3c' || format === 'escala'
-  // Escala JSON and Skill are each one document by contract, so structure
-  // can't split either.
-  const structureLocked = format === 'escala' || format === 'skill' || format === 'agent-bundle'
-  const isWholeDocument = format === 'escala' || format === 'skill' || format === 'agent-bundle'
+  const ai = isAiFormat(format)
+  // Escala JSON and the AI zips are each one document by contract.
+  const isWholeDocument = format === 'escala' || ai
   const canNext = step === 1
     ? collections.length > 0
       && (!collections.includes('semantics') || modes.length > 0)
@@ -561,32 +561,30 @@ export default function ExportWizard({
 
           {step === 2 && (
             <>
-              <h2 className="text-[17px] font-semibold text-fg">Format and structure</h2>
-              <p className="text-[13px] text-fg-muted mt-1">Choose the output format and how it lands on disk</p>
+              <h2 className="text-[17px] font-semibold text-fg">Where is this going?</h2>
+              <p className="text-[13px] text-fg-muted mt-1">Pick the place you work. Not a file format.</p>
 
               <div className="mt-5 rounded-xl border border-line bg-surface/50 p-3">
-                <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Format</span>
+                <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Destination</span>
                 <div className="flex flex-col gap-2">
-                  {WIZARD_FORMATS.map((f) => {
-                    const on = format === f.key
+                  {WIZARD_DESTINATIONS.map((f) => {
+                    const on = f.key === 'agent-bundle' ? ai : format === f.key
                     const isEscala = f.key === 'escala'
-                    const isSkill = f.key === 'skill'
                     const badge = WIZARD_FORMAT_BADGE[f.key]
                     return (
                       <div
                         key={f.key}
                         className={`rounded-lg border transition-colors ${on ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'}`}
                       >
-                        <button onClick={() => setFormat(f.key)} aria-pressed={on} className="flex items-center gap-3 w-full px-3 py-2.5 text-left">
+                        <button
+                          onClick={() => setFormat(f.key === 'agent-bundle' && format === 'skill' ? 'skill' : f.key)}
+                          aria-pressed={on}
+                          className="flex items-center gap-3 w-full px-3 py-2.5 text-left"
+                        >
                           <Radio on={on} />
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-2 flex-wrap">
                               <span className={`block text-[13px] ${on ? 'text-fg font-medium' : 'text-fg'}`}>{f.label}</span>
-                              {/* Escala JSON's badge is filled/accent — it's the one
-                                  format this app is built around, and "Recommended"
-                                  should visually outrank a merely-informational tag.
-                                  W3C's and Markdown's are a quiet outline instead:
-                                  worth knowing, not a nudge toward picking them. */}
                               {badge && (
                                 <span
                                   className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 ${
@@ -599,30 +597,14 @@ export default function ExportWizard({
                                 </span>
                               )}
                             </span>
-                            <span className="block text-[12px] text-fg-faint truncate">{f.hint}</span>
+                            <span className="block text-[12px] text-fg-faint">{f.hint}</span>
                           </span>
                         </button>
-                        {/* Escala JSON is only useful if you know what reads it — shown
-                            regardless of selection so it informs the choice, not just
-                            confirms it after the fact. The download is the same asset
-                            FigmaDownloadView offers, so there's still one place the plugin
-                            package is defined, just a second entry point to grab it. */}
-                        {isSkill && (
-                          <div className="px-3 pb-3 pl-[42px]">
-                            <p className="text-[11px] text-fg-faint leading-relaxed">
-                              A Figma MCP skill zip — <code className="font-mono">SKILL.md</code> at the zip root plus{' '}
-                              <code className="font-mono">references/</code> (color tokens, foundations, semantic contract).
-                              Unzip into a folder named after the skill inside{' '}
-                              <code className="font-mono">.claude/skills/</code> or{' '}
-                              <code className="font-mono">.cursor/skills/</code>. Figma Make: upload the zip as-is.
-                            </p>
-                          </div>
-                        )}
                         {isEscala && (
                           <div className="px-3 pb-3 pl-[42px] flex flex-col gap-1.5">
                             <p className="text-[11px] text-fg-faint leading-relaxed">
                               This is the exact payload the <strong className="text-fg-muted font-medium">Escala Figma plugin</strong> imports —
-                              pick it to sync colors, themes and components straight into Figma variables.
+                              the same JSON Sync already publishes.
                             </p>
                             <a
                               href={FIGMA_PLUGIN_ZIP}
@@ -638,30 +620,49 @@ export default function ExportWizard({
                             </a>
                           </div>
                         )}
+                        {f.key === 'agent-bundle' && on && (
+                          <div className="px-3 pb-3 pl-[42px]">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setFormat(format === 'skill' ? 'agent-bundle' : 'skill')
+                              }}
+                              aria-pressed={format === 'skill'}
+                              className="flex items-start gap-2.5 text-left"
+                            >
+                              <CheckBox on={format === 'skill'} />
+                              <span className="min-w-0">
+                                <span className="block text-[12.5px] text-fg">Figma Make only (smaller zip)</span>
+                                <span className="block text-[11px] text-fg-faint leading-relaxed">
+                                  Cursor and Claude want the full package. Make uploads the smaller zip as-is.
+                                </span>
+                              </span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
                 </div>
               </div>
 
+              {format === 'w3c' && (
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
                 <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Output structure</span>
                 <div className="flex flex-col gap-2">
                   {STRUCTURES.map((s) => {
-                    const on = structure === s.key && !structureLocked
-                    const disabled = structureLocked && s.key === 'per-collection'
+                    const on = structure === s.key
                     return (
                       <button
                         key={s.key}
-                        onClick={() => !disabled && setStructure(s.key)}
-                        disabled={disabled}
+                        onClick={() => setStructure(s.key)}
                         aria-pressed={on}
-                        title={disabled ? 'This format is a single document by contract' : undefined}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors ${
                           on ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
-                        } ${disabled ? 'opacity-40 cursor-not-allowed hover:border-line' : ''}`}
+                        }`}
                       >
-                        <Radio on={on || (structureLocked && s.key === 'single')} />
+                        <Radio on={on} />
                         <span className="min-w-0">
                           <span className="block text-[13px] text-fg">{s.label}</span>
                           <span className="block text-[12px] text-fg-faint truncate">{s.hint}</span>
@@ -671,6 +672,7 @@ export default function ExportWizard({
                   })}
                 </div>
               </div>
+              )}
 
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3 flex flex-col gap-2">
                 <span className="px-1 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Options</span>
@@ -705,50 +707,20 @@ export default function ExportWizard({
                     )}
                   </>
                 )}
-                {!isJson && (
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-line">
-                    <span className="text-[13px] text-fg flex-1">Color format</span>
-                    <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-elevated/60 border border-line">
-                      {COLOR_FORMATS.map((c) => (
-                        <button
-                          key={c.key}
-                          onClick={() => setColorFormat(c.key)}
-                          aria-pressed={colorFormat === c.key}
-                          className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                            colorFormat === c.key ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
-                          }`}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {format === 'escala' && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Escala JSON is the exact payload the Figma plugin imports — keys and values ship verbatim,
-                    and it always ships the WHOLE document (typography, spacing, radius…) regardless of the
-                    collections picked above, since the plugin needs the full contract to import cleanly.
-                    Components are the one part Step 1's toggle controls: on ships{' '}
+                    Figma always ships the whole document (typography, spacing, radius…) regardless of
+                    the collections picked above — the plugin needs the full contract to import cleanly.
+                    Components are the one part Step 1&apos;s toggle controls: on ships{' '}
                     {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
                     as <code className="font-mono">atoms</code>, off ships none.
                   </p>
                 )}
-                {format === 'skill' && (
+                {ai && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Skill ships a Figma MCP / Agent Skills package: <code className="font-mono">SKILL.md</code>{' '}
-                    at the zip root (token catalog for all five semantic groups plus foundations) and{' '}
-                    <code className="font-mono">references/tokens.md</code>,{' '}
-                    <code className="font-mono">foundations.md</code>, and the semantic contract.
-                    Unzip into a folder with that skill name, or upload the zip to Figma Make. Collections picked above are ignored.
-                  </p>
-                )}
-                {format === 'agent-bundle' && (
-                  <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Agent bundle is the same Skill files plus <code className="font-mono">AGENTS.md</code>,{' '}
-                    <code className="font-mono">llms.txt</code>, code/a11y/migrate skills, component templates, and{' '}
-                    <code className="font-mono">checkers/token-lint.mjs</code> generated from this system&apos;s tokens.
-                    Drop the unzipped folder into the product repo. Collections picked above are ignored.
+                    {format === 'skill'
+                      ? 'The smaller zip is what Figma Make uploads as-is. Collections picked above are ignored.'
+                      : 'The zip is the guide your agent reads, plus checkers and templates, generated from this system. Drop the unzipped folder into the product repo — not Escala. Collections picked above are ignored.'}
                   </p>
                 )}
               </div>
@@ -764,10 +736,9 @@ export default function ExportWizard({
                 <SummaryRow
                   label="Collections"
                   value={
-                    format === 'escala' ? 'All (Escala JSON is one document)'
-                      : format === 'skill' ? 'All (Skill is one package)'
-                        : format === 'agent-bundle' ? 'All (Agent bundle is one package)'
-                          : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
+                    format === 'escala' ? 'All (Figma needs the full contract)'
+                      : ai ? 'All (one package)'
+                        : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
                   }
                 />
                 {!isWholeDocument && collections.includes('primitives') && (
@@ -777,10 +748,10 @@ export default function ExportWizard({
                   />
                 )}
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
-                {(collections.includes('semantics') || format === 'skill' || format === 'agent-bundle') && (
+                {(collections.includes('semantics') || ai) && (
                   <SummaryRow label="Modes" value={modes.join(', ')} />
                 )}
-                <SummaryRow label="Format" value={WIZARD_FORMATS.find((f) => f.key === format)?.label ?? format} />
+                <SummaryRow label="Going to" value={wizardFormatLabel(format)} />
                 <SummaryRow label="Structure" value={files.length > 1 ? `${files.length} files` : 'Single file'} />
                 {/* Mirrors `w3cTreeFor`'s own condition exactly — aliases only ever
                     ship when Primitives is part of THIS export, or the row
@@ -791,12 +762,11 @@ export default function ExportWizard({
                     value={includeAliases && collections.includes('primitives') ? 'Included' : 'Resolved to hex'}
                   />
                 )}
-                {!isJson && <SummaryRow label="Color format" value={colorFormat.toUpperCase()} />}
                 <SummaryRow
                   label="Components"
                   value={
                     format !== 'escala'
-                      ? 'Not shipped — Escala JSON only'
+                      ? 'Not shipped — Figma only'
                       : includeComponents
                         ? `${selectedComponents.length} of ${COMPONENT_KEYS.length}`
                         : 'Not included'
@@ -807,8 +777,19 @@ export default function ExportWizard({
               {done && (
                 <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3.5">
                   <span className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Exported {files.length} {files.length === 1 ? 'file' : 'files'} · {varCount} variables
+                    Exported {files.length} {files.length === 1 ? 'file' : 'files'}
+                    {!isWholeDocument ? ` · ${varCount} variables` : ''}
                   </span>
+                </div>
+              )}
+
+              {ai && (
+                <div className="mt-4">
+                  <AgentInstallPanel
+                    key={format}
+                    initialClient={format === 'skill' ? 'make' : 'cursor'}
+                    variant="export"
+                  />
                 </div>
               )}
 
@@ -899,7 +880,7 @@ export default function ExportWizard({
                   {files.map((f) => (
                     <div key={f.name} className="border-b border-line last:border-b-0">
                       <div className="px-4 py-2 text-[11px] font-mono text-fg-faint bg-elevated/40">
-                        {f.binary ? `${f.name} · SKILL.md` : f.name}
+                        {f.binary ? `${f.name} · the guide your agent reads` : f.name}
                       </div>
                       <pre className="px-4 py-3 text-[12px] leading-relaxed font-mono text-fg-muted whitespace-pre overflow-x-auto max-h-64">
                         {f.content}

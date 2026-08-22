@@ -6,8 +6,8 @@
 // This replaces the old `DesignRules` single-scroll sheet. Nothing it printed
 // was dropped — every one of its twelve sheets is still here, just filed under
 // the foundation it documents, and the whole-system sheet survives as the
-// docs site's "Overview" entry (`OVERVIEW_KEY`), which renders every
-// foundation's sections in one column exactly as before.
+// docs site's "System reference" entry (`OVERVIEW_KEY`), after Get started.
+// It still renders every foundation's sections in one column exactly as before.
 //
 // The rule the old sheet was built on still holds and is the reason these pages
 // are worth having: every value reads the store through the SHARED resolvers
@@ -53,7 +53,8 @@ import { fontStack } from '../../../lib/fonts'
 import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
 
 /** The Overview page — the whole-system reference sheet the old Design Rules
- *  view was. Not a foundation key, so it can never collide with one. */
+ *  view was. Not a foundation key, so it can never collide with one. Get
+ *  started (`__get-started`) is the Docs landing; this is the spec. */
 export const OVERVIEW_KEY = '__overview'
 
 // ── Resolved system context ──────────────────────────────────────────────────

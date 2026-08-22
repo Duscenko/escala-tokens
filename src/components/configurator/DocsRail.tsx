@@ -14,6 +14,9 @@ export interface DocsRailRow {
   key: string
   label: string
   Icon?: ComponentType
+  /** Section label drawn above this row when the rail is expanded. Only set
+   *  it on the first row of a group. */
+  heading?: string
 }
 
 /** Docs' left rail — same shell as ComponentsRail (gradient shows through,
@@ -54,29 +57,35 @@ export default function DocsRail({
       </div>
 
       <nav aria-label="Docs" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-3 flex flex-col gap-0.5">
-        {rows.map(({ key, label, Icon }) => {
+        {rows.map(({ key, label, Icon, heading }, i) => {
           const on = activeKey === key
           return (
-            <button
-              key={key}
-              onClick={() => onSelect(key)}
-              aria-current={on ? 'page' : undefined}
-              title={label}
-              className={`flex items-center h-9 rounded-xl text-[13px] text-left transition-all ${
-                collapsed ? 'w-9 mx-auto justify-center' : 'w-full gap-2 px-2.5'
-              } ${
-                on
-                  ? 'bg-white text-accent-ui font-medium shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)] dark:bg-white/12 dark:shadow-none'
-                  : 'text-fg-muted hover:text-fg hover:bg-white/60 dark:hover:bg-white/10'
-              }`}
-            >
-              {Icon ? (
-                <span className={`flex-shrink-0 ${on ? '' : 'text-fg-faint'}`}>
-                  <Icon />
+            <div key={key} className="flex flex-col gap-0.5">
+              {heading && !collapsed && (
+                <span className={`px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint ${i === 0 ? 'pt-1' : 'pt-3'}`}>
+                  {heading}
                 </span>
-              ) : null}
-              {!collapsed && <span className="truncate">{label}</span>}
-            </button>
+              )}
+              <button
+                onClick={() => onSelect(key)}
+                aria-current={on ? 'page' : undefined}
+                title={label}
+                className={`flex items-center h-9 rounded-xl text-[13px] text-left transition-all ${
+                  collapsed ? 'w-9 mx-auto justify-center' : 'w-full gap-2 px-2.5'
+                } ${
+                  on
+                    ? 'bg-white text-accent-ui font-medium shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)] dark:bg-white/12 dark:shadow-none'
+                    : 'text-fg-muted hover:text-fg hover:bg-white/60 dark:hover:bg-white/10'
+                }`}
+              >
+                {Icon ? (
+                  <span className={`flex-shrink-0 ${on ? '' : 'text-fg-faint'}`}>
+                    <Icon />
+                  </span>
+                ) : null}
+                {!collapsed && <span className="truncate">{label}</span>}
+              </button>
+            </div>
           )
         })}
       </nav>
