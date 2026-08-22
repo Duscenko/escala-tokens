@@ -53,7 +53,10 @@ describe('the categorical catalogue is complete', () => {
     expect(label('action', 'primary.pressed')).toBe('accent.6')
     expect(label('border', 'subtle')).toBe('neutral-dark.4')
     expect(label('border', 'strong')).toBe('neutral-dark.6')
-    expect(label('status', 'critical.content')).toBe('error.10')
+    // All three severities share step 11 in dark. Critical read 10 until it was
+    // measured at |Lc| ~42.7 against its own tone-3 tint, ~17 short of the
+    // large-text floor — see the note in semanticArchitectures.ts.
+    expect(label('status', 'critical.content')).toBe('error.11')
     expect(label('status', 'warning.content')).toBe('warning.11')
     expect(label('status', 'success.content')).toBe('success.11')
     expect(label('status', 'critical.surface-solid')).toBe('error.12')

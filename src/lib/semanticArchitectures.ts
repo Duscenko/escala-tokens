@@ -377,11 +377,18 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    step: still clears WCAG AA against the tone-3 tint (~4.5–4.7:1 measured
   //    across seeds) while keeping the severity hue visible. Deliberate product
   //    choice — chromatic legibility over contrast headroom.
-  //  • **Dark fg is a chromatic step too** (critical 10, warning/success 11),
-  //    not tone 12. Tone 12 on a dark tint reads as near-white ink and loses
-  //    the severity hue; 10/11 keep the colour visible in a dark layout.
+  //  • **Dark fg is a chromatic step too** — tone 11, not tone 12. Tone 12 on a
+  //    dark tint reads as near-white ink and loses the severity hue; 11 keeps
+  //    the colour visible in a dark layout.
+  //
+  //    Critical used to read 10 here, on the reasoning that a lower step holds
+  //    more hue. Measured across the audit's 10 seeds it gave |Lc| 42.2–43.3
+  //    against its own tone-3 tint — short of the 60 `large-text` floor by ~17,
+  //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
+  //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
+  //    reads as red, and all three severities now agree on the same step.
   { group: 'status', key: 'critical.surface', light: '{error.3}',        dark: '{error.3}' },
-  { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.10}' },
+  { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.11}' },
   { group: 'status', key: 'warning.surface',  light: '{warning.3}',      dark: '{warning.3}' },
   { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
   { group: 'status', key: 'success.surface',  light: '{success.3}',      dark: '{success.3}' },
@@ -488,7 +495,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'action.disabled': '[ROLE: Disabled Action Fill] Disabled button/control background. No contrast floor — communicates inactive state visually.',
   'status.critical.surface': "[ROLE: Feedback Background Subtle] Tinted background for error alerts and banners. Pair with status.critical.content — never a fixed ink on the bg alone.",
   'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for destructive badges and buttons. Pair with status.critical.on-solid. Light solves {error.solid}; dark uses {error.12} so the fill still reads as coloured on a dark page.",
-  'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Light {error.11} for chromatic severity (~AA floor); dark {error.10} so the hue stays visible on a dark tint.',
+  'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Both themes {error.11} — chromatic severity, not the near-white {error.12} in dark.',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
   'status.warning.surface': '[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.',
   'status.warning.content': '[ROLE: Feedback Text] Warning message ink on status.warning.surface. Light and dark both {warning.11} — chromatic severity, not the near-white {warning.12} in dark.',
