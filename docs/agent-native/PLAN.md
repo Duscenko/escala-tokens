@@ -106,7 +106,7 @@ New `WizardFormat = 'agent-bundle'` beside `w3c | escala | md | skill`. Skill fo
 
 1. **No drive-by refactors** of the store, plugin `code.ts`, or `/api/tokens`.
 2. **Additive schema only.** New keys, never renamed keys. Bump `TOKEN_SCHEMA_VERSION` only with a comment in `tokenGenerator.ts` *and* this folder.
-3. **Plugin zip** (`public/scalable-designs-figma-plugin.zip`) is a distributed artifact. Do not change the fetch URL.
+3. **Plugin zip** (`public/escala-figma-plugin.zip`) is a distributed artifact. Do not change the fetch URL without renaming `FIGMA_PLUGIN_ZIP`.
 4. **WIP on `main`:** layout roles / type roles / schema 6 are already in the working tree. Land that as its own commit. This agent-native layer must not be mixed into that diff.
 5. **Color math stays in `lib/color/`.** Skills, MCP `check_contrast`, and checkers import it or call `scripts/contrast.mjs`. `no-duplication.test.ts` will fail a third copy.
 

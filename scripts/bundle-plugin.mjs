@@ -1,7 +1,7 @@
 // Bundles the sibling Figma plugin (manifest + build output) into a downloadable
 // zip served from /public, so the "Bring to Figma" view can hand it to designers.
 //
-// The plugin lives in a SEPARATE repo (../scalable-designs-figma-plugin) that is
+// The plugin lives in a SEPARATE repo (../escala-figma-plugin) that is
 // NOT present on Vercel's build, so the resulting zip is committed as a static
 // asset. Re-run this and commit the zip whenever the plugin changes:
 //
@@ -14,9 +14,9 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
-const pluginDir = path.resolve(repoRoot, '..', 'scalable-designs-figma-plugin')
+const pluginDir = path.resolve(repoRoot, '..', 'escala-figma-plugin')
 const publicDir = path.resolve(repoRoot, 'public')
-const out = path.join(publicDir, 'scalable-designs-figma-plugin.zip')
+const out = path.join(publicDir, 'escala-figma-plugin.zip')
 
 const manifest = path.join(pluginDir, 'manifest.json')
 const dist = path.join(pluginDir, 'dist')

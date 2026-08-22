@@ -6,7 +6,7 @@ Machine-readable shape: [`tokens.schema.json`](./tokens.schema.json). Source of 
 
 ## 1. HTTP — `/api/tokens`
 
-File: `api/tokens.ts`. Consumer: Figma plugin (`scalable-designs-figma-plugin`), including already-downloaded zips.
+File: `api/tokens.ts`. Consumer: Figma plugin (`escala-figma-plugin`).
 
 `/api/tokens` is a **live-sync cache**, not durable storage. The editor snapshot lives in the browser and, when the designer connects GitHub, in `.escala/system.json`. Do not add login to hold systems.
 

@@ -2,7 +2,7 @@
 // Pure data — no JSX — so both the store (default-all selection) and the
 // catalogue UI can import it without circular dependencies.
 //
-// SOURCE OF TRUTH: the Figma plugin (../scalable-designs-figma-plugin/src/code.ts).
+// SOURCE OF TRUTH: the Figma plugin (../escala-figma-plugin/src/code.ts).
 // Each `key` here equals a CATALOG `gate` in the plugin; `axes` mirrors the
 // plugin's SPECS variant matrix and `figmaSets` lists every component set the
 // key unlocks in the generated Figma library. When the plugin's CATALOG/SPECS

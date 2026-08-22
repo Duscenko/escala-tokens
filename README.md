@@ -10,7 +10,7 @@
 - **Body font:** Inter
 - **Icons:** Lucide (`lucide-react`)
 - **Components:** Button, Input, Select, Checkbox, Toggle, Badge, Avatar, Card, Modal, Toast, Tooltip, Tabs, Breadcrumb, Progress, Spinner, Divider
-- **Repository:** [Duscenko/scalable-designs](https://github.com/Duscenko/scalable-designs)
+- **Repository:** [Duscenko/escala-tokens](https://github.com/Duscenko/escala-tokens)
 
 ---
 

@@ -34,7 +34,7 @@ Load `CLAUDE.md` only for the section you need (nav, store, export, plugin). Do 
 5. **Store is persisted.** New Zustand fields need a migration. Emit them from `generateTokenJSON()` if consumers should see them.
 6. **`*Reference.ts` is generated** (`npm run gen:*`). Do not hand-edit.
 7. **Figma names use `/`, CSS uses hyphens + `var()`, JSON architecture uses dots.** `action.primary.default` → `Action/primary/default` → `var(--color-action-primary-default)`.
-8. **Plugin lives in** `../scalable-designs-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it.
+8. **Plugin lives in** `../escala-figma-plugin`. `code.ts` is authoritative for component sets; `componentCatalogue.ts` mirrors it.
 9. **Desktop/laptop only.** Do not build phone editor layouts. `DesktopOnlyNotice` + About is the one reading-surface exception.
 10. **No `console.log` in production.** TypeScript strict. No `any` unless forced.
 
@@ -62,10 +62,10 @@ npm run build            # tsc -b && vite
 npm run cli -- --help    # @escala/cli (tsx; same code as the published bin)
 npm run build:cli        # bundle cli/dist/escala.js for npm publish
 npm run color:report     # reports/color-audit.json (gitignored)
-npm run bundle:plugin    # refresh public/scalable-designs-figma-plugin.zip
+npm run bundle:plugin    # refresh public/escala-figma-plugin.zip
 ```
 
-Plugin: `cd ../scalable-designs-figma-plugin && npm run build`.
+Plugin: `cd ../escala-figma-plugin && npm run build`.
 
 ## Do not invent
 

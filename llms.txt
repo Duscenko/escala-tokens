@@ -44,4 +44,4 @@ The source of truth for a generated system is the live token payload, not this r
 - `evals/agent-output/` — pass/fail corpus for the generated checker
 - `src/lib/componentCatalogue.ts` — components, props, a11y
 - `src/lib/color/apca.ts` — the only contrast math
-- `../scalable-designs-figma-plugin/src/code.ts` — Figma import (authoritative component sets)
+- `../escala-figma-plugin/src/code.ts` — Figma import (authoritative component sets)

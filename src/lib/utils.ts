@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /** Static asset bundled in /public — refreshed via `npm run bundle:plugin`.
  *  The Figma plugin package (manifest.json + build output). Shared by every
  *  place that offers the download, so the path can't drift between them. */
-export const FIGMA_PLUGIN_ZIP = '/scalable-designs-figma-plugin.zip'
+export const FIGMA_PLUGIN_ZIP = '/escala-figma-plugin.zip'
 
 // Token namespace slug from a human project name: "Apollo UI" → "apollo-ui".
 export function slugify(name: string): string {

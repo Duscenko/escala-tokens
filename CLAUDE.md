@@ -1423,7 +1423,7 @@ src/
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
 scripts/
-├── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/scalable-designs-figma-plugin.zip (npm run bundle:plugin)
+├── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/escala-figma-plugin.zip (npm run bundle:plugin)
 ├── color-report.ts         ← the contrast audit: every architecture × theme × role pair, WCAG + APCA (npm run color:report)
 └── gen-*-reference.ts      ← regenerate the committed vendor tables from the installed packages (npm run gen:radix|tailwind|carbon-reference)
 test-fixtures/
@@ -2214,7 +2214,7 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 
 ## Component Catalogue
 
-**The Figma plugin is the source of truth** (`../scalable-designs-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma, and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
+**The Figma plugin is the source of truth** (`../escala-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma, and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
 
 The catalogue holds **58 components**. The original plugin families were split into standalone entries (Button Group, Input OTP, Radio, Chip, Alert Banner… each owns the plugin set its parent used to bundle), and ~20 entries are **catalogue-first**: `figmaSets: []` means the plugin gate doesn't exist yet — they document + preview in the app and export in `atoms`, and the doc pane shows a "not in the Figma library yet" note. When a set lands in the plugin, fill in its `figmaSets`. Display-name renames (keys stay stable for plugin gates + export): `Toggle`→"Switch", `Divider`→"Separator", `Breadcrumb`→"Breadcrumbs".
 
@@ -2298,7 +2298,7 @@ interface ComponentDef {
 
 ## Figma Plugin
 
-Lives at `../scalable-designs-figma-plugin/`. Separate project, separate `package.json`.
+Lives at `../escala-figma-plugin/`. Separate project, separate `package.json`.
 
 ```
 src/
@@ -2416,20 +2416,20 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 
 ```bash
 # Configurator
-cd ~/sync-ds-platform/scalable-designs
+cd ~/sync-ds-platform/escala-tokens
 npm test               # 161 assertions + 4 documented defects — run BEFORE build
 npm run color:report   # optional: contrast audit → reports/color-audit.json
 npm run build          # verify
 npx vercel --prod      # deploy
 
 # Plugin (after code changes)
-cd ~/sync-ds-platform/scalable-designs-figma-plugin
+cd ~/sync-ds-platform/escala-figma-plugin
 npm run build          # outputs dist/code.js + dist/ui.html
 # Reload in Figma: Plugins → Development → Escala DS → ⟳
 
 # Refresh the downloadable plugin zip served by "Bring to Figma"
-cd ~/sync-ds-platform/scalable-designs
-npm run bundle:plugin  # → public/scalable-designs-figma-plugin.zip (commit it; Vercel only builds this repo)
+cd ~/sync-ds-platform/escala-tokens
+npm run bundle:plugin  # → public/escala-figma-plugin.zip (commit it; Vercel only builds this repo)
 ```
 
 ---
