@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { head } from '@vercel/blob'
-import { handleMcpMessage, mcpDiscovery } from '../src/lib/agentAccess/mcp'
-import type { TokenJSON } from '../src/lib/agentBundle/types'
-import { tokenBlobKey } from '../src/lib/publishTrust'
+import { handleMcpMessage, mcpDiscovery } from '../src/lib/agentAccess/mcp.js'
+import type { TokenJSON } from '../src/lib/agentBundle/types.js'
+import { tokenBlobKey } from '../src/lib/publishTrust.js'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',

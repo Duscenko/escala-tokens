@@ -1,5 +1,5 @@
-import { callTool, TOOL_SPECS } from './callTool'
-import type { LoadTokens } from './types'
+import { callTool, TOOL_SPECS } from './callTool.js'
+import type { LoadTokens } from './types.js'
 
 export const MCP_SERVER_NAME = 'escala-tokens'
 export const MCP_SERVER_VERSION = '1.0.0'

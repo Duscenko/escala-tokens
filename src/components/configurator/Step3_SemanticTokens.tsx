@@ -341,7 +341,7 @@ function TuneIcon({ active }: { active: boolean }) {
   return (
     <SlidersIcon
       size={15}
-      className={`transition-colors ${active ? 'text-accent-ui' : 'text-fg-faint group-hover:text-fg-muted'}`}
+      className={`relative z-[1] transition-colors ${active ? 'text-accent-ui' : 'text-fg-muted group-hover:text-fg'}`}
     />
   )
 }
@@ -519,19 +519,14 @@ function MatrixRow({
           )
         })}
 
-        {/* Filter / edit toggle — opens the Token Details modal (see the
-            main component's render) rather than expanding inline.
-            `sticky right-0` — see the arch table's matching cell for the full
-            reasoning (pinned corner, explicit background to occlude scrolled
-            mode columns, the tiny accepted double-tint trade-off on striped/
-            expanded rows). `isEven`/`expanded` repeat this row's own
-            `<div>` wrapper classes for the same reason. */}
+        {/* Filter / edit toggle — opens Token Details. Glass plate is on
+            `STICKY_TRAIL` so the icon stays readable over scrolling modes. */}
         <button
           onClick={onToggle}
           aria-expanded={expanded}
           aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
-          className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted transition-colors sticky right-0 z-10 border-l border-line ${
-            flash ? 'bg-accent-ui/[0.12]' : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+          className={`group flex items-center justify-center h-full py-2.5 text-fg-muted hover:text-fg transition-colors ${STICKY_TRAIL} ${
+            flash ? 'bg-accent-ui/20' : expanded ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''
           }`}
         >
           <TuneIcon active={expanded} />
@@ -547,6 +542,15 @@ function MatrixRow({
  *  "Token architecture" / category-nav cells use, so the table's left edge
  *  lands on the one column line every row above it already shares. */
 const NAME_MIN_TRACK = '11rem'
+/** Trailing tune / add-theme track — keep overlay width in lockstep. */
+const TRAIL_TRACK = '2.75rem'
+
+/** Pinned trailing cells. The plate is the readability layer — a sibling
+ *  overlay sat on top of the icons and washed them out. `backdrop-blur-xl`
+ *  plus `bg-app/80` keeps the rail glassy without letting swatches collide
+ *  with the sliders. The fade dissolves the mode column into that plate. */
+const STICKY_TRAIL =
+  'relative sticky right-0 z-10 border-l border-line bg-app/90 backdrop-blur-xl supports-[backdrop-filter]:bg-app/80 before:pointer-events-none before:absolute before:inset-y-0 before:right-full before:w-10 before:bg-gradient-to-r before:from-transparent before:to-app/90'
 
 const MAX_DOTS = 6
 const MIN_OVERFLOW = 52
@@ -772,7 +776,7 @@ export default function Step3_SemanticTokens({
   const MAX_NAME_W = 520
   const DEFAULT_NAME_W = 288
   const [nameWidth, setNameWidth] = useState<number | null>(null)
-  const themeTracks = `${themeCols.map((t) => `${widthOf(t)}px`).join(' ')} 2.75rem`
+  const themeTracks = `${themeCols.map((t) => `${widthOf(t)}px`).join(' ')} ${TRAIL_TRACK}`
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: nameWidth == null
       // `minmax(NAME_MIN_TRACK,1fr)`, not `minmax(0,1fr)`. The 1fr still takes
@@ -1133,7 +1137,7 @@ export default function Step3_SemanticTokens({
   ].join('/')
   const archGridStyle: React.CSSProperties = {
     // Last track = the edit toggle, mirroring the flat matrix's trailing column.
-    gridTemplateColumns: `minmax(${NAME_MIN_TRACK},1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} 2.75rem`,
+    gridTemplateColumns: `minmax(${NAME_MIN_TRACK},1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} ${TRAIL_TRACK}`,
   }
 
   if (!ready) {
@@ -1344,11 +1348,8 @@ export default function Step3_SemanticTokens({
                     every "+ Theme" click grows this row) must never push this
                     control out of reach behind a horizontal scroll; extra
                     modes should make the MIDDLE of the table scroll, not
-                    shove this column away. `bg-app` keeps scrolled mode
-                    columns from showing through underneath it; `border-l`
-                    gives the pinned edge a boundary that doesn't depend on
-                    which column happens to be scrolled under it. */}
-                <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
+                    shove this column away. */}
+                <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
                   {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
                     <button
                       onClick={(e) => openAddTheme(undefined, e.currentTarget)}
@@ -1434,30 +1435,14 @@ export default function Step3_SemanticTokens({
                           />
                         </button>
                       ))}
-                      {/* Filter / edit toggle — opens the Token Details modal,
-                          same as the flat matrix (see the main component's render).
-                          `sticky right-0`, matching the header's corner cell — this
-                          is the per-row half of the same pin (see that cell's own
-                          comment). The background REPEATS the row wrapper's own
-                          `isOpen`/zebra classes rather than inheriting them: a
-                          sticky element paints its own layer on top of whatever's
-                          already there, so without an explicit, matching fill here
-                          the mode columns scrolling underneath would show through
-                          this one cell as they pass. (Known, accepted residual:
-                          since the row wrapper ALSO paints that same translucent
-                          tint underneath, the two composite to a hair darker right
-                          under this column specifically — 0.018 → ~0.036 opacity —
-                          imperceptible at this size, and the alternative (an
-                          untinted sticky cell cutting a flat notch through every
-                          striped row) reads as an actual rendering glitch, which
-                          this doesn't.) */}
+                      {/* Filter / edit toggle — glass plate on `STICKY_TRAIL`. */}
                       <button
                         onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
                         aria-expanded={isOpen}
                         aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
                         disabled={!editable}
-                        className={`group flex items-center justify-center h-full py-2.5 text-fg-faint hover:text-fg-muted disabled:opacity-30 transition-colors sticky right-0 z-10 border-l border-line ${
-                          flash ? 'bg-accent-ui/[0.12]' : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : 'bg-app'
+                        className={`group flex items-center justify-center h-full py-2.5 text-fg-muted hover:text-fg disabled:opacity-30 transition-colors ${STICKY_TRAIL} ${
+                          flash ? 'bg-accent-ui/20' : isOpen ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''
                         }`}
                       >
                         <TuneIcon active={isOpen} />
@@ -1582,7 +1567,7 @@ export default function Step3_SemanticTokens({
                   is if anything the MORE likely table to grow past the
                   viewport, since it's the one with the full 89-role matrix
                   and no architecture curating it down. */}
-              <span className="flex items-center justify-center py-1.5 sticky right-0 z-10 bg-app border-l border-line">
+              <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
                 <button
                   onClick={(e) => openAddTheme(undefined, e.currentTarget)}
                   aria-label="Add a theme"

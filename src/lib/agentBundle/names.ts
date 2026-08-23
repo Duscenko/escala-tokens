@@ -1,4 +1,4 @@
-import { mdCell, slugify } from '../utils'
+import { mdCell, slugify } from '../utils.js'
 
 export const GROUP_ORDER = ['content', 'action', 'surface', 'status', 'border'] as const
 export type SemanticGroup = (typeof GROUP_ORDER)[number]

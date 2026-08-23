@@ -68,7 +68,7 @@ describe('agentAccess import boundary', () => {
 
   it('check_contrast is wired to lib/color/apca', () => {
     const src = readFileSync(join(accessDir, 'contrast.ts'), 'utf8')
-    expect(src).toContain("from '../color/apca'")
+    expect(src).toMatch(/from ['"]\.\.\/color\/apca(?:\.js)?['"]/)
     expect(src).not.toContain('chroma.contrast')
   })
 })

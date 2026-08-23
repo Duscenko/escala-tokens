@@ -1,4 +1,4 @@
-import { evaluate, type IntentClass } from '../color/apca'
+import { evaluate, type IntentClass } from '../color/apca.js'
 
 export type { IntentClass }
 

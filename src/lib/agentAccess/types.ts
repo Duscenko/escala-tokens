@@ -1,6 +1,6 @@
 /** MCP tool layer. Store-free, Blob-free — the HTTP handler injects `loadTokens`. */
 
-import type { TokenJSON } from '../agentBundle'
+import type { TokenJSON } from '../agentBundle/types.js'
 
 export type IntentClass = 'body-text' | 'large-text' | 'ui-component' | 'decorative' | 'surface'
 

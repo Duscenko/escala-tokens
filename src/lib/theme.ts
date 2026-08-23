@@ -18,14 +18,32 @@ export function getTheme(): Theme {
   }
 }
 
+function applyThemeClass(theme: Theme): void {
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+  listeners.forEach((fn) => fn())
+}
+
 export function setTheme(theme: Theme): void {
   try {
     localStorage.setItem(KEY, theme)
   } catch {
     /* ignore */
   }
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-  listeners.forEach((fn) => fn())
+
+  const reduced = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  // Crossfade the whole chrome so tabs, scoops and page fill switch as one
+  // snapshot — interpolating ink through mid-gray would dip contrast, and
+  // painting the scoops a frame ahead of the pill is what read as a bug.
+  if (!reduced && typeof document.startViewTransition === 'function') {
+    try {
+      document.startViewTransition(() => applyThemeClass(theme))
+      return
+    } catch {
+      /* fall through */
+    }
+  }
+  applyThemeClass(theme)
 }
 
 export function toggleTheme(): void {

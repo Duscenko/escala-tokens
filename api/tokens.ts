@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { put, head, get } from '@vercel/blob'
+import { put, head } from '@vercel/blob'
 import {
   claimBlobKey,
   originAllowed,
@@ -8,7 +8,13 @@ import {
   parseBearer,
   PROJECT_REQUIRED,
   tokenBlobKey,
-} from '../src/lib/publishTrust'
+} from '../src/lib/publishTrust.js'
+
+// Vercel compiles this to ESM (`package.json` "type": "module"). Node then
+// loads `/var/task/api/tokens.js` and requires a `.js` specifier for every
+// relative import — extensionless paths throw ERR_MODULE_NOT_FOUND (HTTP 500
+// for the Figma plugin). `api/tsconfig.json` stops the same graph failing
+// TS2835 at compile time (root tsconfig is solution-style, no compilerOptions).
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -48,10 +54,11 @@ type ClaimRecord = { hash: string }
 
 async function readClaim(project: string): Promise<ClaimRecord | null> {
   try {
-    const result = await get(claimBlobKey(project), { access: 'private' })
-    if (!result || result.statusCode !== 200) return null
-    const text = await new Response(result.stream).text()
-    const parsed = JSON.parse(text) as { hash?: unknown }
+    const url = (await head(claimBlobKey(project))).url
+    if (!url) return null
+    const raw = await fetch(url)
+    if (!raw.ok) return null
+    const parsed = (await raw.json()) as { hash?: unknown }
     return typeof parsed.hash === 'string' ? { hash: parsed.hash } : null
   } catch {
     return null
@@ -59,8 +66,11 @@ async function readClaim(project: string): Promise<ClaimRecord | null> {
 }
 
 async function writeClaim(project: string, hash: string): Promise<void> {
+  // Same public put as the token payload. The stored value is a SHA-256 hash,
+  // not the claim itself — private Blob access was crashing this store and
+  // turning a successful publish into HTTP 500 (plugin + Figma sync UI).
   await put(claimBlobKey(project), JSON.stringify({ hash } satisfies ClaimRecord), {
-    access: 'private',
+    access: 'public',
     addRandomSuffix: false,
     contentType: 'application/json',
     allowOverwrite: true,
@@ -145,7 +155,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let claim: string | undefined
     if (!existing) {
       claim = generateClaim()
-      await writeClaim(project, hashClaim(claim))
+      try {
+        await writeClaim(project, hashClaim(claim))
+      } catch {
+        // Token payload is already public. Keep this request a 200 so the
+        // configurator and plugin stay connected even if the claim write fails.
+      }
     }
 
     return res.status(200).json({

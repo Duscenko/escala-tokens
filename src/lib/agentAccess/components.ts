@@ -1,4 +1,4 @@
-import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS, type ComponentDef } from '../componentCatalogue'
+import { COMPONENTS, ESSENTIAL_COMPONENT_KEYS, type ComponentDef } from '../componentCatalogue.js'
 
 const ESSENTIAL = new Set<string>(ESSENTIAL_COMPONENT_KEYS)
 

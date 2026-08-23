@@ -1,4 +1,4 @@
-import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
@@ -258,6 +258,96 @@ const DOCS_RAIL_ROWS: DocsRailRow[] = [
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 
+function themeLabel(key: string): string {
+  if (key === 'light') return 'Light'
+  if (key === 'dark') return 'Dark'
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+/** One Theme menu for any count. A Light/Dark segment only works for the
+ *  default pair — extra style themes are named keys (`forest`, `brand-b`),
+ *  each with its own palette and a light/dark kind. Same trigger at 2 or 12. */
+function PreviewThemeSwitch({
+  themes,
+  kinds,
+  value,
+  onChange,
+}: {
+  themes: string[]
+  kinds: Record<string, 'light' | 'dark'>
+  value: string
+  onChange: (key: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const current = themes.includes(value) ? value : themes[0]
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  if (themes.length < 2 || !current) return null
+
+  return (
+    <div ref={menuRef} className="relative flex-shrink-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={`Preview theme ${themeLabel(current)}`}
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg border border-line bg-app text-[12px] font-medium hover:border-line-strong transition-colors"
+      >
+        <span className="text-fg-faint font-normal">Theme</span>
+        <span className="text-fg truncate max-w-[8rem]">{themeLabel(current)}</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" className="text-fg-faint" strokeWidth="1.6" aria-hidden>
+          <path d="M3 4.5 6 8l3-3.5" />
+        </svg>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Preview theme"
+          className="absolute right-0 top-full mt-1 z-50 w-56 max-h-64 overflow-y-auto py-1 rounded-lg border border-line bg-surface shadow-[0_12px_32px_-12px_rgba(0,0,0,0.28)]"
+        >
+          {themes.map((t) => {
+            const on = t === current
+            const kind = kinds[t] ?? 'light'
+            return (
+              <li key={t}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={on}
+                  onClick={() => { onChange(t); setOpen(false) }}
+                  className={`w-full flex items-center justify-between gap-3 px-2.5 py-1.5 text-left transition-colors ${
+                    on ? 'bg-accent-ui/[0.06]' : 'hover:bg-elevated/60'
+                  }`}
+                >
+                  <span className={`text-[12px] font-medium truncate ${on ? 'text-accent-ui' : 'text-fg'}`}>
+                    {themeLabel(t)}
+                  </span>
+                  <span className="text-[11px] text-fg-faint capitalize flex-shrink-0">{kind}</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
 function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string; right?: ReactNode }) {
   return (
@@ -267,8 +357,8 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
       </span>
       <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
-      <p className="text-sm text-fg-faint truncate flex-1 min-w-0">{subtitle}</p>
-      {right && <div className="flex-shrink-0 ml-3">{right}</div>}
+      <p className="text-sm text-fg-faint truncate min-w-0 max-w-md">{subtitle}</p>
+      {right && <div className="flex-shrink-0 ml-auto">{right}</div>}
     </div>
   )
 }
@@ -277,7 +367,7 @@ export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   // `selectedComponents`/`toggleComponent` are no longer read here — the
   // include checkbox moved into ComponentsView along with the master list.
-  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, projectCreated } = useDesignStore()
+  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = useDesignStore()
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
@@ -657,24 +747,41 @@ export default function Configurator() {
       Icon: ComponentsIcon,
       title: 'Components',
       subtitle: 'One page per component — live playground, examples, accessibility, Figma and API.',
-      // On the header's own line, not floating atop the master list.
+      // Search stays last. Theme switch + Edit Color sit in the gap the
+      // subtitle already yields (`truncate`). Same `previewTheme` as the
+      // playground — not a second switcher.
       right: (
-        <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-52 focus-within:border-line-strong transition-colors">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            type="text"
-            value={componentSearch}
-            onChange={(e) => setComponentSearch(e.target.value)}
-            placeholder="Search components"
-            aria-label="Search components"
-            className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+        <div className="flex items-center gap-2">
+          <PreviewThemeSwitch
+            themes={themeOrder.filter((t) => themes[t])}
+            kinds={themeKinds}
+            value={previewTheme}
+            onChange={changePreviewTheme}
           />
-          {componentSearch && (
-            <button onClick={() => setComponentSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-          )}
+          <button
+            type="button"
+            onClick={() => selectFoundation('color')}
+            className="h-8 px-2 text-[12px] font-medium text-fg-muted hover:text-fg transition-colors flex-shrink-0"
+          >
+            Edit Color
+          </button>
+          <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line w-44 lg:w-52 min-w-[8rem] focus-within:border-line-strong transition-colors">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={componentSearch}
+              onChange={(e) => setComponentSearch(e.target.value)}
+              placeholder="Search components"
+              aria-label="Search components"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+            />
+            {componentSearch && (
+              <button onClick={() => setComponentSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            )}
+          </div>
         </div>
       ),
     }

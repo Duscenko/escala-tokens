@@ -1,8 +1,8 @@
-import { checkContrast } from './contrast'
-import { getComponent, listComponents } from './components'
-import { resolveToken } from './resolveToken'
-import { TOOL_SPECS, type LoadTokens } from './types'
-import type { TokenJSON } from '../agentBundle'
+import { checkContrast } from './contrast.js'
+import { getComponent, listComponents } from './components.js'
+import { resolveToken } from './resolveToken.js'
+import { TOOL_SPECS, type LoadTokens } from './types.js'
+import type { TokenJSON } from '../agentBundle/types.js'
 
 export { TOOL_SPECS }
 

@@ -1,5 +1,5 @@
-import { figmaPrimitiveName, figmaSemanticName, figmaSpacingName, webCodeSyntax } from '../agentBundle'
-import type { TokenJSON } from '../agentBundle'
+import { figmaPrimitiveName, figmaSemanticName, figmaSpacingName, webCodeSyntax } from '../agentBundle/names.js'
+import type { TokenJSON } from '../agentBundle/types.js'
 
 export type ResolvedKind = 'semantic' | 'primitive' | 'foundation' | 'unknown'
 

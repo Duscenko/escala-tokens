@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+/* Register chrome colors so a theme switch interpolates the tokens themselves.
+   Unregistered custom properties snap — and box-shadow / gradients that read
+   them can resolve the *previous* theme's value for a frame, which is what
+   made the Color hub tabs flash white scoops on a dark pill. */
+@property --app {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f6f6f7;
+}
+@property --elevated {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e8e8ea;
+}
+@property --fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #18181b;
+}
+@property --fg-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #52525b;
+}
+@property --fg-faint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #737373;
+}
+@property --line {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e5e5e5;
+}
+@property --line-strong {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #d4d4d4;
+}
+
 /* Class-strategy dark mode: `.dark` on <html> activates the dark palette. */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -47,6 +92,9 @@
 }
 
 :root {
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-theme: 280ms;
+
   /* ── Light theme (default) ── */
   --app: #ffffff;
   --surface: #f6f6f7;
@@ -166,6 +214,17 @@
   --color-5: oklch(90.7% 0.231 133);
 }
 
+html {
+  background: var(--app);
+  color: var(--fg);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-theme);
+  animation-timing-function: var(--ease-out-quint);
+}
+
 body {
   margin: 0;
   background: var(--app);
@@ -221,6 +280,10 @@ body {
   .color-hub-tab {
     transition: none;
   }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }
 
 /* Foundation layer bar — the 52px strip under Groups (Color's
@@ -231,6 +294,7 @@ body {
 .foundation-layer-bar {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  overflow: visible;
 }
 
 /* Color hub tabs — Chrome-style active silhouette. The strip inherits the
@@ -240,7 +304,9 @@ body {
 .color-hub-tab-strip {
   background: transparent;
   gap: 1px;
-  padding: 0 8px;
+  /* Room for the 10px scoops on the first/last tab — 8px clipped them. */
+  padding: 0 12px;
+  overflow: visible;
 }
 .color-hub-tab {
   position: relative;
@@ -258,7 +324,10 @@ body {
   white-space: nowrap;
   color: var(--fg-muted);
   cursor: pointer;
-  transition: color 150ms ease-out, background-color 150ms ease-out;
+  overflow: visible;
+  /* Color only — a background-color transition lagged the scoops (painted
+     from `--app`) by 150ms and read as white bites on a dark pill. */
+  transition: color 150ms ease-out;
 }
 .color-hub-tab:hover {
   color: var(--fg);
@@ -270,9 +339,10 @@ body {
 }
 .color-hub-tab-active {
   --tab-r: 10px;
+  --tab-fill: var(--app);
   z-index: 1;
   border-radius: var(--tab-r) var(--tab-r) 0 0;
-  background: var(--app);
+  background: var(--tab-fill);
   color: var(--fg);
   font-weight: 600;
   /* Cover the well's 1px hairline so the tab becomes the page. */
@@ -280,9 +350,12 @@ body {
   padding-bottom: 1px;
 }
 .color-hub-tab-active:hover {
-  background: var(--app);
+  background: var(--tab-fill);
   color: var(--fg);
 }
+/* Concave join into the strip. Painted as `--app` (same token as the tab
+   fill), not a box-shadow: shadow color can resolve against currentColor /
+   the previous theme for a frame, which is the white-scoop flash. */
 .color-hub-tab-active::before,
 .color-hub-tab-active::after {
   content: "";
@@ -294,13 +367,19 @@ body {
 }
 .color-hub-tab-active::before {
   left: calc(-1 * var(--tab-r));
-  border-radius: 0 0 var(--tab-r) 0;
-  box-shadow: calc(var(--tab-r) / 2) 0 0 0 var(--app);
+  background: radial-gradient(
+    circle at 100% 0,
+    var(--tab-fill) var(--tab-r),
+    transparent calc(var(--tab-r) + 0.5px)
+  );
 }
 .color-hub-tab-active::after {
   right: calc(-1 * var(--tab-r));
-  border-radius: 0 0 0 var(--tab-r);
-  box-shadow: calc(var(--tab-r) / -2) 0 0 0 var(--app);
+  background: radial-gradient(
+    circle at 0 0,
+    var(--tab-fill) var(--tab-r),
+    transparent calc(var(--tab-r) + 0.5px)
+  );
 }
 
 /* Preview panel (400px): same silhouette, smaller type so "Documentation" fits. */
