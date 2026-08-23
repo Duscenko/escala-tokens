@@ -26,7 +26,7 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 
 ## 2. Escala JSON — versioning
 
-`schemaVersion` is the plugin handshake. The plugin logs a warning when the payload is newer than `SUPPORTED_SCHEMA_VERSION` (`code.ts`, currently **5**) and still imports.
+`schemaVersion` is the plugin handshake. The plugin logs a warning when the payload is newer than `SUPPORTED_SCHEMA_VERSION` (`code.ts`, currently **6**) and still imports.
 
 | Version | What changed | Compatibility |
 |---|---|---|
@@ -34,7 +34,7 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 | 3 | Semantic keys renamed (`bg-primary` → `surface-0`, …). Flat `colors.semantic` / `semanticDark` stay for the plugin | Breaking names |
 | 4 | Per-family dark primitives (`accent-dark-*`, `error-dark-*`, …) | Additive |
 | 5 | `opacity` **removed** (alpha lives in `colors.primitiveAlpha`) | Older plugin already guards `if (tokens.opacity)` |
-| 6 *(working tree, not on HEAD)* | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame` | Plugin v5 warns, ignores unknown keys |
+| 6 | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame`. Configurator also emits `borders.width` as a copy of `stroke` so a v5 plugin still creates the Border collection. Plugin v6 imports the role maps as `role/*` aliases (and one text style per type role). | Plugin v5 warns, imports colors/primitives, ignores role maps |
 
 Rules:
 
@@ -96,11 +96,12 @@ Always emit when present in the store:
 
 - `colors.primitive`, `colors.primitiveAlpha`, `colors.themes`, `colors.themeOrder`
 - `colors.semantic`, `colors.semanticDark` (compat)
-- `typography`, `spacing`, `padding`, `radius`, `sizes`, `grid`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
+- `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
+- `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection
 - `icons` (library + `aiSource` + `custom`)
 - `atoms`
 
-Plugin also *reads* optional `copy` / `borders` that the configurator does not emit yet. Do not reuse those names for something else.
+Plugin also *reads* optional `copy` that the configurator does not emit yet. Do not reuse that name for something else.
 
 ## 7. Agent envelope
 

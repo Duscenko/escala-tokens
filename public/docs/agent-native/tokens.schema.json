@@ -10,7 +10,7 @@
     "schemaVersion": {
       "type": "integer",
       "minimum": 3,
-      "description": "TOKEN_SCHEMA_VERSION in src/lib/tokenGenerator.ts. HEAD on main is 5. Working tree may be 6 (additive layout/type roles). Plugin SUPPORTED_SCHEMA_VERSION is 5 — newer still imports with a warning."
+      "description": "TOKEN_SCHEMA_VERSION in src/lib/tokenGenerator.ts. Live version is 6 (additive layout/type roles). Plugin SUPPORTED_SCHEMA_VERSION is 6."
     },
     "project": {
       "type": "string",
@@ -148,6 +148,14 @@
       "type": "object",
       "additionalProperties": { "type": "string" },
       "description": "v6 additive."
+    },
+    "borders": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Plugin v5 compat. borders.width is a copy of stroke.",
+      "properties": {
+        "width": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
     },
     "icons": {
       "type": "object",

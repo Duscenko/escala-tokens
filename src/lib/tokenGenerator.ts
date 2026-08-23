@@ -324,6 +324,10 @@ export function generateTokenJSON() {
     sizeRoles: mergeLayoutRoles('size', store.sizeRoles),
     stroke: store.stroke,
     strokeRoles: mergeLayoutRoles('stroke', store.strokeRoles),
+    // Plugin v5 looked for `borders.width` and skipped the Border collection
+    // when it was absent. Same steps as `stroke`, under the name the older
+    // plugin already reads — v6 prefers `stroke` and treats this as a copy.
+    borders: { width: store.stroke },
     icons: {
       library: UNTITLED_LIBRARY.key,
       name: UNTITLED_LIBRARY.label,
