@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import LayoutSemantics from './LayoutSemantics'
 import type { LayoutFamily } from '../../lib/layoutTokens'
+import { ChromeTabBackground } from '../ui/ChromeTabShape'
 
 export type LayoutTab = 'primary' | 'semantics'
 
@@ -40,6 +41,7 @@ export default function LayoutHub({
             aria-pressed={active}
             className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
           >
+            <ChromeTabBackground />
             <span className="relative grid place-items-center">
               <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
               <span className="col-start-1 row-start-1">{t.label}</span>

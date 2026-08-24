@@ -10,6 +10,7 @@ import {
 import { buildSectionExport, ALL_SECTIONS, type SectionKey } from '../../lib/sectionExport'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
+import { ChromeTabBackground } from '../ui/ChromeTabShape'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
 import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { TypeRolesPreview } from './atoms/TypeRolesPreview'
@@ -214,6 +215,7 @@ function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab)
               onClick={() => onChange(t.key)}
               className={`color-hub-tab color-hub-tab-compact ${active ? 'color-hub-tab-active' : ''}`}
             >
+              <ChromeTabBackground />
               <span className="relative grid place-items-center min-w-0">
                 <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
                 <span className="col-start-1 row-start-1 truncate">{t.label}</span>

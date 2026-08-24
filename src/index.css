@@ -294,7 +294,9 @@ body {
   .animate-rainbow {
     animation: none !important;
   }
-  .color-hub-tab {
+  .color-hub-tab,
+  .color-hub-tab::before,
+  .color-hub-tab-bg {
     transition: none;
   }
   ::view-transition-old(root),
@@ -306,23 +308,31 @@ body {
 /* Foundation layer bar — the 52px strip under Groups (Color's
    Primitives/Semantics/Gradients, Typography's search, every railed
    table header). Recessed on `--surface` so it sits BETWEEN the Groups
-   chrome (app) and the table (app): one clear depth step, light and dark.
-   Active Color tabs lift back onto `--app` and cover the bottom hairline. */
+   chrome (app) and the table (app): one clear depth step, light and dark. */
 .foundation-layer-bar {
   background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  /* An inset shadow, not a border — a border-bottom eats 1px of the box's
+     OWN content height (box-sizing: border-box), so a tab sized to "fill
+     the strip" via items-end landed 1px short of the actual bottom edge. */
+  box-shadow: inset 0 -1px 0 var(--line);
   overflow: visible;
 }
+/* Tab-bearing bars drop the hairline — the real Chrome tab shape (see
+   below) already draws its own base edge via the SVG geometry, and a
+   second straight gray line half a pixel under it just doubled the seam. */
+.foundation-layer-bar:has(.color-hub-tab-strip) {
+  box-shadow: none;
+}
 
-/* Color hub tabs — Chrome-style active silhouette. The strip inherits the
-   recessed well from `.foundation-layer-bar`; the active tab lifts on
-   `bg-app` with concave bottom corners and overlaps the well's hairline
-   so it merges into the table. */
+/* Color hub tabs — REAL Chrome tab geometry, ported from
+   adamschwartz/chrome-tabs (see `ui/ChromeTabShape.tsx`), not approximated
+   with border-radius/gradients. The shape is a filled SVG layer
+   (`.color-hub-tab-bg`) painted BEHIND the label, revealed on hover and
+   pinned visible on the active tab — same split as the source repo: the
+   button itself carries no background or radius of its own. */
 .color-hub-tab-strip {
   background: transparent;
-  gap: 1px;
-  /* Room for the 10px scoops on the first/last tab — 8px clipped them. */
-  padding: 0 12px;
+  gap: 0;
   overflow: visible;
 }
 .color-hub-tab {
@@ -332,7 +342,10 @@ body {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 36px;
+  /* 44 of the bar's 52px — Chrome's own tab-to-strip ratio (34 of 40). At
+     36px the tab floated with 16px of dead air above it, so it read as a
+     chip sitting INSIDE the bar instead of a tab hanging FROM its top edge. */
+  height: 44px;
   padding-inline: 16px;
   border: 0;
   background: transparent;
@@ -342,61 +355,70 @@ body {
   color: var(--fg-muted);
   cursor: pointer;
   overflow: visible;
-  /* Color only — a background-color transition lagged the scoops (painted
-     from `--app`) by 150ms and read as white bites on a dark pill. */
   transition: color 150ms ease-out;
 }
 .color-hub-tab:hover {
   color: var(--fg);
-  background: color-mix(in srgb, var(--elevated) 70%, transparent);
 }
 .color-hub-tab:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--fg);
 }
-.color-hub-tab-active {
-  --tab-r: 10px;
-  --tab-fill: var(--app);
-  z-index: 1;
-  border-radius: var(--tab-r) var(--tab-r) 0 0;
-  background: var(--tab-fill);
-  color: var(--fg);
-  font-weight: 600;
-  /* Cover the well's 1px hairline so the tab becomes the page. */
-  margin-bottom: -1px;
-  padding-bottom: 1px;
+
+/* The SVG shape layer — absolutely filling the tab, behind the label
+   (painted first in DOM order; z-index below the text span). Hidden at
+   rest, exactly like the source repo, so resting inactive tabs show no
+   pill at all — only the divider hairlines below say "tabs". */
+.color-hub-tab-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
 }
-.color-hub-tab-active:hover {
-  background: var(--tab-fill);
-  color: var(--fg);
+.color-hub-tab-bg-outer {
+  display: block;
 }
-/* Concave join into the strip. Painted as `--app` (same token as the tab
-   fill), not a box-shadow: shadow color can resolve against currentColor /
-   the previous theme for a frame, which is the white-scoop flash. */
-.color-hub-tab-active::before,
-.color-hub-tab-active::after {
+.color-hub-tab:hover .color-hub-tab-bg {
+  opacity: 1;
+}
+.color-hub-tab-geometry {
+  fill: color-mix(in srgb, var(--elevated) 70%, transparent);
+}
+.color-hub-tab-active .color-hub-tab-bg {
+  opacity: 1;
+}
+.color-hub-tab-active .color-hub-tab-geometry {
+  fill: var(--app);
+}
+
+/* Chrome's tab separators: a hairline between adjacent INACTIVE tabs that
+   retracts beside the active tab and beside whichever tab is hovered. The
+   well and the tab fill sit only ~1.07:1 apart, so at rest these are the
+   only thing that says "tabs" rather than "one label in a strip". */
+.color-hub-tab:not(.color-hub-tab-active)::before {
   content: "";
   position: absolute;
-  bottom: 0;
-  width: var(--tab-r);
-  height: var(--tab-r);
+  left: -1px;
+  top: 50%;
+  width: 1px;
+  height: 18px;
+  margin-top: -9px;
+  background: var(--line-strong);
   pointer-events: none;
+  transition: opacity 120ms ease-out;
 }
-.color-hub-tab-active::before {
-  left: calc(-1 * var(--tab-r));
-  background: radial-gradient(
-    circle at 100% 0,
-    var(--tab-fill) var(--tab-r),
-    transparent calc(var(--tab-r) + 0.5px)
-  );
+.color-hub-tab:not(.color-hub-tab-active):first-child::before,
+.color-hub-tab:not(.color-hub-tab-active):hover::before,
+.color-hub-tab-active + .color-hub-tab:not(.color-hub-tab-active)::before,
+.color-hub-tab:hover + .color-hub-tab:not(.color-hub-tab-active)::before {
+  opacity: 0;
 }
-.color-hub-tab-active::after {
-  right: calc(-1 * var(--tab-r));
-  background: radial-gradient(
-    circle at 0 0,
-    var(--tab-fill) var(--tab-r),
-    transparent calc(var(--tab-r) + 0.5px)
-  );
+.color-hub-tab-active {
+  z-index: 1;
+  color: var(--fg);
+  font-weight: 600;
 }
 
 /* Preview panel (400px): same silhouette, smaller type so "Documentation" fits. */

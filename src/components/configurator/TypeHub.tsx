@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Step4_Typography from './Step4_Typography'
 import TypeSemantics, { type TypeFocus } from './TypeSemantics'
+import { ChromeTabBackground } from '../ui/ChromeTabShape'
 
 export type TypeTab = 'primary' | 'semantics'
 
@@ -36,6 +37,7 @@ export default function TypeHub({
             aria-pressed={active}
             className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
           >
+            <ChromeTabBackground />
             <span className="relative grid place-items-center">
               <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
               <span className="col-start-1 row-start-1">{t.label}</span>

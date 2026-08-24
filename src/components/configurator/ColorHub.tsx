@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
+import { ChromeTabBackground } from '../ui/ChromeTabShape'
 
 export type ColorTab = 'primary' | 'semantics' | 'gradients'
 
@@ -68,6 +69,7 @@ export default function ColorHub({
             aria-pressed={active}
             className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
           >
+            <ChromeTabBackground />
             {/* The label is stacked over an invisible SEMIBOLD copy of itself,
                 which reserves the widest state's width. Without it, activating
                 a tab thickens its text, widening the button and nudging the

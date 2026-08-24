@@ -12,6 +12,7 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
+import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
 // ('about' — the landing surface for new visitors, see `hasOnboarded()`
@@ -891,6 +892,9 @@ export default function Configurator() {
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
+      {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
+          (Color/Type/Layout hub tabs, PreviewPanel's Preview/.MD/Documentation). */}
+      <ChromeTabDefs />
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 
