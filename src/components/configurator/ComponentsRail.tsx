@@ -1,6 +1,6 @@
 import { useMemo, type ComponentType } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
+import { COMPONENTS, CATEGORIES, isInFigmaSample, type ComponentDef } from '../../lib/componentCatalogue'
 import { RAIL_COLLAPSED_WIDTH, RAIL_WIDTH } from './SectionRail'
 
 function CatalogueCheck() {
@@ -155,7 +155,17 @@ export default function ComponentsRail({
                               : 'text-fg-muted hover:bg-elevated/40 hover:text-fg border border-transparent'
                           }`}
                         >
-                          <span className="truncate min-w-0">{comp.label}</span>
+                          <span className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="truncate min-w-0">{comp.label}</span>
+                            {!isInFigmaSample(comp.key) && (
+                              <span
+                                title="No renderiza como componente en el import de Figma hoy — ships como spec para tu agente/código"
+                                className="flex-shrink-0 text-[9px] leading-none px-1 py-0.5 rounded border border-line-strong/60 text-fg-faint uppercase tracking-wide"
+                              >
+                                Code
+                              </span>
+                            )}
+                          </span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation()

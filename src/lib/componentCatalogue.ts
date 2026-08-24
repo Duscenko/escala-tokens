@@ -964,6 +964,31 @@ export const COMPONENTS: ComponentDef[] = [
 // Mirrors the plugin's "❖ Category" divider pages, in the same order.
 export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'Content & Surfaces', 'Feedback', 'Navigation']
 
+// ── Figma import scope ───────────────────────────────────────────────────────
+// `figmaSets` above names the component set(s) a key maps to in the plugin's
+// full CATALOG (../escala-figma-plugin/src/code.ts) — the variant matrix the
+// plugin CAN build. That catalogue is unwired today: rendering all 58 specs as
+// real Figma variants (1,403 combinations) locked the file on import, so the
+// live import instead builds a FIXED 9-component sample sheet
+// ('⬡ Components Overview') regardless of which components are selected here.
+//
+// Every one of the 58 still ships as a full spec — props, variant axes,
+// tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
+// bundle. Only the keys below additionally land as real component nodes in a
+// Figma file today. Don't infer this from `figmaSets.length` — that field
+// describes catalogue capability, not current import behavior.
+//
+// Keep this list in lockstep with the plugin's `SAMPLE` array in code.ts.
+export const FIGMA_SAMPLE_KEYS: readonly string[] = [
+  'Button', 'Input', 'Select', 'Checkbox', 'Toggle', 'Badge', 'StatusBadge', 'Toast', 'Avatar',
+]
+
+/** Does the live Figma import render this key as a real component today —
+ *  not just carry its spec? See FIGMA_SAMPLE_KEYS above. */
+export function isInFigmaSample(key: string): boolean {
+  return FIGMA_SAMPLE_KEYS.includes(key)
+}
+
 // All component keys — the full catalogue, offered alongside the curated
 // default below (see ESSENTIAL_COMPONENT_KEYS) for anyone who wants everything
 // from the start.

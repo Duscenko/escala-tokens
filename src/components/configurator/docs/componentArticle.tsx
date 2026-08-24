@@ -15,7 +15,7 @@
 // is the snippet for the variant on screen — which neither half could claim.
 
 import { useState } from 'react'
-import { COMPONENTS, type ComponentDef, type VariantAxis } from '../../../lib/componentCatalogue'
+import { COMPONENTS, isInFigmaSample, type ComponentDef, type VariantAxis } from '../../../lib/componentCatalogue'
 import { agentContextMarkdown } from '../../../lib/agentContext'
 import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
@@ -321,14 +321,16 @@ function ApiVariantsTable({ def }: { def: ComponentDef }) {
 
 export function FigmaShipList({ component }: { component: ComponentDef }) {
   const variantCount = component.axes.reduce((n, a) => n * a.values.length, 1)
-  // Catalogue-first components — documented + exported, but their component set
-  // hasn't landed in the Figma plugin's CATALOG yet.
-  if (component.figmaSets.length === 0) {
+  // Every key ships a full spec — props, axes, tokens, accessibility — into
+  // tokens.json and the agent bundle regardless of this check. This block is
+  // only about whether the LIVE Figma import additionally renders it as a
+  // real component node today. See FIGMA_SAMPLE_KEYS in componentCatalogue.ts.
+  if (!isInFigmaSample(component.key)) {
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
         <FigmaGlyph className="text-fg-faint flex-shrink-0" />
         <p className="text-[11px] text-fg-faint leading-relaxed">
-          Not in the Figma library yet — it exports in <code className="font-mono">tokens.json</code> and documents here; its Figma component set is on the plugin roadmap.
+          Not rendered in Figma yet — building all 58 specs as real variants locks the file on import, so today this one ships as a full spec (props, tokens, accessibility) in <code className="font-mono">tokens.json</code> and your coding agent's context, not as a component node in the file.
         </p>
       </div>
     )
@@ -344,7 +346,7 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
         </span>
       </div>
       <p className="text-[11px] text-fg-faint leading-relaxed">
-        Including this component, the sync plugin generates {component.figmaSets.length === 1 ? 'this component set' : 'this family of component sets'} — every fill, stroke and radius bound to your variables (component → semantic → primitive):
+        One of the 9 components on the '⬡ Components Overview' sample sheet every import builds — every fill, stroke and radius bound to your variables (component → semantic → primitive):
       </p>
       <div className="flex flex-wrap gap-1.5">
         {component.figmaSets.map((s) => (

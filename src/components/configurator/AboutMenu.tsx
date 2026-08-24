@@ -1,8 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { FIGMA_PLUGIN_ZIP, cn } from '../../lib/utils'
+import { BrandMark } from './TopNav'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -402,6 +403,71 @@ export function AboutContact({ pad = 'px-5' }: { pad?: string }) {
   )
 }
 
+/** Full-page rendering of the same six sections — no drawer, no burger button.
+ *  Used by App.tsx for two surfaces that both need the ENTIRE "what is this"
+ *  story with no workspace behind it: the mobile screen (there's no adaptive
+ *  layout to fall back to) and the `/about` route (a real, shareable,
+ *  crawlable URL — the drawer has neither). One scaffold, one content array;
+ *  only the lead text and outer visibility differ per caller. */
+export function AboutScaffold({
+  heading, subheading, wrapperClassName, ctaHref, ctaLabel,
+}: {
+  heading: string
+  subheading: string
+  /** e.g. `md:hidden` for the mobile-only caller; omitted = always visible. */
+  wrapperClassName?: string
+  /** Optional way back into the app — only meaningful when there IS an app to
+   *  return to (the mobile notice has nowhere useful to send you). */
+  ctaHref?: string
+  ctaLabel?: string
+}) {
+  const [section, setSection] = useState<AboutSection | null>(null)
+
+  return (
+    <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
+      <header className="flex flex-col items-center gap-4 px-6 pt-12 pb-8 text-center">
+        <BrandMark />
+        <div className="flex flex-col gap-1.5 max-w-[420px]">
+          <h1 className="text-[15px] font-semibold text-fg">{heading}</h1>
+          <p className="text-[13px] leading-relaxed text-fg-muted">{subheading}</p>
+        </div>
+        {ctaHref && (
+          <a
+            href={ctaHref}
+            className="inline-flex items-center gap-1.5 mt-1 text-[12.5px] font-semibold text-accent-ui hover:underline"
+          >
+            {ctaLabel ?? 'Open the configurator'}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        )}
+      </header>
+
+      <div className="border-t border-line">
+        <div className="px-5 pt-5 pb-1">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">
+            About
+          </span>
+          <p className="text-[11.5px] text-fg-faint mt-0.5">
+            Design token infrastructure · schema v{TOKEN_SCHEMA_VERSION}
+          </p>
+        </div>
+        <div className="mt-3 border-t border-line">
+          <AboutAccordion section={section} onSectionChange={setSection} />
+          <AboutContact />
+        </div>
+      </div>
+
+      <footer className="mt-auto px-5 py-4 border-t border-line">
+        <p className="text-[11px] text-fg-faint">
+          {COPYRIGHT_LINE} · All rights reserved. Figma is a trademark of Figma, Inc.
+        </p>
+      </footer>
+    </div>
+  )
+}
+
 export default function AboutMenu({
   section,
   onSectionChange,
@@ -474,10 +540,20 @@ export default function AboutMenu({
           <AboutContact />
         </div>
 
-        <div className="flex-shrink-0 px-5 py-3 border-t border-line">
-          <p className="text-[11px] text-fg-faint">
-            {COPYRIGHT_LINE} · All rights reserved. Figma is a trademark of Figma, Inc.
+        <div className="flex-shrink-0 px-5 py-3 border-t border-line flex items-center justify-between gap-3">
+          <p className="text-[11px] text-fg-faint truncate">
+            {COPYRIGHT_LINE} · Figma is a trademark of Figma, Inc.
           </p>
+          {/* The one shareable link to this content — the drawer itself has no
+              URL, so anyone asked "what is this?" gets /about instead. */}
+          <a
+            href="/about"
+            target="_blank"
+            rel="noreferrer"
+            className="flex-shrink-0 text-[11px] font-semibold text-accent-ui hover:underline"
+          >
+            Full page ↗
+          </a>
         </div>
       </motion.aside>
     </motion.div>

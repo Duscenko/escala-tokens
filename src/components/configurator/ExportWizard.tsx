@@ -8,7 +8,7 @@ import {
 } from '../../lib/exportWizard'
 import { type ColorFormat } from '../../lib/sectionExport'
 import { slugify, FIGMA_PLUGIN_ZIP } from '../../lib/utils'
-import { COMPONENTS, CATEGORIES, COMPONENT_KEYS } from '../../lib/componentCatalogue'
+import { COMPONENTS, CATEGORIES, COMPONENT_KEYS, isInFigmaSample } from '../../lib/componentCatalogue'
 import AgentInstallPanel from './AgentInstallPanel'
 
 // ── Guided export (Source → Where → Export) ────────────────────────────────
@@ -143,6 +143,13 @@ export default function ExportWizard({
     selectedComponents, toggleComponent, setSelectedComponents,
   } = store
   const meta = useMemo(() => collectionMeta(), [store])
+  // Of the selected components, how many the live Figma import actually
+  // renders as real component nodes today (the fixed 9-item sample sheet) —
+  // vs. how many ship as spec-only for code/agents. See isInFigmaSample.
+  const figmaRenderedCount = useMemo(
+    () => selectedComponents.filter(isInFigmaSample).length,
+    [selectedComponents],
+  )
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
   // Primitive families (Accent · Neutral · Error … + customs) — the second
   // level of "what do you want to export?" for the primitives collection,
@@ -708,13 +715,24 @@ export default function ExportWizard({
                   </>
                 )}
                 {format === 'escala' && (
-                  <p className="px-3 py-2 text-[12px] text-fg-muted">
-                    Figma always ships the whole document (typography, spacing, radius…) regardless of
-                    the collections picked above — the plugin needs the full contract to import cleanly.
-                    Components are the one part Step 1&apos;s toggle controls: on ships{' '}
-                    {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
-                    as <code className="font-mono">atoms</code>, off ships none.
-                  </p>
+                  <>
+                    <p className="px-3 py-2 text-[12px] text-fg-muted">
+                      Figma always ships the whole document (typography, spacing, radius…) regardless of
+                      the collections picked above — the plugin needs the full contract to import cleanly.
+                      Components are the one part Step 1&apos;s toggle controls: on ships{' '}
+                      {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
+                      as <code className="font-mono">atoms</code>, off ships none.
+                    </p>
+                    {includeComponents && selectedComponents.length > 0 && (
+                      <p className="px-3 pb-2 text-[12px] text-fg-muted">
+                        Of those, the import renders <strong className="text-fg font-medium">{figmaRenderedCount}</strong> as real
+                        components in the file today (the '⬡ Components Overview' sample sheet — building
+                        all 58 as variants locks Figma on import). The remaining{' '}
+                        {selectedComponents.length - figmaRenderedCount} still ship as full specs for your
+                        coding agent.
+                      </p>
+                    )}
+                  </>
                 )}
                 {ai && (
                   <p className="px-3 py-2 text-[12px] text-fg-muted">
@@ -768,7 +786,7 @@ export default function ExportWizard({
                     format !== 'escala'
                       ? 'Not shipped — Figma only'
                       : includeComponents
-                        ? `${selectedComponents.length} of ${COMPONENT_KEYS.length}`
+                        ? `${selectedComponents.length} of ${COMPONENT_KEYS.length} · ${figmaRenderedCount} render in Figma`
                         : 'Not included'
                   }
                 />
