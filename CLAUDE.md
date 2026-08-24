@@ -208,17 +208,39 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   doesn't read as "only Typography got saved."
 
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
-  every view. All nav state is **local** there: `tab` (`foundations`|`components`|`docs`),
-  `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|
+  every view. All nav state is **local** there: `tab` (`about`|`foundations`|`components`|
+  `docs`), `activeFoundation`, `activeComponent`, `exportMode` (`null`|`code`|`md`|`figma`|
   `github`|`save`), `semanticFocus`. None persisted — every reload lands on
-  **Variables · Color** (`activeFoundation` defaults to `'color'`) — there is no separate
-  landing screen. Leaving a foundation marks it complete (`commitVisit()` →
-  `markFoundationComplete`).
-- **THREE top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
-  `handleNav`): **Variables Generator** — EDIT the system (`tab 'foundations'`, entering at
-  Color) — **Components** — browse the catalogue (`tab 'components'`, `ComponentsView`) —
-  and **Docs** — read the token reference (`tab 'docs'`, `DocsView`). Export/connect views
-  (Figma · GitHub · Export · Save) unlight all three.
+  **Variables · Color** (`activeFoundation` defaults to `'color'`) — **except a genuinely
+  first-time visitor, who lands on About instead** (see the About-tab note right below).
+  Leaving a foundation marks it complete (`commitVisit()` → `markFoundationComplete`).
+- **FOUR top-nav sections** (`TopNavKey` in `TopNav.tsx`, mapped by `navActive`/
+  `handleNav`): **About** (first, `tab 'about'`) — **Variables Generator** — EDIT the system
+  (`tab 'foundations'`, entering at Color) — **Components** — browse the catalogue
+  (`tab 'components'`, `ComponentsView`) — and **Docs** — read the token reference
+  (`tab 'docs'`, `DocsView`). Export/connect views (Figma · GitHub · Export · Save) unlight
+  all four.
+  > **About is a tab, not a wizard step — and it's the ONE exception to "no separate
+  > landing screen" above, deliberately narrow.** It used to be a hidden burger-icon
+  > drawer (`AboutMenu.tsx`'s default export — still in the file, unwired, same
+  > retirement treatment as `WorkbenchLayout`/`HomeView`/`PickerColor`) whose only door was
+  > a small icon in `TopNav`; reported as new visitors never finding it. `AboutHome`
+  > (`AboutMenu.tsx`) is the tab's canvas body — reuses the SAME `SECTIONS`/
+  > `AboutAccordion`/`AboutContact`/`COPYRIGHT_LINE` every other About surface
+  > (`AboutScaffold` for the mobile screen and the shareable `/about` route) already
+  > shares, so the pitch can't drift between them — its own hero + CTA
+  > (`onStart` → `selectFoundation('color')`, a real in-app action, not a link) is the
+  > only thing that differs, because unlike the mobile/`/about` callers this one already
+  > IS the app. **Whether it's the LANDING tab is a one-shot, per-browser check** —
+  > `hasOnboarded()` (`lib/onboarding.ts`) reads a plain `sd-onboarded` localStorage flag,
+  > OR grandfathers any browser that already has the zustand persist key
+  > (`scalable-designs-store`) present — so every existing user keeps landing on
+  > Variables · Color exactly as before, and only a browser with NEITHER key counts as
+  > new. No store field, no version bump: this is a UI-chrome concern kept out of
+  > `DesignSnapshot`, the same way `lib/theme.ts`'s `sd-theme` is. Leaving the tab for
+  > anything else marks the browser onboarded (a `useEffect` on `tab`, not a stack of
+  > call sites to remember) — but the tab itself stays reachable from TopNav at any time
+  > afterward, exactly like Components/Docs; it never gates or blocks the workspace.
 - **Components and Docs are TWO separate destinations, each a single-purpose rail →
   master list → article, sharing article renderers but NOT a rail.** They used to be one
   "Documentation" destination with a shared rail carrying two groups (Foundations +

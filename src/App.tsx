@@ -36,12 +36,12 @@ function DesktopOnlyNotice() {
 function AboutPage() {
   useEffect(() => {
     const prevTitle = document.title
-    document.title = 'Escala Tokens — Define your foundations before you prompt'
+    document.title = 'Escala Tokens: Define your foundations before you prompt'
     const meta = document.querySelector('meta[name="description"]')
     const prevDescription = meta?.getAttribute('content') ?? null
     meta?.setAttribute(
       'content',
-      'Define your palette, type scale, spacing and radius once, then hand them to Figma, your code and any AI agent as one contract — before you start prompting.',
+      'Define your palette, type scale, spacing and radius once, then hand them to Figma, your code and any AI agent as one contract, before you start prompting.',
     )
     return () => {
       document.title = prevTitle
@@ -52,7 +52,7 @@ function AboutPage() {
   return (
     <AboutScaffold
       heading="Define your foundations before you prompt"
-      subheading="Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract — so nothing invents its own colors, spacing or radius."
+      subheading="Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius."
       ctaHref="/"
       ctaLabel="Open the configurator"
     />

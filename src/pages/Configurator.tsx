@@ -10,14 +10,17 @@ import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/Sec
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
-import AboutMenu, { COPYRIGHT_LINE, type AboutSection } from '../components/configurator/AboutMenu'
+import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
+import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 
-// Three tabs, matching the three top-nav destinations: EDIT the system
-// ('foundations' — the Variables Generator), browse the catalogue
-// ('components'), or read the token reference ('docs'). Components and Docs
-// used to be folded into one 'docs' tab (a single rail with two groups); split
-// back into their own tabs, each with its own single-purpose rail.
-type Tab = 'foundations' | 'components' | 'docs'
+// Four tabs, matching the four top-nav destinations: read "what this is"
+// ('about' — the landing surface for new visitors, see `hasOnboarded()`
+// below), EDIT the system ('foundations' — the Variables Generator), browse
+// the catalogue ('components'), or read the token reference ('docs').
+// Components and Docs used to be folded into one 'docs' tab (a single rail
+// with two groups); split back into their own tabs, each with its own
+// single-purpose rail.
+type Tab = 'about' | 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
 import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
@@ -379,8 +382,20 @@ export default function Configurator() {
   // a foundation, so it can't be orphaned by which component the Color section
   // happens to render (see the hook's own note).
   useRegenerateScalesOnScaleSettings()
-  const [tab, setTab] = useState<Tab>('foundations')
-  // Every session lands on Variables · Color — no separate landing screen.
+  // Every session lands on Variables · Color — EXCEPT a first-time visitor
+  // (no persisted store in this browser yet, `hasOnboarded()` in
+  // `lib/onboarding.ts`), who lands on About instead. This is the one
+  // exception to "no separate landing screen": About is a real tab a
+  // returning user can still switch to any time, not a wizard step.
+  const [tab, setTab] = useState<Tab>(() => (hasOnboarded() ? 'foundations' : 'about'))
+  // Leaving About for anything else marks this browser onboarded, so the
+  // NEXT reload lands on Variables · Color instead. Every existing path that
+  // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
+  // `openDocs`) already calls `setTab`, so this one effect covers all of
+  // them without a second call site to remember.
+  useEffect(() => {
+    if (tab !== 'about') markOnboarded()
+  }, [tab])
   const [activeFoundation, setActiveFoundation] = useState<string>('color')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
@@ -459,17 +474,6 @@ export default function Configurator() {
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
-  // The About/corporate drawer, opened from TopNav's burger icon. Two pieces
-  // of state, not one: `aboutOpen` is whether the drawer is mounted,
-  // `aboutSection` is which section is expanded inside it — kept as its own
-  // param on `openAbout` (rather than always 'platform') so a future entry
-  // point can jump straight to a specific section without a second opener.
-  const [aboutOpen, setAboutOpen] = useState(false)
-  const [aboutSection, setAboutSection] = useState<AboutSection | null>('platform')
-  function openAbout(section: AboutSection) {
-    setAboutSection(section)
-    setAboutOpen(true)
-  }
   // Components catalogue — filters the master list by label/key. ONE search
   // state now: Documentation carried a second, identical one (`docsSearch`)
   // over the same catalogue, so a filter typed in one section was invisible in
@@ -694,6 +698,19 @@ export default function Configurator() {
       </div>
     )
     centerKey = 'export-save'
+  } else if (tab === 'about') {
+    // header is unused — About skips CenterHeader entirely (see the
+    // `skipCenterHeader` note below) in favor of its own hero. StartIcon is
+    // just a harmless placeholder to satisfy the type.
+    header = { Icon: StartIcon, title: 'About', subtitle: '' }
+    body = (
+      <AboutHome
+        onStart={() => selectFoundation('color')}
+        onLearnAI={() => openDocs(GUIDE_AI_KEY)}
+        foundationCount={FOUNDATIONS.length}
+      />
+    )
+    centerKey = 'about'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
     // HomeActions (Reset/Save) lives in the Groups | icon-rail band
@@ -857,7 +874,8 @@ export default function Configurator() {
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
   const navActive: TopNavKey | null =
-    (!exportMode && tab === 'components') ? 'components'
+    (!exportMode && tab === 'about') ? 'about'
+    : (!exportMode && tab === 'components') ? 'components'
     : (!exportMode && tab === 'docs') ? 'docs'
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
@@ -867,6 +885,9 @@ export default function Configurator() {
   }
 
   const foundationCanvas = tab === 'foundations' && !exportMode
+  // About gets its own hero instead of the dense-editor CenterHeader row —
+  // same opt-out `foundationCanvas` already makes for a different reason.
+  const skipCenterHeader = foundationCanvas || tab === 'about'
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -882,7 +903,6 @@ export default function Configurator() {
         onOpenDownload={() => openExport('figma-download')}
         onExport={openSectionExport}
         exportOpen={sectionExportOpen}
-        onMenu={() => openAbout('platform')}
         brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : groupsColumnVisible ? groupsColumnWidth : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
@@ -936,7 +956,7 @@ export default function Configurator() {
                 sits under the logo. No CenterHeader — the icons ARE the
                 section title. The band is OUTSIDE the keyed motion so
                 switching Color → Font fades the table, not the chrome. */}
-            {!foundationCanvas && (
+            {!skipCenterHeader && (
               <CenterHeader
                 Icon={header.Icon}
                 title={header.title}
@@ -1065,28 +1085,16 @@ export default function Configurator() {
       {/* ── Row 3: the footer hairline ──
           The shell is a fixed-viewport app (h-screen, no page scroll), so there
           is no "bottom of the page" for a conventional footer to sit at. This is
-          a 28px rule instead — attribution only, no links: the burger already
-          opens the full About drawer (how it works, changelog, legal), so
-          repeating entry points here just competed for attention. One quiet
-          line on a step-up surface (`bg-surface`, not `bg-app`) so the rule
-          reads as a distinct strip instead of text floating on the page. */}
+          a 28px rule instead — attribution only, no links: the About TAB already
+          carries the full story (how it works, changelog, legal), so repeating
+          entry points here just competed for attention. One quiet line on a
+          step-up surface (`bg-surface`, not `bg-app`) so the rule reads as a
+          distinct strip instead of text floating on the page. */}
       <footer className="flex-shrink-0 h-7 flex items-center px-4 lg:px-5 border-t border-line bg-surface">
         <span className="text-[10.5px] text-fg-faint truncate">
           {COPYRIGHT_LINE} · Built by Cesar Duscenko
         </span>
       </footer>
-
-      {/* About / corporate drawer — what this is, how the tokens and plugin
-          work, changelog, contact, legal. */}
-      <AnimatePresence>
-        {aboutOpen && (
-          <AboutMenu
-            section={aboutSection}
-            onSectionChange={setAboutSection}
-            onClose={() => setAboutOpen(false)}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Guided export — Source → Format → Export. TRANSVERSAL now: reachable
           from TopNav regardless of `tab`/`exportMode`, so this modal overlay

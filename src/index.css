@@ -89,6 +89,23 @@
     0% { background-position: 0%; }
     100% { background-position: 200%; }
   }
+  /* shadcn Accordion — Radix writes `--radix-accordion-content-height` on
+     the content element itself as it measures the panel, so animating
+     TO/FROM that variable (rather than to `auto`) is what makes a CSS-only
+     height transition possible at all. Missing from this file until now,
+     which left `data-[state=open]:animate-accordion-down` a no-op class
+     with no keyframes behind it — the panel would have snapped open/closed
+     instead of animating. */
+  --animate-accordion-down: accordion-down 0.22s var(--ease-out-quint);
+  --animate-accordion-up: accordion-up 0.22s var(--ease-out-quint);
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
 }
 
 :root {

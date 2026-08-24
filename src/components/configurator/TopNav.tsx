@@ -10,17 +10,26 @@ import ThemeToggle from './ThemeToggle'
 // the left sits over the token-controls column, the nav + actions on the right
 // sit over the canvas.
 
-// THREE destinations: EDIT the system (Variables Generator), browse the
-// component catalogue (Components), or read the token reference (Docs).
-// Components and Docs used to be one "Documentation" destination with two
-// groups sharing a rail (Foundations + Categories) — split apart because
-// browsing components and reading token reference are different intents, and
-// a rail that always listed both regardless of which one you came for was
-// one more thing to visually filter past. Each keeps its own single-purpose
-// rail/master-list now (see `ComponentsView`/`DocsView`).
-export type TopNavKey = 'variables' | 'components' | 'docs'
+// FOUR destinations: read "what this is" (About, first — see below), EDIT the
+// system (Variables Generator), browse the component catalogue (Components),
+// or read the token reference (Docs). Components and Docs used to be one
+// "Documentation" destination with two groups sharing a rail (Foundations +
+// Categories) — split apart because browsing components and reading token
+// reference are different intents, and a rail that always listed both
+// regardless of which one you came for was one more thing to visually filter
+// past. Each keeps its own single-purpose rail/master-list now (see
+// `ComponentsView`/`DocsView`).
+//
+// About used to be a hidden burger-icon drawer (`AboutMenu`'s default
+// export, still in that file, unwired — same retirement treatment as
+// `WorkbenchLayout`/`HomeView`) — new visitors never found it. It's a real
+// tab now, first in order: `Configurator.tsx` also lands a first-time
+// visitor there by default (`hasOnboarded()`, `lib/onboarding.ts`), making it
+// the workspace's landing surface without reviving a wizard/HomeView.
+export type TopNavKey = 'about' | 'variables' | 'components' | 'docs'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
+  { key: 'about', label: 'About' },
   { key: 'variables', label: 'Variables Generator' },
   { key: 'components', label: 'Components' },
   { key: 'docs', label: 'Docs' },
@@ -48,10 +57,6 @@ interface TopNavProps {
    *  the same convention `exportMode === 'figma-sync'/'figma-download'/'github'`
    *  already uses for the pills beside it. */
   exportOpen?: boolean
-  /** Opens the About/corporate drawer (AboutMenu). Always available — it's
-   *  reference material, not a project action, so it doesn't wait on
-   *  `projectCreated` the way Sync/Export do. */
-  onMenu: () => void
   /** Mirrors the left rail's own collapsed state — when the rail shrinks to
    *  an icon strip, the brand block above it shrinks the same way, so the
    *  divider between them stays one continuous line at every width. */
@@ -65,10 +70,13 @@ interface TopNavProps {
   onThemeChange: (theme: string) => void
 }
 
-// Figma brand mark — monochrome, tracks currentColor.
-function FigmaGlyph() {
+// Figma brand mark — monochrome, tracks currentColor. `className` is
+// optional (every existing call site renders it at the fixed 11×16 the SVG
+// attributes already set); pass `h-*`/`w-*` to resize, CSS wins over the
+// presentation attributes.
+export function FigmaGlyph({ className }: { className?: string } = {}) {
   return (
-    <svg width="11" height="16" viewBox="0 0 38 57" fill="currentColor" aria-hidden>
+    <svg width="11" height="16" viewBox="0 0 38 57" fill="currentColor" className={className} aria-hidden>
       <path d="M9.5 57C14.7467 57 19 52.7467 19 47.5V38H9.5C4.25329 38 0 42.2533 0 47.5C0 52.7467 4.25329 57 9.5 57Z" />
       <path d="M0 28.5C0 23.2533 4.25329 19 9.5 19H19V38H9.5C4.25329 38 0 33.7467 0 28.5Z" />
       <path d="M0 9.5C0 4.25329 4.25329 0 9.5 0H19V19H9.5C4.25329 19 0 14.7467 0 9.5Z" />
@@ -253,7 +261,7 @@ export function BrandMark() {
 
 export default function TopNav({
   nav, onNav, exportMode, onOpenSync, onOpenDownload, onExport, exportOpen = false,
-  onMenu, railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
+  railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
   const { projectCreated, autoSyncFigma } = useDesignStore()
   const [syncHubOpen, setSyncHubOpen] = useState(false)
@@ -375,17 +383,6 @@ export default function TopNav({
             </>
           )}
           <ThemeToggle previewTheme={previewTheme} onThemeChange={onThemeChange} />
-          <button
-            onClick={onMenu}
-            aria-label="About Escala Tokens"
-            title="About · how it works · changelog · contact"
-            // Same `rounded-[13px]` squircle as `ThemeToggle` right beside it.
-            className="w-9 h-9 rounded-[13px] flex items-center justify-center border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-          </button>
         </div>
       </div>
     </header>
