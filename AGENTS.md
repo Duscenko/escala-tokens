@@ -16,6 +16,7 @@ A desktop token configurator. Designers pick tokens; the app emits `tokens.json`
 | Deep product / nav / backlog | `CLAUDE.md` (do not treat as a system prompt) |
 | Brand / user | `.impeccable.md` |
 | Color math | `.claude/skills/color-science-core/SKILL.md` |
+| Product Brain doctrine (weekly audit agent, read-only) | `PRODUCT-BRAIN.md` |
 | Agent copy envelope | `src/lib/aiContext.ts` (`agent-context/v1`) |
 | Install recipes (wizard + Docs + CLI) | `src/lib/agentInstall.ts` · `src/lib/cliInstall.ts` · `AgentInstallPanel.tsx` |
 | CLI (`npx @escala/cli`) | `src/cli/main.ts` · `cli/package.json` · `npm run build:cli` |
