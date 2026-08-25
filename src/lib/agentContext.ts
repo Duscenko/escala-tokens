@@ -1,11 +1,14 @@
 // Markdown an agent can paste as the full brief for one catalogue page.
-// Copy context is this string: identity, live foundation tokens (radius,
-// spacing, padding, size, type), Figma bindings, and a CSS recipe. Input OTP
-// is the first page with a full reconstruction spec; other keys get the shared
-// token tables plus a shorter characteristics block.
+// Copy context is this string: identity, live foundation tokens (color,
+// radius, spacing, padding, size, type, shadow), Figma bindings, and a CSS
+// recipe. Input OTP is the first page with a full reconstruction spec; other
+// keys get the shared token tables plus a shorter characteristics block.
 
 import { COMPONENTS, type ComponentDef } from './componentCatalogue'
 import { mdCell } from './utils'
+import { buildSectionExport, cssExcerpt } from './sectionExport'
+import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
+import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import {
   LAYOUT_ROLES,
   STROKE_STANDARD,
@@ -15,7 +18,7 @@ import {
   type LayoutFamily,
 } from './layoutTokens'
 
-export interface AgentFoundationTokens {
+export interface AgentFoundationTokens extends Partial<Record<PreviewColorField, string>> {
   radius: Record<string, string>
   spacing: Record<string, string>
   sizes?: Record<string, string>
@@ -114,12 +117,62 @@ function val(map: Record<string, string> | undefined, key: string, fallback = '�
   return map?.[key] || fallback
 }
 
-function tokenTables(t: AgentFoundationTokens): string[] {
+/** Color, live and resolved. This was the one foundation missing from a
+ *  component's copied context: every other table here (radius, spacing,
+ *  size, stroke, type, shadow) resolved to a real value, but color only
+ *  ever appeared as a CSS-var / Figma-var NAME — useless to an agent
+ *  (Stitch, a fresh Figma session) with no live access to this system to
+ *  resolve that name against.
+ *
+ *  Scoped when possible: `COMPONENT_COLOR_FIELDS` (generated from
+ *  `docs/specimens.tsx`'s own AST — see `scripts/gen-component-color-fields.ts`)
+ *  names exactly which PreviewTokens fields THIS component's specimen reads,
+ *  so the table lists only those — a handful of rows, not the whole system —
+ *  each resolved straight from `t` (the same `PreviewTokens` the specimen
+ *  itself renders from, so this can never disagree with what's on screen).
+ *  A component absent from that map (no specimen yet, or a purely
+ *  structural one with nothing to scope) falls back to the full palette via
+ *  `buildSectionExport('color', 'css')` — the same renderer Export and the
+ *  foundation pages' "Use it" pane use, truncated the same way
+ *  (`CSS_PREVIEW_LINES`) so a ~90-role dump doesn't bury the tables below it. */
+function colorSection(def: ComponentDef, t: AgentFoundationTokens): string[] {
+  const scoped = COMPONENT_COLOR_FIELDS[def.key]
+  if (scoped?.length) {
+    const lines = [
+      '### Color (scoped to this component)',
+      '',
+      `Resolved from **this** system — only the roles ${def.label}'s own live preview actually binds (derived from its specimen, not hand-listed). Bind by semantic name; never hardcode a hex when a token exists. Full palette: Export → Code.`,
+      '',
+      '| Field | Role | CSS | Live |',
+      '|---|---|---|---|',
+    ]
+    scoped.forEach((field) => {
+      const info = COLOR_FIELD_INFO[field]
+      const value = t[field] ?? '—'
+      lines.push(`| \`${field}\` | ${mdCell(info.label)} | ${info.cssVar ? `\`${info.cssVar}\`` : '—'} | \`${value}\` |`)
+    })
+    lines.push('')
+    return lines
+  }
+  return [
+    '### Color (`Color` collection)',
+    '',
+    'Resolved primitives + semantic roles from **this** system — the same values `variables.css` ships. Bind by semantic name (e.g. `--color-content-primary`, `--color-action-primary-default`). Never hardcode a hex when a token exists.',
+    '',
+    '```css',
+    cssExcerpt(buildSectionExport('color', 'css')),
+    '```',
+    '',
+  ]
+}
+
+function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
   const lines = [
     '## Design tokens (live)',
     '',
     'Resolved values from **this** system. Use the CSS custom property in code and the Figma variable in the file. **Never hardcode px, rem, or hex when a token exists. Never invent a parallel name.**',
     '',
+    ...colorSection(def, t),
     '### Radius (`Radius` collection)',
     '',
     '| Step | CSS | Figma | Value |',
@@ -417,7 +470,7 @@ export function agentContextMarkdown(def: ComponentDef, snippet: string, tokens?
     '',
   ]
 
-  if (tokens) lines.push(...tokenTables(tokens))
+  if (tokens) lines.push(...tokenTables(def, tokens))
 
   lines.push(...figmaSection(def))
   if (extra) lines.push(extra)

@@ -20,7 +20,7 @@ import { agentContextMarkdown } from '../../../lib/agentContext'
 import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues } from './specimens'
+import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
 import {
   CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
   ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
@@ -116,21 +116,39 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
   )
 }
 // ── Hero: the live playground, with the doc block's Preview/Code toggle ──────
-
-function Hero({ def, tokens }: { def: ComponentDef; tokens: PreviewTokens }) {
-  const [values, setValues] = useState<AxisValues>(() => axisDefaults(def))
-  const [leadingIcon, setLeadingIcon] = useState(false)
-  const [trailingIcon, setTrailingIcon] = useState(false)
+//
+// `values`/icon toggles and the `snippet` they produce are OWNED by
+// `ComponentArticle`, not by this component — see the note there. Hero used
+// to hold all of it locally, which is exactly how "the snippet you copy is
+// the snippet on screen" stopped being true: `ComponentArticle` had no way to
+// reach Hero's internal state, so `heroCode` (the string handed to Usage,
+// "Use it", and the "Copy context to Agents" button) was computed from
+// `axisDefaults(def)` instead — always Brand/Solid/MD/Default, regardless of
+// what the playground actually showed. Verified live: setting Color=Danger,
+// Style=Ghost repainted the Preview correctly (measured computed style:
+// transparent fill, `#be3a2f` ink) while every one of those three consumers
+// kept printing `color="brand" style="solid"`. One shared snippet, computed
+// once by the parent and passed down, is what makes that impossible again.
+function Hero({
+  def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
+}: {
+  def: ComponentDef
+  tokens: PreviewTokens
+  values: AxisValues
+  onValuesChange: (v: AxisValues) => void
+  icons?: IconOpts
+  leadingIcon: boolean
+  onLeadingIconChange: (v: boolean) => void
+  trailingIcon: boolean
+  onTrailingIconChange: (v: boolean) => void
+  /** Computed once by `ComponentArticle` from these same `values`/`icons` —
+   *  Hero never recomputes its own copy. */
+  snippet: string
+}) {
   const [view, setView] = useState<'preview' | 'code'>('preview')
 
-  // Icon slots (Button/Input) render live glyphs from the Foundations library.
   const slots = ICON_SLOTS[def.key]
-  const icons = slots
-    ? { prefix: UNTITLED_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
-    : undefined
-
   const Specimen = SPECIMENS[def.key]
-  const snippet = snippetFor(def, values, icons)
   const variantCount = def.axes.reduce((n, a) => n * a.values.length, 1)
   const hasControls = def.axes.length > 0 || Boolean(slots)
 
@@ -196,14 +214,14 @@ function Hero({ def, tokens }: { def: ComponentDef; tokens: PreviewTokens }) {
                 key={axis.name}
                 axis={axis}
                 value={values[axis.name]}
-                onChange={(v) => setValues((prev) => ({ ...prev, [axis.name]: v }))}
+                onChange={(v) => onValuesChange({ ...values, [axis.name]: v })}
               />
             ))}
             {slots && (
               <>
                 {def.axes.length > 0 && <div className="border-t border-line/70 my-1" />}
-                <OptionSwitch label="Leading icon" checked={leadingIcon} onChange={setLeadingIcon} />
-                <OptionSwitch label="Trailing icon" checked={trailingIcon} onChange={setTrailingIcon} />
+                <OptionSwitch label="Leading icon" checked={leadingIcon} onChange={onLeadingIconChange} />
+                <OptionSwitch label="Trailing icon" checked={trailingIcon} onChange={onTrailingIconChange} />
               </>
             )}
           </div>
@@ -418,7 +436,21 @@ export function componentToc(def: ComponentDef): TocEntry[] {
 export function ComponentArticle({
   def, tokens, onOpen,
 }: { def: ComponentDef; tokens: PreviewTokens; onOpen: (c: ComponentDef) => void }) {
-  const heroCode = snippetFor(def, axisDefaults(def))
+  // The live playground's own selection — OWNED here, not inside `Hero` (see
+  // that component's note). This is what makes "the snippet you copy is the
+  // snippet on screen" actually true: every downstream consumer of
+  // `heroCode` — Usage's import block, "Use it"'s Code tab, and the
+  // Copy-context-to-Agents markdown — reads the SAME `values`/`icons` the
+  // Preview panel renders from, computed once, below.
+  const [values, setValues] = useState<AxisValues>(() => axisDefaults(def))
+  const [leadingIcon, setLeadingIcon] = useState(false)
+  const [trailingIcon, setTrailingIcon] = useState(false)
+  const slots = ICON_SLOTS[def.key]
+  const icons = slots
+    ? { prefix: UNTITLED_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
+    : undefined
+
+  const heroCode = snippetFor(def, values, icons)
   const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
   // ONE descriptor, rendered below AND appended to the agent brief — the
   // second of the three outputs (page · markdown · MCP). Composed here rather
@@ -444,8 +476,23 @@ export function ComponentArticle({
 
       <DocTitle title={def.label} eyebrow={def.category} lead={def.description} />
 
-      {/* Hero — live playground + code, keyed so axis state resets per component */}
-      <Hero key={def.key} def={def} tokens={tokens} />
+      {/* Hero — live playground + code. Axis/icon state lives in THIS
+          component now (see above), reset per component the same way every
+          other piece of this page's state already is: `ComponentsView` keys
+          its wrapping `motion.div` on `def.key`, remounting the whole
+          article — no separate key needed here any more. */}
+      <Hero
+        def={def}
+        tokens={tokens}
+        values={values}
+        onValuesChange={setValues}
+        icons={icons}
+        leadingIcon={leadingIcon}
+        onLeadingIconChange={setLeadingIcon}
+        trailingIcon={trailingIcon}
+        onTrailingIconChange={setTrailingIcon}
+        snippet={heroCode}
+      />
 
       {/* Use it — the same Figma · Code · AI block every foundation page
           carries, so the two page kinds answer "how do I consume this" the

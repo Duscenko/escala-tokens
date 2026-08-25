@@ -11,9 +11,30 @@ import {
   validateToken, listRepos, createRepo, pushFiles, getFile,
   type GitHubUser, type GitHubRepo,
 } from '../../lib/github'
+import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
+import { GitHubGlyph } from '../ui/icons'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
+}
+
+// Every failure `githubOAuth.ts`/`api/github-oauth.ts` can hand back, worded
+// for the person looking at this screen rather than for a log line. Missing
+// a key here isn't silent — the fallback string still shows an error, it's
+// just less specific than these.
+const OAUTH_ERROR_COPY: Record<string, string> = {
+  popup_blocked: 'Your browser blocked the popup. Allow popups for this site, or paste a token below instead.',
+  closed: 'Connection window closed before finishing.',
+  timeout: 'Took too long — try again.',
+  state_mismatch: 'Something about that connection looked wrong, so it was rejected. Try again.',
+  not_configured: 'GitHub sign-in isn’t set up on this deployment yet — paste a token below instead.',
+  access_denied: 'Access was declined on GitHub.',
+  network_error: 'Could not reach GitHub. Check your connection and try again.',
+  exchange_failed: 'GitHub did not return a usable token. Try again.',
+  no_token: 'GitHub did not return a usable token. Try again.',
+}
+function oauthErrorMessage(code: string): string {
+  return OAUTH_ERROR_COPY[code] ?? 'Could not connect to GitHub. Paste a token below instead.'
 }
 
 type PushState = 'idle' | 'pushing' | 'done' | 'error'
@@ -30,6 +51,12 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
   const [user, setUser] = useState<GitHubUser | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [authBusy, setAuthBusy] = useState(false)
+  // Whether to offer OAuth at all — `null` while unknown, so the button never
+  // flashes in then out. Defaults to hidden (not `true`) precisely because
+  // this deployment may not have `GITHUB_OAUTH_CLIENT_ID`/`_SECRET` set yet —
+  // see `isGithubOAuthConfigured`.
+  const [oauthAvailable, setOauthAvailable] = useState<boolean | null>(null)
+  const [oauthBusy, setOauthBusy] = useState(false)
 
   // ── Repo selection ──
   const [repos, setRepos] = useState<GitHubRepo[]>([])
@@ -45,6 +72,38 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
   const [restoreState, setRestoreState] = useState<'idle' | 'loading' | 'restored' | 'empty' | 'error'>('idle')
 
   const slug = slugify(projectName) || 'design-system'
+
+  useEffect(() => {
+    let cancelled = false
+    isGithubOAuthConfigured().then((v) => { if (!cancelled) setOauthAvailable(v) })
+    return () => { cancelled = true }
+  }, [])
+
+  async function connectWithOAuth() {
+    setOauthBusy(true)
+    setAuthError(null)
+    const result = await startGithubOAuth()
+    setOauthBusy(false)
+    if (!result.ok) {
+      // A closed/timed-out popup is the user's own choice, not a failure
+      // worth a red error line — everything else is.
+      if (result.error !== 'closed') setAuthError(oauthErrorMessage(result.error))
+      return
+    }
+    // `startGithubOAuth` already called `setStoredToken` — same path `connect()`
+    // takes from here, so both doors end up in identical state.
+    setAuthBusy(true)
+    try {
+      const token = getStoredToken()!
+      const u = await validateToken(token)
+      setUser(u)
+      setRepos(await listRepos(token))
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : 'Connected, but could not load your GitHub account.')
+    } finally {
+      setAuthBusy(false)
+    }
+  }
 
   // Reconnect silently with the stored token on mount.
   useEffect(() => {
@@ -233,6 +292,32 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
           </div>
         ) : (
           <>
+            {/* OAuth is the PRIMARY path — one click, no token to generate or
+                paste. Rendered only once `oauthAvailable` resolves `true`;
+                staying `null`/`false` leaves this whole block out rather than
+                showing a button that would fail on click, which is exactly
+                what a deployment with no `GITHUB_OAUTH_CLIENT_ID`/`_SECRET`
+                set would otherwise do. The PAT flow below is UNCHANGED and
+                un-demoted in its own copy — it's the fallback for a blocked
+                popup or a deployment without OAuth configured, not a legacy
+                path being phased out. */}
+            {oauthAvailable && (
+              <>
+                <button
+                  onClick={connectWithOAuth}
+                  disabled={oauthBusy || authBusy}
+                  className="flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium bg-fg text-app hover:opacity-90 disabled:opacity-40 transition-colors"
+                >
+                  <GitHubGlyph size={14} />
+                  {oauthBusy ? 'Waiting for GitHub…' : 'Continue with GitHub'}
+                </button>
+                <div className="flex items-center gap-2 text-[11px] text-fg-faint">
+                  <span className="flex-1 h-px bg-line" />
+                  or paste a token
+                  <span className="flex-1 h-px bg-line" />
+                </div>
+              </>
+            )}
             <p className="text-xs text-fg-faint leading-relaxed">
               Create a{' '}
               <a href={TOKEN_URL} target="_blank" rel="noreferrer" className="text-[#5AADFF] hover:underline">

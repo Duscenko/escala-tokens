@@ -19,7 +19,7 @@
 //    agent would contradict — the same rule the export wizard already
 //    follows ("everything derives from ONE generateTokenJSON() call").
 
-import { buildSectionExport, type SectionKey } from '../../../lib/sectionExport'
+import { buildSectionExport, cssExcerpt, type SectionKey } from '../../../lib/sectionExport'
 import { syncProjectId } from '../../../lib/figmaSync'
 import type { ComponentDef } from '../../../lib/componentCatalogue'
 import type { FoundationDoc } from './foundationDocs'
@@ -44,31 +44,6 @@ export const USE_IT_ID = 'use-it'
 export const USE_IT_TITLE = 'Use it'
 export const USE_IT_LEAD =
   'The same element in the three places this system ships to. Every value here is read from your own tokens by the same resolvers the export uses, so what you copy is what lands.'
-
-/** How many declarations a Code pane shows before it truncates. Color alone
- *  emits ~89 semantic roles plus every family ramp — the full file is one
- *  click away in Export, and a page-length dump teaches nothing. */
-const CSS_PREVIEW_LINES = 8
-
-/** Trim `:root { … }` down to a readable, still-valid excerpt.
- *  `cssFor` is always `wrapRoot(...)` (see `sectionExport.ts`), so the first
- *  line opens the block and the first bare `}` closes it — Grid appends a
- *  media query AFTER that brace, which is why the close is FOUND rather than
- *  assumed to be the last line. */
-function cssExcerpt(css: string): string {
-  const lines = css.split('\n')
-  const close = lines.findIndex((l) => l.trim() === '}')
-  if (close < 1) return css.trimEnd()
-  const decls = lines.slice(1, close).filter((l) => l.trim())
-  if (decls.length <= CSS_PREVIEW_LINES) return css.trimEnd()
-  const rest = decls.length - CSS_PREVIEW_LINES
-  return [
-    lines[0],
-    ...decls.slice(0, CSS_PREVIEW_LINES),
-    `  /* …+${rest} more — the full file is Export → Code */`,
-    '}',
-  ].join('\n')
-}
 
 /** The AI destination is the only one that needs the published system, so it
  *  is the only one that carries a precondition. Points at the guide that

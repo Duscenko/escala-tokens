@@ -22,6 +22,7 @@ import { useDesignStore, DEFAULT_ACCENT, type DesignSnapshot } from '../../store
 import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
 import { useApplyAccentColor } from '../../lib/colorActions'
 import HeaderPill from '../ui/HeaderPill'
+import { GitHubGlyph } from '../ui/icons'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
 const FolderIcon: ComponentType = () => (
@@ -108,12 +109,26 @@ function KitFact({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-// ── Save popover — name & save the current system, reopen a previous kit ─────
-// Named "Save" in the UI; the saved entries are still "kits" (the store's
-// `savedSystems` registry) and the internal flow is unchanged — the rename is
-// about the ACTION the button performs, which is what a header pill labels.
+// ── Systems popover — name & save the current system, reopen a previous one ──
+//
+// The pill reads "Systems", not "Save", and that is a deliberate correction of
+// a promise this control could not keep. Two facts drove it:
+//
+//  1. **Nothing here is durable.** The store persists with NO `partialize`, so
+//     `savedSystems` lives inside the same `scalable-designs-store` localStorage
+//     key as the working state — clearing site data destroys the current system
+//     AND every saved one in a single action. "Save" is the one word that
+//     promises otherwise, and it was the only word on the button.
+//  2. **This popover is mostly a LIBRARY.** One third is "save current as";
+//     the rest is the list of what you already have, with load/review/sync per
+//     row. A folder glyph over a verb was already saying two different things.
+//
+// So "Save" moves INSIDE, onto the button that actually performs it, where it
+// can state its destination; the pill names the shelf. One noun throughout —
+// **system**, matching `savedSystems` and SaveView's "My design systems". The
+// third name ("kit") is gone from the UI; only the internal flow keeps it.
 function KitsPopover({
-  onClose, previewTheme, onOpenEditor, onReviewInDocs,
+  onClose, previewTheme, onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme,
 }: {
   onClose: () => void
   previewTheme: string
@@ -121,13 +136,26 @@ function KitsPopover({
   onOpenEditor?: () => void
   /** Where "Load & review" lands — Docs' whole-system Overview sheet, which is
    *  every foundation's sections in one column. That's the page that answers
-   *  "what is in this system", which is the question a saved kit raises. */
+   *  "what is in this system", which is the question a saved system raises. */
   onReviewInDocs?: () => void
+  /** Opens `GitHubConnectView` — the ONE durable destination in the app, and
+   *  the remedy this popover now names inline instead of leaving it to a hub
+   *  users were not finding (see the durability note below). */
+  onConnectGithub?: () => void
+  /** Opens `SaveView` — the full hub this popover is the quick version of.
+   *  Its only doors were a button inside a Docs article and a link two levels
+   *  inside the Figma Sync screen, so the surface holding the systems grid,
+   *  the create/import tile (the app's last Import door) and the connection
+   *  status was effectively unreachable from the editor. */
+  onOpenSaveHub?: () => void
+  /** Sets the previewed theme — `changePreviewTheme` in the shell, so the app
+   *  chrome follows too. Used to land a load on the theme the user picked. */
+  onPreviewTheme?: (themeKey: string) => void
 }) {
   const {
     setProjectName, primaryColor, projectName,
     savedSystems, saveCurrentSystem, saveCurrentSystemAsTheme, loadSystem, removeSavedSystem,
-    themeOrder,
+    themeOrder, githubRepo,
   } = useDesignStore()
   // Which kit is currently on screen. The sync URL is derived from the project
   // name (figmaSync's `syncProjectId`), and `handleSave` sets the project name
@@ -152,10 +180,20 @@ function KitsPopover({
   const [justSaved, setJustSaved] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  // Local kits only (GitHub-backed systems have their own push flow).
+  // EVERY saved system, local and GitHub-backed alike. This used to filter
+  // `source !== 'github'` ("GitHub-backed systems have their own push flow"),
+  // which had a defect this popover could not survive: `buildSavedSystemEntry`
+  // stamps `source: 'github'` the moment `githubRepo` is set, so once a user
+  // connected a repo, pressing Save here saved an entry the list then hid.
+  // Verified against the store — one entry written, zero rendered: the green
+  // tick flashed and the list did not change, which is indistinguishable from
+  // a save that failed. Showing both kinds side by side is also what makes the
+  // durability badge below meaningful: the whole point is being able to see,
+  // in one list, which systems would survive a cache clear.
+  //
   // Derived BEFORE `openKit` on purpose — that state seeds itself from the
-  // first kit and would otherwise be reading a variable declared below it.
-  const kits = savedSystems.filter((s) => s.source !== 'github')
+  // first system and would otherwise be reading a variable declared below it.
+  const kits = savedSystems
 
   // Which kit's contents are expanded.
   //  · **One at a time** — the list scrolls inside a 256px box, and a second
@@ -167,6 +205,14 @@ function KitsPopover({
   //    several. The popover unmounts on close, so every open re-seeds here,
   //    which is the behaviour we want: come back, see the top kit's contents.
   const [openKit, setOpenKit] = useState<string | null>(() => kits[0]?.id ?? null)
+
+  // Which theme each system should OPEN in, keyed by system id. Per-system
+  // rather than one shared value: two saved systems rarely carry the same
+  // theme names, and a single selection would either be wrong for one of them
+  // or need resetting every time the open row changes. Unset means "this
+  // system's first theme", resolved at click time so the map never has to be
+  // pre-seeded for systems the user never expanded.
+  const [landTheme, setLandTheme] = useState<Record<string, string>>({})
 
   // The scope question only exists to ASK — with one theme there's nothing to
   // choose between, and asking anyway would be a confirmation dialog for a
@@ -206,6 +252,24 @@ function KitsPopover({
     setTimeout(() => setJustSaved(false), 1800)
   }
 
+  /** Load a system, land on the requested theme, then go wherever the caller
+   *  points. One helper for both destinations so "Load & edit" and
+   *  "Load & review" can never disagree about which theme you arrive on.
+   *
+   *  Order matters: `loadSystem` replaces `themeOrder`, and Configurator
+   *  CLAMPS `previewTheme` to it — so requesting the theme before the load
+   *  would be clamped away against the outgoing system's themes. Both run in
+   *  one React batch, and the clamp reads the committed store either way.
+   *  `onPreviewTheme` is optional: without it the clamp alone still guarantees
+   *  a valid theme, it just won't be the one the user picked. */
+  function handleLoad(id: string, themes: string[], go?: () => void) {
+    loadSystem(id)
+    const target = landTheme[id] ?? themes[0]
+    if (target) onPreviewTheme?.(target)
+    go?.()
+    onClose()
+  }
+
   // Load a kit and publish it in one action — the shortcut this popover exists
   // to provide. It genuinely LOADS first: publishTokens() serializes whatever
   // is in the store right now, so publishing without loading would push the
@@ -233,7 +297,7 @@ function KitsPopover({
       transition={{ duration: 0.15 }}
       className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-line bg-surface shadow-[0_16px_48px_-12px_rgba(0,0,0,0.28)] z-50 overflow-hidden"
       role="dialog"
-      aria-label="Kits"
+      aria-label="Saved systems"
     >
       <div className="p-4 flex flex-col gap-2.5">
         <h3 className="text-sm font-semibold text-fg">Save current as</h3>
@@ -242,13 +306,13 @@ function KitsPopover({
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-            placeholder="Name this kit"
-            aria-label="Kit name"
+            placeholder="Name this system"
+            aria-label="System name"
             className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-app text-sm text-fg outline-none transition-colors placeholder:text-fg-faint focus:border-line-strong"
           />
           <button
             onClick={handleSave}
-            aria-label="Save kit"
+            aria-label="Save system"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white transition-colors"
             style={{ backgroundColor: justSaved ? '#10b981' : primaryColor }}
           >
@@ -309,20 +373,48 @@ function KitsPopover({
         {/* No "saves all 8 foundations: Color · Typography · …" line here.
             It was tried, and it's the weaker half of the same fix: a static
             sentence that never changes is a claim to be taken on faith, and it
-            says the same thing the first kit's own OPEN summary below already
-            proves with real values off its snapshot. Showing both was the
-            over-explaining CLAUDE.md's design principles warn about — the
-            evidence wins, the sentence goes. */}
+            says the same thing the first system's own OPEN summary below
+            already proves with real values off its snapshot. Showing both was
+            the over-explaining CLAUDE.md's design principles warn about — the
+            evidence wins, the sentence goes.
+
+            SCOPE is what that summary answers. This line answers DURABILITY,
+            which nothing on screen used to: it read "Saved locally in your
+            browser", which is true and far too calm for what it describes.
+            There is no `partialize` on the store, so `savedSystems` shares one
+            localStorage key with the working state — "clear site data" is a
+            single action that destroys the current system and every saved one
+            together. A user who has pressed a button labelled Save has every
+            reason to believe otherwise, so the risk is named in full, and the
+            remedy is offered in the same breath rather than left in a hub
+            (`SaveView`) whose only door is inside a Docs article. */}
         <p className="text-xs text-fg-faint leading-relaxed">
           {hasMultipleThemes && scope === 'one'
-            ? `Every primitive is kept; only the ${themeLabel(chosenTheme)} theme ships — the other themes stay out of this kit. Locally in your browser; reusing a name updates that kit.`
-            : 'Saved locally in your browser. Reusing a name updates that kit.'}
+            ? `Every primitive is kept; only the ${themeLabel(chosenTheme)} theme ships — the other themes stay out. `
+            : ''}
+          Reusing a name updates that system.
+          {githubRepo
+            ? <> Saved in this browser and pushed to <code className="font-mono text-fg-muted">{githubRepo}</code>.</>
+            : ' Saved in this browser only — clearing site data removes it, along with every system below.'}
         </p>
+        {/* The remedy, inline. Only while there IS one to offer: once a repo is
+            connected the sentence above already reports it, and a button
+            re-offering the thing you just did is noise. */}
+        {!githubRepo && onConnectGithub && (
+          <button
+            type="button"
+            onClick={() => { onConnectGithub(); onClose() }}
+            className="flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
+          >
+            <GitHubGlyph />
+            Connect GitHub to keep a restorable copy
+          </button>
+        )}
       </div>
 
       <div className="max-h-64 overflow-y-auto border-t border-line/70">
         {kits.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-fg-faint text-center">No kits saved yet.</p>
+          <p className="px-4 py-6 text-sm text-fg-faint text-center">No saved systems yet.</p>
         ) : (
           <ul className="p-2 flex flex-col gap-0.5">
             {kits.map((kit) => {
@@ -368,13 +460,33 @@ function KitsPopover({
                   />
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm font-medium text-fg truncate">{kit.name}</span>
-                    <span className="block text-[11px] text-fg-faint">
-                      saved {timeAgo(kit.savedAt)}
-                      {/* Each kit publishes to ITS OWN endpoint — see
-                          `activeKitName`. Marking the live one is the whole
-                          point of surfacing sync here: otherwise you can't tell
-                          which kit the plugin in Figma is reading. */}
-                      {isActive && canSync && <span className="text-fg-muted"> · live</span>}
+                    <span className="flex items-center gap-1 text-[11px] text-fg-faint min-w-0">
+                      <span className="truncate">
+                        saved {timeAgo(kit.savedAt)}
+                        {/* Each system publishes to ITS OWN endpoint — see
+                            `activeKitName`. Marking the live one is the whole
+                            point of surfacing sync here: otherwise you can't
+                            tell which system the plugin in Figma is reading. */}
+                        {isActive && canSync && <span className="text-fg-muted"> · live</span>}
+                      </span>
+                      {/* Durability badge — marks only the EXCEPTION, never the
+                          rule. Every row carrying a "Browser only" chip would
+                          repeat, on each line, what the one sentence above the
+                          list already states for all of them; a badge that is
+                          always present stops being read. So it appears solely
+                          when a system is genuinely backed by a repo, which is
+                          the fact you cannot otherwise get from this list — and
+                          the same "don't answer a question that was never in
+                          doubt" rule the theme-scope control follows. */}
+                      {kit.source === 'github' && (
+                        <span
+                          title={kit.repo ? `Restorable from ${kit.repo}` : 'Restorable from GitHub'}
+                          className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 h-[15px] rounded text-[10px] font-medium border border-line text-fg-muted bg-elevated/60"
+                        >
+                          <GitHubGlyph size={9} />
+                          GitHub
+                        </span>
+                      )}
                     </span>
                   </span>
                 </button>
@@ -452,6 +564,37 @@ function KitsPopover({
                         {facts.icons && <KitFact label="Icons">{facts.icons}</KitFact>}
                       </dl>
 
+                      {/* Which theme to LAND on. Only when this system carries
+                          more than one — the same "don't ask a question that
+                          has only one answer" rule the save-scope control
+                          follows one panel up; with a single theme the clamp in
+                          `Configurator` already picks it and a select of one
+                          option would be a decision that was never in doubt.
+
+                          Non-destructive on purpose: this previews the chosen
+                          theme, it does NOT narrow the loaded system to it.
+                          Narrowing already exists on the SAVE side ("Just one
+                          theme" → `scopeSnapshotToTheme`), and offering it here
+                          too would be a second, silent way to discard themes at
+                          the exact moment the system on screen is replaced —
+                          the same class of surprise as the row-click-loads
+                          behaviour this panel was built to remove. */}
+                      {facts.themes.length > 1 && (
+                        <label className="flex items-center gap-2 text-[11px] text-fg-faint">
+                          <span className="flex-shrink-0">Open in</span>
+                          <select
+                            value={landTheme[kit.id] ?? facts.themes[0]}
+                            onChange={(e) => setLandTheme((m) => ({ ...m, [kit.id]: e.target.value }))}
+                            aria-label={`Theme to open ${kit.name} in`}
+                            className="flex-1 min-w-0 px-2 py-1 rounded-md border border-line bg-app text-[11px] text-fg outline-none transition-colors focus:border-line-strong"
+                          >
+                            {facts.themes.map((t) => (
+                              <option key={t} value={t}>{themeLabel(t)}</option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+
                       {/* Two destinations, spelled out, because they're the two
                           things you do with a saved system and they land in
                           different places. Both LOAD first — the editor and the
@@ -462,14 +605,14 @@ function KitsPopover({
                           and it should not be a surprise. */}
                       <div className="flex items-center gap-1.5 pt-0.5">
                         <button
-                          onClick={() => { loadSystem(kit.id); onOpenEditor?.(); onClose() }}
+                          onClick={() => handleLoad(kit.id, facts.themes, onOpenEditor)}
                           title={`Load ${kit.name} and open it in the Variables Generator`}
                           className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
                         >
                           Load & edit
                         </button>
                         <button
-                          onClick={() => { loadSystem(kit.id); onReviewInDocs?.(); onClose() }}
+                          onClick={() => handleLoad(kit.id, facts.themes, onReviewInDocs)}
                           title={`Load ${kit.name} and read its foundations in Docs`}
                           className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
                         >
@@ -487,14 +630,41 @@ function KitsPopover({
         )}
       </div>
 
-      <div className="px-4 py-2.5 border-t border-line/70 bg-app/60 flex flex-col gap-1">
-        <span className="text-[11px] text-fg-faint">
-          Active: <code className="font-mono text-fg-muted">{primaryColor}</code>
-        </span>
+      {/* The door to the full hub.
+          This slot used to read `Active: #9522e9`. That line is named in
+          CLAUDE.md as one half of why this popover "looked like a palette
+          manager" — the per-row colour dot was the other half, and only the
+          dot got fixed (by `kitFacts`) at the time. It reports the accent, on
+          a surface whose subject is whole systems, so it survived as a
+          misleading signal in the most prominent fixed position here. Spending
+          the space on the one thing this popover genuinely cannot do is a
+          strictly better trade than keeping it.
+          Named as a ROW (glyph · title · what's there) rather than a bare
+          link, matching `SyncHubPopover` — the codebase's existing pattern for
+          "this popover routes somewhere". The destination keeps its own proper
+          noun, "Save & Share", because Docs prose refers to it by that name in
+          eight places; the subtitle is what says why you'd go. */}
+      <div className="border-t border-line/70 bg-app/60 p-1.5">
+        {onOpenSaveHub && (
+          <button
+            onClick={() => { onOpenSaveHub(); onClose() }}
+            className="w-full flex items-start gap-3 rounded-xl px-2.5 py-2 text-left hover:bg-elevated/60 transition-colors"
+          >
+            <span className="flex-shrink-0 mt-0.5 text-fg-muted">
+              <FolderIcon />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold text-fg">Save &amp; Share</span>
+              <span className="block text-[11px] text-fg-faint leading-relaxed">
+                Every system side by side, the export files, and your Figma / GitHub connections.
+              </span>
+            </span>
+          </button>
+        )}
         {kits.length > 0 && (
-          <span className="text-[11px] text-fg-faint leading-relaxed">
+          <span className="block px-2.5 pb-1 pt-0.5 text-[11px] text-fg-faint leading-relaxed">
             {canSync
-              ? 'Each kit syncs to its own Figma URL, named after the kit.'
+              ? 'Each system syncs to its own Figma URL, named after the system.'
               : 'Sync is available on the deployed app.'}
           </span>
         )}
@@ -506,7 +676,7 @@ function KitsPopover({
 // ── Reset confirmation ───────────────────────────────────────────────────────
 // Same anchor/dismiss contract as KitsPopover (outside-click + Escape, the
 // framer fade+slide), so the two controls in this row behave identically.
-// Spells out what survives — saved kits and the sync connection — because the
+// Spells out what survives — saved systems and the sync connection — because the
 // only reason to hesitate here is not knowing whether Reset also throws those
 // away. It does not; see `resetToDefaults`.
 function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
@@ -539,7 +709,7 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
       <p className="text-xs text-fg-faint leading-relaxed">
         Puts every foundation back to the default — the purple accent, the Light
         and Dark themes, Astryx semantics, typography, spacing and the rest.
-        Your saved kits and Figma sync URL are kept.
+        Your saved systems and Figma sync URL are kept.
       </p>
       <div className="flex items-center gap-2 pt-0.5">
         <button
@@ -559,14 +729,20 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
   )
 }
 
-// ── The pill row itself (header rightSlot on Home) — Reset · Save ───────────
+// ── The pill row itself (header rightSlot on Home) — Reset · Systems ────────
 export default function HomeActions({
-  previewTheme = 'light', onOpenEditor, onReviewInDocs,
+  previewTheme = 'light', onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme,
 }: {
   previewTheme?: string
-  /** Forwarded to the Save popover's per-kit actions — see `KitsPopover`. */
+  /** Forwarded to the Systems popover's per-row actions — see `KitsPopover`. */
   onOpenEditor?: () => void
   onReviewInDocs?: () => void
+  /** Opens `GitHubConnectView` — the popover's inline durability remedy. */
+  onConnectGithub?: () => void
+  /** Opens `SaveView` — the full hub the popover routes to. */
+  onOpenSaveHub?: () => void
+  /** Sets the previewed theme (and the app chrome with it). */
+  onPreviewTheme?: (themeKey: string) => void
 }) {
   const [kitsOpen, setKitsOpen] = useState(false)
   const kitsBtn = useRef<HTMLButtonElement>(null)
@@ -618,8 +794,8 @@ export default function HomeActions({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Same HeaderPill as Save, so both read as one row of equal-weight
-          actions — the pill owns the h-7 / rounded-[10px] / px-2.5 geometry,
+      {/* Same HeaderPill as Systems, so both read as one row of equal-weight
+          controls — the pill owns the h-7 / rounded-[10px] / px-2.5 geometry,
           which is what makes the two match without hardcoding sizes here. */}
       <div className="relative">
         <Pill
@@ -643,7 +819,8 @@ export default function HomeActions({
       <div className="relative">
         <Pill
           Icon={FolderIcon}
-          label="Save"
+          label="Systems"
+          title="Save the current system under a name, and reopen one you already saved"
           onClick={() => setKitsOpen((v) => !v)}
           buttonRef={kitsBtn}
           aria-haspopup
@@ -656,6 +833,9 @@ export default function HomeActions({
               previewTheme={previewTheme}
               onOpenEditor={onOpenEditor}
               onReviewInDocs={onReviewInDocs}
+              onConnectGithub={onConnectGithub}
+              onOpenSaveHub={onOpenSaveHub}
+              onPreviewTheme={onPreviewTheme}
             />
           )}
         </AnimatePresence>

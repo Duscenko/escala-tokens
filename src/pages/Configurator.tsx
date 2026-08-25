@@ -441,17 +441,48 @@ export default function Configurator() {
   // light — Alias/Semantics' theme selector, Picker Color's transparency ramp,
   // and PreviewPanel would all read light tokens under dark chrome until the
   // user re-clicked the toggle twice to resync.
-  const [previewTheme, setPreviewTheme] = useState(() => {
+  const [previewThemeRaw, setPreviewTheme] = useState(() => {
     if (getTheme() !== 'dark') return 'light'
     if (themeKinds.dark === 'dark') return 'dark'
     return Object.keys(themeKinds).find((k) => themeKinds[k] === 'dark') ?? 'light'
   })
+  // CLAMPED to a theme the current system actually has. `previewThemeRaw` can
+  // point at a theme that no longer exists, and nothing used to notice:
+  //
+  //  · **Loading a theme-scoped system.** Saving "just one theme" narrows
+  //    `themeOrder` (see `scopeSnapshotToTheme`), so loading a Dark-only kit
+  //    while previewing light left `previewTheme === 'light'` against a system
+  //    with no light theme. Measured: `resolvePreviewTokens(state, 'light')`
+  //    fell through `themes[key] ?? themes.light ?? {}` to an empty map and
+  //    `themeKinds[key] ?? 'light'`, rendering surface `#fdfdfd` / text
+  //    `#0a0d12` — a fully LIGHT preview of a system whose only theme is dark,
+  //    beside a Semantics table showing one Dark column.
+  //  · **Deleting the previewed theme.** `removeTheme` drops the key and never
+  //    looks at what is being previewed — the same dangling reference by
+  //    another route.
+  //
+  // Derived rather than corrected through an effect on purpose: a `useEffect`
+  // that calls `setPreviewTheme` is the cascading-render pattern the React
+  // lint rule flags, and it would fight `changePreviewTheme` on every load.
+  // The RAW value is deliberately kept, so re-loading a system that has the
+  // user's preferred theme again snaps back to it instead of stranding them on
+  // whatever the narrow system happened to carry.
+  const previewTheme = themeOrder.includes(previewThemeRaw) ? previewThemeRaw : (themeOrder[0] ?? 'light')
   // Picking a theme also flips the app chrome to that theme's kind, so a dark
   // preview (built-in dark or any future dark-kind theme) reads on dark chrome.
   const changePreviewTheme = (key: string) => {
     setPreviewTheme(key)
     setTheme((themeKinds[key] ?? 'light') === 'dark' ? 'dark' : 'light')
   }
+  // Chrome follows the CLAMPED theme, not the raw one — otherwise the clamp
+  // above fixes the preview's tokens and leaves the app painted in the other
+  // appearance, which is the same "previewed theme and chrome flip together"
+  // contract broken one layer down. This is an effect because its target is
+  // the document's own class (`lib/theme.ts`), an external system — not React
+  // state, so it is not the cascading-render pattern the note above avoids.
+  useEffect(() => {
+    setTheme((themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light')
+  }, [previewTheme, themeKinds])
   // Right preview panel can be collapsed for more center width; re-expanded
   // via the slim strip that replaces it while collapsed. Starts EXPANDED: it's
   // a persistent, always-visible specimen of the category being edited, not an
@@ -643,6 +674,9 @@ export default function Configurator() {
           previewTheme={previewTheme}
           onOpenEditor={() => selectFoundation('color')}
           onReviewInDocs={() => openDocs(OVERVIEW_KEY)}
+          onConnectGithub={() => openExport('github')}
+          onOpenSaveHub={() => openExport('save')}
+          onPreviewTheme={changePreviewTheme}
         />
       </div>
     </>
@@ -699,7 +733,13 @@ export default function Configurator() {
     )
     centerKey = 'export-code'
   } else if (exportMode === 'save') {
-    header = { Icon: SaveIcon, title: 'Save & Share', subtitle: 'Copy the README or the CSS into Stitch, Claude or Codex or any IDE context!' }
+    // Subtitle covers all THREE halves of this view — the systems grid, the
+    // file preview and the connections panel. It used to describe only the
+    // middle one ("Copy the README or the CSS into Stitch, Claude or Codex…"),
+    // which was fine while the sole way in was a Docs link about exporting
+    // CSS, and became a mismatch the moment the Systems popover started
+    // routing here promising "every system side by side" and the connections.
+    header = { Icon: SaveIcon, title: 'Save & Share', subtitle: 'Every saved system, the export files, and your Figma / GitHub connections.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
         <SaveView onImport={() => setImportOpen(true)} onNewSystem={() => setNewSystemOpen(true)} />

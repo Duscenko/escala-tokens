@@ -21,7 +21,8 @@
     "color:report": "tsx scripts/color-report.ts",
     "gen:radix-reference": "tsx scripts/gen-radix-reference.ts",
     "gen:tailwind-reference": "tsx scripts/gen-tailwind-reference.ts",
-    "gen:carbon-reference": "tsx scripts/gen-carbon-reference.ts"
+    "gen:carbon-reference": "tsx scripts/gen-carbon-reference.ts",
+    "gen:component-color-fields": "tsx scripts/gen-component-color-fields.ts"
   },
   "dependencies": {
     "@material/material-color-utilities": "^0.4.0",

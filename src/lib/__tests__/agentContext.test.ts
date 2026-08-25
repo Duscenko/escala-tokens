@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMPONENTS } from '../componentCatalogue'
+import { COMPONENTS, type ComponentDef } from '../componentCatalogue'
 import { agentContextMarkdown, type AgentFoundationTokens } from '../agentContext'
 
 const otp = COMPONENTS.find((c) => c.key === 'InputOTP')!
@@ -14,6 +14,18 @@ const TOKENS: AgentFoundationTokens = {
     sizes: { 'text-md': '16px', 'text-lg': '18px', 'text-xl': '20px' },
     weights: { semibold: 600, medium: 500 },
   },
+  // Color fields — the exact PreviewTokens shape ComponentArticle passes
+  // through in the real app (structurally, since `AgentFoundationTokens`
+  // is a subset of `PreviewTokens`).
+  brandSolid: '#7f56d9',
+  onBrand: '#ffffff',
+  neutralText: '#101828',
+  errorColor: '#f04438',
+  disabledBg: '#f5f5f5',
+  disabledText: '#a4a7ae',
+  successColor: '#17b26a',
+  warningColor: '#f79009',
+  infoColor: '#2e90fa',
 }
 
 describe('agentContextMarkdown', () => {
@@ -49,5 +61,40 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('var(--stroke-control)')
     expect(md).not.toContain('Reconstruct the set')
     expect(md).not.toContain('Border/critical')
+  })
+
+  it('scopes the Color section to the roles Button\'s own specimen reads, resolved', () => {
+    const button = COMPONENTS.find((c) => c.key === 'Button')!
+    const md = agentContextMarkdown(button, '<Button />', TOKENS)
+    expect(md).toContain('### Color (scoped to this component)')
+    // A real resolved value next to a real role — not merely a var/Figma
+    // NAME. This is the exact gap this section closes: every other table
+    // already resolved to a value, color used to be name-only.
+    expect(md).toContain('`brandSolid`')
+    expect(md).toContain('`--color-background-brand-solid`')
+    expect(md).toContain('`#7f56d9`')
+    expect(md).toContain('`onBrand`')
+    expect(md).toContain('`#ffffff`')
+    // The four state-family fields are labeled without a fabricated CSS var
+    // — which family backs "error" can be re-pointed by a theme, so there is
+    // no single name that's always correct (see previewColorFields.ts).
+    expect(md).toContain('`errorColor`')
+    expect(md).toMatch(/\| `errorColor` \| Error accent[^|]*\| — \| `#f04438` \|/)
+  })
+
+  it('falls back to the full palette when a component has no scoped color map', () => {
+    const notScoped: ComponentDef = { ...otp, key: 'NotInSpecimensRegistry' }
+    const md = agentContextMarkdown(notScoped, '<Foo />', TOKENS)
+    expect(md).toContain('### Color (`Color` collection)')
+    expect(md).not.toContain('### Color (scoped to this component)')
+    // A real resolved declaration from the full CSS excerpt — `--color-<key>: #……`.
+    expect(md).toMatch(/--color-[\w-]+:\s*#[0-9a-fA-F]{3,8};/)
+  })
+
+  it('has no color section when no tokens are supplied (nothing live to resolve)', () => {
+    const button = COMPONENTS.find((c) => c.key === 'Button')!
+    const md = agentContextMarkdown(button, '<Button />')
+    expect(md).not.toContain('### Color (`Color` collection)')
+    expect(md).not.toContain('### Color (scoped to this component)')
   })
 })

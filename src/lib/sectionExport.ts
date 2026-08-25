@@ -73,6 +73,34 @@ export function exportLanguage(format: ExportFormat): string {
   return format === 'css' ? 'css' : format === 'tailwind' ? 'js' : format === 'tokens' ? 'json' : 'markdown'
 }
 
+/** How many declarations a preview pane shows before it truncates. Color alone
+ *  emits ~89 semantic roles plus every family ramp — the full file is one
+ *  click away in Export, and a page-length dump teaches nothing. Shared by
+ *  `useIt.ts` (foundation pages) and `agentContext.ts` (component "Copy
+ *  context" — its Color section is this same excerpt, so the two can't quote
+ *  a different truncation depth for the same CSS). */
+export const CSS_PREVIEW_LINES = 8
+
+/** Trim `:root { … }` down to a readable, still-valid excerpt.
+ *  `cssFor` is always `wrapRoot(...)` (see above), so the first line opens the
+ *  block and the first bare `}` closes it — Grid appends a media query AFTER
+ *  that brace, which is why the close is FOUND rather than assumed to be the
+ *  last line. */
+export function cssExcerpt(css: string): string {
+  const lines = css.split('\n')
+  const close = lines.findIndex((l) => l.trim() === '}')
+  if (close < 1) return css.trimEnd()
+  const decls = lines.slice(1, close).filter((l) => l.trim())
+  if (decls.length <= CSS_PREVIEW_LINES) return css.trimEnd()
+  const rest = decls.length - CSS_PREVIEW_LINES
+  return [
+    lines[0],
+    ...decls.slice(0, CSS_PREVIEW_LINES),
+    `  /* …+${rest} more — the full file is Export → Code */`,
+    '}',
+  ].join('\n')
+}
+
 // ── Section token sources ───────────────────────────────────────────────────
 
 /** Per-call export scoping. Today only the color section reads it: the export
