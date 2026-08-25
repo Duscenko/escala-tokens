@@ -175,19 +175,26 @@ function TokenMark({
 }
 
 /** Specimen left, token id + swatch right. The visual always keeps its width —
- *  long ids like `action.primary.pressed` truncate instead of crushing buttons. */
+ *  long ids like `action.primary.pressed` truncate instead of crushing buttons.
+ *  `shrinkVisual` flips that: for a specimen that's itself running text (the
+ *  Content hierarchy's headline/body lines) it's the VISUAL that has to give,
+ *  not the token id — a fixed-width wrapper around running text defeats its
+ *  own `truncate` (a flex child can't shrink below its content size unless its
+ *  parent allows it to), so the line ran past the card's edge instead of
+ *  ellipsizing. */
 function Row({
-  t, slot, onEdit, children,
+  t, slot, onEdit, children, shrinkVisual = false,
 }: {
   t: PreviewTokens
   slot: Slot
   onEdit?: (id: string) => void
   children: ReactNode
+  shrinkVisual?: boolean
 }) {
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <div className="flex items-center gap-2 flex-shrink-0">{children}</div>
-      <div className="min-w-0 flex-1 flex justify-end">
+      <div className={`flex items-center gap-2 min-w-0 ${shrinkVisual ? 'flex-1' : 'flex-shrink-0'}`}>{children}</div>
+      <div className={`flex justify-end ${shrinkVisual ? 'flex-shrink-0' : 'min-w-0 flex-1'}`}>
         <TokenMark slot={slot} onEdit={onEdit} color={t.fgMuted || '#717680'} />
       </div>
     </div>
@@ -208,8 +215,8 @@ export function ContentSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const fill = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
 
   const Line = ({ slot, role, children }: { slot: Slot; role: string; children: ReactNode }) => (
-    <Row t={t} slot={slot} onEdit={onEditToken}>
-      <span style={{ color: slot.css, ...typeStyleOf(t, role) }} className="truncate">
+    <Row t={t} slot={slot} onEdit={onEditToken} shrinkVisual>
+      <span style={{ color: slot.css, ...typeStyleOf(t, role) }} className="truncate block min-w-0">
         {children}
       </span>
     </Row>

@@ -727,7 +727,8 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > - **The FIRST kit starts open, the rest collapsed, with a chevron to toggle.** With the
 >   scope sentence gone this summary is the only thing distinguishing a kit from a palette,
 >   so it can't be something you have to go looking for — but opening all of them would
->   bury the list. One at a time: the list scrolls inside a 256px box, and a second open kit
+>   bury the list. One at a time: the list scrolls inside its own region (sized by
+>   `usePopoverPlacement`, see below — not a fixed box any more), and a second open kit
 >   pushes the one you just opened's actions out of view. The popover unmounts on close, so
 >   every open re-seeds on the top kit. The chevron LEADS and the colour dot moved inside
 >   the same button behind it — the glyph is what says the row discloses something (the
@@ -789,6 +790,35 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   elsewhere in the app (every "> 1" guard, like the per-theme delete lock,
 >   already assumes 1 is valid), not a new case this feature had to teach
 >   the rest of the app to handle.
+> - **The popover CAPS its own height to the room below the trigger, via
+>   `usePopoverPlacement(anchorRef, …)`** — the same hook `AddThemePanel` uses for its
+>   header/scrolling-body/pinned-footer shape. Before this, the outer `motion.div` had no
+>   height limit at all: its natural height (header + kits list + the "Save & Share" door)
+>   just grew with however much content there was, and nothing capped it to the viewport.
+>   Reported as "Save & Share needs to stay reachable once there are many kits" — measured
+>   first, and the real trigger turned out to be viewport height more than kit COUNT: with
+>   15 kits the popover wanted 682px, and on an ordinary 650px-tall window the door's
+>   bottom edge landed at 772px — 122px past the bottom of the screen, with no scrollbar
+>   anywhere to reach it. It wasn't clipped, it was simply gone.
+>   - **Only the kits list gives up space.** The header form (name input · scope toggle ·
+>     durability paragraph · Connect GitHub) and the "Save & Share" footer are both
+>     `flex-shrink-0`; the kits list is `flex-1 min-h-0 overflow-y-auto` (replacing a fixed
+>     `max-h-64`) — the ONE region allowed to shrink when the popover's capped `maxHeight` is
+>     tighter than everything wants. That's what makes "Save & Share fixed at the bottom"
+>     literally true regardless of kit count: it can never be pushed off by a long list, only
+>     the list itself scrolls.
+>   - **`flex-1` here does NOT stretch the list to fill idle space on a tall screen — verify
+>     this before trusting the diff.** It looked like it might: measured on a 900px viewport,
+>     the kits box grew from a fixed 288px to 326px. But that's `flex-shrink` reclaiming
+>     space CSS already owed it, not `flex-grow` inventing new space: 15 kits' rows have a
+>     natural (uncapped) content height of ~1045px, which exceeds ANY reasonable popover
+>     max-height, so the box is always in "give some back" mode, never "stretch to fill".
+>     Confirmed empirically with ONE kit (a short list): `kitsBoxHeight` measured 287px
+>     against its own `<ul>` content height of 286px — 1px of slack, not a stretched region
+>     with dead space at the bottom.
+>   - **Anchored to the TRIGGER pill (`kitsBtn`, threaded in as `anchorRef`), not the
+>     popover's own ref** (`ref`, used only for outside-click detection) — measuring the
+>     popover against itself would be measuring the very box being sized.
 - **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
   since the rail was removed — Kits in Variables' header and the Export wizard's own
   "Save this design system" card (see above) cover PART of the same ground — naming,
@@ -970,60 +1000,51 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   on light until the toggle was clicked twice to resync. Any code that needs "is the preview
   dark right now" on first render must go through this init, not assume `previewTheme` starts
   `'light'`.
-> **The aside is a THREE-TAB reference, not just a specimen — `Preview` · `.MD` ·
-> `Documentation` (`PanelTabBar` in `PreviewPanel.tsx`).** It's the only column that is
-> always looking at the foundation you're editing, which makes it the cheapest place to
-> reach the two things that otherwise cost a navigation: the section's markdown (before:
-> open `ExportWizard`, pick a scope, pick a format) and its reference page (before: leave
-> Variables for the Docs destination and lose the editor). Both stay scoped to whatever
-> the centre column is on, so switching foundations moves all three tabs at once.
+> **The aside is a THREE-TAB reference, not just a specimen — `Preview` · `Artefacts` ·
+> `.MD` (`PanelTabBar` in `PreviewPanel.tsx`).** It's the only column that is always
+> looking at the system you're editing, which makes it the cheapest place to reach the two
+> things that otherwise cost a navigation: a real composed SCREEN built from your tokens,
+> and the section's markdown (before: open `ExportWizard`, pick a scope, pick a format).
+> - **The two non-specimen tabs are scoped DIFFERENTLY, on purpose.** `.MD` follows the
+>   centre column — markdown for "the foundation you're editing" is the useful scope. An
+>   **artefact is whole-SYSTEM**: it's the one view where every foundation is on screen at
+>   once, which is the only way to see them working together. Switching foundations doesn't
+>   change what the artefact renders; it changes which of those tokens you're about to move.
+>   - **Color is the one foundation where `.MD` itself splits by SUB-tab, via
+>     `mdWholeSystem`** (`Configurator.tsx` → `PreviewPanel`): Primitives and Gradients show
+>     the WHOLE `design-system.md`, only Semantics narrows to `color.md`. Reported request,
+>     not a guess: Primitives/Gradients are where you're still gathering broad context (an
+>     AI agent, a handoff), Semantics is the one deliberate, focused task ("map THIS role to
+>     THIS tone") where the noise of every other foundation's tokens gets in the way.
+>     `mdWholeSystem` is computed at the CALL SITE, not inside `PreviewPanel` — the panel
+>     stays foundation-agnostic (it doesn't know `ColorTab` exists), the same split
+>     `focus`/`onEditColorGroup` already use. It only overrides `.MD`'s `section`; nothing
+>     else reads `section` any more (the `Documentation` tab that used to was retired — see
+>     below), so this can't leak into the artefact or the header title outside `.MD`.
+>     Verified: Primitives and Gradients both read `design-system.md` in the file chip and
+>     the header; Semantics reads `color.md`; an unrelated foundation (Radius) still reads
+>     `radius.md`, untouched.
+> - **A fourth tab, `Documentation`, was RETIRED for Artefacts** — the foundation's own Docs
+>   page re-laid-out as an accordion (`DocsPane`/`DocRow`, deleted along with the
+>   `onOpenDocs` prop and its `Configurator` wiring; `openDocs` itself stays, `DocsView`
+>   still uses it). **Nothing was lost**: the Docs destination carries every one of those
+>   pages at full width, with the TOC, prev/next and side-by-side ramps a 400px column could
+>   never show, so the accordion was always the lesser copy of a page one click away. Don't
+>   re-add it as a fifth tab — if the panel ever needs reference again, the answer is a link
+>   to Docs, not a second rendering of it.
 > - **Nothing here is re-authored.** `.MD` is the exact string `buildSectionExport(section,
->   'md')` hands the wizard; `Documentation` reads the same `FOUNDATION_DOCS` entry and
->   calls the same `section.render(system)` bodies `FoundationArticle` does. So a
->   foundation documented once is documented in both places, and the panel can't claim
->   something the export or the docs site would contradict. What changes in the docs tab is
->   the SHAPE only: the article's long single scroll becomes an accordion, which in a 400px
->   column doubles as that page's own table of contents (closed by default — six labelled
->   rows under the lead is a scannable index; six expanded sections would be a scroll with
->   no map).
-> - **Only the active tab is MOUNTED.** `.MD` rebuilds its string and `Documentation` runs
->   `useSystemDoc()` (89 roles + every family) — neither may run while you're looking at
->   the specimen, in a panel that repaints on every token edit. This is also why `DocRow`
->   renders nothing when closed instead of animating to `height: 0` with the body mounted,
->   which is what `AboutAccordion` (the other reading-surface accordion, whose visual
->   language this matches) correctly does for its four paragraphs.
+>   'md')` hands the wizard; an artefact's every CONTROL is a catalogue `SPECIMENS`
+>   renderer. So the panel can't claim something the export or the Figma plugin would
+>   contradict.
+> - **Only the active tab is MOUNTED.** `.MD` rebuilds a few hundred tokens of markdown and
+>   an artefact runs a dozen specimens — neither may pay that while you're looking at the
+>   other, in a panel that repaints on every token edit.
 > - **`MarkdownPane` calls `useDesignStore()` for the SUBSCRIPTION, not the value**, and
 >   deliberately does not memoise: `buildSectionExport` reads `getState()` itself, so the
 >   bare call is what makes the pane live (verified — retinting the accent moves `accent-9`
 >   here in the same frame it moves in the table). A `useMemo` keyed on the store object
 >   would work too but adds a dependency the linter can't see is load-bearing, for a case
 >   (`previewTheme` changing without a store change) that barely exists.
-> - **The wide doc bodies are reused VERBATIM, not forked into a narrow variant** — every
->   one carries its own `overflow-x-auto`, so nothing can blow out this column (verified:
->   the aside's `scrollWidth === clientWidth` with Color's Primitives section open). Any
->   NEW doc section must keep that guard. But scrolling is the FLOOR, not the goal, and the
->   two wide bodies answer it differently on purpose:
->   - **`PrimitiveRamp` reflows, via a CONTAINER QUERY** (`@container` +
->     `@max-[640px]:…` in `foundationDocs.tsx`) — one renderer, two densities, no fork
->     (a fork is what drifts once someone edits one copy). Above 640px it's the article's
->     full form (`h-11`, `gap-1.5`, hex captions, `min-w-[640px]`); below, it drops the hex
->     caption and falls to `h-8`/`gap-1` — **exactly `ScaleRow`'s density**, so the panel's
->     ramps read as the same object the Color hub shows one column over rather than a
->     shrunken copy of the article's. All twelve tones then fit 400px with no scroll at all.
->     Shedding the hex is the right trade because the ramp's job here is the CURVE plus a
->     nameable step: the swatch carries the curve, the tone number names the step, and the
->     hex is still one hover away on the swatch's pre-existing `title`. Verified across
->     naming schemes — `hundreds` ("950") measures 17px in a 26px cell.
->     **640 is the threshold because 640 is what the full form needs**: the same number as
->     the floor below it, not a second tuned constant. Both are literal px, deliberately —
->     `:root` is 18px, so the `@2xl` container breakpoint would silently mean 756px, the
->     identical trap that already bit this file's own `min-w-[40rem]` once.
->   - **`RoleTable` keeps scrolling, and should.** Five real columns of tabular data can't
->     reflow to 363px the way a ramp can; scrolling wide tables inside their own container
->     is this codebase's documented answer. Its floor is `min-w-[672px]` — px for the same
->     root-font-size reason (`42rem` silently meant 756px). That change is provably inert in
->     the Docs article, whose column never drops below 756px, so the floor only ever bound
->     in this panel, where it was demanding 84px of scrolling nobody asked for.
 > - **Tab state is LOCAL to the panel**, unlike `previewCollapsed` (which is lifted because
 >   TopNav sizes its brand divider from the column's width). Nothing outside reads it. It
 >   survives foundation switches — the panel is a separate tree from the centre column's
@@ -1036,17 +1057,159 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   one line across the shell. It shipped at `h-9` first and read as a lesser, secondary
 >   strip beside the centre column's taller one. **The LABEL still runs `text-[12px]`
 >   against ColorHub's `text-[15px]` — matched height, not matched type**: that column is
->   ~800px for three short words, this one is 400px split into 133px cells, and
->   "Documentation" at 15px measures ~118px before padding. Height is what lines the rows
->   up; type size is what keeps the longest label from truncating (measured: 91px in a
->   133px cell at 12px).
-> - **The theme badge shows only on `Preview`.** The markdown ships every theme's values and
->   the docs pages print light and dark side by side, so the badge would be claiming a scope
->   those two tabs don't have.
-> - **`Documentation` carries "Full page →"** (`onOpenDocs` → Configurator's `openDocs`,
->   the reverse of `FoundationArticle`'s own "Edit tokens" link). The accordion is a reading
->   surface for this column, never a replacement — anything wanting the full width (the
->   TOC, prev/next, side-by-side ramps) is one click away.
+>   ~800px for three short words, this one is 400px split into 133px cells. Height is what
+>   lines the rows up; type size is what keeps the longest label from truncating.
+> - **The theme badge shows on `Preview` AND `Artefacts`.** Both are painted in ONE theme,
+>   so both can claim it; the markdown ships every theme's values, so it can't.
+>   `iconLibraryKey` suppresses it on Preview only — a glyph sheet has no theme, but the
+>   artefact is still painted in one even while Icons is the active foundation.
+
+> **An ARTEFACT is a composed SCREEN — the thing a designer ships — built from the
+> system's own components and foundations (`preview/artefacts/`).** `Preview` asks "what do
+> my components look like"; an artefact asks "what does a real screen built from my system
+> look like". **Five exist**, in a deliberate narrative order (`ARTEFACTS` in `index.ts`):
+> `Login` → `Verify code` (OTP/2FA) → `Pricing` → `Checkout` → `Profile` — an onboarding-to-
+> settings arc, not an alphabetical or by-category list. A new entry doesn't have to fit
+> that arc; it just goes wherever it reads best next to its neighbours. The carousel's
+> pagination dots and scroll-snap activated automatically the moment the second entry
+> (`Verify code`) landed — no code changed in `CompactCarousel` to make that happen, which
+> is the whole reason the registry existed before a picker did.
+> - **Together the five deliberately cover ground `Login` alone couldn't**: `Verify code`
+>   is the first live use of the STATUS ramp (`InlineAlert`'s `Status: 'Error'`); `Checkout`
+>   uses the same component with `Status: 'Success'`, so the pair proves the ramp both
+>   directions from one component. `Pricing` is the first to compose `radius` + `shadow` +
+>   `Card` together. `Profile` is the first to use `Switch` (via `SwitchGroup`) and the
+>   `Button`'s destructive `Color: 'Danger'` axis (verified: resolves to `rgb(170,80,69)`,
+>   the ERROR ramp — independent of whatever the accent is, not a hand-picked red).
+> - **Every control is a catalogue `SPECIMENS` renderer, never hand-rolled markup** — the
+>   Color collage's rule, for the same reason: the artefact must not be able to drift from
+>   what the Figma plugin ships. Verified live: retinting the accent moved the CTA from
+>   `rgb(149,34,233)` to `rgb(42,122,75)`, and that's the SOLVED accessible solid, not the
+>   raw hex typed in — i.e. it reads the resolved semantic like everything else.
+> - **What the artefact DOES own is its prose** (page title, footer line). No catalogue
+>   component provides those and a screen without them isn't a screen. That's the normal
+>   split: the system owns the component, the composition owns the copy around it.
+> - **`SpecimenProps.w` is how a control fills a column — a width, not a
+>   re-implementation.** Every specimen carries a hardcoded px width tuned for the
+>   Components playground canvas (Input 260, SocialLoginButton 280, Divider 220…), which is
+>   right there and wrong in a ~328px mobile frame, where a 260px field reads as a broken
+>   form. `w` is **opt-in and therefore provably inert** — every pre-existing call site
+>   omits it (verified: the playground's Button still hugs its label at 90px with
+>   `justifyContent: normal`, its Input still measures exactly 260). It is deliberately NOT
+>   a fork: one renderer at two widths, the same call `PrimitiveRamp`'s container query
+>   already makes. Everything deciding how a component LOOKS stays inside the specimen.
+>   **Don't add `boxSizing: 'border-box'` alongside it** — Tailwind's preflight already
+>   sets `border-box` on `*`, so it's dead weight (measured: a bare 280px div with a 1px
+>   border renders at 280, not 282).
+> - **`SpecimenProps.children` is the same move for COPY that `w` is for width — opt-in,
+>   provably inert, never a fork.** A handful of specimens echo fixed prose that made sense
+>   as a category demo and nowhere else: `Badge` printed its `Color` axis value verbatim
+>   ("Brand", "Success" — fine as a demo label, wrong as a "Most popular" plan badge),
+>   `TextLink` was one hardcoded sentence, `Card` a fixed title/body/link, `Button` the
+>   literal word "Button". Building five real screens needed real words on all four, so each
+>   now takes `children` and falls back to its old fixed copy when it's omitted — verified
+>   against the live Components playground and the Color collage after the change: `Button`
+>   still reads "Button", `Card` still shows "Card title / Supporting copy… / Learn more →",
+>   `InlineAlert` still shows "Heads up / Semantic tokens re-derive…", byte-identical.
+>   - **`TextLink` changes SHAPE, not just text, when `children` is given**: with it, only
+>     the anchor renders (no "Read the …" sentence wrapped around it) — an artefact supplies
+>     its OWN sentence ("Didn't get a code? `<TextLink>Resend</TextLink>`"), and wrapping
+>     that in a second, unrelated sentence would double the prose.
+>   - **`Card` keeps its own chrome — border, radius, shadow, the `inset-surface`
+>     padding — and lets `children` replace only the BODY.** That's what makes it usable as
+>     the pricing plan's real container: the token-driven surface is the reusable part, a
+>     specific plan's name/price/features is composition, same "system owns the component,
+>     composition owns the copy" split as `LoginArtefact`'s own prose.
+>   - **`InlineAlert` and `SwitchGroup` also gained `w`** (defaults 320 / 260, same
+>     opt-in/inert contract as everywhere else) — a status callout or a settings section
+>     that doesn't span the mobile column reads like it's floating in a wider chrome that
+>     isn't there.
+> - **The frame is NEVER scaled.** It renders at whatever the column gives it — ~363px in
+>   the 400px aside — which IS a real phone width (iPhone SE 375, older 320), so type,
+>   control heights and radii are all at TRUE size and what you see is what ships. Scaling
+>   a "390pt" frame down to fit would render a 16px label at 14.7px and quietly lie about
+>   the type scale. `GridPreview` reaches the opposite conclusion for the right reason: it
+>   draws a layout DIAGRAM, whose percentage insets stay a true scale model at any size —
+>   an artefact contains type, which has no percentage equivalent.
+> - **Every measurement resolves from the store; the artefact picks no numbers.** The page
+>   inset is the system's OWN mobile grid margin (`resolveGridFrame('mobile', …)`), gaps are
+>   spacing ROLES (`gap-group` is literally what the system calls "stacked fields"), and the
+>   CTA is `Size: 'LG'` — the same `lg` primitive the `touch` size role points at, whose
+>   description is "Mobile CTA. 48px covers HIG 44." Verified: moving Grid · Mobile's margin
+>   from step 4 to step 10 took the frame's padding 16px → 40px and re-flowed every control
+>   329px → 281px, live, without leaving the tab.
+> - **A caption under the frame names the two numbers it's built from** ("Mobile · true
+>   size · page margin 16px from Grid"). Without it, "this is at true size" and "that margin
+>   is your Grid token" are both claims you'd have to take on faith.
+> - **Plain rounded rectangle — no notch, no status bar, no simulated hardware.** Every
+>   pixel of invented device chrome is a pixel that isn't a token, competing for attention
+>   in a panel whose entire job is showing you tokens.
+>
+> **The Artefacts tab opens on a COMPACT carousel, not the true-size frame — a photograph,
+> not a re-flow.** `ArtefactsPane` (`PreviewPanel.tsx`) holds one piece of local state,
+> `expanded: Artefact | null`; `null` renders `CompactCarousel`, set renders the true-size
+> `DeviceFrame` path (unchanged) behind an "All artefacts" back row. **`expanded` resets to
+> `null` for free** — the Artefacts tab unmounts on tab switch (see "only the active tab is
+> mounted" above), so leaving and coming back always lands compact with zero reset logic
+> to write. Verified end to end: expand → switch to `.MD` → back to `Artefacts` → lands on
+> the carousel, not the frame it was left on.
+> - **`ScaledArtefactCard` (`preview/artefacts/`) is a PHOTOGRAPH, not a second layout.**
+>   It renders `artefact.render({ t, compact: true })` at a fixed reference width
+>   (`SOURCE_WIDTH = 375`, a real phone width — independent of the panel's own size, so the
+>   thumbnail reads as "a shrunk phone" everywhere) and then shrinks the WHOLE rendered
+>   result with `transform: scale()`. This is the resolution to `DeviceFrame`'s own "never
+>   scaled" rule, not an exception to it: that rule is about layout — never re-flow a design
+>   into a narrower box, which is what actually lies about the type scale (a squeezed 16px
+>   label rendering at 14.7px). A post-layout CSS transform doesn't re-flow anything; the
+>   frame still computes every value at its one true scale first, and the transform only
+>   changes how large the finished photo displays. **Compact width is 240px** — deliberately
+>   much smaller than the ~360px true-size frame (scale ≈0.64), so it reads as a thumbnail
+>   rather than a slightly-narrower version of the real screen.
+>   - **Height is MEASURED, never assumed** (`ResizeObserver` on the unscaled inner div) —
+>     an artefact's height depends on live tokens (type scale, spacing, how long a value
+>     runs), so a fixed guess would clip or gap. Renders at `opacity: 0` until the first
+>     measurement lands, rather than flashing a wrong-height card.
+>   - **`ArtefactProps.compact` exists so the caption doesn't lie.** `DeviceFrame`'s own
+>     "Mobile · true size · page margin…" caption is a factual claim about ITS render — true
+>     in the expanded view, false in a 0.64×-scaled photo. Every artefact's `render()` must
+>     forward `compact` down to its own `DeviceFrame` call (see `LoginArtefact.tsx`'s
+>     `LoginScreen`) or a new artefact will silently claim "true size" in its thumbnail.
+>     Verified: compact card carries no `<p>` caption at all; expanded shows
+>     "Mobile · true size · page margin 16px from Grid".
+> - **`CompactCarousel`'s dots + prev/next are gated on `ARTEFACTS.length > 1`** — same "no
+>   control for a choice nobody has" rule as `KitsPopover`'s one-theme case. With one entry
+>   the strip just centers a single card (`justify-center`); the moment a second `Artefact`
+>   is registered, both the pagination dots and the horizontal scroll-snap layout activate
+>   with no further wiring — that's the whole reason the registry (`ARTEFACTS`) existed
+>   before a picker did.
+> - **Tapping a compact card is the ONLY way in; the whole card is the button** — no separate
+>   "expand" icon competing for the same click. `title`/`aria-label` both read "Expand
+>   {label} to actual size" so the affordance is announced, not just implied by a hover
+>   scale (`hover:scale-[1.02]`).
+> - **The tab title is always the literal string `'Artefacts'`, never the open artefact's
+>   own label.** It used to read `artefact?.label` — correct-looking with one entry ("Login"
+>   both compact and expanded), and secretly two different claims stacked on one line: with
+>   more than one artefact it would have had to flip between "Artefacts" (carousel) and the
+>   specific name (expanded) depending on a click, which is a title that moves under you.
+>   The specific screen is already named on its own card caption and, expanded, is the only
+>   thing on screen — the header doesn't need to repeat it.
+> - **Both views CENTER their content in the pane rather than pinning it to the top.**
+>   Reported as "on a bigger screen this looks like it has an infinite gap" — measured on a
+>   1920×1200 window: 266px of blank pane below the expanded frame, because the frame is a
+>   fixed, content-sized box inside a flex column that had nowhere to put the window's extra
+>   height except below it. **This is not a spacing-token problem** — `gap-section`/
+>   `gap-group` etc. were correctly sized the whole time; a design running proportionally
+>   bigger gaps on a bigger MONITOR would break the exact "true size, what you see is what
+>   ships" guarantee `DeviceFrame` exists to make (the monitor isn't the canvas the screen
+>   ships on). The fix is layout, not tokens: both `ArtefactsPane`'s expanded branch and
+>   `CompactCarousel` wrap their content in a `flex-1 min-h-0 flex flex-col justify-center`
+>   div. `min-h-0` is the load-bearing part — without it a flex child can't shrink below its
+>   content's height, so `justify-center` has nothing to center WITHIN and the content just
+>   sits at the top regardless. When the frame doesn't fit even a tall window, the wrapper
+>   grows past its flex-basis instead of clipping, and the pane's own `overflow-y-auto`
+>   scrolls the whole column — centering can never trap the top of overflowing content
+>   off-screen. Verified: spaceAbove/spaceBelow the frame landed within ~30px of each other
+>   at 1920×1200, and nothing regressed at the normal 1440×900 window.
 
 - **Right = `PreviewPanel.tsx`**: a **persistent, sticky specimen** of whatever foundation
   is being edited — **expanded by default** (`previewCollapsed` starts `false`; the slim

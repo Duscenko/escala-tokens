@@ -136,7 +136,37 @@ export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewToke
   return <PreviewIcon concept={concept} size={size} color={color} />
 }
 
-export interface SpecimenProps { t: PreviewTokens; v: AxisValues; icons?: IconOpts }
+/**
+ * `w` overrides a specimen's own width.
+ *
+ * Every renderer here carries a hardcoded px width tuned for the Components
+ * playground canvas (Input 260, SocialLoginButton 280, Divider 220…), which is
+ * correct there and wrong inside an artefact: a login screen in a ~328px mobile
+ * frame needs its fields to fill the column, or it reads as a broken form
+ * rather than a screen.
+ *
+ * It is OPT-IN and therefore provably inert — every pre-existing call site omits
+ * it, so the playground and the Color collage render byte-identically. And it is
+ * deliberately NOT a fork: one renderer at two widths, the same call
+ * `PrimitiveRamp`'s container query already makes ("one renderer, two densities,
+ * no fork — a fork is what drifts once someone edits one copy"). Anything that
+ * decides how a component LOOKS — colour, radius, height, type, state — stays
+ * inside the specimen, so an artefact can never disagree with what the plugin
+ * ships to Figma.
+ */
+/**
+ * `children` overrides a specimen's own hardcoded COPY, on the same terms `w`
+ * overrides its width: opt-in, so every existing call site (the playground,
+ * the Color collage) that omits it renders byte-identical to before. It exists
+ * because a few specimens echo fixed prose that made sense as a category demo
+ * — `Badge` prints its `Color` axis value verbatim ("Brand", "Success"),
+ * `TextLink` is one fixed sentence, `Card` is one fixed title/body/link — and
+ * an artefact composing a real screen (a "Most popular" plan badge, a "Resend
+ * code" link, a pricing card's own features) needs to say something the demo
+ * never anticipated. The specimen still owns every visual: colour, radius,
+ * padding, type role. Only the words move.
+ */
+export interface SpecimenProps { t: PreviewTokens; v: AxisValues; icons?: IconOpts; w?: number | string; children?: ReactNode }
 
 // ── Button (Color × Style × State) ────────────────────────────────────────────
 
@@ -149,7 +179,7 @@ const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number;
   XL: { sizeKey: 'xl', h: 56, f: 16, padX: 26, icon: 20, gap: 10 },
 }
 
-function ButtonSpecimen({ t, v, icons }: SpecimenProps) {
+function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   const color = statusColor(t, v.Color === 'Danger' ? 'Error' : (v.Color ?? 'Brand'))
   const style = v.Style ?? 'Solid'
   const state = v.State ?? 'Default'
@@ -181,6 +211,10 @@ function ButtonSpecimen({ t, v, icons }: SpecimenProps) {
       style={{
         ...baseFont(t),
         display: 'inline-flex', alignItems: 'center', gap: sz.gap,
+        // A width only arrives from an artefact (see `SpecimenProps.w`). Centring
+        // rides with it: the playground's button hugs its label, so left-aligned
+        // content is right there and wrong the moment the button spans a column.
+        width: w, justifyContent: w == null ? undefined : 'center',
         height: sizeOf(t, sz.sizeKey, sz.h), padding: `0 ${sz.padX}px`,
         borderRadius: radiusRoleOf(t, 'action'),
         background: bg, color: fg,
@@ -197,7 +231,7 @@ function ButtonSpecimen({ t, v, icons }: SpecimenProps) {
     >
       {loading && <SpecimenSpinner size={sz.icon - 2} color={fg} track={fg + '33'} />}
       {!loading && icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={sz.icon} color={fg} />}
-      Button
+      {children ?? 'Button'}
       {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={sz.icon} color={fg} />}
     </button>
   )
@@ -215,7 +249,7 @@ const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: 
   'Website':      { label: 'Website', placeholder: 'yoursite.com', prefix: 'https://' },
 }
 
-function InputSpecimen({ t, v, icons }: SpecimenProps) {
+function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
   const state = v.State ?? 'Default'
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const h = INPUT_HEIGHTS[v.Size ?? 'MD'] ?? 40
@@ -231,7 +265,7 @@ function InputSpecimen({ t, v, icons }: SpecimenProps) {
     : (t.border ?? '#d0d5dd')
 
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: 260 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>
         {meta.label}
       </span>
@@ -374,7 +408,7 @@ const BADGE_SIZE_SPECS: Record<string, { pad: string; f: number; dot: number; ga
   LG: { pad: '4px 12px', f: 13, dot: 7, gap: 7 },
 }
 
-function BadgeSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
+function BadgeSpecimen({ t, v, children }: SpecimenProps) {
   const c = statusColor(t, v.Color ?? 'Brand')
   const style = v.Style ?? 'Soft'
   const isNeutral = (v.Color ?? 'Brand') === 'Neutral'
@@ -393,7 +427,7 @@ function BadgeSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
       }}
     >
       <span style={{ width: sz.dot, height: sz.dot, borderRadius: 999, background: style === 'Solid' ? t.onBrand : c }} />
-      {v.Color ?? 'Brand'}
+      {children ?? (v.Color ?? 'Brand')}
     </span>
   )
 }
@@ -471,20 +505,20 @@ function SpinnerSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 // ── Divider (Orientation) ─────────────────────────────────────────────────────
 
-function DividerSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
+function DividerSpecimen({ t, v, w }: SpecimenProps) {
   const horizontal = (v.Orientation ?? 'Horizontal') === 'Horizontal'
   return horizontal
-    ? <hr style={{ width: 220, border: 'none', borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }} />
+    ? <hr style={{ width: w ?? 220, border: 'none', borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }} />
     : <span style={{ display: 'inline-block', height: 64, width: 1, background: t.borderDefault ?? '#e9eaeb' }} />
 }
 
 // ── Single-variant specimens ──────────────────────────────────────────────────
 
-function CardSpecimen({ t }: { t: PreviewTokens }) {
+function CardSpecimen({ t, w, children }: SpecimenProps) {
   return (
     <div
       style={{
-        ...baseFont(t), width: 280, padding: paddingOf(t),
+        ...baseFont(t), width: w ?? 280, padding: paddingOf(t),
         borderRadius: radiusRoleOf(t, 'container'),
         ...panelStyle(t, t.neutralFill || t.surface),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
@@ -492,11 +526,15 @@ function CardSpecimen({ t }: { t: PreviewTokens }) {
         display: 'flex', flexDirection: 'column', gap: 8,
       }}
     >
-      <span style={{ ...typeOf(t, 'heading-sm') }}>Card title</span>
-      <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
-        Supporting copy that explains the grouped content inside this surface.
-      </span>
-      <span style={{ ...typeOf(t, 'button'), color: t.brandText, cursor: 'pointer' }}>Learn more →</span>
+      {children ?? (
+        <>
+          <span style={{ ...typeOf(t, 'heading-sm') }}>Card title</span>
+          <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
+            Supporting copy that explains the grouped content inside this surface.
+          </span>
+          <span style={{ ...typeOf(t, 'button'), color: t.brandText, cursor: 'pointer' }}>Learn more →</span>
+        </>
+      )}
     </div>
   )
 }
@@ -663,7 +701,7 @@ const PROVIDER_MARKS: Record<string, { glyph: string; color: string }> = {
   Figma: { glyph: 'F', color: '#a259ff' },
 }
 
-function SocialLoginButtonSpecimen({ t, v }: SpecimenProps) {
+function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
   const provider = v.Provider ?? 'Google'
   const mark = PROVIDER_MARKS[provider] ?? PROVIDER_MARKS.Google
   const large = (v.Size ?? 'MD') === 'LG'
@@ -673,7 +711,8 @@ function SocialLoginButtonSpecimen({ t, v }: SpecimenProps) {
       style={{
         ...baseFont(t),
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-        width: large ? 320 : 280, height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
+        width: w ?? (large ? 320 : 280),
+        height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
         borderRadius: radiusRoleOf(t, 'action'),
         background: t.surface, border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
         ...typeOf(t, 'button'),
@@ -691,27 +730,29 @@ function SocialLoginButtonSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-function TextLinkSpecimen({ t, v }: SpecimenProps) {
+function TextLinkSpecimen({ t, v, children }: SpecimenProps) {
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
-  return (
-    <span style={{ ...typeOf(t, 'body-md') }}>
-      Read the{' '}
-      <a
-        href="#docs"
-        aria-disabled={disabled}
-        onClick={(e) => e.preventDefault()}
-        style={{
-          color: disabled ? t.disabledText : t.brandText,
-          fontWeight: weightOf(t, 'medium', 500),
-          textDecoration: state === 'Hover' ? 'underline' : 'none',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-        }}
-      >
-        design tokens guide ↗
-      </a>
-    </span>
+  const anchor = (
+    <a
+      href="#docs"
+      aria-disabled={disabled}
+      onClick={(e) => e.preventDefault()}
+      style={{
+        color: disabled ? t.disabledText : t.brandText,
+        fontWeight: weightOf(t, 'medium', 500),
+        textDecoration: state === 'Hover' ? 'underline' : 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      {children ?? 'design tokens guide ↗'}
+    </a>
   )
+  // With `children`, the caller supplies the WHOLE sentence around the link
+  // (e.g. "Didn't get a code? <TextLink>Resend</TextLink>") — wrapping it in
+  // "Read the …" too would double the prose. Without it, this is the demo
+  // sentence, unchanged.
+  return children ? anchor : <span style={{ ...typeOf(t, 'body-md') }}>Read the{' '}{anchor}</span>
 }
 
 function AppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
@@ -949,14 +990,14 @@ function MiniSwitch({ t, on }: { t: PreviewTokens; on: boolean }) {
   )
 }
 
-function SwitchGroupSpecimen({ t }: { t: PreviewTokens }) {
+function SwitchGroupSpecimen({ t, w }: SpecimenProps) {
   const rows = [
     { label: 'Email notifications', on: true },
     { label: 'Push notifications', on: true },
     { label: 'Marketing emails', on: false },
   ]
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 12, width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: t.fgMuted }}>Notifications</span>
       {rows.map((r) => (
         <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -1409,19 +1450,23 @@ function AlertBannerSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-function InlineAlertSpecimen({ t, v }: SpecimenProps) {
+function InlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
   return (
-    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: 320, padding: 14, borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${c}33` }}>
+    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${c}33` }}>
       <StatusIcon c={c} status={status} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{ ...typeOf(t, 'button') }}>
-          {status === 'Error' ? 'Export failed' : status === 'Warning' ? 'Contrast warning' : status === 'Success' ? 'System saved' : 'Heads up'}
-        </span>
-        <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
-          {status === 'Warning' ? 'Accent 400 on white is below AA for body text.' : 'Semantic tokens re-derive when the accent changes.'}
-        </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+        {children ?? (
+          <>
+            <span style={{ ...typeOf(t, 'button') }}>
+              {status === 'Error' ? 'Export failed' : status === 'Warning' ? 'Contrast warning' : status === 'Success' ? 'System saved' : 'Heads up'}
+            </span>
+            <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
+              {status === 'Warning' ? 'Accent 400 on white is below AA for body text.' : 'Semantic tokens re-derive when the accent changes.'}
+            </span>
+          </>
+        )}
       </div>
     </div>
   )

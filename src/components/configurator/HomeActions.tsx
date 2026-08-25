@@ -16,13 +16,14 @@
 // opened the exact same ExportWizard as the Export pill, just pre-checked to
 // whole-system. Export's own Step 1 still selects every collection manually.
 
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, DEFAULT_ACCENT, type DesignSnapshot } from '../../store/useDesignStore'
 import { isLiveEnvironment, publishTokens } from '../../lib/figmaSync'
 import { useApplyAccentColor } from '../../lib/colorActions'
 import HeaderPill from '../ui/HeaderPill'
 import { GitHubGlyph } from '../ui/icons'
+import { usePopoverPlacement } from './colorControls'
 
 // ── Pill icons (16–18px on a 24 grid, tracking currentColor) ─────────────────
 const FolderIcon: ComponentType = () => (
@@ -128,10 +129,21 @@ function KitFact({ label, children }: { label: string; children: ReactNode }) {
 // **system**, matching `savedSystems` and SaveView's "My design systems". The
 // third name ("kit") is gone from the UI; only the internal flow keeps it.
 function KitsPopover({
-  onClose, previewTheme, onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme,
+  onClose, previewTheme, onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme, anchorRef,
 }: {
   onClose: () => void
   previewTheme: string
+  /** The Systems pill — measured so the popover's own height never exceeds
+   *  the room actually below it. Without this, a short window (or, more
+   *  reliably, JUST a handful of saved systems on an ordinary laptop window)
+   *  ran the popover's natural height — header + kits list + the "Save &
+   *  Share" door — straight past the bottom of the viewport, with no scroll
+   *  affordance for the door: it wasn't even clipped visibly, it was simply
+   *  gone below the fold. Reported as "Save & Share needs to stay reachable
+   *  once there are many kits" — measured first: with 15 kits the popover
+   *  wants 682px, and a 650px-tall window put the door's bottom edge at 772,
+   *  122px past the window. */
+  anchorRef: RefObject<HTMLElement | null>
   /** Where "Load & edit" lands — the Variables Generator. */
   onOpenEditor?: () => void
   /** Where "Load & review" lands — Docs' whole-system Overview sheet, which is
@@ -179,6 +191,12 @@ function KitsPopover({
   const [name, setName] = useState('')
   const [justSaved, setJustSaved] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  // Measured against the TRIGGER pill, not this popover's own div — by the
+  // time this ref exists the popover's natural height is already what we're
+  // trying to cap. `prefer`/`max` sized to the content's own natural ceiling
+  // (measured ~682px with 15 kits and the multi-theme scope UI open) so a
+  // tall window never clips a shorter popover down for no reason.
+  const place = usePopoverPlacement(anchorRef, true, { prefer: 640, max: 720, min: 320 })
 
   // EVERY saved system, local and GitHub-backed alike. This used to filter
   // `source !== 'github'` ("GitHub-backed systems have their own push flow"),
@@ -196,8 +214,10 @@ function KitsPopover({
   const kits = savedSystems
 
   // Which kit's contents are expanded.
-  //  · **One at a time** — the list scrolls inside a 256px box, and a second
-  //    open kit would push the one you just opened's actions out of view.
+  //  · **One at a time** — the list scrolls inside its own region (sized by
+  //    `usePopoverPlacement`, not a fixed box any more — see the popover's own
+  //    note), and a second open kit would push the one you just opened's
+  //    actions out of view.
   //  · **The FIRST kit starts open.** With the scope sentence gone (see the
   //    header), this summary is the only thing that says a kit is the whole
   //    system rather than a palette — so it has to be visible without being
@@ -295,11 +315,12 @@ function KitsPopover({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -6, scale: 0.98 }}
       transition={{ duration: 0.15 }}
-      className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-line bg-surface shadow-[0_16px_48px_-12px_rgba(0,0,0,0.28)] z-50 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-line bg-surface shadow-[0_16px_48px_-12px_rgba(0,0,0,0.28)] z-50 overflow-hidden flex flex-col"
+      style={{ maxHeight: place.max }}
       role="dialog"
       aria-label="Saved systems"
     >
-      <div className="p-4 flex flex-col gap-2.5">
+      <div className="flex-shrink-0 p-4 flex flex-col gap-2.5">
         <h3 className="text-sm font-semibold text-fg">Save current as</h3>
         <div className="flex items-center gap-2">
           <input
@@ -412,7 +433,13 @@ function KitsPopover({
         )}
       </div>
 
-      <div className="max-h-64 overflow-y-auto border-t border-line/70">
+      {/* `flex-1 min-h-0` — not a fixed `max-h-64` — so this is the ONE region
+          that gives up space when the popover's own `maxHeight` (from
+          `usePopoverPlacement`) is tighter than the content wants. The header
+          above and the "Save & Share" footer below are both `flex-shrink-0`:
+          neither can be pushed off screen by a long kit list, which is the
+          bug this whole restructure exists to fix. */}
+      <div className="flex-1 min-h-0 overflow-y-auto border-t border-line/70">
         {kits.length === 0 ? (
           <p className="px-4 py-6 text-sm text-fg-faint text-center">No saved systems yet.</p>
         ) : (
@@ -644,7 +671,7 @@ function KitsPopover({
           "this popover routes somewhere". The destination keeps its own proper
           noun, "Save & Share", because Docs prose refers to it by that name in
           eight places; the subtitle is what says why you'd go. */}
-      <div className="border-t border-line/70 bg-app/60 p-1.5">
+      <div className="flex-shrink-0 border-t border-line/70 bg-app/60 p-1.5">
         {onOpenSaveHub && (
           <button
             onClick={() => { onOpenSaveHub(); onClose() }}
@@ -830,6 +857,7 @@ export default function HomeActions({
           {kitsOpen && (
             <KitsPopover
               onClose={() => setKitsOpen(false)}
+              anchorRef={kitsBtn}
               previewTheme={previewTheme}
               onOpenEditor={onOpenEditor}
               onReviewInDocs={onReviewInDocs}

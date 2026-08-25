@@ -1,0 +1,67 @@
+import { SPECIMENS } from '../../configurator/docs/specimens'
+import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
+import type { PreviewTokens } from '../ButtonPreview'
+import { DeviceFrame } from './DeviceFrame'
+import type { ArtefactProps } from './types'
+
+const Button = SPECIMENS.Button
+const Avatar = SPECIMENS.Avatar
+const StatusBadge = SPECIMENS.StatusBadge
+const Divider = SPECIMENS.Divider
+const SwitchGroup = SPECIMENS.SwitchGroup
+
+const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
+
+/**
+ * Profile / settings.
+ *
+ * `SwitchGroup`'s own demo ("Email notifications" / "Push notifications" /
+ * "Marketing emails") is a genuine settings section as-is — `w="100%"` is the
+ * only override it needs. The destructive action at the bottom is `Button`'s
+ * real `Color: 'Danger'` axis (already resolves to the ERROR ramp — see
+ * `statusColor`), not a hand-picked red: the same status colour `OTP` shows
+ * on a fill and `Checkout` shows on a tint, here shown on an outline.
+ */
+function ProfileScreen({ t, compact }: ArtefactProps) {
+  const muted = t.fgMuted || '#717680'
+
+  return (
+    <DeviceFrame t={t} compact={compact}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-section', '24px') }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: gap(t, 'gap-group', '16px') }}>
+          <Avatar t={t} v={{ Size: 'XL' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-tight', '4px'), flex: 1, minWidth: 0 }}>
+            <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Maya Duscenko</span>
+            <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>maya@escala.ds</span>
+          </div>
+          <StatusBadge t={t} v={{ Status: 'Online' }} />
+        </div>
+
+        <Divider t={t} v={{}} w="100%" />
+
+        <SwitchGroup t={t} v={{}} w="100%" />
+
+        <Divider t={t} v={{}} w="100%" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
+          <span
+            style={{
+              ...typeStyleOf(t, 'caption'), letterSpacing: '0.08em', textTransform: 'uppercase', color: muted,
+            }}
+          >
+            Danger zone
+          </span>
+          <Button t={t} v={{ Style: 'Outline', Color: 'Danger', Size: 'LG' }} w="100%">Delete account</Button>
+        </div>
+      </div>
+    </DeviceFrame>
+  )
+}
+
+export const PROFILE_ARTEFACT = {
+  key: 'profile',
+  label: 'Profile',
+  hint: 'Account settings — the first artefact to use Switch and a destructive Button.',
+  viewport: 'mobile' as const,
+  render: (p: ArtefactProps) => <ProfileScreen {...p} />,
+}

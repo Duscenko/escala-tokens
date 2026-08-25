@@ -1166,11 +1166,12 @@ export default function Step3_SemanticTokens({
           {navItems.map((item) => {
             const isActive = activeKey === item.key
             return (
-              <div key={item.key} className={`relative group ${railCollapsed ? '' : 'w-full'}`}>
+              <div key={item.key} className={`relative ${railCollapsed ? '' : 'w-full'}`}>
                 <button
                   onClick={() => selectNavItem(item.key)}
                   aria-label={item.label}
                   aria-current={isActive}
+                  title={railCollapsed ? `${item.label} — ${item.description}` : item.description}
                   className={`flex items-center rounded-lg transition-colors ${
                     railCollapsed ? 'w-10 h-8 justify-center' : 'w-full gap-2.5 px-2.5 py-2 text-left'
                   } ${
@@ -1193,12 +1194,6 @@ export default function Step3_SemanticTokens({
                     aria-hidden
                   />
                 )}
-                <span
-                  role="tooltip"
-                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 w-44 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-40 shadow-lg"
-                >
-                  {railCollapsed ? `${item.label} — ${item.description}` : item.description}
-                </span>
               </div>
             )
           })}

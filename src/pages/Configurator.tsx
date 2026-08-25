@@ -940,7 +940,7 @@ export default function Configurator() {
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
-          (Color/Type/Layout hub tabs, PreviewPanel's Preview/.MD/Documentation). */}
+          (Color/Type/Layout hub tabs, PreviewPanel's Preview/Artefacts/.MD). */}
       <ChromeTabDefs />
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
@@ -1105,10 +1105,12 @@ export default function Configurator() {
                   focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticFocus : null}
                   typeFocus={!exportMode && tab === 'foundations' && activeFoundation === 'typography' && typeTab === 'semantics' ? typeFocus : null}
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
+                  mdWholeSystem={
+                    !exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab !== 'semantics'
+                  }
                   previewTheme={previewTheme}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}
-                  onOpenDocs={openDocs}
                   onEditTypeRole={(key) => {
                     setTypeTab('semantics')
                     setTypeReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))

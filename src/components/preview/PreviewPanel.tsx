@@ -1,13 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live } from '../configurator/docs/specimens'
-import { CopyButton, Prose, CodeBlock, CountBadge, UseItBlock } from '../configurator/docs/blocks'
-import { useItForFoundation, USE_IT_ID, USE_IT_TITLE } from '../configurator/docs/useIt'
-import {
-  useSystemDoc, foundationDoc, type FoundationDoc,
-} from '../configurator/docs/foundationDocs'
+import { CopyButton } from '../configurator/docs/blocks'
+import { ARTEFACTS, type Artefact } from './artefacts'
+import { CompactCarousel } from './artefacts/CompactCarousel'
 import { buildSectionExport, ALL_SECTIONS, type SectionKey } from '../../lib/sectionExport'
 import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
@@ -176,31 +173,41 @@ function ColorCollage({
 }
 
 // ── Panel tabs ──────────────────────────────────────────────────────────────
-// The aside is the only column that is ALWAYS looking at the foundation you're
-// editing, which makes it the cheapest place to reach for the two things that
-// otherwise cost a navigation: the section's markdown (today: open the Export
-// wizard, pick a scope, pick a format) and its reference page (today: leave
-// Variables for the Docs destination and lose the editor). Both are now a tab
-// away and stay scoped to whatever the centre column is on.
+// The aside is the only column that is ALWAYS looking at the system you're
+// editing, which makes it the cheapest place to reach the two things that
+// otherwise cost a navigation: a real composed SCREEN built from your tokens
+// (`Artefacts`) and the section's markdown (`.MD` — otherwise: open the Export
+// wizard, pick a scope, pick a format).
+//
+// The two are scoped differently, on purpose. `.MD` follows the centre column,
+// because markdown for "the foundation you're editing" is the useful scope. An
+// artefact is whole-SYSTEM: it's the one view where every foundation is on
+// screen at once, which is the only way to see them working together.
 //
 // Everything here is a READING of what already exists — `buildSectionExport`
-// for the markdown, `FOUNDATION_DOCS` for the reference. Nothing is re-authored
-// for this column, so the panel can't tell you something the export or the docs
-// site would contradict.
+// for the markdown, the catalogue's `SPECIMENS` for the artefact's controls.
+// Nothing is re-authored for this column, so the panel can't tell you something
+// the export or the Figma plugin would contradict.
+//
+// A third tab, `Documentation`, used to sit here: the foundation's own Docs page
+// re-laid-out as an accordion. It was retired for this one. Nothing was lost —
+// the Docs destination carries every one of those pages at full width, with the
+// TOC, prev/next and side-by-side ramps a 400px column could never show, so the
+// accordion was always the lesser copy of a page one click away.
 
-export type PanelTab = 'preview' | 'md' | 'docs'
+export type PanelTab = 'preview' | 'artefacts' | 'md'
 
 const PANEL_TABS: { key: PanelTab; label: string }[] = [
   { key: 'preview', label: 'Preview' },
+  { key: 'artefacts', label: 'Artefacts' },
   { key: 'md', label: '.MD' },
-  { key: 'docs', label: 'Documentation' },
 ]
 
 /** Same Chrome-style strip `ColorHub` uses for Primitives / Semantics /
  *  Gradients: recessed `foundation-layer-bar`, active tab lifts on `bg-app`
  *  with concave bottom corners. Height stays `h-[52px]` so this row lines up
- *  with CenterHeader. Type stays 12px — "Documentation" at ColorHub's 15px
- *  would truncate in a 400px column. */
+ *  with CenterHeader. Type stays 12px — a 400px column splits into 133px cells,
+ *  and ColorHub's 15px would put the longest label close to truncating. */
 function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab) => void }) {
   return (
     <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px]">
@@ -260,169 +267,54 @@ function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: st
   )
 }
 
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden
-      className={`transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-    >
-      <path d="M9 6l6 6-6 6" />
-    </svg>
-  )
-}
-
-/** One collapsible section of the docs pane.
+/** The `Artefacts` tab — a composed screen built from the catalogue.
  *
- *  Unlike `AboutAccordion` — the other reading-surface accordion in the app,
- *  whose visual language this matches — a closed section here renders NOTHING
- *  rather than animating to `height: 0` with the body still mounted. That
- *  pattern is right for About's four paragraphs and wrong here: Color's
- *  Primitives section alone is twelve 12-step ramps and its Semantics section
- *  resolves 89 roles, and paying for all of them on every repaint of a panel
- *  that repaints on every token edit is exactly the cost this column can't
- *  afford. Nothing inside opens a popover, so the `overflow-hidden` the height
- *  animation needs is harmless (see CLAUDE.md's note on animated-height
- *  containers that DO hold popovers). */
-function DocRow({
-  title, hint, open, onToggle, children,
-}: {
-  title: string
-  hint?: string
-  open: boolean
-  onToggle: () => void
-  children: ReactNode
-}) {
-  return (
-    <div className="border-b border-line">
-      <button
-        onClick={onToggle}
-        aria-expanded={open}
-        className="w-full flex items-start gap-2.5 px-4 py-3 text-left hover:bg-elevated/40 transition-colors"
-      >
-        <span className={`flex-shrink-0 mt-0.5 ${open ? 'text-accent-ui' : 'text-fg-faint'}`}>
-          <Chevron open={open} />
-        </span>
-        <span className="flex-1 min-w-0">
-          <span className={`block text-[12.5px] text-fg ${open ? 'font-semibold' : 'font-medium'}`}>{title}</span>
-          {!open && hint && <span className="block text-[11px] text-fg-faint truncate">{hint}</span>}
-        </span>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-5 min-w-0">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-/** The `Documentation` tab — the foundation's own Docs page, re-laid-out for a
- *  400px column.
+ *  Whole-system, not scoped to the active foundation: an artefact's whole point
+ *  is that colour, type, radius, spacing, sizes and the grid are all visible at
+ *  once, working together. Switching foundations in the centre column doesn't
+ *  change what's rendered here — it changes which of these tokens you're about
+ *  to move.
  *
- *  Same CONTENT as `FoundationArticle` (lead · Why · Usage · the foundation's
- *  own token sections · Ships as), read from the same `FOUNDATION_DOCS` entry
- *  and rendered with the same `section.render(system)` bodies — so a foundation
- *  documented once is documented here too, with nothing to keep in sync. What
- *  changes is the SHAPE: the article's long single scroll becomes an accordion,
- *  which in a column this narrow doubles as the page's own table of contents.
- *  Closed by default — six labelled rows under the lead is a scannable index,
- *  where six expanded sections would be a scroll with no map.
- *
- *  The wide bodies (the primitive ramps, the 89-role table) already carry their
- *  own `overflow-x-auto`, so they scroll inside themselves here instead of
- *  breaking the column — which is why the article can be reused verbatim
- *  rather than forked into a "narrow" variant. */
-function DocsPane({
-  doc, onOpenFull,
-}: {
-  doc: FoundationDoc
-  /** Opens the real Docs page for this foundation. The accordion is a reading
-   *  surface, not a replacement — anything that wants the full width (side by
-   *  side ramps, the TOC, prev/next) is one click away. */
-  onOpenFull?: (key: string) => void
-}) {
-  const system = useSystemDoc()
-  const [open, setOpen] = useState<string | null>(null)
-  const toggle = (id: string) => setOpen((cur) => (cur === id ? null : id))
-  const count = doc.tokenCount(system)
+ *  Opens on the COMPACT carousel — a photograph-scale thumbnail per
+ *  `ARTEFACTS` entry — and tapping one expands it to true size, where every
+ *  measurement (page margin, control heights, type) is at the exact px the
+ *  system ships. `expanded` is LOCAL: the tab unmounts on switch (see the
+ *  panel's "only the active tab is mounted" rule), so returning here always
+ *  lands back on the carousel — that unmount is what makes "compact by
+ *  default" true without any reset logic to write. */
+function ArtefactsPane({ tokens }: { tokens: PreviewTokens }) {
+  const [expanded, setExpanded] = useState<Artefact | null>(null)
 
-  // Built from the doc entry in the SAME order the full article prints them.
-  const rows = [
-    {
-      id: USE_IT_ID,
-      title: USE_IT_TITLE,
-      hint: 'This foundation in Figma, in code, and to an AI agent — live values.',
-      body: <UseItBlock useIt={useItForFoundation(doc)} />,
-    },
-    {
-      id: 'why',
-      title: `Why ${doc.label.toLowerCase()} tokens`,
-      hint: doc.why,
-      body: <Prose text={doc.why} className="text-[12.5px] text-fg-muted leading-relaxed" />,
-    },
-    {
-      id: 'usage',
-      title: 'Usage',
-      hint: doc.usage,
-      body: (
-        <div className="flex flex-col gap-3">
-          <Prose text={doc.usage} className="text-[12.5px] text-fg-muted leading-relaxed" />
-          <CodeBlock file="variables.css" code={doc.usageCode} />
+  if (expanded) {
+    return (
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-4 flex flex-col gap-3">
+        <button
+          onClick={() => setExpanded(null)}
+          className="self-start flex-shrink-0 flex items-center gap-1.5 text-[11px] text-fg-faint hover:text-fg transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M7.5 2.5 4 6l3.5 3.5" />
+          </svg>
+          All artefacts
+        </button>
+        {/* Centers the frame in whatever room is left, rather than pinning it
+            under the back row and leaving the rest of a tall window as dead
+            space below it (measured: 266px of blank pane on a 1200px-tall
+            screen). `min-h-0` is what lets this wrapper actually SHRINK to
+            less than the frame's height when the window is short — without it
+            `justify-center` has nothing to center within, and the frame just
+            sits at the top either way. When the frame genuinely doesn't fit,
+            the wrapper grows past its flex-basis instead of clipping, and the
+            OUTER `overflow-y-auto` scrolls the whole column — centering never
+            traps the top of the content off-screen. */}
+        <div className="flex-1 min-h-0 flex flex-col justify-center">
+          {expanded.render({ t: tokens })}
         </div>
-      ),
-    },
-    ...doc.sections.map((s) => ({
-      id: s.id,
-      title: s.title,
-      hint: s.description,
-      body: (
-        <div className="flex flex-col gap-3">
-          {s.description && <Prose text={s.description} className="text-[12.5px] text-fg-muted leading-relaxed" />}
-          {s.render(system)}
-        </div>
-      ),
-    })),
-  ]
-
-  return (
-    <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
-      {/* Lead — always visible, so the tab never opens on a wall of closed
-          rows with no content to orient against. */}
-      <div className="px-4 py-4 flex flex-col gap-2.5 border-b border-line">
-        <div className="flex items-center gap-2">
-          <CountBadge>{count} token{count === 1 ? '' : 's'}</CountBadge>
-          {onOpenFull && (
-            <button
-              onClick={() => onOpenFull(doc.key)}
-              className="ml-auto flex items-center gap-1 text-[11px] text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
-              title={`Open Docs · ${doc.label}`}
-            >
-              Full page
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <Prose text={doc.lead} className="text-[12.5px] text-fg-muted leading-relaxed" />
       </div>
+    )
+  }
 
-      {rows.map((r) => (
-        <DocRow key={r.id} title={r.title} hint={r.hint} open={open === r.id} onToggle={() => toggle(r.id)}>
-          {r.body}
-        </DocRow>
-      ))}
-    </div>
-  )
+  return <CompactCarousel tokens={tokens} onExpand={setExpanded} />
 }
 
 // ── Panel ─────────────────────────────────────────────────────────────────
@@ -430,10 +322,10 @@ export default function PreviewPanel({
   focus = null,
   typeFocus = null,
   categoryKey = null,
+  mdWholeSystem = false,
   previewTheme = 'light',
   iconLibraryKey = null,
   onCollapse,
-  onOpenDocs,
   onEditTypeRole,
   onEditLayoutRole,
   onEditColorToken,
@@ -445,16 +337,18 @@ export default function PreviewPanel({
   /** Active Variables foundation key (`color`|`typography`|`radius`|…) — tailors
    *  the generic fallback below to a live specimen set for that foundation. */
   categoryKey?: string | null
+  /** Forces the `.MD` tab to the whole-system export instead of `categoryKey`'s
+   *  own section. Computed by the caller (Configurator knows Color's own
+   *  Primitives/Semantics/Gradients sub-tab; this panel deliberately doesn't)
+   *  so `.MD` can read "everything" while skimming Primitives or Gradients and
+   *  narrow to just `color.md` once Semantics is the deliberate, focused task. */
+  mdWholeSystem?: boolean
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
   previewTheme?: string
   /** When set (Icons foundation), the panel previews that library's glyphs. */
   iconLibraryKey?: string | null
   /** When set, shows a header button to collapse the panel. */
   onCollapse?: () => void
-  /** Opens the Docs destination at a foundation — the Documentation tab's
-   *  "Full page" escape hatch. Optional: without it the tab still reads, it
-   *  just doesn't offer the link. */
-  onOpenDocs?: (foundationKey: string) => void
   /** Jump Typography · Semantics to a text-role row (preview specimen → table). */
   onEditTypeRole?: (key: string) => void
   /** Jump a layout foundation's Semantics table to a role row. */
@@ -480,24 +374,37 @@ export default function PreviewPanel({
   // inside the Variables Generator (see `showPreview` in Configurator), so
   // `categoryKey` is in practice always a foundation — but it's typed nullable,
   // and 'all' (the whole-system export) is the honest answer when it isn't set
-  // rather than picking a foundation at random.
+  // rather than picking a foundation at random. `mdWholeSystem` overrides this
+  // to 'all' even with a real `categoryKey` — Color's Primitives/Gradients tabs
+  // want the big export, only Semantics wants the narrow one.
   const section: SectionKey | 'all' =
-    categoryKey && (ALL_SECTIONS as string[]).includes(categoryKey) ? (categoryKey as SectionKey) : 'all'
-  const doc = section === 'all' ? undefined : foundationDoc(section)
+    mdWholeSystem ? 'all'
+    : categoryKey && (ALL_SECTIONS as string[]).includes(categoryKey) ? (categoryKey as SectionKey) : 'all'
   const mdFile = section === 'all' ? 'design-system.md' : `${section}.md`
+
+  // One entry today, so there is nothing to pick between — see the registry.
+  const artefact = ARTEFACTS[0] as Artefact | undefined
 
   const previewTitle = iconLibraryKey
     ? `${getIconLibrary(iconLibraryKey)?.label ?? 'Icon'} preview`
     : specimen
     ? FOCUS_TITLE[specimen]
     : (categoryKey && CATEGORY_TITLE[categoryKey]) || 'Components Preview'
-  const title = tab === 'md' ? mdFile : tab === 'docs' ? `${doc?.label ?? 'System'} docs` : previewTitle
-  // Show which theme is on display when it isn't the default light one. Only
-  // the specimen renders in a theme — the markdown ships every theme's values
-  // and the docs pages print light and dark side by side, so the badge would
-  // be claiming a scope those tabs don't have.
-  const themeBadge =
-    tab === 'preview' && !iconLibraryKey && previewTheme && previewTheme !== 'light' ? previewTheme : null
+  // 'Artefacts' regardless of which one is open (compact carousel) or expanded
+  // — a per-artefact title would have to flip the moment expanding/collapsing
+  // did, and "Login" vs "Artefacts" depending on a click is a title that moves
+  // under you. The specific screen is already named on its own card/back row.
+  const title =
+    tab === 'md' ? mdFile
+    : tab === 'artefacts' ? 'Artefacts'
+    : previewTitle
+  // Show which theme is on display when it isn't the default light one. Both
+  // the specimen and the artefact are painted in ONE theme, so both claim it;
+  // the markdown ships every theme's values, so it can't. `iconLibraryKey` only
+  // suppresses it on Preview — a glyph sheet has no theme, but the artefact is
+  // still painted in one even while Icons is the active foundation.
+  const themeInTab = tab === 'artefacts' || (tab === 'preview' && !iconLibraryKey)
+  const themeBadge = themeInTab && previewTheme && previewTheme !== 'light' ? previewTheme : null
   const collageIconPrefix = 'untitled'
 
   return (
@@ -527,18 +434,18 @@ export default function PreviewPanel({
 
       <PanelTabBar tab={tab} onChange={setTab} />
 
-      {/* Only the ACTIVE tab is mounted. `.MD` rebuilds its string and
-          `Documentation` resolves the whole system doc (89 roles, every family)
-          — neither should run while you're looking at the specimen, and a
-          hidden-but-mounted tab would pay both on every token edit. */}
+      {/* Only the ACTIVE tab is mounted. `.MD` rebuilds a few hundred tokens of
+          markdown and the artefact runs a dozen specimens — neither should pay
+          that while you're looking at the other, in a panel that repaints on
+          every token edit. */}
       {tab === 'md' ? (
         <MarkdownPane section={section} file={mdFile} />
-      ) : tab === 'docs' ? (
-        doc ? (
-          <DocsPane doc={doc} onOpenFull={onOpenDocs} />
+      ) : tab === 'artefacts' ? (
+        artefact ? (
+          <ArtefactsPane tokens={tokens} />
         ) : (
           <div className="flex-1 min-h-0 flex items-center justify-center px-8 text-center text-[12.5px] text-fg-faint">
-            Pick a foundation in the Variables Generator to read its documentation here.
+            No artefacts yet.
           </div>
         )
       ) : (
