@@ -16,12 +16,15 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
 // token tiers relate, how the Figma plugin consumes them, what the component
-// docs are derived from, what shipped when, and who made it.
+// docs are derived from, and who made it. "What shipped when" used to live
+// here too — moved to Docs · Changelog (`docs/changelogArticle.tsx`), since
+// it's documentation, not corporate/about copy, and Docs is where a returning
+// user would actually look for it.
 //
 // A right-side drawer rather than a centered modal: this is reference reading
 // you consult WHILE working, so it slides in beside the canvas instead of
-// blocking it, and every section is collapsed by default — a list of six
-// labels, not six essays. Only the section you opened it on expands.
+// blocking it, and every section is collapsed by default — a list of five
+// labels, not five essays. Only the section you opened it on expands.
 //
 // **This module owns the content, not just the drawer.** `AboutAccordion` and
 // `AboutContact` are exported so the MOBILE screen (`App.tsx`'s
@@ -31,7 +34,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 // button that only exists in the desktop shell. One array, two surfaces: the
 // copy can't drift between them.
 
-export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'changelog' | 'legal'
+export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'legal'
 
 /** The creator's contact details — the one place they're defined.
  *  `linkedin` stays null until the real profile URL is known; the row is
@@ -85,19 +88,6 @@ function Tier({ n, name, detail, example }: { n: number; name: string; detail: s
         <span className="text-[12.5px] leading-relaxed text-fg-muted">{detail}</span>
         <span className="text-[11px] font-mono text-fg-faint break-all">{example}</span>
       </div>
-    </div>
-  )
-}
-
-/** One shipped change — date left, summary right. Dates are release dates from
- *  the project's own history, not invented milestones. */
-function Entry({ date, children }: { date: string; children: ReactNode }) {
-  return (
-    <div className="flex gap-3 py-1.5 border-b border-line/60 last:border-b-0">
-      {/* nowrap + room for all 10 chars: at this root font-size an ISO date
-          wrapped to "2026-07-" / "29" in a narrower column. */}
-      <span className="flex-shrink-0 w-[78px] text-[11px] font-mono tabular-nums whitespace-nowrap text-fg-faint pt-[2px]">{date}</span>
-      <span className="min-w-0 text-[12.5px] leading-relaxed text-fg-muted">{children}</span>
     </div>
   )
 }
@@ -237,49 +227,6 @@ export const SECTIONS: { key: AboutSection; label: string; hint: string; body: R
     ),
   },
   {
-    key: 'changelog',
-    label: 'Changelog',
-    hint: 'What shipped when',
-    body: (
-      <div className="flex flex-col">
-        <Entry date="2026-07-29">
-          Escala JSON export always ships the full plugin contract. Architecture-aware semantic
-          preview; dark-mode tone inversions fixed across the role catalogue.
-        </Entry>
-        <Entry date="2026-07-29">
-          Picker Color tab, and the export flow gained system identity: name, save and GitHub
-          status at the payoff step.
-        </Entry>
-        <Entry date="2026-07-28">
-          Variables-first navigation, guided token creation, sticky category preview.
-        </Entry>
-        <Entry date="2026-07-27">
-          Radix two-scale primitives: every family ships a light ramp and a dark twin. Editable
-          semantic architectures, the guided export wizard, and the top-nav workspace.
-        </Entry>
-        <Entry date="2026-07-20">
-          Semantic architecture picker (Flat · Categorical · Vibrancy · Tonal), Save &amp; Share
-          hub, import and new-system flows.
-        </Entry>
-        <Entry date="2026-07-18">Color became a multi-tab hub; theme-aware brand lockup.</Entry>
-        <Entry date="2026-07-16">
-          Dark-appearance neutral ramps, accent-derived gradients, Variables/Styles rail split.
-        </Entry>
-        <Entry date="2026-07-13">Gradients foundation with a full HSV picker.</Entry>
-        <Entry date="2026-07-12">
-          Documentation tab; catalogue expanded to {COMPONENT_KEYS.length} components.
-        </Entry>
-        <Entry date="2026-07-08">Interactive component playground wired to the plugin contract.</Entry>
-        <Entry date="2026-07-07">
-          Export normalizes semantics so every token aliases a real primitive.
-        </Entry>
-        <Entry date="2026-06-14">
-          Figma sync pipeline: per-system scoping and theme columns.
-        </Entry>
-      </div>
-    ),
-  },
-  {
     key: 'legal',
     label: 'Legal & data',
     hint: 'Ownership and storage',
@@ -355,7 +302,7 @@ function ContactRow({ icon, label, href }: { icon: ReactNode; label: string; hre
  *  a plain object literal keyed by `AboutSection` so a missing entry is a
  *  TypeScript error, not a silently blank icon. Hand-drawn inline, same
  *  weight/size as `MailIcon`/`GlobeIcon` above: no icon package pulled in for
- *  six glyphs already this cheap to draw. */
+ *  five glyphs already this cheap to draw. */
 function InfoGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -380,14 +327,6 @@ function DocGlyph({ className }: { className?: string }) {
     </svg>
   )
 }
-function ClockGlyph({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3.5 2" />
-    </svg>
-  )
-}
 function ScaleGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -401,11 +340,10 @@ const SECTION_ICONS: Record<AboutSection, ComponentType<{ className?: string }>>
   tokens: LayersGlyph,
   plugin: FigmaGlyph,
   docs: DocGlyph,
-  changelog: ClockGlyph,
   legal: ScaleGlyph,
 }
 
-/** The six collapsible sections, on Radix's own `Accordion` primitive
+/** The five collapsible sections, on Radix's own `Accordion` primitive
  *  (`ui/accordion.tsx`) instead of a hand-rolled `motion.div` height
  *  animation. Shared by the About tab, the `/about` route and the mobile
  *  screen, so none of them can carry a stale copy of another's wording —
@@ -416,18 +354,28 @@ const SECTION_ICONS: Record<AboutSection, ComponentType<{ className?: string }>>
  *
  *  A leading icon per section (`SECTION_ICONS`) replaced an earlier
  *  monospace `01…06` index — same slot, a glyph instead of a number.
- *  The body is still capped at 500px measured width so paragraphs don't run
- *  the full band's ~780px (a genuine earlier bug, not a stylistic choice):
- *  `ch` units are a trap here specifically because this wrapper inherits the
- *  18px root rather than the 12.5px its own paragraphs set, so `68ch` had
- *  quietly computed to 769px — no cap at all. Same family as CLAUDE.md's
- *  rem-vs-root-font-size note, one level subtler. */
+ *  The body used to cap at 500px measured width so paragraphs didn't run
+ *  the full band's ~780px — reverted for the About tab specifically (see
+ *  `bleed`), which is wide enough that the cap read as unused whitespace
+ *  rather than a readability aid; the other two callers are already
+ *  narrower than 500px in practice, so nothing there was relying on it. */
 export function AboutAccordion({
-  section, onSectionChange, pad = 'px-5',
+  section, onSectionChange, pad = 'px-5', bleed,
 }: {
   section: AboutSection | null
   onSectionChange: (s: AboutSection | null) => void
   pad?: string
+  /** The About tab's own band already carries the horizontal gutter
+   *  (`px-6` wrapping this whole component), so that caller passes
+   *  `pad="px-0"` — but a trigger with zero horizontal padding means its
+   *  hover fill hugs the label with no breathing room on either side,
+   *  reading as cramped rather than a real list-row hover. `bleed` cancels
+   *  the wrapper's own gutter with a negative margin and re-applies it as
+   *  the trigger's OWN padding, so the hover fill spans edge-to-edge of the
+   *  section instead of stopping at the text. Also drops the row divider —
+   *  with a full-bleed hover already marking each row's bounds, an
+   *  always-on hairline between them was a redundant second boundary. */
+  bleed?: boolean
 }) {
   return (
     <Accordion
@@ -439,16 +387,16 @@ export function AboutAccordion({
       {SECTIONS.map((s) => {
         const Icon = SECTION_ICONS[s.key]
         return (
-          <AccordionItem key={s.key} value={s.key} data-section={s.key}>
-            <AccordionTrigger className={`${pad} hover:bg-elevated/40`}>
+          <AccordionItem key={s.key} value={s.key} data-section={s.key} className={bleed ? 'border-b-0' : undefined}>
+            <AccordionTrigger className={`${bleed ? '-mx-6 px-6' : pad} hover:bg-elevated/40`}>
               <Icon className="h-4 w-4 flex-shrink-0 mt-0.5 text-fg-faint" />
               <span className="flex-1 min-w-0">
                 <span className="block text-[13px] font-medium text-fg leading-tight">{s.label}</span>
                 <span className="block text-[11.5px] text-fg-faint leading-tight mt-1">{s.hint}</span>
               </span>
             </AccordionTrigger>
-            <AccordionContent className={pad}>
-              <div className="max-w-[500px]">{s.body}</div>
+            <AccordionContent className={bleed ? '-mx-6 px-6' : pad}>
+              {s.body}
             </AccordionContent>
           </AccordionItem>
         )
@@ -846,7 +794,7 @@ export function AboutHome({
             Duscenko — repeating it here was the same line twice on screen at
             once. */}
         <div className="px-6 pb-8">
-          <AboutAccordion section={section} onSectionChange={setSection} pad="px-0" />
+          <AboutAccordion section={section} onSectionChange={setSection} bleed />
           <AboutContact pad="px-0" card />
         </div>
       </div>
@@ -854,7 +802,7 @@ export function AboutHome({
   )
 }
 
-/** Full-page rendering of the same six sections — no drawer, no burger button.
+/** Full-page rendering of the same five sections — no drawer, no burger button.
  *  Used by App.tsx for two surfaces that both need the ENTIRE "what is this"
  *  story with no workspace behind it: the mobile screen (there's no adaptive
  *  layout to fall back to) and the `/about` route (a real, shareable,
@@ -939,7 +887,7 @@ export default function AboutMenu({
   }, [onClose])
 
   // Opening straight at a section must SHOW that section, not just expand it
-  // below the fold — Legal & data is the last of six rows.
+  // below the fold — Legal & data is the last of five rows.
   useEffect(() => {
     if (!section || !bodyRef.current) return
     const el = bodyRef.current.querySelector(`[data-section="${section}"]`)

@@ -30,7 +30,7 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
-import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY } from '../components/configurator/DocsView'
+import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY, CHANGELOG_KEY } from '../components/configurator/DocsView'
 import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
 import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
 import { GUIDE_AI_KEY, GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
@@ -221,6 +221,12 @@ const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2
 const StartIcon = ic('M12 3l2.1 6.4H21l-5.4 3.9 2.1 6.4L12 16.8 6.3 19.7 8.4 13.3 3 9.4h6.9z', '1.8')
 const SparkIcon = ic('M12 3v3M12 18v3M3 12h3M18 12h3M6.2 6.2l2.1 2.1M15.7 15.7l2.1 2.1M17.8 6.2l-2.1 2.1M8.3 15.7l-2.1 2.1', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
+const ClockIcon: ComponentType = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+)
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
 const SaveIcon: ComponentType = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -253,6 +259,7 @@ const DOCS_RAIL_ROWS: DocsRailRow[] = [
   { key: GUIDE_FIGMA_KEY, label: 'Use in Figma', Icon: FigmaIcon },
   { key: GUIDE_CODE_KEY, label: 'Use in code', Icon: CodeIcon },
   { key: GUIDE_AI_KEY, label: 'Use with AI', Icon: SparkIcon },
+  { key: CHANGELOG_KEY, label: 'Changelog', Icon: ClockIcon },
   { key: OVERVIEW_KEY, label: 'System reference', Icon: RulesIcon, heading: 'Reference' },
   ...FOUNDATION_DOCS.map((d) => {
     const section = FOUNDATIONS.find((f) => f.key === d.key)
