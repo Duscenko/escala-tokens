@@ -661,14 +661,25 @@ export default function Configurator() {
 
   const foundationsToolbar = (
     <>
-      <FoundationIconRail
-        active={activeFoundation}
-        onSelect={selectFoundation}
-        groups={[
-          { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-          { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-        ]}
-      />
+      {/* `min-w-0` + `overflow-x-auto` is load-bearing: the rail's 9 icon
+          buttons are all `flex-shrink-0` (see FoundationIconRail), so without
+          a shrinkable, scrollable wrapper the row refuses to compress and
+          bleeds out of `main` on any window narrow enough to still show the
+          400px preview aside — visually overlapping PreviewPanel's own tab
+          bar ("Artefacts") rather than being clipped by it. Scrolling here
+          keeps every foundation reachable; the alternative (letting it hide
+          under Reset/Systems) would silently make some foundations
+          unselectable at that width. */}
+      <div className="flex-1 min-w-0 overflow-x-auto scrollbar-thin">
+        <FoundationIconRail
+          active={activeFoundation}
+          onSelect={selectFoundation}
+          groups={[
+            { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+            { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
+          ]}
+        />
+      </div>
       <div className="ml-auto flex-shrink-0 flex items-center gap-2">
         <HomeActions
           previewTheme={previewTheme}
