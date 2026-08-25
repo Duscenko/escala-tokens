@@ -2238,7 +2238,7 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 
 **The Figma plugin is the source of truth** (`../escala-figma-plugin/src/code.ts`): each catalogue `key` equals a plugin CATALOG `gate`, `axes` mirrors the plugin's SPECS variant matrix, `figmaSets` lists every component set the key unlocks in Figma, and `category` mirrors the plugin's "❖ Category" divider pages. When the plugin's CATALOG/SPECS change, mirror them here — never the reverse.
 
-The catalogue holds **58 components**. The original plugin families were split into standalone entries (Button Group, Input OTP, Radio, Chip, Alert Banner… each owns the plugin set its parent used to bundle), and ~20 entries are **catalogue-first**: `figmaSets: []` means the plugin gate doesn't exist yet — they document + preview in the app and export in `atoms`, and the doc pane shows a "not in the Figma library yet" note. When a set lands in the plugin, fill in its `figmaSets`. Display-name renames (keys stay stable for plugin gates + export): `Toggle`→"Switch", `Divider`→"Separator", `Breadcrumb`→"Breadcrumbs".
+The catalogue holds **59 components**. The original plugin families were split into standalone entries (Button Group, Input OTP, Radio, Chip, Alert Banner… each owns the plugin set its parent used to bundle). The catalogue-first state (`figmaSets: []`, meaning the plugin gate doesn't exist yet) still exists as a mechanism — the doc pane shows a "not in the Figma library yet" note whenever it's hit — but **measured 2026-08-24, zero entries are currently in it**: the plugin has shipped a gate for every catalogue key. Don't assume any entry is spec-only without checking `figmaSets` directly; the last time this file claimed a count ("~20 entries") it had gone stale without anyone noticing. When a set lands in the plugin, fill in its `figmaSets`. Display-name renames (keys stay stable for plugin gates + export): `Toggle`→"Switch", `Divider`→"Separator", `Breadcrumb`→"Breadcrumbs".
 
 `src/lib/componentCatalogue.ts` contains the `COMPONENTS` array (pure data — imported by the store, the catalogue list, and `docs/componentArticle`). Each definition has:
 
@@ -2258,7 +2258,38 @@ interface ComponentDef {
 
 **To add a new component:** add its gate + spec in the plugin first, then mirror it in `COMPONENTS`. The catalogue list renders it automatically and it's included by default.
 
-**Docs are an interactive playground** (`docs/componentArticle.tsx` + `docs/specimens.tsx`) — and there is exactly ONE page per component, not a separate "browse" and "read" pair (see the Navigation model's merge note): a live token-driven specimen on a canvas with per-axis controls (dropdowns / switches driving the exact plugin axes) and a Preview/Code toggle whose snippet tracks those controls, a usage snippet with Copy, per-axis Examples, a "Ships in Figma" section (figmaSets + variant count), the props + variants tables, and accessibility. To support a new component, add its render to the `SPECIMENS` registry and a case to `snippetFor()` in `docs/specimens.tsx`.
+**Docs are an interactive playground** (`docs/componentArticle.tsx` + `docs/specimens.tsx`) — and there is exactly ONE page per component, not a separate "browse" and "read" pair (see the Navigation model's merge note): a live token-driven specimen on a canvas with per-axis controls (dropdowns / switches driving the exact plugin axes) and a Preview/Code toggle whose snippet tracks those controls, a **"Use it" block** (Figma · Code · AI, see below), a usage snippet with Copy, per-axis Examples, a "Ships in Figma" section (figmaSets + variant count), the props + variants tables, and accessibility. To support a new component, add its render to the `SPECIMENS` registry and a case to `snippetFor()` in `docs/specimens.tsx`.
+
+> **Every element documented answers "how do I consume this" the same way: `docs/useIt.ts` → "Use it" (Figma · Code · AI).**
+> Both page kinds — a component article and a foundation article — render the
+> identical block right after their description, before any conceptual prose,
+> the slot Create UI's own component docs give "Installation". It supersedes
+> the old `ShipsAs` (a static 3-row table of hand-written NAMING patterns —
+> `--color-<family>-<tone>`, not a real value, and not copyable) with tabs
+> whose content is **live and derived**: Figma names the real `figmaSets` (or
+> says "not in the Figma library yet" for a spec-only entry — never invents
+> one); Code is a real, resolved excerpt via `buildSectionExport(key, 'css')`
+> or the hero's own `snippetFor()` snippet; AI is the actual MCP call for
+> THIS element (`resolve_token` / `get_component`) with the real project slug
+> from `syncProjectId()`. Nothing is authored per element — with 59
+> components and 9 foundations that would be unmaintainable, so every string
+> composes an existing builder; if `buildCSS` renames a variable, the block
+> renames with it.
+> **One contract, three outputs, not three copies of the truth.** The same
+> `UseIt` descriptor also serialises into `foundationMarkdown()` / the
+> component's agent-context markdown ("Copy Page") — so a pasted spec can
+> never claim a destination the page doesn't show — and `src/lib/__tests__/
+> useIt.test.ts` asserts the Figma tab and MCP's `get_component` name the same
+> `figmaSets` for every catalogue entry, turning what used to be a coincidence
+> (both read `COMPONENTS`) into a guarantee. `CopyButton` on every tab copies
+> EXACTLY the pane's own content — for Color's 89 roles that's a representative
+> excerpt (`CSS_PREVIEW_LINES` in `useIt.ts`), with an explicit "+N more" line
+> and a pointer to Export → Code for the full file, never a silent truncation.
+> Deliberately NOT covered yet: a "Styling" section naming which semantic
+> roles a component consumes — `specimens.tsx` reads them off `PreviewTokens`
+> without declaring them anywhere, so that would mean ~59 hand-written lists
+> today. Needs a `tokens: string[]` field on `ComponentDef`, mirrored from the
+> plugin like every other catalogue field, before it can be derived.
 
 ---
 

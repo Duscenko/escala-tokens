@@ -1,15 +1,21 @@
 // The foundation article — the same page shape a component article has, so the
-// docs site reads as one thing: breadcrumb · title · Overview · Why · Usage ·
-// the foundation's own sections · Ships as · prev/next, with the TOC on the
+// docs site reads as one thing: breadcrumb · title · Overview · Use it · Why ·
+// Usage · the foundation's own sections · prev/next, with the TOC on the
 // right. Content and token bodies come from `foundationDocs.tsx`.
+//
+// "Use it" replaced the old "Ships as" section AND moved up to sit directly
+// under the lead: it answers "how do I consume this" (Figma · Code · AI) with
+// live values, which is the question you have before any of the conceptual
+// copy — the same slot Create UI gives Installation. See `useIt.ts`.
 
 import { type ReactNode } from 'react'
 import { AIContextButton } from '../../ui/AIContextButton'
 import { withAgentEnvelope } from '../../../lib/aiContext'
 import {
-  DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, ShipsAs, CountBadge,
+  DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
+import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 import {
   FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown,
   type FoundationDoc, type SystemDoc,
@@ -37,10 +43,10 @@ function EditPill({ label, onEdit }: { label: string; onEdit: () => void }) {
 export function foundationToc(doc: FoundationDoc): TocEntry[] {
   return [
     { id: 'description', label: 'Overview' },
+    { id: USE_IT_ID, label: USE_IT_TITLE },
     { id: 'why', label: `Why ${doc.label.toLowerCase()} tokens` },
     { id: 'usage', label: 'Usage' },
     ...doc.sections.map((s) => ({ id: s.id, label: s.title, sub: true })),
-    { id: 'ships', label: 'Ships as' },
   ]
 }
 
@@ -90,6 +96,13 @@ export function FoundationArticle({
         meta={<CountBadge>{count} token{count === 1 ? '' : 's'}</CountBadge>}
       />
 
+      {/* Create UI's slot for this: immediately after the description, before
+          any conceptual copy — you can't act on a page until you know how to
+          consume what it documents. */}
+      <DocSection id={USE_IT_ID} title={USE_IT_TITLE} description={USE_IT_LEAD}>
+        <UseItBlock useIt={useItForFoundation(doc)} />
+      </DocSection>
+
       <DocSection id="why" title={`Why ${doc.label.toLowerCase()} tokens`} description={doc.why} />
 
       <DocSection id="usage" title="Usage" description={doc.usage}>
@@ -101,14 +114,6 @@ export function FoundationArticle({
           {section.render(system)}
         </DocSection>
       ))}
-
-      <DocSection
-        id="ships"
-        title="Ships as"
-        description="What these tokens are called in the three places they land. Every value on this page reads the same resolvers the export does, so the file can never disagree with what you just read."
-      >
-        <ShipsAs json={doc.ships.json} css={doc.ships.css} figma={doc.ships.figma} />
-      </DocSection>
 
       <Pager
         prev={prev && { key: prev.key, label: prev.label }}

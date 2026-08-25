@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live } from '../configurator/docs/specimens'
-import { CopyButton, Prose, CodeBlock, CountBadge, ShipsAs } from '../configurator/docs/blocks'
+import { CopyButton, Prose, CodeBlock, CountBadge, UseItBlock } from '../configurator/docs/blocks'
+import { useItForFoundation, USE_IT_ID, USE_IT_TITLE } from '../configurator/docs/useIt'
 import {
   useSystemDoc, foundationDoc, type FoundationDoc,
 } from '../configurator/docs/foundationDocs'
@@ -357,6 +358,12 @@ function DocsPane({
   // Built from the doc entry in the SAME order the full article prints them.
   const rows = [
     {
+      id: USE_IT_ID,
+      title: USE_IT_TITLE,
+      hint: 'This foundation in Figma, in code, and to an AI agent — live values.',
+      body: <UseItBlock useIt={useItForFoundation(doc)} />,
+    },
+    {
       id: 'why',
       title: `Why ${doc.label.toLowerCase()} tokens`,
       hint: doc.why,
@@ -384,12 +391,6 @@ function DocsPane({
         </div>
       ),
     })),
-    {
-      id: 'ships',
-      title: 'Ships as',
-      hint: 'What these tokens are called in tokens.json, variables.css and Figma.',
-      body: <ShipsAs json={doc.ships.json} css={doc.ships.css} figma={doc.ships.figma} />,
-    },
   ]
 
   return (

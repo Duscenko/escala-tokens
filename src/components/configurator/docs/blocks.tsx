@@ -12,6 +12,7 @@
 import { useState, type ReactNode } from 'react'
 import { buildSkillExport } from '../../../lib/skillExport'
 import { AIContextButton } from '../../ui/AIContextButton'
+import type { UseIt, UseItDestId } from './useIt'
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -230,28 +231,63 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
   )
 }
 
-/** The "Under the hood" card — what this page's tokens are CALLED in the three
- *  places they ship: tokens.json, variables.css, Figma. It exists because the
- *  handoff question is never "what colour is it" but "what do I type". */
-export function ShipsAs({
-  json, css, figma,
-}: { json: string; css: string; figma: string }) {
-  const rows: [string, string][] = [
-    ['tokens.json', json],
-    ['variables.css', css],
-    ['Figma', figma],
-  ]
+/** "Use it" — this element in the three places the platform ships to.
+ *
+ *  Supersedes `ShipsAs`, which listed the same three destinations as static,
+ *  hand-written naming PATTERNS in a 3-row table. Two things changed and both
+ *  matter: the values are now the user's own, resolved live (see `useIt.ts`),
+ *  and each one is copyable. The third row also changed identity — `Figma` /
+ *  `variables.css` / `tokens.json` became **Figma · Code · AI**, because AI is
+ *  a first-class destination everywhere else in this product (Get started is
+ *  literally those three) and was the one missing from the triad. tokens.json
+ *  didn't get dropped; it's named in the Code tab's note, where it belongs.
+ *
+ *  Tabs rather than three rows at once, for the same reason Create UI's
+ *  Installation block uses them: one destination is the one you're actually
+ *  going to. It also survives the 400px preview column, where three stacked
+ *  code panes would not.
+ *
+ *  Chrome is reused, not invented: `BlockChrome` already renders exactly this
+ *  bar (left slot + trailing actions) and `CodePane` the body, so this reads
+ *  as the same object as every other code block on the page. The tab strip
+ *  mirrors `AgentInstallPanel`'s (aria-pressed + `bg-elevated` active) so the
+ *  product's two "how do I install this" surfaces don't drift apart. */
+export function UseItBlock({ useIt }: { useIt: UseIt }) {
+  const [active, setActive] = useState<UseItDestId>('code')
+  // Falls back to the first destination rather than rendering an empty pane if
+  // a caller ever ships a partial descriptor.
+  const dest = useIt.destinations.find((d) => d.id === active) ?? useIt.destinations[0]
+  if (!dest) return null
+
   return (
     <div className="rounded-xl border border-line overflow-hidden">
-      {rows.map(([label, value], i) => (
-        <div
-          key={label}
-          className={`grid grid-cols-[110px_1fr] gap-4 px-4 py-2.5 items-baseline ${i ? 'border-t border-line/60' : ''}`}
-        >
-          <span className="text-[10px] uppercase tracking-wider text-fg-faint">{label}</span>
-          <span className="text-[12px] font-mono text-fg-muted break-all">{value}</span>
-        </div>
-      ))}
+      <BlockChrome
+        left={
+          <div role="tablist" aria-label="Destination" className="flex items-center gap-1">
+            {useIt.destinations.map((d) => (
+              <button
+                key={d.id}
+                role="tab"
+                aria-selected={d.id === dest.id}
+                onClick={() => setActive(d.id)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  d.id === dest.id ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        <CopyButton text={dest.code} />
+      </BlockChrome>
+      <CodePane code={dest.code} minH={0} />
+      {dest.note && (
+        <p className="px-4 py-2 text-[11px] leading-relaxed text-fg-faint border-t border-line/60 break-words">
+          {dest.note}
+        </p>
+      )}
     </div>
   )
 }

@@ -23,9 +23,10 @@ import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues } from './specimens'
 import {
   CopyButton, CopyAgentContextButton, DocHeader, DocTitle, DocSection, SectionHeading, BlockChrome,
-  ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager,
+  ViewToggle, CodePane, CodeBlock, PreviewCode, ExampleCell, Pager, UseItBlock,
   type TocEntry,
 } from './blocks'
+import { useItForComponent, useItMarkdown, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 
 // Categories whose components respond to pointer/keyboard — they get the
 // standard keyboard-interaction table in Accessibility.
@@ -397,6 +398,7 @@ function RelatedComponents({ def, onOpen }: { def: ComponentDef; onOpen: (c: Com
 export function componentToc(def: ComponentDef): TocEntry[] {
   const entries: TocEntry[] = [
     { id: 'description', label: 'Description' },
+    { id: USE_IT_ID, label: USE_IT_TITLE },
     { id: 'usage', label: 'Usage' },
   ]
   if (def.axes.length) {
@@ -418,6 +420,11 @@ export function ComponentArticle({
 }: { def: ComponentDef; tokens: PreviewTokens; onOpen: (c: ComponentDef) => void }) {
   const heroCode = snippetFor(def, axisDefaults(def))
   const usageCode = `import { ${def.key.replace(/\s+/g, '')} } from "@/components/ui/${def.key.toLowerCase().replace(/\s+/g, '-')}"\n\n${heroCode}`
+  // ONE descriptor, rendered below AND appended to the agent brief — the
+  // second of the three outputs (page · markdown · MCP). Composed here rather
+  // than inside `agentContextMarkdown` because that lives in `lib/`, and lib
+  // importing a `components/` module would invert the layering.
+  const useIt = useItForComponent(def, heroCode)
   const idx = COMPONENTS.findIndex((c) => c.key === def.key)
   const prev = COMPONENTS[idx - 1]
   const next = COMPONENTS[idx + 1]
@@ -428,13 +435,25 @@ export function ComponentArticle({
         section="Components"
         kind={def.category}
         title={def.label}
-        actions={<CopyAgentContextButton text={agentContextMarkdown(def, heroCode, tokens)} />}
+        actions={
+          <CopyAgentContextButton
+            text={`${agentContextMarkdown(def, heroCode, tokens)}\n\n${useItMarkdown(useIt)}`}
+          />
+        }
       />
 
       <DocTitle title={def.label} eyebrow={def.category} lead={def.description} />
 
       {/* Hero — live playground + code, keyed so axis state resets per component */}
       <Hero key={def.key} def={def} tokens={tokens} />
+
+      {/* Use it — the same Figma · Code · AI block every foundation page
+          carries, so the two page kinds answer "how do I consume this" the
+          same way. Sits before Usage for the reason Create UI puts
+          Installation there: you reach for it before the prose. */}
+      <DocSection id={USE_IT_ID} title={USE_IT_TITLE} description={USE_IT_LEAD}>
+        <UseItBlock useIt={useIt} />
+      </DocSection>
 
       {/* Usage — the "when to use" prose the catalogue showed in a card, plus
           the import snippet Documentation showed. Same section, one place. */}

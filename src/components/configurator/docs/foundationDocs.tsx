@@ -19,6 +19,7 @@
 // `accent-8`, not just that it happens to be #CCF57B today.
 
 import { useMemo, type ReactNode } from 'react'
+import { useItForFoundation, useItMarkdown } from './useIt'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../../../store/useDesignStore'
 import {
   ROLE_GROUPS, sourceScaleFor, recToneFor, SCALE_META, baseLabelForTone,
@@ -1277,14 +1278,10 @@ export function foundationMarkdown(doc: FoundationDoc, c: SystemDoc): string {
     }
   }
 
+  // The SAME descriptor the page renders — second of the three outputs, so a
+  // pasted spec can't name a destination the page doesn't show. See `useIt.ts`.
   lines.push(
-    '## Ships as',
-    '',
-    '| Target | Name |',
-    '|---|---|',
-    `| tokens.json | \`${doc.ships.json}\` |`,
-    `| variables.css | \`${doc.ships.css}\` |`,
-    `| Figma | ${doc.ships.figma} |`,
+    useItMarkdown(useItForFoundation(doc)),
     '',
     `${doc.tokenCount(c)} tokens · ${doc.sections.length} section${doc.sections.length === 1 ? '' : 's'}: ${doc.sections.map((s) => s.title).join(' · ')}`,
   )
