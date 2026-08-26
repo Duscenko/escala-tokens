@@ -667,6 +667,7 @@ export default function Step3_SemanticTokens({
     primaryColor, errorColor, primaryScale, errorScale, warningScale, successScale, infoScale,
     primaryDarkScale, errorDarkScale, warningDarkScale, successDarkScale, infoDarkScale,
     grayLightScale, grayDarkScale, customColors,
+    pageBackground, darkBackground,
     themes, themeOrder, themeKinds, themeSources, colorNaming,
     setThemeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
@@ -884,7 +885,7 @@ export default function Step3_SemanticTokens({
         ? null
         : buildArchitectureView(
             semanticArchitecture,
-            { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor },
+            { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor, pageBackground, darkBackground },
             errorColor,
             architectureOverrides[semanticArchitecture] ?? {},
             // Every theme in the workspace — Categorical resolves one column
@@ -895,7 +896,7 @@ export default function Step3_SemanticTokens({
             themeCols,
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides, themeCols],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides, themeCols, pageBackground, darkBackground],
   )
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')

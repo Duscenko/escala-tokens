@@ -25,10 +25,18 @@ export type AxisValues = Record<string, string>
 const darken = (c: string, amt: number) => {
   try { return chroma(c).darken(amt).hex() } catch { return c }
 }
-/** Soft tint of a hex — reads the Opacity foundation's 10 / 5 steps, so soft
- *  fills track the user's transparency scale. */
+/** Soft tint of a hex — reads the Opacity foundation's 10 / 5 / 20 steps, so
+ *  soft fills track the user's transparency scale. */
 const soft = (t: PreviewTokens, hex: string) => tintOf(t, hex, '10', 0.1)
 const softer = (t: PreviewTokens, hex: string) => tintOf(t, hex, '5', 0.05)
+/** One step deeper than `soft` — a pressed wash, not a hover one. Used to be
+ *  `color + '33'` in ButtonSpecimen: a raw hex-alpha-suffix hack that (a) only
+ *  works when `color` is already a clean 6-digit hex, and (b) went through
+ *  neither `tintOf` nor any other named step, so it couldn't be told apart
+ *  from a typo at the call site. `withAlpha` handles any chroma-parseable
+ *  color, and routing through `tintOf` keeps every soft-fill in this file on
+ *  ONE mechanism instead of two. */
+const pressed = (t: PreviewTokens, hex: string) => tintOf(t, hex, '20', 0.2)
 
 function statusColor(t: PreviewTokens, name: string): string {
   switch (name) {
@@ -200,7 +208,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
     else bg = style === 'Soft' ? color + '2b' : soft(t, color)
   } else if (state === 'Pressed') {
     if (style === 'Solid') bg = darken(color, 0.8)
-    else bg = color + '33'
+    else bg = pressed(t, color)
   }
   if (disabled) { bg = style === 'Ghost' ? 'transparent' : t.disabledBg; fg = t.disabledText; border = style === 'Outline' ? t.disabledBg : 'transparent' }
 

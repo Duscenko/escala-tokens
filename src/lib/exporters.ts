@@ -4,7 +4,7 @@
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
-import { toneLabel, withAlpha, darkShadow } from './colorUtils'
+import { toneLabel, withAlpha, darkShadow, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
@@ -45,6 +45,40 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   family('success', successScale)
   family('info', infoScale)
   customColors.forEach((c) => family(c.key, c.scale))
+
+  // Alpha twins — reproduces each solid tone when composited over the page
+  // (see tokens.json's `colors.primitiveAlpha`). CSS is a flat namespace, so
+  // the `-a-` infix disambiguates from the solid var above it, matching the
+  // per-family export's own `tokenPrefix` (`accent-a`, `<custom>-a`, …).
+  // Light only, same as the solid families above — this file doesn't emit a
+  // dark primitive variant for those either; dark themes get their own
+  // resolved values through the semantic layer.
+  lines.push('\n  /* Alpha twins — reproduce a solid tone over the page, for translucent fills */')
+  const alphaFamily = (name: string, scale: Record<number, string>) => {
+    if (!Object.keys(scale).length) return
+    const alpha = generateAlphaScale(scale, pageBackground, 'light')
+    Object.entries(alpha)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .forEach(([k, v]) => { if (v) lines.push(`  --color-${name}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  }
+  alphaFamily('accent', primaryScale)
+  alphaFamily('neutral', grayLightScale)
+  alphaFamily('error', errorScale)
+  alphaFamily('warning', warningScale)
+  alphaFamily('success', successScale)
+  alphaFamily('info', infoScale)
+  customColors.forEach((c) => alphaFamily(c.key, c.scale))
+
+  // Neutral alpha primitives — a fixed opacity ladder, not derived from any
+  // family (see colorUtils' BLACK_ALPHA_SCALE/WHITE_ALPHA_SCALE). For scrims,
+  // ghost-state washes and rims over a surface the token doesn't know.
+  lines.push('\n  /* Neutral alpha — fixed opacity ladder for scrims, washes, rims */')
+  Object.entries(BLACK_ALPHA_SCALE)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .forEach(([k, v]) => lines.push(`  --color-black-a-${toneLabel(colorNaming, Number(k))}: ${v};`))
+  Object.entries(WHITE_ALPHA_SCALE)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .forEach(([k, v]) => lines.push(`  --color-white-a-${toneLabel(colorNaming, Number(k))}: ${v};`))
 
   lines.push('\n  /* Semantic tokens — light */')
   Object.entries(semanticTokens).forEach(([k, v]) => {
@@ -208,6 +242,25 @@ ${primitiveTable('accent', primaryScale)}${primitiveTable('neutral', grayLightSc
 | Token | Value |
 |-------|-------|
 ${Object.entries(c.scale).sort(([a],[b])=>Number(a)-Number(b)).map(([k,v])=>`| \`--color-${c.key}-${toneLabel(colorNaming, Number(k))}\` | \`${v}\` |`).join('\n')}`).join('\n')}
+
+### Alpha (translucent) primitives
+
+Two different contracts, both shipped:
+
+- **\`--color-<family>-a-<tone>\`** — the alpha TWIN of a family. Solved so that
+  tone _N_ reproduces the solid tone _N_ when composited over its own page.
+  Use it for a tint that has to survive on top of an unknown surface (a status
+  banner inside a card, a selected row, a ghost-button wash). The opacity is a
+  RESULT, not a setting, so the ladder is not monotonic — \`-a-1\` is fully
+  transparent by construction (tone 1 IS the page).
+- **\`--color-black-a-<tone>\` / \`--color-white-a-<tone>\`** — a FIXED opacity
+  ladder (5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 95 %), agnostic to any
+  page. Use it for scrims, neutral ghost washes and the dark-mode elevation
+  rim, where the ink is genuinely black or white and the opacity IS the design
+  decision.
+
+Sixteen semantic roles resolve through these — see the Semantic Tokens table
+for which. Values there may therefore be 8-digit \`#rrggbbaa\`.
 
 ### Semantic Tokens
 

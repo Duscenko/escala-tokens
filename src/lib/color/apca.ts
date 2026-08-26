@@ -46,13 +46,40 @@ const LO_WOB_OFFSET = 0.027
 const DELTA_Y_MIN = 0.0005
 const LO_CLIP = 0.1
 
-/** sRGB hex (`#rgb`, `#rrggbb`, `#rrggbbaa`) → [r, g, b] in 0–255. */
+/** sRGB hex (`#rgb`, `#rrggbb`, `#rrggbbaa`) → [r, g, b] in 0–255.
+ *
+ *  A `#rrggbbaa`/`#rgba` input used to have its alpha channel silently
+ *  DROPPED — contrast math ran against the colour as if it were opaque. That
+ *  was harmless while every token in the system was opaque; it stopped being
+ *  harmless the moment translucent alpha primitives shipped (`accent-a-*`,
+ *  `black-a-*`, …, see design-plans/alpha-primitives.md) — a role resolving
+ *  to one of those and fed straight into `checkContrast`/`evaluate` (the
+ *  `check_contrast` MCP tool takes arbitrary strings from a caller) would
+ *  silently score against the WRONG colour with no error, no warning, and a
+ *  passing-looking number, since a translucent grey read as opaque black
+ *  always "passes." A translucent input therefore throws now, with a pointer
+ *  to the fix, rather than pretending an alpha channel doesn't exist:
+ *  composite it over its real backdrop first (`colorUtils.compositeOver`),
+ *  then measure THAT. Alpha that rounds to fully opaque (≥99.9%) is let
+ *  through unchanged — that's not a translucent colour, it's a solid one
+ *  that happens to carry a redundant `ff` byte. */
 function parseHex(hex: string): [number, number, number] {
-  let h = hex.trim().replace(/^#/, '')
-  if (h.length === 3 || h.length === 4) h = h.slice(0, 3).split('').map((c) => c + c).join('')
-  if (h.length === 8) h = h.slice(0, 6)
+  const stripped = hex.trim().replace(/^#/, '')
+  let h = stripped
+  let alphaDigits: string | null = null
+  if (h.length === 4) { alphaDigits = h[3] + h[3]; h = h.slice(0, 3) }
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  if (h.length === 8) { alphaDigits = stripped.slice(6, 8); h = h.slice(0, 6) }
   if (h.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(h)) {
     throw new Error(`apca: not an sRGB hex color: "${hex}"`)
+  }
+  if (alphaDigits) {
+    const a = parseInt(alphaDigits, 16) / 255
+    if (a < 0.999) {
+      throw new Error(
+        `apca: "${hex}" is translucent (alpha ${Math.round(a * 100)}%) — contrast requires an opaque color. Composite it over its real backdrop first (colorUtils.compositeOver), then measure the result.`,
+      )
+    }
   }
   return [
     parseInt(h.slice(0, 2), 16),

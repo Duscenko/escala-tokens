@@ -3,7 +3,7 @@
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
 import chroma from 'chroma-js'
-import { toneLabel, darkShadowMap } from './colorUtils'
+import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
@@ -190,9 +190,34 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
   const out: [string, Record<number, string>][] = fams
     .filter((f) => filled(f.light))
     .map((f) => [f.family, f.light!])
-  if (themeContextFromStore(store).hasDarkTheme) {
+  const hasDark = themeContextFromStore(store).hasDarkTheme
+  if (hasDark) {
     fams.filter((f) => filled(f.dark)).forEach((f) => out.push([`${f.family}-dark`, f.dark!]))
   }
+
+  // Alpha twins — reproduce each solid tone when composited over the page
+  // (see tokens.json's `colors.primitiveAlpha`). `-a`/`-a-dark` disambiguate
+  // from the solid `-dark` suffix above in this shared flat namespace; no
+  // other exporter reads these composite names as a contract, they're just
+  // the CSS-var/Tailwind-key/MD-row labels this file already mints for every
+  // other family here.
+  fams.filter((f) => filled(f.light)).forEach((f) => {
+    out.push([`${f.family}-a`, generateAlphaScale(f.light!, store.pageBackground, 'light')])
+  })
+  if (hasDark) {
+    fams.filter((f) => filled(f.dark)).forEach((f) => {
+      out.push([`${f.family}-a-dark`, generateAlphaScale(f.dark!, store.darkBackground, 'dark')])
+    })
+  }
+
+  // Neutral alpha primitives — a fixed opacity ladder, not derived from any
+  // family. Tied to whether NEUTRAL ships (they're the neutral's alpha
+  // twins in spirit — see design-plans/alpha-primitives.md), not to a family
+  // filter of their own.
+  if (!opts.families || opts.families.includes('neutral')) {
+    out.push(['black-a', BLACK_ALPHA_SCALE], ['white-a', WHITE_ALPHA_SCALE])
+  }
+
   return out
 }
 
@@ -432,6 +457,8 @@ function categoricalSemanticsMd(store: Store, cf: ColorFormat, modes: string[]):
       themePalettes: resolvedPalettes,
       scales: globalScales,
       accent: store.primaryColor,
+      pageBackground: store.pageBackground,
+      darkBackground: store.darkBackground,
     },
     store.errorColor,
     store.architectureOverrides?.categorical ?? {},

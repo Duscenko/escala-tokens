@@ -1,6 +1,6 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import { getIconAiSource, UNTITLED_LIBRARY } from './iconLibraries'
-import { toneLabel, generateAlphaScale, darkShadowMap, type ColorNaming } from './colorUtils'
+import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
@@ -21,7 +21,19 @@ import { gradientToCss, gradientSlug } from './gradients'
 //     an older configurator's payload (still carrying the field) keeps
 //     importing fine — this bump is for anything that treats an ABSENT field
 //     as a real gap rather than "not part of this system."
-export const TOKEN_SCHEMA_VERSION = 6
+// v7: SEMANTIC COLOURS CAN NOW BE TRANSLUCENT. `colors.architecture.tokens`
+//     ships 8-digit hex (`#rrggbbaa`) for the 16 roles backed by an alpha
+//     primitive — ghost-button washes, status tints, the selected row, focus
+//     halos, the scrim, the dark-mode elevation rim (see
+//     design-plans/alpha-primitives.md). The SHAPE is unchanged, which is
+//     exactly why this needs a version signal rather than riding in silently
+//     like `shadowsDark`/`gradientsDark` did: those added ignorable KEYS,
+//     while this changes the value domain of keys that already existed. A
+//     consumer parsing with a 6-digit assumption keeps "working" and silently
+//     drops the alpha, painting an opaque scrim over the page it was meant to
+//     dim. `colors.primitive` and `colors.themes` (the flat catalogue) stay
+//     fully opaque — only the architecture projection carries alpha.
+export const TOKEN_SCHEMA_VERSION = 7
 
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
@@ -225,6 +237,14 @@ export function generateTokenJSON() {
   alphaOf('info', store.infoScale);        alphaDarkOf('info', store.infoDarkScale)
   store.customColors.forEach((c) => { alphaOf(c.key, c.scale); alphaDarkOf(c.key, c.darkScale) })
 
+  // Neutral alpha primitives — a fixed opacity ladder (Radix blackA/whiteA),
+  // not derived from any family's solid. Unlike the twins above, these don't
+  // vary per system: no page/appearance argument, one appearance each. See
+  // design-plans/alpha-primitives.md for why this is a second, separate
+  // contract rather than a 7th call to alphaOf.
+  Object.assign(primitiveAlpha, flattenScale('black-a', BLACK_ALPHA_SCALE, colorNaming))
+  Object.assign(primitiveAlpha, flattenScale('white-a', WHITE_ALPHA_SCALE, colorNaming))
+
   // No per-theme namespaced ramps any more: a theme REFERENCES a family, and
   // every family already shipped above under its own key. The theme's semantics
   // therefore alias the same primitive variables the families export.
@@ -242,6 +262,8 @@ export function generateTokenJSON() {
       themePalettes: resolvedPalettes,
       scales: globalScales,
       accent: store.primaryColor,
+      pageBackground: store.pageBackground,
+      darkBackground: store.darkBackground,
     },
     store.errorColor,
     // Was missing entirely — table edits (setArchitectureOverride) never

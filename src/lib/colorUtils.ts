@@ -660,6 +660,31 @@ export function generateAlphaScale(
   return out
 }
 
+// ── Neutral alpha primitives (black-a / white-a) ────────────────────────────
+// A DIFFERENT contract from `generateAlphaScale` above, on purpose — see
+// design-plans/alpha-primitives.md. `accent-a`/`error-a`/etc. are SOLVED: tone
+// N reproduces that family's own solid N when composited over ITS OWN page,
+// so the scale isn't monotonic in opacity (it can't be — that's not what it's
+// for) and step 1 is 0% (fully transparent). Black/white alpha are the other
+// half of the dilemma: a FIXED opacity ladder, agnostic to any background,
+// for washes/scrims/rims that have to work over a surface the token itself
+// doesn't know about (a modal scrim, a hover wash on an arbitrary card, the
+// light rim `darkShadow` already paints ad hoc). Values are the published
+// Radix `blackA`/`whiteA` scale (`@radix-ui/colors`), not invented — same
+// precedent as `radixReference.ts` reusing upstream data rather than
+// re-deriving it. These are CONSTANTS, not derived from any store field, so
+// they carry no migration and aren't part of `DesignSnapshot`.
+export const BLACK_ALPHA_SCALE: Record<number, string> = {
+  1: '#0000000d', 2: '#0000001a', 3: '#00000026', 4: '#00000033',
+  5: '#0000004d', 6: '#00000066', 7: '#00000080', 8: '#00000099',
+  9: '#000000b3', 10: '#000000cc', 11: '#000000e6', 12: '#000000f2',
+}
+export const WHITE_ALPHA_SCALE: Record<number, string> = {
+  1: '#ffffff0d', 2: '#ffffff1a', 3: '#ffffff26', 4: '#ffffff33',
+  5: '#ffffff4d', 6: '#ffffff66', 7: '#ffffff80', 8: '#ffffff99',
+  9: '#ffffffb3', 10: '#ffffffcc', 11: '#ffffffe6', 12: '#fffffff2',
+}
+
 // Canonical hues for the four state roles (recognizable red / amber / green /
 // blue). recommendStateColors keeps these hues + lightness but pulls each
 // toward the brand's chroma, so the state set feels cohesive with the brand.

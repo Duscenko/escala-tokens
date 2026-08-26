@@ -60,6 +60,32 @@ function primitiveValues(json: TokenJSON, raw: string, id: string): { key: strin
       return { key, hex }
     }
   }
+  return alphaPrimitiveValues(json, raw, id)
+}
+
+/**
+ * Alpha primitives, which live in their OWN payload bucket and were invisible
+ * to this resolver — an agent asking for `accent-a-3` or `black-a-8` got
+ * `unknown` for a token the system genuinely ships, which is the exact failure
+ * `resolve_token` exists to prevent (see the "live over static" note in
+ * CLAUDE.md: a stale answer here is worse than no answer).
+ *
+ * Two key shapes, both tried, because the bucket names a family twin by the
+ * BARE family (`accent-3` — `primitiveAlpha` already disambiguates it from
+ * `primitive`) while `black-a`/`white-a` carry the `-a` in the key itself.
+ * The CSS name always carries the infix, matching what `buildCSS` emits.
+ */
+function alphaPrimitiveValues(json: TokenJSON, raw: string, id: string): { key: string; hex: string } | null {
+  const alpha = (json.colors as { primitiveAlpha?: Record<string, string> }).primitiveAlpha
+  if (!alpha) return null
+  for (const q of [id, raw]) {
+    if (alpha[q]) return { key: q, hex: alpha[q] }
+    // `accent-a-3` → the twin stored as `accent-3`; keeps the queried NAME so
+    // the agent sees back the token it asked about, not an ambiguous one that
+    // also names a solid.
+    const m = /^(.+)-a-(\d+)$/.exec(q)
+    if (m && alpha[`${m[1]}-${m[2]}`]) return { key: q, hex: alpha[`${m[1]}-${m[2]}`] }
+  }
   return null
 }
 

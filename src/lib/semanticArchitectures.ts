@@ -21,7 +21,7 @@
 // belongs instead.
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
-import { accessibleSolidTone, solidInkPair, checkContrast, WCAG_AA } from './colorUtils'
+import { accessibleSolidTone, solidInkPair, checkContrast, WCAG_AA, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, generateAlphaScale } from './colorUtils'
 import { apcaLc, INTENT_THRESHOLDS } from './color/apca'
 
 /** APCA body-text floor — the same constant the audit and the ramp use. */
@@ -65,6 +65,14 @@ export type ProjectionInput = {
   themePalettes: Record<string, ThemePalette>
   scales: GlobalScales
   accent: string
+  /** Needed to solve a family's ALPHA twin on demand (`{<fam>-a.N}` refs,
+   *  see `scaleLookup`) — an alpha value is composited against a real page,
+   *  it has no meaning without one. Optional: a caller that never resolves
+   *  an alpha ref (most tests) doesn't need to supply them, and omitting
+   *  them just means those refs resolve `undefined` → 'transparent' in
+   *  `refToView`, same as any other unresolved ref. */
+  pageBackground?: string
+  darkBackground?: string
 }
 
 // ── Solid fills and the ink that sits on them ────────────────────────────────
@@ -368,7 +376,7 @@ function projectCurated(
     const kind = input.themeKinds[t] ?? 'light'
     // The SAME lookup `buildArchitectureView` renders with, so the tone this
     // solves for is scored against the exact hex the table will show.
-    const look = scaleLookup(input.scales, input.themePalettes[t], kind)
+    const look = scaleLookup(input.scales, input.themePalettes[t], kind, input.pageBackground, input.darkBackground)
     for (const r of curatedRefs(roles, kind, look, input.accent)) {
       out[r.group] ??= {}
       out[r.group][r.key] ??= {}
@@ -445,6 +453,29 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // pin it replaces, which wasn't a state at all for those hues.
   { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
   { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
+  // Ghost / tertiary fill — a borderless button's hover/pressed wash. This is
+  // the first role backed by a COLOURED alpha primitive (`{accent-a.N}`,
+  // resolved by `scaleLookup` against the real page/dark background — see
+  // design-plans/alpha-primitives.md). A solid tint (`{accent.3}`, what
+  // `action.secondary.accent` uses) is the wrong tool here: a ghost button
+  // has no fill of its own, so its hover/pressed state has to be a WASH over
+  // whatever it's sitting on, which the alpha twin is the one thing in this
+  // system built to do correctly regardless of backdrop. Two steps, same
+  // relationship as primary's hover/pressed: tone 3 then tone 5 on the same
+  // ramp `{accent.solid}` already reads from.
+  // Split by INTENT, matching Button's own `Color` axis (Brand / Danger /
+  // Neutral) — a ghost button's wash has to carry the same meaning its label
+  // does, and one unqualified `ghost.hover` could only ever serve one of the
+  // three. NEUTRAL is the one that flips ink per appearance: black over a
+  // light page, white over a dark one, which is precisely the job
+  // `black-a`/`white-a` exist for (nothing else in the system can wash a
+  // surface DOWN in light and UP in dark using one role).
+  { group: 'action', key: 'ghost.neutral.hover',   light: '{black-a.1}', dark: '{white-a.1}' },
+  { group: 'action', key: 'ghost.neutral.pressed', light: '{black-a.2}', dark: '{white-a.2}' },
+  { group: 'action', key: 'ghost.brand.hover',     light: '{accent-a.3}', dark: '{accent-a.3}' },
+  { group: 'action', key: 'ghost.brand.pressed',   light: '{accent-a.5}', dark: '{accent-a.5}' },
+  { group: 'action', key: 'ghost.danger.hover',    light: '{error-a.3}',  dark: '{error-a.3}' },
+  { group: 'action', key: 'ghost.danger.pressed',  light: '{error-a.5}',  dark: '{error-a.5}' },
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
@@ -455,14 +486,25 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'surface', key: 'input', light: '{neutral.1}', dark: '{neutral-dark.1}' },
   // Accent-tinted row/item selection — one step up from `surface.accent`,
   // the same tone `action.secondary` already uses for a component-level fill.
-  { group: 'surface', key: 'selected', light: '{accent.3}', dark: '{accent.3}' },
+  // A selected row is the textbook alpha case: it can sit on the page OR on a
+  // card, and a SOLID tint only looks right on one of them. Was `{accent.3}`;
+  // `{accent-a.3}` composites to the same colour over the page and keeps its
+  // tint over any other surface. Everything reading text on it composites
+  // first — see `audit.ts`'s `backdrop`.
+  { group: 'surface', key: 'selected', light: '{accent-a.3}', dark: '{accent-a.3}' },
   // Inverse surface is dark-on-light and light-on-dark by definition — but
   // dark does NOT take the ramp's lightest step. `{neutral-dark.12}` flashes
   // near-white on a dark page; `{neutral.4}` (the light ramp's quiet gray) is
   // the muted inverse chip that actually reads as "inverted" in a layout.
   { group: 'surface', key: 'inverse', light: '{neutral.12}', dark: '{neutral.4}' },
   // Scrim — stays dark in BOTH appearances (it dims, it doesn't invert).
-  { group: 'surface', key: 'overlay', light: '{neutral.12}', dark: '{neutral-dark.1}' }, // pair with opacity.60
+  // `{black-a.8}` (60% — Radix blackA8) is a genuine translucent overlay: the
+  // pre-alpha-primitives value here was `{neutral.12}` / `{neutral-dark.1}`,
+  // both fully OPAQUE, with a `// pair with opacity.60` comment pointing at a
+  // token that was never wired up (and the `opacity` foundation is retired —
+  // see design-plans/alpha-primitives.md). An opaque scrim doesn't dim the
+  // page behind a modal, it erases it.
+  { group: 'surface', key: 'overlay', light: '{black-a.8}', dark: '{black-a.8}' },
   // Status — feedback fg/bg pairs (critical = error family). The fg's ONLY job
   // is to sit on its own -bg, so the pair is solved as a pair:
   //
@@ -490,11 +532,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   //    while warning/success on 11 sat at ~73. One step is worth ~30 Lc on the
   //    dark ramp, so 10 was not a hue-vs-contrast trade, just a miss: 11 still
   //    reads as red, and all three severities now agree on the same step.
-  { group: 'status', key: 'critical.surface', light: '{error.3}',        dark: '{error.3}' },
+  { group: 'status', key: 'critical.surface', light: '{error-a.3}',   dark: '{error-a.3}' },
   { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.11}' },
-  { group: 'status', key: 'warning.surface',  light: '{warning.3}',      dark: '{warning.3}' },
+  { group: 'status', key: 'warning.surface',  light: '{warning-a.3}', dark: '{warning-a.3}' },
   { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
-  { group: 'status', key: 'success.surface',  light: '{success.3}',      dark: '{success.3}' },
+  { group: 'status', key: 'success.surface',  light: '{success-a.3}', dark: '{success-a.3}' },
   { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.11}' },
   // Info — same shape as the three severities above, added because the Info
   // primitive (seeded, generated, exported to tokens.json) had NO semantic
@@ -508,7 +550,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // clears WCAG 4.35 / Lc 63.8 in light and 10.21 / Lc 73.6 in dark — the
   // same range critical/warning/success already accept (critical's own
   // residual is Lc ~42, short of the 60 floor, and was kept anyway).
-  { group: 'status', key: 'info.surface',     light: '{info.3}',        dark: '{info.3}' },
+  { group: 'status', key: 'info.surface',     light: '{info-a.3}',    dark: '{info-a.3}' },
   { group: 'status', key: 'info.content',     light: '{info.11}',       dark: '{info.11}' },
   // Solid critical fill (badges, destructive buttons). Light solves the fill
   // (`{error.solid}`). Dark uses the ramp's light end so a destructive solid
@@ -568,6 +610,31 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // showed dark ramps have no equivalent blind spot worth walking around
   // (tone 11 clears both for every seed tried: WCAG 11.83–11.90, Lc 75.0–75.3).
   { group: 'border', key: 'focus',   light: '{ui:accent.9}',  dark: '{ui:accent.9}' },
+  // ── Focus RING (the translucent halo), distinct from `border.focus` (the
+  // solid boundary). Two roles, not one, because they do different jobs: the
+  // boundary must clear WCAG 1.4.11 as a UI component (hence the `{ui:…}`
+  // solver above), while the halo is a soft glow OUTSIDE it that must never be
+  // measured as a boundary — it's decoration that widens the target visually.
+  // `specimens.tsx`'s `focusRing()` already painted exactly this at a
+  // hardcoded 40% (`withAlpha(accent, alphaOf(t, '40', 0.4))`); these give it
+  // a token. `{fam-a.6}` IS 40% on the black/white ladder and ~37% on a
+  // solved colour twin, so the shipped look is unchanged.
+  //
+  // NOTE — this does NOT reverse the documented "no border.focus.critical"
+  // decision: that one is about the solid BOUNDARY staying accent-coloured
+  // for every severity, which it still does. A halo matching the field's own
+  // error/success border is a separate, additive affordance.
+  { group: 'border', key: 'ring.default',  light: '{accent-a.6}',  dark: '{accent-a.6}' },
+  { group: 'border', key: 'ring.critical', light: '{error-a.6}',   dark: '{error-a.6}' },
+  { group: 'border', key: 'ring.success',  light: '{success-a.6}', dark: '{success-a.6}' },
+  // The 1px light rim `darkShadow()` paints on every dark-mode elevation —
+  // until now a bare `rgba(255,255,255,…)` computed inside that function with
+  // no token anywhere. This does NOT change what `darkShadow` emits (its alpha
+  // is a continuous function of the shadow's own weight, deliberately — see
+  // design-plans/alpha-primitives.md); it gives the CONCEPT a name so a
+  // consumer building elevation by hand has the same rim available, and so
+  // `white-a` stops being a family the export ships that no role references.
+  { group: 'border', key: 'rim-highlight', light: '{white-a.1}', dark: '{white-a.1}' },
   // Already the minimum tone clearing both metrics — verified, not changed.
   // Light error.9 = 3.76/64 (passes). Dark error.9 = 5.14 WCAG but Lc 37.6
   // (fails APCA — the same blind spot `default` above hits); error.10 is
@@ -613,7 +680,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'surface.input': "[ROLE: Form Background] Background for interactive data-entry fields. Ensures content.primary typed by the user stays legible. Same tone as surface.page by design — named separately so forms have their own token.",
   'surface.selected': '[ROLE: Active State Background] Subtle fill for mutual selection (e.g. a selected table row). Must guarantee 4.5:1 against content.primary on top.',
   'surface.inverse': "[ROLE: Inverted Background] High-contrast background for tooltips and snackbars. Always pair with content.inverse. Light {neutral.12}; dark {neutral.4} — a muted inverse chip, not the dark ramp's near-white step.",
-  'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at alpha 0.5.',
+  'surface.overlay': '[ROLE: Scrim] Semi-transparent layer over surface.page to focus attention on modals (layer-2 surfaces). Ships at 60% black alpha (`{black-a.8}`), same in both themes.',
   'surface.accent': '[ROLE: Accent Wash] Ambient brand-tinted background — a section that leans brand without being an interactive fill.',
   'content.primary': '[ROLE: High Contrast Text] Main body and headings. STRICT: must pass WCAG AA (4.5:1) against surface.page and surface.layer-1.',
   'content.secondary': '[ROLE: Medium Contrast Text] Supporting copy and descriptions. STRICT: WCAG AA (4.5:1) against standard surface backgrounds.',
@@ -630,6 +697,12 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'action.secondary.default': '[ROLE: Secondary CTA Default] Neutral subtle button fill. Label text must be content.primary, not content.on-action.',
   'action.secondary.accent': '[ROLE: Secondary Accent Fill] Accent-tinted secondary button background. Pair with content.primary for the label.',
   'action.disabled': '[ROLE: Disabled Action Fill] Disabled button/control background. No contrast floor — communicates inactive state visually.',
+  'action.ghost.neutral.hover': '[ROLE: Ghost Neutral Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
+  'action.ghost.neutral.pressed': '[ROLE: Ghost Neutral Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',
+  'action.ghost.brand.hover': '[ROLE: Ghost Brand Hover] Hover wash for a borderless button carrying brand intent (tertiary CTA). An ALPHA primitive, not a solid tint — a ghost button has no fill of its own, so its hover has to composite over whatever surface it sits on.',
+  'action.ghost.brand.pressed': '[ROLE: Ghost Brand Pressed] Pressed wash for a brand ghost button. One step deeper than action.ghost.brand.hover on the same alpha ramp.',
+  'action.ghost.danger.hover': '[ROLE: Ghost Danger Hover] Hover wash for a borderless destructive action (a Delete in a row menu). Error family so the intent reads before the click, not after.',
+  'action.ghost.danger.pressed': '[ROLE: Ghost Danger Pressed] Pressed wash for a destructive borderless action.',
   'status.critical.surface': "[ROLE: Feedback Background Subtle] Tinted background for error alerts and banners. Pair with status.critical.content — never a fixed ink on the bg alone.",
   'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for destructive badges and buttons. Pair with status.critical.on-solid. Light solves {error.solid}; dark uses {error.12} so the fill still reads as coloured on a dark page.",
   'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Both themes {error.11} — chromatic severity, not the near-white {error.12} in dark.',
@@ -643,7 +716,11 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'border.subtle': '[ROLE: Structural Border] Aesthetic dividers (hr, table rules). Light {neutral.3}, dark {neutral-dark.4}. Not critical for accessibility.',
   'border.default': '[ROLE: Control Boundary] The resting border for inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. Light {neutral.8} = 3.26:1/Lc60. Dark {neutral-dark.11} = 11.99:1/Lc75 — not tone-for-tone with light; this ramp\'s dark tones 9-10 pass WCAG but fail APCA (Lc 21-27), so 11 is the first that clears both.',
   'border.strong': '[ROLE: Emphasis Border] One step past border.default in both themes — for a stroke that needs to outrank a plain control boundary (a selected card\'s own edge). Light {neutral.9} = 4.78:1. Dark {neutral-dark.12} = 15.19:1. Not the default input border — see border.default.',
-  'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. SOLVED per theme, not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Light walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 clear (lands on 9-11 depending on hue). Dark stays {accent.11}. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, matching Material/Carbon (WCAG does not require an error-coloured ring) and keeping one ring token instead of one per severity.',
+  'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. SOLVED per theme, not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Light walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 clear (lands on 9-11 depending on hue). Dark stays {accent.11}. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, matching Material/Carbon (WCAG does not require an error-coloured ring) and keeping one ring token instead of one per severity. That scope covers the solid BOUNDARY only — the translucent halo around it is border.ring.*, which does vary by severity.',
+  'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens.',
+  'border.ring.critical': '[ROLE: Focus Halo Critical] Focus halo on a field already showing border.critical, so the glow matches the field rather than fighting it. The solid focus boundary stays accent — see border.focus.',
+  'border.ring.success': '[ROLE: Focus Halo Success] Focus halo on a field showing a success/validated border.',
+  'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Decorative Brand Border] Brand-tinted grouping stroke. NOT a state indicator — use border.focus for focus/selected/active.',
   'border.critical': '[ROLE: Critical Border] Validation stroke for inputs in an error state. Light {error.9} = 3.76:1. Dark {error.11} = 11.94:1 — error.9/10 fail APCA in dark (Lc 37.6/44.2), same blind spot as border.default.',
   'border.warning': '[ROLE: Warning Border] Validation stroke for inputs in a warning state. {warning.11} — the minimum tone that clears WCAG in light (tone 9 = 2.35, tone 10 = 2.75, both fail).',
@@ -772,9 +849,15 @@ export function scaleLookup(
   scales: GlobalScales,
   palette?: ThemePalette,
   kind: 'light' | 'dark' = 'light',
+  /** Only needed to resolve a family's alpha twin (`{<fam>-a.N}`) — see the
+   *  block below. Omit them and those refs just resolve `undefined`, same as
+   *  any other unresolved ref. */
+  pageBackground?: string,
+  darkBackground?: string,
 ): (fam: string, tone: number) => string | undefined {
   const darkTwin = (fam: 'brand' | 'error' | 'warning' | 'success' | 'info') =>
     kind === 'dark' ? scales.dark?.[fam] : undefined
+  const neutralSolid = kind === 'dark' ? (palette?.gray ?? (scales.grayDark ?? scales.gray)) : (palette?.gray ?? scales.gray)
   const fams: Record<string, Record<number, string> | undefined> = {
     neutral: palette?.gray ?? scales.gray,
     'neutral-dark': palette?.gray ?? (scales.grayDark ?? scales.gray),
@@ -783,6 +866,28 @@ export function scaleLookup(
     warning: palette?.warning ?? darkTwin('warning') ?? scales.warning,
     success: palette?.success ?? darkTwin('success') ?? scales.success,
     info: palette?.info ?? darkTwin('info') ?? scales.info,
+    // Fixed opacity ladder, agnostic to theme/palette/kind — see
+    // design-plans/alpha-primitives.md. Not derived from any family, so
+    // there's no lookup chain here, just the constant.
+    'black-a': BLACK_ALPHA_SCALE,
+    'white-a': WHITE_ALPHA_SCALE,
+  }
+  // Alpha twins — ONE name per family, kind-aware exactly like `accent`
+  // already is: the SAME ref text (`{accent-a.3}`) resolves to the light
+  // twin in a light column and the dark twin in a dark one, so a role never
+  // needs an `-a-dark` variant of its own ref. `neutral` needed splitting
+  // into `neutral`/`neutral-dark` above because BOTH can be addressed
+  // explicitly in the SAME role (e.g. `content.inverse`); nothing here needs
+  // that for alpha, so one kind-aware name is enough.
+  if (pageBackground && darkBackground) {
+    const bg = kind === 'dark' ? darkBackground : pageBackground
+    const kindCorrectSolid: Record<string, Record<number, string> | undefined> = {
+      neutral: neutralSolid, accent: fams.accent, error: fams.error,
+      warning: fams.warning, success: fams.success, info: fams.info,
+    }
+    for (const [fam, solid] of Object.entries(kindCorrectSolid)) {
+      if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, bg, kind)
+    }
   }
   return (fam, tone) => fams[fam]?.[tone]
 }
@@ -881,7 +986,7 @@ export function buildArchitectureView(
     // theme references), not one shared lookup — same per-theme resolution
     // the flat catalogue's roles get via `sourceScaleFor`.
     const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
-      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
+      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light', input.pageBackground, input.darkBackground)]))
     const META: Record<string, [string, string]> = {
       content: ['Content', 'Text & icon ink — primary to inverse'],
       action: ['Action', 'Interactive element fills'],
@@ -947,7 +1052,7 @@ function resolveCuratedForExport(
 ): Record<string, Record<string, Record<string, string>>> {
   const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
     Object.fromEntries(themeOrder.map((t) =>
-      [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
+      [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light', input.pageBackground, input.darkBackground)]))
   const REF = /^\{([a-z-]+)\.(\d+)\}$/
   const out: typeof tokens = {}
   for (const [group, byKey] of Object.entries(tokens)) {

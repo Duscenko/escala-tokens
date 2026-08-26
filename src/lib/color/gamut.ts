@@ -140,11 +140,29 @@ export const oklabToOklch = ({ l, a, b }: OKLab): OKLCH => {
  * linear RGB, and there must be exactly one sRGB transfer function in the
  * codebase for those results to agree with `hexToOklch`.
  */
+// A `#rrggbbaa`/`#rgba` input used to have its alpha channel silently
+// dropped, same bug as apca.ts's `parseHex` (see that function's comment) —
+// this IS "the single sRGB transfer function" every colour-vision-deficiency
+// simulation and ΔE comparison in the codebase runs through, so a translucent
+// alpha primitive (`accent-a-*`, `black-a-*`, …) fed in here would silently
+// simulate/compare the wrong colour. Same fix: throw on a real alpha channel,
+// let a channel that rounds to fully opaque (≥99.9%) through unchanged.
 export function hexToLinearRgb(hex: string): LinearRGB {
-  let h = hex.trim().replace(/^#/, '')
-  if (h.length === 3 || h.length === 4) h = h.slice(0, 3).split('').map((c) => c + c).join('')
-  if (h.length === 8) h = h.slice(0, 6)
+  const stripped = hex.trim().replace(/^#/, '')
+  let h = stripped
+  let alphaDigits: string | null = null
+  if (h.length === 4) { alphaDigits = h[3] + h[3]; h = h.slice(0, 3) }
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  if (h.length === 8) { alphaDigits = stripped.slice(6, 8); h = h.slice(0, 6) }
   if (!/^[0-9a-fA-F]{6}$/.test(h)) throw new Error(`gamut: not an sRGB hex color: "${hex}"`)
+  if (alphaDigits) {
+    const a = parseInt(alphaDigits, 16) / 255
+    if (a < 0.999) {
+      throw new Error(
+        `gamut: "${hex}" is translucent (alpha ${Math.round(a * 100)}%) — composite it over its real backdrop first (colorUtils.compositeOver), then convert the result.`,
+      )
+    }
+  }
   return {
     r: toLinear(parseInt(h.slice(0, 2), 16) / 255),
     g: toLinear(parseInt(h.slice(2, 4), 16) / 255),

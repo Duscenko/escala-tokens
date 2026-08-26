@@ -25,7 +25,7 @@ import {
   ROLE_GROUPS, sourceScaleFor, recToneFor, SCALE_META, baseLabelForTone,
   type Role, type GlobalScales,
 } from '../../../lib/semanticRoles'
-import { toneLabel, type ColorNaming } from '../../../lib/colorUtils'
+import { toneLabel, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from '../../../lib/colorUtils'
 import {
   buildArchitectureView,
   CATEGORICAL_ROLE_COMMENTS,
@@ -69,6 +69,7 @@ export interface SystemDoc {
   /** Categorical architecture groups — same projection as the Color preview. */
   categoricalCategories?: CategoricalCategoryDoc[]
   primitiveFamilies: { label: string; scale: Record<number, string> }[]
+  alphaFamilies: { label: string; scale: Record<number, string> }[]
   colorNaming: ColorNaming
   typography: ReturnType<typeof useDesignStore.getState>['typography']
   spacing: Record<string, string>
@@ -135,6 +136,8 @@ function resolveCategoricalCategories(
       themePalettes: resolvedPalettes,
       scales: globalScales,
       accent: store.primaryColor,
+      pageBackground: store.pageBackground,
+      darkBackground: store.darkBackground,
     },
     store.errorColor,
     store.architectureOverrides?.categorical ?? {},
@@ -173,7 +176,7 @@ export function useSystemDoc(): SystemDoc {
     successScale, successDarkScale, infoScale, infoDarkScale,
     customColors, colorNaming, typography, spacing, padding, radius,
     shadows, grid, gridFrame, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
-    iconLibrary, customIcons, themeOrder,
+    iconLibrary, customIcons, themeOrder, pageBackground,
   } = store
 
   const categoricalCategories = useMemo(
@@ -252,8 +255,28 @@ export function useSystemDoc(): SystemDoc {
   }, [primaryScale, primaryDarkScale, grayLightScale, grayDarkScale, errorScale, errorDarkScale,
       warningScale, warningDarkScale, successScale, successDarkScale, infoScale, infoDarkScale, customColors])
 
+  // Alpha primitives — the OTHER half of the colour layer, and the one that
+  // had no documentation at all while sixteen semantic roles resolved through
+  // it. Two contracts, kept visually apart because they are not the same kind
+  // of thing: a family's twin is SOLVED against its page, black/white is a
+  // FIXED ladder. Built here (not in `primitiveFamilies`) so the doc can say
+  // that out loud instead of listing eight more ramps that look identical.
+  const alphaFamilies = useMemo(() => {
+    const twin = (label: string, scale: Record<number, string>, bg: string, appearance: 'light' | 'dark') =>
+      ({ label, scale: generateAlphaScale(scale, bg, appearance) })
+    const out = [
+      twin('Accent', primaryScale, pageBackground, 'light'),
+      twin('Neutral', grayLightScale, pageBackground, 'light'),
+      twin('State/Error', errorScale, pageBackground, 'light'),
+      twin('State/Warning', warningScale, pageBackground, 'light'),
+      twin('State/Success', successScale, pageBackground, 'light'),
+      twin('State/Info', infoScale, pageBackground, 'light'),
+    ]
+    return out.filter((f) => Object.keys(f.scale).length)
+  }, [primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, pageBackground])
+
   return {
-    scales, roles, categoricalCategories, primitiveFamilies, colorNaming, typography, spacing, padding,
+    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming, typography, spacing, padding,
     radius, shadows, grid, gridFrame, sizes, stroke,
     radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
     iconLibrary, customIcons,
@@ -304,6 +327,45 @@ function Swatch({ hex, className = '' }: { hex: string; className?: string }) {
  *  breakpoint (`@2xl` = 42rem) would silently mean 756px (see CLAUDE.md's
  *  "Root font-size" note — this file's own floor was already once bitten by
  *  exactly that, `min-w-[40rem]` meaning 720px). */
+/** Same ramp, on a CHECKERBOARD — an alpha swatch painted on a flat backdrop
+ *  silently reads as whatever that backdrop makes it, which is exactly the
+ *  misreading these tokens exist to prevent. The checkerboard has no "wrong
+ *  theme" to break against. Same `CHECKER` treatment `AlphaHexCell` uses in
+ *  the Primitives table, so the two surfaces agree on what "translucent"
+ *  looks like. */
+function AlphaRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
+  return (
+    <div className="@container">
+      <div className="overflow-x-auto">
+        <div className="flex gap-1.5 min-w-[640px] @max-[640px]:gap-1 @max-[640px]:min-w-0">
+          {Object.entries(scale)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([tone, hex]) => (
+              <div key={tone} className="flex-1 min-w-0 flex flex-col items-center gap-1 @max-[640px]:gap-0.5">
+                <span
+                  className="w-full h-11 rounded-lg ring-1 ring-black/10 dark:ring-white/15 relative overflow-hidden @max-[640px]:h-8 @max-[640px]:rounded-md"
+                  style={{
+                    backgroundImage: 'repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)',
+                    backgroundSize: '10px 10px',
+                  }}
+                  title={hex}
+                >
+                  <span className="absolute inset-0" style={{ background: hex }} />
+                </span>
+                <span className="text-[9px] font-mono tabular-nums text-fg-faint">
+                  {toneLabel(naming, Number(tone))}
+                </span>
+                <span className="text-[8px] font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
+                  {hex.toUpperCase()}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
   return (
     <div className="@container">
@@ -595,7 +657,7 @@ export const FOUNDATION_DOCS: FoundationDoc[] = [
     label: 'Color',
     lead: 'Two layers: twelve-step primitive ramps that hold the raw values, and a categorical semantic contract that names what each value is FOR — grouped as Content, Action, Surface, Status and Border with nested role ids like `content.primary` and `action.primary.default`. Designs reference the roles; only the roles reference the ramps.',
     why: 'A hex in a component is a decision nobody can revisit. A role — `action.primary.default` — is a decision you can re-point once and have the whole system follow, in every theme at once. It is also the only way light and dark can be the same design rather than two hand-tuned ones: a role resolves to its own ramp per appearance, so `content.primary` means "the readable ink on this page" in both, and neither is a copy of the other.',
-    usage: 'Reach for a categorical semantic role first — `surface.*` for page and card levels, `action.*` for control fills, `status.*` for feedback, `content.*` for ink, `border.*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text.',
+    usage: 'Reach for a categorical semantic role first — `surface.*` for page and card levels, `action.*` for control fills, `status.*` for feedback, `content.*` for ink, `border.*` for edges. Use a primitive directly only when you are defining a new role. Steps are ordered by ROLE, not lightness: 1–2 page background · 3–5 component · 6–8 border · 9 the solid (your brand hex, verbatim) · 10 solid hover · 11–12 accessible text. Sixteen roles resolve to a TRANSLUCENT primitive instead of a solid tone — see Alpha below — so a semantic value can be 8-digit `#rrggbbaa`.',
     usageCode: `/* semantic — what it is FOR */
 background: var(--color-action-primary-default);
 color:      var(--color-content-on-action);
@@ -603,8 +665,8 @@ color:      var(--color-content-on-action);
 /* primitive — only when defining a role */
 --color-accent-9: #9522e9;`,
     ships: {
-      json: 'colors.primitive · colors.architecture (categorical) · colors.themes',
-      css: '--color-<group>-<role>  ·  --color-<family>-<tone>',
+      json: 'colors.primitive · colors.primitiveAlpha · colors.architecture (categorical) · colors.themes',
+      css: '--color-<group>-<role>  ·  --color-<family>-<tone>  ·  --color-<family>-a-<tone>  ·  --color-black-a-<tone> / -white-a-',
       figma: 'Variable collection "Color", one mode per theme',
     },
     tokenCount: (c) => {
@@ -626,6 +688,29 @@ color:      var(--color-content-on-action);
                 <PrimitiveRamp scale={fam.scale} naming={c.colorNaming} />
               </div>
             ))}
+          </div>
+        ),
+      },
+      {
+        id: 'alpha',
+        title: 'Alpha',
+        description: 'Translucent primitives — for anything painted ON TOP of a surface the token cannot know in advance. Two different contracts, deliberately not merged: a family TWIN is solved so tone N reproduces the solid tone N over its own page (the opacity is a result, so the ladder is not monotonic and tone 1 is fully transparent); black/white is a fixed opacity ladder — 5 to 95 % — for scrims, neutral washes and the dark-mode elevation rim, where the ink really is black or white and the opacity IS the decision.',
+        render: (c) => (
+          <div className="flex flex-col gap-5">
+            {c.alphaFamilies.map((fam) => (
+              <div key={fam.label} className="flex flex-col gap-1.5">
+                <span className="text-[11px] text-fg-muted">{fam.label} <span className="text-fg-faint">— twin, solved vs the page</span></span>
+                <AlphaRamp scale={fam.scale} naming={c.colorNaming} />
+              </div>
+            ))}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-fg-muted">Black <span className="text-fg-faint">— fixed ladder</span></span>
+              <AlphaRamp scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-fg-muted">White <span className="text-fg-faint">— fixed ladder</span></span>
+              <AlphaRamp scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} />
+            </div>
           </div>
         ),
       },

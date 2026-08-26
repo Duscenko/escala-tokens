@@ -1635,7 +1635,7 @@ src/
 │   ├── gradients.ts           ← GradientDef/GradientAssignments types + gradientToCss()/gradientSlug()/makeDefaultGradients() (pure data)
 │   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
 │   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
-│   ├── semanticArchitectures.ts ← the ONE semantic token architecture: metadata + a pure projection of the flat role catalogue — projectCategorical() (DTCG-style grouped tree, 41 roles), projectArchitecture() dispatcher (returns null for anything but 'categorical'). Astryx/shadcn/Vibrancy/Tonal/Carbon projections — ~850 lines — were DELETED, not hidden; don't reintroduce one as a second projection, extend CATEGORICAL_ROLES or the {fam.solid}/{on:}/{ink:}/{ui:}/{ui+:}/{step:} marker vocabulary instead
+│   ├── semanticArchitectures.ts ← the ONE semantic token architecture: metadata + a pure projection of the flat role catalogue — projectCategorical() (DTCG-style grouped tree, 51 roles — 16 of them backed by an alpha primitive), projectArchitecture() dispatcher (returns null for anything but 'categorical'). Astryx/shadcn/Vibrancy/Tonal/Carbon projections — ~850 lines — were DELETED, not hidden; don't reintroduce one as a second projection, extend CATEGORICAL_ROLES or the {fam.solid}/{on:}/{ink:}/{ui:}/{ui+:}/{step:} marker vocabulary instead
 │   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
 │   ├── exporters.ts           ← buildCSS()/buildMarkdown() — shared by ExportView + GitHubConnectView
 │   ├── github.ts              ← GitHub REST client (PAT in localStorage 'sd-github-token', NEVER in the store): validateToken, listRepos, createRepo, pushFiles (Contents API, sequential)
@@ -2160,6 +2160,81 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > Both appearances ship (`accent-a*` and `accent-dark-a*`) because an alpha value only
 > means anything relative to the page it was solved against.
 
+> **THE ALPHA LAYER — two contracts, sixteen roles. Read this before touching
+> anything alpha.** Full history + measurements in
+> `design-plans/alpha-primitives.md`.
+>
+> For a long time the alpha twins above were **dead data**: exported in
+> `colors.primitiveAlpha`, absent from `variables.css`, absent from the `.MD`,
+> and referenced by **zero** semantic roles. Reported as "creamos esos alphas
+> ¿para qué?" — a fair question, and the answer was "for nothing yet."
+>
+> **There are TWO kinds of alpha primitive and they must not be merged:**
+>
+> | | Family TWIN (`accent-a`, `error-a`, …) | Neutral ladder (`black-a`, `white-a`) |
+> |---|---|---|
+> | Contract | reproduce solid tone N **over its own page** | darken/lighten **an unknown backdrop** |
+> | Anchored to | `pageBackground` / `darkBackground` | nothing — agnostic by definition |
+> | Value | SOLVED (`alphaColorOver`) | FIXED (Radix `blackA`/`whiteA`, verbatim) |
+> | Ladder | NOT monotonic; tone 1 is 0 % (tone 1 IS the page) | 5·10·15·20·30·40·50·60·70·80·90·95 % |
+>
+> - **`BLACK_ALPHA_SCALE`/`WHITE_ALPHA_SCALE` (`colorUtils.ts`) are the published
+>   Radix values, not invented.** Same precedent as `radixReference.ts`. A 5-step
+>   ladder at 5/10/15/40/80 % was proposed and REJECTED: those five stops are
+>   **exactly** 5 of the 12 Radix steps (`black-a-1/2/3/6/10`), so a second
+>   numbering scheme would have bought nothing. Measured first — fixed-% vs
+>   solved differ by ~0.06 in contrast delta on a dark page, nowhere near enough
+>   to justify 96 more tokens.
+> - **A twin's ladder is NOT an opacity scale.** Measured on the default accent:
+>   `1=0% 2=6% 3=12% … 9=87% 10=84% 11=70% 12=86%`. Non-monotonic by
+>   construction. Don't reach for it when you want "40 % of the brand" — that's
+>   what the fixed ladder is for.
+> - **`scaleLookup` resolves `{<fam>-a.N}` kind-aware**, composing on demand
+>   against `pageBackground`/`darkBackground` — so ONE ref text resolves to the
+>   light twin in a light column and the dark twin in a dark one, and no role
+>   needs an `-a-dark` variant. Those two fields are OPTIONAL on
+>   `ProjectionInput`: omit them and alpha refs resolve `undefined` like any
+>   unresolved ref. Every real call site threads them (`tokenGenerator`,
+>   `previewTokens`, `Step3_SemanticTokens`, `foundationDocs`, `sectionExport`,
+>   `color/audit`) — **a new call site that forgets them silently loses every
+>   alpha role**, which is exactly how a seeded-store probe read `{accent-a.3}`
+>   unresolved while `{black-a.8}` (needing no page) resolved fine.
+> - **Sixteen roles use it**: six `action.ghost.{neutral,brand,danger}.{hover,pressed}`
+>   (split by intent to match Button's own `Color` axis), `surface.selected`,
+>   `surface.overlay`, the four `status.*.surface`, three `border.ring.*` and
+>   `border.rim-highlight`.
+> - **`border.ring.*` is the HALO, `border.focus` is the BOUNDARY.** Two roles,
+>   deliberately: the boundary must clear WCAG 1.4.11 (hence `{ui:…}`), the halo
+>   is decoration measured by nothing. This does NOT reverse the documented "no
+>   `border.focus.critical`" decision — that one is about the solid boundary
+>   staying accent for every severity, which it still does.
+> - **`neutral-a` is the one family with no role, deliberately.** The neutral
+>   wash case is better served by `black-a`/`white-a`, which don't carry the
+>   accent tint `neutralFromBrand` bakes into the neutral ramp. Its real use
+>   would be glassmorphism (translucent `surface.layer-*`), a separate change.
+> - **NAMING DIFFERS BY SURFACE, on purpose.** `colors.primitiveAlpha` keys a
+>   family twin by the BARE family (`accent-3`) because the bucket already
+>   disambiguates it from `colors.primitive`; CSS and Markdown are ONE flat
+>   namespace, so they need the infix (`--color-accent-a-3`). `black-a`/`white-a`
+>   carry the `-a` in the key everywhere, having no solid counterpart to collide
+>   with. The plugin's `primitiveRefHex` tries both shapes — don't "unify" these
+>   without migrating the shipped `primitiveAlpha` contract.
+> - **The contrast audit COMPOSES before measuring.** `Pairing` (`color/audit.ts`)
+>   gained `backdrop?` (default `surface.page`). A translucent background used to
+>   hit a silent `continue` and vanish from the matrix — a hole that would have
+>   grown with every alpha role. Now it's composited and audited like any other
+>   colour; a translucent bg whose backdrop doesn't resolve **throws**, and a
+>   translucent FOREGROUND always throws (ink is never a wash).
+> - **`parseHex` (apca.ts) and `hexToLinearRgb` (gamut.ts) THROW on a real alpha
+>   channel** instead of silently dropping it, as both did before. These are the
+>   only two sRGB decode paths in the codebase, so that silence would have let a
+>   wash score against the wrong colour — including via the `check_contrast` MCP
+>   tool, which takes arbitrary strings. Alpha ≥ 99.9 % passes through (that's a
+>   solid with a redundant `ff`, not a translucent colour).
+> - **Don't recompute alpha ad hoc in a specimen.** Three hardcodes were replaced
+>   by tokens (`ButtonSpecimen`'s `color + '33'`, `BorderSpecimen`'s
+>   `` `${slot.css}33` ``). If a specimen needs a wash, it wants a role.
+
 > **Ask what a colour IS, don't assume.** "+ Add family" carries a Light · Dark · Alpha
 > choice (`SeedKind`), preselected by `detectSeedKind` and overridable. A **dark** seed
 > anchors the dark ramp; an **alpha** seed is composited back to the solid it renders as
@@ -2488,7 +2563,10 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > `status.*.surface-solid`/`on-solid` were NOT added for info — critical is the only severity
 > with a solid pair today; adding one for info alone would make it the second-best-equipped
 > severity while warning/success still have none. One decision across all four, not an
-> info-only addition. Role count: 39 → 41.
+> info-only addition. Role count: 39 → 41. **Now 51** — see "THE ALPHA LAYER"
+> above: six `action.ghost.*` (split by intent), three `border.ring.*` and
+> `border.rim-highlight` were added, and five existing roles (`surface.selected`
+> + the four `status.*.surface`) moved from a solid tone to their alpha twin.
 
 > **DECISION: there is no `border.focus.critical` — an invalid, focused input shows the
 > normal accent focus ring, not an error-coloured one.** Raised by the same external audit
@@ -2687,7 +2765,7 @@ interface ComponentDef {
 }
 ```
 
-`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **5**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. v5 REMOVED `opacity` (see "Opacity is retired" below) — the plugin's own import is already guarded (`if (tokens.opacity)`), so it degrades gracefully without a plugin-side change; the bump is a signal for anything else that might treat an absent field as a gap rather than "not part of this system." `shadowsDark` was added WITHOUT a bump, on the `gradientsDark` precedent: a complete parallel map under the same keys is purely additive, so an older plugin ignoring it is the correct outcome (see "Shadows ship a DARK TWIN" above). The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
+`tokenGenerator.ts` generates this (the README markdown in `ExportView.tsx` mirrors it, incl. an Icons section). If you add fields to the store, also add them to `generateTokenJSON()` and the markdown. `schemaVersion` (`TOKEN_SCHEMA_VERSION` in `tokenGenerator.ts`, now **7**) versions the contract the plugin checks. v4 added the per-family dark primitives (`accent-dark-*`, `error-dark-*`, … alongside `neutral-dark-*`) — additive, so an older plugin ignores them; **the plugin still needs updating to import them as a dark mode**. v5 REMOVED `opacity` (see "Opacity is retired" below) — the plugin's own import is already guarded (`if (tokens.opacity)`), so it degrades gracefully without a plugin-side change; the bump is a signal for anything else that might treat an absent field as a gap rather than "not part of this system." `shadowsDark` was added WITHOUT a bump, on the `gradientsDark` precedent: a complete parallel map under the same keys is purely additive, so an older plugin ignoring it is the correct outcome (see "Shadows ship a DARK TWIN" above). **v7 is the one to know about: semantic colours can now be TRANSLUCENT.** `colors.architecture.tokens` ships 8-digit `#rrggbbaa` for the 16 alpha-backed roles. The SHAPE is unchanged, which is precisely why it needed a version signal rather than riding in silently like `shadowsDark`/`gradientsDark` did — those added ignorable KEYS, while this changes the value domain of keys that already existed, so a consumer parsing with a 6-digit assumption keeps "working" while silently dropping the alpha and painting an opaque scrim over the page it was meant to dim. `colors.primitive` and `colors.themes` (the flat catalogue) stay fully opaque — only the architecture projection carries alpha. The plugin was updated in the same pass (`SUPPORTED_SCHEMA_VERSION` 7): `archValueRgba`/`hexToRgba` already handled 8-digit hex and Figma COLOR variables carry alpha natively, so translucent roles import as genuinely translucent variables; the `{family.tone}` fallback path DID need fixing (`primitiveRefHex`), since it looked only in `colors.primitive` where no alpha key has ever existed. The plugin also reads optional `copy` / `borders` sections that the configurator does **not** emit yet (plugin-ready forward-compat).
 
 ---
 

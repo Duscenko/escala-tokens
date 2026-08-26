@@ -20,6 +20,7 @@ const system = buildSystem('violet/radix', '#7f56d9', 'radix')
 const view = buildArchitectureView('categorical', {
   themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
   scales: system.scales, accent: system.accent,
+  pageBackground: system.lightBg, darkBackground: system.darkBg,
 } as never, system.errorSeed)!
 
 const roleIds = view.categories.flatMap((c) => c.tokens.map((t) => `${c.key}.${t.key}`))
@@ -32,13 +33,17 @@ const amberSystem = buildSystem('amber/radix', '#f59e0b', 'radix')
 const amberView = buildArchitectureView('categorical', {
   themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
   scales: amberSystem.scales, accent: amberSystem.accent,
+  pageBackground: amberSystem.lightBg, darkBackground: amberSystem.darkBg,
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 41 roles across five groups', () => {
-    // 39 + status.info.surface + status.info.content — the Info primitive had
-    // a full generated ramp and zero semantic roles referencing it.
-    expect(roleIds).toHaveLength(41)
+  it('ships 51 roles across five groups', () => {
+    // 39 + status.info.surface + status.info.content (Info had a full ramp
+    // and zero roles referencing it) + the alpha-backed set (see
+    // design-plans/alpha-primitives.md): six action.ghost.* split by intent
+    // (neutral/brand/danger × hover/pressed), three border.ring.* focus
+    // halos, and border.rim-highlight.
+    expect(roleIds).toHaveLength(51)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -172,7 +177,10 @@ describe('status.info — no longer orphaned', () => {
   it('references the info family, matching the shape of the other three severities', () => {
     const infoSurface = view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === 'info.surface')
     const infoContent = view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === 'info.content')
-    expect(infoSurface?.modes.light.label).toBe('info.3')
+    // The surface is the ALPHA twin — every status tint is a wash now, so a
+    // banner keeps its severity colour inside a card, not just on the page.
+    // The ink stays a solid tone: ink is never a wash.
+    expect(infoSurface?.modes.light.label).toBe('info-a.3')
     expect(infoContent?.modes.light.label).toBe('info.11')
     expect(infoContent?.modes.dark.label).toBe('info.11')
   })
@@ -212,7 +220,10 @@ describe('generateTokenJSON is the live-sync payload the plugin GETs', () => {
       const [group, ...rest] = id.split('.')
       const key = rest.join('.')
       const light = arch.tokens[group]?.[key]?.light
-      expect(light, id).toMatch(/^(#[0-9a-fA-F]{6}|\{[a-z0-9-]+\.\d+\})$/)
+      // 8-digit hex is a legitimate resolved value now too — `surface.overlay`
+      // resolves through an alpha primitive (`{black-a.8}`), a genuinely
+      // translucent scrim rather than the opaque near-black it used to be.
+      expect(light, id).toMatch(/^(#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?|\{[a-z0-9-]+\.\d+\})$/)
     }
   })
 })
@@ -224,6 +235,8 @@ describe('projectArchitecture keeps nested override ids', () => {
     themePalettes: {},
     scales: system.scales,
     accent: system.accent,
+    pageBackground: system.lightBg,
+    darkBackground: system.darkBg,
   } as never
 
   it('applies action.primary.default instead of truncating at primary', () => {

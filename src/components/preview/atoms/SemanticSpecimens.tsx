@@ -380,6 +380,15 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const neutral = s('background-secondary', ['action.secondary.default', 'action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
   const secondary = s('background-brand-primary', ['action.secondary.accent', 'action.secondary', 'accent.muted'], t.neutralFill)
   const disabled = s('action-disabled', ['action.disabled', 'background.muted', 'muted.fill'], t.disabledBg)
+  // No flat-catalogue equivalent — these only exist in Categorical (see
+  // design-plans/alpha-primitives.md), so the flatKey is a label only, never
+  // actually looked up while `t.archTokens` is populated (always, in
+  // practice — see CLAUDE.md's About-tab/architecture notes). Shown one per
+  // INTENT rather than all six: hover carries the colour difference that
+  // matters here, and six near-identical washes would read as noise.
+  const ghostNeutral = s('action-ghost-neutral', ['action.ghost.neutral.hover'], t.neutralFill)
+  const ghostBrand = s('action-ghost-brand', ['action.ghost.brand.hover'], t.neutralFill)
+  const ghostDanger = s('action-ghost-danger', ['action.ghost.danger.hover'], t.neutralFill)
   const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
@@ -422,6 +431,18 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
           </Row>
           <Row t={t} slot={stroke} onEdit={onEditToken}>
             <Btn bg="transparent" fg={labelInk.css} bd={stroke.css}>Outline</Btn>
+          </Row>
+          {/* A ghost button has no fill of its own, so the swatch worth
+              showing is the WASH — alpha primitives, not solid tones. One per
+              intent, all at hover, so the three read as a set. */}
+          <Row t={t} slot={ghostNeutral} onEdit={onEditToken}>
+            <Btn bg={ghostNeutral.css} fg={labelInk.css}>Ghost neutral</Btn>
+          </Row>
+          <Row t={t} slot={ghostBrand} onEdit={onEditToken}>
+            <Btn bg={ghostBrand.css} fg={labelInk.css}>Ghost brand</Btn>
+          </Row>
+          <Row t={t} slot={ghostDanger} onEdit={onEditToken}>
+            <Btn bg={ghostDanger.css} fg={labelInk.css}>Ghost danger</Btn>
           </Row>
           <Row t={t} slot={disabled} onEdit={onEditToken}>
             <Btn bg={disabled.css} fg={t.disabledText}>Disabled</Btn>
@@ -531,7 +552,13 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
           a dimmed layer rather than as another flat swatch. */}
       <Section t={t} title="Overlay">
         <div style={{ position: 'relative', borderRadius: radiusOf(t, 'md', '8px'), overflow: 'hidden', background: layer1.css, height: 108 }}>
-          <div style={{ position: 'absolute', inset: 0, background: overlay.css, opacity: 0.55 }} />
+          {/* No hardcoded opacity here any more — `surface.overlay` resolves to
+              a genuinely translucent alpha primitive now (`{black-a.8}`), so a
+              bolted-on `opacity` would double-apply transparency on top of the
+              token's own. Before the alpha-primitives fix this token was
+              opaque (`{neutral.12}`), and 0.55 was the only thing making this
+              demo read as a scrim at all. */}
+          <div style={{ position: 'absolute', inset: 0, background: overlay.css }} />
           <div
             style={{
               position: 'absolute', left: 14, right: 14, top: 20,
@@ -701,15 +728,21 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const accent = s('border-brand', ['border.accent', 'border.ring'], t.brandSolid)
   const active = s('border-brand', ['border.focus', 'border.active', 'border.ring'], t.brandSolid)
   const critical = s('border-error', ['border.critical', 'destructive.fill'], t.errorColor)
+  // The focus HALO — a real token now, where this used to append a raw `33`
+  // (20%) to whatever the border resolved to. Same class of hack as
+  // ButtonSpecimen's old `color + '33'`: it only works if the border happens
+  // to be a clean 6-digit hex, and it went through no named step at all.
+  const ring = s('border-focus-ring', ['border.ring.default'], t.brandSolid)
+  const ringCritical = s('border-focus-ring-critical', ['border.ring.critical'], t.errorColor)
   const r = radiusOf(t, 'md', '8px')
 
-  const Field = ({ slot, text, ring }: { slot: Slot; text: string; ring?: boolean }) => (
-    <Row t={t} slot={slot} onEdit={onEditToken}>
+  const Field = ({ slot, text, ringSlot }: { slot: Slot; text: string; ringSlot?: Slot }) => (
+    <Row t={t} slot={ringSlot ?? slot} onEdit={onEditToken}>
       <span
         style={{
           display: 'inline-flex', alignItems: 'center', height: 34, minWidth: 150, padding: '0 12px',
           borderRadius: r, border: `1px solid ${slot.css}`,
-          boxShadow: ring ? `0 0 0 3px ${slot.css}33` : undefined,
+          boxShadow: ringSlot ? `0 0 0 3px ${ringSlot.css}` : undefined,
           ...typeOf(t, 'placeholder'), color: t.placeholderText || t.fgMuted,
         }}
       >
@@ -729,8 +762,11 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Inputs">
         <div className="flex flex-col gap-2">
           <Field slot={def} text="Default" />
-          <Field slot={active} text="Focused" ring />
+          <Field slot={active} text="Focused" ringSlot={ring} />
           <Field slot={critical} text="Invalid" />
+          {/* The severity halo: the solid boundary stays the field's own
+              `border.critical`, the glow around it matches. */}
+          <Field slot={critical} text="Invalid + focused" ringSlot={ringCritical} />
         </div>
       </Section>
 

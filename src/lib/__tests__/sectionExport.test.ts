@@ -58,9 +58,36 @@ describe('buildSectionExport color markdown ↔ tokens.json', () => {
     } as never)
   }
 
-  /** Primitive token names from the Markdown tables above the Semantic block. */
+  /** Primitive-table row NAMES from the Markdown, above the Semantic block —
+   *  every row is a hex value (opaque OR translucent), so classification below
+   *  goes by NAME shape, not by whether the hex happens to carry an alpha
+   *  channel: an alpha twin whose solved opacity rounds to 100% renders as a
+   *  plain 6-digit hex, indistinguishable by value from a solid tone. */
+  function mdPrimitiveRowNames(md: string): string[] {
+    return [...md.split('### Semantic')[0].matchAll(/^\| `([a-z0-9-]+)` \| `#/gm)].map((m) => m[1])
+  }
+  /** `<fam>-a-<tone>` / `<fam>-a-dark-<tone>` / `black-a-<tone>` / `white-a-<tone>` —
+   *  the shapes `colorFamilies` mints for an alpha row. The `-a`/`-a-dark`
+   *  infix only exists so an alpha row can't collide with its own solid row in
+   *  one flat MD document; tokenGenerator keeps alpha in a separate JSON
+   *  bucket and never needed it. */
+  const ALPHA_ROW = /^(?:black-a|white-a)-\d+$|^.+-a-dark-\d+$|^.+-a-\d+$/
+  /** Primitive token names from the Markdown tables above the Semantic block
+   *  (solid rows only). */
   function mdPrimitives(md: string): Set<string> {
-    return new Set([...md.split('### Semantic')[0].matchAll(/^\| `([a-z0-9-]+)` \| `#/gm)].map((m) => m[1]))
+    return new Set(mdPrimitiveRowNames(md).filter((n) => !ALPHA_ROW.test(n)))
+  }
+  /** Alpha rows, mapped back to their `primitiveAlpha` bucket key. */
+  function mdAlphaAsPrimitiveAlphaKeys(md: string): Set<string> {
+    const toKey = (name: string): string => {
+      if (name.startsWith('black-a-') || name.startsWith('white-a-')) return name
+      const dark = /^(.+)-a-dark-(\d+)$/.exec(name)
+      if (dark) return `${dark[1]}-dark-${dark[2]}`
+      const light = /^(.+)-a-(\d+)$/.exec(name)
+      if (light) return `${light[1]}-${light[2]}`
+      return name
+    }
+    return new Set(mdPrimitiveRowNames(md).filter((n) => ALPHA_ROW.test(n)).map(toKey))
   }
 
   it('documents every primitive tokens.json ships, dark twins included', () => {
@@ -75,6 +102,23 @@ describe('buildSectionExport color markdown ↔ tokens.json', () => {
     expect([...mdPrimitives(md)].filter((t) => !shipped.has(t))).toEqual([])
     expect(mdPrimitives(md).has('accent-dark-9')).toBe(true)
     expect(mdPrimitives(md).has('teal-dark-9')).toBe(true)
+  })
+
+  it('documents every alpha primitive tokens.json ships, dark twins included', () => {
+    seedTwoAppearanceSystem()
+    const store = useDesignStore.getState()
+    const md = buildSectionExport('color', 'md', 'hex', {
+      modes: store.themeOrder.filter((t) => store.themes[t]),
+    })
+    const shippedAlpha = new Set(Object.keys(generateTokenJSON().colors.primitiveAlpha))
+    const mdAlpha = mdAlphaAsPrimitiveAlphaKeys(md)
+
+    expect([...shippedAlpha].filter((t) => !mdAlpha.has(t))).toEqual([])
+    expect([...mdAlpha].filter((t) => !shippedAlpha.has(t))).toEqual([])
+    expect(mdAlpha.has('accent-dark-9')).toBe(true)
+    expect(mdAlpha.has('teal-dark-9')).toBe(true)
+    expect(mdAlpha.has('black-a-8')).toBe(true)
+    expect(mdAlpha.has('white-a-8')).toBe(true)
   })
 
   it('adds no dark twin to a system that has no dark theme', () => {

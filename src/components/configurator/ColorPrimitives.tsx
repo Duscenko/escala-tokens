@@ -953,10 +953,45 @@ export default function ColorPrimitives({
       solidLight: primaryScale, solidDark: primaryDarkScale,
     },
     { key: 'neutral', label: 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,    setLight: setGrayLightScale, setDark: setGrayDarkScale },
+    {
+      key: 'neutral-alpha', label: 'Neutral-Alpha', tokenPrefix: 'neutral-a', base: grayBaseColor,
+      light: generateAlphaScale(grayLightScale, pageBackground, 'light'),
+      dark: generateAlphaScale(grayDarkScale, darkBackground, 'dark'),
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: grayLightScale, solidDark: grayDarkScale,
+    },
     { key: 'error',   label: 'Error',   tokenPrefix: 'error',   base: errorColor,    light: errorScale,     dark: errorDarkScale,   setLight: setErrorScale,     setDark: setErrorDarkScale },
+    {
+      key: 'error-alpha', label: 'Error-Alpha', tokenPrefix: 'error-a', base: errorColor,
+      light: generateAlphaScale(errorScale, pageBackground, 'light'),
+      dark: generateAlphaScale(errorDarkScale, darkBackground, 'dark'),
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: errorScale, solidDark: errorDarkScale,
+    },
     { key: 'success', label: 'Success', tokenPrefix: 'success', base: successColor,  light: successScale,   dark: successDarkScale, setLight: setSuccessScale,   setDark: setSuccessDarkScale },
+    {
+      key: 'success-alpha', label: 'Success-Alpha', tokenPrefix: 'success-a', base: successColor,
+      light: generateAlphaScale(successScale, pageBackground, 'light'),
+      dark: generateAlphaScale(successDarkScale, darkBackground, 'dark'),
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: successScale, solidDark: successDarkScale,
+    },
     { key: 'warning', label: 'Warning', tokenPrefix: 'warning', base: warningColor,  light: warningScale,   dark: warningDarkScale, setLight: setWarningScale,   setDark: setWarningDarkScale },
+    {
+      key: 'warning-alpha', label: 'Warning-Alpha', tokenPrefix: 'warning-a', base: warningColor,
+      light: generateAlphaScale(warningScale, pageBackground, 'light'),
+      dark: generateAlphaScale(warningDarkScale, darkBackground, 'dark'),
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: warningScale, solidDark: warningDarkScale,
+    },
     { key: 'info',    label: 'Info',    tokenPrefix: 'info',    base: infoColor,     light: infoScale,      dark: infoDarkScale,    setLight: setInfoScale,      setDark: setInfoDarkScale },
+    {
+      key: 'info-alpha', label: 'Info-Alpha', tokenPrefix: 'info-a', base: infoColor,
+      light: generateAlphaScale(infoScale, pageBackground, 'light'),
+      dark: generateAlphaScale(infoDarkScale, darkBackground, 'dark'),
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+      solidLight: infoScale, solidDark: infoDarkScale,
+    },
     // A custom family that some theme reads as its BRAND gets an alpha twin
     // right after it, exactly like the global Accent does — a theme's accent
     // needs its overlay ramp as much as the default one. Built adjacent so the
@@ -1019,7 +1054,7 @@ export default function ColorPrimitives({
     (f: Family): { folder: string; group: FamilyGroup } => {
       // Globals — one palette, read by both built-in modes.
       if (f.key === 'accent' || f.key === 'accent-alpha') return { folder: BASE_FOLDER, group: 'Accents' }
-      if (f.key === 'neutral') return { folder: BASE_FOLDER, group: 'Neutrals' }
+      if (f.key === 'neutral' || f.key === 'neutral-alpha') return { folder: BASE_FOLDER, group: 'Neutrals' }
       const custKey = f.customKey ?? f.alphaOf
       if (!custKey) return { folder: BASE_FOLDER, group: 'States' }
       // Custom family — homed to the first theme that references it, under the

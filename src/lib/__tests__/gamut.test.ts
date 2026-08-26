@@ -2,8 +2,29 @@ import { describe, expect, it } from 'vitest'
 import chroma from 'chroma-js'
 import {
   hexToOklch, oklchToHex, oklchToHexClipped, gamutMapSrgb,
-  inSrgbGamut, oklabToOklch, oklchToOklab, deltaEOK,
+  inSrgbGamut, oklabToOklch, oklchToOklab, deltaEOK, hexToLinearRgb,
 } from '../color/gamut'
+
+// A translucent hex used to have its alpha channel silently dropped — the
+// colour would be decoded as if it were opaque, with no error. That was
+// harmless before alpha primitives (`accent-a-*`, `black-a-*`, …) existed;
+// afterward, it would let a translucent token quietly pass the CVD gate (or
+// any ΔE comparison) against the wrong colour. See design-plans/alpha-primitives.md.
+describe('hexToLinearRgb rejects translucent input', () => {
+  it('throws on a real alpha channel (8-digit and 4-digit short form)', () => {
+    expect(() => hexToLinearRgb('#00000099')).toThrow(/translucent/)
+    expect(() => hexToLinearRgb('#0009')).toThrow(/translucent/)
+  })
+
+  it('lets fully-opaque alpha through unchanged', () => {
+    expect(hexToLinearRgb('#000000ff')).toEqual(hexToLinearRgb('#000000'))
+    expect(hexToLinearRgb('#000f')).toEqual(hexToLinearRgb('#000000'))
+  })
+
+  it('still rejects a genuinely malformed hex', () => {
+    expect(() => hexToLinearRgb('not-a-color')).toThrow(/not an sRGB hex color/)
+  })
+})
 
 describe('OKLab round-trip', () => {
   it('hex → OKLCH → hex is lossless for in-gamut colors', () => {

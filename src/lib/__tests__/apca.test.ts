@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { APCAcontrast, sRGBtoY } from 'apca-w3'
 import { colorParsley } from 'colorparsley'
-import { apcaLc, wcagRatio, evaluate } from '../color/apca'
+import { apcaLc, wcagRatio, evaluate, apcaY } from '../color/apca'
 
 /**
  * Two layers of verification:
@@ -93,5 +93,33 @@ describe('the two metrics disagree — which is the whole point', () => {
     expect(Math.abs(v.apcaLc)).toBeLessThan(75) // APCA says: not body copy
     expect(v.passesApca).toBe(false)
     expect(v.pass).toBe(false)
+  })
+})
+
+// A translucent hex used to have its alpha channel silently dropped —
+// `apcaY`/`apcaLc`/`wcagRatio`/`evaluate` would score it as if it were
+// opaque, with no error. That was harmless before alpha primitives
+// (`accent-a-*`, `black-a-*`, …) existed; it stopped being harmless the
+// moment one could reach this code with no composited backdrop — including
+// via the `check_contrast` MCP tool, which takes arbitrary strings from
+// whoever is calling it. See design-plans/alpha-primitives.md.
+describe('translucent input is rejected, not silently treated as opaque', () => {
+  it('apcaY throws on a real alpha channel (8-digit and 4-digit short form)', () => {
+    expect(() => apcaY('#00000099')).toThrow(/translucent/)
+    expect(() => apcaY('#0009')).toThrow(/translucent/)
+  })
+
+  it('wcagRatio and evaluate throw the same way', () => {
+    expect(() => wcagRatio('#00000099', '#ffffff')).toThrow(/translucent/)
+    expect(() => evaluate('#00000099', '#ffffff', 'body-text')).toThrow(/translucent/)
+  })
+
+  it('lets fully-opaque alpha through unchanged', () => {
+    expect(apcaY('#000000ff')).toBe(apcaY('#000000'))
+    expect(apcaY('#000f')).toBe(apcaY('#000000'))
+  })
+
+  it('still rejects a genuinely malformed hex', () => {
+    expect(() => apcaY('not-a-color')).toThrow(/not an sRGB hex color/)
   })
 })

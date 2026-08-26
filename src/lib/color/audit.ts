@@ -22,6 +22,7 @@ import {
   neutralFromBrand,
   recommendStateColors,
   DEFAULT_NEUTRAL_TINT,
+  compositeOver,
   type ColorAlgorithm,
 } from '../colorUtils'
 import {
@@ -145,7 +146,15 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 //
 // Each entry: foreground token, the background it is READ ON, and its intent.
 // `group.key` addressing matches the projection tables.
-type Pairing = { fg: string; bg: string; intent: IntentClass }
+// `backdrop` is what a TRANSLUCENT `bg` composites over before it's measured
+// — a wash has no colour of its own until something is behind it. Defaults to
+// `surface.page` (a status banner or selected row sits on the page unless
+// stated otherwise); name a different role for one that lives inside a card.
+// Ignored when `bg` is opaque, so every pre-alpha pairing is untouched.
+type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string }
+
+const OPAQUE_HEX = /^#[0-9a-f]{6}$/i
+const TRANSLUCENT_HEX = /^#[0-9a-f]{8}$/i
 
 export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> = {
   categorical: [
@@ -198,6 +207,8 @@ function projectionInputFor(sys: System): ProjectionInput {
     themePalettes: {},
     scales: sys.scales,
     accent: sys.accent,
+    pageBackground: sys.lightBg,
+    darkBackground: sys.darkBg,
   }
 }
 
@@ -223,8 +234,35 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
   for (const theme of view.modeKeys as ('light' | 'dark')[]) {
     for (const p of pairings) {
       const fg = resolved.get(p.fg)?.[theme]
-      const bg = resolved.get(p.bg)?.[theme]
-      if (!fg || !bg || !/^#[0-9a-f]{6}$/i.test(fg) || !/^#[0-9a-f]{6}$/i.test(bg)) continue
+      const rawBg = resolved.get(p.bg)?.[theme]
+      if (!fg || !rawBg) continue
+
+      // COMPOSITE before measuring. A translucent background used to hit the
+      // `continue` below and vanish from the matrix entirely — a silent hole
+      // that would have grown with every alpha-backed role. Now a wash is
+      // resolved against its declared backdrop and audited like any other
+      // colour; only a genuinely unresolvable value is skipped.
+      let bg = rawBg
+      if (TRANSLUCENT_HEX.test(rawBg)) {
+        const backdropRole = p.backdrop ?? 'surface.page'
+        const backdrop = resolved.get(backdropRole)?.[theme]
+        if (!backdrop || !OPAQUE_HEX.test(backdrop)) {
+          throw new Error(
+            `audit: ${p.bg} is translucent in ${theme} and its backdrop "${backdropRole}" did not resolve to an opaque colour — a wash cannot be measured without one.`,
+          )
+        }
+        bg = compositeOver(rawBg, backdrop)
+      }
+      // A translucent FOREGROUND is always a modelling error: ink is never a
+      // wash. Loud, because the alternative is a contrast number scored
+      // against a colour nothing will ever render.
+      if (!OPAQUE_HEX.test(fg)) {
+        if (TRANSLUCENT_HEX.test(fg)) {
+          throw new Error(`audit: ${p.fg} resolved translucent (${fg}) in ${theme} — a foreground must be opaque.`)
+        }
+        continue
+      }
+      if (!OPAQUE_HEX.test(bg)) continue
       const v = evaluate(fg, bg, p.intent)
       out.push({
         architecture: arch, system: sys.name, theme, role: p.fg, against: p.bg,

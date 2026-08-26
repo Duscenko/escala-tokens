@@ -10,6 +10,8 @@ const SPECIMEN_ARCH_IDS = [
   'content.on-action', 'content.link.default', 'content.link.hover',
   'action.primary.default', 'action.primary.hover', 'action.primary.pressed',
   'action.secondary.default', 'action.secondary.accent', 'action.disabled',
+  'action.ghost.neutral.hover', 'action.ghost.brand.hover', 'action.ghost.danger.hover',
+  'border.ring.default', 'border.ring.critical',
   'surface.page', 'surface.layer-1', 'surface.layer-2', 'surface.input', 'surface.selected',
   'surface.accent', 'surface.inverse', 'surface.overlay',
   'status.critical.surface', 'status.critical.content', 'status.critical.surface-solid', 'status.critical.on-solid',
@@ -90,6 +92,7 @@ describe('semantic preview wiring', () => {
   const view = buildArchitectureView('categorical', {
     themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
     scales: system.scales, accent: system.accent,
+    pageBackground: system.lightBg, darkBackground: system.darkBg,
   } as never, system.errorSeed)!
   const roleIds = new Set(view.categories.flatMap((c) => c.tokens.map((t) => `${c.key}.${t.key}`)))
 
@@ -115,7 +118,9 @@ describe('semantic preview wiring', () => {
         const arch = tokens.archTokens!
         for (const id of SPECIMEN_ARCH_IDS) {
           if (id.startsWith('icon.')) continue
-          expect(arch[id], id).toMatch(/^#[0-9a-f]{6}$/i)
+          // 8-digit (translucent) hex is real too — surface.overlay resolves
+          // through an alpha primitive (`{black-a.8}`) now, not an opaque tone.
+          expect(arch[id], id).toMatch(/^#[0-9a-f]{6}([0-9a-f]{2})?$/i)
         }
       })
 

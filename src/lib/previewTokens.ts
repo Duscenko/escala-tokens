@@ -165,6 +165,8 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
         themePalettes: pal ? { [themeKey]: pal } : {},
         scales: globalScales,
         accent: primaryColor,
+        pageBackground: store.pageBackground,
+        darkBackground: store.darkBackground,
       },
       errorColor,
       store.architectureOverrides?.[arch] ?? {},

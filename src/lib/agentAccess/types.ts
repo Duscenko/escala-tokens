@@ -35,7 +35,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   {
     name: 'resolve_token',
     description:
-      'Resolve one token to Figma name, CSS var(), and values (hex per theme, or px). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), or primitive keys (accent-6).',
+      'Resolve one token to Figma name, CSS var(), and values (hex per theme, or px). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), or alpha primitives (accent-a-3, black-a-8). A semantic value may come back as 8-digit #rrggbbaa — 16 roles resolve to a translucent primitive.',
     inputSchema: {
       type: 'object',
       properties: {
