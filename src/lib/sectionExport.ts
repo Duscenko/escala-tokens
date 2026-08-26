@@ -3,12 +3,13 @@
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
 import chroma from 'chroma-js'
-import { toneLabel } from './colorUtils'
+import { toneLabel, darkShadowMap } from './colorUtils'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
 import { mdCell } from './utils'
+import { gradientToCss, gradientSlug } from './gradients'
 import {
   buildArchitectureView,
   CATEGORICAL_ROLE_COMMENTS,
@@ -31,11 +32,15 @@ import {
 type Store = ReturnType<typeof useDesignStore.getState>
 
 export type SectionKey =
-  | 'color' | 'typography' | 'radius' | 'spacing'
+  | 'color' | 'gradients' | 'typography' | 'radius' | 'spacing'
   | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
 
-// Order used when assembling the full-system ("all") export.
-export const ALL_SECTIONS: SectionKey[] = ['color', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons']
+// Order used when assembling the full-system ("all") export. Gradients sit
+// right after Color — they're built FROM the accent ramp (linked stops
+// reference `primaryScale`/`primaryDarkScale` by tone), so they read as a
+// continuation of the same foundation rather than an unrelated one dropped
+// in alphabetically.
+export const ALL_SECTIONS: SectionKey[] = ['color', 'gradients', 'typography', 'spacing', 'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons']
 
 export type ExportFormat = 'css' | 'tailwind' | 'tokens' | 'md'
 export type ColorFormat = 'hex' | 'rgba' | 'hsl' | 'oklch'
@@ -112,10 +117,25 @@ export interface SectionExportOptions {
   /** Family keys to keep (`accent`, `neutral`, a custom family's key…).
    *  Omitted = every family, i.e. the pre-existing behaviour. */
   families?: string[]
-  /** Which appearance's ramps ship. Omitted = the light ones (what this module
-   *  has always exported). 'dark' swaps in each family's dark twin under its
-   *  EXPORTED name (`accent-dark-*`), matching tokenGenerator — a per-column
-   *  quick export from the Primitives table ships exactly one appearance. */
+  /** Which appearance's ramps ship. An explicit 'light'/'dark' ships EXACTLY
+   *  that one, under its exported name (`accent-*` / `accent-dark-*`) — the
+   *  per-column quick export from the Primitives table is one appearance by
+   *  definition, so it says which.
+   *
+   *  OMITTED means UNSCOPED, and unscoped now means BOTH: light ramps followed
+   *  by the dark twins, gated on the system actually having a dark-kind theme
+   *  — the identical `hasDarkTheme` rule `tokenGenerator` uses. It used to
+   *  mean "light only", which made this module the one renderer that
+   *  disagreed with the tokens.json beside it: measured on a 7-family system
+   *  with light+dark themes, the `.MD` pane shipped 7 ramps (84 tokens) while
+   *  tokens.json shipped 14 (168) — every `accent-dark-*`, `neutral-dark-*`
+   *  and custom `-dark` twin silently absent from a file whose own header
+   *  says "use these tokens verbatim". Same class as the `modes` bug below,
+   *  one layer down: that one dropped the dark THEME's semantics, this one
+   *  dropped the dark PRIMITIVES they alias.
+   *
+   *  A light-only system is byte-identical to before — there are no twins to
+   *  add, so nothing about that output changes. */
   appearance?: 'light' | 'dark'
   /** Whether the semantic block ships alongside the primitives. Omitted = yes.
    *  The wizard passes `false` when the run picked Primitives but not
@@ -138,24 +158,42 @@ export interface SectionExportOptions {
  *  Family names match tokens.json (`accent`/`neutral` — the plugin contract),
  *  so every export surface speaks the same vocabulary. */
 function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, Record<number, string>][] {
-  const dark = opts.appearance === 'dark'
   // Name and scale move together: the dark twin exports as `accent-dark-*`,
   // exactly what tokenGenerator emits, so a scoped slice still names the same
   // tokens as tokens.json. `families` always matches on the FAMILY (`accent`),
   // never on the suffixed name.
-  const fams: [string, string, Record<number, string> | undefined][] = [
-    ['accent', 'accent-dark', dark ? store.primaryDarkScale : store.primaryScale],
-    ['neutral', 'neutral-dark', dark ? store.grayDarkScale : store.grayLightScale],
-    ['error', 'error-dark', dark ? store.errorDarkScale : store.errorScale],
-    ['warning', 'warning-dark', dark ? store.warningDarkScale : store.warningScale],
-    ['success', 'success-dark', dark ? store.successDarkScale : store.successScale],
-    ['info', 'info-dark', dark ? store.infoDarkScale : store.infoScale],
-    ...store.customColors.map((c): [string, string, Record<number, string> | undefined] =>
-      [c.key, `${c.key}-dark`, dark ? c.darkScale : c.scale]),
-  ]
-  return fams
-    .filter(([family, , scale]) => scale && Object.keys(scale).length && (!opts.families || opts.families.includes(family)))
-    .map(([family, darkName, scale]) => [dark ? darkName : family, scale!])
+  type Fam = { family: string; light?: Record<number, string>; dark?: Record<number, string> }
+  const fams: Fam[] = [
+    { family: 'accent', light: store.primaryScale, dark: store.primaryDarkScale },
+    { family: 'neutral', light: store.grayLightScale, dark: store.grayDarkScale },
+    { family: 'error', light: store.errorScale, dark: store.errorDarkScale },
+    { family: 'warning', light: store.warningScale, dark: store.warningDarkScale },
+    { family: 'success', light: store.successScale, dark: store.successDarkScale },
+    { family: 'info', light: store.infoScale, dark: store.infoDarkScale },
+    ...store.customColors.map((c): Fam => ({ family: c.key, light: c.scale, dark: c.darkScale })),
+  ].filter((f) => !opts.families || opts.families.includes(f.family))
+
+  const filled = (s?: Record<number, string>) => Boolean(s && Object.keys(s).length)
+
+  // One explicit appearance — the per-column quick export. Unchanged.
+  if (opts.appearance) {
+    const dark = opts.appearance === 'dark'
+    return fams
+      .filter((f) => filled(dark ? f.dark : f.light))
+      .map((f) => [dark ? `${f.family}-dark` : f.family, (dark ? f.dark : f.light)!])
+  }
+
+  // Unscoped — every light ramp, then every dark twin, but only for a system
+  // that HAS a dark-kind theme. That gate is `tokenGenerator`'s own, read from
+  // the shared `themeContextFromStore` rather than re-derived here, so the two
+  // can't drift on which twins exist.
+  const out: [string, Record<number, string>][] = fams
+    .filter((f) => filled(f.light))
+    .map((f) => [f.family, f.light!])
+  if (themeContextFromStore(store).hasDarkTheme) {
+    fams.filter((f) => filled(f.dark)).forEach((f) => out.push([`${f.family}-dark`, f.dark!]))
+  }
+  return out
 }
 
 const sortedEntries = (o: Record<string, string>) =>
@@ -207,6 +245,13 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     ]
     if (store.customIcons.length) lines.push(`/* Custom icons: ${store.customIcons.map((i) => i.name).join(', ')} */`)
     return lines
+  }
+  if (section === 'gradients') {
+    // Light-only here, matching every other section's per-slice `css` output
+    // (shadow's dark twin is likewise absent from THIS format) — the `.dark`
+    // selector override lives in the whole-system `exporters.ts` build, not
+    // this per-section/AI-context utility.
+    return store.gradients.map((g) => `--gradient-${gradientSlug(g)}: ${gradientToCss(g)};`)
   }
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
@@ -294,6 +339,11 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     }
   }
   if (section === 'icons') return {}
+  if (section === 'gradients') {
+    // `backgroundImage` is Tailwind's real theme key for named gradients —
+    // this mints usable `bg-<slug>` utilities, not a placeholder comment.
+    return { backgroundImage: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])) }
+  }
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
     const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
@@ -327,6 +377,7 @@ function tokensFor(section: SectionKey): unknown {
   const full = generateTokenJSON()
   switch (section) {
     case 'color': return { colors: full.colors }
+    case 'gradients': return { gradients: full.gradients, gradientsDark: full.gradientsDark, gradientAssignments: full.gradientAssignments }
     case 'typography': return { typography: full.typography }
     case 'spacing': return { spacing: full.spacing, spacingRoles: full.spacingRoles, padding: full.padding }
     case 'radius': return { radius: full.radius, radiusRoles: full.radiusRoles }
@@ -493,6 +544,33 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       : ''
     return `${ctx.markdown}${extra}`
   }
+  if (section === 'gradients') {
+    const gradients = store.gradients
+    if (!gradients.length) return '## Gradients\n\n_No gradients defined._'
+    const slugById = (id: string | null) => {
+      const g = gradients.find((x) => x.id === id)
+      return g ? gradientSlug(g) : null
+    }
+    const cover = slugById(store.gradientAssignments.cover)
+    const avatar = slugById(store.gradientAssignments.avatar)
+    const assigned = [
+      cover ? `card cover → \`--gradient-${cover}\`` : null,
+      avatar ? `avatars → \`--gradient-${avatar}\`` : null,
+    ].filter(Boolean).join(', ') || '_none_'
+    return [
+      '## Gradients\n',
+      table(
+        ['Token', 'Type', 'Light', 'Dark'],
+        gradients.map((g) => [
+          `\`--gradient-${gradientSlug(g)}\``,
+          g.type,
+          `\`${gradientToCss(g)}\``,
+          g.stops.some((s) => s.darkColor) ? `\`${gradientToCss(g, 'dark')}\`` : '—',
+        ]),
+      ),
+      `\nAssigned surfaces: ${assigned}.`,
+    ].join('\n')
+  }
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
     const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
@@ -546,6 +624,22 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       `\n### Surface padding\n`,
       table(['Token', 'Value'], Object.entries(store.padding ?? {}).map(([k, v]) => [`\`--padding-${k}\``, `\`${v}\``])),
     )
+  }
+  // The elevation ramp has a DERIVED dark twin (`shadowsDark` in tokens.json,
+  // `.dark` in the CSS) — one value provably cannot serve both appearances, a
+  // black shadow on a near-black page moves the pixel by 0.36 of one 8-bit
+  // level. The Markdown listed the light ramp alone, so a reader (or an agent
+  // told to "use these tokens verbatim") had no dark elevation to reach for.
+  // Same gate as the primitive twins above: only where a dark theme exists.
+  if (section === 'shadow' && themeContextFromStore(store).hasDarkTheme) {
+    const dark = darkShadowMap(store.shadows)
+    if (Object.keys(dark).length) {
+      parts.push(
+        `\n### Dark\n`,
+        '_Derived, not a second editable ramp — re-coloured to pure black at a higher alpha plus a 1px light rim, since below a near-black page only ~5% of the luminance range is left to spend downward._\n',
+        table(['Token', 'Value'], Object.entries(dark).map(([k, v]) => [`\`--${simple.prefix}-${k}\` (\`.dark\`)`, `\`${v}\``])),
+      )
+    }
   }
   return parts.join('\n')
 }

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
   buildWizardExport, collectionMeta, primitiveFamilyMeta, isAiFormat, selectionCount,
-  WIZARD_DESTINATIONS, WIZARD_FORMAT_BADGE, wizardFormatLabel,
+  WIZARD_DESTINATIONS, WIZARD_FORMAT_BADGE, wizardFormatLabel, ALL_WIZARD_COLLECTIONS,
   type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { type ColorFormat } from '../../lib/sectionExport'
@@ -114,7 +114,7 @@ function toArrayBuffer(data: Uint8Array): ArrayBuffer {
 export default function ExportWizard({
   onClose,
   onConnectGithub,
-  initialCollections = ['primitives', 'semantics'],
+  initialCollections = ALL_WIZARD_COLLECTIONS,
 }: {
   onClose: () => void
   /** Closes the wizard and opens the dedicated GitHub connect flow — the
@@ -122,7 +122,11 @@ export default function ExportWizard({
    *  itself, so there's still only ONE GitHub-connect flow in the app. */
   onConnectGithub?: () => void
   /** Pre-checked collections — the shell passes the section you opened it from,
-   *  so "Export" from Typography starts scoped to Typography. */
+   *  so "Export" from Typography starts scoped to Typography. Opened with no
+   *  scoping (Components, Docs, the bare TopNav pill), it defaults to EVERY
+   *  foundation — a whole-system export is the more common ask than a partial
+   *  one, and starting partial silently under-shipped anyone who hit Next
+   *  without first reading the checklist. */
   initialCollections?: WizardCollection[]
 }) {
   // Subscribe so counts track edits made while the wizard is open.
@@ -335,25 +339,34 @@ export default function ExportWizard({
 
               {sourceTab === 'foundations' && (
                 <>
-                  {/* All / None — same affordance Components already has next to
-                      its search field. Foundations has no search box to share a
-                      row with, so these sit on their own, right-aligned above
-                      the checklist. */}
-                  <div className="mt-4 flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => setCollections(meta.map((c) => c.key))}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setCollections([])}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
-                    >
-                      None
-                    </button>
-                  </div>
-                  <div className="mt-1 rounded-xl border border-line bg-surface/50 p-3">
+                  {/* All / None lives INSIDE the checklist card now, paired with
+                      a count label — same header-row shape Families and
+                      Components already use just below (label left, All/None
+                      right, both inside the bordered card the list sits in).
+                      It used to float in a bare div above the card, unlabeled
+                      and structurally disconnected from what it controlled —
+                      the one instance of this pattern in the file that didn't
+                      match its own two siblings. */}
+                  <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
+                    <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">
+                        {collections.length} of {meta.length} selected
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setCollections(meta.map((c) => c.key))}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                        >
+                          All
+                        </button>
+                        <button
+                          onClick={() => setCollections([])}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex flex-col gap-0.5">
                       {meta.map((c) => {
                         const on = collections.includes(c.key)

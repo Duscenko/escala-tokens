@@ -22,12 +22,12 @@ import { buildAgentProductExport, buildSkillExport } from './skillExport'
 import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, type LayoutFamily } from './layoutTokens'
 
 export type WizardCollection =
-  | 'primitives' | 'semantics' | 'typography' | 'spacing'
+  | 'primitives' | 'semantics' | 'gradients' | 'typography' | 'spacing'
   | 'radius' | 'shadow' | 'grid' | 'sizes' | 'stroke' | 'icons'
 
 /** Every collection, in export order — also the "share the whole system" preset. */
 export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
-  'primitives', 'semantics', 'typography', 'spacing',
+  'primitives', 'semantics', 'gradients', 'typography', 'spacing',
   'radius', 'shadow', 'grid', 'sizes', 'stroke', 'icons',
 ]
 
@@ -38,7 +38,7 @@ export type WizardStructure = 'single' | 'per-collection'
  *  reuse those builders rather than growing a second renderer per format.
  *  Primitives and semantics are one 'color' section there, hence the dedupe. */
 const SECTION_OF: Record<WizardCollection, SectionKey> = {
-  primitives: 'color', semantics: 'color', typography: 'typography',
+  primitives: 'color', semantics: 'color', gradients: 'gradients', typography: 'typography',
   spacing: 'spacing', radius: 'radius',
   shadow: 'shadow', grid: 'grid', sizes: 'sizes', stroke: 'stroke', icons: 'icons',
 }
@@ -203,6 +203,7 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
   return [
     { key: 'primitives', label: 'Color · Primitives', count: Object.keys(full.colors.primitive).length },
     { key: 'semantics', label: 'Color · Semantics', count: roleCount * themeNames.length, modes: themeNames },
+    { key: 'gradients', label: 'Gradients', count: Object.keys(full.gradients).length + Object.keys(full.gradientsDark).length },
     { key: 'typography', label: 'Typography', count: typographyCount },
     { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length + Object.keys(full.spacingRoles ?? {}).length },
     { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length + Object.keys(full.radiusRoles ?? {}).length },
@@ -364,6 +365,16 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
     }
     case 'shadow':
       return Object.fromEntries(Object.entries(full.shadows).map(([k, v]) => [k, token(v, 'shadow')])) as W3CNode
+    case 'gradients': {
+      const node: Record<string, W3CNode> = {}
+      for (const [slug, css] of Object.entries(full.gradients)) {
+        const darkCss = full.gradientsDark[slug]
+        node[slug] = darkCss && darkCss !== css
+          ? { light: token(css, 'gradient'), dark: token(darkCss, 'gradient') }
+          : token(css, 'gradient')
+      }
+      return node as W3CNode
+    }
     case 'icons': {
       const node: Record<string, W3CNode> = {
         library: token(full.icons.name, 'string'),
@@ -383,7 +394,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
 
 // Root keys per collection in the W3C tree (also the per-collection filenames).
 const W3C_ROOT: Record<WizardCollection, string> = {
-  primitives: 'color', semantics: 'semantic', typography: 'typography',
+  primitives: 'color', semantics: 'semantic', gradients: 'gradient', typography: 'typography',
   spacing: 'spacing', radius: 'radius',
   shadow: 'shadow', grid: 'grid', sizes: 'size', stroke: 'stroke', icons: 'icon',
 }

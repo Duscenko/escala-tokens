@@ -21,11 +21,9 @@
     "color:report": "tsx scripts/color-report.ts",
     "gen:radix-reference": "tsx scripts/gen-radix-reference.ts",
     "gen:tailwind-reference": "tsx scripts/gen-tailwind-reference.ts",
-    "gen:carbon-reference": "tsx scripts/gen-carbon-reference.ts",
     "gen:component-color-fields": "tsx scripts/gen-component-color-fields.ts"
   },
   "dependencies": {
-    "@material/material-color-utilities": "^0.4.0",
     "@radix-ui/react-icons": "^1.3.2",
     "@radix-ui/react-slot": "^1.3.3",
     "@tailwindcss/vite": "^4.3.0",
@@ -44,8 +42,6 @@
   },
   "devDependencies": {
     "@ant-design/colors": "^8.0.1",
-    "@carbon/colors": "^11.56.0",
-    "@carbon/themes": "^11.79.0",
     "@eslint/js": "^10.0.1",
     "@radix-ui/colors": "^3.0.0",
     "@types/chroma-js": "^3.1.2",

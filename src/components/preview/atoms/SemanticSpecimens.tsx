@@ -4,9 +4,9 @@
 //
 // Two rules keep these honest:
 //  · Every colour comes from the resolved `PreviewTokens` (architecture-aware —
-//    `resolvePreviewTokens` overlays Categorical/Vibrancy/Tonal and applies
+//    `resolvePreviewTokens` overlays Categorical and applies
 //    `architectureOverrides`), never from a hardcoded hex. Editing a token
-//    repaints the specimen, in every architecture.
+//    repaints the specimen.
 //  · Every element is CAPTIONED with the token driving it, named in the active
 //    architecture's own vocabulary (`action.primary` in Categorical,
 //    `background-brand-solid` in Flat) — a preview that shows a colour without
@@ -58,25 +58,22 @@ function ContrastFlag({ fg, bg }: { fg: string; bg: string }) {
  * Resolves one role to its live colour + the name it goes by in the ACTIVE
  * architecture.
  *
- * `archIds` lists the id this slot goes by in EACH curated architecture —
- * Categorical's `category.token`, Astryx's, shadcn's — first match wins. It
- * used to be a single Categorical id, which meant the other two architectures
- * matched almost nothing: measured, Astryx resolved 5 of 28 slots and shadcn
- * 1 of 28. The rest silently fell through to the flat catalogue, so the
- * Action preview painted its Primary button from `themes['background-brand-
- * solid']` while every other accent surface in the app painted from
- * `t.brandSolid` — which `resolvePreviewTokens` had already re-mapped onto the
- * active architecture. Two different greens on screen at once, from one accent.
- * The ids don't collide across architectures (`action.*` is Categorical-only,
- * `accent.solid` Astryx-only, `primary.fill` shadcn-only), so a list is
- * unambiguous.
+ * `archIds` is the id (or ids) this slot goes by in the curated architecture —
+ * Categorical's `category.token`. It stays a LIST rather than a single string
+ * because it was one when several architectures shipped side by side, and the
+ * bug that shape exists to prevent is worth keeping cheap to re-fix: a slot
+ * that matches nothing silently falls through to the flat catalogue, which is
+ * a DIFFERENT scheme's answer. Measured when that happened, the Action preview
+ * painted its Primary button from `themes['background-brand-solid']` while
+ * every other accent surface painted from `t.brandSolid` — two different
+ * greens on screen at once, from one accent.
  *
  * `fallback` is the already-arch-resolved `PreviewTokens` field, and for a
- * NON-FLAT architecture it now beats the flat map: when the active scheme has
- * no equivalent for a slot, the flat value is a different scheme's answer and
- * reintroduces exactly the mismatch above. The flat map is only consulted when
- * the architecture IS flat, where it's the precise per-role value and the
- * coarser `t.*` field would lose detail.
+ * NON-FLAT architecture it beats the flat map for the same reason: when the
+ * active scheme has no equivalent for a slot, the flat value is a different
+ * scheme's answer and reintroduces exactly that mismatch. The flat map is only
+ * consulted when the architecture IS flat, where it's the precise per-role
+ * value and the coarser `t.*` field would lose detail.
  */
 function slotOf(t: PreviewTokens, flatKey: string, archIds: string | string[], fallback: string): Slot {
   const arch = t.archTokens
@@ -282,11 +279,10 @@ export function ContentSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 }
 
 // ── Icon — the glyph hierarchy, in the contexts icons are actually judged ────
-// Astryx ships `icon.*` as its OWN parallel hierarchy to `text.*` (icons read
-// lighter than type at the same tone, so they get their own ramp steps), which
-// had no preview at all — picking "Icon" in the nav showed the text specimen.
-// Architectures without a dedicated icon group (Categorical, flat) fall back
-// to their content inks, which is exactly what those roles mean there.
+// `icon.*` is a hierarchy parallel to `text.*` where an architecture ships one
+// (icons read lighter than type at the same tone, so they get their own ramp
+// steps). Categorical and flat have no dedicated icon group, so this falls back
+// to their content inks — which is exactly what those roles mean there.
 //
 // Every glyph comes from `TokenIcon` → `t.iconPrefix`, i.e. the library chosen
 // in Foundations · Icons — never a hand-drawn SVG — so switching the library
@@ -576,14 +572,12 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   // an honestly unreadable alert is information — it is exactly as unreadable in
   // production. `ContrastFlag` below surfaces the ratio instead.
   //
-  // The severity ink each architecture ACTUALLY uses for text on its own tint:
-  //  · Categorical ships a real one (`status.*-fg`, contrast-solved via `{ink:}`)
-  //  · Astryx/shadcn ship none — their `status.error` / `destructive.fill` is a
-  //    FILL for icons and solid buttons. Forcing it into a text slot is what
-  //    made them "fail"; those systems put neutral text on a muted tint and
-  //    spend the severity colour on the dot. So their own `text.primary` /
-  //    `base.foreground` is next in the list — honest modelling, and it passes
-  //    without any nudge.
+  // Categorical ships a REAL severity ink for text on its own tint
+  // (`status.*-fg`, contrast-solved). The extra candidates below are the
+  // muted-tint spellings kept from when other architectures shipped: a
+  // severity SOLID is a fill for icons and buttons, and forcing one into a
+  // text slot is what makes it "fail" — the honest modelling is neutral text
+  // on a muted tint with the severity colour spent on the dot.
   const criticalBg = s('background-error-primary', ['status.critical.surface', 'status.critical-bg', 'status.error-muted'], t.neutralFill)
   const warningBg = s('background-warning-primary', ['status.warning.surface', 'status.warning-bg', 'status.warning-muted'], t.neutralFill)
   const successBg = s('background-success-primary', ['status.success.surface', 'status.success-bg', 'status.success-muted'], t.neutralFill)
@@ -654,11 +648,11 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Status chips">
         <div className="flex flex-wrap items-center gap-2">
           {/* The DOT carries the severity solid, the text carries the text
-              role — which is the split those architectures actually ship, and
-              why nothing here needs a contrast fudge. On Categorical the two
-              resolve to the same token (`status.*-fg` is both), so the chip is
-              unchanged there; on Astryx/shadcn the dot keeps `status.error`
-              visible where it belongs while the label stays legible. */}
+              role — the split that keeps a chip legible without any contrast
+              fudge. On Categorical the two resolve to the same token
+              (`status.*-fg` is both), so the chip reads as one colour; the
+              split still matters for any scheme whose severity colour is a
+              fill rather than an ink. */}
           {severities.map((sev) => (
             <span
               key={sev.label}
@@ -727,10 +721,14 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   return (
     <Frame t={t}>
       {/* Borders are only judgeable on the thing they outline — a swatch of a
-          1px stroke tells you nothing about whether an input reads. */}
+          1px stroke tells you nothing about whether an input reads.
+          `border.default` is the control boundary now (WCAG 1.4.11 + APCA
+          Lc 45 — see semanticArchitectures.ts), so it's what a resting input
+          binds to; `border.strong` moved to Containers below, where it
+          actually belongs (emphasis, not the default input weight). */}
       <Section t={t} title="Inputs">
         <div className="flex flex-col gap-2">
-          <Field slot={strong} text="Default" />
+          <Field slot={def} text="Default" />
           <Field slot={active} text="Focused" ring />
           <Field slot={critical} text="Invalid" />
         </div>
@@ -741,12 +739,12 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
           <Row t={t} slot={subtle} onEdit={onEditToken}>
             <span style={{ display: 'block', width: 180, height: 1, background: subtle.css }} />
           </Row>
-          <Row t={t} slot={def} onEdit={onEditToken}>
-            <span style={{ display: 'block', width: 180, height: 1, background: def.css }} />
-          </Row>
         </div>
       </Section>
 
+      {/* Three containers, ascending weight: subtle (decorative) → accent
+          (decorative, brand-tinted) → strong (emphasis — the ONE step past
+          the control boundary, e.g. a selected card's own edge). */}
       <Section t={t} title="Containers">
         <div className="flex gap-2.5">
           <div style={{ flex: 1, minWidth: 0, border: `1px solid ${subtle.css}`, borderRadius: r, padding: 12 }}>
@@ -754,6 +752,9 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
           </div>
           <div style={{ flex: 1, minWidth: 0, border: `1px solid ${accent.css}`, borderRadius: r, padding: 12 }}>
             <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${strong.css}`, borderRadius: r, padding: 12 }}>
+            <TokenMark slot={strong} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
         </div>
       </Section>

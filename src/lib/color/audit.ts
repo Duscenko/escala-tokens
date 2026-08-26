@@ -135,11 +135,13 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 
 
 
-// ── Curated architectures ────────────────────────────────────────────────────
-// The flat ROLE_GROUPS catalogue is only one of the tables in play. Categorical,
-// Astryx and shadcn/ui each carry their OWN curated role table with explicit
+// ── Curated architecture ─────────────────────────────────────────────────────
+// The flat ROLE_GROUPS catalogue is the underlying editing model; Categorical
+// is the curated role table shipped on top of it, with explicit
 // {family.tone} refs. Auditing only the flat one would miss the fact that the
-// two disagree — which is finding H3, and the whole reason for P2.
+// two can disagree — which is finding H3, and the whole reason for P2.
+// (Astryx / shadcn / Carbon / Vibrancy / Tonal were retired — Categorical is
+// the only architecture, so this map has one entry rather than five.)
 //
 // Each entry: foreground token, the background it is READ ON, and its intent.
 // `group.key` addressing matches the projection tables.
@@ -162,17 +164,17 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
     { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'body-text' },
-    // `decorative`, not `ui-component` — deliberately. NO tone in the Radix
-    // border band (6–8) reaches WCAG 3:1 against the page in either appearance
-    // (light tops out at 3.36 on tone 8; dark at 2.39). That is structural:
-    // Radix 6–8 are subtle separators, not control boundaries. The architecture
-    // currently has NO 1.4.11-compliant border role at all — auditing this one
-    // as `ui-component` reports a failure against a job it was never given.
-    // See the "missing role" note in docs/color/IMPLEMENTATION-LOG.md.
-    { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
-    // Layout stroke — light still clears 1.4.11 at {neutral.9}; dark sits in
-    // the quiet 4–6 band by design. Control boundaries use border.focus.
-    { fg: 'border.strong',     bg: 'surface.page',    intent: 'decorative' },
+    // `ui-component`, and it MUST pass — `border.default` is the control
+    // boundary now (the border roles were split by job: decoration has no
+    // floor, the boundary targets WCAG 1.4.11 + APCA Lc 45). This entry used
+    // to be `decorative` with a note claiming "the architecture currently has
+    // NO 1.4.11-compliant border role at all"; that was true when `default`
+    // was a tone-5 hairline and is false now — light {neutral.8} = 3.26/Lc60,
+    // dark {neutral-dark.11} = 11.99/Lc75.
+    { fg: 'border.default',    bg: 'surface.page',    intent: 'ui-component' },
+    // Emphasis, one step past the boundary — audited as `ui-component` too,
+    // since anything heavier than a passing boundary passes by construction.
+    { fg: 'border.strong',     bg: 'surface.page',    intent: 'ui-component' },
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
     // signalling selected/focused/active must use border.focus, which is
@@ -185,100 +187,7 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text' },
     { fg: 'status.warning.content',  bg: 'status.warning.surface',  intent: 'large-text' },
     { fg: 'status.success.content',  bg: 'status.success.surface',  intent: 'large-text' },
-  ],
-  carbon: [
-    // Carbon's whole point: a component does not know which surface it landed
-    // on, so every foreground has to clear ALL FOUR depths. The other
-    // architectures cannot express this pairing — they have one background.
-    { fg: 'text.text-primary',   bg: 'layer.background', intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'layer.layer-01',   intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'layer.layer-02',   intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'layer.layer-03',   intent: 'body-text' },
-    { fg: 'text.text-secondary', bg: 'layer.background', intent: 'large-text' },
-    { fg: 'text.text-secondary', bg: 'layer.layer-01',   intent: 'large-text' },
-    { fg: 'text.text-secondary', bg: 'layer.layer-02',   intent: 'large-text' },
-    { fg: 'text.text-secondary', bg: 'layer.layer-03',   intent: 'large-text' },
-    // The non-essential tier — same rule as the flat catalogue.
-    { fg: 'text.text-placeholder', bg: 'layer.layer-01', intent: 'decorative' },
-    { fg: 'text.text-disabled',    bg: 'layer.layer-01', intent: 'decorative' },
-    { fg: 'icon.icon-primary',   bg: 'layer.background', intent: 'ui-component' },
-    { fg: 'icon.icon-primary',   bg: 'layer.layer-03',   intent: 'ui-component' },
-    { fg: 'icon.icon-secondary', bg: 'layer.layer-03',   intent: 'ui-component' },
-    // Control boundaries, at every depth.
-    { fg: 'border.border-strong-01', bg: 'layer.layer-01', intent: 'ui-component' },
-    { fg: 'border.border-strong-02', bg: 'layer.layer-02', intent: 'ui-component' },
-    { fg: 'border.border-strong-03', bg: 'layer.layer-03', intent: 'ui-component' },
-    { fg: 'border.border-interactive', bg: 'layer.background', intent: 'ui-component' },
-    { fg: 'interactive.focus',   bg: 'layer.background', intent: 'ui-component' },
-    // Subtle borders are separators, not control boundaries.
-    { fg: 'border.border-subtle-00', bg: 'layer.background', intent: 'decorative' },
-    { fg: 'border.border-subtle-01', bg: 'layer.layer-01',   intent: 'decorative' },
-    // `large-text`, and the reasoning is worth keeping. A button label on a
-    // LIGHT accent fill (which is what Carbon uses in its dark themes) cannot
-    // reach APCA body grade: the best ink available measures WCAG 7.53 at
-    // Lc 68.1. That is a ceiling of the fill, not a solver failure — and APCA's
-    // Bronze table does lower the bar for bold text, which button labels are.
-    //
-    // For scale: IBM's own dark `textOnColor` is #ffffff on blue-50, about
-    // 3.1:1. Ours is 7.53:1. The token is better than the reference and still
-    // honestly classified.
-    { fg: 'text.text-on-color',  bg: 'interactive.interactive', intent: 'large-text' },
-    { fg: 'icon.icon-on-color',  bg: 'interactive.interactive', intent: 'ui-component' },
-
-    // ── The rest of Carbon's core contract ────────────────────────────────
-    // Added when the architecture went from a 42-token subset to IBM's full
-    // 103-token core set. Every token below carries a real legibility
-    // obligation; the purely decorative surfaces are covered transitively by
-    // the text pairs that sit on them.
-    { fg: 'text.text-helper',    bg: 'layer.layer-01',   intent: 'large-text' },
-    { fg: 'text.text-error',     bg: 'layer.layer-01',   intent: 'body-text' },
-    { fg: 'text.text-inverse',   bg: 'layer.background-inverse', intent: 'body-text' },
-    { fg: 'icon.icon-inverse',   bg: 'layer.background-inverse', intent: 'ui-component' },
-    { fg: 'icon.icon-interactive', bg: 'layer.layer-01', intent: 'ui-component' },
-    // Text has to stay readable on the SELECTED and ACCENT surfaces too — the
-    // ones a component lands on when it is in a state, which is exactly where
-    // a depth-indexed system tends to lose contrast.
-    { fg: 'text.text-primary',   bg: 'layer.layer-selected-01', intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'layer.layer-accent-01',   intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'layer.layer-hover-01',    intent: 'body-text' },
-    { fg: 'text.text-primary',   bg: 'field.field-01',   intent: 'body-text' },
-    { fg: 'text.text-placeholder', bg: 'field.field-01', intent: 'decorative' },
-    { fg: 'text.text-primary',   bg: 'field.field-03',   intent: 'body-text' },
-    // Links: primary and secondary are body copy, visited included — Carbon
-    // distinguishes it by hue, and a hue-only distinction still has to be
-    // legible on its own.
-    { fg: 'link.link-primary',   bg: 'layer.background', intent: 'body-text' },
-    { fg: 'link.link-primary',   bg: 'layer.layer-01',   intent: 'body-text' },
-    { fg: 'link.link-secondary', bg: 'layer.background', intent: 'body-text' },
-    { fg: 'link.link-visited',   bg: 'layer.background', intent: 'body-text' },
-    { fg: 'link.link-inverse',   bg: 'layer.background-inverse', intent: 'body-text' },
-    // Status indicators are non-text UI, so 3:1 / Lc 45.
-    { fg: 'support.support-error',   bg: 'layer.layer-01', intent: 'ui-component' },
-    { fg: 'support.support-success', bg: 'layer.layer-01', intent: 'ui-component' },
-    { fg: 'support.support-warning', bg: 'layer.layer-01', intent: 'ui-component' },
-    { fg: 'support.support-info',    bg: 'layer.layer-01', intent: 'ui-component' },
-    { fg: 'interactive.focus-inverse', bg: 'layer.background-inverse', intent: 'ui-component' },
-    { fg: 'utility.toggle-off',  bg: 'layer.layer-01',   intent: 'ui-component' },
-    { fg: 'border.border-tile-01', bg: 'layer.layer-01', intent: 'decorative' },
-    { fg: 'border.border-subtle-selected-01', bg: 'layer.layer-01', intent: 'decorative' },
-  ],
-  astryx: [
-    { fg: 'text.primary',    bg: 'background.body',     intent: 'body-text' },
-    { fg: 'text.secondary',  bg: 'background.body',     intent: 'body-text' },
-    { fg: 'text.accent',     bg: 'background.body',     intent: 'body-text' },
-    { fg: 'text.disabled',   bg: 'background.body',     intent: 'decorative' },
-    { fg: 'text.primary',    bg: 'background.surface',  intent: 'body-text' },
-    { fg: 'icon.primary',    bg: 'background.body',     intent: 'ui-component' },
-    { fg: 'icon.secondary',  bg: 'background.body',     intent: 'ui-component' },
-    { fg: 'icon.accent',     bg: 'background.body',     intent: 'ui-component' },
-    { fg: 'accent.on-solid', bg: 'accent.solid',        intent: 'body-text' },
-    { fg: 'status.on-success', bg: 'status.success',    intent: 'body-text' },
-    { fg: 'status.on-error',   bg: 'status.error',      intent: 'body-text' },
-    { fg: 'status.on-warning', bg: 'status.warning',    intent: 'body-text' },
-    // Same reasoning as Categorical's border.default — see the note there.
-    { fg: 'border.default',    bg: 'background.body',   intent: 'decorative' },
-    { fg: 'border.emphasized', bg: 'background.body',   intent: 'decorative' },
-    { fg: 'border.strong',     bg: 'background.body',   intent: 'ui-component' },
+    { fg: 'status.info.content',     bg: 'status.info.surface',     intent: 'large-text' },
   ],
 }
 

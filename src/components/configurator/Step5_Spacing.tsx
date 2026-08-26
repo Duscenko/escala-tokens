@@ -105,64 +105,42 @@ export default function Step5_Spacing({ tabBar }: { tabBar?: ReactNode } = {}) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 border-r border-line flex flex-col justify-center gap-1.5 px-4 py-5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Base unit</span>
-          <RailSelect
-            value={baseUnit}
-            options={BASE_PRESETS.map((p) => ({ value: p.value, label: p.label.replace(/\s+/g, ' ') }))}
-            onChange={applyBase}
-            ariaLabel="Spacing base unit"
-            icon={<RulerIcon />}
-          />
-        </div>
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 pl-6 lg:pl-8 pr-3 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Scale</span>
-            <span className="text-[11px] font-mono text-fg-muted tabular-nums">
-              {valueOf('0')} → {valueOf('16')}
-            </span>
-          </div>
-          <div className="flex items-end gap-1.5 h-9">
-            {SPACING_STEPS.map((step) => (
-              <div
-                key={step}
-                className="flex-1 min-w-0 rounded-sm"
-                style={{
-                  height: `${Math.max((pxToNum(valueOf(step)) / maxSpacingPx) * 100, step === '0' ? 0 : 6)}%`,
-                  backgroundColor: accentColor + '88',
-                }}
-                title={`spacing-${step} — ${valueOf(step)}`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
       <VariablesTable
         title={active.label}
         searchLabel="Filter spacing tokens"
         railed
         tabBar={tabBar}
         railBody={
-          <nav aria-label="Spacing collections" className="py-1.5 px-2 flex flex-col gap-0.5">
-            {SPACING_COLLECTIONS.map((c) => {
-              const isActive = c.key === collection
-              return (
-                <button
-                  key={c.key}
-                  onClick={() => setCollection(c.key)}
-                  aria-current={isActive}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                    isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                  }`}
-                >
-                  <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
-                  <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{counts[c.key]}</span>
-                </button>
-              )
-            })}
-          </nav>
+          <>
+            <div className="flex flex-col gap-1 px-4 pt-3 pb-2.5">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Base unit</span>
+              <RailSelect
+                value={baseUnit}
+                options={BASE_PRESETS.map((p) => ({ value: p.value, label: p.label.replace(/\s+/g, ' ') }))}
+                onChange={applyBase}
+                ariaLabel="Spacing base unit"
+                icon={<RulerIcon />}
+              />
+            </div>
+            <nav aria-label="Spacing collections" className="py-1.5 px-2 flex flex-col gap-0.5 border-t border-line/60">
+              {SPACING_COLLECTIONS.map((c) => {
+                const isActive = c.key === collection
+                return (
+                  <button
+                    key={c.key}
+                    onClick={() => setCollection(c.key)}
+                    aria-current={isActive}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                      isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                    }`}
+                  >
+                    <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
+                    <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{counts[c.key]}</span>
+                  </button>
+                )
+              })}
+            </nav>
+          </>
         }
         groups={[{ valueLabel: 'Value', rows: collection === 'scale' ? scaleRows : paddingRows }]}
       />

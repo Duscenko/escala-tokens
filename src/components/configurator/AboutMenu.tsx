@@ -685,10 +685,25 @@ export function AboutHome({
           </motion.div>
         </motion.div>
 
-        {/* Drop a real workspace screenshot in here — see ImagePlaceholder's
-            own doc comment for the swap. */}
+        {/* Workspace demo. NOT 16:9 despite 1280x720 pixel dimensions — the
+            file carries a non-square sample aspect ratio (display_aspect_ratio
+            762:539, measured via ffprobe and confirmed by the browser's own
+            videoWidth/videoHeight, 1280x905), so the frame is sized to that
+            real ratio rather than the placeholder's old 16:9 guess. Autoplay
+            requires muted + playsInline (Safari/iOS policy); no native
+            controls — this reads as a passive hero demo, not something a
+            visitor operates. */}
         <div className="px-6">
-          <ImagePlaceholder label="Add a screenshot of the workspace here" className="aspect-[16/9] mb-14" />
+          <video
+            src="/video/escala-tokens-demo-lr.mp4"
+            className="w-full h-auto rounded-2xl object-cover mb-14"
+            style={{ aspectRatio: '762 / 539' }}
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="Escala Tokens workspace demo"
+          />
         </div>
 
         {/* ── Stats — real counts, not marketing round numbers ── */}

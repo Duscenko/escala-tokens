@@ -10,7 +10,7 @@ import { withAlpha, readableInk, darkShadowMap } from './colorUtils'
 import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
-import { tonalPalettes, buildArchitectureView } from './semanticArchitectures'
+import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack } from './fonts'
 import { typeStyleCss } from './typeRoles'
 import { resolveLayoutRole, extractBreakpoints, type LayoutFamily } from './layoutTokens'
@@ -202,82 +202,24 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
         put('placeholderText', 'content.subtle')
         put('disabledBg', 'action.disabled')
         put('disabledText', 'content.disabled')
-        // `PreviewTokens.border` is the component stroke (inputs, selects) —
-        // categorical `border.strong`, not the decorative `border.default`.
-        put('border', 'border.strong')
+        // `PreviewTokens.border` is the component stroke (inputs, selects), so
+        // it takes `border.default` — which IS the control boundary since the
+        // border roles were split by job (WCAG 1.4.11 + APCA Lc 45). It used
+        // to read `border.strong` back when `default` was a decorative tone-5
+        // hairline; `strong` is now the heavier EMPHASIS step above the
+        // boundary, which is not what a resting input should draw.
+        put('border', 'border.default')
         put('borderDefault', 'border.subtle')
         put('errorColor', 'status.critical.content')
         put('warningColor', 'status.warning.content')
         put('successColor', 'status.success.content')
-      } else if (arch === 'astryx') {
-        put('surface', 'background.body')
-        put('neutralFill', 'background.surface')
-        put('brandSolid', 'accent.solid')
-        put('onBrand', 'accent.on-solid')
-        put('brandText', 'text.accent')
-        put('neutralText', 'text.primary')
-        put('fgMuted', 'text.secondary')
-        put('placeholderText', 'text.disabled')
-        put('disabledBg', 'background.muted')
-        put('disabledText', 'text.disabled')
-        put('border', 'border.default')
-        put('borderDefault', 'border.emphasized')
-        put('errorColor', 'status.error')
-        put('warningColor', 'status.warning')
-        put('successColor', 'status.success')
-      } else if (arch === 'shadcn') {
-        put('surface', 'base.background')
-        put('neutralFill', 'card.fill')
-        put('brandSolid', 'primary.fill')
-        put('onBrand', 'primary.foreground')
-        put('brandText', 'primary.fill')
-        put('neutralText', 'base.foreground')
-        put('fgMuted', 'muted.foreground')
-        put('placeholderText', 'muted.foreground')
-        put('disabledBg', 'muted.fill')
-        put('disabledText', 'muted.foreground')
-        put('border', 'border.default')
-        put('borderDefault', 'border.input')
-        put('errorColor', 'destructive.fill')
+        put('infoColor', 'status.info.content')
       }
     }
   }
-
-  if (arch === 'tonal') {
-    // Material 3: the exact scheme the export ships — primary 40↔80 with paired
-    // on-colors, neutral surfaces (98↔6) + containers, neutral-variant outlines.
-    const pals = tonalPalettes(primaryColor, errorColor)
-    const P = pals.primary, N = pals.neutral, NV = pals['neutral-variant'], E = pals.error
-    tokens.surface = (dark ? N[6] : N[98]) ?? tokens.surface
-    tokens.neutralFill = (dark ? N[12] : N[94]) ?? tokens.neutralFill        // surface-container
-    tokens.brandSolid = (dark ? P[80] : P[40]) ?? tokens.brandSolid
-    tokens.onBrand = (dark ? P[20] : P[100]) ?? tokens.onBrand               // on-primary
-    tokens.brandText = (dark ? P[80] : P[40]) ?? tokens.brandText
-    tokens.neutralText = (dark ? N[90] : N[10]) ?? tokens.neutralText        // on-surface
-    tokens.fgMuted = (dark ? NV[80] : NV[30]) ?? tokens.fgMuted              // on-surface-variant
-    tokens.placeholderText = (dark ? NV[60] : NV[50]) ?? tokens.placeholderText
-    tokens.border = (dark ? NV[60] : NV[50]) ?? tokens.border                // outline
-    tokens.borderDefault = (dark ? NV[30] : NV[80]) ?? tokens.borderDefault  // outline-variant
-    tokens.errorColor = (dark ? E[80] : E[40]) ?? tokens.errorColor
-    tokens.disabledBg = (dark ? N[17] : N[92]) ?? tokens.disabledBg
-    tokens.disabledText = (dark ? N[60] : N[50]) ?? tokens.disabledText
-  } else if (arch === 'vibrancy') {
-    // Apple HIG: one ink at graded opacities instead of separate gray tones,
-    // thin alpha fills for controls, hairline alpha separators.
-    const ink = tokens.neutralText
-    const sepBase = grayScale[6] ?? tokens.border
-    const fillBase = grayScale[8] ?? tokens.border
-    tokens.fgMuted = withAlpha(ink, 0.6)            // secondary label
-    tokens.placeholderText = withAlpha(ink, 0.3)    // tertiary label
-    tokens.disabledText = withAlpha(ink, 0.3)
-    tokens.border = withAlpha(sepBase, 0.55)        // separator (strong)
-    tokens.borderDefault = withAlpha(sepBase, 0.36) // separator
-    tokens.neutralFill = withAlpha(fillBase, 0.12)  // tertiary fill
-    tokens.disabledBg = withAlpha(fillBase, 0.08)   // quaternary fill
-  }
-  // 'flat', 'categorical', 'astryx' and 'shadcn' share the same underlying tone
-  // math — the latter three are curated regroupings/renamings of it, resolved
-  // via the `put()` calls above, so the render always matches the export.
+  // 'flat' and 'categorical' share the same underlying tone math — categorical
+  // is a curated regrouping of it, resolved via the `put()` calls above, so the
+  // render always matches the export.
 
   return tokens
 }

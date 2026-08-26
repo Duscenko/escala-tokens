@@ -561,8 +561,7 @@ export default function Configurator() {
   // exactly what the chrome's accent buttons looked wrong against.
   //
   // The fill now uses `solidInkPair` on the previewed ramp — the SAME rule
-  // `{accent.solid}` resolves through in every architecture (Categorical's
-  // `action.primary`, Astryx's `accent.solid`, shadcn's `primary.fill`) and the
+  // `{accent.solid}` resolves through in Categorical (`action.primary`) and the
   // same one the flat catalogue's `background-brand-solid` anchors to. So an
   // accent-filled chrome control is the user's brand solid, hex for hex with
   // the preview. It also keeps the fill ON the anchor for most accents, because

@@ -829,7 +829,7 @@ interface DesignStore {
   renameActiveSystem: (name: string) => { ok: boolean; error?: string }
   startNewSystem: () => void
   // Put every DESIGN foundation back to its default — the purple accent, the
-  // plain light/dark theme pair, Astryx semantics, and every other foundation
+  // plain light/dark theme pair, the semantic roles, and every other foundation
   // `makeDesignDefaults` seeds — while leaving this system's IDENTITY and its
   // connections alone.
   //
@@ -1288,7 +1288,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 56,
+      version: 57,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2187,6 +2187,36 @@ export const useDesignStore = create<DesignStore>()(
           migrateGrid(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) migrateGrid(sys?.snapshot)
+          }
+        }
+        if (version < 57) {
+          // v56→v57: the retired architectures are DELETED, not just hidden.
+          // v50 already moved every stored `semanticArchitecture` to
+          // 'categorical', so no system points at one — but their
+          // `architectureOverrides` buckets survived that migration and are
+          // now references to code that no longer exists. Dropping every key
+          // but 'categorical' (and 'flat', which is still a valid value even
+          // though it has no projection) so the persisted shape matches the
+          // shipped `SemanticArchitecture` union.
+          //
+          // Token Detail edits made under Categorical are untouched — this
+          // only removes buckets that could never be read again.
+          const KEEP = new Set(['categorical', 'flat'])
+          const pruneArchOverrides = (state: any) => {
+            const all = state?.architectureOverrides
+            if (!all || typeof all !== 'object') return
+            for (const arch of Object.keys(all)) {
+              if (!KEEP.has(arch)) delete all[arch]
+            }
+            // Same reason: a stored choice pointing at a deleted architecture
+            // would render an empty table with no way back.
+            if (state.semanticArchitecture && !KEEP.has(state.semanticArchitecture)) {
+              state.semanticArchitecture = 'categorical'
+            }
+          }
+          pruneArchOverrides(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) pruneArchOverrides(sys?.snapshot)
           }
         }
         return persisted

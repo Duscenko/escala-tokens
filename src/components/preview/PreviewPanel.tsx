@@ -10,7 +10,6 @@ import { SignUpCardPreview } from './atoms/SignUpCardPreview'
 import { SEMANTIC_SPECIMENS, SEMANTIC_SPECIMEN_TITLE, SemanticGroupIndex, type SemanticFocusKey } from './atoms/SemanticSpecimens'
 import { ChromeTabBackground } from '../ui/ChromeTabShape'
 import { IconSpecimenPreview } from './atoms/IconSpecimenPreview'
-import { FontFamilyPreview } from './atoms/FontFamilyPreview'
 import { TypeRolesPreview } from './atoms/TypeRolesPreview'
 import { RadiusRolesPreview } from './atoms/RadiusRolesPreview'
 import { LayoutRolesPreview } from './atoms/LayoutRolesPreview'
@@ -459,26 +458,11 @@ export default function PreviewPanel({
         ) : categoryKey === 'color' ? (
           <ColorCollage tokens={tokens} iconPrefix={collageIconPrefix} onEditGroup={onEditColorGroup} />
         ) : categoryKey === 'typography' ? (
-          <>
-            <Group title="Button">
-              <Tile tokens={tokens}>
-                <ButtonSpec t={tokens} v={{ Style: 'Solid' }} />
-                <ButtonSpec t={tokens} v={{ Style: 'Outline' }} />
-              </Tile>
-            </Group>
-
-            <Group title="Font family">
-              <FontFamilyPreview tokens={tokens} />
-            </Group>
-
-            <Group title="Text roles">
-              <TypeRolesPreview
-                tokens={tokens}
-                focus={typeFocus && typeFocus !== 'all' ? typeFocus : 'all'}
-                onEditRole={onEditTypeRole}
-              />
-            </Group>
-          </>
+          <TypeRolesPreview
+            tokens={tokens}
+            focus={typeFocus && typeFocus !== 'all' ? typeFocus : 'all'}
+            onEditRole={onEditTypeRole}
+          />
         ) : categoryKey === 'radius' ? (
           <RadiusRolesPreview tokens={tokens} onEditRole={onEditLayoutRole} />
         ) : categoryKey === 'spacing' ? (

@@ -71,7 +71,12 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   expect(tokens.successColor).toBe(arch['status.success.content'])
   expect(tokens.surface).toBe(arch['surface.page'])
   expect(tokens.neutralFill).toBe(arch['surface.layer-1'])
-  expect(tokens.border).toBe(arch['border.strong'])
+  // `PreviewTokens.border` is the component stroke (inputs, selects), so it
+  // takes the CONTROL BOUNDARY — `border.default` since the border roles were
+  // split by job. It read `border.strong` while `default` was a decorative
+  // tone-5 hairline; `strong` is now the heavier emphasis step above the
+  // boundary, which a resting input must not draw.
+  expect(tokens.border).toBe(arch['border.default'])
   expect(tokens.borderDefault).toBe(arch['border.subtle'])
   expect(inputSurfaceOf(tokens)).toBe(arch['surface.input'])
   expect(focusBorderOf(tokens)).toBe(arch['border.focus'])

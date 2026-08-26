@@ -24,9 +24,21 @@ const view = buildArchitectureView('categorical', {
 
 const roleIds = view.categories.flatMap((c) => c.tokens.map((t) => `${c.key}.${t.key}`))
 
+// A second seed whose SOLID resolves to tone 11, not 9 — amber measures
+// 2.15:1/Lc 42 at the ramp's anchor, so `solidInkPair` walks past it. Several
+// tests below rely on this to prove a fix, not just the absence of a
+// regression on the (already-passing) module-level `view`.
+const amberSystem = buildSystem('amber/radix', '#f59e0b', 'radix')
+const amberView = buildArchitectureView('categorical', {
+  themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
+  scales: amberSystem.scales, accent: amberSystem.accent,
+} as never, amberSystem.errorSeed)!
+
 describe('the categorical catalogue is complete', () => {
-  it('ships 39 roles across five groups', () => {
-    expect(roleIds).toHaveLength(39)
+  it('ships 41 roles across five groups', () => {
+    // 39 + status.info.surface + status.info.content — the Info primitive had
+    // a full generated ramp and zero semantic roles referencing it.
+    expect(roleIds).toHaveLength(41)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -50,9 +62,7 @@ describe('the categorical catalogue is complete', () => {
     const label = (group: string, key: string) =>
       view.categories.find((c) => c.key === group)?.tokens.find((t) => t.key === key)?.modes.dark.label
     expect(label('surface', 'inverse')).toBe('neutral.4')
-    expect(label('action', 'primary.pressed')).toBe('accent.6')
     expect(label('border', 'subtle')).toBe('neutral-dark.4')
-    expect(label('border', 'strong')).toBe('neutral-dark.6')
     // All three severities share step 11 in dark. Critical read 10 until it was
     // measured at |Lc| ~42.7 against its own tone-3 tint, ~17 short of the
     // large-text floor — see the note in semanticArchitectures.ts.
@@ -60,6 +70,111 @@ describe('the categorical catalogue is complete', () => {
     expect(label('status', 'warning.content')).toBe('warning.11')
     expect(label('status', 'success.content')).toBe('success.11')
     expect(label('status', 'critical.surface-solid')).toBe('error.12')
+  })
+
+  // `border.default`/`border.strong` split by JOB (control boundary vs.
+  // emphasis) rather than by weight, each dual-metric verified (WCAG 1.4.11 +
+  // APCA Lc 45) against the page it sits on — see the [ROLE:] comments in
+  // semanticArchitectures.ts and design-plans/border-roles-radix-band.md.
+  // Dark is NOT tone-for-tone with light: this ramp's dark tones 8-10 either
+  // miss WCAG or pass it while failing APCA (the same blind spot a since-
+  // deleted IBM Carbon projection once proved for a sibling architecture's own
+  // border-strong), so the walk lands on 11 for the default seed, not 8/9
+  // mirrored from light.
+  it('border.default is the accessible control boundary, border.strong one step past it', () => {
+    const label = (key: string) =>
+      view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    expect(label('default')?.light.label).toBe('neutral.8')
+    expect(label('default')?.dark.label).toBe('neutral-dark.11')
+    expect(label('strong')?.light.label).toBe('neutral.9')
+    expect(label('strong')?.dark.label).toBe('neutral-dark.12')
+  })
+
+  // border.focus is SOLVED against the page, not pinned — a fixed tone can't
+  // honestly promise a floor when the ring's colour is the user's own accent
+  // hue. This test's seed (#7f56d9, a saturated violet) is one of the hues
+  // that already passed at tone 9, so light resolving to accent.9 here proves
+  // the solver reproduces the pre-existing value for the common case, not
+  // that the solver is a no-op — see the 8-hue table in the design plan for
+  // the hues that don't.
+  it('border.focus resolves via the solver, matching the pinned value for a passing hue', () => {
+    const label = (key: string) =>
+      view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    expect(label('focus')?.light.label).toBe('accent.9')
+    expect(label('focus')?.dark.label).toBe('accent.11')
+  })
+
+  // border.success has one step of headroom border.warning does not — see the
+  // dual-metric table in the design plan (`warning` has no tone below 11 that
+  // clears WCAG in light; `success` does at tone 10).
+  it('border.success sits one tone lighter than border.warning', () => {
+    const label = (key: string) =>
+      view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    expect(label('success')?.light.label).toBe('success.10')
+    expect(label('warning')?.light.label).toBe('warning.11')
+  })
+})
+
+describe('border.focus solver — a hue the old pinned {accent.9} actually failed', () => {
+  // Amber measured 2.15:1 / Lc 42 at tone 9 in light — under both the WCAG
+  // 3:1 and APCA Lc 45 floors. This is the case the solver exists for; the
+  // test above (violet) only proves the solver doesn't regress the common
+  // passing case. (`amberSystem`/`amberView` declared at module scope.)
+  it('walks past tone 9 to a tone that actually clears both floors', () => {
+    const focus = amberView.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === 'focus')
+    expect(focus?.modes.light.label).not.toBe('accent.9')
+    expect(['accent.10', 'accent.11', 'accent.12']).toContain(focus?.modes.light.label)
+  })
+})
+
+// `{step:accent+n}` replaced fixed `{accent.10}`/`{accent.11}`/`{accent.6}`
+// for hover/pressed. Two seeds: violet (solid resolves to 9 in light, proving
+// the common case is byte-identical to the old pin) and amber (solid resolves
+// to 11, the case the old pin silently broke — hover measured 2.51:1 and
+// pressed was IDENTICAL to default under the fixed-tone version).
+describe('action.primary hover/pressed — solved relative to the resolved solid, not pinned', () => {
+  const actionOf = (v: typeof view, key: string) =>
+    v.categories.find((c) => c.key === 'action')?.tokens.find((t) => t.key === key)?.modes
+
+  it('a hue whose solid is 9 resolves to the exact tones the old fixed pin used', () => {
+    expect(actionOf(view, 'primary.default')?.light.label).toBe('accent.9')
+    expect(actionOf(view, 'primary.hover')?.light.label).toBe('accent.10')
+    expect(actionOf(view, 'primary.pressed')?.light.label).toBe('accent.11')
+  })
+
+  it('a hue whose solid is 11 gets a hover/pressed that are NOT the broken fixed pin', () => {
+    const solid = actionOf(amberView, 'primary.default')?.light.label
+    const hover = actionOf(amberView, 'primary.hover')?.light.label
+    const pressed = actionOf(amberView, 'primary.pressed')?.light.label
+    expect(solid).toBe('accent.11')
+    // The old fixed pin put hover at accent.10 — LIGHTER than an 11-solid,
+    // reading as a step backward and measuring 2.51:1 (fails AA). The solved
+    // version must differ from that broken value.
+    expect(hover).not.toBe('accent.10')
+    // The old fixed pin put pressed at accent.11 — IDENTICAL to the default,
+    // i.e. no pressed state at all for this hue.
+    expect(pressed).not.toBe(solid)
+  })
+
+  it('pressed is never lighter than hover, which is never lighter than default', () => {
+    for (const v of [view, amberView]) {
+      const toneOf = (label?: string) => Number(label?.split('.')[1] ?? 0)
+      const d = toneOf(actionOf(v, 'primary.default')?.light.label)
+      const h = toneOf(actionOf(v, 'primary.hover')?.light.label)
+      const p = toneOf(actionOf(v, 'primary.pressed')?.light.label)
+      expect(h).toBeGreaterThanOrEqual(d)
+      expect(p).toBeGreaterThanOrEqual(h)
+    }
+  })
+})
+
+describe('status.info — no longer orphaned', () => {
+  it('references the info family, matching the shape of the other three severities', () => {
+    const infoSurface = view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === 'info.surface')
+    const infoContent = view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === 'info.content')
+    expect(infoSurface?.modes.light.label).toBe('info.3')
+    expect(infoContent?.modes.light.label).toBe('info.11')
+    expect(infoContent?.modes.dark.label).toBe('info.11')
   })
 })
 

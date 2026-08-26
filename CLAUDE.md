@@ -76,16 +76,21 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > actions. `ExportWizard` was already a `fixed inset-0` modal with its own backdrop, so
 > opening it doesn't care what's rendered behind it; the only thing that changes by call
 > site is `initialCollections` — pre-scoped to the active foundation
-> (`COLLECTIONS_OF[activeFoundation]`) when opened from Variables, `undefined` (the wizard's
-> own primitives+semantics default) from anywhere else, incl. Components and Docs.
+> (`COLLECTIONS_OF[activeFoundation]`) when opened from Variables, `ALL_WIZARD_COLLECTIONS`
+> (every foundation, the default parameter) from anywhere else, incl. Components and Docs.
+> **This was `['primitives', 'semantics']` — a deliberate partial default — until it wasn't:
+> a whole-system export turned out to be the more common ask than a partial one, and
+> starting partial silently under-shipped anyone who hit Next without first reading the
+> checklist.** This is the "whole-system-by-default earns its place back" path the retired
+> Share pill note (right below) already anticipated: it landed as the wizard's own default
+> parameter, not a second entry point.
 > A separate **Share** pill used to open the same wizard pre-checked to whole-system
 > (`ALL_WIZARD_COLLECTIONS`) instead of the active section — it was retired (`HomeActions`,
 > `Configurator.tsx`'s `shareOpen` state and second `ExportWizard` instance all removed)
 > because two pills opening the identical flow just read as duplication; Export's own
 > Step 1 lets you check every collection manually, so whole-system export is still one
 > click away, just not a dedicated button for it. Don't re-add a Share pill that does what
-> Export already does — if whole-system-by-default earns its place back, make it an option
-> INSIDE the one wizard (e.g. a "select all" affordance in Step 1), not a second entry point.
+> Export already does.
 > Step 1 picks **collections** (primitives · semantics · typography · spacing · radius ·
 > shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship
 > and, for primitives, which **families** ship (Accent · Neutral · Error … + customs —
@@ -543,39 +548,39 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     entirely rather than left disabled, so the UI doesn't promise interactivity it doesn't
     have; a real background picker is still out of scope (see "Base drives the page" above
     — independent editability there is what caused page/ramp drift before).
-  - **Semantics** (`Step3_SemanticTokens`, topped by the
-  **architecture picker** — `ArchitecturePicker`: radio cards for Flat /
-  Categorical / Vibrancy / Tonal with a live WCAG contrast strip. Flat keeps
-  the full editable 89-role matrix; a non-flat choice re-derives the WHOLE
+  - **Semantics** (`Step3_SemanticTokens`). **Categorical is the only
+  architecture** (`semanticArchitecture: 'flat' | 'categorical'`,
+  `lib/semanticArchitectures.ts`) — Astryx, shadcn/ui, Apple-HIG Vibrancy,
+  Material-3 Tonal and IBM Carbon were each implemented here as alternative
+  projections, retired from the picker in store v50, and DELETED outright
+  (code, tests, vendor deps, migration bucket) once nothing pointed at them —
+  see the note further down. There is no `ArchitecturePicker` radio-card UI
+  any more; `semanticArchitecture` exists mainly so `'flat'` (the underlying
+  89-role matrix `themes[theme]` holds) and `'categorical'` (the projection)
+  stay distinguishable types. Selecting Categorical re-derives the WHOLE
   view from its projection via `buildArchitectureView` — sidebar groups,
   counts and a value table mirror the exported schema exactly. The table is
-  **editable in every architecture**, not just Flat, and through the SAME
-  affordance: the row's sliders icon expands it (description + CSS var + a ramp
+  **editable**, through the row's sliders icon (description + CSS var + a ramp
   per mode with the current tone ringed), exactly like the flat matrix — one
   interaction to learn, not two. A family row above each ramp re-points the slot
   to another family. Edits are stored as REFs in
   `architectureOverrides[arch]['category.token'][mode]` (`mode` is a THEME KEY,
   see below) so an edited token still resolves through the ramps. "Reset to
   schema" clears it; the export applies the same overrides, so tokens.json
-  can't disagree with the table. Cells whose value isn't a ref (vibrancy
-  alphas, blur) stay read-only — there's no primitive to swap. Switching
-  architectures resets category/search state.
-    - **"+ Theme" works in Flat AND Categorical, not Vibrancy/Tonal.**
-      `ArchitectureView.modeKeys` is the authoritative column list per
-      architecture: Categorical gets one column per entry in `themeOrder` (so
-      adding a theme genuinely grows the table, resolved per-theme via
-      `scaleLookup(scales, themePalettes[key], kind)`); Vibrancy and Tonal
-      always report `['light','dark']` regardless of `themeOrder`, because
-      their math is a fixed binary transform of the GLOBAL primitives with NO
-      per-theme concept — Vibrancy's light/dark are two hardcoded calls to one
-      opacity-layer formula, Tonal's is a fixed tone-inversion table
-      (`TONAL_SCHEME`, 40↔80…). A 3rd theme has no defined meaning for either
-      until someone decides what a HIG opacity layer or an M3 tone-inversion
-      means for a non-binary theme — that's a schema decision, not an
-      engineering gap, so the button stays hidden there rather than faking it.
-      Each column's header is the SAME click-to-preview affordance the flat
-      matrix's columns use (no drag-reorder/resize for the arch table though —
-      it's schema-order, not a user-arranged matrix).
+  can't disagree with the table. Switching architectures resets category/search
+  state.
+    - **"+ Theme" works in Flat and Categorical.** `ArchitectureView.modeKeys`
+      is the authoritative column list: Categorical gets one column per entry
+      in `themeOrder` (adding a theme genuinely grows the table, resolved
+      per-theme via `scaleLookup(scales, themePalettes[key], kind)`), same as
+      the flat matrix. (The deleted Vibrancy/Tonal architectures always
+      reported a fixed `['light','dark']` regardless of `themeOrder` — their
+      math was a binary transform of the global primitives with no per-theme
+      concept, so "+ Theme" stayed hidden there. Moot now; every architecture
+      that exists supports it.) Each column's header is the SAME
+      click-to-preview affordance the flat matrix's columns use (no
+      drag-reorder/resize for the arch table though — it's schema-order, not a
+      user-arranged matrix).
     - **Exports ADDITIVELY.** `colors.architecture.tokens[group][token]` used to
       be a hardcoded `{light, dark}` pair; it's now `{[themeKey]: ref}` with
       `light`/`dark` always present (any consumer reading `.light`/`.dark` sees
@@ -583,7 +588,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
       actually has them — no schema-version bump, no migration needed for the
       2-theme case. Was ALSO fixed in the same pass: `tokenGenerator.ts`'s call
       to `projectArchitecture()` had been omitting `overrides` entirely, so
-      table edits in Categorical/Vibrancy/Tonal never reached the actual export
+      table edits in Categorical never reached the actual export
       — only the live preview table. Both `overrides` and `themeOrder` are now
       passed through.
     - **A solid fill and its ink are ONE decision, solved per theme against real
@@ -1587,16 +1592,15 @@ src/
 │   │   ├── antDesign.ts          ← byte-identical port of @ant-design/colors v8 (HSV, hueStep 2°). Proven against the package
 │   │   ├── radix.ts              ← byte-identical port of generateRadixColors (reference transposition, bezier, CIE Lab D50 mixing). Proven against the upstream file in test-fixtures/
 │   │   ├── tailwind.ts           ← Tailwind v4's published OKLCH palette + an HONEST derivation (provenance: 'tailwind' | 'escala-derived'). Tailwind has no generator
-│   │   ├── carbon.ts             ← IBM's palette, four themes, and the LAYER MODEL (resolveLayer/carbonSurfaceStack). The layer model is the reason Carbon is here
-│   │   └── *Reference.ts         ← GENERATED and COMMITTED (npm run gen:*-reference). Never hand-edit; a companion test asserts each regenerates byte-for-byte
-│   ├── __tests__/             ← vitest suite (npm test). apca · gamut · cvd · ramps.golden (124 snapshots) · ramps.invariants · no-duplication · contrast-matrix · ant-design · material-hct · radix · tailwind · carbon · shadcn
+│   │   └── *Reference.ts         ← GENERATED and COMMITTED (npm run gen:*-reference). Never hand-edit; a companion test asserts each regenerates byte-for-byte. (carbon.ts/carbonReference.ts DELETED with the Carbon architecture — see the semanticArchitectures.ts note below)
+│   ├── __tests__/             ← vitest suite (npm test). apca · gamut · cvd · ramps.golden (124 snapshots) · ramps.invariants · no-duplication · contrast-matrix · ant-design · radix · tailwind · chart-palette (renamed from shadcn.test.ts — the shadcn CONTRACT tests were deleted with the architecture, the CVD-validated chart-palette tests they sat beside were not)
 │   ├── componentCatalogue.ts  ← ComponentDef type, COMPONENTS array, CATEGORIES, COMPONENT_KEYS (pure data)
 │   ├── iconLibraries.ts       ← ICON_LIBRARIES (incl. iconifyPrefix for the live Iconify browser), getIconLibrary(), SAMPLE_GLYPHS (pure data)
 │   ├── previewTokens.ts       ← resolvePreviewTokens()/usePreviewTokens() — single source for live-preview tokens; ARCHITECTURE-AWARE (see below)
 │   ├── gradients.ts           ← GradientDef/GradientAssignments types + gradientToCss()/gradientSlug()/makeDefaultGradients() (pure data)
 │   ├── typographyStandard.ts  ← Type-scale/weight/family token standard + categories (pure data)
 │   ├── fonts.ts               ← FONT_PRESETS, POPULAR_GOOGLE_FONTS, fontStack(), loadGoogleFont()
-│   ├── semanticArchitectures.ts ← the 4 semantic token architectures: metadata (labels/tooltips) + pure projections of the flat role catalogue — projectCategorical() (DTCG-style grouped tree), projectVibrancy() (Apple HIG alpha roles + opaque fallbacks), projectTonal() (M3 0–100 tonal palettes + paired on-color scheme), projectArchitecture() dispatcher used by the export
+│   ├── semanticArchitectures.ts ← the ONE semantic token architecture: metadata + a pure projection of the flat role catalogue — projectCategorical() (DTCG-style grouped tree, 41 roles), projectArchitecture() dispatcher (returns null for anything but 'categorical'). Astryx/shadcn/Vibrancy/Tonal/Carbon projections — ~850 lines — were DELETED, not hidden; don't reintroduce one as a second projection, extend CATEGORICAL_ROLES or the {fam.solid}/{on:}/{ink:}/{ui:}/{ui+:}/{step:} marker vocabulary instead
 │   ├── tokenGenerator.ts      ← generateTokenJSON(), downloadTokenJSON()
 │   ├── exporters.ts           ← buildCSS()/buildMarkdown() — shared by ExportView + GitHubConnectView
 │   ├── github.ts              ← GitHub REST client (PAT in localStorage 'sd-github-token', NEVER in the store): validateToken, listRepos, createRepo, pushFiles (Contents API, sequential)
@@ -1610,7 +1614,7 @@ api/
 scripts/
 ├── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/escala-figma-plugin.zip (npm run bundle:plugin)
 ├── color-report.ts         ← the contrast audit: every architecture × theme × role pair, WCAG + APCA (npm run color:report)
-└── gen-*-reference.ts      ← regenerate the committed vendor tables from the installed packages (npm run gen:radix|tailwind|carbon-reference)
+└── gen-*-reference.ts      ← regenerate the committed vendor tables from the installed packages (npm run gen:radix-reference, gen:tailwind-reference — gen-carbon-reference.ts was deleted with the Carbon architecture)
 test-fixtures/
 └── upstream-generate-radix-colors.ts ← VENDORED radix-ui/website generator, verbatim except a removed "use client" and a @ts-nocheck header. The reference radix.ts is proven byte-identical against. Do not "fix" it
 docs/
@@ -1647,7 +1651,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `grayLightScale` | ColorScale | Foundations · Color |
 | `errorColor/Scale`, `warningColor/Scale`, `successColor/Scale`, `infoColor/Scale` | ColorScale | Foundations · Color |
 | `customColors` | CustomColor[] (`{ key, label, base, scale }` — named families with auto 1–12 scales; keys in `RESERVED_COLOR_KEYS` are blocked) | Foundations · Color |
-| `semanticArchitecture` | `'flat' \| 'categorical' \| 'vibrancy' \| 'tonal'` — which shape the export projects the 89-role catalogue into (`lib/semanticArchitectures.ts`). The flat matrix is ALWAYS the editing surface; non-flat choices ship additively as `colors.architecture` in tokens.json (plugin contract untouched) | Color · Alias/Semantics (ArchitecturePicker) |
+| `semanticArchitecture` | `'flat' \| 'categorical'` (Astryx/shadcn/Vibrancy/Tonal/Carbon retired then deleted — see the semanticArchitectures.ts note) — which shape the export projects the 89-role catalogue into (`lib/semanticArchitectures.ts`). The flat matrix is ALWAYS the editing surface; Categorical ships additively as `colors.architecture` in tokens.json (plugin contract untouched) | Color · Alias/Semantics |
 | `themes` | Record<theme, Record<role, hex>> — `light`/`dark` always exist (protected); user themes via `addTheme(key, base)` duplicate an existing one. Role keys use the **readable taxonomy**: `surface-*` (page/card levels), `action-*` (button/control fills), `status-*` (feedback fills), `text-*`, `icon-*`, `border-*`. Defined once in `ROLE_GROUPS` (`Step3_SemanticTokens.tsx`); `SEMANTIC_KEY_RENAME` (store) migrates old v23 keys | Foundations · Semantic |
 | `themeOrder` | string[] (column order, default `['light','dark']`) | Foundations · Semantic |
 | `themeKinds` | Record<theme, 'light'\|'dark'> — drives recommended tones + which gray ramp seeds a theme | Foundations · Semantic |
@@ -2196,9 +2200,9 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > Keep every field in `resolvePreviewTokens` going through `resolveRole()`, not a raw
 > `semanticTokens[key] || rec(key)` read.
 
-> **A non-flat architecture stores its edits in `architectureOverrides`, NOT in `themes` —
+> **Categorical stores its edits in `architectureOverrides`, NOT in `themes` —
 > so `resolvePreviewTokens` has to project, or the preview is frozen.** `themes[theme]` only
-> ever holds the FLAT role map; Categorical/Vibrancy/Tonal edits are refs under
+> ever holds the FLAT role map; Categorical edits are refs under
 > `architectureOverrides[arch]['category.token'][mode]`. `resolvePreviewTokens` used to read
 > `themes` exclusively and carried a comment that 'flat' and 'categorical' "share the same
 > resolved values" — so editing e.g. `action.primary` in Categorical repainted **nothing**,
@@ -2301,6 +2305,164 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > the flat catalogue) whenever no theme palette overrides it. `surface.accent` on the
 > built-in dark theme now correctly reads the dark accent twin, not the light one. This
 > was NOT a schema change — same refs, same shape, just the resolved HEX.
+
+> **UPDATE: `border.*` was re-split by JOB (decoration vs. control boundary) rather than
+> by weight — this SUPERSEDES the `border.default` 3→5 Astryx alignment two paragraphs up.
+> The two no longer share a tone, deliberately.** Reported as "colores tan marcados" on
+> inputs, plus a request to follow Radix's own 6–8 stroke band — auditing against Radix's
+> OWN upstream tables (`radixReference.ts`) first showed those two asks are not the same
+> instruction: Radix's own step 8 measures 1.87–2.38:1 in light, under WCAG 1.4.11's 3:1.
+> "Follow Radix's band" and "clear the accessibility floor" only agree if the roles are
+> split by what the stroke has to DO, not by how heavy it looks.
+> - **`border.default` is now the control boundary** (light `{neutral.8}` = 3.26:1/Lc60,
+>   dark `{neutral-dark.11}` = 11.99:1/Lc75) — what a resting input, select, checkbox or
+>   unfilled button binds to. It used to sit at tone 5 (1.61:1, genuinely decorative) while
+>   ALSO being the name inputs pointed at, so an "input border" was either invisible or,
+>   if you reached for `strong` instead, one step into the solid register (tone 9, 4.78:1) —
+>   past Radix's band entirely. Now "the input border" and "the accessible tone" are the
+>   same answer, and dropping from 9 → 8 in light is the visible "less marked" result.
+> - **`border.strong` is emphasis, one step past `default`, in BOTH themes** (light
+>   `{neutral.9}`, dark `{neutral-dark.12}`) — for a stroke that needs to outrank a plain
+>   control boundary (a selected card's own edge), never the default input weight.
+> - **Dark is NOT tone-for-tone with light, and that's not a shortcut — it's a measured
+>   floor.** This ramp's dark tones 9–10 pass WCAG (3.21/3.89) but FAIL APCA (Lc 21.4/27.0)
+>   — the identical blind spot a since-deleted IBM Carbon projection's `CARBON_MIN_TONE`
+>   table once proved for its own dark ramp ("there is nothing between Lc 27 and Lc 75").
+>   Tone 11 is the
+>   first dark tone clearing both. Shipping 9 there would have looked fixed on a WCAG-only
+>   check while remaining exactly as invisible as the `{neutral-dark.6}` it replaced.
+> - **`border.focus` is SOLVED per theme now, not pinned.** The old comment claimed
+>   `{accent.9}` "clears both (WCAG 3.14–7.45)" in light — measured across 8 accent hues,
+>   **5 of 8 failed**: sky 2.77, cyan 2.43, amber 2.15, lime 1.98, yellow 1.53. Tone 9 is the
+>   user's raw brand hex, so its luminance is entirely outside this system's control; a
+>   pinned tone cannot honestly promise a floor for a value the user picks. `{focus:accent}`
+>   (a FOURTH marker in `curatedRefs`, beside `{accent.solid}`/`{on:…}`/`{ink:…}`) walks the
+>   ramp up from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear, falling back to the
+>   closest-to-passing tone rather than a fixed step — same no-fixed-fallback shape as
+>   `solidInkPair`/`tintInkRef`. A saturated/cool accent still resolves to `{accent.9}`
+>   (unchanged output for the common case); dark stays pinned at `{accent.11}`, whose own
+>   six-seed search already showed no equivalent blind spot.
+> - **`border.critical` and `border.warning` were already correct — verified, not touched.**
+>   Light `error.9` = 3.76/64; dark jumps to `error.11` because `error.9`/`.10` hit the same
+>   APCA blind spot as neutral (5.14 WCAG but Lc 37.6, then 44.2 — just short of 45).
+>   `warning.11` has no tone below it that clears WCAG in light (tone 9 = 2.35, tone 10 =
+>   2.75, both fail).
+> - **`border.success` had one step of headroom `warning` didn't**: tone 10 clears both
+>   metrics in both themes (3.31/60 light, 8.22/56 dark) — moved down from 11.
+> - **The rule worth generalising**: a role whose value depends on a hue the USER supplies
+>   cannot be a pinned tone, ever — it has to be solved. `border.focus` shipped a
+>   documented, specific, and wrong contrast range for exactly that reason.
+> - Full audit, the Radix upstream tables, and the per-role measured tables live in
+>   `design-plans/border-roles-radix-band.md`. Deliberately excluded from this pass: the
+>   FLAT role catalogue (materialized into `themes[theme]`, needs a `clearSemantics`-style
+>   migration) and the ramp generator itself (the real fix for the dark stroke-band
+>   compression, but it moves `ramps.golden` and every saved system's dark neutral — a
+>   separate decision). Astryx/shadcn's own border groups were excluded for the stated
+>   reason (a vendor architecture matches its contract) and are moot now anyway — see the
+>   correction directly below.
+
+> **UPDATE (SAME DAY, second pass): `border.default` ITSELF turned out to need solving, not
+> pinning — the identical defect one level up from `border.focus`.** The contrast matrix
+> (`contrast-matrix.test.ts`, 10 seeds × 4 algorithms) caught `border.default` failing at
+> 2.96:1 (teal/radix) and 2.98:1 (green/radix): the neutral ramp gets tinted by the accent
+> hue (`neutralFromBrand`, `linkNeutralToAccent`), so a tone that clears 3:1 on the default
+> seed doesn't on every seed — the SAME "a pinned tone cannot promise a floor for a hue the
+> user picks" defect this whole section exists to fix, just milder.
+> - **`{focus:<fam>}` was replaced by two markers before it shipped**, because the fix for
+>   `border.default` needed the identical walk-and-verify shape `border.focus` already had:
+>   `{ui:<fam>.<start>}` walks up from `start` until WCAG 1.4.11 + APCA Lc 45 both clear
+>   (`uiBoundaryRef`) — `border.default` is `{ui:neutral.8}` (start 8, was pinned there),
+>   `border.focus` is `{ui:accent.9}` (start 9, both themes now — dark's own six-seed search
+>   already landed on 11, exactly where a walk from 9 arrives, so the separate pin was
+>   redundant). `{ui+:<fam>.<start>}` is the EMPHASIS step, one past whatever `{ui:…}`
+>   actually resolved to — `border.strong` is `{ui+:neutral.8}`. This is what makes it
+>   correct on the tinted-neutral systems: a pinned `border.strong` at tone 9 would have
+>   collapsed onto `border.default` on exactly the systems where the boundary itself has to
+>   walk to 9.
+> - Every number in the target table above is unchanged for the DEFAULT seed — this is a
+>   solver correction, not a retint. It only moves output on the handful of accent hues that
+>   tint the neutral ramp into the 2.9-ish range at the boundary's starting tone.
+> - `focusRingRef` no longer exists as a separate function; `uiBoundaryRef` supersedes it and
+>   is called with `start: 9` for the focus ring, `start: 8` for the control boundary.
+
+> **UPDATE: every architecture but Categorical was DELETED — Astryx, shadcn/ui, Apple-HIG
+> Vibrancy, Material-3 Tonal and IBM Carbon are gone from the codebase, not merely hidden
+> from the picker.** They had already been retired from `ARCHITECTURE_OPTIONS` in store v50
+> (Categorical-only picker, `semanticArchitecture` migrated to `'categorical'` for every
+> persisted system); this removed the ~850 lines of projection code, the four vendor
+> reference tables (`carbon.ts`/`carbonReference.ts` + the `@carbon/*`/
+> `@material/material-color-utilities` deps), their dedicated test files
+> (`carbon.test.ts`, `material-hct.test.ts`, and `shadcn.test.ts`'s CONTRACT half — its
+> CVD-validated chart-palette tests survive, renamed to `chart-palette.test.ts`, since the
+> chart palette is Categorical's own), and every `architectureOverrides` bucket for a
+> deleted key (store **v57** migration — `KEEP = new Set(['categorical', 'flat'])`).
+> `SemanticArchitecture` is now `'flat' | 'categorical'`. `projectArchitecture` returns
+> `null` for anything else, same as it always did for an unhandled kind — no behavior change
+> for the one architecture that ships. Every comment in this file that compares Categorical
+> against "Astryx" or "shadcn" by name is describing a design decision made while both
+> existed (why a tone was chosen to AGREE with a sibling architecture, mostly) — the
+> reasoning is still valid history, the sibling just isn't in the tree to check it against
+> any more. Don't reintroduce one as a second projection: extend `CATEGORICAL_ROLES` or the
+> marker vocabulary (`{fam.solid}`/`{on:…}`/`{ink:…}`/`{ui:…}`/`{ui+:…}`/`{step:…}`) instead.
+
+> **UPDATE: `action.primary.hover`/`.pressed` were pinned tones written for a solid that
+> isn't always tone 9 — same defect class as `border.focus`, found by an external audit
+> this time.** `{accent.solid}` (`solidInkPair`) resolves the default fill to whichever tone
+> can actually carry a label — measured, **8 of 12 seeded hues resolve to 11, not 9**
+> (anything warm or low-luminance: green, sky, cyan, amber, yellow, lime, orange, teal).
+> Hover and pressed were still pinned to `{accent.10}`/`{accent.11}` (light) and
+> `{accent.10}`/`{accent.6}` (dark) — tones that only make sense relative to a solid of 9.
+> - **Light hover measured under WCAG AA on those 8 hues** (as low as 1.78:1, yellow) —
+>   the pinned tone 10 is LIGHTER than an 11-anchored solid, i.e. a step backward from the
+>   fill it's supposed to darken/lighten for feedback.
+> - **A second defect the audit didn't name**: on those same 8 hues, pinned `pressed`
+>   (tone 11) was IDENTICAL to `default` (also 11) — no pressed state existed at all.
+> - **Dark was worse than reported**: `{accent.6}`'s comment records it was "measured by
+>   eye… read as a hover-again, not down" — against an ASSUMED solid of 9. Re-measured
+>   against the actual resolved solid (11 for most hues), tone 6 gives **APCA Lc 0–24 across
+>   every one of the 12 seeded hues** — not low-contrast, illegible.
+> - **Fix: `{step:<fam>+<n>}`, a fifth `curatedRefs` marker.** Takes the family's
+>   ALREADY-RESOLVED solid tone (the same memoised value `{accent.solid}` produced for this
+>   theme — `solidToneFor(fam)`, reused not recomputed) and walks `n` steps past it through
+>   the same `solidInkPair` search, clamped to 12. `hover = {step:accent+1}`,
+>   `pressed = {step:accent+2}`. For every hue whose solid is 9, this resolves to EXACTLY
+>   `accent.10`/`accent.11` — byte-identical output to the old pin, verified in
+>   `categorical.test.ts` against a violet seed.
+> - **Two things were tried and DIDN'T recover the tone-11 hues' missing third step — recorded
+>   so neither gets re-attempted**: pure-black ink instead of `{neutral.12}` still misses Lc 75
+>   at the anchor (amber 62.2, teal 55.7); relaxing the solved-solid target from Lc 75 to Lc 60
+>   only moves ONE hue (yellow) and leaves green/sky/amber/teal still walking to 11. The
+>   headroom loss is a property of the ramp, not a tuning miss.
+> - **Residual, stated rather than hidden**: when the solid is already 11, hover AND pressed
+>   both land on 12 — the ramp's last tone that can carry the label, so pressed is legible
+>   but not visually distinct from hover. Still strictly better than the pin it replaced
+>   (which, for those hues, had a hover that FAILED and a pressed that DIDN'T EXIST).
+
+> **UPDATE: `status.info.*` was missing entirely — the Info primitive (full generated ramp,
+> exported to tokens.json) had zero Categorical roles referencing it.** A designer retinting
+> Info saw nothing move anywhere in Semantics. Added `status.info.surface` (`{info.3}`) and
+> `status.info.content` (`{info.11}`, **not** `{ink:info.3}`) — same shape as
+> critical/warning/success. The `{ink:…}` marker was considered and rejected: it collapses
+> to tone 12, and this table already documents (see the `status.critical.surface` comment
+> above) that 12 "reads as near-black… and loses the severity hue" for exactly this kind of
+> tint pairing — critical/warning/success are pinned to the chromatic tone 11 for that
+> reason, and info follows the same rule rather than inventing a second mechanism for one
+> severity. Measured against the live system's info seed (`#3690f5`): info.11 on info.3
+> clears WCAG 4.35 / Lc 63.8 in light and 10.21 / Lc 73.6 in dark — the same range
+> critical/warning/success already accept (critical's own residual is Lc ~42, kept anyway).
+> `status.*.surface-solid`/`on-solid` were NOT added for info — critical is the only severity
+> with a solid pair today; adding one for info alone would make it the second-best-equipped
+> severity while warning/success still have none. One decision across all four, not an
+> info-only addition. Role count: 39 → 41.
+
+> **DECISION: there is no `border.focus.critical` — an invalid, focused input shows the
+> normal accent focus ring, not an error-coloured one.** Raised by the same external audit
+> as a possible naming gap. Genuinely no wrong answer here, so it's recorded as a choice:
+> focus wins over error-state colour, matching Material and Carbon (WCAG does not require a
+> severity-coloured ring), and it keeps ONE focus-ring token instead of one per severity that
+> would need the same solver treatment `border.focus` just got. If this is ever revisited,
+> the mechanism already exists — `{ui:error.9}` through the same `uiBoundaryRef` — so it's a
+> one-line addition, not a new solver.
 
 > **UPDATE: `StatusSpecimen`'s alert/chip TEXT was reading Astryx's (and shadcn's) vivid
 > tone-9 solid as literal ink on a tone-3 tint, and it failed contrast badly.** Reported as

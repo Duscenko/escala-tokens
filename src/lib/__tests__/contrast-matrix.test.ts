@@ -44,7 +44,7 @@ describe('flat catalogue — every role pair clears its intent', () => {
 
 describe('curated architectures — every role pair clears its intent', () => {
   it('audits a non-trivial number of pairs', () => {
-    expect(curated.length).toBeGreaterThan(500)
+    expect(curated.length).toBeGreaterThan(400)
   })
 
   it('has zero WCAG 2.1 failures', () => {

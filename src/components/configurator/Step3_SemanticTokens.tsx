@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
-  architectureLabel, architectureModeLabel, buildArchitectureView, scaleLookup,
+  architectureLabel, buildArchitectureView, scaleLookup,
   type ArchTokenValue, type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 import {
@@ -54,37 +54,11 @@ export function focusForNavKey(key: string): SemanticFocus | null {
     case 'action': return 'action'
     case 'surface': return 'surface'
     case 'status': return 'status'
-    // Astryx.
-    case 'accent': return 'action'
-    // Astryx ships `icon.*` as its OWN hierarchy parallel to `text.*`, so it
-    // gets its own specimen — it used to fold into 'content', which meant
-    // picking Icon in the nav showed the text preview and no glyphs at all.
+    // `icon.*` is its own hierarchy parallel to `text.*` (icons read lighter
+    // than type at the same tone), so it gets its own specimen rather than
+    // folding into 'content' — which would show the text preview and no
+    // glyphs at all for an icon group.
     case 'icon': return 'icon'
-    // shadcn/ui (groups shared with Astryx/Categorical/Tonal above reuse
-    // those cases: accent, secondary, border).
-    case 'base': return 'surface'
-    case 'card': return 'surface'
-    case 'popover': return 'surface'
-    case 'primary': return 'action'
-    case 'muted': return 'surface'
-    case 'destructive': return 'status'
-    case 'sidebar': return 'surface'
-    // Vibrancy (Apple HIG grouping).
-    case 'labels': return 'content'
-    case 'backgrounds': return 'surface'
-    case 'materials': return 'surface'
-    case 'fills': return 'action'
-    case 'separators': return 'border'
-    // Tonal (Material 3) + remaining projection groups.
-    case 'text': return 'content'
-    case 'core': return 'action'
-    case 'secondary': return 'action'
-    case 'tertiary': return 'action'
-    case 'tint': return 'action'
-    case 'surfaces': return 'surface'
-    case 'fallbacks': return 'surface'
-    case 'error': return 'status'
-    case 'outlines': return 'border'
     default: return null
   }
 }
@@ -113,7 +87,6 @@ function archNavForToken(
 // deletable columns all apply. Vibrancy/Tonal stay excluded: their light/dark
 // are a fixed binary transform of the global primitives with no per-theme
 // concept (see ArchitectureView.modeKeys' doc comment in semanticArchitectures.ts).
-const PER_THEME_ARCHITECTURES = new Set<SemanticArchitecture>(['categorical', 'astryx', 'shadcn'])
 
 // ── Category nav metadata: icon + one-line description (tooltip) ─────────────
 const catIc = (d: string, filled = false): ReactNode => (
@@ -147,7 +120,7 @@ const CATEGORY_DESC: Record<SemanticCategory, string> = {
 const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
   content: CATEGORY_ICON.content,
   // A star — the app's own stand-in for "a glyph", distinct from Content's
-  // type mark so the two Astryx groups don't read as the same thing.
+  // type mark so an Icon group and a Content group don't read as the same thing.
   icon:    catIc('M12 3l2.6 6.2 6.4.5-4.9 4.2 1.5 6.1L12 16.8 6.4 20l1.5-6.1L3 9.7l6.4-.5L12 3z'),
   surface: CATEGORY_ICON.background,
   border:  CATEGORY_ICON.border,
@@ -268,7 +241,6 @@ function TokenCell({
   edited?: boolean
 }) {
   const hasAlpha = /\/\s*0\./.test(v.css)
-  const tonal = kind === 'tonal' ? /^([a-z-]+)\.(\d+)$/.exec(v.label) : null
   const Chip = onEdit ? 'button' : 'span'
   return (
     <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
@@ -282,13 +254,7 @@ function TokenCell({
           {hasAlpha && <span className="absolute inset-0" style={CHECKER_STYLE} aria-hidden />}
           <span className="absolute inset-0" style={{ background: v.css }} />
         </span>
-        {tonal ? (
-          <span className="truncate tabular-nums" title={`${v.css} — tone ${tonal[2]} (inverts between themes)`}>
-            {'{'}{tonal[1]}.<span className="text-accent-ui font-semibold">{tonal[2]}</span>{'}'}
-          </span>
-        ) : (
-          <span className="truncate tabular-nums" title={v.label}>{v.label}</span>
-        )}
+        <span className="truncate tabular-nums" title={v.label}>{v.label}</span>
       </Chip>
       {fallback && (
         <span
@@ -1120,10 +1086,12 @@ export default function Step3_SemanticTokens({
    * header row, the tone-picker sections and the mode editor — and they must
    * not be able to disagree.
    */
-  const archModeLabel = (mode: string) =>
-    PER_THEME_ARCHITECTURES.has(semanticArchitecture)
-      ? themeDisplayName(mode)
-      : architectureModeLabel(semanticArchitecture, mode)
+  // Categorical is the only architecture and it is per-theme by construction —
+  // its columns ARE `themeOrder`, so a mode name is always a theme name. The
+  // retired architectures (Vibrancy/Tonal/Carbon) were the ones with fixed,
+  // contract-owned mode names, which is what `architectureModeLabel` existed
+  // to render; it went with them.
+  const archModeLabel = (mode: string) => themeDisplayName(mode)
   /** Everything that can change the table's `scrollWidth`, as one string for
    *  `ScrollPager` to re-measure on. Not a ResizeObserver's job: the tracks
    *  overflow a block child whose own box never changes size, so neither the
@@ -1272,14 +1240,12 @@ export default function Step3_SemanticTokens({
                 {archModeKeys.map((mode) => {
                   const isPreviewed = previewTheme === mode
                   const label = archModeLabel(mode)
-                  // Only a PER_THEME_ARCHITECTURES entry's columns are real
-                  // theme columns (one per `themeOrder` entry, same as the
-                  // flat matrix) — Vibrancy/Tonal's 'light'/'dark' are fixed
-                  // slots of a global transform with no per-theme concept, so
-                  // there's nothing meaningful to delete (matches why
-                  // "+ Theme" is hidden for those too, above).
-                  const isThemeCol = PER_THEME_ARCHITECTURES.has(semanticArchitecture)
-                  const deletable = isThemeCol && themeCols.length > 1
+                  // Categorical's columns ARE `themeOrder`, one per theme,
+                  // same as the flat matrix — so every column is a real,
+                  // deletable theme. (The retired Vibrancy/Tonal/Carbon
+                  // architectures had fixed contract-owned mode slots with no
+                  // per-theme concept, which is what this used to guard.)
+                  const deletable = themeCols.length > 1
                   return (
                     <span key={mode} className={`flex items-center border-r border-line min-w-0 px-1.5 py-1.5 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       {/* Same "whole header is the preview toggle" affordance
@@ -1345,7 +1311,7 @@ export default function Step3_SemanticTokens({
                     modes should make the MIDDLE of the table scroll, not
                     shove this column away. */}
                 <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
-                  {(isFlat || PER_THEME_ARCHITECTURES.has(semanticArchitecture)) ? (
+                  {true ? (
                     <button
                       onClick={(e) => openAddTheme(undefined, e.currentTarget)}
                       aria-label="Add a theme"

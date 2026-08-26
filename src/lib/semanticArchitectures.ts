@@ -1,17 +1,24 @@
-// ─── Semantic architectures ──────────────────────────────────────────────────
+// ─── Semantic architecture ───────────────────────────────────────────────────
 // The flat 89-role catalogue (semanticRoles.ts) stays the single editing model;
-// this module PROJECTS it into alternative token shapes the user can pick in
-// the Alias/Semantics tab. Pure data + math — no store imports, so it's shared
-// by the picker UI, the token export and the README without cycles.
+// this module PROJECTS it into the shipped token shape. Pure data + math — no
+// store imports, so it's shared by the picker UI, the token export and the
+// README without cycles.
 //
-//   flat        — the existing shape (colors.semantic / colors.themes)
-//   categorical — LIGHTWEIGHT: a fixed 39-role catalogue (Content · Action ·
-//                 Surface · Status · Border), light/dark primitive refs inside
-//                 each token (DTCG-style) — deliberately NOT the 89 flat roles
-//   vibrancy    — Apple HIG roles: labels/fills/separators as alpha layers over
-//                 RGB channel primitives + opaque WCAG fallbacks + materials
-//   tonal       — Material 3: 0–100 tonal palettes derived from the accent,
-//                 paired on-colors, light↔dark as a tone inversion (40↔80…)
+//   flat        — the underlying editing model (colors.semantic / colors.themes).
+//                 Still a valid `SemanticArchitecture` value and still what
+//                 `themes[theme]` holds; it is simply not a projection.
+//   categorical — the ONE shipped architecture: a fixed 41-role catalogue
+//                 (Content · Action · Surface · Status · Border) with the
+//                 light/dark primitive ref inside each token (DTCG-style),
+//                 deliberately NOT the 89 flat roles.
+//
+// Astryx, shadcn/ui, Apple-HIG Vibrancy, Material-3 Tonal and IBM Carbon were
+// each implemented here as alternative projections and have all been REMOVED —
+// they were retired from the picker in store v50 and deleted outright after.
+// Don't reintroduce one as a second projection: `projectCurated` +
+// `CATEGORICAL_ROLES` is the single table, and the marker vocabulary below
+// ({fam.solid}, {on:…}, {ink:…}, {ui:…}, {ui+:…}, {step:…}) is where a new idea
+// belongs instead.
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
 import { accessibleSolidTone, solidInkPair, checkContrast, WCAG_AA } from './colorUtils'
@@ -19,19 +26,19 @@ import { apcaLc, INTENT_THRESHOLDS } from './color/apca'
 
 /** APCA body-text floor — the same constant the audit and the ramp use. */
 const APCA_BODY_TEXT = INTENT_THRESHOLDS['body-text'].apcaLc ?? 75
+/** WCAG 1.4.11 + APCA floor for a non-text UI boundary (borders, focus rings,
+ *  control outlines) — `checkContrast`/`apcaLc` dual-metric, `ui-component`
+ *  intent. Shared by the focus-ring solver below. */
+const WCAG_UI = INTENT_THRESHOLDS['ui-component'].wcag ?? 3
+const APCA_UI = INTENT_THRESHOLDS['ui-component'].apcaLc ?? 45
 import { hexToOklch, oklchToHex } from './color/gamut'
-import { CARBON_TOKENS } from './color/carbonReference'
-import { Hct, TonalPalette, argbFromHex, hexFromArgb } from '@material/material-color-utilities'
 import type { ThemePalette } from '../store/useDesignStore'
 
-export type SemanticArchitecture = 'flat' | 'astryx' | 'shadcn' | 'categorical' | 'vibrancy' | 'tonal' | 'carbon'
+export type SemanticArchitecture = 'flat' | 'categorical'
 
-// 'flat' stays a valid value (the underlying editing model every architecture
-// projects from, see the header comment above) but is no longer offered as a
-// picker card — Astryx replaced it as the visible "one alias per role" choice.
-// Old persisted systems migrate 'flat' → 'astryx' (useDesignStore.ts v43→v44).
-/** Visible in the UI — Categorical only. Other projections (Astryx, shadcn,
- *  Vibrancy, Carbon, Tonal) remain in code for tests and legacy exports. */
+/** The picker's cards. Categorical is the only projection; 'flat' stays a
+ *  valid TYPE value (it's the underlying editing model `themes[theme]` holds)
+ *  but is not a card, and `projectArchitecture` returns null for it. */
 export const ARCHITECTURE_OPTIONS: {
   key: SemanticArchitecture
   label: string
@@ -61,7 +68,7 @@ export type ProjectionInput = {
 }
 
 // ── Solid fills and the ink that sits on them ────────────────────────────────
-// Every curated architecture (Categorical · Astryx · shadcn) has the same two
+// The curated architecture has two roles that move together:
 // roles: a solid brand fill and the ink ON it. Both used to be static — the
 // fill's tone came from one `accessibleSolidTone(scales.brand)` call and the
 // ink was hardcoded `{neutral.1}` — and that produced measurably inaccessible
@@ -81,7 +88,7 @@ export type ProjectionInput = {
 //     page, a hair darker. Accent `#fff3b0` measured 4.44:1 in light: the
 //     search believed it had passed. And for a mid-lightness ramp (yellow,
 //     lime) near-white may never be the right answer at any tone — the
-//     Astryx table already hand-patched exactly that with `on-warning:
+//     A hand-patched table used to spell exactly that out as `on-warning:
 //     {neutral.12}`, which is the general rule written once as a special case.
 //
 // Both are now solved TOGETHER, per theme, against real hexes:
@@ -199,15 +206,99 @@ function tintInkRef(fam: string, bgTone: number, look: Look): string {
 }
 
 /**
+ * The tone of `fam`'s ramp that works as a NON-TEXT UI boundary against the
+ * page — a focus ring, a control outline. Solved rather than pinned, because
+ * every ramp this is asked about is tinted by a hue the USER supplies, so its
+ * luminance is outside this system's control and a fixed tone cannot honestly
+ * promise a floor.
+ *
+ * Walks UP from `start` and returns the FIRST tone clearing both WCAG 1.4.11
+ * (3:1) and APCA Lc 45 — the `ui-component` intent. Falls back to the
+ * closest-to-passing tone rather than a hardcoded step, mirroring
+ * `solidInkPair`/`tintInkRef`.
+ *
+ * Both callers were pinned tones that measurably failed:
+ *  · `border.focus` (start 9) was `{accent.9}` with a comment claiming it
+ *    "clears both" — 5 of 8 accent hues fell under 3:1 (yellow 1.53).
+ *  · `border.default` (start 8) was pinned to `{neutral.8}` by the border
+ *    realignment, which holds for most systems and misses on a neutral tinted
+ *    by certain accents — the contrast matrix caught teal/radix at 2.96 and
+ *    green/radix at 2.98, i.e. the SAME defect the focus-ring fix existed to
+ *    remove, one notch milder. Starting the walk at 8 keeps every passing
+ *    system on 8 and lifts only the ones that need it.
+ */
+function uiBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look): string {
+  const page = look(kind === 'dark' ? 'neutral-dark' : 'neutral', 1)
+  if (!page) return `{${fam}.${start}}`
+  const ramp = rampOf(look, fam)
+  let fallback = start
+  let bestScore = -Infinity
+  for (let t = start; t <= 12; t++) {
+    const hex = ramp[t]
+    if (!hex) continue
+    const w = checkContrast(hex, page)
+    const lc = Math.abs(apcaLc(hex, page))
+    if (w >= WCAG_UI && lc >= APCA_UI) return `{${fam}.${t}}`
+    const score = Math.min(w / WCAG_UI, lc / APCA_UI)
+    if (score > bestScore) { bestScore = score; fallback = t }
+  }
+  return `{${fam}.${fallback}}`
+}
+
+/** The tone number `uiBoundaryRef` resolved to — for a role that must sit a
+ *  step ABOVE the boundary (`border.strong`) and would otherwise collapse onto
+ *  it whenever the boundary itself had to walk up. */
+function uiBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look: Look): number {
+  return Number(REF_RE.exec(uiBoundaryRef(fam, start, kind, look))?.[2] ?? start)
+}
+
+/**
+ * A hover/pressed tone `offset` steps past the RESOLVED solid, re-verified
+ * through `solidInkPair` rather than assumed — pinning hover/pressed to fixed
+ * tones (the old `{accent.10}`/`{accent.11}`) silently breaks the moment the
+ * solid itself isn't 9, which `{accent.solid}` guarantees for any hue whose
+ * anchor can't carry white-or-near-black ink at Lc 75 (measured: 8 of 12
+ * seeded hues resolve the solid to 11, not 9).
+ *
+ * `solidTone` is passed in rather than recomputed — `curatedRefs` already
+ * memoises it per family via `solidToneFor`, and reusing that value is what
+ * guarantees `{step:accent+1}` can never disagree with what `{accent.solid}`
+ * itself resolved to for the SAME theme.
+ *
+ * Clamped to 12 before the walk: `solidInkPair`'s loop runs `start..12`, so an
+ * unclamped `start` past 12 would never enter it and return the out-of-range
+ * start verbatim (`{accent.13}`, which resolves to nothing).
+ *
+ * When the solid is already at 11 (one step of ramp headroom left), both
+ * `+1` and `+2` land on 12 — a real, legible pressed state, just not distinct
+ * from hover. Verified: no hue in the audited set has ANY tone past 12 that
+ * still carries the label, so this is a property of the ramp, not a solver
+ * shortfall — see the design plan's two negative results (pure-black ink,
+ * relaxed Lc 60 target) for what was ruled out before accepting it.
+ */
+function solidStepRef(fam: string, offset: number, solidTone: number, look: Look): string {
+  const ramp = rampOf(look, fam)
+  const start = Math.min(solidTone + offset, 12)
+  const { tone } = solidInkPair(ramp, inkHexes(look), start)
+  return `{${fam}.${tone}}`
+}
+
+/**
  * A curated role table resolved for ONE theme, against that theme's OWN ramps.
  *
- * Three markers are substituted here, and only here:
+ * Five markers are substituted here, and only here:
  *  · `{accent.solid}`    → `{accent.<tone>}`, the accessible fill step
  *  · `{on:<fam>.<tone>}` → whichever INK_REF actually passes on that fill
  *    (`{on:accent.solid}` resolves the fill's tone first)
  *  · `{ink:<fam>.<tone>}` → the same family's tone that reads on that tint
+ *  · `{ui:<fam>.<start>}`  → the first tone from `start` that works as a
+ *    non-text UI boundary against the page (see `uiBoundaryRef`)
+ *  · `{ui+:<fam>.<start>}` → one step past whatever `{ui:…}` resolved to —
+ *    the emphasis stroke, which must not collapse onto the boundary
+ *  · `{step:<fam>+<n>}`    → `<n>` tones past the RESOLVED solid, re-verified
+ *    (see `solidStepRef`)
  *
- * All three collapse to a plain `{family.tone}` here, which is what makes the
+ * All five collapse to a plain `{family.tone}` here, which is what makes the
  * result editable: `architectureOverrides` are applied AFTER this, so the
  * system assigns a sensible value by default and a hand-picked one still wins.
  */
@@ -234,8 +325,8 @@ function curatedRefs(
     const ref = (kind === 'dark' ? r.dark : r.light)
       // Handles both `{accent.solid}` and `{on:accent.solid}` in one pass.
       // `{fam.solid}` and `{on:fam.solid}` for ANY family, not just accent.
-      // Astryx pinned its status fills to `{error.9}` while its accent used
-      // `{accent.solid}` — same table, two conventions. Tone 9 of a red ramp
+      // Status fills used to be pinned to `{error.9}` while the accent used
+      // `{accent.solid}` — one table, two conventions. Tone 9 of a red ramp
       // cannot carry white OR near-black ink at AA (measured worst: 3.55), so
       // the pinned form was unfixable by choosing a better ink. Solving the
       // FILL tone is what Categorical already does.
@@ -245,25 +336,28 @@ function curatedRefs(
         inkRefFor(look(fam, Number(tone)), look))
       .replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
         tintInkRef(fam, Number(tone), look))
+      // `{ui:<fam>.<start>}` — the control boundary / focus ring, solved from
+      // `start`. `{ui+:…}` is the EMPHASIS step: one past whatever the
+      // boundary actually resolved to, so it can never collapse onto it when
+      // the boundary itself had to walk up (which is exactly what a pinned
+      // `border.strong` would have done on a teal or green tinted neutral).
+      .replace(/\{ui\+:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
+      .replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        uiBoundaryRef(fam, Number(start), kind, look))
+      .replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam: string, n: string) =>
+        solidStepRef(fam, Number(n), solidToneFor(fam), look))
       // `{chart.N}` is a computed series colour, not a ramp step — it resolves
       // to a literal, which `refToView` passes through unchanged.
       .replace(/\{chart\.(\d)\}/g, (_m, n: string) => chartSlots[Number(n) - 1] ?? '')
-      // `{visited.N}` — the accent ramp rotated onto a distinct hue, for
-      // Carbon's visited-link and caution-undefined tokens. L and C are the
-      // accent ramp's, so the visited ramp inherits its contrast behaviour and
-      // only the hue differs. See CARBON_VISITED_HUE_OFFSET.
-      .replace(/\{visited\.(\d+)\}/g, (_m, tone: string) => {
-        const base = look('accent', Number(tone))
-        if (!base) return ''
-        const { l, c, h } = hexToOklch(base)
-        return oklchToHex(l, c, (h + CARBON_VISITED_HUE_OFFSET) % 360)
-      })
     return { group: r.group, key: r.key, ref }
   })
 }
 
-/** Every curated architecture projects identically — table in, per-theme refs
- *  out — so they share one loop instead of three copies that can drift. */
+/** The curated role table → per-theme refs. Categorical is the only
+ *  architecture now; this stays a generic loop over a role table rather than
+ *  being inlined into `projectCategorical`, because the marker substitution
+ *  above is the part worth keeping separable from any one catalogue. */
 function projectCurated(
   roles: { group: string; key: string; light: string; dark: string }[],
   input: ProjectionInput,
@@ -314,11 +408,9 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
   { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
   { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
-  // Disabled ink — tone 7, matching Astryx's own `text.disabled`. Categorical
-  // used to have none at all (a fixed tone here would need re-verifying per
-  // custom accent, same trap as everything else in this file), and the preview
-  // panel fell back to Astryx's value for this slot; adopting the same tone
-  // natively means that fallback is no longer needed.
+  // Disabled ink — tone 7. Categorical used to have no disabled ink at all and
+  // the preview panel fell back to another scheme's value for the slot;
+  // adopting the tone natively means that fallback is no longer needed.
   { group: 'content', key: 'disabled', light: '{neutral.7}', dark: '{neutral-dark.7}' },
   // Link ink + its hover step. NOT the user-proposed {accent.10}/{accent.11} —
   // tone 10 is the ramp's "solid hover" FILL step, not a text step, and isn't
@@ -331,17 +423,28 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'action', key: 'secondary.default', light: '{neutral.3}',    dark: '{neutral-dark.3}' },
   { group: 'action', key: 'secondary.accent', light: '{accent.3}',     dark: '{accent.3}' },
   { group: 'action', key: 'disabled',  light: '{neutral.2}',    dark: '{neutral-dark.2}' },
-  // Hover/pressed on the primary fill — fixed one/two steps past the solid,
-  // matching the flat catalogue's own `background-brand-solid-hover` (9→10)
-  // convention. Known, accepted simplification: unlike `action.primary.default`
-  // itself these are fixed tones, not re-solved from `accent.solid`'s resolved step —
-  // for the rare accent whose solid lands above tone 9 (see `solidInkPair`),
-  // hover could read lighter than default. Not fixed here; same class of
-  // residual this file already accepts elsewhere for simple fixed-step roles.
-  { group: 'action', key: 'primary.hover',   light: '{accent.10}', dark: '{accent.10}' },
-  // Dark pressed is a recessed step (6), not a lighter one — measured by eye
-  // on a dark layout, {accent.11} read as a hover-again, not as "down".
-  { group: 'action', key: 'primary.pressed', light: '{accent.11}', dark: '{accent.6}' },
+  // Hover/pressed on the primary fill — SOLVED `n` steps past the RESOLVED
+  // solid (`{step:accent+n}`), not pinned. This used to be fixed one/two steps
+  // past tone 9, on the stated assumption that the solid always lands there —
+  // false for 8 of 12 seeded hues, whose solid resolves to 11 (see
+  // `solidInkPair`). Measured under the old pin: light hover fell to 1.78:1 on
+  // yellow (fails AA), and light pressed at a FIXED 11 was identical to
+  // default for every one of those 8 hues — no pressed state at all. Dark
+  // pressed was worse: `{accent.6}`, "measured by eye… read as a hover-again,
+  // not as 'down'" against an assumed solid of 9, measured Lc 0–24 across
+  // every hue once the solid actually resolves to 11.
+  //
+  // `{step:accent+1}`/`+2` re-verify through the SAME `solidInkPair` search
+  // `{accent.solid}` uses, so a cool/saturated accent (solid stays at 9) keeps
+  // resolving to exactly `accent.10`/`accent.11` — byte-identical to before.
+  // When the solid is already 11, both land on 12: the ramp's last tone that
+  // can carry the label at all (verified — pure-black ink and a relaxed Lc 60
+  // target were both tried and neither recovers a distinct third step; see
+  // design-plans/action-states-and-info-status.md). Pressed and hover then
+  // share a tone, which is still a real, legible state — unlike the fixed-11
+  // pin it replaces, which wasn't a state at all for those hues.
+  { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
+  { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
@@ -393,31 +496,51 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
   { group: 'status', key: 'success.surface',  light: '{success.3}',      dark: '{success.3}' },
   { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.11}' },
+  // Info — same shape as the three severities above, added because the Info
+  // primitive (seeded, generated, exported to tokens.json) had NO semantic
+  // role referencing it at all; a designer retinting Info saw nothing move.
+  // Tone 11 for content, not `{ink:info.3}` — this table deliberately pins
+  // critical/warning/success to 11 rather than the solved-to-12 `{ink:…}`
+  // marker (see the comment above critical.surface: 12 "reads as near-black…
+  // and loses the severity hue," 11 is Radix's own chromatic-text step).
+  // Info follows the identical rule rather than a different mechanism for
+  // one severity: measured on the live system's seed, info.11 on info.3
+  // clears WCAG 4.35 / Lc 63.8 in light and 10.21 / Lc 73.6 in dark — the
+  // same range critical/warning/success already accept (critical's own
+  // residual is Lc ~42, short of the 60 floor, and was kept anyway).
+  { group: 'status', key: 'info.surface',     light: '{info.3}',        dark: '{info.3}' },
+  { group: 'status', key: 'info.content',     light: '{info.11}',       dark: '{info.11}' },
   // Solid critical fill (badges, destructive buttons). Light solves the fill
   // (`{error.solid}`). Dark uses the ramp's light end so a destructive solid
   // still reads as coloured on a dark page; ink is solved against that step.
   { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.12}' },
   { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.12}' },
-  // Border — strokes. `default` is tone 5, the same step Astryx's own
-  // `border.default` resolves to, so the two namings agree on what a default
-  // stroke IS. That also fixes an ordering this file used to carry and flag:
-  // `subtle` sat on a HIGHER tone (5) than `default` (3), i.e. the "subtle"
-  // stroke was the heavier one. `subtle` takes over the 3 `default` vacated, so
-  // the pair now reads in the right order and no tone leaves the palette.
-  // DECORATIVE by intent: card edges, dividers, table rules. No contrast floor.
-  // Do NOT use it as the visible boundary of a control — see `strong`.
-  { group: 'border', key: 'default',  light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  // The control boundary — WCAG 1.4.11 (≥3:1) AND APCA Lc 45. Use it wherever
-  // the stroke is the only thing saying "there is an input here": text fields,
-  // checkboxes, radios, selects, unfilled buttons.
+  // Border — strokes, split by JOB rather than by weight: decoration (no
+  // floor) vs. the control boundary (WCAG 1.4.11 ≥3:1 AND APCA Lc ≥45, the
+  // `ui-component` intent, via `{ui:…}` — see `uiBoundaryRef`). `default` used
+  // to be pinned to tone 5 (1.61:1, decorative weight) while ALSO being the
+  // name inputs were expected to reach for — shipping either an invisible
+  // input or, if you wanted a real boundary, forcing `strong`'s tone-9 weight
+  // (4.78:1, past Radix's own 6–8 stroke band) onto every field. `default` now
+  // IS the accessible control boundary, so "the input border" and "the
+  // accessible tone" are the same answer.
   //
-  // The light/dark tones are DELIBERATELY not the same step, which breaks the
-  // system's usual identity rule. Light `{neutral.9}` is the 1.4.11 control
-  // boundary. Dark used to jump to `{neutral-dark.11}` for the same floor —
-  // on a dark layout that stroke reads as a second text colour. `{neutral-dark.6}`
-  // is the quiet grouping edge that matches the rest of the dark page; use
-  // `border.focus` when the stroke is the only thing saying "this is a control".
-  { group: 'border', key: 'strong',   light: '{neutral.9}', dark: '{neutral-dark.6}' },
+  // SOLVED from start 8, not pinned there — a fixed tone 8 measured under 3:1
+  // (2.96 / 2.98) on a neutral ramp tinted by certain accents (`neutralFromBrand`
+  // links the neutral to the accent hue). Dark starts the SAME walk at 8, not
+  // tone-for-tone with light: this ramp's dark tones 8–10 either miss WCAG or
+  // pass it while failing APCA (Lc 21.4 / 27.0 at 9/10 — "there is nothing
+  // between Lc ~27 and Lc ~75" on this ramp's dark stroke band, the same gap a
+  // deleted IBM Carbon projection once proved for a sibling architecture's own
+  // border-strong), so the walk lands on 11 (11.99/75.2) for the default seed.
+  { group: 'border', key: 'default',  light: '{ui:neutral.8}', dark: '{ui:neutral-dark.8}' },
+  // Emphasis — one step past whatever `default` RESOLVED to (`{ui+:…}`),
+  // never a fixed tone: pinning it to 9 would collapse onto the boundary on
+  // exactly the tinted-neutral systems where the boundary itself walks to 9.
+  // Reserve for grouping strokes that need to outrank a plain control
+  // boundary (e.g. a selected card's own edge); it is NOT where a resting
+  // input should point — that's `default`, immediately above.
+  { group: 'border', key: 'strong',   light: '{ui+:neutral.8}', dark: '{ui+:neutral-dark.8}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
   // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -427,23 +550,37 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // wrong for state.
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
   { group: 'border', key: 'subtle',   light: '{neutral.3}', dark: '{neutral-dark.4}' },
-  // Focus ring — WCAG 1.4.11 wants ≥3:1 against the page, and APCA wants Lc 45.
-  // Light `{accent.9}` clears both (WCAG 3.14–7.45, Lc 57–85). Dark used to be
-  // `{accent.8}` and cleared NEITHER (WCAG 1.97–4.00, Lc 9.5–28.5). Measured
-  // across six seeds, the dark accent tones give:
-  //     .8  → WCAG 1.97..4.00   Lc  9.5..28.5   fails both
-  //     .9  → WCAG 2.52..6.01   Lc 15.3..42.9   fails both
-  //     .10 → WCAG 3.04..7.21   Lc 20.2..50.1   WCAG only — the blind spot
-  //     .11 → WCAG 11.83..11.90 Lc 75.0..75.3   clears both
-  // `.10` is the trap: it satisfies the letter of 1.4.11 while remaining hard
-  // to see, which is exactly what the dual-metric rule exists to catch.
-  { group: 'border', key: 'focus',   light: '{accent.9}',  dark: '{accent.11}' },
+  // Focus ring — SOLVED, not pinned. `{ui:accent.9}` (resolved in
+  // `curatedRefs` via `uiBoundaryRef`, below) walks the accent ramp up from
+  // tone 9 until a tone clears WCAG ≥3:1 AND APCA Lc ≥45 against the page,
+  // falling back to the closest-to-passing tone if none does — same
+  // no-fixed-fallback shape as `solidInkPair`/`tintInkRef`.
+  //
+  // This role used to be pinned to `{accent.9}` with a comment claiming it
+  // "clears both (WCAG 3.14-7.45)" — measured across 8 accent hues, 5 of 8
+  // fail: sky 2.77, cyan 2.43, amber 2.15, lime 1.98, yellow 1.53. Tone 9 is
+  // the user's raw brand hex, so its luminance is entirely outside this
+  // system's control; a pinned tone cannot honestly promise a floor here.
+  // The solver lands on 9 for a cool/saturated accent (unchanged output for
+  // the common case) and walks up to 10 or 11 for anything warmer or paler.
+  //
+  // Dark stays pinned at `{accent.11}` — its own six-seed search already
+  // showed dark ramps have no equivalent blind spot worth walking around
+  // (tone 11 clears both for every seed tried: WCAG 11.83–11.90, Lc 75.0–75.3).
+  { group: 'border', key: 'focus',   light: '{ui:accent.9}',  dark: '{ui:accent.9}' },
+  // Already the minimum tone clearing both metrics — verified, not changed.
+  // Light error.9 = 3.76/64 (passes). Dark error.9 = 5.14 WCAG but Lc 37.6
+  // (fails APCA — the same blind spot `default` above hits); error.10 is
+  // 44.2, still short of the Lc 45 floor; error.11 is the first to clear both
+  // (11.94/75.0).
   { group: 'border', key: 'critical', light: '{error.9}',   dark: '{error.11}' },
-  // Warning/success ramps are lighter than error at tone 9 — measured worst
-  // case across seeds: .9 reads 2.29:1 / Lc 44.4 on the page, .10 still under
-  // 3:1. Tone 11 is the first step that clears both floors in light AND dark.
+  // Also already minimal: warning has NO tone below 11 that clears WCAG in
+  // light (tone 9 = 2.35, tone 10 = 2.75 — both fail; tone 11 = 5.14 passes).
   { group: 'border', key: 'warning',  light: '{warning.11}', dark: '{warning.11}' },
-  { group: 'border', key: 'success',  light: '{success.11}', dark: '{success.11}' },
+  // Success has one step of headroom warning doesn't: tone 10 clears BOTH
+  // metrics in both themes (light 3.31/60.0, dark 8.22/55.7), one step
+  // lighter than the previous tone-11 pin.
+  { group: 'border', key: 'success',  light: '{success.10}', dark: '{success.10}' },
 ]
 
 /**
@@ -488,8 +625,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'content.link.default': '[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.',
   'content.link.hover': '[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.',
   'action.primary.default': "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
-  'action.primary.hover': '[ROLE: Primary CTA Hover] Interactive hover state — one primitive step darker (light) or lighter (dark) than action.primary.default.',
-  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Active/pressed state. Light {accent.11} (one step past hover). Dark {accent.6} — recessed, darker than the solid, so press reads as down not as a second hover.',
+  'action.primary.hover': '[ROLE: Primary CTA Hover] Interactive hover state. SOLVED one tone past the RESOLVED action.primary.default, re-verified for label contrast — not a fixed accent step. A pinned {accent.10} measured under WCAG AA (as low as 1.78:1) for any hue whose solid resolves above tone 9.',
+  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Active/pressed state. SOLVED two tones past the RESOLVED default, same reasoning as hover. Replaces a fixed dark {accent.6} that measured APCA Lc 0-24 (illegible) once the solid resolves above tone 9, which it does for most hues.',
   'action.secondary.default': '[ROLE: Secondary CTA Default] Neutral subtle button fill. Label text must be content.primary, not content.on-action.',
   'action.secondary.accent': '[ROLE: Secondary Accent Fill] Accent-tinted secondary button background. Pair with content.primary for the label.',
   'action.disabled': '[ROLE: Disabled Action Fill] Disabled button/control background. No contrast floor — communicates inactive state visually.',
@@ -501,14 +638,16 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.warning.content': '[ROLE: Feedback Text] Warning message ink on status.warning.surface. Light and dark both {warning.11} — chromatic severity, not the near-white {warning.12} in dark.',
   'status.success.surface': '[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.',
   'status.success.content': '[ROLE: Feedback Text] Success message ink on status.success.surface. Light and dark both {success.11} — chromatic severity, not the near-white {success.12} in dark.',
+  'status.info.surface': '[ROLE: Feedback Background Subtle] Tinted background for informational alerts and banners. Pair with status.info.content — never a fixed ink on the bg alone.',
+  'status.info.content': '[ROLE: Feedback Text] Info message ink on status.info.surface. Both themes {info.11} — same chromatic-severity rule as critical/warning/success, not the near-white {info.12}.',
   'border.subtle': '[ROLE: Structural Border] Aesthetic dividers (hr, table rules). Light {neutral.3}, dark {neutral-dark.4}. Not critical for accessibility.',
-  'border.strong': '[ROLE: Component Border] Default layout stroke for cards and grouping. Light {neutral.9}. Dark {neutral-dark.6} so the edge stays quiet on a dark page — use border.focus when the stroke is the only control affordance (WCAG 1.4.11).',
-  'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. Must contrast strongly against backgrounds — solved per theme (light {accent.9}, dark {accent.11}).',
-  'border.default': '[ROLE: Structural Border Default] Decorative card edges and dividers. No contrast floor — not for control boundaries.',
+  'border.default': '[ROLE: Control Boundary] The resting border for inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. Light {neutral.8} = 3.26:1/Lc60. Dark {neutral-dark.11} = 11.99:1/Lc75 — not tone-for-tone with light; this ramp\'s dark tones 9-10 pass WCAG but fail APCA (Lc 21-27), so 11 is the first that clears both.',
+  'border.strong': '[ROLE: Emphasis Border] One step past border.default in both themes — for a stroke that needs to outrank a plain control boundary (a selected card\'s own edge). Light {neutral.9} = 4.78:1. Dark {neutral-dark.12} = 15.19:1. Not the default input border — see border.default.',
+  'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. SOLVED per theme, not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Light walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 clear (lands on 9-11 depending on hue). Dark stays {accent.11}. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, matching Material/Carbon (WCAG does not require an error-coloured ring) and keeping one ring token instead of one per severity.',
   'border.accent': '[ROLE: Decorative Brand Border] Brand-tinted grouping stroke. NOT a state indicator — use border.focus for focus/selected/active.',
-  'border.critical': '[ROLE: Critical Border] Validation stroke for inputs in an error state.',
-  'border.warning': '[ROLE: Warning Border] Validation stroke for inputs in a warning state.',
-  'border.success': '[ROLE: Success Border] Validation stroke for inputs in a success/valid state.',
+  'border.critical': '[ROLE: Critical Border] Validation stroke for inputs in an error state. Light {error.9} = 3.76:1. Dark {error.11} = 11.94:1 — error.9/10 fail APCA in dark (Lc 37.6/44.2), same blind spot as border.default.',
+  'border.warning': '[ROLE: Warning Border] Validation stroke for inputs in a warning state. {warning.11} — the minimum tone that clears WCAG in light (tone 9 = 2.35, tone 10 = 2.75, both fail).',
+  'border.success': '[ROLE: Success Border] Validation stroke for inputs in a success/valid state. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.31:1/Lc60 light, 8.22:1/Lc56 dark).',
 }
 
 /** Flat role id → nested export path segments. `content.link.default` → ['content','link','default']. */
@@ -535,857 +674,6 @@ export const CATEGORICAL_ROLE_RENAME: Record<string, string> = {
   'status.success-fg': 'status.success.content',
   'border.active': 'border.focus',
 }
-
-// ── Astryx ───────────────────────────────────────────────────────────────────
-// The Astryx design-token color contract (@astryxdesign/core `defineTheme`):
-// one alias per role, one hop to a primitive — same shape/math as Categorical,
-// just grouped and named the way Astryx themes are (color-accent,
-// color-background-surface, color-text-primary…). Curated, not a projection
-// of the 39 flat roles — deliberately scoped to the roles that map cleanly
-// onto Escala's primitive model (accent/neutral/error/warning/success); the
-// chromatic swatch families (blue/cyan/green/…) and syntax-highlight tokens an
-// Astryx theme file may also carry are out of scope for a semantic
-// architecture — they're app-specific extras, not part of the alias layer.
-const ASTRYX_ROLES: { group: string; key: string; light: string; dark: string }[] = [
-  // Accent — the brand color and how to sit on top of it
-  { group: 'accent', key: 'solid',    light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'accent', key: 'on-solid', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
-  { group: 'accent', key: 'muted',    light: '{accent.3}',     dark: '{accent.3}' },
-  // Background — page canvas through elevated surfaces
-  { group: 'background', key: 'body',     light: '{neutral.1}',  dark: '{neutral-dark.1}' },
-  { group: 'background', key: 'surface',  light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  // `background-card` is in the published contract (`--color-background-card`)
-  // and was missing here. Cards sit one step off the body, like `surface`, but
-  // Astryx keeps them separate so a card inside a surface can still be told
-  // apart.
-  { group: 'background', key: 'card',     light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  { group: 'background', key: 'muted',    light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'background', key: 'popover',  light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  // Deliberately inverted — an inverted surface is dark on a light page and
-  // light on a dark one, by definition (same pattern as Categorical's
-  // `surface.inverse`).
-  { group: 'background', key: 'inverted', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // `--color-background-error-inverted` — the solid error surface that carries
-  // `on-error` ink. Solved rather than pinned, same as every other solid fill.
-  { group: 'background', key: 'error-inverted', light: '{error.solid}', dark: '{error.solid}' },
-  // Text — foreground ink
-  { group: 'text', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  { group: 'text', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
-  { group: 'text', key: 'disabled',  light: '{neutral.7}',  dark: '{neutral-dark.7}' },
-  { group: 'text', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
-  // Icon — same hierarchy as Text, one step lighter (icons read lighter than type)
-  { group: 'icon', key: 'primary',   light: '{neutral.11}', dark: '{neutral-dark.11}' },
-  // Icons are non-text UI: WCAG 1.4.11 applies whenever they carry meaning, and
-  // "secondary" promises a second VISIBLE level, not a hidden one. Light
-  // `{neutral.9}` clears it (Lc 68); dark `{neutral-dark.9}` measured Lc 21 —
-  // invisible. Promoted to 11 in dark, which does make it equal to
-  // `icon.primary` there. That is the honest trade: the dark ramp has no step
-  // between Lc 27 and Lc 75, so a second visible icon weight does not exist.
-  // An invisible icon is a defect; two icons at one weight is a limitation.
-  { group: 'icon', key: 'secondary', light: '{neutral.9}',  dark: '{neutral-dark.11}' },
-  { group: 'icon', key: 'disabled',  light: '{neutral.7}',  dark: '{neutral-dark.7}' },
-  // Same rule as `icon.secondary`: an icon that carries meaning is non-text UI
-  // under WCAG 1.4.11. Light `{accent.9}` clears it (3.14:1, Lc 57); dark
-  // measured 2.52:1 at Lc 15.3 — below the floor in both metrics. `{accent.11}`
-  // is the only dark accent tone clearing both (11.83:1, Lc 75).
-  { group: 'icon', key: 'accent',    light: '{accent.9}',   dark: '{accent.11}' },
-  // Status — feedback fg/bg/on triads per severity
-  { group: 'status', key: 'success',       light: '{success.solid}',  dark: '{success.solid}' },
-  { group: 'status', key: 'success-muted', light: '{success.3}',  dark: '{success.3}' },
-  { group: 'status', key: 'on-success',    light: '{on:success.solid}', dark: '{on:success.solid}' },
-  { group: 'status', key: 'error',         light: '{error.solid}',    dark: '{error.solid}' },
-  { group: 'status', key: 'error-muted',   light: '{error.3}',    dark: '{error.3}' },
-  { group: 'status', key: 'on-error',      light: '{on:error.solid}',   dark: '{on:error.solid}' },
-  { group: 'status', key: 'warning',       light: '{warning.solid}',  dark: '{warning.solid}' },
-  { group: 'status', key: 'warning-muted', light: '{warning.3}',  dark: '{warning.3}' },
-  // Warning yellow stays light in both appearances, so its "on" ink comes out
-  // dark — solved, not hardcoded: that hand-patched {neutral.12} was the
-  // general rule (pick the ink by contrast) written once as a special case.
-  { group: 'status', key: 'on-warning',    light: '{on:warning.solid}', dark: '{on:warning.solid}' },
-  // Border — strokes. `emphasized` was `{neutral.7}` — tone 7 sits deep
-  // enough into the ramp that it read as a heavy, near-solid stroke rather
-  // than an emphasized-but-still-subtle border (reported as "muy fuerte").
-  // Pinned to `{neutral.5}`, the same tone `default` already resolves to —
-  // deliberately: the user's own hand-edit (an `architectureOverrides` entry
-  // on `border.emphasized.light`) had already landed there, so this makes
-  // that the SCHEMA's own answer instead of a personal override sitting on
-  // top of a heavier one. Both border roles reading the same primitive today
-  // isn't a bug — nothing requires them to diverge, and they still can later
-  // (a future override, or a future schema change, re-splits them).
-  // ── Utility ───────────────────────────────────────────────────────────────
-  // The remainder of the published contract. These were absent, which meant an
-  // Astryx codebase consuming this export still had to hand-write them —
-  // defeating the point of shipping the architecture rather than a subset.
-  { group: 'utility', key: 'overlay',         light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  { group: 'utility', key: 'overlay-hover',   light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'utility', key: 'overlay-pressed', light: '{neutral.4}',  dark: '{neutral-dark.4}' },
-  { group: 'utility', key: 'skeleton',        light: '{neutral.4}',  dark: '{neutral-dark.4}' },
-  { group: 'utility', key: 'track',           light: '{neutral.4}',  dark: '{neutral-dark.4}' },
-  { group: 'utility', key: 'neutral',         light: '{neutral.5}',  dark: '{neutral-dark.5}' },
-  // `on-dark` / `on-light` are absolute by definition — the ink for a surface
-  // whose polarity is known regardless of theme, which is why neither flips.
-  { group: 'utility', key: 'on-dark',         light: '{neutral.1}',  dark: '{neutral-dark.12}' },
-  { group: 'utility', key: 'on-light',        light: '{neutral.12}', dark: '{neutral-dark.1}' },
-
-  { group: 'border', key: 'default',    light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  { group: 'border', key: 'emphasized', light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  // Control boundary — same reasoning as Categorical's `border.strong`.
-  { group: 'border', key: 'strong',     light: '{neutral.9}', dark: '{neutral-dark.11}' },
-]
-
-/** Astryx resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
-export function projectAstryx(
-  input: ProjectionInput,
-  themeOrder: string[] = ['light', 'dark'],
-): Record<string, Record<string, Record<string, string>>> {
-  return projectCurated(ASTRYX_ROLES, input, themeOrder)
-}
-
-// ── shadcn/ui ────────────────────────────────────────────────────────────────
-// The shadcn/ui CSS-variable contract (--background, --card, --primary,
-// --sidebar-*…): same one-hop-per-role shape/math as Astryx and Categorical,
-// named the way a shadcn `:root`/`.dark` block is. Curated to the roles shadcn
-// itself ships as COLOR variables — `--radius` isn't a color and `--chart-1`
-// … `--chart-5` are a data-viz palette with no equivalent primitive in
-// Escala's model (they're independent hues, not tones of any existing ramp),
-// so both are out of scope here, same call as dropping Astryx's chromatic/
-// syntax extras above.
-const SHADCN_ROLES: { group: string; key: string; light: string; dark: string }[] = [
-  // Base — page canvas and default ink
-  { group: 'base', key: 'background', light: '{neutral.1}',  dark: '{neutral-dark.1}' },
-  { group: 'base', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Card — the default raised panel
-  { group: 'card', key: 'fill',       light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  { group: 'card', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Popover — floating surfaces (menus, dropdowns, tooltips)
-  { group: 'popover', key: 'fill',       light: '{neutral.2}',  dark: '{neutral-dark.2}' },
-  { group: 'popover', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Primary — the brand action color
-  { group: 'primary', key: 'fill',       light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'primary', key: 'foreground', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
-  // Secondary — a lower-emphasis fill (secondary buttons, chips)
-  { group: 'secondary', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'secondary', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Muted — subtle backgrounds (disabled states, quiet panels). `bg-muted
-  // text-muted-foreground` is a real shadcn pairing, so the ink has to read on
-  // the fill. It was tone 9 in both, which is the SOLID step, not a text step —
-  // fine on the light ramp (3.86:1, near AA) and broken on the dark one, where
-  // tone 9 is a mid-grey sitting on a barely-lighter tone 3: 2.89:1 measured.
-  // Tone 11 is the designated low-contrast TEXT step, and puts this pair in
-  // line with the rest of the system (flat's own `content-primary` on
-  // `background-secondary` measures 4.06 light / 4.47 dark — text on a step-2/3
-  // surface runs a little under 4.5 system-wide, because tone 11 is solved
-  // against the PAGE). Tone 12 would clear AA outright but is `foreground`'s
-  // own tone, which would erase the muted/default distinction shadcn's
-  // contract exists to draw.
-  { group: 'muted', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'muted', key: 'foreground', light: '{neutral.11}', dark: '{neutral-dark.11}' },
-  // Accent — shadcn overloads this name for a subtle interactive-hover tint,
-  // NOT the brand color (that's Primary) — kept faithful to the source contract.
-  { group: 'accent', key: 'fill',       light: '{neutral.3}',  dark: '{neutral-dark.3}' },
-  { group: 'accent', key: 'foreground', light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Destructive — the one severity color shadcn's base contract ships (no
-  // paired "-foreground" in the source variables, so none is added here)
-  // Solved, not pinned to 9 — a bright error hue at tone 9 cannot carry a label
-  // (measured 3.55:1 elsewhere in this codebase). `--destructive-foreground` was
-  // missing entirely; shadcn's own contract ships it.
-  { group: 'destructive', key: 'fill',       light: '{error.solid}', dark: '{error.solid}' },
-  { group: 'destructive', key: 'foreground', light: '{on:error.solid}', dark: '{on:error.solid}' },
-  // Border / Input / Ring — strokes and focus rings
-  { group: 'border', key: 'default', light: '{neutral.5}', dark: '{neutral-dark.5}' },
-  { group: 'border', key: 'input',   light: '{neutral.5}', dark: '{neutral-dark.6}' },
-  // ── Charts ────────────────────────────────────────────────────────────────
-  // `--chart-1` … `--chart-5` are part of shadcn's published contract and were
-  // missing entirely, so any consumer had to hand-write them.
-  //
-  // These are a CATEGORICAL palette — identity, not magnitude — so the rule is
-  // that adjacent slots must stay separable, including under colour-vision
-  // deficiency. Evenly spaced hues FAIL that: a 72° split puts green next to
-  // amber, which measures ΔE 5.9 under deuteranopia. The offsets below
-  // (0/70/160/230/300 from the brand hue at L 0.62, C 0.15) were found by
-  // search and verified with the dataviz validator: worst adjacent pair ΔE 9.2
-  // protan, 15.5 normal vision, every slot ≥3:1 on both surfaces, in BOTH light
-  // and dark. See `__tests__/shadcn.test.ts`, which re-runs the checks.
-  { group: 'chart', key: 'chart-1', light: '{chart.1}', dark: '{chart.1}' },
-  { group: 'chart', key: 'chart-2', light: '{chart.2}', dark: '{chart.2}' },
-  { group: 'chart', key: 'chart-3', light: '{chart.3}', dark: '{chart.3}' },
-  { group: 'chart', key: 'chart-4', light: '{chart.4}', dark: '{chart.4}' },
-  { group: 'chart', key: 'chart-5', light: '{chart.5}', dark: '{chart.5}' },
-  // `--ring` is the FOCUS indicator, so WCAG 1.4.11 applies: it needs ≥3:1
-  // against the page. Neutral tone 6 reads 1.90:1 in light and 1.57:1 in dark —
-  // the same trap `border.active` and Carbon's `focus` hit. Bound to the accent,
-  // which is also what shadcn's own default theme does.
-  { group: 'border', key: 'ring',    light: '{accent.solid}', dark: '{accent.11}' },
-  // Sidebar — a parallel surface set for nav rails/dashboards
-  { group: 'sidebar', key: 'background',          light: '{neutral.2}',   dark: '{neutral-dark.2}' },
-  { group: 'sidebar', key: 'foreground',          light: '{neutral.12}',  dark: '{neutral-dark.12}' },
-  { group: 'sidebar', key: 'primary',             light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'sidebar', key: 'primary-foreground',  light: '{on:accent.solid}', dark: '{on:accent.solid}' },
-  { group: 'sidebar', key: 'accent',              light: '{neutral.3}',   dark: '{neutral-dark.3}' },
-  { group: 'sidebar', key: 'accent-foreground',   light: '{neutral.12}',  dark: '{neutral-dark.12}' },
-  { group: 'sidebar', key: 'border',               light: '{neutral.5}',  dark: '{neutral-dark.5}' },
-  { group: 'sidebar', key: 'ring',                light: '{neutral.6}',   dark: '{neutral-dark.6}' },
-]
-
-/** shadcn resolved across every theme in `themeOrder`: group → token → themeKey → ref. */
-export function projectShadcn(
-  input: ProjectionInput,
-  themeOrder: string[] = ['light', 'dark'],
-): Record<string, Record<string, Record<string, string>>> {
-  return projectCurated(SHADCN_ROLES, input, themeOrder)
-}
-
-// ── Vibrancy ─────────────────────────────────────────────────────────────────
-// Apple HIG opacity tiers (labels 100/60/30/18 · fills 20/16/12/8 · separator
-// 36). Alpha roles reference RGB channel primitives; every text-grade role
-// ships an opaque fallback resolved to the nearest AA-safe ramp tone.
-const rgbOf = (hex: string): string => {
-  try { return chroma(hex).rgb().map(Math.round).join(' ') } catch { return '0 0 0' }
-}
-
-type VibrancyMode = {
-  channels: Record<string, string>
-  labels: Record<string, string>
-  labelFallbacks: Record<string, string>
-  backgrounds: Record<string, string>
-  fills: Record<string, string>
-  separators: Record<string, string>
-  tint: string
-  materials: Record<string, string>
-}
-
-export function projectVibrancy(input: ProjectionInput): { light: VibrancyMode; dark: VibrancyMode; blur: string } {
-  const gray = input.scales.gray
-  const grayDark = input.scales.grayDark ?? gray
-  const solidTone = accessibleSolidTone(input.scales.brand)
-  const solidBrand = input.scales.brand[solidTone] ?? input.accent
-
-  const mode = (
-    scale: Record<number, string>, fam: 'neutral' | 'neutral-dark',
-    pageTone: number, inkTone: number, bg2Tone: number, bg3Tone: number, sepTone: number,
-    // Opaque fallback refs — mode-specific: the nearest solid tone to what the
-    // alpha label composites to over the page (secondary must stay AA-safe).
-    secondaryFb: number, tertiaryFb: number,
-  ): VibrancyMode => {
-    const page = scale[pageTone] ?? '#ffffff'
-    const ink = scale[inkTone] ?? '#000000'
-    return {
-      channels: {
-        [`rgb-${fam}-${pageTone}`]: rgbOf(page),
-        [`rgb-${fam}-${inkTone}`]: rgbOf(ink),
-        'rgb-accent-solid': rgbOf(solidBrand),
-      },
-      labels: {
-        primary: `rgb(${rgbOf(ink)} / 1)`,
-        secondary: `rgb(${rgbOf(ink)} / 0.60)`,
-        tertiary: `rgb(${rgbOf(ink)} / 0.30)`,   // non-text use only
-        quaternary: `rgb(${rgbOf(ink)} / 0.18)`, // decorative only
-      },
-      labelFallbacks: {
-        primary: `{${fam}.${inkTone}}`,
-        secondary: `{${fam}.${secondaryFb}}`, // nearest AA-safe solid tone
-        tertiary: `{${fam}.${tertiaryFb}}`,   // appearance match — not for text
-      },
-      // System background stack — opaque by design, so pure primitive refs (R1).
-      backgrounds: {
-        primary: `{${fam}.${pageTone}}`,
-        secondary: `{${fam}.${bg2Tone}}`,
-        tertiary: `{${fam}.${bg3Tone}}`,
-      },
-      fills: {
-        primary: `rgb(${rgbOf(scale[8] ?? '#636468')} / 0.20)`,
-        secondary: `rgb(${rgbOf(scale[8] ?? '#636468')} / 0.16)`,
-        tertiary: `rgb(${rgbOf(scale[8] ?? '#636468')} / 0.12)`,
-        quaternary: `rgb(${rgbOf(scale[8] ?? '#636468')} / 0.08)`,
-      },
-      separators: {
-        default: `rgb(${rgbOf(scale[sepTone] ?? '#919396')} / 0.36)`,
-        opaque: `{${fam}.${bg3Tone}}`,
-      },
-      tint: `rgb(${rgbOf(solidBrand)} / 1)`,
-      materials: {
-        thick: `rgb(${rgbOf(page)} / 0.93)`,
-        regular: `rgb(${rgbOf(page)} / 0.80)`,
-        thin: `rgb(${rgbOf(page)} / 0.60)`,
-      },
-    }
-  }
-
-  return {
-    // light: page grows from tone 1, ink is tone 12.
-    light: mode(gray, 'neutral', 1, 12, 2, 3, 6, 8, 5),
-    // dark: the hierarchy inverts — page IS tone 12 of the dark ramp.
-    dark: mode(grayDark, 'neutral-dark', 12, 1, 11, 10, 6, 5, 9),
-    blur: 'blur(20px) saturate(1.8)',
-  }
-}
-
-/** Composite an alpha ink over a base — what an alpha role effectively reads as. */
-export function compositeOver(inkHex: string, alpha: number, baseHex: string): string {
-  try { return chroma.mix(baseHex, inkHex, alpha, 'rgb').hex() } catch { return inkHex }
-}
-
-// ── Tonal (Material 3) ───────────────────────────────────────────────────────
-// REAL HCT, via Google's own `@material/material-color-utilities`.
-//
-// This replaces a fabrication (defect C2). The previous implementation set
-// OKLCH `L = tone / 100` and tapered chroma with `sin(π·t)`, with a comment
-// claiming that was "the same behavior HCT tonal palettes exhibit". Both halves
-// were wrong:
-//
-//  · **Tone is CIE `L*`, not OKLab `L`.** They are different functions:
-//    `L* 40` ≈ OKLab `L 0.48`, not 0.40, and the error is non-linear — largest
-//    in the mid tones, which is exactly where M3's contrast guarantees live.
-//    Tone pairs like 40-on-100 and 80-on-20 therefore did NOT deliver the
-//    contrast the scheme promises, so every `on-*` role was unverified.
-//  · **HCT does not taper chroma smoothly.** It holds hue constant and takes
-//    the MAXIMUM chroma available in gamut at each tone — a jagged,
-//    hue-dependent envelope. A sine has no relationship to it.
-//
-// CAM16 (which HCT is built on) is ~400 lines of dense appearance-model maths
-// where a transposed coefficient is invisible in review and wrong in output.
-// Porting it by hand would be the least defensible option available; depending
-// on the reference implementation IS the faithful choice here.
-//
-// The palette PARAMETERS come from `SchemeTonalSpot`, M3's default scheme, so
-// the chroma values below are Google's, not ours.
-
-/** Hue/chroma per palette, read from `SchemeTonalSpot` rather than invented. */
-const TONAL_SPOT = {
-  primary: { hueShift: 0, chroma: 36 },
-  secondary: { hueShift: 0, chroma: 16 },
-  tertiary: { hueShift: 60, chroma: 24 },
-  neutral: { hueShift: 0, chroma: 6 },
-  'neutral-variant': { hueShift: 0, chroma: 8 },
-} as const
-
-const TONAL_STOPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100]
-const TONAL_STOPS_NEUTRAL = [0, 4, 6, 10, 12, 17, 20, 22, 24, 30, 40, 50, 60, 70, 80, 87, 90, 92, 94, 95, 96, 98, 99, 100]
-
-/**
- * A Material 3 tonal palette: the seed's HCT hue at a fixed chroma, sampled at
- * the requested tones. `chroma` is HCT chroma (roughly 0–120), NOT OKLCH chroma
- * (0–0.37) — the two are not interchangeable, which is why the call sites below
- * carry M3's own numbers rather than the old OKLCH constants.
- */
-export function tonalPalette(
-  seedHex: string,
-  opts: { hueShift?: number; chroma?: number; chromaMul?: number; stops?: number[] } = {},
-): Record<number, string> {
-  let hue = 0
-  let seedChroma = 36
-  try {
-    const src = Hct.fromInt(argbFromHex(seedHex))
-    hue = src.hue
-    seedChroma = src.chroma
-  } catch { /* keep fallbacks */ }
-
-  const chroma = opts.chroma ?? seedChroma * (opts.chromaMul ?? 1)
-  const palette = TonalPalette.fromHueAndChroma(hue + (opts.hueShift ?? 0), chroma)
-
-  const out: Record<number, string> = {}
-  for (const t of opts.stops ?? TONAL_STOPS) {
-    try { out[t] = hexFromArgb(palette.tone(t)) } catch { out[t] = t >= 50 ? '#ffffff' : '#000000' }
-  }
-  return out
-}
-
-export function tonalPalettes(accent: string, errorSeed: string): Record<string, Record<number, string>> {
-  const p = TONAL_SPOT
-  return {
-    primary: tonalPalette(accent, { chroma: p.primary.chroma }),
-    secondary: tonalPalette(accent, { chroma: p.secondary.chroma }),
-    tertiary: tonalPalette(accent, { hueShift: p.tertiary.hueShift, chroma: p.tertiary.chroma }),
-    // M3 pins the error palette to its own hue/chroma rather than deriving it
-    // from the seed — but Escala lets the user choose an error colour, so the
-    // seed's hue is kept and only the chroma follows the scheme.
-    error: tonalPalette(errorSeed, { chroma: 84 }),
-    neutral: tonalPalette(accent, { chroma: p.neutral.chroma, stops: TONAL_STOPS_NEUTRAL }),
-    'neutral-variant': tonalPalette(accent, { chroma: p['neutral-variant'].chroma, stops: TONAL_STOPS_NEUTRAL }),
-  }
-}
-
-// The strict M3 scheme: light 40/100/90/10 ↔ dark 80/20/30/90, surfaces on the
-// extended neutral stops, outlines on neutral-variant.
-export const TONAL_SCHEME: { group: string; role: string; palette: string; light: number; dark: number }[] = [
-  { group: 'core', role: 'primary', palette: 'primary', light: 40, dark: 80 },
-  { group: 'core', role: 'on-primary', palette: 'primary', light: 100, dark: 20 },
-  { group: 'core', role: 'primary-container', palette: 'primary', light: 90, dark: 30 },
-  { group: 'core', role: 'on-primary-container', palette: 'primary', light: 10, dark: 90 },
-  { group: 'core', role: 'inverse-primary', palette: 'primary', light: 80, dark: 40 },
-  { group: 'secondary', role: 'secondary', palette: 'secondary', light: 40, dark: 80 },
-  { group: 'secondary', role: 'on-secondary', palette: 'secondary', light: 100, dark: 20 },
-  { group: 'secondary', role: 'secondary-container', palette: 'secondary', light: 90, dark: 30 },
-  { group: 'secondary', role: 'on-secondary-container', palette: 'secondary', light: 10, dark: 90 },
-  { group: 'tertiary', role: 'tertiary', palette: 'tertiary', light: 40, dark: 80 },
-  { group: 'tertiary', role: 'on-tertiary', palette: 'tertiary', light: 100, dark: 20 },
-  { group: 'tertiary', role: 'tertiary-container', palette: 'tertiary', light: 90, dark: 30 },
-  { group: 'tertiary', role: 'on-tertiary-container', palette: 'tertiary', light: 10, dark: 90 },
-  { group: 'error', role: 'error', palette: 'error', light: 40, dark: 80 },
-  { group: 'error', role: 'on-error', palette: 'error', light: 100, dark: 20 },
-  { group: 'error', role: 'error-container', palette: 'error', light: 90, dark: 30 },
-  { group: 'error', role: 'on-error-container', palette: 'error', light: 10, dark: 90 },
-  { group: 'surfaces', role: 'surface', palette: 'neutral', light: 98, dark: 6 },
-  { group: 'surfaces', role: 'on-surface', palette: 'neutral', light: 10, dark: 90 },
-  { group: 'surfaces', role: 'surface-variant', palette: 'neutral-variant', light: 90, dark: 30 },
-  { group: 'surfaces', role: 'on-surface-variant', palette: 'neutral-variant', light: 30, dark: 80 },
-  { group: 'surfaces', role: 'surface-container-lowest', palette: 'neutral', light: 100, dark: 4 },
-  { group: 'surfaces', role: 'surface-container-low', palette: 'neutral', light: 96, dark: 10 },
-  { group: 'surfaces', role: 'surface-container', palette: 'neutral', light: 94, dark: 12 },
-  { group: 'surfaces', role: 'surface-container-high', palette: 'neutral', light: 92, dark: 17 },
-  { group: 'surfaces', role: 'surface-container-highest', palette: 'neutral', light: 90, dark: 22 },
-  { group: 'surfaces', role: 'inverse-surface', palette: 'neutral', light: 20, dark: 90 },
-  { group: 'surfaces', role: 'inverse-on-surface', palette: 'neutral', light: 95, dark: 20 },
-  { group: 'outlines', role: 'outline', palette: 'neutral-variant', light: 50, dark: 60 },
-  { group: 'outlines', role: 'outline-variant', palette: 'neutral-variant', light: 80, dark: 30 },
-]
-
-export function projectTonal(input: ProjectionInput, errorSeed: string): {
-  palettes: Record<string, Record<number, string>>
-  scheme: Record<string, Record<string, { light: string; dark: string }>>
-} {
-  const palettes = tonalPalettes(input.accent, errorSeed)
-  const scheme: Record<string, Record<string, { light: string; dark: string }>> = {}
-  for (const e of TONAL_SCHEME) {
-    scheme[e.group] ??= {}
-    scheme[e.group][e.role] = { light: `{${e.palette}.${e.light}}`, dark: `{${e.palette}.${e.dark}}` }
-  }
-  return { palettes, scheme }
-}
-
-
-// ── IBM Carbon ───────────────────────────────────────────────────────────────
-// Carbon's own contract, with the user's colours in it. Two things make it
-// structurally different from every other architecture here, and both are
-// preserved rather than flattened:
-//
-//  1. **Four themes, not light/dark.** White · Gray 10 · Gray 90 · Gray 100.
-//     Two are light and two are dark, but they are four distinct products —
-//     `g10` is not "light mode with a tweak", it is the theme whose page is one
-//     step off white so that layers can alternate DOWN as well as up.
-//
-//  2. **Surfaces resolve by nesting DEPTH.** A component asks for `layer`, and
-//     which of `layer-01/02/03` it gets depends on how deeply it is wrapped.
-//     Flattening that into a background/surface pair loses the whole idea.
-//
-// The layer progression follows Carbon's own shape, verified against
-// `@carbon/themes` in `__tests__/carbon.test.ts`:
-//
-//     white  page → +1 → page → +1     (ALTERNATES — no headroom above white)
-//     g10    page → −1 → page → −1     (alternates the other way)
-//     g90    page → +1 → +2 → +3       (ascends — dark has headroom)
-//     g100   page → +1 → +2 → +3
-//
-// Encoding "each layer is lighter than the last" would be wrong for half of
-// them. See `color/carbon.ts` for the measurement.
-
-/** Carbon's four themes, in Carbon's own order. */
-export const CARBON_MODES = ['white', 'g10', 'g90', 'g100'] as const
-export type CarbonMode = (typeof CARBON_MODES)[number]
-
-const CARBON_MODE_KIND: Record<CarbonMode, 'light' | 'dark'> = {
-  white: 'light', g10: 'light', g90: 'dark', g100: 'dark',
-}
-
-/**
- * IBM's own names for the four themes. Carbon's mode keys are the only ones in
- * the system that are not already readable — `light`/`dark` say what they are,
- * `g90` does not — so the table has to translate them or it shows the reader
- * internal keys.
- */
-const CARBON_MODE_LABEL: Record<CarbonMode, string> = {
-  white: 'White', g10: 'Gray 10', g90: 'Gray 90', g100: 'Gray 100',
-}
-
-/**
- * Display name for one of an architecture's `modeKeys`.
- *
- * Per-theme architectures resolve their columns against user-named themes, so
- * the UI resolves those itself; this covers the FIXED mode sets that belong to
- * the architecture rather than to the project.
- */
-export function architectureModeLabel(kind: SemanticArchitecture, mode: string): string {
-  if (kind === 'carbon') return CARBON_MODE_LABEL[mode as CarbonMode] ?? mode
-  return mode
-}
-
-/**
- * IBM stop → Escala ramp tone.
- *
- * THIS IS THE ONLY THING ESCALA SUPPLIES. Every Carbon token's family and stop
- * comes from `CARBON_TOKENS`, generated from `@carbon/themes` — so the token
- * list, and which stop each theme uses, are IBM's by construction and cannot
- * drift. What has to be translated is the LADDER ITSELF.
- *
- * Carbon walks a 10-step neutral ladder that is evenly spaced by lightness.
- * Escala walks a 12-step Radix ramp whose steps are ROLES: 1–2 page surfaces,
- * 3–5 component surfaces, 6–8 borders, 9 solid, 10 hovered solid, 11 low-
- * contrast text, 12 high-contrast text. The mapping is therefore by role, not
- * by lightness — matching `gray-70` to whichever Escala tone happens to share
- * its L would put secondary text on a border step.
- *
- * TWO COLLAPSES ARE UNAVOIDABLE, and they are the honest cost of the model:
- *
- *   light: gray-80, gray-90, gray-100 and black all land on tone 12
- *   dark:  gray-10, gray-20 and white all land on tone 12
- *
- * A Radix-shaped ramp has exactly ONE step at the far end of the page; Carbon
- * has three. `backgroundInverse` (gray-80) and `textPrimary` (gray-100) are
- * distinct in Carbon and identical here. Widening the ramp to fix that would
- * change every other architecture, so the collapse is recorded rather than
- * hidden — `__tests__/carbon.test.ts` asserts exactly which tokens collide.
- */
-const CARBON_NEUTRAL_TONE: Record<'light' | 'dark', Record<number, number>> = {
-  //         10  20  30  40  50  60  70  80  90 100
-  light: { 10: 2, 20: 3, 30: 4, 40: 6, 50: 8, 60: 9, 70: 11, 80: 12, 90: 12, 100: 12 },
-  dark:  { 10: 12, 20: 12, 30: 11, 40: 11, 50: 9, 60: 7, 70: 5, 80: 3, 90: 2, 100: 1 },
-}
-
-/**
- * The same translation for a CHROMATIC ladder, where Radix's step 9 is the
- * solid and the meaning of "higher" flips between appearances.
- *
- * Carbon anchors brand identity at stop 60 (`blue-60` IS IBM Blue), so 60 → 9
- * in both. Above 60 Carbon goes darker; in a light ramp that is 11–12 (text
- * steps) and in a dark ramp it is 3–5 (surface steps). Below 60 Carbon goes
- * lighter, and the two appearances mirror again.
- */
-/**
- * Chromatic stops are mapped by their OFFSET FROM THE FAMILY'S ANCHOR, not by
- * their absolute number.
- *
- * Carbon's chromatic ramps are not lightness-aligned with each other. `blue-60`
- * is IBM Blue; the equivalent saturated step of the yellow ramp is `yellow-30`,
- * because a yellow dark enough to sit at stop 60 has stopped being yellow.
- * Mapping absolute stops through one table put `supportWarning` (yellow-30) on
- * tone 4 — a pale tint where IBM has a vivid signal colour.
- *
- * So each family declares which stop plays the solid role, and the ladder is
- * indexed by distance from it.
- */
-const CARBON_FAMILY_ANCHOR: Record<string, number> = {
-  blue: 60, red: 60, purple: 60, magenta: 60, teal: 60, cyan: 60,
-  green: 50, orange: 40, yellow: 30,
-}
-
-/**
- * Offset from the anchor → Escala tone. Offset 0 is the solid (step 9); the
- * two appearances mirror, because "one stop darker than the brand colour" is a
- * text step in a light ramp and a surface step in a dark one.
- *
- * In dark, offsets −1 and −2 BOTH land on 11, and that is a measured decision
- * rather than an oversight. A Radix dark ramp has two bright steps above the
- * solid (11, 12); Carbon uses three (`blue-30/40/50`). Sending −1 to tone 10
- * keeps them distinct and puts `border-interactive` at 2.91:1 on the g90 page —
- * under WCAG 1.4.11. Collapsing costs one gradation and buys the 3:1.
- */
-const CARBON_CHROMA_TONE: Record<'light' | 'dark', Record<number, number>> = {
-  light: { '-4': 3, '-3': 4, '-2': 6, '-1': 8, 0: 9, 1: 11, 2: 12, 3: 12, 4: 12 },
-  dark:  { '-4': 12, '-3': 12, '-2': 11, '-1': 11, 0: 9, 1: 5, 2: 3, 3: 2, 4: 1 },
-}
-
-/**
- * The same offsets for a CHROMATIC token that sits on the INVERSE surface.
- *
- * `linkInverse`, `focusInverse` and the `support*Inverse` pairs are painted on
- * the inverse bar, which is dark in a light theme and light in a dark one. BOTH
- * appearances therefore run backwards relative to the ordinary ladder, and the
- * anchor sits well away from the solid in each.
- *
- * The light table is not just "the pale end". The inverse bar in a light theme
- * is `{neutral.12}` — around `#37343c`, which is dark but not black — and APCA
- * punishes a mid-pale foreground on it hard: tone 6 measures WCAG 6.08 and
- * **Lc 56.9**, comfortably AA and nowhere near the Lc 75 body text needs. Tone
- * 3 clears it. That gap between the two metrics is the whole reason the system
- * reports both.
- *
- * Measured on this codebase's dark violet ramp against the inverse bar
- * (`#e5e4e8`): tone 9 reads **3.92:1** and tone 8 reads 3.77:1 at Lc 57 —
- * both under what a link needs. Tone 6 clears it for most seeds and the amber
- * ramp still misses at Lc 74.5, so the anchor lands on **5** — the first step
- * that clears Lc 75 for every seed while still reading as the brand.
- *
- * Without this table the teal seed produced `link-inverse` at **1.00:1**: the
- * solved `{accent.solid}` on a dark ramp is the pale `#c3ede6`, painted onto a
- * near-white bar.
- */
-const CARBON_CHROMA_TONE_INVERSE: Record<'light' | 'dark', Record<number, number>> = {
-  light: { '-4': 2, '-3': 2, '-2': 3, '-1': 3, 0: 4, 1: 6, 2: 8, 3: 9, 4: 11 },
-  dark:  { '-4': 7, '-3': 7, '-2': 6, '-1': 6, 0: 5, 1: 4, 2: 3, 3: 2, 4: 1 },
-}
-
-/** Stops, ordered, so an offset is a distance in ladder steps. */
-const CARBON_STOP_LADDER = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-
-/**
- * The few places Escala deliberately does NOT reproduce IBM's value, each with
- * the measurement that forced it.
- *
- * The rule for adding to this table: an override is only legitimate when IBM's
- * own token fails an accessibility floor that the token's role requires. It is
- * not for taste. Every entry names the floor and the number.
- */
-const CARBON_MIN_TONE: Record<string, { light: number; dark: number }> = {
-  /**
-   * `border-strong-*` is the CONTROL BOUNDARY — the outline of an input or a
-   * button — so WCAG 1.4.11 applies at 3:1 against the surface it sits on.
-   *
-   * IBM uses `gray-50` for it, which reads **3.19:1 on white and 2.93:1 on
-   * gray-10** — IBM's own g10 theme misses the floor. Transposed onto a Radix
-   * ramp it lands on step 8, a decorative border step, and measures 2.69–2.96
-   * in the light themes and 1.79–2.84 in the dark ones.
-   *
-   * The dark floor is 11, and the reason is a genuine property of the ramp
-   * rather than a conservative choice. Measured on the dark neutral ramp
-   * against every layer it can sit on:
-   *
-   *   tone  9  →  WCAG 2.39–3.17  ·  APCA Lc 17.8–21.2
-   *   tone 10  →  WCAG 2.89–3.84  ·  APCA Lc 23.4–26.7
-   *   tone 11  →  WCAG 9.01–11.95 ·  APCA Lc 72.0–75.3
-   *
-   * **There is nothing between Lc 27 and Lc 75.** A Radix dark ramp jumps
-   * straight from its border steps to its text steps, so a dark control
-   * boundary is either below the Lc 45 the `ui-component` intent requires, or
-   * it is bright. Tone 10 passes WCAG and fails APCA — precisely the blind spot
-   * the dual metric exists to expose, and the reason this floor is 11 and not
-   * the 10 that WCAG alone would have accepted.
-   *
-   * Because this is a FLOOR and not a fixed value, Carbon's per-depth gradation
-   * in the dark themes (`gray-50` → `40` → `30` as depth increases) survives
-   * wherever it already clears.
-   */
-  'border-strong-01': { light: 9, dark: 11 },
-  'border-strong-02': { light: 9, dark: 11 },
-  'border-strong-03': { light: 9, dark: 11 },
-  /**
-   * The toggle track. Same `gray-50`, same job — it is the visible boundary of
-   * a control — and the same measurements: 2.69 light, 1.79–2.84 dark.
-   */
-  'toggle-off': { light: 9, dark: 11 },
-  /**
-   * Links are BODY COPY, so 4.5:1 and Lc 75 apply, not the 3:1 a fill needs.
-   *
-   * IBM uses `blue-60` for `linkPrimary`, which is its text-grade blue — 5.16:1
-   * on white. Transposed onto an arbitrary brand ramp, the equivalent step is
-   * the solid, and a solid is only guaranteed to CARRY ink, not to BE ink:
-   * this codebase's violet solid measures **4.29:1 at Lc 63.5** on the page.
-   *
-   * The floor is 12, not the 11 a text step suggests, and Carbon is the
-   * architecture that proved why. `{accent.11}` is solved against the PAGE and
-   * lands on Lc 75.1 — the body-text threshold exactly, with no margin. Carbon
-   * is the only architecture with a SECOND surface, and one step in is enough
-   * to spend it: the same colour reads **Lc 68.0 on the g10 page** and
-   * **Lc 74.6 on g90**. Tone 12 is the ramp's high-contrast text step and
-   * carries the headroom the layer model requires.
-   */
-  'link-primary': { light: 12, dark: 12 },
-  'link-primary-hover': { light: 12, dark: 12 },
-  'link-secondary': { light: 12, dark: 12 },
-  'link-visited': { light: 12, dark: 12 },
-  /**
-   * `textError` is body copy, so the same floor applies. IBM uses `red-60`,
-   * which is its text-grade red; on an arbitrary error ramp the solid measures
-   * 4.72:1 at Lc 67.9 — WCAG AA, APCA short.
-   */
-  'text-error': { light: 12, dark: 12 },
-}
-
-/**
- * Does this token sit on the inverse surface rather than on the page?
- *
- * Neutral inverse tokens (`background-inverse`, `text-inverse`) need no special
- * handling — the ordinary ladder already puts them at the far end of the ramp,
- * which IS the inverse surface and its ink. Only the CHROMATIC ones do, via
- * `CARBON_CHROMA_TONE_INVERSE`.
- */
-const isCarbonInverseToken = (token: string): boolean => /inverse/.test(token)
-
-/**
- * Tokens whose whole job is "be legible on that fill", so they are SOLVED
- * against it rather than pinned.
- *
- * IBM pins `textOnColor` and `iconOnColor` to pure white in all four themes.
- * On IBM's own `blue-50` that is 3.18:1 — already under AA, and only defensible
- * because a button label is large text. Transposed onto an arbitrary brand
- * ramp it is worse: on this codebase's violet it measured **2.09:1**, which
- * fails even the large-text floor.
- *
- * A pinned ink cannot be right for an unknown brand hue. `{on:…}` picks the
- * near-white or near-black that actually wins on the resolved fill, which is
- * the same solver `accent.on-solid` uses everywhere else in the system.
- */
-const CARBON_SOLVED_INK: Record<string, string> = {
-  'text-on-color': 'interactive',
-  'icon-on-color': 'interactive',
-}
-
-/**
- * IBM palette family → Escala family.
- *
- * `purple` is the interesting one. Carbon uses it for visited links and for
- * "caution, undefined" — a hue Escala's palette does not carry. Rather than
- * drop those tokens (incomplete) or fold them into the accent (wrong meaning),
- * they are emitted on a hue ROTATED off the accent by the same angle that
- * separates Carbon's own purple from its own blue: **+33° in OKLCH**, measured
- * on `purple-60` vs `blue-60`. The relationship is IBM's; only the starting hue
- * is the user's. Same technique as `chartPalette`.
- */
-const CARBON_VISITED_HUE_OFFSET = 33
-
-const CARBON_FAMILY: Record<string, string> = {
-  blue: 'accent',
-  red: 'error',
-  green: 'success',
-  yellow: 'warning',
-  orange: 'warning',
-}
-
-/**
- * Carbon uses BLUE for two different jobs — the brand (`interactive`,
- * `linkPrimary`, `focus`) and the informational status (`supportInfo`) — because
- * IBM's brand IS blue. Escala separates `accent` from `info`, so the split has
- * to be made explicit or every "info" token comes out brand-coloured.
- */
-const carbonFamilyFor = (token: string, ibmFamily: string): string =>
-  ibmFamily === 'blue' && token.startsWith('support-info') ? 'info' : CARBON_FAMILY[ibmFamily]
-
-/** Which UI group a Carbon token belongs to, longest prefix first. */
-const CARBON_GROUP_RULES: [RegExp, string][] = [
-  [/^layer|^background/, 'layer'],
-  [/^field/, 'field'],
-  [/^border/, 'border'],
-  [/^text/, 'text'],
-  [/^icon/, 'icon'],
-  [/^link/, 'link'],
-  [/^support/, 'support'],
-  [/^focus|^interactive|^highlight/, 'interactive'],
-]
-const CARBON_FALLBACK_GROUP = 'utility'
-
-const carbonGroupOf = (token: string): string =>
-  CARBON_GROUP_RULES.find(([re]) => re.test(token))?.[1] ?? CARBON_FALLBACK_GROUP
-
-/** Group order and copy for the table. */
-export const CARBON_GROUP_META: Record<string, [string, string]> = {
-  layer: ['Layer', 'The page and the three nesting depths — the layer model'],
-  field: ['Field', 'Input surfaces, one per depth'],
-  text: ['Text', 'Foreground ink'],
-  icon: ['Icon', 'Icon ink — mirrors Text'],
-  border: ['Border', 'Subtle (per depth), strong (control boundaries) and interactive'],
-  link: ['Link', 'Links, including the inverse and visited variants'],
-  interactive: ['Interactive', 'Brand fill, focus and highlight'],
-  support: ['Support', "Carbon's status family, plus its inverse pairs"],
-  utility: ['Utility', 'Overlay, skeleton and toggle'],
-}
-const CARBON_GROUP_ORDER = Object.keys(CARBON_GROUP_META)
-
-type CarbonRow = { group: string; key: string; refs: Record<CarbonMode, string> }
-
-const perMode = (fn: (m: CarbonMode) => string): Record<CarbonMode, string> =>
-  Object.fromEntries(CARBON_MODES.map((m) => [m, fn(m)])) as Record<CarbonMode, string>
-
-/**
- * One Carbon token, in one theme, as an Escala ref.
- *
- * `white`/`black` are not palette stops — they are the ends of the ladder — so
- * they resolve to whichever ramp end sits AWAY FROM THE PAGE in that
- * appearance. That is what Carbon means by them: `textOnColor: white` in the
- * white theme and `focus: white` in g100 are both "the extreme, opposite the
- * surface".
- */
-function carbonRef(mode: CarbonMode, token: string, ref: { family: string; stop: number }): string {
-  const kind = CARBON_MODE_KIND[mode]
-  const neutral = kind === 'dark' ? 'neutral-dark' : 'neutral'
-  const inverse = isCarbonInverseToken(token)
-
-  // Solved inks resolve against the token they have to be legible on, which
-  // means resolving THAT token first. One level deep, and the target is always
-  // a plain ref — no cycle is possible.
-  const inkTarget = CARBON_SOLVED_INK[token]
-  if (inkTarget) {
-    const fill = carbonRef(mode, inkTarget, CARBON_TOKENS[mode][inkTarget])
-    return `{on:${fill.slice(1, -1)}}`
-  }
-
-  const floor = CARBON_MIN_TONE[token]?.[kind]
-  const atLeast = (t: number) => (floor === undefined ? t : Math.max(t, floor))
-
-  // `white`/`black` are ladder ENDS, not stops: whichever extreme sits away
-  // from the surface in this appearance.
-  if (ref.family === 'white') return `{${neutral}.${atLeast(kind === 'dark' ? 12 : 1)}}`
-  if (ref.family === 'black') return `{${neutral}.${atLeast(kind === 'dark' ? 1 : 12)}}`
-
-  if (ref.family === 'gray' || ref.family === 'coolGray' || ref.family === 'warmGray') {
-    return `{${neutral}.${atLeast(CARBON_NEUTRAL_TONE[kind][ref.stop])}}`
-  }
-
-  const anchor = CARBON_FAMILY_ANCHOR[ref.family]
-  if (anchor === undefined) throw new Error(`carbon: no anchor for family "${ref.family}"`)
-  const offset = CARBON_STOP_LADDER.indexOf(ref.stop) - CARBON_STOP_LADDER.indexOf(anchor)
-  const clamped = Math.max(-4, Math.min(4, offset))
-  const ladder = inverse ? CARBON_CHROMA_TONE_INVERSE : CARBON_CHROMA_TONE
-  const tone = atLeast(ladder[kind][clamped])
-
-  if (ref.family === 'purple') return `{visited.${tone}}`
-
-  const family = carbonFamilyFor(token, ref.family)
-  if (!family) throw new Error(`carbon: no Escala family for "${ref.family}"`)
-  // The anchor stop IS the brand solid, and `{fam.solid}` is the SOLVED solid —
-  // the tone that actually clears contrast on this user's ramp, not a fixed 9.
-  // An INVERSE token never takes it: `solid` is solved against the appearance's
-  // own page, which is the opposite of the surface an inverse token sits on.
-  return tone === 9 && !inverse ? `{${family}.solid}` : `{${family}.${tone}}`
-}
-
-/**
- * Carbon's token set, resolved against the user's ramps.
- *
- * Token KEYS are Carbon's own, kebab-cased for export (`layer-01`,
- * `border-subtle-00`, `text-primary`) so a Carbon codebase can consume the
- * output without a rename step — which is the whole point of shipping an
- * architecture rather than an approximation of one.
- */
-function carbonRows(): CarbonRow[] {
-  const names = Object.keys(CARBON_TOKENS[CARBON_MODES[0]]).sort()
-  const rows = names.map((key) => ({
-    group: carbonGroupOf(key),
-    key,
-    refs: perMode((m) => carbonRef(m, key, CARBON_TOKENS[m][key])),
-  }))
-  // Group order is the table's, not the alphabet's; within a group Carbon's
-  // own names sort sensibly (`layer-01` before `layer-02`, `border-subtle-00`
-  // before `border-subtle-01`).
-  return rows.sort((a, b) =>
-    CARBON_GROUP_ORDER.indexOf(a.group) - CARBON_GROUP_ORDER.indexOf(b.group) ||
-    a.key.localeCompare(b.key))
-}
-
-/** Carbon resolved across its four themes: group → token → mode → ref. */
-export function projectCarbon(
-  input: ProjectionInput,
-): Record<string, Record<string, Record<string, string>>> {
-  const out: Record<string, Record<string, Record<string, string>>> = {}
-  const lookByMode = Object.fromEntries(
-    CARBON_MODES.map((m) => [m, scaleLookup(input.scales, undefined, CARBON_MODE_KIND[m])]),
-  ) as Record<CarbonMode, Look>
-
-  for (const mode of CARBON_MODES) {
-    const look = lookByMode[mode]
-    for (const row of carbonRows()) {
-      const resolved = curatedRefs(
-        [{ group: row.group, key: row.key, light: row.refs[mode], dark: row.refs[mode] }],
-        CARBON_MODE_KIND[mode],
-        look,
-        input.accent,
-      )[0]
-      out[row.group] ??= {}
-      out[row.group][row.key] ??= {}
-      out[row.group][row.key][mode] = resolved.ref
-    }
-  }
-  return out
-}
-
 
 // ── Categorical chart palette ────────────────────────────────────────────────
 /**
@@ -1561,7 +849,7 @@ function applyOverrides(
         // string, since that's the same equivalence the cell itself displays.
         // An override whose label matches is a no-op that just happens to be
         // sitting in storage — most often stale data from before the schema's
-        // OWN default moved onto that value (e.g. Astryx's `border.default`,
+        // OWN default moved onto that value (e.g. a `border.default`
         // pinned to `{neutral.5}` — see CLAUDE.md's border-realignment note).
         // Flagging it as "modified" was a false positive: it painted the same
         // strong accent-ui ring a genuine hand-edit gets, on a row that reads
@@ -1616,152 +904,14 @@ export function buildArchitectureView(
     return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
   }
 
-  if (kind === 'carbon') {
-    // Carbon ships its OWN four modes, so `themeOrder` is ignored the same way
-    // Vibrancy and Tonal ignore it — adding a theme cannot extend a contract
-    // whose modes are part of the contract.
-    const tokens = projectCarbon(input)
-    const lookByMode: Record<string, (fam: string, tone: number) => string | undefined> =
-      Object.fromEntries(CARBON_MODES.map((m) => [m, scaleLookup(input.scales, undefined, CARBON_MODE_KIND[m])]))
-    // Group copy comes from CARBON_GROUP_META — the same table `carbonRows`
-    // orders by, so a group can never appear in the projection without a label.
-    const categories = Object.entries(tokens).map(([key, group]) => ({
-      key,
-      label: CARBON_GROUP_META[key]?.[0] ?? key,
-      description: CARBON_GROUP_META[key]?.[1] ?? '',
-      tokens: Object.entries(group).map(([k, byMode]) => ({
-        key: k,
-        modes: Object.fromEntries(
-          CARBON_MODES.map((m) => [m, refToView(byMode[m] ?? '', lookByMode[m])]),
-        ),
-      })),
-    }))
-    const edited = applyOverrides(categories, overrides, lookByMode)
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: [...CARBON_MODES] }
-  }
-
-  if (kind === 'astryx') {
-    const tokens = projectAstryx(input, themeOrder)
-    // Same per-theme resolution as Categorical — each theme's refs resolve
-    // against ITS OWN palette, not one shared lookup.
-    const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
-      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
-    const META: Record<string, [string, string]> = {
-      accent: ['Accent', 'The brand color and its on-fill ink'],
-      background: ['Background', 'Page canvas through elevated surfaces'],
-      text: ['Text', 'Foreground ink — primary to disabled'],
-      icon: ['Icon', 'Icon ink — mirrors Text one step lighter'],
-      status: ['Status', 'Feedback fg/bg/on triads per severity'],
-      utility: ['Utility', 'Overlays, skeletons, tracks and polarity inks'],
-      border: ['Border', 'Strokes — default, emphasized and the control boundary'],
-    }
-    const categories = Object.entries(tokens).map(([key, group]) => ({
-      key,
-      label: META[key]?.[0] ?? key,
-      description: META[key]?.[1] ?? '',
-      tokens: Object.entries(group).map(([k, byTheme]) => ({
-        key: k,
-        modes: Object.fromEntries(
-          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
-        ),
-      })),
-    }))
-    const edited = applyOverrides(categories, overrides, lookByTheme)
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
-  }
-
-  if (kind === 'shadcn') {
-    const tokens = projectShadcn(input, themeOrder)
-    // Same per-theme resolution as Categorical/Astryx — each theme's refs
-    // resolve against ITS OWN palette, not one shared lookup.
-    const lookByTheme: Record<string, (fam: string, tone: number) => string | undefined> =
-      Object.fromEntries(themeOrder.map((t) => [t, scaleLookup(input.scales, input.themePalettes[t], input.themeKinds[t] ?? 'light')]))
-    const META: Record<string, [string, string]> = {
-      base: ['Base', 'Page background and default foreground ink'],
-      card: ['Card', 'The default raised panel'],
-      popover: ['Popover', 'Floating surfaces — menus, dropdowns, tooltips'],
-      primary: ['Primary', 'The brand action color and its on-fill ink'],
-      secondary: ['Secondary', 'A lower-emphasis fill — secondary buttons, chips'],
-      muted: ['Muted', 'Subtle backgrounds — disabled states, quiet panels'],
-      accent: ['Accent', 'Subtle interactive-hover tint (not the brand color)'],
-      chart: ['Chart', 'Categorical series colours — CVD-verified'],
-      destructive: ['Destructive', 'The severity color for dangerous actions'],
-      border: ['Border', 'Strokes, inputs and focus rings'],
-      sidebar: ['Sidebar', 'A parallel surface set for nav rails/dashboards'],
-    }
-    const categories = Object.entries(tokens).map(([key, group]) => ({
-      key,
-      label: META[key]?.[0] ?? key,
-      description: META[key]?.[1] ?? '',
-      tokens: Object.entries(group).map(([k, byTheme]) => ({
-        key: k,
-        modes: Object.fromEntries(
-          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
-        ),
-      })),
-    }))
-    const edited = applyOverrides(categories, overrides, lookByTheme)
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
-  }
-
-  if (kind === 'vibrancy') {
-    const v = projectVibrancy(input)
-    const look = scaleLookup(input.scales)
-    // The HIG grouping is strictly labels · backgrounds · fills · separators ·
-    // materials. Fallbacks aren't a group of their own — each label carries its
-    // opaque alias as metadata (rendered as a badge on the row). `tint` stays
-    // export-only.
-    const labelTokens = pairViews(Object.keys(v.light.labels), v.light.labels, v.dark.labels, look).map((t) => {
-      const fbL = v.light.labelFallbacks[t.key]
-      const fbD = v.dark.labelFallbacks[t.key]
-      return fbL && fbD
-        ? { ...t, fallback: { light: refToView(fbL, look), dark: refToView(fbD, look) } }
-        : t
-    })
-    const categories: ArchCategoryView[] = [
-      { key: 'labels', label: 'Labels', description: 'One ink, hierarchy through opacity (100/60/30/18) — each text label carries its opaque WCAG fallback', tokens: labelTokens },
-      { key: 'backgrounds', label: 'Backgrounds', description: 'System background stack — opaque by design', tokens: pairViews(Object.keys(v.light.backgrounds), v.light.backgrounds, v.dark.backgrounds, look) },
-      { key: 'fills', label: 'Fills', description: 'Thin control washes over any content', tokens: pairViews(Object.keys(v.light.fills), v.light.fills, v.dark.fills, look) },
-      { key: 'separators', label: 'Separators', description: 'Hairlines — alpha default + opaque twin', tokens: pairViews(Object.keys(v.light.separators), v.light.separators, v.dark.separators, look) },
-      { key: 'materials', label: 'Materials', description: 'Translucent panels — pair with backdrop blur', tokens: pairViews(Object.keys(v.light.materials), v.light.materials, v.dark.materials, look) },
-    ]
-    const edited = applyOverrides(categories, overrides, look)
-    // Fixed light/dark by construction — Vibrancy's math has no per-theme
-    // concept, so adding a theme doesn't add a column here (see modeKeys doc).
-    return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: ['light', 'dark'] }
-  }
-
-  // tonal
-  const { palettes, scheme } = projectTonal(input, errorSeed)
-  const look = (fam: string, tone: number) => palettes[fam]?.[tone]
-  const META: Record<string, [string, string]> = {
-    core: ['Core', 'Primary roles + paired on-colors'],
-    secondary: ['Secondary', 'Muted companion palette (chroma ÷3)'],
-    tertiary: ['Tertiary', 'Contrast accent (hue +60°)'],
-    error: ['Error', 'Error roles + paired on-colors'],
-    surfaces: ['Surfaces', 'Neutral surface stack + containers'],
-    outlines: ['Outlines', 'Borders on the neutral-variant palette'],
-  }
-  const categories = Object.entries(scheme).map(([key, group]) => ({
-    key,
-    label: META[key]?.[0] ?? key,
-    description: META[key]?.[1] ?? '',
-    tokens: Object.entries(group).map(([k, v]) => ({
-      key: k,
-      modes: { light: refToView(v.light, look), dark: refToView(v.dark, look) },
-    })),
-  }))
-  const editedTonal = applyOverrides(categories, overrides, look)
-  // Fixed light/dark by construction — Tonal's dark is a tone-inversion of the
-  // one accent (40↔80, 90↔30…), with no per-theme concept to extend either.
-  return { categories: editedTonal, total: editedTonal.reduce((n, c) => n + c.tokens.length, 0), modeKeys: ['light', 'dark'] }
+  return null
 }
 
 // ── Export dispatcher ────────────────────────────────────────────────────────
 
 /**
  * Export-only: resolves every plain `{family.tone}` ref in a CURATED
- * projection (Astryx/shadcn/Categorical) into this THEME's actual hex, using
+ * projection (Categorical) into this THEME's actual hex, using
  * that theme's own resolved palette — the exact substitution the table
  * already applies for on-screen DISPLAY (`buildArchitectureView`'s
  * `lookByTheme`, built the same way here), just baked into the exported
@@ -1856,25 +1006,6 @@ export function projectArchitecture(
       applyArchTokenOverrides(tokens, normalizeCategoricalOverrides(overrides))
       return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
     }
-    case 'astryx': {
-      const tokens = projectAstryx(input, themeOrder)
-      applyArchTokenOverrides(tokens, overrides)
-      return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
-    }
-    case 'shadcn': {
-      const tokens = projectShadcn(input, themeOrder)
-      applyArchTokenOverrides(tokens, overrides)
-      return { kind, tokens: resolveCuratedForExport(tokens, input, themeOrder) }
-    }
-    case 'carbon': {
-      const tokens = projectCarbon(input)
-      applyArchTokenOverrides(tokens, overrides)
-      return { kind, tokens }
-    }
-    case 'vibrancy':
-      return { kind, tokens: projectVibrancy(input) }
-    case 'tonal':
-      return { kind, ...projectTonal(input, errorSeed) }
     default:
       return null
   }

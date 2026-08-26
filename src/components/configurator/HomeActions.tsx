@@ -735,7 +735,7 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
       <h3 className="text-sm font-semibold text-fg">Reset to defaults?</h3>
       <p className="text-xs text-fg-faint leading-relaxed">
         Puts every foundation back to the default — the purple accent, the Light
-        and Dark themes, Astryx semantics, typography, spacing and the rest.
+        and Dark themes, the semantic roles, typography, spacing and the rest.
         Your saved systems and Figma sync URL are kept.
       </p>
       <div className="flex items-center gap-2 pt-0.5">

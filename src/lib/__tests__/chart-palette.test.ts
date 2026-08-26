@@ -1,63 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { buildArchitectureView, chartPalette, CHART_HUE_OFFSETS } from '../semanticArchitectures'
-import { buildSystem } from '../color/audit'
+import { chartPalette, CHART_HUE_OFFSETS } from '../semanticArchitectures'
 import { hexToOklch } from '../color/gamut'
 import { wcagRatio } from '../color/apca'
 import { validateCategorical, separation, CATEGORICAL_LIMITS } from '../color/cvd'
 
 /**
- * shadcn/ui ships a published CSS-variable contract. This holds the architecture
- * to it — every variable present, and the chart palette actually validated
- * rather than asserted by comment.
+ * The Categorical chart palette (`--chart-1…5`) — five series colours derived
+ * from the brand hue, validated rather than asserted by comment.
+ *
+ * This file used to also hold the shadcn/ui published-contract tests; that
+ * architecture was retired (Categorical is the only one), but the chart
+ * palette outlived it — it is Categorical's own, and CVD separation is the
+ * kind of property that has to be measured, never eyeballed.
  */
-
-const system = buildSystem('violet/radix', '#7f56d9', 'radix')
-const view = buildArchitectureView('shadcn', {
-  themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
-  scales: system.scales, accent: system.accent,
-} as never, system.errorSeed)!
-
-const keys = view.categories.flatMap((c) => c.tokens.map((t) => `${c.key}.${t.key}`))
-const value = (group: string, key: string, mode: string) => {
-  for (const c of view.categories) if (c.key === group)
-    for (const t of c.tokens) if (t.key === key) return t.modes[mode]?.css
-  return undefined
-}
-
-describe('the published shadcn contract is complete', () => {
-  it('ships every base variable', () => {
-    for (const k of [
-      'base.background', 'base.foreground',
-      'card.fill', 'card.foreground', 'popover.fill', 'popover.foreground',
-      'primary.fill', 'primary.foreground', 'secondary.fill', 'secondary.foreground',
-      'muted.fill', 'muted.foreground', 'accent.fill', 'accent.foreground',
-      'destructive.fill', 'destructive.foreground',
-      'border.default', 'border.input', 'border.ring',
-    ]) expect(keys, `missing --${k}`).toContain(k)
-  })
-
-  it('ships chart-1 through chart-5 — they were missing entirely', () => {
-    for (let n = 1; n <= 5; n++) expect(keys).toContain(`chart.chart-${n}`)
-  })
-
-  it('the focus ring clears WCAG 1.4.11 on the page', () => {
-    // `--ring` is a focus indicator, so 3:1 applies. Neutral tone 6 (the old
-    // value) reads 1.90:1 light and 1.57:1 dark.
-    for (const mode of ['light', 'dark']) {
-      const ring = value('border', 'ring', mode)!
-      const page = value('base', 'background', mode)!
-      expect(wcagRatio(ring, page), `${mode} ring`).toBeGreaterThanOrEqual(3)
-    }
-  })
-
-  it('destructive carries a legible label', () => {
-    for (const mode of ['light', 'dark']) {
-      const fill = value('destructive', 'fill', mode)!
-      const ink = value('destructive', 'foreground', mode)!
-      expect(wcagRatio(ink, fill), `${mode} destructive`).toBeGreaterThanOrEqual(4.5)
-    }
-  })
-})
 
 describe('the chart palette is a real categorical palette', () => {
   const palette = chartPalette('#7f56d9')

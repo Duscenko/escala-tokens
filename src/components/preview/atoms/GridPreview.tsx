@@ -54,6 +54,18 @@ function Frame({
   const content = Math.max(0, Math.min(viewportPx - margin * 2, container === Infinity ? viewportPx - margin * 2 : container))
   const insetPct = viewportPx > 0 ? ((viewportPx - content) / 2 / viewportPx) * 100 : 0
   const gapPct = content > 0 ? (gutter / content) * 100 : 0
+  // Decorative chrome only — this rect stands for "a device viewport," not a
+  // real container, so its radius is capped rather than taken verbatim from
+  // the (possibly much larger) container-radius token. Uncapped, a generous
+  // radius token rounds deep enough into the fixed 40px column row to read as
+  // clipped bars instead of a rounded frame.
+  const frameRadius = Math.min(num(radiusRoleOf(t, 'container'), 14), 14)
+  const stats: [string, string][] = [
+    ['cols', String(frame.columns)],
+    ['gutter', frame.gutter],
+    ['margin', frame.margin],
+    ['container', frame.container === 'none' ? 'fluid' : frame.container],
+  ]
 
   return (
     <div className="flex flex-col gap-1 min-w-0" style={{ width: `${(viewportPx / widest) * 100}%` }}>
@@ -95,8 +107,14 @@ function Frame({
         style={{
           background: t.surface,
           border: `1px solid ${t.borderDefault || t.border || '#eaecf0'}`,
-          borderRadius: radiusRoleOf(t, 'container'),
+          borderRadius: frameRadius,
           overflow: 'hidden',
+          // Vertical-only breathing room: the columns are a fixed 40px strip
+          // unrelated to the horizontal percentage math below, so padding
+          // here can't shift the `insetPct`/`gapPct` calculations — it just
+          // keeps the strip clear of the frame's own rounded top/bottom edge.
+          paddingTop: 8,
+          paddingBottom: 8,
         }}
       >
         {insetPct > 0 && (
@@ -115,16 +133,28 @@ function Frame({
             }}
           >
             {Array.from({ length: frame.columns }).map((_, i) => (
-              <span key={i} style={{ background: withAlpha(accent, 0.22) }} />
+              <span key={i} style={{ background: withAlpha(accent, 0.28), borderRadius: 3 }} />
             ))}
           </div>
         </div>
       </div>
-      <div style={{ fontFamily: MONO, fontSize: 10, color: t.placeholderText || t.fgMuted }} className="flex flex-wrap gap-x-3">
-        <span>{frame.columns} col</span>
-        <span>{frame.gutter} gutter</span>
-        <span>{frame.margin} margin</span>
-        <span>{frame.container === 'none' ? 'fluid' : `${frame.container} container`}</span>
+      <div className="flex flex-wrap gap-1">
+        {stats.map(([k, v]) => (
+          <span
+            key={k}
+            className="inline-flex items-baseline gap-1 flex-shrink-0"
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              border: `1px solid ${withAlpha(accent, 0.14)}`,
+              borderRadius: 5,
+              padding: '2px 6px',
+            }}
+          >
+            <span style={{ color: t.placeholderText || t.fgMuted }}>{k}</span>
+            <span style={{ color: t.fgMuted }}>{v}</span>
+          </span>
+        ))}
       </div>
     </div>
   )

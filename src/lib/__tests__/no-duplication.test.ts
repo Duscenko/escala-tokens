@@ -171,19 +171,22 @@ describe('3 · the skill mirror does not drift', () => {
   })
 })
 
-describe('4 · known pre-existing collision (not introduced by P0)', () => {
-  it.fails('compositeOver is defined in exactly one module', () => {
-    // `colorUtils.compositeOver(overlay, background)` — 2 args, alpha taken
-    // from the overlay's own hex.
-    // `semanticArchitectures.compositeOver(ink, alpha, base)` — 3 args, alpha
-    // passed separately.
-    //
-    // Same name, same concept, different signatures, both exported. An import
-    // from the wrong module type-errors at best and silently mis-composites at
-    // worst. Renaming one is a mechanical fix; it is left as a decision because
-    // the better name depends on which call sites you want to read well.
+describe('4 · resolved collision — now a permanent guarantee', () => {
+  // This was an `it.fails` documenting a real collision: `compositeOver` was
+  // exported from BOTH `colorUtils` (2 args, alpha read from the overlay hex)
+  // and `semanticArchitectures` (3 args, alpha passed separately) — same name,
+  // same concept, different signatures, so importing the wrong one
+  // type-errored at best and silently mis-composited at worst.
+  //
+  // It was fixed by DELETION rather than by renaming: the 3-arg copy belonged
+  // to the Vibrancy architecture (alpha label/fill layers), and Vibrancy went
+  // when every architecture but Categorical was removed. Per this repo's own
+  // rule, an `it.fails` that starts passing loses the `.fails` and becomes a
+  // guarantee — so a future module cannot quietly reintroduce the name.
+  it('compositeOver is defined in exactly one module', () => {
     const a = src('../colorUtils.ts').includes('export function compositeOver')
     const b = src('../semanticArchitectures.ts').includes('export function compositeOver')
-    expect(a && b).toBe(false)
+    expect(a).toBe(true)
+    expect(b).toBe(false)
   })
 })
