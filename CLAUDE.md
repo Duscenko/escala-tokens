@@ -102,8 +102,9 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > step 2 picks the **destination** (Figma → `escala`, Code → `w3c`, AI → `agent-bundle`;
 > Skill is a nested Figma Make toggle, Markdown left the wizard for Save / Copy context)
 > and, for W3C only, single-vs-per-collection files; step 3 summarizes and downloads. On
-> AI, step 3 shows the same Install panel as Docs → Use with AI (`npx @escala/cli`
-> plus unzip fallback). Rules that keep it honest:
+> AI, step 3 shows the same Install panel as Docs → Use with AI — `AgentInstallPanel`,
+> which now leads with the MCP connection, not the `npx @escala/cli` package (see the
+> UPDATE below). Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
 >   disagree with `tokens.json`. Counts on screen are counts in the file.
 > - **Primitives' per-column export icon exports one ramp; it doesn't fork the export
@@ -211,6 +212,40 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   system regardless of which collections this export run scoped to (same as Save & Share's
 >   own Save button) — the card says so explicitly so exporting from, say, Typography
 >   doesn't read as "only Typography got saved."
+
+> **UPDATE: `AgentInstallPanel` now leads with the MCP connection; the `npx @escala/cli`
+> package is the offline fallback, not the default.** It used to be the reverse — the
+> package's install command first, the MCP block last, captioned "Live tokens (optional,
+> recommended)". The word "optional" undid "recommended": a reader scanning for what they
+> must do stops at "optional."
+> - **The reason is specific, not a general live-over-static preference, and it's now
+>   measurable.** The border/action solver work in this same session made 5 of Categorical's
+>   41 roles resolve to a DIFFERENT PRIMITIVE REF depending on the user's accent hue —
+>   `action.primary.default/hover/pressed`, `border.focus`, `content.on-action`. A package
+>   generated against a violet system and kept in the repo tells the agent `accent.9` for the
+>   primary fill after the brand moves to amber — and `accent.9` is the exact tone the solver
+>   REJECTED for that system because its label fails AA. A stale snapshot here doesn't just
+>   go out of date; it goes out of date in the direction that reintroduces the accessibility
+>   bug the solver exists to prevent. `resolve_token` has no such failure mode — it resolves
+>   against the published system at call time, so it always returns what the solver actually
+>   chose. This is why Live got promoted and the package didn't get cut: the package still
+>   answers "what tokens does this system even have" (names, catalogue, usage prose), which
+>   Live can't — an agent with only Live doesn't know what to ask for.
+> - **No new MCP tools.** The six that already exist (`get_tokens`, `resolve_token`,
+>   `list_components`, `get_component`, `list_icons`, `check_contrast` —
+>   `lib/agentAccess/types.ts`) carry the whole argument. This was a framing fix, not a
+>   capability build.
+> - **Figma Make keeps zero live framing** — `{tab !== 'make' && <McpBlock …>}` is unchanged.
+>   Make consumes an uploaded zip and cannot hold a connection; don't imply otherwise there.
+> - **Docs → Use with AI's sections reordered to match**: Connect → Offline package → Paste
+>   only (was Download → Install → Paste only). The old "Download" section existed mainly to
+>   send the reader to Export for the zip; that exit now lives inside the "Offline package"
+>   section instead of being the page's opening move. Copy Page's markdown for this guide
+>   leads with the `mcp init`/`.cursor/mcp.json` connection for the same reason — an agent
+>   reading the pasted context should be told to connect before it's told to unzip.
+> - **Every command string still comes from `lib/agentInstall.ts`** — reordering never meant
+>   inlining a command. If a path in Docs ever disagrees with what the CLI parses, that
+>   module is where it drifted, not the JSX around it.
 
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
   every view. All nav state is **local** there: `tab` (`about`|`foundations`|`components`|

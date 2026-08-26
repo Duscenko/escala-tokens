@@ -48,11 +48,12 @@ export default function AgentInstallPanel({
     <div className="rounded-xl border border-line bg-surface/50 overflow-hidden">
       {inWizard && (
         <div className="px-4 pt-3.5 pb-3 flex flex-col gap-1">
-          <span className="text-[13px] font-medium text-fg">Install</span>
+          <span className="text-[13px] font-medium text-fg">Connect your agent</span>
           <p className="text-[12px] text-fg-muted leading-relaxed">
-            This teaches the agent your token names. It does not replace Figma. Run the command in the{' '}
-            <strong className="font-medium text-fg">product</strong> repo — the app you are building, not Escala.
-            The system must be published (Sync). Or unzip the file you just downloaded.
+            Publish this system (Sync), then connect it below so the agent resolves real values instead of
+            guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo — the
+            app you are building, not Escala. No connection yet? The offline package still teaches it your
+            token names.
           </p>
         </div>
       )}
@@ -74,6 +75,20 @@ export default function AgentInstallPanel({
       </div>
 
       <div className="px-4 pb-4 flex flex-col gap-3">
+        {/* Live leads: it resolves against the PUBLISHED system at call time,
+            so it can never hand out a tone the solver has since rejected —
+            the way a stale zip can (see AgentInstallPanel's header comment).
+            The offline package follows, framed as the fallback (no network,
+            Figma Make, before the system is ever published), not the default. */}
+        {tab !== 'make' && (
+          <McpBlock
+            origin={origin}
+            slug={slug}
+            mcp={mcp}
+            client={tab}
+          />
+        )}
+
         {tab === 'cursor' && (
           <ClientInstall
             command={cliSkillCommand(slug, 'cursor', origin)}
@@ -98,15 +113,6 @@ export default function AgentInstallPanel({
             <span className="text-fg">Figma Make only (smaller zip)</span>. This does not replace Figma variables — Sync still does that.
           </p>
         )}
-
-        {tab !== 'make' && (
-          <McpBlock
-            origin={origin}
-            slug={slug}
-            mcp={mcp}
-            client={tab}
-          />
-        )}
       </div>
     </div>
   )
@@ -130,7 +136,14 @@ function ClientInstall({
   after: string
 }) {
   return (
-    <>
+    <div className="flex flex-col gap-2.5 pt-3 border-t border-line/60">
+      <div>
+        <span className="text-[12.5px] font-medium text-fg">Offline package</span>
+        <p className="text-[12px] text-fg-muted leading-relaxed mt-0.5">
+          Names, usage prose and the component catalogue with no network — and the only route
+          into Figma Make, which can only take a zip.
+        </p>
+      </div>
       <CodeBlock file="terminal" code={command} />
       <ol className={`list-decimal pl-4 text-fg-muted leading-relaxed flex flex-col gap-1 ${inWizard ? 'text-[12px]' : 'text-[13px]'}`}>
         {!inWizard && (
@@ -148,7 +161,7 @@ function ClientInstall({
           <CodeBlock file={path} code={path} />
         </div>
       </details>
-    </>
+    </div>
   )
 }
 
@@ -161,12 +174,13 @@ function McpBlock({
   client: 'cursor' | 'claude'
 }) {
   return (
-    <div className="flex flex-col gap-2.5 pt-3 border-t border-line/60">
+    <div className="flex flex-col gap-2.5">
       <div>
-        <span className="text-[12.5px] font-medium text-fg">Live tokens (optional, recommended)</span>
+        <span className="text-[12.5px] font-medium text-fg">Live tokens — start here</span>
         <p className="text-[12px] text-fg-muted leading-relaxed mt-0.5">
-          The guide is static names. This connection lets the agent ask the published system{' '}
-          <Mono>resolve_token</Mono> and <Mono>check_contrast</Mono>. Restart the agent after.
+          Resolves against the published system at call time, so it can never hand out a value the
+          solver has since rejected. Lets the agent ask <Mono>resolve_token</Mono> and{' '}
+          <Mono>check_contrast</Mono> instead of guessing. Restart the agent after.
         </p>
       </div>
       <CodeBlock file="terminal" code={cliMcpInitCommand(client, origin)} />

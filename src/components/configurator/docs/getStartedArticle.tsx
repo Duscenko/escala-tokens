@@ -44,8 +44,8 @@ export function getStartedToc(key: string): TocEntry[] {
   if (key === GUIDE_AI_KEY) {
     return [
       { id: 'description', label: 'Overview' },
-      { id: 'download', label: 'Download' },
-      { id: 'install', label: 'Install' },
+      { id: 'connect', label: 'Connect' },
+      { id: 'package', label: 'Offline package' },
       { id: 'paste', label: 'Paste only' },
     ]
   }
@@ -91,13 +91,22 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     return [
       '# Use with AI',
       '',
-      'One package: full context for Cursor and Claude. In Export, pick **AI assistant**. Figma Make is a nested option on that same destination — not a third product.',
+      'Connect first: live tokens resolve against the published system at call time, so the agent never gets a value the solver has since rejected. In Export, pick **AI assistant** for the offline package too — Figma Make is a nested option on that same destination, not a third product.',
       '',
-      'Publish (Figma → Sync), then in the **product** repo:',
+      'Publish (Figma → Sync), then in the **product** repo, connect live tokens. Cursor project file `.cursor/mcp.json`:',
+      '',
+      '```json',
+      mcpCursorConfig(origin),
+      '```',
+      '',
+      `Or: \`${cliMcpInitCommand('cursor', origin)}\``,
+      '',
+      `Tools that read the published system take an optional \`project\` argument. This system's slug is \`${slug}\` — the same slug Figma Sync uses.`,
+      '',
+      'Also install the offline package, so the agent knows your token names with no network (and for Figma Make, which can only take a zip):',
       '',
       '```',
       cliSkillCommand(slug, 'cursor', origin),
-      cliMcpInitCommand('cursor', origin),
       '```',
       '',
       `Claude Code: \`${cliSkillCommand(slug, 'claude', origin)}\``,
@@ -112,15 +121,7 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       '',
       `\`${folder}\``,
       '',
-      'Then optionally connect live tokens. Cursor project file `.cursor/mcp.json`:',
-      '',
-      '```json',
-      mcpCursorConfig(origin),
-      '```',
-      '',
-      `Tools that read the published system take an optional \`project\` argument. This system's slug is \`${slug}\` — the same slug Figma Sync uses.`,
-      '',
-      'The guide teaches names. The live connection looks up values (`resolve_token`, `check_contrast`). Use both.',
+      'The live connection looks up values (`resolve_token`, `check_contrast`). The package teaches names. Use both.',
       '',
       'No install: **Copy context to Agents** pastes the system into a chat.',
     ].join('\n')
@@ -134,7 +135,7 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     '',
     '- **Figma** — plugin + Sync.',
     '- **Code** — `variables.css` from Save, or W3C JSON from Export.',
-    '- **AI** — one zip into Cursor or Claude, optionally the live token connection.',
+    '- **AI** — connect live tokens (MCP) so the agent resolves real values; also install the offline package.',
     '',
     'Do not choose between Markdown, Skill, and Agent bundle. Export asks where the system is going: Figma, code, or AI.',
   ].join('\n')
@@ -205,7 +206,7 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
           />
           <DestinationRow
             title="Use with AI"
-            hint="One zip into Cursor or Claude so the agent stops inventing hex. Optional live lookup."
+            hint="Connect live tokens so the agent resolves real values, not stale hex. Also install the offline package."
             onClick={() => onOpen(GUIDE_AI_KEY)}
           />
         </div>
@@ -289,25 +290,25 @@ function AiGuide({ exits }: { exits: DocsExits }) {
   return (
     <>
       <DocSection
-        id="download"
-        title="Download"
-        description="In Export pick AI assistant. That is the full context (the guide the agent reads, plus checkers and templates). Markdown is already in Save and in Copy context. Figma Make is a nested checkbox on the same destination — a smaller zip, not a third philosophy."
-      >
-        <ExitButton onClick={exits.onOpenExport}>Open Export</ExitButton>
-      </DocSection>
-
-      <DocSection
-        id="install"
-        title="Install"
-        description="This teaches the agent your token names. It does not replace Figma. Unzip in the product repo — the app you are building, not Escala. Optionally connect live tokens so the agent can look up values."
+        id="connect"
+        title="Connect"
+        description="Publish (Sync), then connect the agent below so it resolves real values at call time — resolve_token, check_contrast — instead of guessing. This is the first thing to do; the panel also covers the offline package for when you need it."
       >
         <AgentInstallPanel variant="docs" />
       </DocSection>
 
       <DocSection
+        id="package"
+        title="Offline package"
+        description="No network, or Figma Make (which can only take a zip): pick AI assistant in Export for the full context — the guide the agent reads, plus checkers and templates. Markdown is already in Save and in Copy context. Figma Make is a nested checkbox on the same destination, not a third philosophy."
+      >
+        <ExitButton onClick={exits.onOpenExport}>Open Export</ExitButton>
+      </DocSection>
+
+      <DocSection
         id="paste"
         title="Paste only"
-        description="No files, no restart. Copy context to Agents (the rainbow control on this page) pastes the system into a chat. Use that for a one-off. Install the package when every chat in the repo should already know the tokens."
+        description="No files, no restart. Copy context to Agents (the rainbow control on this page) pastes the system into a chat. Use that for a one-off. Connect or install when every chat in the repo should already know the tokens."
       />
     </>
   )
@@ -328,7 +329,7 @@ const TITLE: Record<string, { title: string; lead: string }> = {
   },
   [GUIDE_AI_KEY]: {
     title: 'Use with AI',
-    lead: 'One package: the full context for Cursor and Claude so the agent stops inventing names and hex. Install it in the product repo. Optionally connect live tokens. Or paste into a chat and skip install.',
+    lead: 'Connect live tokens so the agent resolves real values instead of guessing — a stale snapshot can hand out a tone the solver has since rejected. Also install the offline package so it knows your token names with no network. Or paste into a chat and skip both.',
   },
 }
 
