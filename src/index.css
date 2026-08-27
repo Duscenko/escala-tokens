@@ -211,6 +211,19 @@
   scrollbar-color: var(--line-strong) transparent;
 }
 
+/* Opt-in: keep the thin thumb VISIBLE AT REST instead of hover-revealing it.
+   For a docked panel whose body reliably runs past the fold on a shorter
+   window (the family-edit / theme drawers) — there the "there's more below"
+   hint has to land immediately, not on hover. Still 6px, still the thin
+   style; the browser only paints it when the content actually overflows, so
+   it never fakes a scroll that isn't there. */
+.scrollbar-always {
+  scrollbar-color: var(--line-strong) transparent;
+}
+.scrollbar-always::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+}
+
 .dark {
   /* ── Dark theme ── */
   --app: #0a0a0a;

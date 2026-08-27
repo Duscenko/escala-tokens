@@ -62,8 +62,11 @@ export default function AgentInstallPanel({
   variant = 'docs',
 }: {
   initialClient?: InstallClient
-  /** `export` is the wizard payoff (you already have the zip). `docs` includes the publish step. */
-  variant?: 'export' | 'docs'
+  /** `export` is the wizard payoff (you already have the zip). `docs` includes
+   *  the publish step. `about` is the teaser on the About page: the tabs +
+   *  toggle + ONLY the first step, since a "More in Docs" link right below it
+   *  carries the full procedure. */
+  variant?: 'export' | 'docs' | 'about'
 }) {
   const [tab, setTab] = useState<InstallClient>(initialClient)
   const [mode, setMode] = useState<Mode>('mcp')
@@ -71,11 +74,15 @@ export default function AgentInstallPanel({
   const origin = publishOrigin()
   const slug = syncProjectId()
   const inWizard = variant === 'export'
+  const teaser = variant === 'about'
 
   // Make has no live mode; force the panel back to its one real view rather
   // than rendering an empty MCP pane if it was left on that tab.
   const effectiveMode: Mode = tab === 'make' ? 'mcp' : mode
-  const steps = stepsFor(tab, origin, slug, projectName)
+  const allSteps = stepsFor(tab, origin, slug, projectName)
+  // About shows just the first row ("Add the server" — or Make's "Export the
+  // zip"); the alternative-config and offline-package rows live in Docs.
+  const steps = teaser ? allSteps.slice(0, 1) : allSteps
 
   return (
     <div className="rounded-xl border border-line bg-surface/50 overflow-hidden">
@@ -84,7 +91,7 @@ export default function AgentInstallPanel({
           <span className="text-[13px] font-medium text-fg">Connect your agent</span>
           <p className="text-[12px] text-fg-muted leading-relaxed">
             Publish this system (Sync), then connect it below so the agent resolves real values instead of
-            guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo — the
+            guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo: the
             app you are building, not Escala.
           </p>
         </div>
@@ -137,9 +144,9 @@ export default function AgentInstallPanel({
         <PromptPane prompt={agentSetupPrompt(origin, slug)} />
       ) : (
         <>
-          {!inWizard && tab !== 'make' && (
+          {!inWizard && !teaser && tab !== 'make' && (
             <p className="px-4 pt-3 text-[12px] text-fg-faint leading-relaxed">
-              Publish this system first (Figma → Sync) — the server resolves against the published
+              Publish this system first (Figma → Sync). The server resolves against the published
               system, so there has to be one. Run these in the{' '}
               <strong className="font-medium text-fg-muted">product</strong> repo.
             </p>
@@ -175,7 +182,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Upload it as-is',
         body: (
           <>
-            Figma Make reads an uploaded zip — it cannot hold a live connection, so there is no
+            Figma Make reads an uploaded zip. It cannot hold a live connection, so there is no
             server to add here. This does not replace Figma variables; Sync still does that.
           </>
         ),
@@ -194,7 +201,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Or edit it yourself',
         body: (
           <>
-            The key is <Mono>servers</Mono>, not <Mono>mcpServers</Mono> — VS Code is the one client
+            The key is <Mono>servers</Mono>, not <Mono>mcpServers</Mono>. VS Code is the one client
             that spells it differently.
           </>
         ),
@@ -208,7 +215,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         body: (
           <>
             Copilot can now call <Mono>resolve_token</Mono> and <Mono>check_contrast</Mono>. The
-            token tools take an optional <Mono>project</Mono> — this system is <Mono>{slug}</Mono>,
+            token tools take an optional <Mono>project</Mono>. This system is <Mono>{slug}</Mono>,
             the same slug Figma Sync uses.
           </>
         ),
@@ -232,7 +239,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
         title: 'Install the offline package',
         body: (
           <>
-            Your token names, usage prose and the component catalogue with no network — what Live
+            Your token names, usage prose and the component catalogue with no network. It's what Live
             can&apos;t answer, since an agent with only a connection doesn&apos;t know what to ask
             for. Lands in <Mono>{skillInstallPath('claude', projectName)}</Mono>.
           </>
@@ -263,7 +270,7 @@ function stepsFor(tab: InstallClient, origin: string, slug: string, projectName:
       title: 'Install the offline package',
       body: (
         <>
-          Your token names, usage prose and the component catalogue with no network — what Live
+          Your token names, usage prose and the component catalogue with no network. It's what Live
           can&apos;t answer, since an agent with only a connection doesn&apos;t know what to ask
           for. Lands in <Mono>{`.cursor/skills/${folder}/`}</Mono>.
         </>
@@ -340,7 +347,7 @@ function PromptPane({ prompt }: { prompt: string }) {
         <span className="block text-[13px] font-medium text-fg">Paste this to your agent</span>
         <p className="text-[11.5px] text-fg-faint leading-relaxed mt-0.5">
           It adds the server, proves the connection by reading your system back, and tells the agent
-          to resolve tokens instead of inventing values. Publish first (Sync) — there has to be a
+          to resolve tokens instead of inventing values. Publish first (Sync). There has to be a
           published system to read.
         </p>
       </div>

@@ -94,7 +94,7 @@ export function agentSetupPrompt(
   const withProject = slug ? ` with project "${slug}"` : ''
   return [
     'Set up my Escala design system.',
-    `1. Add the MCP server ${mcpEndpoint(origin)} — it's streamable HTTP with no auth, so use whichever config my editor expects, and name it ${MCP_SERVER_NAME}.`,
+    `1. Add the MCP server ${mcpEndpoint(origin)}. It's streamable HTTP with no auth, so use whichever config my editor expects, and name it ${MCP_SERVER_NAME}.`,
     `2. Call get_tokens${withProject} and tell me how many semantic roles the system ships.`,
     '3. From now on resolve every colour, size and radius through resolve_token instead of writing a hex or a px value, and run check_contrast before you pair an ink with a fill.',
   ].join('\n')

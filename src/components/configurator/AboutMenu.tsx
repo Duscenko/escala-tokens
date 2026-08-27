@@ -12,6 +12,7 @@ import { BentoGrid } from '../ui/bento-grid'
 import { SparkleCircleIcon } from '../ui/icons'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
+import AgentInstallPanel from './AgentInstallPanel'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -36,14 +37,15 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '..
 
 export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'legal'
 
-/** The creator's contact details — the one place they're defined.
- *  `linkedin` stays null until the real profile URL is known; the row is
- *  conditional, so filling this in is the only change needed to surface it
- *  (guessing a handle risks linking to a different person). */
-const CONTACT = {
+/** The creator's contact details — the one place they're defined. The public
+ *  "contact" block leads with LinkedIn and X; `email` is kept only as the
+ *  target for Docs' FAQ "report a bug" CTA (a prefilled mail draft), not shown
+ *  as a raw address anywhere. Any of these set to null just drops its row. */
+export const CONTACT = {
   email: 'duscenko@gmail.com',
   site: 'duscenko.com',
-  linkedin: null as string | null,
+  linkedin: 'https://www.linkedin.com/in/cesar-durango/' as string | null,
+  x: 'https://x.com/duscenko' as string | null,
 }
 
 const COPYRIGHT_YEAR = 2026
@@ -233,7 +235,7 @@ export const SECTIONS: { key: AboutSection; label: string; hint: string; body: R
     body: (
       <div className="flex flex-col gap-3">
         <P>
-          {COPYRIGHT_LINE}. Escala Tokens and its source are the work of Cesar Duscenko.
+          {COPYRIGHT_LINE}. Escala Tokens and its source are the work of Cesar Durango.
           The design systems you build with it are <span className="text-fg">yours</span>.
           The tokens, scales and exported files carry no licence or attribution requirement
           from this tool.
@@ -278,6 +280,14 @@ function LinkedInIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6.94 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7 8.48H3V21h4V8.48Zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.68-2.91V8.48Z" />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
     </svg>
   )
 }
@@ -420,15 +430,17 @@ export function AboutContact({ pad = 'px-5', card = false }: { pad?: string; car
     <>
       <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Contact</span>
       <P>
-        Built and maintained by <span className="text-fg">Cesar Duscenko</span>,
+        Built and maintained by <span className="text-fg">Cesar Durango</span>,
         design systems and design engineering.
       </P>
       <div className="flex flex-col mt-0.5">
-        <ContactRow icon={<MailIcon />} label={CONTACT.email} href={`mailto:${CONTACT.email}`} />
-        <ContactRow icon={<GlobeIcon />} label={CONTACT.site} href={`https://${CONTACT.site}`} />
         {CONTACT.linkedin && (
           <ContactRow icon={<LinkedInIcon />} label="LinkedIn" href={CONTACT.linkedin} />
         )}
+        {CONTACT.x && (
+          <ContactRow icon={<XIcon />} label="X" href={CONTACT.x} />
+        )}
+        <ContactRow icon={<GlobeIcon />} label={CONTACT.site} href={`https://${CONTACT.site}`} />
       </div>
     </>
   )
@@ -767,17 +779,23 @@ export function AboutHome({
             <FeatureCard title="AI agents" Icon={SparkleCircleIcon} span="col-span-2 row-span-2">
               <p>
                 A live MCP server with <C>resolve_token</C>, <C>check_contrast</C>,{' '}
-                <C>list_components</C> and more, plus one command:
+                <C>list_components</C> and more. Pick your editor, then run the steps
+                or hand the whole setup to the agent:
               </p>
-              <code className="block text-[11px] font-mono px-2.5 py-2 rounded-lg bg-elevated text-fg-muted leading-relaxed break-all">
-                npx @escala/cli mcp init --client cursor
-              </code>
+
+              {/* The real "Connect your agent" widget: client logos + an
+                  MCP/PROMPT switch, rather than a second, drifting copy of it.
+                  Same component Docs and the Export wizard use, every string
+                  from `agentInstall.ts`. `variant="about"` trims it to the tabs,
+                  the toggle and the first step; the rest is one click away. */}
+              <AgentInstallPanel variant="about" />
+
               <button
                 type="button"
                 onClick={onLearnAI}
                 className="self-start inline-flex items-center gap-1 rounded text-[12px] font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
               >
-                Read the setup guide
+                Full steps, CSS, other tools and a repo in Docs
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
@@ -807,7 +825,7 @@ export function AboutHome({
             measure reads fine in practice.
             No footer here: Configurator.tsx's own Row 3 (the fixed hairline
             under every tab) already prints {COPYRIGHT_LINE} · Built by Cesar
-            Duscenko — repeating it here was the same line twice on screen at
+            Durango — repeating it here was the same line twice on screen at
             once. */}
         <div className="px-6 pb-8">
           <AboutAccordion section={section} onSectionChange={setSection} bleed />

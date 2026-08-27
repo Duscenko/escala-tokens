@@ -476,7 +476,7 @@ function ThemeForm({
         </button>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4 flex flex-col gap-3">
         {/* Identity — name + mode on one row. `flex-shrink-0` on every child
             of this scroll column: it is a COLUMN flex container, so a child with
             the default `flex-shrink: 1` gets crushed when the siblings overflow.
@@ -651,6 +651,10 @@ function ThemeForm({
  * rendered.
  */
 const SHELL_ROWS = 72 + 52
+/** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
+ *  panel's usual 8px gap, so the drawer stops above the "Built by…" line.
+ *  ColorPrimitives' family-edit drawer uses the identical value. */
+const DOCK_BOTTOM = 28 + 8
 
 export default function ThemePanel({
   open,
@@ -731,7 +735,7 @@ export default function ThemePanel({
             position: 'fixed',
             left: dockLeft,
             top: dockTop,
-            bottom: 8,
+            bottom: DOCK_BOTTOM,
             width,
           }}
           className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"

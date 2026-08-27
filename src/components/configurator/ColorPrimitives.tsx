@@ -54,9 +54,17 @@ import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
-/** Rendered width of the family-edit popover's `w-64` (16rem at this app's
- *  18px root = 288px). Used only to clamp it inside a narrow viewport. */
-const EDIT_POPOVER_W = 288
+/** The family-edit drawer docks exactly like `ThemePanel` — these mirror its
+ *  private `PANEL_W` (360) and `SHELL_ROWS` (72px TopNav + 52px toolbar), used
+ *  only as the width cap and the top fallback when the family `<nav>` hasn't
+ *  been measured yet. */
+const DOCK_W = 360
+const DOCK_TOP_FALLBACK = 72 + 52
+/** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
+ *  same 8px breathing gap the panel keeps everywhere else, so the drawer stops
+ *  ABOVE the "Built by…" line instead of overlapping it. `ThemePanel` uses the
+ *  identical value. */
+const DOCK_BOTTOM = 28 + 8
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -1148,6 +1156,31 @@ export default function ColorPrimitives({
     })
   }
 
+  // Theme folders are an ACCORDION: opening one collapses every other folder,
+  // so the nav never shows two themes' ramp trees at once. A system with a
+  // handful of "+ Theme" families otherwise stacked Theme 1 + Mint + Custom +
+  // … all expanded, and it wasn't obvious which theme the table/preview were
+  // actually on. Clicking an already-open folder just closes it (plain
+  // toggle). Only the OUTER `folder.key` entries are touched — the
+  // `<folder>/<group>` Accents/Neutrals/States keys keep their own state, so
+  // reopening a folder lands on the same groups you left open inside it.
+  const toggleFolderExclusive = (folderKey: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (!prev.has(folderKey)) {
+        // was open → collapse it
+        next.add(folderKey)
+      } else {
+        // was collapsed → open it, collapse the rest
+        navFolders.forEach((f) => {
+          if (f.key === folderKey) next.delete(f.key)
+          else next.add(f.key)
+        })
+      }
+      return next
+    })
+  }
+
   // Which theme a nav FOLDER previews. A real theme folder (`sky`, `violet`)
   // IS that theme; `__base` ("Theme 1") stands in for the first built-in;
   // `__custom` holds unreferenced families and previews nothing. Clicking a
@@ -1215,7 +1248,6 @@ export default function ColorPrimitives({
   const editRef = useRef<HTMLDivElement>(null)
   const editPopRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLElement>(null)
-  const editPlace = usePopoverPlacement(navRef, editFamily, { side: true })
 
   // The picker is 256px wide but the nav column is 198px AND scrolls
   // (`overflow-y-auto`), with two more `overflow:hidden` wrappers above it from
@@ -1270,22 +1302,11 @@ export default function ColorPrimitives({
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [editFamily])
 
-  // Same picker, opened from the quick-edit strip's own hex field (its
-  // dropdown chevron) instead of the nav row's pencil — same edit, second
-  // entry point, own popover instance so it anchors where it's clicked.
-  const [stripEditOpen, setStripEditOpen] = useState(false)
-  const stripEditRef = useRef<HTMLDivElement>(null)
-  const stripEditPlace = usePopoverPlacement(stripEditRef, stripEditOpen, { side: true })
-  useEffect(() => {
-    if (!stripEditOpen) return
-    function onDown(e: MouseEvent) {
-      if (stripEditRef.current && !stripEditRef.current.contains(e.target as Node)) setStripEditOpen(false)
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setStripEditOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
-  }, [stripEditOpen])
+  // The quick-edit strip's hex swatch is just a second door into the SAME
+  // family-edit drawer (`editFamily` / `editPortal` above) — it used to open
+  // its own separately-anchored popover, which is exactly the "one job, three
+  // controls" split the dock unified.
+  const openFamilyEdit = () => { if (!family.isAlpha) setEditFamily(family.key) }
 
   // ── Reset a family to its factory colour ──
   // Read from `makeDesignDefaults()` — the SAME factory a brand-new system is
@@ -1325,52 +1346,65 @@ export default function ColorPrimitives({
   }
 
   // Built here rather than inline in the nav so it renders ONCE, outside every
-  // clipping ancestor. `left` docks it just past the nav's right border, still
-  // clamped to the viewport so the panel can't hang off-screen on a narrow
-  // window. That clamp used to subtract a literal 256 for "the `w-64` panel" —
-  // wrong here, because this app's root font-size is 18px, so `w-64` (16rem)
-  // measures 288. `EDIT_POPOVER_W` is that measured width; keep the two in
-  // step if the class changes.
+  // clipping ancestor — and it DOCKS exactly like `ThemePanel` (the "New/Edit
+  // theme" drawer): flush against the Color Variables column, top-aligned with
+  // it, full height to an 8px bottom gap. Same portal, same `rounded-r-2xl
+  // border-l-0` shell, same shadow, same 52px header with a close button, same
+  // left-slide in/out. Editing a family's base colour and minting a theme are
+  // the same KIND of action on the same column, so they read as the same
+  // drawer — this used to be a small `w-64` floater beside the rail (and the
+  // quick-edit strip opened its own separate anchored popover), which made one
+  // job look like three different controls. `DOCK_W` mirrors `ThemePanel`'s
+  // `PANEL_W`; `dockLeft` follows the rail's collapsed/expanded width off the
+  // shared constants so a collapsed rail can't leave it floating over the strip.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
+  const dockLeft = railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH
   const editPortal = editingFamily && navRect
     ? createPortal(
         <AnimatePresence>
           <motion.div
             ref={editPopRef}
             key={editingFamily.key}
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             role="dialog"
             aria-label={`Edit ${editingFamily.label} color`}
             style={{
               position: 'fixed',
-              left: Math.min(navRect.right + 8, window.innerWidth - EDIT_POPOVER_W - 12),
-              // Top-aligned with the nav in the normal case; `up` only fires on
-              // a window too short to fit the panel below the nav's own top,
-              // and then it bottom-aligns instead of running off-screen.
-              ...(editPlace.up
-                ? { bottom: window.innerHeight - navRect.bottom }
-                : { top: navRect.top }),
-              maxHeight: editPlace.max,
+              left: dockLeft,
+              top: navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK,
+              bottom: DOCK_BOTTOM,
+              width: Math.min(DOCK_W, Math.max(280, window.innerWidth - dockLeft - 16)),
             }}
-            className="z-50 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
+            className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
           >
-            <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-shrink-0">
+            <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line/60 flex-shrink-0">
               <span className={SWATCH} style={{ backgroundColor: editingFamily.base }} />
               <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{editingFamily.label}</span>
               <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-                      <ColorPickerPanel
-                        value={editingFamily.base}
-                        onChange={(hex) => changeFamilyBase(editingFamily, hex)}
-                        suggestions
-                        palette={curatedPaletteFor(editingFamily.key)}
-                        followAccent={editingFamily.key === 'accent'}
-                        appearance={darkPreview ? 'dark' : 'light'}
-                      />
+              <button
+                type="button"
+                aria-label="Close"
+                title="Close"
+                onClick={() => setEditFamily(null)}
+                className="ml-1 text-fg-faint hover:text-fg transition-colors w-6 h-6 flex items-center justify-center flex-shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <path d="M10 2 2 10M2 2l8 8" />
+                </svg>
+              </button>
+            </header>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4">
+              <ColorPickerPanel
+                value={editingFamily.base}
+                onChange={(hex) => changeFamilyBase(editingFamily, hex)}
+                suggestions
+                palette={curatedPaletteFor(editingFamily.key)}
+                followAccent={editingFamily.key === 'accent'}
+                appearance={darkPreview ? 'dark' : 'light'}
+              />
             </div>
           </motion.div>
         </AnimatePresence>,
@@ -1457,39 +1491,12 @@ export default function ColorPrimitives({
         style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
       >
         {railCollapsed ? (
-          <div ref={stripEditRef} className="relative flex items-center justify-center pb-3 mb-1 border-b border-line/60">
+          <div className="relative flex items-center justify-center pb-3 mb-1 border-b border-line/60">
             <FamilySwatch
               family={family}
               dark={darkPreview}
-              onClick={family.isAlpha ? undefined : () => setStripEditOpen((o) => !o)}
+              onClick={family.isAlpha ? undefined : openFamilyEdit}
             />
-            <AnimatePresence>
-              {stripEditOpen && !family.isAlpha && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.14, ease: 'easeOut' }}
-                  role="dialog"
-                  aria-label={`Edit ${family.label} color`}
-                  style={{ maxHeight: stripEditPlace.max }}
-                  className={`absolute left-full ml-4 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                    stripEditPlace.up ? 'bottom-0' : 'top-0'
-                  }`}
-                >
-                  <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                    <ColorPickerPanel
-                      value={family.base}
-                      onChange={(hex) => changeFamilyBase(family, hex)}
-                      suggestions
-                      palette={curatedPaletteFor(family.key)}
-                      followAccent={family.key === 'accent'}
-                      appearance={darkPreview ? 'dark' : 'light'}
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         ) : null}
         {railCollapsed ? (
@@ -1542,7 +1549,7 @@ export default function ColorPrimitives({
             <div className="group/folder relative flex items-center w-full">
             <button
               type="button"
-              onClick={() => { toggleGroup(folder.key); selectFolderTheme(folder.key) }}
+              onClick={() => { toggleFolderExclusive(folder.key); selectFolderTheme(folder.key) }}
               aria-expanded={!folderCollapsed}
               aria-current={folderPreviewed ? 'true' : undefined}
               title={folderPreviewed ? `${folder.label} — shown in preview` : folderThemeKey(folder.key) ? `Preview the ${folder.label} theme` : undefined}
@@ -1788,7 +1795,7 @@ export default function ColorPrimitives({
                 />
               </div>
             ) : (
-              <div ref={stripEditRef} className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0">
                 <div className="h-9 flex items-stretch rounded-[10px] border border-line bg-surface overflow-hidden">
                   <div className="flex items-center pl-1.5 pr-0.5">
                     <HexCell
@@ -1796,7 +1803,7 @@ export default function ColorPrimitives({
                       value={family.base}
                       onChange={(hex) => changeFamilyBase(family, hex)}
                       ariaLabel={`${family.label} base color`}
-                      onSwatchClick={() => setStripEditOpen((o) => !o)}
+                      onSwatchClick={openFamilyEdit}
                       swatchLabel={`Open color picker for ${family.label}`}
                     />
                   </div>
@@ -1823,33 +1830,6 @@ export default function ColorPrimitives({
                     )
                   })()}
                 </div>
-                <AnimatePresence>
-                  {stripEditOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                      transition={{ duration: 0.14, ease: 'easeOut' }}
-                      role="dialog"
-                      aria-label={`Edit ${family.label} color`}
-                      style={{ maxHeight: stripEditPlace.max }}
-                      className={`absolute left-0 z-30 w-64 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden ${
-                        stripEditPlace.up ? 'bottom-full mb-2' : 'top-full mt-2'
-                      }`}
-                    >
-                      <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                        <ColorPickerPanel
-                          value={family.base}
-                          onChange={(hex) => changeFamilyBase(family, hex)}
-                          suggestions
-                          palette={curatedPaletteFor(family.key)}
-                          followAccent={family.key === 'accent'}
-                          appearance={darkPreview ? 'dark' : 'light'}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             )
           )}

@@ -31,7 +31,7 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
-import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY, CHANGELOG_KEY } from '../components/configurator/DocsView'
+import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY, CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
 import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
 import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
 import { GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
@@ -228,6 +228,13 @@ const ClockIcon: ComponentType = () => (
   </svg>
 )
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
+const HelpIcon: ComponentType = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.2 9a2.8 2.8 0 0 1 5.5.8c0 1.9-2.7 2.5-2.7 4" />
+    <path d="M12 17h.01" />
+  </svg>
+)
 const SaveIcon: ComponentType = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
@@ -262,6 +269,7 @@ const DOCS_RAIL_ROWS: DocsRailRow[] = [
   // `GUIDE_PAGES` for why.
   { key: GUIDE_CODE_KEY, label: 'Use in code', Icon: CodeIcon },
   { key: CHANGELOG_KEY, label: 'Changelog', Icon: ClockIcon },
+  { key: FAQ_KEY, label: 'FAQ', Icon: HelpIcon },
   { key: OVERVIEW_KEY, label: 'System reference', Icon: RulesIcon, heading: 'Reference' },
   ...FOUNDATION_DOCS.map((d) => {
     const section = FOUNDATIONS.find((f) => f.key === d.key)
@@ -598,9 +606,16 @@ export default function Configurator() {
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
+  // Dark reads the DARK end of the ramp. `s` used to be `primaryScale` (always
+  // the light ramp) where tone 12 IS that dark end — a deep near-black brand
+  // tone. Once `s` became theme-aware it's the DARK twin in dark chrome, whose
+  // tone 12 is the near-WHITE text end (Radix two-scale model), so `s[12]` here
+  // started painting a pale lavender splash instead of the deep wash it always
+  // was. Tone 6 of the dark ramp is the equivalent deep brand tone (default
+  // accent: `#49266c`, ~identical to the old `primaryScale[12]` `#472668`).
   const gradient =
     theme === 'dark'
-      ? `linear-gradient(160deg, ${s[12] ?? '#1c1c1c'} 0%, #0a0a0a 48%)`
+      ? `linear-gradient(160deg, ${s[6] ?? s[12] ?? '#1c1c1c'} 0%, #0a0a0a 48%)`
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
   // ── Foundation-switcher toolbar wash — same brand-derived language as Layer
@@ -628,7 +643,16 @@ export default function Configurator() {
   // transparent by ~45% width — roughly where that cluster ends — so the
   // Reset/Save pills sit on a neutral patch and keep their own border as
   // their contrast, rather than competing with more colour behind them.
-  const toolbarWash = `linear-gradient(90deg, color-mix(in srgb, ${uiAccent} 10%, transparent) 0%, transparent 45%)`
+  //
+  // Dark chrome uses a DIFFERENT source: `uiAccent` is walked UP the ramp for
+  // page contrast, so in dark it's a near-WHITE tone (`#e1beff` for the default
+  // accent). Mixed over the near-black row that reads as a grey FILM, not a
+  // brand wash — the chrome stops looking dark. So dark reads the solid brand
+  // tone (`s[9]`, chromatic and dark) at a lighter 7%, which stays a whisper of
+  // colour over `#0a0a0a` instead of a wash of grey. Light is unchanged.
+  const washAccent = theme === 'dark' ? s[9] ?? uiAccent : uiAccent
+  const washMix = theme === 'dark' ? 7 : 10
+  const toolbarWash = `linear-gradient(90deg, color-mix(in srgb, ${washAccent} ${washMix}%, transparent) 0%, transparent 45%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
   // Marking happens on *leave*: a foundation counts as visited for the
@@ -1169,7 +1193,7 @@ export default function Configurator() {
           distinct strip instead of text floating on the page. */}
       <footer className="flex-shrink-0 h-7 flex items-center px-4 lg:px-5 border-t border-line bg-surface">
         <span className="text-[10.5px] text-fg-faint truncate">
-          {COPYRIGHT_LINE} · Built by Cesar Duscenko
+          {COPYRIGHT_LINE} · Built by Cesar Durango
         </span>
       </footer>
 

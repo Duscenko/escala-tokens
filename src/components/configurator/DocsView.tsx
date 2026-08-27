@@ -10,10 +10,12 @@ import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
 import { isGuideKey, type DocsExits } from './docs/getStarted'
 import { useSystemDoc, OVERVIEW_KEY, foundationDoc } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
+import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
 
 export { OVERVIEW_KEY }
 export { GET_STARTED_KEY } from './docs/getStarted'
 export { CHANGELOG_KEY } from './docs/changelogArticle'
+export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
   activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits,
@@ -33,7 +35,8 @@ export default function DocsView({
 
   const guide = isGuideKey(activeFoundationKey)
   const isChangelog = activeFoundationKey === CHANGELOG_KEY
-  const doc = !guide && !isChangelog && activeFoundationKey !== OVERVIEW_KEY
+  const isFaq = activeFoundationKey === FAQ_KEY
+  const doc = !guide && !isChangelog && !isFaq && activeFoundationKey !== OVERVIEW_KEY
     ? foundationDoc(activeFoundationKey)
     : undefined
 
@@ -45,9 +48,11 @@ export default function DocsView({
     ? getStartedToc(activeFoundationKey)
     : isChangelog
       ? changelogToc()
-      : doc
-        ? foundationToc(doc)
-        : overviewToc()
+      : isFaq
+        ? faqToc()
+        : doc
+          ? foundationToc(doc)
+          : overviewToc()
 
   return (
     <div className="h-full flex min-h-0">
@@ -70,6 +75,8 @@ export default function DocsView({
             />
           ) : isChangelog ? (
             <ChangelogArticle />
+          ) : isFaq ? (
+            <FaqArticle />
           ) : doc ? (
             <FoundationArticle
               doc={doc}
