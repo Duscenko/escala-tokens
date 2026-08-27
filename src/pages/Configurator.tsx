@@ -597,7 +597,7 @@ export default function Configurator() {
   }, [uiAccent, uiAccentSolid, uiAccentInk])
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
-  const s = primaryScale
+  const s = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
   const gradient =
     theme === 'dark'
       ? `linear-gradient(160deg, ${s[12] ?? '#1c1c1c'} 0%, #0a0a0a 48%)`

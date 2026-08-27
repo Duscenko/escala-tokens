@@ -1539,14 +1539,14 @@ export default function ColorPrimitives({
                 from the nav's edge. When the trash button DOES render, `gap-1`
                 alone separates it from the label — same flush-right pattern
                 every other trailing icon in this nav already uses. */}
-            <div className="group/folder flex items-center gap-1">
+            <div className="group/folder relative flex items-center w-full">
             <button
               type="button"
               onClick={() => { toggleGroup(folder.key); selectFolderTheme(folder.key) }}
               aria-expanded={!folderCollapsed}
               aria-current={folderPreviewed ? 'true' : undefined}
               title={folderPreviewed ? `${folder.label} — shown in preview` : folderThemeKey(folder.key) ? `Preview the ${folder.label} theme` : undefined}
-              className={`flex-1 min-w-0 flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+              className={`w-full flex items-center gap-1.5 pl-2.5 pr-8 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
                 folderPreviewed ? 'text-accent-ui' : 'text-fg-muted hover:text-fg'
               }`}
             >
@@ -1560,23 +1560,28 @@ export default function ColorPrimitives({
                 )}
               </span>
               <span className="flex-1 text-left truncate">{folder.label}</span>
+            </button>
+            <div className="absolute right-2.5 top-0 bottom-0 flex items-center gap-1.5 pointer-events-none">
+              {folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setThemeToDelete(folder.key)
+                  }}
+                  aria-label={`Delete theme ${folder.label}`}
+                  title={`Delete the ${folder.label} theme — its color families stay, and move to Custom`}
+                  className="pointer-events-auto flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/folder:opacity-100 focus-visible:opacity-100 transition-all"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  </svg>
+                </button>
+              )}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${folderCollapsed ? '-rotate-90' : ''}`}>
                 <path d="M6 9l6 6 6-6" />
               </svg>
-            </button>
-            {folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setThemeToDelete(folder.key)}
-                aria-label={`Delete theme ${folder.label}`}
-                title={`Delete the ${folder.label} theme — its color families stay, and move to Custom`}
-                className="mt-1.5 flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/folder:opacity-100 focus-visible:opacity-100 transition-all"
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                </svg>
-              </button>
-            )}
+            </div>
             </div>
             <AnimatePresence initial={false}>
               {!folderCollapsed && (
