@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { FIGMA_PLUGIN_ZIP as PLUGIN_ZIP } from '../../lib/utils'
+import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { FigmaLogo, Step, BackToEditor } from './figmaShared'
 
 interface FigmaDownloadViewProps {
@@ -16,8 +17,9 @@ interface FigmaDownloadViewProps {
 // No auto-publish here on purpose: downloading a file has no reason to hit
 // /api/tokens — that only happens on FigmaSyncView, which IS the sync screen. ──
 export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownloadViewProps = {}) {
-  const { projectName, selectedComponents } = useDesignStore()
+  const { projectName, selectedComponents, pluginBuildSeen, setPluginBuildSeen } = useDesignStore()
   const synced = ['Colors', 'Typography', 'Spacing', 'Radius', 'Icons', `${selectedComponents.length} components`]
+  const updateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
 
   return (
     <motion.div
@@ -55,9 +57,17 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
         <p className="text-xs text-fg-faint leading-relaxed">
           A small package with the plugin&apos;s <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code> and build output.
         </p>
+        {updateAvailable ? (
+          <p className="text-xs leading-relaxed text-accent-ui bg-accent-ui/10 border border-accent-ui/20 rounded-lg px-3 py-2">
+            A newer plugin build is available (<span className="font-semibold">v{PLUGIN_VERSION}</span>). Re-download below and re-import it in Figma to pick up the latest changes.
+          </p>
+        ) : (
+          <p className="text-[11px] text-fg-faint">Current version: <span className="font-medium text-fg-muted">v{PLUGIN_VERSION}</span></p>
+        )}
         <a
           href={PLUGIN_ZIP}
           download
+          onClick={() => setPluginBuildSeen(PLUGIN_BUILD)}
           className="self-start mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-app bg-fg hover:opacity-90 shadow-sm transition-all"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

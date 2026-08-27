@@ -16,6 +16,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColor, type GradientDef, type GradientType, type GradientAppearance } from '../../lib/gradients'
 import { usePopoverPlacement, ScaleRow } from './colorControls'
 import { NAMING_SCHEMES, BASE_TONE } from '../../lib/colorUtils'
+import { themeBrandRamp } from '../../lib/themeSources'
 import ColorField from '../ui/ColorField'
 import RailSelect from '../ui/RailSelect'
 import { SlidersIcon } from '../ui/icons'
@@ -78,21 +79,32 @@ export default function StepGradients({
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
 } = {}) {
+  const store = useDesignStore()
   const {
     gradients, gradientAssignments, primaryColor, primaryScale, primaryDarkScale,
-    colorNaming, themeKinds,
+    colorNaming, themeKinds, themeSources,
     addGradient, updateGradient, removeGradient, setGradientAssignment,
-  } = useDesignStore()
+  } = store
 
   // A gradient has exactly TWO appearances, but `previewTheme` is a THEME key
   // (which may be a custom theme), so it's mapped through `themeKinds` the same
   // way every other appearance-aware surface does it.
   const appearance: GradientAppearance = (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light'
   const isDark = appearance === 'dark'
-  /** The accent ramp the previewed appearance resolves against. Step N means
-   *  the same ROLE in both (Radix two-scale model) — a linked stop keeps its
-   *  tone and swaps ramps, it never inverts. */
-  const ramp = isDark ? primaryDarkScale : primaryScale
+  /** The accent ramp the previewed THEME resolves against — its own brand
+   *  family, in its own appearance. This used to be the GLOBAL accent
+   *  (`primaryScale`/`primaryDarkScale`) regardless of theme, which made the
+   *  gradient the one foundation that ignored the theme picker: previewing a
+   *  teal theme still painted the default accent. Step N means the same ROLE in
+   *  both appearances (Radix two-scale model) — a linked stop keeps its tone and
+   *  swaps ramps, it never inverts. */
+  const ramp = themeBrandRamp(previewTheme, themeSources, themeKinds, store)
+    ?? (isDark ? primaryDarkScale : primaryScale)
+  /** The token PREFIX a linked stop's tone names in this theme. A stop reads
+   *  "tone 9 of the accent", but which family that is depends on the theme, so
+   *  the row must say `sky-9` under Sky and `accent-9` under Theme 1 — the same
+   *  exported-name rule the Primitives table follows. */
+  const rampPrefix = themeSources[previewTheme]?.brand ?? 'accent'
 
   const [selectedId, setSelectedId] = useState<string | null>(gradients[0]?.id ?? null)
   const [query, setQuery] = useState('')
@@ -197,9 +209,15 @@ export default function StepGradients({
   const linkable = selected ? isLinkable(selected.id) : false
   const locked = !!selected && linkable && selected.linked === true
   const toneNames = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
-  /** The exported primitive a linked stop references, e.g. `accent-9`. */
+  /** The exported primitive a linked stop references, e.g. `accent-9` — or
+   *  `sky-9` while a theme whose brand slot is the Sky family is previewed. */
   const tokenNameFor = (tone: number, ap: GradientAppearance = 'light') =>
-    `accent${ap === 'dark' ? '-dark' : ''}-${toneNames[tone - 1] ?? tone}`
+    `${rampPrefix}${ap === 'dark' ? '-dark' : ''}-${toneNames[tone - 1] ?? tone}`
+  /** The gradient as this THEME renders it — the shared call every bar, chip
+   *  and swatch on this screen goes through, so none of them can disagree
+   *  about which accent the preview is showing. */
+  const cssFor = (g: GradientDef, ap: GradientAppearance = appearance) =>
+    gradientToCss(g, ap, ap === appearance ? ramp : undefined)
 
   // Three tracks, matching the reference: position · color · row actions.
   const gridStyle: React.CSSProperties = {

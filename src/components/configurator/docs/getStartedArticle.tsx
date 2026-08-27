@@ -1,7 +1,8 @@
 // Get started articles — destinations, not file formats.
 // Create UI's docs shape (what you get → where it lands) without their CLI.
-// Install (Cursor / Claude / Make + MCP) is `AgentInstallPanel` — the same
-// component the Export wizard shows on step 3, so the two cannot drift.
+// Install (Cursor / Claude Code / VS Code / Figma Make, MCP steps or one pasted prompt)
+// is `AgentInstallPanel` — the same component the Export wizard shows on step 3, so the
+// two cannot drift.
 
 import { type ReactNode } from 'react'
 import { useDesignStore } from '../../../store/useDesignStore'
@@ -20,7 +21,7 @@ import {
   CodeBlock, DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
 import {
-  GET_STARTED_KEY, GUIDE_AI_KEY, GUIDE_CODE_KEY, GUIDE_FIGMA_KEY,
+  GET_STARTED_KEY, GUIDE_CODE_KEY, GUIDE_FIGMA_KEY,
   introPager, type DocsExits,
 } from './getStarted'
 
@@ -37,16 +38,9 @@ export function getStartedToc(key: string): TocEntry[] {
     return [
       { id: 'description', label: 'Overview' },
       { id: 'css', label: 'CSS variables' },
+      { id: 'connect', label: 'Connect your agent' },
       { id: 'w3c', label: 'Other tools' },
       { id: 'github', label: 'A repo' },
-    ]
-  }
-  if (key === GUIDE_AI_KEY) {
-    return [
-      { id: 'description', label: 'Overview' },
-      { id: 'connect', label: 'Connect' },
-      { id: 'package', label: 'Offline package' },
-      { id: 'paste', label: 'Paste only' },
     ]
   }
   return [
@@ -74,26 +68,27 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     ].join('\n')
   }
   if (key === GUIDE_CODE_KEY) {
+    // ONE page, so ONE markdown: the CSS half and the agent half both answer
+    // "how does this reach my repo", and they share the rule. Stating it once
+    // at the top is what the merge bought — the two pages used to say it twice
+    // in different words.
     return [
       '# Use in code',
       '',
-      'CSS already lives in Save & Share (`variables.css`). Export W3C JSON only when another tool needs the standard format.',
+      'Everything here lands in the **product** repo — the app you are building, not Escala. One rule underneath all of it: reference a semantic role, never invent a hex or a px. That is what `variables.css` gives a human and what the MCP server enforces for an agent.',
+      '',
+      '## CSS variables',
+      '',
+      'Already in Save & Share (`variables.css`). Put it in the product and reference roles, not ramps.',
       '',
       '```css',
       'background: var(--color-action-primary-default);',
       'color: var(--color-content-on-action);',
       '```',
       '',
-      'Do not invent hex or px when a token exists. Semantic roles over primitive ramps.',
-    ].join('\n')
-  }
-  if (key === GUIDE_AI_KEY) {
-    return [
-      '# Use with AI',
+      '## Connect your agent',
       '',
-      'Connect first: live tokens resolve against the published system at call time, so the agent never gets a value the solver has since rejected. In Export, pick **AI assistant** for the offline package too — Figma Make is a nested option on that same destination, not a third product.',
-      '',
-      'Publish (Figma → Sync), then in the **product** repo, connect live tokens. Cursor project file `.cursor/mcp.json`:',
+      'Live tokens resolve against the published system at call time, so an agent never gets a value the solver has since rejected — the way a stale snapshot can. Publish (Figma → Sync) first, then in the product repo:',
       '',
       '```json',
       mcpCursorConfig(origin),
@@ -103,7 +98,7 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       '',
       `Tools that read the published system take an optional \`project\` argument. This system's slug is \`${slug}\` — the same slug Figma Sync uses.`,
       '',
-      'Also install the offline package, so the agent knows your token names with no network (and for Figma Make, which can only take a zip):',
+      'Also install the offline package, so the agent knows your token NAMES with no network — which the connection alone cannot answer, since an agent with only a connection does not know what to ask for:',
       '',
       '```',
       cliSkillCommand(slug, 'cursor', origin),
@@ -115,15 +110,17 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       '',
       `- Cursor: \`${cursorPath}\``,
       `- Claude Code: \`${claudePath}\``,
-      '- Figma Make: upload the zip as-is.',
+      '- Figma Make: upload the zip as-is (it cannot hold a live connection).',
       '',
       'Folder name inside the zip:',
       '',
       `\`${folder}\``,
       '',
-      'The live connection looks up values (`resolve_token`, `check_contrast`). The package teaches names. Use both.',
+      'No install at all: **Copy context to Agents** pastes the system into a chat.',
       '',
-      'No install: **Copy context to Agents** pastes the system into a chat.',
+      '## Other tools',
+      '',
+      'Style Dictionary, Tokens Studio or Figma\'s own variable import want W3C JSON. In Export pick **W3C Design Tokens**.',
     ].join('\n')
   }
   return [
@@ -134,10 +131,9 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
     'Take it somewhere:',
     '',
     '- **Figma** — plugin + Sync.',
-    '- **Code** — `variables.css` from Save, or W3C JSON from Export.',
-    '- **AI** — connect live tokens (MCP) so the agent resolves real values; also install the offline package.',
+    '- **Code** — `variables.css` from Save, W3C JSON from Export, a GitHub remote, and the MCP connection an AI agent resolves real values through. All of it lands in the product repo.',
     '',
-    'Do not choose between Markdown, Skill, and Agent bundle. Export asks where the system is going: Figma, code, or AI.',
+    'Do not choose between Markdown, Skill, and Agent bundle. Export asks where the system is going.',
   ].join('\n')
 }
 
@@ -191,7 +187,7 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
       <DocSection
         id="start"
         title="Take it somewhere"
-        description="Three jobs. Pick the place you work — not a file format."
+        description="Two places, not three file formats. Figma is a design tool; everything else lands in the product repo."
       >
         <div className="flex flex-col gap-2">
           <DestinationRow
@@ -201,13 +197,8 @@ function GetStartedLanding({ onOpen }: { onOpen: (key: string) => void }) {
           />
           <DestinationRow
             title="Use in code"
-            hint="variables.css from Save & Share, or W3C JSON when another tool needs the standard format."
+            hint="variables.css, W3C JSON for another tool, a GitHub remote — and the live connection an AI agent resolves real values through."
             onClick={() => onOpen(GUIDE_CODE_KEY)}
-          />
-          <DestinationRow
-            title="Use with AI"
-            hint="Connect live tokens so the agent resolves real values, not stale hex. Also install the offline package."
-            onClick={() => onOpen(GUIDE_AI_KEY)}
           />
         </div>
       </DocSection>
@@ -252,19 +243,52 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
   )
 }
 
+/**
+ * Code AND agents — one page, because they are one destination.
+ *
+ * This used to be two rail rows, "Use in code" and "Use with AI", and they
+ * answered the same question (how do my tokens reach my repo) with the same
+ * rule stated twice in different words — the CSS section said "reference
+ * roles, not hex" in prose, the AI page enforced the identical thing through
+ * `resolve_token`. Everything on this page lands in the product repo;
+ * `variables.css` is how a human obeys the rule and the MCP server is how an
+ * agent does. Figma is the destination that is genuinely different, and it
+ * kept its own page.
+ *
+ * Section order is what a reader actually asks in sequence: the file first
+ * (the universal answer), then the agent (the same rule, enforced), then the
+ * two exits — another tool's format, and a repo to commit into.
+ */
 function CodeGuide({ exits }: { exits: DocsExits }) {
   return (
     <>
       <DocSection
         id="css"
         title="CSS variables"
-        description="Save & Share already has `variables.css`. Put it in the product and reference roles, not hex. GitHub is the same files versioned."
+        description="Save & Share already has `variables.css`. Put it in the product and reference semantic roles, never a primitive ramp and never a leftover hex."
       >
         <CodeBlock
           file="variables.css"
           code={`background: var(--color-action-primary-default);\ncolor:      var(--color-content-on-action);`}
         />
         <ExitButton onClick={exits.onOpenSave}>Open Save & Share</ExitButton>
+      </DocSection>
+
+      {/* The same rule as the section above, enforced at call time instead of
+          by discipline. The panel carries the offline package as its own step
+          03, so there is no separate "Offline package" section any more — one
+          explanation, in the place you act on it. */}
+      <DocSection
+        id="connect"
+        title="Connect your agent"
+        description="An agent writing this code needs the same rule. Publish (Sync), then connect it so it resolves real values at call time — resolve_token, check_contrast — instead of guessing: a stale snapshot can hand out a tone the solver has since rejected. Step 3 installs the offline package, which teaches it your token names with no network."
+      >
+        <AgentInstallPanel variant="docs" />
+        <p className="text-[12.5px] text-fg-faint leading-relaxed">
+          Neither, for a one-off? <span className="text-fg-muted">Copy context to Agents</span> (the
+          control at the top of this page) pastes the system straight into a chat — no files, no
+          restart. Connect when every chat in the repo should already know the tokens.
+        </p>
       </DocSection>
 
       <DocSection
@@ -286,38 +310,10 @@ function CodeGuide({ exits }: { exits: DocsExits }) {
   )
 }
 
-function AiGuide({ exits }: { exits: DocsExits }) {
-  return (
-    <>
-      <DocSection
-        id="connect"
-        title="Connect"
-        description="Publish (Sync), then connect the agent below so it resolves real values at call time — resolve_token, check_contrast — instead of guessing. This is the first thing to do; the panel also covers the offline package for when you need it."
-      >
-        <AgentInstallPanel variant="docs" />
-      </DocSection>
-
-      <DocSection
-        id="package"
-        title="Offline package"
-        description="No network, or Figma Make (which can only take a zip): pick AI assistant in Export for the full context — the guide the agent reads, plus checkers and templates. Markdown is already in Save and in Copy context. Figma Make is a nested checkbox on the same destination, not a third philosophy."
-      >
-        <ExitButton onClick={exits.onOpenExport}>Open Export</ExitButton>
-      </DocSection>
-
-      <DocSection
-        id="paste"
-        title="Paste only"
-        description="No files, no restart. Copy context to Agents (the rainbow control on this page) pastes the system into a chat. Use that for a one-off. Connect or install when every chat in the repo should already know the tokens."
-      />
-    </>
-  )
-}
-
 const TITLE: Record<string, { title: string; lead: string }> = {
   [GET_STARTED_KEY]: {
     title: 'Get started',
-    lead: 'Foundations are set. This page is where the system goes — Figma, code, or an AI assistant — not a menu of file formats.',
+    lead: 'Foundations are set. This page is where the system goes — into Figma, or into your product repo — not a menu of file formats.',
   },
   [GUIDE_FIGMA_KEY]: {
     title: 'Use in Figma',
@@ -325,11 +321,7 @@ const TITLE: Record<string, { title: string; lead: string }> = {
   },
   [GUIDE_CODE_KEY]: {
     title: 'Use in code',
-    lead: 'CSS custom properties from Save & Share, or W3C JSON when another tool needs the standard format. Reach for semantic roles (`action.primary.default`), never a leftover hex.',
-  },
-  [GUIDE_AI_KEY]: {
-    title: 'Use with AI',
-    lead: 'Connect live tokens so the agent resolves real values instead of guessing — a stale snapshot can hand out a tone the solver has since rejected. Also install the offline package so it knows your token names with no network. Or paste into a chat and skip both.',
+    lead: 'Everything that lands in the product repo — `variables.css`, W3C JSON for another tool, a GitHub remote, and the live connection an AI agent reads. One rule under all of it: reach for a semantic role (`action.primary.default`), never a leftover hex.',
   },
 }
 
@@ -366,8 +358,6 @@ export function GetStartedArticle({
         <FigmaGuide exits={exits} />
       ) : pageKey === GUIDE_CODE_KEY ? (
         <CodeGuide exits={exits} />
-      ) : pageKey === GUIDE_AI_KEY ? (
-        <AiGuide exits={exits} />
       ) : (
         <GetStartedLanding onOpen={onOpen} />
       )}

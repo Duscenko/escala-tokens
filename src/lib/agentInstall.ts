@@ -74,3 +74,28 @@ export function cliMcpInitCommand(
 ): string {
   return `npx ${CLI_PACKAGE} mcp init --client ${client} --url ${mcpEndpoint(origin)}`
 }
+
+/**
+ * The "paste this to your agent" alternative to the numbered steps — one
+ * message that connects the server and then PROVES it connected.
+ *
+ * Every claim in it is checked against something real: the endpoint is
+ * `mcpEndpoint`, the transport is what `/api/mcp` actually speaks (plain
+ * streamable HTTP, no auth — do NOT add a sign-in line here), and the two tool
+ * names are entries in `agentAccess/types.ts`. Step 3 exists because "did it
+ * work" is otherwise unanswerable until the agent gets a token wrong: asking
+ * for the role's resolved value makes a silent mis-connection visible
+ * immediately.
+ */
+export function agentSetupPrompt(
+  origin: string = DEFAULT_PUBLISH_ORIGIN,
+  slug?: string,
+): string {
+  const withProject = slug ? ` with project "${slug}"` : ''
+  return [
+    'Set up my Escala design system.',
+    `1. Add the MCP server ${mcpEndpoint(origin)} — it's streamable HTTP with no auth, so use whichever config my editor expects, and name it ${MCP_SERVER_NAME}.`,
+    `2. Call get_tokens${withProject} and tell me how many semantic roles the system ships.`,
+    '3. From now on resolve every colour, size and radius through resolve_token instead of writing a hex or a px value, and run check_contrast before you pair an ink with a fill.',
+  ].join('\n')
+}

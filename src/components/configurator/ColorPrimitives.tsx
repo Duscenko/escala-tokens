@@ -5,8 +5,10 @@
 // promoted DEFINE surface Picker Color used to own — a quick-edit strip above
 // the table (hex field, "match states" wand, scale, algorithm settings) edits
 // whichever family is active, so palette definition and usage now live on one
-// screen. The nav groups families under a THEME folder (see BASE_FOLDER) —
-// families are created by Semantics' "+ Theme", not from this rail. Token
+// screen. The nav groups families under a THEME folder (see BASE_FOLDER). A
+// "+ New theme" CTA below the folder list opens the SAME `ThemePanel`
+// Semantics' "+ Theme" mints from — adding a theme creates the primitive
+// families it reads, which is a Primitives concern too, not only Semantics'. Token
 // names in the table are the EXACT exported names
 // (tokenGenerator's flattenScale prefixes: accent/neutral/error/success/
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
@@ -34,6 +36,7 @@ import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
 import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import ThemePanel from './ThemePanel'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 
 // ── Family groups ───────────────────────────────────────────────────────────
@@ -41,12 +44,13 @@ import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY
 // in is DERIVED from `themeSources` — a custom family reads as "Accents"
 // precisely because its theme's `brand` slot points at it (see `homeOf`).
 //
-// There is no "+ Add family" control here any more: minting a family from this
-// rail meant also deciding which theme slot should reference it (or inventing a
-// theme to hold it), which was too much flow for a nav header. Families are
-// created where that decision is already being made — Semantics' "+ Theme",
-// which asks for the accent/neutral/status colours it needs and files the
-// families it mints under that theme's folder automatically.
+// There is no "+ Add family" control here: minting a single family meant also
+// deciding which theme slot should reference it (or inventing a theme to hold
+// it), which was too much flow for a nav header. Families are created as a
+// side effect of adding a THEME — the "+ New theme" CTA at the bottom of this
+// nav (and Semantics' "+ Theme"), which asks for the accent/neutral/status
+// colours it needs and files the families it mints under that theme's folder
+// automatically.
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
@@ -917,6 +921,11 @@ export default function ColorPrimitives({
   // per-family trash already works. Nothing about the colours is destroyed —
   // only the theme and the semantic values mapped to it.
   const [themeToDelete, setThemeToDelete] = useState<string | null>(null)
+  // "+ New theme" CTA under the folder list — opens the SAME `ThemePanel`
+  // Semantics' `+` and column pencil open, in the same docked position.
+  // Adding a theme is a colour decision (it mints the primitive families the
+  // new theme reads), so it belongs on this rail too, not only in Semantics.
+  const [addThemeOpen, setAddThemeOpen] = useState(false)
 
   // A family created elsewhere (NewTokenWizard) requests focus — switch to it
   // so the table actually shows the family + names the user just picked,
@@ -1120,6 +1129,13 @@ export default function ColorPrimitives({
     const collapsed = new Set<string>()
     navFolders.forEach((folder) => {
       if (folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER) collapsed.add(folder.key)
+      // Neutrals and States start closed — a fresh system reaches for its
+      // Accent first, and those two groups are noise until it does.
+      folder.groups.forEach((group) => {
+        if (group.label === 'Neutrals' || group.label === 'States') {
+          collapsed.add(`${folder.key}/${group.label}`)
+        }
+      })
     })
     return collapsed
   })
@@ -1130,6 +1146,51 @@ export default function ColorPrimitives({
       else next.add(key)
       return next
     })
+  }
+
+  // Which theme a nav FOLDER previews. A real theme folder (`sky`, `violet`)
+  // IS that theme; `__base` ("Theme 1") stands in for the first built-in;
+  // `__custom` holds unreferenced families and previews nothing. Clicking a
+  // folder header switches the whole surface — ramps, Preview, Artefacts,
+  // .MD — to that theme, so selecting a theme in the nav shows its result,
+  // the same as clicking a column eye in Semantics.
+  const folderThemeKey = useCallback(
+    (folderKey: string): string | null => {
+      if (folderKey === CUSTOM_FOLDER) return null
+      if (folderKey === BASE_FOLDER) return themeOrder[0] ?? 'light'
+      return themeOrder.includes(folderKey) ? folderKey : null
+    },
+    [themeOrder],
+  )
+  /** The Family key of a theme's ACCENT — the family whose ramp IS that theme's
+   *  identity. A theme references its brand slot by customColors key
+   *  (`themeSources[t].brand === 'sky'`), and this nav keys that family
+   *  `custom-sky`; a theme with no override (the built-in light/dark) reads the
+   *  global `accent`. */
+  const themeAccentFamilyKey = useCallback(
+    (themeKey: string): string | null => {
+      const brand = themeSources[themeKey]?.brand
+      const key = !brand || brand === 'accent' ? 'accent' : `custom-${brand}`
+      return families.some((f) => f.key === key) ? key : null
+    },
+    [families, themeSources],
+  )
+
+  // Selecting a theme must move the TABLE too, not just the preview. Switching
+  // `previewTheme` alone left the quick-edit strip, the token rows and the ramp
+  // overview on whichever family was selected before — so picking "Theme 1"
+  // while Sky's accent was active showed the Theme-1 preview beside `sky-1…12`
+  // and Sky's hex, i.e. two different themes on one screen. Landing on the
+  // theme's own accent is what makes "the ramp changed" true.
+  const selectFolderTheme = (folderKey: string) => {
+    const tk = folderThemeKey(folderKey)
+    if (!tk) return
+    if (tk !== previewTheme) onPreviewThemeChange?.(tk)
+    const accentKey = themeAccentFamilyKey(tk)
+    if (accentKey && accentKey !== activeFamily) {
+      setActiveFamily(accentKey)
+      setExpandedTone(null)
+    }
   }
 
   const q = query.trim().toLowerCase()
@@ -1458,6 +1519,7 @@ export default function ColorPrimitives({
         ) : (
         navFolders.map((folder) => {
           const folderCollapsed = collapsedGroups.has(folder.key)
+          const folderPreviewed = folderThemeKey(folder.key) === previewTheme
           return (
           <div key={folder.key} className="flex flex-col">
             {/* Theme folder — the outer level. Its Accents/Neutrals/States sit
@@ -1480,13 +1542,23 @@ export default function ColorPrimitives({
             <div className="group/folder flex items-center gap-1">
             <button
               type="button"
-              onClick={() => toggleGroup(folder.key)}
+              onClick={() => { toggleGroup(folder.key); selectFolderTheme(folder.key) }}
               aria-expanded={!folderCollapsed}
-              className="flex-1 min-w-0 flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-muted hover:text-fg transition-colors"
+              aria-current={folderPreviewed ? 'true' : undefined}
+              title={folderPreviewed ? `${folder.label} — shown in preview` : folderThemeKey(folder.key) ? `Preview the ${folder.label} theme` : undefined}
+              className={`flex-1 min-w-0 flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                folderPreviewed ? 'text-accent-ui' : 'text-fg-muted hover:text-fg'
+              }`}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
-                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-              </svg>
+              <span className="flex-shrink-0 flex items-center">
+                {folderPreviewed ? (
+                  <EyeIcon active />
+                ) : (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+                  </svg>
+                )}
+              </span>
               <span className="flex-1 text-left truncate">{folder.label}</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${folderCollapsed ? '-rotate-90' : ''}`}>
                 <path d="M6 9l6 6 6-6" />
@@ -1652,6 +1724,20 @@ export default function ColorPrimitives({
           </div>
           )
         })
+        )}
+        {!railCollapsed && (
+          <button
+            type="button"
+            onClick={() => setAddThemeOpen((v) => !v)}
+            aria-haspopup="dialog"
+            aria-expanded={addThemeOpen}
+            className="mt-2 mx-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 py-2 text-[12px] font-medium text-fg-faint hover:text-fg hover:border-fg-faint hover:bg-elevated/40 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New theme
+          </button>
         )}
       </nav>
 
@@ -1990,6 +2076,16 @@ export default function ColorPrimitives({
           />
         )}
       </AnimatePresence>
+
+      {/* The ONE theme panel — same component, same docked position, whether
+          it's opened from here or from Semantics' `+` / column pencil. */}
+      <ThemePanel
+        open={addThemeOpen}
+        onClose={() => setAddThemeOpen(false)}
+        appearance={darkPreview ? 'dark' : 'light'}
+        railCollapsed={railCollapsed}
+        onCreated={(key) => { onPreviewThemeChange?.(key); setAddThemeOpen(false) }}
+      />
     </div>
   )
 }

@@ -49,7 +49,7 @@ export function CopyAgentContextButton({ text }: { text: string }) {
 }
 
 /** Overview header — same chrome, global Skill markdown (zip still lives in Export).
- *  Labelled paste-only: install lives on Docs → Use with AI. */
+ *  Labelled paste-only: install lives on Docs → Use in code. */
 export function DownloadSkillButton() {
   return <AIContextButton scope="global" markdown={() => buildSkillExport().skillMd} />
 }

@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, getTheme, setTheme } from '../lib/theme'
 import { chromeAccent, readableInk, solidInkPair } from '../lib/colorUtils'
+import { themeBrandRamp } from '../lib/themeSources'
 import { useAutoFigmaSync } from '../lib/figmaSync'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
@@ -33,7 +34,7 @@ import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY, CHANGELOG_KEY } from '../components/configurator/DocsView'
 import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
 import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
-import { GUIDE_AI_KEY, GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
+import { GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
@@ -219,7 +220,6 @@ const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 // sheet (the README export).
 const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
 const StartIcon = ic('M12 3l2.1 6.4H21l-5.4 3.9 2.1 6.4L12 16.8 6.3 19.7 8.4 13.3 3 9.4h6.9z', '1.8')
-const SparkIcon = ic('M12 3v3M12 18v3M3 12h3M18 12h3M6.2 6.2l2.1 2.1M15.7 15.7l2.1 2.1M17.8 6.2l-2.1 2.1M8.3 15.7l-2.1 2.1', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
 const ClockIcon: ComponentType = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -257,8 +257,10 @@ const GitHubIcon: ComponentType = () => (
 const DOCS_RAIL_ROWS: DocsRailRow[] = [
   { key: GET_STARTED_KEY, label: 'Get started', Icon: StartIcon, heading: 'Start' },
   { key: GUIDE_FIGMA_KEY, label: 'Use in Figma', Icon: FigmaIcon },
+  // "Use with AI" was a fourth row here; it merged INTO this one — code and
+  // agents are one destination (the product repo), so they are one page. See
+  // `GUIDE_PAGES` for why.
   { key: GUIDE_CODE_KEY, label: 'Use in code', Icon: CodeIcon },
-  { key: GUIDE_AI_KEY, label: 'Use with AI', Icon: SparkIcon },
   { key: CHANGELOG_KEY, label: 'Changelog', Icon: ClockIcon },
   { key: OVERVIEW_KEY, label: 'System reference', Icon: RulesIcon, heading: 'Reference' },
   ...FOUNDATION_DOCS.map((d) => {
@@ -378,7 +380,8 @@ export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   // `selectedComponents`/`toggleComponent` are no longer read here — the
   // include checkbox moved into ComponentsView along with the master list.
-  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = useDesignStore()
+  const store = useDesignStore()
+  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, themeSources, projectCreated } = store
   const theme = useTheme()
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
   useAutoFigmaSync()
@@ -546,10 +549,21 @@ export default function Configurator() {
   // lands around 3.8:1 — fine as a UI component, short of AA for body text.
   // Fixing THAT means moving those rows off `bg-elevated` onto an accent tint,
   // which is a visual-design change, not a token one.
+  // Resolved against the PREVIEWED theme's own brand family (`themeSources`),
+  // not always the global `accent` — selecting a theme folder in Primitives
+  // (or a Semantics column) previews that theme via `previewTheme`, and the
+  // chrome accent has to follow it or picking e.g. Green leaves every chip,
+  // dot and this toolbar wash pinned to Theme 1's purple. Same fix as
+  // `StepGradients`' `themeBrandRamp` call — one resolver, so a family
+  // reference can't disagree about which ramp "the accent" means depending on
+  // which surface reads it. `themeBrandRamp` already picks the ramp matching
+  // `themeKinds[previewTheme]`, which tracks `theme` via the effect above, so
+  // a single resolved ramp serves both branches.
+  const uiAccentRamp = themeBrandRamp(previewTheme, themeSources, themeKinds, store)
   const uiAccent =
     theme === 'dark'
-      ? chromeAccent(primaryDarkScale, '#0a0a0a', primaryColor)
-      : chromeAccent(primaryScale, '#ffffff', primaryColor)
+      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#0a0a0a', primaryColor)
+      : chromeAccent(uiAccentRamp ?? primaryScale, '#ffffff', primaryColor)
   // ── …and the chrome accent as a FILL, which is a different question ──
   // `chromeAccent` walks UP the ramp until the tone clears 4.5:1 against the
   // chrome PAGE. That is the right rule for INK, and the wrong one for a solid
@@ -566,7 +580,7 @@ export default function Configurator() {
   // accent-filled chrome control is the user's brand solid, hex for hex with
   // the preview. It also keeps the fill ON the anchor for most accents, because
   // flipping the ink is cheaper than darkening the fill (see `solidInkPair`).
-  const fillRamp = theme === 'dark' ? primaryDarkScale : primaryScale
+  const fillRamp = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
   const uiAccentSolid = (() => {
     const inks = ['#ffffff', '#0a0d12']
     const ramp = fillRamp && Object.keys(fillRamp).length ? fillRamp : null
@@ -764,7 +778,7 @@ export default function Configurator() {
     body = (
       <AboutHome
         onStart={() => selectFoundation('color')}
-        onLearnAI={() => openDocs(GUIDE_AI_KEY)}
+        onLearnAI={() => openDocs(GUIDE_CODE_KEY)}
         foundationCount={FOUNDATIONS.length}
       />
     )
@@ -879,7 +893,7 @@ export default function Configurator() {
       // also two different destinations.
       Icon: RulesIcon,
       title: 'Docs',
-      subtitle: 'Where this system goes — Figma, code, or an AI assistant — then the token reference.',
+      subtitle: 'Where this system goes — Figma, or your product repo — then the token reference.',
     }
     body = (
       <DocsView

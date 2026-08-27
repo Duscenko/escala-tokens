@@ -83,9 +83,15 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // (its stops are tone references), so previewing dark used to paint the light
   // hexes on the dark page — the same class of bug the dark ramps fixed for
   // solid colours.
+  // ...and against the previewed THEME's own brand ramp, so a custom theme's
+  // cover/avatar carry that theme's accent instead of the default one. `pal`
+  // is already this theme's resolved palette, so `pal.brand` IS the ramp — no
+  // second resolution path to drift from. Undefined for a theme with no
+  // `themeSources` entry (the built-in light/dark), where the stops' cached
+  // global-accent colours are the right answer anyway.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
-    return g ? gradientToCss(g, kind === 'dark' ? 'dark' : 'light') : undefined
+    return g ? gradientToCss(g, kind === 'dark' ? 'dark' : 'light', pal?.brand) : undefined
   }
   const tokens: PreviewTokens = {
     // background-primary is base.white in light / gray tone 12 in dark

@@ -18,7 +18,7 @@ import {
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
-import AddThemePanel from './AddThemePanel'
+import ThemePanel from './ThemePanel'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -677,19 +677,14 @@ export default function Step3_SemanticTokens({
 
   const reduce = useReducedMotion() ?? false
 
-  // "+ Theme" / edit-theme popover — same anchored, portaled pattern Color
-  // Agent uses. Lives here (not in Configurator's preview aside) so it still
-  // opens when that panel is collapsed or the viewport is below 1180px.
-  const addThemeAnchorRef = useRef<HTMLElement | null>(null)
+  // New-theme / edit-theme panel. NOT anchored to its trigger any more: it
+  // docks flush against the Color Variables column, in the same place from
+  // every entry point here and from Primitives' own "+ New theme" CTA — see
+  // `ThemePanel`. The triggers therefore pass no anchor element.
   const [addThemeOpen, setAddThemeOpen] = useState<boolean | string>(false)
-  const openAddTheme = (editKey: string | undefined, anchor: HTMLElement) => {
+  const openAddTheme = (editKey?: string) => {
     const next = editKey ?? true
-    if (addThemeOpen === next) {
-      setAddThemeOpen(false)
-      return
-    }
-    addThemeAnchorRef.current = anchor
-    setAddThemeOpen(next)
+    setAddThemeOpen((cur) => (cur === next ? false : next))
   }
 
   // Self-seed any ramp that's still empty (state scales on a system built from
@@ -1269,7 +1264,7 @@ export default function Step3_SemanticTokens({
                         <EyeIcon active={isPreviewed} />
                         <span className="truncate">{label}</span>
                       </button>
-                      {/* Opens the SAME `AddThemePanel` "+ Theme" mints, in
+                      {/* Opens the SAME `ThemePanel` "+ Theme" mints, in
                           edit mode — rename, or re-point a slot to another
                           family. Every mode key here is a real theme
                           (`themeSources[mode]` always resolves, even for
@@ -1277,7 +1272,7 @@ export default function Step3_SemanticTokens({
                           affordance isn't gated on `isThemeCol` the way
                           delete is. */}
                       <button
-                        onClick={(e) => openAddTheme(mode, e.currentTarget)}
+                        onClick={() => openAddTheme(mode)}
                         aria-label={`Edit theme ${label}`}
                         title={`Edit theme ${label}`}
                         className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
@@ -1314,7 +1309,7 @@ export default function Step3_SemanticTokens({
                 <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
                   {true ? (
                     <button
-                      onClick={(e) => openAddTheme(undefined, e.currentTarget)}
+                      onClick={() => openAddTheme()}
                       aria-label="Add a theme"
                       title="Add a theme — its roles resolve through the primary colors"
                       className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1481,7 +1476,7 @@ export default function Step3_SemanticTokens({
                     {/* No per-ROLE colour editing in this table, by design: a
                         theme is a READING of the primitives, never a place to
                         set colour. This edit button doesn't violate that — it
-                        opens `AddThemePanel` in edit mode, which only lets you
+                        opens `ThemePanel` in edit mode, which only lets you
                         rename the theme or re-point one of its six SLOTS
                         (brand/gray/error/warning/success/info) to a different
                         primitive family, the same "+ Theme" mechanism that
@@ -1491,7 +1486,7 @@ export default function Step3_SemanticTokens({
                         name or a slot you wanted pointed elsewhere meant
                         deleting the theme and starting over. */}
                     <button
-                      onClick={(e) => openAddTheme(t, e.currentTarget)}
+                      onClick={() => openAddTheme(t)}
                       aria-label={`Edit theme ${displayName}`}
                       title={`Edit theme ${displayName}`}
                       className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
@@ -1531,7 +1526,7 @@ export default function Step3_SemanticTokens({
                   and no architecture curating it down. */}
               <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
                 <button
-                  onClick={(e) => openAddTheme(undefined, e.currentTarget)}
+                  onClick={() => openAddTheme()}
                   aria-label="Add a theme"
                   title="Add a theme — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
@@ -1687,11 +1682,11 @@ export default function Step3_SemanticTokens({
           />
         )}
       </AnimatePresence>
-      <AddThemePanel
+      <ThemePanel
         open={addThemeOpen !== false}
         editKey={typeof addThemeOpen === 'string' ? addThemeOpen : null}
         onClose={() => setAddThemeOpen(false)}
-        anchorRef={addThemeAnchorRef}
+        railCollapsed={railCollapsed}
         appearance={kindOf(previewTheme ?? 'light')}
         onCreated={(key) => onPreviewThemeChange?.(key)}
         onRenamed={(oldKey, newKey) => {

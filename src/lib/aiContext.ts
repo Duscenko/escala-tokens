@@ -25,7 +25,7 @@ export const AI_CONTEXT_COPY: Record<AIContextScope, AIContextCopy> = {
   global: {
     label: 'Copy context to Agents',
     done: 'Copied',
-    hint: 'Pastes the system into a chat (no install). For Cursor or Claude to keep it in the repo, follow Docs → Use with AI.',
+    hint: 'Pastes the system into a chat (no install). For Cursor or Claude to keep it in the repo, follow Docs → Use in code.',
     toast: 'System context copied for agents',
     instruction: 'Use this markdown as the source of truth for the whole product. Prefer these token names over exploring the repo. Do not invent parallel names, hex, or px when a token exists.',
   },

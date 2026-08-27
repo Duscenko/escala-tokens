@@ -1,7 +1,7 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import { getIconAiSource, UNTITLED_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
-import { resolveThemePalette } from './themeSources'
+import { resolveThemePalette, themeBrandRamp } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
@@ -323,6 +323,28 @@ export function generateTokenJSON() {
     // is always complete: a plugin can bind a dark mode without having to check
     // which entries exist.
     gradientsDark: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, 'dark')])),
+    // Per-THEME gradients. A linked stop references a tone of "the accent", and
+    // which family that is depends on the theme (`themeSources[t].brand`) — so
+    // a system with a teal theme ships a teal gradient for it, not the default
+    // accent's. Additive under a new key, exactly like `gradientsDark` and
+    // `shadowsDark` before it: `gradients`/`gradientsDark` stay byte-identical
+    // (they are still the GLOBAL accent's resolution, which is what the
+    // built-in light/dark themes give), so an older consumer — including the
+    // Figma plugin, which ignores gradients entirely today — is unaffected and
+    // no `schemaVersion` bump is needed. Complete for every theme in
+    // `themeOrder`, so a consumer never tests which entries exist.
+    gradientsByTheme: Object.fromEntries(
+      store.themeOrder.map((t) => {
+        const ramp = themeBrandRamp(t, store.themeSources, store.themeKinds, store)
+        const appearance = (store.themeKinds[t] ?? 'light') === 'dark' ? 'dark' : 'light'
+        return [
+          t,
+          Object.fromEntries(
+            store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, appearance, ramp)]),
+          ),
+        ]
+      }),
+    ),
     gradientAssignments: (() => {
       const slugOf = (id: string | null) => {
         const g = store.gradients.find((x) => x.id === id)

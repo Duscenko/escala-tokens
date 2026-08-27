@@ -82,6 +82,30 @@ export function resolveThemePalette(
 }
 
 /**
+ * The BRAND ramp a theme resolves to, in that theme's own appearance.
+ *
+ * Gradients need exactly this and nothing else: a linked stop references a tone
+ * of "the accent", and which family that is depends on the theme
+ * (`themeSources[t].brand`), while which of its two ramps depends on the
+ * theme's kind. Undefined when the theme has no resolvable brand — the caller
+ * then falls back to the stop's own cached colour.
+ *
+ * Kept here rather than in `gradients.ts`, which is deliberately dependency-free
+ * (see its header): the resolver takes a plain ramp, the store lookup lives with
+ * the other store-aware resolvers.
+ */
+export function themeBrandRamp(
+  themeKey: string,
+  themeSources: Record<string, ThemeSources>,
+  themeKinds: Record<string, 'light' | 'dark'>,
+  p: PrimitiveScales,
+): ColorScale | undefined {
+  const kind = themeKinds[themeKey] ?? 'light'
+  const brand = themeSources[themeKey]?.brand ?? GLOBAL_FAMILY.brand
+  return scaleForFamily(brand, kind, p) ?? scaleForFamily(GLOBAL_FAMILY.brand, kind, p)
+}
+
+/**
  * The slot a family serves across the themes — 'brand' when some theme reads it
  * as its accent, 'gray' as its neutral, a status slot for intents. Drives the
  * Primitives nav's folders: a family minted for a theme's accent files under

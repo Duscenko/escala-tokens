@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "appllama-app-design-skill": {
+      "source": "appllama/appllama-skills",
+      "sourceType": "github",
+      "skillPath": "skills/appllama-app-design-skill/SKILL.md",
+      "computedHash": "023b25559a5e9a4ab85ccffc9612d0d0f650608eb7f281dce8408a32649b2340"
+    },
+    "appllama-usage": {
+      "source": "appllama/appllama-skills",
+      "sourceType": "github",
+      "skillPath": "skills/appllama-usage/SKILL.md",
+      "computedHash": "1e669d6eb273b18542da0a44e99ddf3716733d155a85e355c313840126940e64"
+    },
     "improve-ui": {
       "source": "ibelick/ui-skills",
       "sourceType": "github",

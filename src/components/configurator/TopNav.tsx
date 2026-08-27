@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { isLiveEnvironment } from '../../lib/figmaSync'
+import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import ThemeToggle from './ThemeToggle'
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
@@ -142,11 +143,13 @@ function NavPill({
 // wanted to glance at the sync URL. Splitting means checking status doesn't
 // mean re-scrolling past install instructions you finished once already.
 function SyncHubPopover({
-  onClose, onOpenSync, onOpenDownload,
+  onClose, onOpenSync, onOpenDownload, updateAvailable = false,
 }: {
   onClose: () => void
   onOpenSync: () => void
   onOpenDownload: () => void
+  /** The shipped plugin build differs from the one the user last downloaded. */
+  updateAvailable?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -199,8 +202,19 @@ function SyncHubPopover({
           </svg>
         </span>
         <span className="min-w-0">
-          <span className="block text-[13px] font-semibold text-fg">Download plugin</span>
-          <span className="block text-[11.5px] text-fg-faint leading-relaxed">Get the .zip and install it in Figma.</span>
+          <span className="flex items-center gap-1.5">
+            <span className="block text-[13px] font-semibold text-fg">Download plugin</span>
+            {updateAvailable && (
+              <span className="flex-shrink-0 text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent-ui/10 text-accent-ui">
+                Update
+              </span>
+            )}
+          </span>
+          <span className="block text-[11.5px] text-fg-faint leading-relaxed">
+            {updateAvailable
+              ? `A newer build is ready — v${PLUGIN_VERSION}. Re-download and re-import in Figma.`
+              : 'Get the .zip and install it in Figma.'}
+          </span>
         </span>
       </button>
     </motion.div>
@@ -263,8 +277,11 @@ export default function TopNav({
   nav, onNav, exportMode, onOpenSync, onOpenDownload, onExport, exportOpen = false,
   railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
 }: TopNavProps) {
-  const { projectCreated, autoSyncFigma } = useDesignStore()
+  const { projectCreated, autoSyncFigma, pluginBuildSeen } = useDesignStore()
   const [syncHubOpen, setSyncHubOpen] = useState(false)
+  // Only after a first download do we have a baseline to compare against — a
+  // first-time user has nothing to "update" from, so `null` shows no hint.
+  const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
 
   // z-30 (not 20): Sync/Download popovers hang below this bar. The Color
   // primitives quick-edit strip is `sticky z-20 isolate` in the canvas —
@@ -347,6 +364,11 @@ export default function TopNav({
                     {isLiveEnvironment() && autoSyncFigma && (
                       <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
                     )}
+                    {/* A newer plugin build is downloadable — distinct signal
+                        from the green auto-sync dot, so it sits bottom-right. */}
+                    {pluginUpdateAvailable && (
+                      <span className="absolute -right-1 -bottom-0.5 w-1.5 h-1.5 rounded-full bg-accent-ui ring-2 ring-app" />
+                    )}
                   </span>
                 </NavPill>
                 <AnimatePresence>
@@ -355,6 +377,7 @@ export default function TopNav({
                       onClose={() => setSyncHubOpen(false)}
                       onOpenSync={onOpenSync}
                       onOpenDownload={onOpenDownload}
+                      updateAvailable={pluginUpdateAvailable}
                     />
                   )}
                 </AnimatePresence>

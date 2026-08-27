@@ -50,6 +50,31 @@ export function stopColor(s: GradientStop, appearance: GradientAppearance = 'lig
   return appearance === 'dark' ? (s.darkColor || s.color) : s.color
 }
 
+/**
+ * A stop's colour resolved against a SPECIFIC brand ramp — the per-theme path.
+ *
+ * `tone` is a reference, and until now the only ramp it was ever resolved
+ * against was the GLOBAL accent (its `color`/`darkColor` caches). That made a
+ * gradient the one foundation that ignored the previewed theme: previewing a
+ * teal theme still painted the default green, because the cache said so. Given
+ * a `ramp` (that theme's brand family in that theme's appearance), a linked
+ * stop reads its own tone off it instead.
+ *
+ * `ramp` omitted, or a tone the ramp doesn't carry, falls back to `stopColor` —
+ * so every pre-existing call site is byte-identical, and an UNLINKED stop (no
+ * `tone`) always keeps the user's hand-picked hex. A hand-picked colour has no
+ * ramp to resolve against; re-deriving it per theme would silently restyle a
+ * colour someone chose, the same rule `darkColor` already follows.
+ */
+export function stopColorOn(
+  s: GradientStop,
+  appearance: GradientAppearance,
+  ramp?: Record<number, string>,
+): string {
+  if (s.tone != null && ramp?.[s.tone]) return ramp[s.tone]
+  return stopColor(s, appearance)
+}
+
 export interface GradientDef {
   id: string
   name: string
@@ -74,10 +99,17 @@ export interface GradientAssignments {
 /** The `background`-ready CSS for a gradient (stops sorted by position), in the
  *  given appearance. Defaults to light, so every pre-existing call site keeps
  *  producing exactly what it produced before. */
-export function gradientToCss(g: GradientDef, appearance: GradientAppearance = 'light'): string {
+export function gradientToCss(
+  g: GradientDef,
+  appearance: GradientAppearance = 'light',
+  /** A theme's brand ramp. Omitted ⇒ the stops' cached colours (the global
+   *  accent), which is exactly what every call site did before per-theme
+   *  gradients existed — so omitting it is byte-identical to the old output. */
+  ramp?: Record<number, string>,
+): string {
   const stops = [...g.stops]
     .sort((a, b) => a.pos - b.pos)
-    .map((s) => `${stopColor(s, appearance)} ${clampPos(s.pos)}%`)
+    .map((s) => `${stopColorOn(s, appearance, ramp)} ${clampPos(s.pos)}%`)
     .join(', ')
   return g.type === 'radial'
     ? `radial-gradient(circle at 30% 30%, ${stops})`

@@ -49,7 +49,7 @@ export const USE_IT_LEAD =
  *  is the only one that carries a precondition. Points at the guide that
  *  already exists rather than re-explaining install here. */
 const AI_NOTE =
-  'Needs the system published (Sync) and the MCP server connected — see Docs → Use with AI.'
+  'Needs the system published (Sync) and the MCP server connected — see Docs → Use in code.'
 
 // ── Foundations ──────────────────────────────────────────────────────────────
 

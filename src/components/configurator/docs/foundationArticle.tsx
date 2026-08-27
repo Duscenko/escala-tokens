@@ -151,7 +151,7 @@ export function OverviewArticle({
 
       <section id="start" className="flex flex-col gap-2 scroll-mt-4">
         <p className="text-[13px] text-fg-muted leading-relaxed">
-          Looking for how this lands in Figma, code, or an AI assistant?{' '}
+          Looking for how this lands in Figma or in your product repo?{' '}
           <button
             type="button"
             onClick={() => onOpen(GET_STARTED_KEY)}

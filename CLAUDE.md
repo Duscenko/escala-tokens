@@ -102,7 +102,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > step 2 picks the **destination** (Figma → `escala`, Code → `w3c`, AI → `agent-bundle`;
 > Skill is a nested Figma Make toggle, Markdown left the wizard for Save / Copy context)
 > and, for W3C only, single-vs-per-collection files; step 3 summarizes and downloads. On
-> AI, step 3 shows the same Install panel as Docs → Use with AI — `AgentInstallPanel`,
+> AI, step 3 shows the same Install panel as Docs → Use in code — `AgentInstallPanel`,
 > which now leads with the MCP connection, not the `npx @escala/cli` package (see the
 > UPDATE below). Rules that keep it honest:
 > - Everything derives from ONE `generateTokenJSON()` call, so wizard output can never
@@ -237,15 +237,58 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   capability build.
 > - **Figma Make keeps zero live framing** — `{tab !== 'make' && <McpBlock …>}` is unchanged.
 >   Make consumes an uploaded zip and cannot hold a connection; don't imply otherwise there.
-> - **Docs → Use with AI's sections reordered to match**: Connect → Offline package → Paste
->   only (was Download → Install → Paste only). The old "Download" section existed mainly to
->   send the reader to Export for the zip; that exit now lives inside the "Offline package"
->   section instead of being the page's opening move. Copy Page's markdown for this guide
->   leads with the `mcp init`/`.cursor/mcp.json` connection for the same reason — an agent
->   reading the pasted context should be told to connect before it's told to unzip.
+> - **Docs' AI sections reordered to match**: Connect → Offline package → Paste only (was
+>   Download → Install → Paste only). The old "Download" section existed mainly to send the
+>   reader to Export for the zip; that exit moved inside "Offline package" instead of being
+>   the page's opening move. Copy Page's markdown leads with the
+>   `mcp init`/`.cursor/mcp.json` connection for the same reason — an agent reading the
+>   pasted context should be told to connect before it's told to unzip. (**Superseded in
+>   placement, not in reasoning**: that whole page merged into Docs → Use in code — see the
+>   "TWO destinations" note under the Docs master list. Connect still leads the AI half.)
 > - **Every command string still comes from `lib/agentInstall.ts`** — reordering never meant
 >   inlining a command. If a path in Docs ever disagrees with what the CLI parses, that
 >   module is where it drifted, not the JSX around it.
+
+> **UPDATE: `AgentInstallPanel` is a numbered PROCEDURE now — client tabs + an MCP/PROMPT
+> toggle over `[nn] [what + why] | [the command]` rows.** It was a stack of prose blocks
+> with two `<details>` disclosures, where the commands were the smallest thing on screen and
+> half of them were hidden behind a summary you had to know to open. Connecting an agent IS
+> a procedure, and one that doesn't say how many steps it has reads as open-ended.
+> - **Four client tabs — Cursor · Claude Code · VS Code · Figma Make — and NOT one more.**
+>   That's exactly what `agentInstall.ts` can honestly produce (`McpClient` is
+>   `cursor|claude|vscode`; Make takes a zip). A tab whose commands had to be invented is
+>   precisely the drift the "every command string comes from `agentInstall.ts`" rule exists
+>   to stop — don't add ChatGPT/Codex/Claude Desktop tabs without the CLI learning them
+>   first.
+> - **A client only gets a step it can actually run.** VS Code has NO offline-package step:
+>   `SkillAgent` is `cursor|claude` and Copilot has no skills folder to install one into.
+>   Figma Make has no MCP mode at all, and its toggle is **not rendered** rather than
+>   disabled — a disabled control still claims the mode exists. (This is the same
+>   `{tab !== 'make'}` rule as before, just expressed in the tab row.)
+> - **PROMPT is a real second path, not a restatement.** `agentSetupPrompt()` (in
+>   `agentInstall.ts`, like everything else) is one message that adds the server, then
+>   PROVES it connected by having the agent read the system back. Every claim in it is
+>   checked against something real: the endpoint is `mcpEndpoint`, the transport is what
+>   `/api/mcp` actually speaks — **plain streamable HTTP with no auth, so never add a
+>   "sign in" line** — and the tool names are entries in `agentAccess/types.ts`.
+> - **A step with no command spans the whole row** (`split`), instead of keeping a 42%
+>   column and leaving 58% blank beside it. The column split exists to give the COMMAND its
+>   own space; with no command there's nothing for it to do.
+> - **The client tabs carry real vendor logos** — `public/ide-logos/<name>-{dark,light}.svg`,
+>   rendered by `ClientLogo` (`AgentInstallPanel.tsx`). This REVERSES an earlier
+>   "simple marks, not vendor logos" call — a designer supplied the real marks and a real
+>   logo tells the four options apart faster than an abstraction of one. Each mark is two
+>   files with a HARDCODED fill: `<name>-dark.svg` is black (for light mode), `<name>-light.svg`
+>   is white (for dark mode). They're `<img>` from `public/`, so `currentColor` can't reach
+>   them — the two-file swap is done with `dark:hidden` / `hidden dark:block` on the app's
+>   `.dark` class, NOT by recolouring. Active vs. inactive is opacity only (100 vs. 55): a
+>   logo shouldn't change colour between tab states, just dim when it isn't the selected
+>   one. `figma-*.svg` covers the "Figma Make" tab — Figma Make is a Figma product and has
+>   no separate mark. If a fifth client is ever added, it needs both files in that folder
+>   before its tab can render.
+> - **It lives on Docs → Use in code → "Connect your agent" now**, not on a page of its own
+>   — see the "TWO destinations" note under the Docs master list. Its step 03 is why that
+>   page has no standalone "Offline package" section.
 
 - **Shell = `Configurator.tsx`**. `TopNav` is mounted **once**, above the columns, in
   every view. All nav state is **local** there: `tab` (`about`|`foundations`|`components`|
@@ -313,10 +356,26 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     foundation is still ONE entry in `FOUNDATION_DOCS`; the master list, the TOC and
     prev/next all still derive from it.
 - **Rules that keep it honest:**
-  - **Docs' master list is Get started (Figma / Code / AI), then System reference
+  - **Docs' master list is Get started (Figma / Code), then System reference
     (`OVERVIEW_KEY`), then the foundations in `FOUNDATION_DOCS` order.** Get started is
     destinations, not file formats. Adding a foundation is still automatic; nothing in
     `DocsView.tsx` enumerates them by hand. Guide keys live in `docs/getStarted.ts`.
+    **TWO destinations, not three — `GUIDE_AI_KEY` is GONE.** "Use in code" and "Use with
+    AI" were separate rail rows answering the SAME question ("how do my tokens reach my
+    repo?") and giving the same rule twice in different words: the CSS section said
+    "reference roles, never a hex" in prose, the AI page enforced the identical thing
+    through `resolve_token`. `variables.css`, W3C JSON, a GitHub remote and the MCP server
+    all land in one place — the product repo. Figma is the destination that is genuinely
+    different (a design tool, a plugin, variables in a file) and kept its own page.
+    Merged shape: **CSS variables · Connect your agent · Other tools · A repo**, in the
+    order a reader asks — the file first (the universal answer), then the agent (same rule,
+    enforced at call time), then the two exits. The standalone "Offline package" section
+    went with the merge because `AgentInstallPanel` carries it as its own step 03 (one
+    explanation, in the place you act on it), and "Paste only" became a one-line footnote
+    under Connect. The key, the rail row, the TOC branch, the markdown branch and the
+    `TITLE` entry were all DELETED, not deprecated; About's "learn AI" CTA points at
+    `GUIDE_CODE_KEY` now. Don't re-split them — a reader who wants the agent half lands on
+    a page whose first paragraph already tells them everything here goes to one place.
   - **`componentCategory` (Components' rail selection) and `docFoundationKey` (Docs' open
     row) are independent pieces of state in `Configurator.tsx`, one per destination —
     switching Components' category never touches `docFoundationKey` and vice versa.** Both
@@ -831,7 +890,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   already assumes 1 is valid), not a new case this feature had to teach
 >   the rest of the app to handle.
 > - **The popover CAPS its own height to the room below the trigger, via
->   `usePopoverPlacement(anchorRef, …)`** — the same hook `AddThemePanel` uses for its
+>   `usePopoverPlacement(anchorRef, …)`** — the same hook `ThemePanel`'s slot pickers use for their
 >   header/scrolling-body/pinned-footer shape. Before this, the outer `motion.div` had no
 >   height limit at all: its natural height (header + kits list + the "Save & Share" door)
 >   just grew with however much content there was, and nothing capped it to the viewport.
@@ -923,6 +982,22 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   so "has ever published" IS the connection signal) rather than the install pitch.
 > - **`FigmaDownloadView.tsx`** is Steps 1–2 unchanged, verbatim. **No auto-publish** —
 >   downloading a file was never a reason to hit `/api/tokens`.
+> - **"Update available" hint on the Download plugin row.** `src/lib/pluginVersion.ts` is
+>   GENERATED + COMMITTED by `npm run bundle:plugin` (same treatment as `*Reference.ts`) —
+>   it exports `PLUGIN_VERSION` (semver from the sibling plugin's `package.json`, for
+>   display) and `PLUGIN_BUILD` (a sha256 of the plugin's shipped files: `manifest.json` +
+>   `dist/code.js` + `dist/ui.html`, first 12 hex). `PLUGIN_BUILD` is the "did the plugin
+>   actually change" signal — it hashes the SOURCE files, not the zip (a re-zip embeds
+>   fresh mtimes, so the zip's bytes aren't stable for unchanged content), and it flips on
+>   any real change without anyone having to bump the semver. The store carries
+>   `pluginBuildSeen: string | null` (top-level global pref, NOT in `DesignSnapshot`, store
+>   v58) — the build the user last downloaded, written by `FigmaDownloadView`'s download
+>   `<a onClick>`. `SyncHubPopover` and `FigmaDownloadView` both show an "Update" badge when
+>   `pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD`, and `TopNav`'s Sync pill
+>   gets an accent dot (bottom-right, distinct from the green auto-sync dot top-right).
+>   **`null` shows NOTHING** — a first-time user has no baseline to update from, and the v58
+>   migration deliberately leaves existing sessions at `null` rather than guessing (guessing
+>   `PLUGIN_BUILD` would suppress a real update; it self-populates on their next download).
 > - **Each screen cross-links to the other** ("Haven't installed the plugin yet? Download
 >   it" / "Already installed? Go to Sync") so landing on the wrong half first doesn't
 >   dead-end anyone — the split trades one linear onboarding path for two focused
@@ -1089,7 +1164,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   TopNav sizes its brand divider from the column's width). Nothing outside reads it. It
 >   survives foundation switches — the panel is a separate tree from the centre column's
 >   `AnimatePresence` — and resets to `Preview` when the aside is handed to another panel
->   (`SaveSidePanel`, `AddThemePanel`), which is the right moment to land back on the
+>   (`SaveSidePanel`, `ThemePanel`), which is the right moment to land back on the
 >   specimen.
 > - **The tab row is `h-[52px]`, the app's one row-2 height** — the same rule
 >   `CenterHeader`, `SaveSidePanel` and this panel's own header follow, and the height
@@ -1611,7 +1686,7 @@ header or a stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaSyncView + FigmaDownloadView (figmaShared.tsx), GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ThemePanel (THE one create/edit-theme surface, docked flush against the Color Variables column — see its note), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaSyncView + FigmaDownloadView (figmaShared.tsx), GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
@@ -1647,7 +1722,7 @@ src/
 api/
 └── tokens.ts               ← Vercel serverless: GET returns Blob, POST saves to Blob
 scripts/
-├── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/escala-figma-plugin.zip (npm run bundle:plugin)
+├── bundle-plugin.mjs       ← zips the sibling Figma plugin → public/escala-figma-plugin.zip + regenerates src/lib/pluginVersion.ts (PLUGIN_VERSION + content-hash PLUGIN_BUILD) (npm run bundle:plugin)
 ├── color-report.ts         ← the contrast audit: every architecture × theme × role pair, WCAG + APCA (npm run color:report)
 └── gen-*-reference.ts      ← regenerate the committed vendor tables from the installed packages (npm run gen:radix-reference, gen:tailwind-reference — gen-carbon-reference.ts was deleted with the Carbon architecture)
 test-fixtures/
@@ -1947,7 +2022,7 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > (the old Picker Color's brand + neutral + 5 state scales) at the old size made the page
 > feel heavy. It's the ONE shared component behind every ramp — `ColorPrimitives.tsx`'s
 > quick-edit strip (default size — one ramp at a time now, not several stacked, so the
-> extra height is affordable again), `AddThemeModal.tsx` — so a size change here is felt
+> extra height is affordable again), `ThemePanel.tsx` — so a size change here is felt
 > everywhere; the on-swatch "Anchor" text was already dropped in favor of the ring + dot
 > (title tooltip carries the label), which is what keeps this size legible.
 >
@@ -1980,6 +2055,21 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > switches the table to it too, rather than editing one family while looking at another's
 > rows. Omitted for Accent-Alpha (`FamilySwatch`'s `onClick` prop) — nothing to retint
 > independently, same reason the pencil is already withheld there.
+
+> **Clicking a THEME folder header previews that theme.** The Primitives nav folders
+> (`ColorPrimitives.tsx`) aren't just expand/collapse containers — the header click also
+> calls `onPreviewThemeChange` with that folder's theme, so selecting a theme in the nav
+> repaints the whole surface (ramps, quick-edit strip, `PreviewPanel`, Artefacts, `.MD`),
+> the same payoff clicking a column eye in Semantics gives. `folderThemeKey()` maps a
+> folder to its theme: a real theme folder (`sky`, `violet`) IS that theme; `__base`
+> ("Theme 1") stands in for `themeOrder[0]` (the first built-in — `light`); `__custom`
+> previews nothing (unreferenced families, no theme). The switch only fires when the
+> target differs from the current `previewTheme`, so collapsing the folder you're viewing
+> just collapses. The previewed folder swaps its folder glyph for an `EyeIcon` in
+> `text-accent-ui` — display-only, the header's own click is the toggle. Because
+> `onPreviewThemeChange` is the same handler `ThemeToggle` and Semantics use, picking a
+> `dark`-kind theme here flips the app chrome too. Collapsed-rail (56px) mode is untouched
+> — it iterates GROUPS for family selection, has no folder headers.
 
 > **Popovers inside the Quick-edit accordion.** `Group`'s content wrapper needs
 > `overflow-hidden` for its height animation, and that CLIPS any dropdown opened inside
@@ -2063,7 +2153,7 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > never held a copy to drift with.
 >
 > Consequences to preserve:
-> - **Creating a theme creates its families.** `AddThemeModal` mints a `customColors` entry
+> - **Creating a theme creates its families.** `ThemePanel` mints a `customColors` entry
 >   for any slot whose hex isn't already a family (`teal` for the brand, `teal-gray` for the
 >   linked neutral) and stores references. A slot matching a global reuses `accent` /
 >   `neutral` / `error` / … instead of duplicating it.
@@ -2073,6 +2163,61 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 >   Primary Color; the table only maps roles onto it.
 > - **The export ships no per-theme namespaced ramps.** A theme's ramps ARE families,
 >   already exported under their own key, so its semantics alias those primitives.
+
+> **THERE IS ONE THEME PANEL — `ThemePanel.tsx` — and it docks in ONE place.** Create and
+> edit used to be two components inside the same file that agreed on almost nothing:
+> `AddThemePicker` (288px, no header, bare "Name" input, one accent picker, footer "Add
+> theme") and `AddThemeForm` (400px, swatch/title/hex header, labelled "Theme name", six
+> always-on slot rows, footer "Create theme" / "Save changes"). Same concept, **three**
+> names for the confirm action, two opposite answers to "what if I leave the name blank"
+> (derive one from `INDUSTRY_SPECTRUM` vs. error), and two minting implementations. Audited
+> and unified. What the unification settled, and must not drift apart again:
+> - **One minting path, `mintTheme`, for create AND edit.** The old edit path
+>   (`AddThemeForm.handleCreate`) minted families with `scale` only and **no `darkScale`**.
+>   `tokenGenerator.ts` gates the `<key>-dark-*` primitives on exactly that field being
+>   non-empty, so an export or an auto-sync (~1.5s debounce) fired between the save and the
+>   next `ColorPrimitives` mount shipped the family's ENTIRE dark ramp missing. **Measured**
+>   before the fix: re-pointing a theme's Error slot to `#B91C1C` persisted
+>   `lightSteps: 12, darkSteps: 0`, then read `darkSteps: 12` only after switching to the
+>   Primitives tab — because `useEnsureColorScales` is a `[]`-deps effect that happens to
+>   backfill it on mount. That backfill was never equivalent anyway: it runs
+>   `generateFamilyDarkScale` for every family, while the **gray slot needs
+>   `generateDarkColorScale` + `neutralTint`** (only that generator re-derives the base as a
+>   dark neutral, and only the neutral carries the tint's chroma link). `scalesForSlot`
+>   owns that split now, once. Verified after: a theme created from the rail and a slot
+>   re-pointed from Semantics both persist `dark: 12` immediately, with no remount.
+> - **The shape is the create picker's, because that's the common case.** Pick ONE accent;
+>   the other five slots derive from it via `slotsFromAccent` — the same `previewHarmony`
+>   the accent↔neutral/states links use, so a theme minted from an accent lands on the
+>   colours the rest of the system would have picked for it.
+> - **The six-slot control is DISCLOSED, not dropped.** "Adjust colours" opens the same six
+>   `SlotRow`s the edit form owned, so re-pointing a slot at another family is still one
+>   click away — it just isn't what the common case pays for. Its summary line is real
+>   state, not decoration: "Neutral and the four states follow the accent" vs. "N set by
+>   hand". **The `derived` set is what makes create and edit differ, and that's the whole
+>   difference**: creating starts with all five following (moving the accent repaints them),
+>   editing starts with none (every slot already holds a value someone chose, so moving the
+>   accent must not silently repaint them). Hand-editing a slot detaches it, the same
+>   detach-on-manual-edit rule `useApplyGrayColor` follows.
+> - **Every child of the panel's scroll column needs `flex-shrink-0`.** It's a COLUMN flex
+>   container, so a child with the default `flex-shrink: 1` gets crushed when its siblings
+>   overflow. The ~540px accent card squashed the "Adjust colours" row to its 2px borders —
+>   present in the DOM, its own button overflowing past the container, `scrollHeight`
+>   under-reporting, and the section unreachable however far you scrolled. Measured
+>   `{h: 2, ot: 665}` against a `scrollHeight` of 631.
+> - **It DOCKS; it is not anchored.** Five entry points (Semantics' Categorical + flat `+`,
+>   both tables' column pencils, Primitives' "+ New theme") used to open it in five places —
+>   two of them floating over the very table they were about to change, and moving with
+>   horizontal scroll. It's `fixed` at the left edge of the canvas now, flush against the
+>   Color Variables column, top-aligned with it, full height. No anchor to measure, no
+>   flip-up/flip-down, no viewport clamping, and it reads as a drawer sliding out of the
+>   column that lists the very families it mints. `DOCK_LEFT` comes from
+>   `COLOR_RAIL_WIDTH`/`COLOR_RAIL_COLLAPSED_WIDTH` (imported, never repeated) so a
+>   collapsed rail can't leave it floating over the strip; `DOCK_TOP` is measured off
+>   `nav[aria-label="Color families"]` when it's on screen and falls back to the shell's own
+>   two-row height (72 + 52) when it isn't — the panel opens from Semantics too, where that
+>   `<nav>` isn't rendered. Triggers therefore pass **no anchor element**.
+> - **`seedFrom` (a "duplicate theme" flow with no caller) was deleted**, not kept.
 
 > **Base drives the page (HeroUI model).** There is still no background PICKER.
 > `grayBaseColor` — labelled **Gray / Neutral** in the UI (renamed from "Base", which
@@ -2920,7 +3065,7 @@ npm run build          # outputs dist/code.js + dist/ui.html
 
 # Refresh the downloadable plugin zip served by "Bring to Figma"
 cd ~/sync-ds-platform/escala-tokens
-npm run bundle:plugin  # → public/escala-figma-plugin.zip (commit it; Vercel only builds this repo)
+npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVersion.ts (commit both; Vercel only builds this repo)
 ```
 
 ---

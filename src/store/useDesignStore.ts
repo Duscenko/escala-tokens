@@ -608,6 +608,12 @@ interface DesignStore {
   // state. A global preference (not per-system), driven by useAutoFigmaSync().
   autoSyncFigma: boolean
   setAutoSyncFigma: (v: boolean) => void
+  // The plugin content hash (`PLUGIN_BUILD`) the user last downloaded. When it
+  // differs from the shipped `PLUGIN_BUILD`, the Sync hub flags an available
+  // update on its "Download plugin" row. A global preference (not per-system),
+  // null until the first download so a first-time user sees no false "update".
+  pluginBuildSeen: string | null
+  setPluginBuildSeen: (build: string) => void
 
   // Color — scale generation algorithm + contrast shift (drive every 1–12 ramp)
   // and the token-naming scheme used in the export.
@@ -878,6 +884,8 @@ export const useDesignStore = create<DesignStore>()(
       setGithubLastPushAt: (iso) => set({ githubLastPushAt: iso }),
       autoSyncFigma: false,
       setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
+      pluginBuildSeen: null,
+      setPluginBuildSeen: (build) => set({ pluginBuildSeen: build }),
 
       // Color scale generation
       setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
@@ -1288,7 +1296,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 57,
+      version: 58,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2218,6 +2226,11 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) pruneArchOverrides(sys?.snapshot)
           }
+          // v57→v58: track which plugin build the user last downloaded, so the
+          // Sync hub can flag a newer one. Null for existing sessions — we can't
+          // know what they already have, and guessing would suppress a real
+          // update hint; it self-populates on their next download.
+          if (persisted.pluginBuildSeen === undefined) persisted.pluginBuildSeen = null
         }
         return persisted
       },

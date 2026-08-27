@@ -609,8 +609,9 @@ export function AboutHome({
   onStart, onLearnAI, foundationCount,
 }: {
   onStart: () => void
-  /** Opens Docs → Get started → "Use with AI" — the real guide, not a
-   *  second one. `Configurator.tsx` wires this to `openDocs(GUIDE_AI_KEY)`. */
+  /** Opens Docs → Get started → "Use in code" — the real guide, not a second
+   *  one. That page absorbed the former "Use with AI" (its Connect section);
+   *  `Configurator.tsx` wires this to `openDocs(GUIDE_CODE_KEY)`. */
   onLearnAI: () => void
   /** `FOUNDATIONS.length` from `Configurator.tsx` — that array is local
    *  there, so this is a prop rather than a duplicated constant. */
@@ -776,7 +777,7 @@ export function AboutHome({
                 onClick={onLearnAI}
                 className="self-start inline-flex items-center gap-1 rounded text-[12px] font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
               >
-                Read the AI setup guide
+                Read the setup guide
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
