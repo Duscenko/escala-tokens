@@ -13,12 +13,13 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
-import { CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
+import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { adoptPreset } from '../lib/adoptPreset'
 import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
@@ -66,12 +67,6 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-
-// macOS shows ⌘K, everything else Ctrl+K — read once at module load for the
-// token-search field's `aria-keyshortcuts`. `navigator.platform` is deprecated
-// but still the most reliable Mac signal; `userAgentData` isn't universal yet.
-const IS_MAC = typeof navigator !== 'undefined'
-  && /mac/i.test(navigator.platform || navigator.userAgent || '')
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -285,6 +280,9 @@ const SaveIcon: ComponentType = () => (
 
 const FigmaIcon: ComponentType = () => <FigmaGlyph size={18} />
 const GitHubIcon: ComponentType = () => <GitHubGlyph size={18} />
+/** Rail footer — match `FoundationIconRail`'s h-5 mask (~14px artwork). */
+const FigmaRailIcon: ComponentType = () => <FigmaGlyph size={14} />
+const GitHubRailIcon: ComponentType = () => <GitHubGlyph size={14} />
 
 const ExportIcon: ComponentType = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -349,8 +347,10 @@ function SyncPill({
             : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
         }`}
       >
-        <span aria-hidden className={`absolute top-1.5 left-1.5 h-1.5 w-1.5 rounded-full ${SYNC_DOT[status]}`} />
-        <Icon />
+        <span aria-hidden className={`absolute top-2 left-2 h-1.5 w-1.5 rounded-full ${SYNC_DOT[status]}`} />
+        <span className={`grid h-5 w-5 place-items-center ${active ? 'drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]' : 'opacity-90'}`}>
+          <Icon />
+        </span>
       </button>
     )
   }
@@ -470,9 +470,11 @@ function WorkspaceTabIcon({ source }: { source: string }) {
 function ThemeWorkspaceTabs({
   value,
   onChange,
+  search,
 }: {
   value: ThemeWorkspaceTab
   onChange: (tab: ThemeWorkspaceTab) => void
+  search?: ReactNode
 }) {
   const { t } = useI18n()
   return (
@@ -480,7 +482,7 @@ function ThemeWorkspaceTabs({
       <div
         role="tablist"
         aria-label={t('Theme workspace')}
-        className="theme-workspace-tab-strip flex min-w-0 items-center gap-1.5"
+        className="theme-workspace-tab-strip flex min-w-0 flex-1 items-center gap-1.5"
         onKeyDown={(event) => {
           const current = THEME_WORKSPACE_TABS.findIndex((item) => item.key === value)
           let next = current
@@ -522,6 +524,11 @@ function ThemeWorkspaceTabs({
           )
         })}
       </div>
+      {search && (
+        <div className="ml-auto flex flex-shrink-0 items-center min-w-0">
+          {search}
+        </div>
+      )}
     </div>
   )
 }
@@ -651,26 +658,6 @@ export default function Configurator() {
   // Semantics consume the same value, so changing depth does not make search
   // jump to a second, redundant header row.
   const [colorQuery, setColorQuery] = useState('')
-  const colorSearchRef = useRef<HTMLInputElement>(null)
-  // ⌘K / Ctrl+K focuses the token search — the field only renders in the Themes
-  // workspace, so the listener no-ops elsewhere (ref is null). Ignored while
-  // another text field / editable is focused so it can't steal a keystroke
-  // someone meant for what they were typing in.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey)) return
-      const el = document.activeElement as HTMLElement | null
-      const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
-      if (typing && el !== colorSearchRef.current) return
-      const field = colorSearchRef.current
-      if (!field) return
-      e.preventDefault()
-      field.focus()
-      field.select()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
   const [typeFocus, setTypeFocus] = useState<TypeFocus>('all')
   const [typeReveal, setTypeReveal] = useState<{ key: string; seq: number } | null>(null)
   const [layoutReveal, setLayoutReveal] = useState<{ key: string; seq: number } | null>(null)
@@ -1001,39 +988,8 @@ export default function Configurator() {
     }
   }, [])
 
-  {/* Token search. Lived in the Themes-workspace tab strip for a while; moved
-      up to TopNav (beside Language + Appearance) at the user's call — the tab
-      strip was already carrying two Sync pills and three tabs. Still
-      `colorQuery` / `colorSearchRef`, so ⌘K focuses it wherever it renders.
-      `flex-1 min-w-0 max-w-[14rem]` so it grows to a comfortable width when
-      there's room and shrinks (rather than pushing the centered nav) when the
-      window narrows. Icons are the supplied assets: `search.svg` via mask +
-      currentColor, `search-comands.svg` as the ⌘K keycap. */}
   const tokenSearchField = (
-    <label className={`flex h-8 flex-1 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg px-2.5 text-fg-muted transition-colors ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${CHROME_CONTROL_FOCUS}`}>
-      <span
-        aria-hidden
-        className="h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint"
-        style={{
-          WebkitMask: "url('/icons/settings/search.svg') center / contain no-repeat",
-          mask: "url('/icons/settings/search.svg') center / contain no-repeat",
-        }}
-      />
-      <input
-        ref={colorSearchRef}
-        value={colorQuery}
-        onChange={(event) => setColorQuery(event.target.value)}
-        placeholder={t('Search tokens')}
-        aria-label={t('Search tokens')}
-        aria-keyshortcuts={IS_MAC ? 'Meta+K' : 'Control+K'}
-        className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-faint"
-      />
-      {colorQuery ? (
-        <button type="button" onClick={() => setColorQuery('')} aria-label={t('Clear search')} className="grid h-5 w-5 flex-shrink-0 place-items-center rounded text-ui text-fg-faint hover:bg-elevated hover:text-fg">×</button>
-      ) : (
-        <img src="/icons/settings/search-comands.svg" alt="" aria-hidden className="hidden min-[1180px]:block h-3.5 flex-shrink-0 opacity-80" />
-      )}
-    </label>
+    <TokenSearchField value={colorQuery} onChange={setColorQuery} />
   )
 
   const themeWorkspaceSyncRail = (
@@ -1041,7 +997,7 @@ export default function Configurator() {
       <SyncPill
         rail
         label="GitHub"
-        Icon={GitHubIcon}
+        Icon={GitHubRailIcon}
         status={githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle'}
         statusText={
           githubPushState === 'pushing' ? t('pushing…')
@@ -1055,7 +1011,7 @@ export default function Configurator() {
       <SyncPill
         rail
         label="Figma"
-        Icon={FigmaIcon}
+        Icon={FigmaRailIcon}
         status={figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle'}
         statusText={
           figmaPublishState === 'publishing' ? t('publishing…')
@@ -1387,9 +1343,6 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
-        // Contextual: the token search only filters the Generator workspace's
-        // tables, so it's absent on About / Components / Docs.
-        search={themesCanvas ? tokenSearchField : undefined}
         exportAction={<ExportPill onClick={openSectionExport} />}
         brandWidth={themeLibraryVisible ? THEME_LIBRARY_WIDTH : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
@@ -1451,7 +1404,11 @@ export default function Configurator() {
           {/* On the Themes workspace the tab strip is a FULL-WIDTH row above the
               icon rail + editor. GitHub and Figma sync live in the rail footer. */}
           {themesCanvas && (
-            <ThemeWorkspaceTabs value={themeWorkspaceTab} onChange={changeThemeWorkspaceTab} />
+            <ThemeWorkspaceTabs
+              value={themeWorkspaceTab}
+              onChange={changeThemeWorkspaceTab}
+              search={tokenSearchField}
+            />
           )}
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (

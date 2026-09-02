@@ -1585,9 +1585,17 @@ function InlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
 
 // ── Navigation — menus, pagination, steps and shells ──────────────────────────
 
-function MenuPanel({ t, items, shortcuts }: { t: PreviewTokens; items: { label: string; danger?: boolean; hover?: boolean; sep?: boolean }[]; shortcuts?: Record<string, string> }) {
+function MenuPanel({
+  t, items, shortcuts, w = 210, elev = 'lg',
+}: {
+  t: PreviewTokens
+  items: { label: string; danger?: boolean; hover?: boolean; sep?: boolean }[]
+  shortcuts?: Record<string, string>
+  w?: number | string
+  elev?: string
+}) {
   return (
-    <div role="menu" style={{ ...baseFont(t), width: 210, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: 4 }}>
+    <div role="menu" style={{ ...baseFont(t), width: w, maxWidth: '100%', borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, elev, '0 12px 32px rgba(10,13,18,0.14)'), padding: 4 }}>
       {items.map((item, i) =>
         item.sep ? (
           <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: '4px 6px' }} aria-hidden />
@@ -1632,10 +1640,12 @@ function DropdownMenuSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
-function ContextMenuSpecimen({ t }: { t: PreviewTokens }) {
+function ContextMenuSpecimen({ t, w, elev }: Pick<SpecimenProps, 't' | 'w' | 'elev'>) {
   return (
     <MenuPanel
       t={t}
+      w={w}
+      elev={elev}
       items={[
         { label: 'Copy', hover: true },
         { label: 'Paste' },

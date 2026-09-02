@@ -39,7 +39,6 @@ const MODULE_SOURCE = 260
 const MODULE_DISPLAY = 156
 /** Sub-row unit for the masonry `grid-row: span` trick. */
 const MASONRY_ROW = 4
-const CONTEXT_MENU_SOURCE = 210
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
 
@@ -126,6 +125,19 @@ function ScaledModule({
         {body}
       </div>
     </div>
+  )
+}
+
+function GradientAvatar({ t, size }: { t: PreviewTokens; size: string }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: size, height: size, flexShrink: 0,
+        borderRadius: 999,
+        background: t.avatarGradient || t.coverGradient || t.brandSolid,
+      }}
+    />
   )
 }
 
@@ -233,7 +245,7 @@ export function SystemCollage({
           <Live c="CloseButton" t={t} v={{ Size: 'SM' }} />
         </div>
         <div className="flex flex-col items-center text-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-          <Well t={t} size={wellLg} icon="user" iconSize={18} pill />
+          <GradientAvatar t={t} size={wellLg} />
           <p style={{ margin: 0, ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>{translate('Create an account')}</p>
           <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
             {translate('Sign in to continue to your workspace.')}
@@ -314,8 +326,13 @@ export function SystemCollage({
         </ScaledModule>
       ))}
 
-      <ScaledModule t={t} chrome={false} sourceWidth={CONTEXT_MENU_SOURCE}>
-        <ContextMenu t={t} v={{}} />
+      <ScaledModule t={t}>
+        <div
+          className="overflow-hidden"
+          style={{ borderRadius: radiusRoleOf(t, 'overlay') }}
+        >
+          <ContextMenu t={t} v={{}} w="100%" elev="sm" />
+        </div>
       </ScaledModule>
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -338,9 +355,9 @@ export function SystemCollage({
             {translate('Do you want to save or discard changes?')}
           </p>
         </div>
-        <div className="flex justify-end" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }}>{translate('Discard')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }}>{translate('Save changes')}</Live>
+        <div className="flex flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
+          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</Live>
+          <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</Live>
         </div>
       </ScaledModule>
     </div>

@@ -1,11 +1,16 @@
 import { BRAND_SPECTRUM } from './brandPalette'
 import { type NeutralTint } from './colorUtils'
 import {
+  GRID_FRAME_STANDARD,
   RADIUS_PRESETS,
   STROKE_STANDARD,
   buildSelectorsFromBase,
   buildSizesFromBase,
   buildSpacingFromBase,
+  concentricRadiusStep,
+  defaultLayoutRoles,
+  resolveLayoutRole,
+  type GridFrameModes,
 } from './layoutTokens'
 import { SHADOW_PRESETS } from './shadowTokens'
 import type { ThemeFoundationOverride } from './themeFoundations'
@@ -184,6 +189,44 @@ function typography(body: string, heading: string, mode: (typeof TYPE_SCALE_MODE
     lineHeights: scale.lineHeights,
     weights: { ...FONT_WEIGHT_STANDARD },
     roles: mergeTypeRoles(),
+  }
+}
+
+function paddingOf(spacing: Record<string, string>, step: string) {
+  const value = spacing[step] ?? '20px'
+  return { top: value, right: value, bottom: value, left: value }
+}
+
+/**
+ * Style-scoped layout aliases. The primitive ramps are the personality;
+ * the roles are what specimens actually read. Nested `control ⊂ action`
+ * is derived from the current ramp + inset so a Pill style cannot ship a
+ * chip that collides with its field — the same concentric rule the
+ * roundness slider now keeps.
+ */
+function styleLayout(opts: {
+  radius: Record<string, string>
+  spacing: Record<string, string>
+  radiusPins?: Record<string, string>
+  spacingPins?: Record<string, string>
+  strokePins?: Record<string, string>
+  sizePins?: Record<string, string>
+  selectorPins?: Record<string, string>
+  gridFrame?: GridFrameModes
+}) {
+  const spacingRoles = { ...defaultLayoutRoles('spacing'), ...opts.spacingPins }
+  const radiusRoles = { ...defaultLayoutRoles('radius'), ...opts.radiusPins }
+  if (radiusRoles.control !== 'none' && radiusRoles.action !== 'none') {
+    const insetPx = parseFloat(resolveLayoutRole('spacing', spacingRoles, opts.spacing, 'inset-control', '12px')) || 12
+    radiusRoles.control = concentricRadiusStep(opts.radius, radiusRoles.action, insetPx)
+  }
+  return {
+    radiusRoles,
+    spacingRoles,
+    strokeRoles: { ...defaultLayoutRoles('stroke'), ...opts.strokePins },
+    sizeRoles: { ...defaultLayoutRoles('size'), ...opts.sizePins },
+    selectorRoles: { ...defaultLayoutRoles('selector'), ...opts.selectorPins },
+    gridFrame: opts.gridFrame ?? GRID_FRAME_STANDARD,
   }
 }
 
