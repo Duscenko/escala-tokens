@@ -216,28 +216,47 @@ describe('action.primary hover/pressed — solved relative to the resolved solid
     expect(actionOf(view, 'primary.pressed')?.light.label).toBe('accent.11')
   })
 
-  it('a hue whose solid is 11 gets a hover/pressed that are NOT the broken fixed pin', () => {
+  // Amber is the hue that exposed BOTH defects `brandSolidPair` fixes, so the
+  // numbers are worth keeping. Its light ramp, measured, carries a legible
+  // label on tones 1–8 with near-black ink and on 11–12 with near-white; the
+  // anchor itself (#f59e0b) misses at Lc 54.
+  //
+  // The old upward-only walk therefore stopped at accent.11 — #985e00, a dark
+  // BROWN. That clears contrast and is not, in any useful sense, the amber the
+  // user picked. accent.8 (#f7b462, black label, 6.8:1 / Lc 62) is the tone
+  // nearest the anchor that carries a label, and is what Radix's own amber
+  // button does: a light fill with dark text, not a darkened one with white.
+  it('an anchor that cannot carry a label resolves NEAR it, not at the ramp end', () => {
     const solid = actionOf(amberView, 'primary.default')?.light.label
-    const hover = actionOf(amberView, 'primary.hover')?.light.label
-    const pressed = actionOf(amberView, 'primary.pressed')?.light.label
-    expect(solid).toBe('accent.11')
-    // The old fixed pin put hover at accent.10 — LIGHTER than an 11-solid,
-    // reading as a step backward and measuring 2.51:1 (fails AA). The solved
-    // version must differ from that broken value.
-    expect(hover).not.toBe('accent.10')
-    // The old fixed pin put pressed at accent.11 — IDENTICAL to the default,
-    // i.e. no pressed state at all for this hue.
-    expect(pressed).not.toBe(solid)
+    expect(solid).toBe('accent.8')
+    // The old value. Kept as an explicit negative so a regression to the
+    // upward-only walk fails loudly rather than just looking muddy.
+    expect(solid).not.toBe('accent.11')
   })
 
-  it('pressed is never lighter than hover, which is never lighter than default', () => {
-    for (const v of [view, amberView]) {
-      const toneOf = (label?: string) => Number(label?.split('.')[1] ?? 0)
-      const d = toneOf(actionOf(v, 'primary.default')?.light.label)
-      const h = toneOf(actionOf(v, 'primary.hover')?.light.label)
-      const p = toneOf(actionOf(v, 'primary.pressed')?.light.label)
-      expect(h).toBeGreaterThanOrEqual(d)
-      expect(p).toBeGreaterThanOrEqual(h)
+  // The contract is that the three states are DISTINCT and each is legible with
+  // the SOLID'S OWN ink — not that the tone index always rises.
+  //
+  // An earlier version asserted `pressed >= hover >= default` on the index,
+  // which silently assumed a near-white label: only then is "further from the
+  // anchor" also "darker". On a fill that carries a near-BLACK label the ramp
+  // says the opposite — amber light has no darker tone that stays legible in
+  // black (tone 9 is Lc 54, tone 10 is 47), so its states run 8 → 7 → 6 and the
+  // button brightens rather than deepens. Both directions are legitimate; what
+  // is not legitimate is the old behaviour, where all three collapsed onto one
+  // hex (measured: 47 of 58 seed×appearance combinations).
+  it('default, hover and pressed are three distinct tones moving one way', () => {
+    for (const [name, v] of [['violet', view], ['amber', amberView]] as const) {
+      for (const appearance of ['light', 'dark'] as const) {
+        const toneOf = (label?: string) => Number(label?.split('.')[1] ?? 0)
+        const d = toneOf(actionOf(v, 'primary.default')?.[appearance].label)
+        const h = toneOf(actionOf(v, 'primary.hover')?.[appearance].label)
+        const p = toneOf(actionOf(v, 'primary.pressed')?.[appearance].label)
+        expect(new Set([d, h, p]).size, `${name}/${appearance} states`).toBe(3)
+        // Monotonic: both steps go the same way, so the ramp reads as one
+        // direction of travel rather than oscillating around the fill.
+        expect(Math.sign(h - d), `${name}/${appearance} direction`).toBe(Math.sign(p - h))
+      }
     }
   })
 })

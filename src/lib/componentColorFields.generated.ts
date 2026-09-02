@@ -15,7 +15,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Avatar": ['brandSolid', 'brandText', 'neutralText'],
   "Badge": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
   "Breadcrumb": ['neutralText', 'fgMuted', 'placeholderText'],
-  "Button": ['brandSolid', 'onBrand', 'neutralText', 'errorColor', 'disabledBg', 'disabledText', 'successColor', 'warningColor', 'infoColor'],
+  "Button": ['brandSolid', 'brandText', 'onBrand', 'neutralText', 'errorColor', 'disabledBg', 'disabledText', 'successColor', 'warningColor', 'infoColor'],
   "ButtonGroup": ['surface', 'neutralFill', 'neutralText', 'border'],
   "Card": ['brandText', 'neutralText', 'borderDefault', 'fgMuted'],
   "Checkbox": ['surface', 'brandSolid', 'onBrand', 'neutralText', 'disabledBg', 'disabledText', 'border'],

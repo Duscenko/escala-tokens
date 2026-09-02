@@ -148,15 +148,45 @@ export function apcaLcAbs(text: string, background: string): number {
  *
  *   body-text     — paragraph copy, ≈14–16px regular. The strictest text case.
  *   large-text    — ≥24px, or ≥18.66px bold. Headings.
+ *   action-label  — the label ON a solid control fill: a button, a chip, a
+ *                   status pill. See below — this is NOT `large-text`.
  *   ui-component  — non-text: borders, icons, focus rings, control outlines.
  *                   WCAG 1.4.11 asks 3:1; APCA's equivalent floor is Lc 45.
  *   decorative    — no legibility requirement (dividers, subtle fills).
  *   surface       — a background; contrast is judged from whatever sits ON it,
  *                   not against the page. Never audited as a foreground.
+ *
+ * ── Why `action-label` is its own class, and not either neighbour ────────────
+ *
+ * A button label is a genuinely different case from both body copy and a
+ * heading, and collapsing it into either one gets a measurably wrong answer.
+ *
+ * It is NOT `large-text`. WCAG 2.x defines large text as ≥24px regular or
+ * ≥18.66px bold, and lets it drop to 3:1. Escala's own button labels render at
+ * **17px / weight 600** (measured in the live collage), which qualifies as
+ * neither — so the WCAG leg stays at the full **4.5**. Auditing a button under
+ * `large-text` would quietly licence a 3:1 label.
+ *
+ * It is NOT `body-text` either. That class carries APCA **Lc 75**, the row of
+ * the Bronze lookup written for ~400-weight running copy. A 17px/600 label sits
+ * on the large/bold row, whose floor is **Lc 60**. Scoring a button on the body
+ * row is not "being strict", it is reading the wrong row of the table — and it
+ * had a specific, visible cost: `{accent.solid}` walks the ramp until its label
+ * clears the target, and at Lc 75 the only tones that qualify on a DARK ramp are
+ * 11–12, the near-white end. Measured across the 29-seed brand spectrum, that
+ * put 30 of 58 seed×appearance solids on a pastel with none of the brand left
+ * in it — every dark theme's primary button converging on the same washed-out
+ * colour. Reading the correct row moves all 30 back toward the anchor (chroma
+ * gained on 30, lost on 0) with **zero** pairs dropping below WCAG AA.
+ *
+ * So: full WCAG AA, APCA's large/bold row. Strictly stronger than `large-text`
+ * on the WCAG leg, strictly weaker than `body-text` only on the leg where
+ * `body-text` was measuring the wrong thing.
  */
 export type IntentClass =
   | 'body-text'
   | 'large-text'
+  | 'action-label'
   | 'ui-component'
   | 'decorative'
   | 'surface'
@@ -166,6 +196,7 @@ export type Thresholds = { wcag: number | null; apcaLc: number | null }
 export const INTENT_THRESHOLDS: Record<IntentClass, Thresholds> = {
   'body-text':    { wcag: 4.5, apcaLc: 75 },
   'large-text':   { wcag: 3.0, apcaLc: 60 },
+  'action-label': { wcag: 4.5, apcaLc: 60 },
   'ui-component': { wcag: 3.0, apcaLc: 45 },
   decorative:     { wcag: null, apcaLc: null },
   surface:        { wcag: null, apcaLc: null },

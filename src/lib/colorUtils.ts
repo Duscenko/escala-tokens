@@ -917,6 +917,84 @@ export function solidInkPair(
   return best
 }
 
+/**
+ * WCAG AA plus APCA's large/bold row — the target for a LABEL SITTING ON A
+ * SOLID FILL. Mirrors `INTENT_THRESHOLDS['action-label']`; see that entry for
+ * why a button label is neither `body-text` nor `large-text`.
+ */
+export const ACTION_LABEL_TARGET: TextContrastTarget = { wcag: WCAG_AA, apcaLc: 60 }
+
+/**
+ * The brand fill: the tone NEAREST THE ANCHOR whose ink clears `target`,
+ * tie-broken toward the more chromatic side.
+ *
+ * `solidInkPair` walks `start → 12` and takes the first pass, which encodes
+ * "higher index = a better fill". That is only true of a LIGHT ramp. On a dark
+ * one the tones get LIGHTER with index, so the walk runs away from the brand
+ * and stops at the near-white end — the same orientation bug `accessibleSolidTone`
+ * documents and fixed for itself, still present in the function that superseded
+ * it. Measured over the 29-seed brand spectrum × both appearances: 30 of 58
+ * solids sat on tone 11–12, so every dark theme's primary button was a pastel
+ * with the brand bleached out of it, and all six shipped styles converged on
+ * near-identical washed-out CTAs.
+ *
+ * Searching OUTWARD from the anchor is orientation-independent — it finds the
+ * deeper tone in a light ramp and the darker one in a dark ramp without either
+ * this function or its callers knowing which they hold. The chroma tie-break
+ * settles the symmetric case (|9−7| = |9−11|), and settles it toward the tone
+ * that still looks like the user's colour.
+ *
+ * Measured against the previous walk: chroma gained on 30 seeds, lost on 0, and
+ * no pair drops below WCAG AA. Many hues land back on the literal anchor — the
+ * brand hex itself as the button — which is what the old comment on
+ * `solidInkPair` always claimed ("keeps the fill ON the anchor") but could only
+ * deliver on a light ramp.
+ *
+ * Falls back to `solidInkPair`'s argmax when nothing in the ramp clears, so the
+ * no-solution case behaves exactly as before.
+ */
+export function brandSolidPair(
+  scale: Record<number, string>,
+  inks: string[],
+  anchor = BASE_TONE,
+  target: number | TextContrastTarget = ACTION_LABEL_TARGET,
+): SolidInkPair {
+  const t: TextContrastTarget =
+    typeof target === 'number' ? { wcag: target, apcaLc: 75 } : target
+
+  const tones = Object.keys(scale)
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && scale[n])
+    .sort((a, b) => {
+      const d = Math.abs(a - anchor) - Math.abs(b - anchor)
+      if (d !== 0) return d
+      // Symmetric distance: prefer whichever side keeps more of the brand.
+      return chromaOf(scale[b]) - chromaOf(scale[a])
+    })
+
+  for (const tone of tones) {
+    for (let i = 0; i < inks.length; i++) {
+      let w: number
+      let lc: number
+      try {
+        w = checkContrast(inks[i], scale[tone])
+        lc = Math.abs(apcaLc(inks[i], scale[tone]))
+      } catch { continue }
+      if (w >= t.wcag && lc >= t.apcaLc) return { tone, ink: i, contrast: w }
+    }
+  }
+  return solidInkPair(scale, inks, anchor, t)
+}
+
+/** OKLCH chroma, 0 for anything unparseable — a tie-break must never throw. */
+function chromaOf(hex: string): number {
+  try {
+    return hexToOklch(hex).c
+  } catch {
+    return 0
+  }
+}
+
 // ── The app chrome's own accent, as INK ─────────────────────────────────────
 // `--accent-ui` tracks the user's accent for everything READ AGAINST THE PAGE:
 // `text-accent-ui` section titles, links, active nav, plus the small graphical

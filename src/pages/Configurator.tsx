@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, type ComponentType, type Reac
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
-import { BASE_TONE, chromeAccent, darkChromeWash, readableInk, solidInkPair } from '../lib/colorUtils'
+import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp } from '../lib/themeSources'
 import { isLiveEnvironment, publishTokens, useAutoFigmaSync, type FigmaPublishState } from '../lib/figmaSync'
 import { type GitHubPushState } from '../lib/github'
@@ -844,18 +844,20 @@ export default function Configurator() {
   // rendered the anchor `#a317e6`. Same accent, two colours on screen, which is
   // exactly what the chrome's accent buttons looked wrong against.
   //
-  // The fill now uses `solidInkPair` on the previewed ramp — the SAME rule
+  // The fill uses `brandSolidPair` on the previewed ramp — the SAME rule
   // `{accent.solid}` resolves through in Categorical (`action.primary`) and the
   // same one the flat catalogue's `background-brand-solid` anchors to. So an
   // accent-filled chrome control is the user's brand solid, hex for hex with
-  // the preview. It also keeps the fill ON the anchor for most accents, because
-  // flipping the ink is cheaper than darkening the fill (see `solidInkPair`).
+  // the preview. **This has to track whatever `{accent.solid}` uses**: it was
+  // `solidInkPair`, and when that walked a dark ramp to its near-white end the
+  // chrome's accent buttons went pale in lockstep with the canvas — the bug
+  // stayed invisible precisely because both halves were wrong together.
   const fillRamp = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
   const uiAccentSolid = (() => {
     const inks = ['#ffffff', '#0a0d12']
     const ramp = fillRamp && Object.keys(fillRamp).length ? fillRamp : null
     if (!ramp) return primaryColor
-    return ramp[solidInkPair(ramp, inks).tone] ?? primaryColor
+    return ramp[brandSolidPair(ramp, inks).tone] ?? primaryColor
   })()
   // The ink for an `--accent-solid` fill, solved against THAT fill — not
   // against `--accent-ui`, which is a different colour now.

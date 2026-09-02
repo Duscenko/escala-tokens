@@ -21,7 +21,7 @@
 // belongs instead.
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
-import { accessibleSolidTone, solidInkPair, checkContrast, WCAG_AA, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, generateAlphaScale } from './colorUtils'
+import { accessibleSolidTone, solidInkPair, brandSolidPair, ACTION_LABEL_TARGET, BASE_TONE, checkContrast, WCAG_AA, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, generateAlphaScale } from './colorUtils'
 import { apcaLc, INTENT_THRESHOLDS } from './color/apca'
 
 /** APCA body-text floor — the same constant the audit and the ramp use. */
@@ -143,7 +143,14 @@ function inkHexes(look: Look): string[] {
 function inkRefFor(fill: string | undefined, look: Look): string {
   if (!fill) return INK_REFS[0]
   // A one-step "ramp": there's nothing to search, only the ink to choose.
-  return INK_REFS[solidInkPair({ 1: fill }, inkHexes(look), 1).ink]
+  //
+  // Same target as `brandSolidPair` uses for the FILL, deliberately. These two
+  // run independently — the fill is solved by `{fam.solid}` and the label by
+  // `{on:fam.solid}`, in separate passes of the same regex pipeline — so if
+  // their bars disagreed they could pick different inks for the same button,
+  // and `content.on-action` would not be the ink the fill was actually verified
+  // against. Sharing `ACTION_LABEL_TARGET` is what keeps them in step.
+  return INK_REFS[solidInkPair({ 1: fill }, inkHexes(look), 1, ACTION_LABEL_TARGET).ink]
 }
 
 /**
@@ -273,22 +280,61 @@ function uiBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look
  * guarantees `{step:accent+1}` can never disagree with what `{accent.solid}`
  * itself resolved to for the SAME theme.
  *
- * Clamped to 12 before the walk: `solidInkPair`'s loop runs `start..12`, so an
- * unclamped `start` past 12 would never enter it and return the out-of-range
- * start verbatim (`{accent.13}`, which resolves to nothing).
+ * ── The states must be DISTINCT, and they were not ──────────────────────────
  *
- * When the solid is already at 11 (one step of ramp headroom left), both
- * `+1` and `+2` land on 12 — a real, legible pressed state, just not distinct
- * from hover. Verified: no hue in the audited set has ANY tone past 12 that
- * still carries the label, so this is a property of the ramp, not a solver
- * shortfall — see the design plan's two negative results (pure-black ink,
- * relaxed Lc 60 target) for what was ruled out before accepting it.
+ * This used to clamp `solidTone + offset` to 12 and re-run the solid search
+ * from there. Two failures compounded:
+ *
+ *  1. The solid itself was landing on 11–12 (see `brandSolidPair`), so `+1` and
+ *     `+2` both clamped to 12 — and when the solid was already 12, both landed
+ *     back ON the solid. Measured across the 29-seed spectrum × both
+ *     appearances, **47 of 58** combinations resolved fewer than 3 distinct
+ *     tones, and in dark all six shipped styles rendered default, hover and
+ *     pressed as ONE hex. Not "pressed is legible but indistinct from hover" —
+ *     pressing the button changed nothing at all.
+ *  2. Re-running the SOLID search let a state pick a different ink than the
+ *     fill it is a state OF, so a hover could flip the label from near-white to
+ *     near-black mid-interaction.
+ *
+ * Both are fixed by asking a narrower question: the nearest UNUSED tone, in the
+ * ramp's own units, that still carries **the solid's own ink**. Up first (the
+ * Radix convention — 10 is the hover for 9 in both appearances), falling back
+ * downward when the ramp has no room above. `used` is threaded so pressed
+ * cannot land on hover.
+ *
+ * Ramp geometry still binds: 19 of 58 combinations genuinely have only two
+ * label-carrying tones. Those return the HOVER tone for pressed rather than the
+ * solid — the documented residual ("legible, not distinct from hover") instead
+ * of the strictly worse "pressed reverts to default" this replaced.
  */
-function solidStepRef(fam: string, offset: number, solidTone: number, look: Look): string {
+function solidStepRef(
+  fam: string,
+  offset: number,
+  solidTone: number,
+  look: Look,
+  inkHex: string,
+  used: Set<number>,
+): string {
   const ramp = rampOf(look, fam)
-  const start = Math.min(solidTone + offset, 12)
-  const { tone } = solidInkPair(ramp, inkHexes(look), start)
-  return `{${fam}.${tone}}`
+  const fits = (t: number): boolean => {
+    const fill = ramp[t]
+    if (!fill) return false
+    try {
+      return checkContrast(inkHex, fill) >= ACTION_LABEL_TARGET.wcag &&
+        Math.abs(apcaLc(inkHex, fill)) >= (ACTION_LABEL_TARGET.apcaLc ?? 60)
+    } catch { return false }
+  }
+  for (const dir of [1, -1]) {
+    for (let d = offset; d <= 11; d++) {
+      const t = solidTone + dir * d
+      if (t < 1 || t > 12 || used.has(t)) continue
+      if (fits(t)) { used.add(t); return `{${fam}.${t}}` }
+    }
+  }
+  // No third tone in this ramp. Reuse the last state we did find (hover) rather
+  // than falling back to the solid, which would make pressing a no-op.
+  const fallback = [...used].filter((t) => t !== solidTone).pop() ?? solidTone
+  return `{${fam}.${fallback}}`
 }
 
 /**
@@ -320,15 +366,27 @@ function curatedRefs(
   const chartSlots = chartPalette(accentHex)
   // Memoised per family — each `{fam.solid}` resolves to the lightest tone of
   // that ramp whose label still clears both contrast floors.
-  const solidTones = new Map<string, number>()
-  const solidToneFor = (fam: string): number => {
-    let t = solidTones.get(fam)
-    if (t === undefined) {
-      t = solidInkPair(rampOf(look, fam), inkHexes(look)).tone
-      solidTones.set(fam, t)
+  // Memoised per family. `tone` is the fill; `ink` is the hex actually solved
+  // for it, which the hover/pressed steps must SHARE — a state that re-solves
+  // its own ink can flip the label colour mid-interaction. `used` is the set of
+  // tones this family's interaction states have already claimed, so pressed
+  // cannot land on hover.
+  const solids = new Map<string, { tone: number; ink: string; used: Set<number> }>()
+  const solidFor = (fam: string) => {
+    let s = solids.get(fam)
+    if (s === undefined) {
+      // `brandSolidPair`, not `solidInkPair`: the tone NEAREST the anchor that
+      // carries a label, rather than the first one found walking toward 12. On
+      // a dark ramp "toward 12" is toward near-white, which is how every dark
+      // theme's primary button became a pastel. See `brandSolidPair`.
+      const inks = inkHexes(look)
+      const pair = brandSolidPair(rampOf(look, fam), inks, BASE_TONE, ACTION_LABEL_TARGET)
+      s = { tone: pair.tone, ink: inks[pair.ink] ?? inks[0], used: new Set([pair.tone]) }
+      solids.set(fam, s)
     }
-    return t
+    return s
   }
+  const solidToneFor = (fam: string): number => solidFor(fam).tone
   return roles.map((r) => {
     const ref = (kind === 'dark' ? r.dark : r.light)
       // Handles both `{accent.solid}` and `{on:accent.solid}` in one pass.
@@ -353,8 +411,10 @@ function curatedRefs(
         uiBoundaryRef(fam, Math.min(uiBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
       .replace(/\{ui:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
         uiBoundaryRef(fam, Number(start), kind, look))
-      .replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam: string, n: string) =>
-        solidStepRef(fam, Number(n), solidToneFor(fam), look))
+      .replace(/\{step:([a-z-]+)\+(\d+)\}/g, (_m, fam: string, n: string) => {
+        const s = solidFor(fam)
+        return solidStepRef(fam, Number(n), s.tone, look, s.ink, s.used)
+      })
       // `{chart.N}` is a computed series colour, not a ramp step — it resolves
       // to a literal, which `refToView` passes through unchanged.
       .replace(/\{chart\.(\d)\}/g, (_m, n: string) => chartSlots[Number(n) - 1] ?? '')

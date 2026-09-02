@@ -51,6 +51,33 @@ function statusColor(t: PreviewTokens, name: string): string {
   }
 }
 
+/**
+ * The same intent as INK rather than as a FILL.
+ *
+ * `statusColor` returns a fill, and a fill is not readable as text on the page
+ * — that is the whole reason the role catalogue ships `content.accent`
+ * (`{accent.11}`, audited `body-text`, worst measured 5.21:1 / Lc 75) beside
+ * `action.primary`. An Outline / Ghost / Soft button paints no brand fill, so
+ * its LABEL sits on the page and must use the ink role.
+ *
+ * They used to be the same value here, and it looked fine only by accident: the
+ * old solid solver walked a light ramp until white was legible ON it, which
+ * dragged the fill down to tone 11 — where it happens to double as text. Once
+ * `brandSolidPair` stopped over-darkening the fill (Neo's light solid went from
+ * #8e6300, a brown, to #eebd62, the actual gold), every ghost button inherited
+ * a fill-weight colour as ink: measured #eebd62 on Neo's near-white page at
+ * **1.9:1**. The fill fix is right; sharing one token for two jobs was not.
+ *
+ * ONLY Brand is redirected. The four status intents resolve to their family's
+ * tone 9 and have no ink field, deliberately — see the `StatusSpecimen` note in
+ * CLAUDE.md for why `errorInk`/`warningInk`/`successInk` were deleted rather
+ * than reintroduced (a preview that repairs a colour disagrees with every other
+ * preview about what that token is). Their behaviour is unchanged here.
+ */
+function statusInk(t: PreviewTokens, name: string): string {
+  return name === 'Brand' ? (t.brandText || t.brandSolid) : statusColor(t, name)
+}
+
 /** The stroke of a status surface — `status.<severity>.border`, an alpha token.
  *
  *  This used to be `` `${c}33` `` inline: the status SOLID at a hardcoded 20%.
@@ -250,7 +277,10 @@ const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number;
 }
 
 function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
-  const color = statusColor(t, v.Color === 'Danger' ? 'Error' : (v.Color ?? 'Brand'))
+  const intent = v.Color === 'Danger' ? 'Error' : (v.Color ?? 'Brand')
+  const color = statusColor(t, intent)
+  // The label/stroke of every style that paints no solid fill. See `statusInk`.
+  const ink = statusInk(t, intent)
   const style = v.Style ?? 'Solid'
   const state = v.State ?? 'Default'
   const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
@@ -259,10 +289,15 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   const slots = ICON_SLOTS.Button
 
   let bg = 'transparent'
-  let fg = color
+  let fg = ink
   let border = 'transparent'
+  // The soft/pressed washes stay keyed to the FILL — a brand tint should be the
+  // brand's fill at low alpha, not its darker text tone — while the label on
+  // top of them reads from the ink. That split is what the paired
+  // `soft(t, t.brandSolid)` + `color: t.brandText` call sites elsewhere in this
+  // file have always done; the Button was the one that collapsed them.
   if (style === 'Solid') { bg = color; fg = t.onBrand }
-  else if (style === 'Outline') { border = color + '99' }
+  else if (style === 'Outline') { border = ink + '99' }
   else if (style === 'Soft') { bg = soft(t, color) }
 
   if (state === 'Hover') {

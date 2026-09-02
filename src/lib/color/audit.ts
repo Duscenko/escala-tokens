@@ -166,13 +166,18 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.disabled',  bg: 'surface.page',    intent: 'decorative' },
     { fg: 'content.link.default', bg: 'surface.page', intent: 'body-text' },
     { fg: 'content.link.hover',   bg: 'surface.page', intent: 'body-text' },
-    { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'body-text' },
+    // `action-label`, not `body-text`: these two are a LABEL ON A SOLID FILL,
+    // which keeps the full WCAG AA 4.5 but is scored on APCA's large/bold row
+    // (Lc 60) rather than the 400-weight running-copy row. See `IntentClass`
+    // for the measurement that forced the distinction — auditing a button as
+    // body copy is what pushed every dark-theme solid onto a near-white pastel.
+    { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
-    { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'body-text' },
+    { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'action-label' },
     // `ui-component`, and it MUST pass — this is the control boundary, the one
     // stroke that identifies a control (WCAG 1.4.11 + APCA Lc 45). It carried
     // the name `border.default` until phase 1 of

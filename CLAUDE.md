@@ -3413,6 +3413,83 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   but not visually distinct from hover. Still strictly better than the pin it replaced
 >   (which, for those hues, had a hover that FAILED and a pressed that DIDN'T EXIST).
 
+> **UPDATE (supersedes the two notes directly above): the solid is solved by
+> `brandSolidPair`, not `solidInkPair`, and a button label is audited as
+> `action-label` — WCAG AA 4.5 + APCA Lc 60, not Lc 75.** Reported as the System
+> Styles being "broken" in the artefact view, and it was two compounding defects,
+> both measured before anything was changed:
+> - **Every dark theme's primary button was a near-white pastel.** Verified live for
+>   all six styles: Core `rgb(209,231,255)`, Neo `rgb(251,225,178)`, Glass
+>   `rgb(184,238,248)`, Material `rgb(241,222,255)`, Retro `rgb(255,224,212)`,
+>   Nature `rgb(193,243,207)`. Six different accents, one washed-out CTA.
+> - **`action.primary.default/hover/pressed` had collapsed onto ONE hex** in dark for
+>   all six, and `hover === pressed` in light for five of six. Across the 29-seed
+>   brand spectrum × both appearances, **47 of 58** combinations resolved fewer than
+>   three distinct tones. The residual documented above ("legible, not distinct from
+>   hover") understated it: when the solid itself reached 12, pressing changed
+>   nothing at all.
+>
+> **The root cause is an orientation bug, and the note above ruled out the fix for
+> the wrong reason.** `solidInkPair` walks `start → 12` and takes the first pass,
+> which encodes "higher index = a better fill" — true only of a LIGHT ramp. On a
+> dark ramp the tones get LIGHTER with index, so the walk runs away from the brand
+> and stops at the near-white end. This is the exact defect `accessibleSolidTone`
+> documents and fixed FOR ITSELF ("searching outward from the anchor is
+> orientation-independent"); the function that generalised it never got the same
+> fix. The note above tested Lc 60 *while keeping the upward walk* and correctly
+> found it moved only one hue — the two changes only work together, which is why
+> that negative result did not generalise.
+> - **`brandSolidPair` (`colorUtils.ts`)** orders candidates by `|tone − anchor|`
+>   ascending, tie-broken by chroma descending, and takes the first whose ink clears
+>   the target. Measured over 58 seed×appearance combos: **30 move, chroma gained on
+>   30, lost on 0, and zero pairs drop below WCAG AA.** Many hues land back on the
+>   literal anchor — the brand hex itself as the button (Glass resolves `#22d3ee` in
+>   BOTH appearances now). It falls back to `solidInkPair`'s argmax when nothing
+>   clears, so the no-solution case is unchanged.
+> - **`action-label` is a real intent class, not a loosened `body-text`.** It keeps
+>   the FULL WCAG AA 4.5 — Escala's button labels render 17px/600 (measured), which
+>   is neither WCAG large text (≥18.66px bold / ≥24px regular) nor eligible for 3:1 —
+>   and scores APCA on the large/bold row (Lc 60) instead of the 400-weight
+>   running-copy row (Lc 75). Reading the body row for a semibold button label was
+>   not strictness, it was the wrong row of the table. `INTENT_THRESHOLDS` carries
+>   it and `color/audit.ts` audits `content.on-action` and `status.*-on-solid` under
+>   it; the full matrix still reports **0 failures across 1120 pairs**.
+> - **`solidStepRef` asks a narrower question**: the nearest UNUSED tone that carries
+>   **the solid's own ink**, up first (Radix's convention — 10 is the hover for 9)
+>   and down when the ramp has no room. Re-running the SOLID search let a state pick
+>   a different ink than the fill it is a state OF, so a hover could flip the label
+>   from near-white to near-black mid-interaction. Collapse: **47 → 19 of 58**; the
+>   remainder genuinely have only two label-carrying tones and now return the HOVER
+>   tone for pressed rather than the solid, i.e. the documented residual instead of
+>   "pressing is a no-op".
+> - **`{step:…}` direction is not always "darker", and the test that assumed so was
+>   wrong.** On a fill carrying a near-BLACK label the ramp has no darker tone that
+>   stays legible (light amber: tone 9 is Lc 54, tone 10 is Lc 47), so its states run
+>   8 → 7 → 6 and the button BRIGHTENS. `categorical.test.ts` now asserts what
+>   actually matters — three distinct tones, moving monotonically in one direction —
+>   instead of a rising tone index.
+> - **`--accent-solid` in `Configurator.tsx` had to move with it.** It is required to
+>   match `{accent.solid}` hex for hex; when both were wrong together the chrome's
+>   accent buttons went pale in lockstep with the canvas, which is precisely why the
+>   bug stayed invisible.
+> - **It exposed a latent token misuse in `ButtonSpecimen`, which had to be fixed in
+>   the same pass.** Outline/Ghost/Soft buttons used `statusColor` — a FILL — as their
+>   label and stroke ink. That looked fine only by accident: the old solver dragged
+>   the light fill down to tone 11, where it doubles as text. With the fill correctly
+>   back on the brand (Neo light `#8e6300` brown → `#eebd62` gold), every ghost button
+>   inherited fill-weight ink and measured **1.9:1**. `statusInk()` redirects Brand to
+>   `t.brandText` (`content.accent`, audited `body-text`) — the role that exists for
+>   exactly this — restoring 4.73:1, while the soft/pressed WASHES stay keyed to the
+>   fill. **Only Brand is redirected**: the four status intents keep tone 9 and get no
+>   ink field, per the `StatusSpecimen` note above (`errorInk`/`warningInk`/
+>   `successInk` were deleted, not to be reintroduced). `Button`'s entry in
+>   `componentColorFields.generated.ts` gains `brandText` — regenerate, don't hand-edit.
+> - **Known residual, unchanged and deliberate**: a ghost button's ink on a step-2 CARD
+>   measures 2.93–3.94:1 in light, because `content.accent` is solved against the
+>   PAGE. That is the system-wide "text on a step-2/3 surface" residual already
+>   documented above, not a regression — it is up from 1.9:1, and fixing it means
+>   moving `content.accent` to tone 12, which that note explicitly leaves alone.
+
 > **UPDATE: `status.info.*` was missing entirely — the Info primitive (full generated ramp,
 > exported to tokens.json) had zero Categorical roles referencing it.** A designer retinting
 > Info saw nothing move anywhere in Semantics. Added `status.info.surface` (`{info.3}`) and
