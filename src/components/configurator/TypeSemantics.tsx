@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { tableHeaderClass, tableRowClass } from './tableChrome'
+import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack } from '../../lib/fonts'
 import {
@@ -28,7 +28,7 @@ import { TypeRolesPreview } from '../preview/atoms/TypeRolesPreview'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
 
-const GRID = 'grid grid-cols-[minmax(8.5rem,1fr)_minmax(13rem,1.35fr)_minmax(13rem,1.35fr)_minmax(7rem,1fr)_2.5rem]'
+const GRID = 'grid grid-cols-[minmax(8.5rem,1fr)_minmax(13rem,1.35fr)_minmax(13rem,1.35fr)_minmax(10rem,1.15fr)_2.5rem]'
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -79,7 +79,7 @@ function ViewportCell({
   onChange: (next: TypeAlias) => void
 }) {
   return (
-    <div className="flex items-center gap-1 px-2 py-2 border-r border-line/60 min-w-0">
+    <div className="flex items-center gap-1 px-2 py-2 border-r border-line min-w-0">
       <AliasSelect
         value={alias.size}
         options={SIZE_OPTIONS}
@@ -112,6 +112,7 @@ function ResetIcon() {
 
 export default function TypeSemantics({
   tabBar,
+  query: externalQuery,
   onFocusChange,
   revealRole,
   railCollapsed = false,
@@ -119,6 +120,9 @@ export default function TypeSemantics({
   previewAppearance,
 }: {
   tabBar?: ReactNode
+  /** Workspace search. When passed, the inner 52px bar (heading + search)
+   *  drops so TOKEN NAME lines up with “Text variables”, same as Radius. */
+  query?: string
   onFocusChange?: (f: TypeFocus) => void
   /** Preview specimen asked to open this role's row (`key` + `seq` so repeats work). */
   revealRole?: { key: string; seq: number } | null
@@ -131,10 +135,12 @@ export default function TypeSemantics({
   const setTypography = (value: typeof typography) => patch({ typography: value })
   const roles = mergeTypeRoles(typography.roles)
   const [group, setGroup] = useState<TypeFocus>('all')
-  const [query, setQuery] = useState('')
+  const [localQuery, setLocalQuery] = useState('')
   const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
   const [flashKey, setFlashKey] = useState<string | null>(null)
   const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const controlled = externalQuery !== undefined
+  const query = controlled ? externalQuery : localQuery
 
   useEffect(() => {
     onFocusChange?.(group)
@@ -144,7 +150,7 @@ export default function TypeSemantics({
     if (!revealRole?.key) return
     const spec = TYPE_ROLE_BY_KEY[revealRole.key]
     if (!spec) return
-    setQuery('')
+    if (!controlled) setLocalQuery('')
     setGroup((g) => (g === 'all' || g === spec.group ? g : spec.group))
     setFlashKey(revealRole.key)
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -157,7 +163,7 @@ export default function TypeSemantics({
       window.clearTimeout(t0)
       window.clearTimeout(t1)
     }
-  }, [revealRole?.key, revealRole?.seq])
+  }, [revealRole?.key, revealRole?.seq, controlled])
 
   function patchRole(key: string, viewport: 'desktop' | 'mobile', alias: TypeAlias) {
     const current = roles[key]
@@ -181,7 +187,7 @@ export default function TypeSemantics({
   const revealFromPreview = (key: string) => {
     const spec = TYPE_ROLE_BY_KEY[key]
     if (!spec) return
-    setQuery('')
+    if (!controlled) setLocalQuery('')
     setGroup(spec.group)
     setFlashKey(key)
     window.setTimeout(() => document.getElementById(`type-role-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40)
@@ -208,51 +214,60 @@ export default function TypeSemantics({
         />
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-            <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
-            <div className="self-center flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line flex-shrink-0">
-              {(['desktop', 'mobile'] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setPreviewViewport(v)}
-                  aria-pressed={previewViewport === v}
-                  className={`px-2 py-1 rounded text-caption font-medium capitalize transition-colors ${
-                    previewViewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
-                  }`}
-                >
-                  {v}
-                </button>
-              ))}
+          {/* Dropped in the workspace — `ThemeWorkspaceTabs` already carries
+              search, and “Text variables” is the rail title. Same rule as
+              `VariablesTable` / `Step4`: no inner bar whenever a `query` is
+              passed in, so TOKEN NAME lines up with the foundation name. */}
+          {!controlled && (
+            <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
+              <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
+              <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
+                  <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={localQuery}
+                  onChange={(e) => setLocalQuery(e.target.value)}
+                  placeholder="Search…"
+                  className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
+                  aria-label="Filter text roles"
+                />
+                {localQuery && (
+                  <button onClick={() => setLocalQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+                )}
+              </div>
             </div>
-            <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search…"
-                className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
-                aria-label="Filter text roles"
-              />
-              {query && (
-                <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-              )}
-            </div>
-          </div>
+          )}
 
           <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[42rem]">
               <div className={tableHeaderClass(GRID)}>
-                <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Role</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Desktop</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Mobile</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
-                <div />
+                <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
+                <span className={`${TABLE_HEAD_CELL} px-3`}>Desktop</span>
+                <span className={`${TABLE_HEAD_CELL} px-3`}>Mobile</span>
+                <span className={`${TABLE_HEAD_CELL} px-2 gap-1.5 min-w-0`}>
+                  <span className="truncate">Preview</span>
+                  <span className="ml-auto flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line normal-case tracking-normal font-medium flex-shrink-0">
+                    {(['desktop', 'mobile'] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setPreviewViewport(v)}
+                        aria-pressed={previewViewport === v}
+                        title={v === 'desktop' ? 'Preview desktop type' : 'Preview mobile type'}
+                        className={`px-1.5 py-0.5 rounded text-mini capitalize transition-colors ${
+                          previewViewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+                <span aria-hidden />
               </div>
               {rows.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{query}”.</div>
@@ -266,7 +281,7 @@ export default function TypeSemantics({
                     id={`type-role-${role.key}`}
                     className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                   >
-                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60">
+                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                       <span className="flex items-center gap-2 min-w-0">
                         <code className="font-mono text-body text-fg-muted truncate">text-{role.key}</code>
                         {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
@@ -285,7 +300,7 @@ export default function TypeSemantics({
                       alias={modes.mobile}
                       onChange={(alias) => patchRole(role.key, 'mobile', alias)}
                     />
-                    <div className="flex items-center px-3 py-2 border-r border-line/60 overflow-hidden">
+                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
                       <span
                         className="text-fg truncate leading-none"
                         style={{

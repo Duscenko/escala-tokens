@@ -172,16 +172,21 @@ function AppearanceToggle({
   )
 }
 
+/** Row-1 shell height — same 52px band as `ThemeWorkspaceTabs` and every
+ *  other row-2 header (`CenterHeader`, PreviewPanel, Theme library). Drawers
+ *  that dock under TopNav add another 52 for their top fallback. */
+export const TOP_NAV_H = 52
+
 // Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
 // #18181B) so the lockup inverts with the theme instead of going invisible on
 // the dark chrome; the middle ring keeps its 0.3 opacity, which reads on both.
 // No chip behind it — this is a finished badge, not a glyph needing a frame.
 // Exported — App.tsx's desktop-only gate reuses it rather than duplicating
 // the path data, so there's one place the mark's geometry lives.
-export function BrandMark() {
+export function BrandMark({ size = 32 }: { size?: number } = {}) {
   return (
     <svg
-      width="32" height="32" viewBox="0 0 32 32" fill="none"
+      width={size} height={size} viewBox="0 0 32 32" fill="none"
       className="flex-shrink-0 text-fg"
       role="img" aria-label="Escala Tokens"
     >
@@ -237,22 +242,21 @@ export default function TopNav({
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
-    <header className="relative z-30 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
+    <header className="relative z-30 flex items-stretch flex-shrink-0 bg-app border-b border-line" style={{ height: TOP_NAV_H }}>
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
-          the mark (no wordmark) in step with the rail below it. */}
+          the mark (no wordmark) in step with the rail below it. One line, never
+          truncated: "Escala Tokens" is the product name, not a title that can
+          ellipsize inside its own lockup. */}
       <div
-        className={`flex items-center gap-3 flex-shrink-0 transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
-          railCollapsed ? 'justify-center px-0' : 'px-4 lg:px-5'
+        className={`flex items-center gap-2.5 flex-shrink-0 transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
+          railCollapsed ? 'justify-center px-0' : 'px-3'
         }`}
         style={brandWidth ? { width: brandWidth } : undefined}
       >
-        <BrandMark />
+        <BrandMark size={24} />
         {!railCollapsed && (
-          <div className="min-w-0">
-            <div className="text-strong font-semibold text-fg truncate leading-tight">Escala Tokens</div>
-            <div className="text-caption text-fg-faint leading-tight">{t('Token generator')}</div>
-          </div>
+          <div className="text-ui font-semibold text-fg whitespace-nowrap leading-none">Escala Tokens</div>
         )}
       </div>
 
@@ -262,9 +266,9 @@ export default function TopNav({
           under the nav — when the window narrows, the empty LEFT track gives up
           its width first and the search field (`flex-1 min-w-0` inside) shrinks,
           rather than the cluster overrunning the centred nav. */}
-      <div className="grid flex-1 min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center gap-3 px-4 xl:px-6">
+      <div className="grid flex-1 min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center gap-2 px-3 xl:px-4">
         <span aria-hidden />
-        <nav aria-label={t('Sections')} className="hidden min-[860px]:flex items-center gap-4 lg:gap-6 xl:gap-8 min-w-0">
+        <nav aria-label={t('Sections')} className="hidden min-[860px]:flex items-center gap-3 lg:gap-5 min-w-0">
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {

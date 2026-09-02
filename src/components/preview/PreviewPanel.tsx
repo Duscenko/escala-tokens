@@ -265,7 +265,7 @@ function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: st
 
   return (
     <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-      <div className="flex items-center gap-2 px-4 h-9 border-b border-line/60 flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 h-9 border-b border-line flex-shrink-0">
         <span className="text-caption font-mono text-fg-faint truncate">{file}</span>
         <span className="ml-auto flex-shrink-0"><CopyButton text={md} label="Copy" /></span>
       </div>
@@ -429,7 +429,7 @@ export default function PreviewPanel({
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
       {/* Header */}
-      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg truncate">{title}</h2>
         {themeBadge && (
           <span className="px-1.5 py-0.5 rounded-md bg-elevated text-mini font-medium text-accent-ui capitalize">

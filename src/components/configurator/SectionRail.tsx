@@ -77,7 +77,7 @@ export default function SectionRail({
       className="flex-shrink-0 flex flex-col min-h-0 transition-[width] duration-200"
     >
       <div
-        className={`flex items-center h-[52px] flex-shrink-0 border-b border-line/60 ${collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'}`}
+        className={`flex items-center h-[52px] flex-shrink-0 border-b border-line ${collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'}`}
       >
         {!collapsed && <span className="text-ui font-semibold text-fg truncate">{title}</span>}
         <button

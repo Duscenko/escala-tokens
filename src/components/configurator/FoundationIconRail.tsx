@@ -68,7 +68,7 @@ export default function FoundationIconRail({
           className={vertical
             // First group sits at the top under the full-width tab strip; every
             // later group carries its own separator rule + top margin.
-            ? `flex flex-col items-center gap-1.5 pt-3 ${gi > 0 ? 'border-t border-line/60 mt-3' : ''}`
+            ? `flex flex-col items-center gap-1.5 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
             : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
         >
           {group.items.map(({ key, label, Icon }) => {

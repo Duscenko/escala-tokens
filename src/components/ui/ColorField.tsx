@@ -9,8 +9,14 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
 import { useDesignStore } from '../../store/useDesignStore'
-import { accessibleVariants, readableInk, DEFAULT_NEUTRAL_TINT } from '../../lib/colorUtils'
-import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
+import {
+  accessibleVariants,
+  readableInk,
+  DEFAULT_NEUTRAL_TINT,
+  neutralCuratedPalette,
+  neutralHueAnchorFromSpectrum,
+} from '../../lib/colorUtils'
+import { INDUSTRY_SPECTRUM, accentCuratedPalette } from '../../lib/industryPacks'
 import { HarmonyFollows } from '../configurator/HarmonyFollows'
 
 type HSVA = { h: number; s: number; v: number; a: number }
@@ -51,30 +57,22 @@ export function ColorPickerPanel({
   followAccent = false,
   appearance = 'light',
   linkOnPick = true,
-  /** When set, the SV field's white/black corners follow the theme page being
-   *  authored (light page vs dark page) so toggling mode is visible in the
-   *  spectrum, not only in Follows. */
   fieldAppearance,
+  dynamicNeutralPalette = false,
+  dynamicAccentPalette = false,
+  neutralRampFrom,
+  accentHueFrom,
 }: {
   value: string
   onChange: (hex: string) => void
-  /** Show the curated accessible alternatives of the current colour. Opt-in,
-   *  and only meaningful where the value being edited is a family's BASE (the
-   *  anchor a whole ramp is grown from) — Accent, Neutral and the states. A
-   *  single tone inside a ramp, or a gradient stop, has no white-ink guarantee
-   *  to keep, so offering "more accessible" versions there would be noise. */
   suggestions?: boolean
-  /** What the "Curated palette" bar offers. Defaults to `INDUSTRY_SPECTRUM` —
-   *  the same vetted hues the scale-guide agent ships (Market → Work → Life).
-   *  Intent families pass `STATE_PRESETS` instead. */
   palette?: { label: string; hex: string }[]
-  /** Accent family: show Neutral (light/dark) + States derived from the hex
-   *  under the cursor, and picking a curated swatch turns both harmony links on. */
+  dynamicNeutralPalette?: boolean
+  dynamicAccentPalette?: boolean
+  neutralRampFrom?: string
+  accentHueFrom?: string
   followAccent?: boolean
   appearance?: 'light' | 'dark'
-  /** When false, Follows still previews derived Neutral/States but curated
-   *  picks do not write the system-wide harmony links. Used when this panel
-   *  authors a new theme rather than the Accent family. */
   linkOnPick?: boolean
   fieldAppearance?: 'light' | 'dark'
 }) {
@@ -109,6 +107,32 @@ export function ColorPickerPanel({
 
   const hex = useMemo(() => toHex(hsva), [hsva])
   const hueColor = useMemo(() => chroma.hsv(hsva.h, 1, 1).hex(), [hsva.h])
+  // Curated bars follow the picker's SPECTRUM (hsva.h), not a frozen theme
+  // accent passed as `neutralRampFrom` / `accentHueFrom` — those props used to
+  // win over `hex` and left six purple greys on screen while the hue slider sat
+  // on blue.
+  const spectrumHueAnchor = useMemo(() => {
+    try {
+      return chroma.hsv(hsva.h, 1, 0.75).hex().slice(0, 7)
+    } catch {
+      return hex.slice(0, 7)
+    }
+  }, [hsva.h, hex])
+
+  const effectivePalette = useMemo(() => {
+    if (dynamicAccentPalette) {
+      return accentCuratedPalette(spectrumHueAnchor)
+    }
+    if (dynamicNeutralPalette) {
+      const tint = neutralTint ?? DEFAULT_NEUTRAL_TINT
+      return neutralCuratedPalette(
+        neutralHueAnchorFromSpectrum(hsva.h, tint),
+        tint,
+        appearance,
+      )
+    }
+    return palette
+  }, [dynamicAccentPalette, dynamicNeutralPalette, spectrumHueAnchor, hsva.h, hex, palette, neutralTint, appearance])
   // Recomputed as the user drags — the four options are always alternatives to
   // what's on screen RIGHT NOW, not to whatever the field held on open.
   const variants = useMemo(
@@ -238,7 +262,7 @@ export function ColorPickerPanel({
           Same scope as `suggestions` — only useful while the value being
           edited is a family's own base — so it rides that flag rather than
           adding a second prop that would always be set together with it. */}
-      {suggestions && palette.length > 0 && (
+      {suggestions && effectivePalette.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <span className="text-caption text-fg-muted">Curated palette</span>
           {/* `rounded-lg`, matching the hex field below it — this strip reads
@@ -251,7 +275,7 @@ export function ColorPickerPanel({
             aria-label="Curated palette"
             className="flex h-6 w-full rounded-lg overflow-hidden touch-none ring-1 ring-black/10"
           >
-            {palette.map((preset) => {
+            {effectivePalette.map((preset, idx) => {
               const isSelected = hex.slice(0, 7).toLowerCase() === preset.hex.toLowerCase()
               // Selection is marked in ink SOLVED against the swatch, never a
               // hardcoded white: the strip runs from a pale yellow to a deep
@@ -261,7 +285,7 @@ export function ColorPickerPanel({
               const ink = readableInk(preset.hex)
               return (
                 <button
-                  key={preset.hex}
+                  key={`${preset.label}-${idx}`}
                   type="button"
                   onClick={() => pickCurated(preset.hex)}
                   onMouseEnter={() => followAccent && setHoverHex(preset.hex)}

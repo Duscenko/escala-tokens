@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { useDesignStore, type SavedSystem } from '../../store/useDesignStore'
 import { isLiveEnvironment, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
 import { slugify } from '../../lib/utils'
-import { FigmaLogo, BackToEditor, relativeTime } from './figmaShared'
+import { FigmaLogo, BackToEditor, relativeTime, PluginInstallPromo } from './figmaShared'
+import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
@@ -108,7 +109,7 @@ export default function FigmaSyncView({
   const {
     projectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
     githubRepo, savedSystems, loadSystem, removeSavedSystem, renameSavedSystem,
-    renameActiveSystem,
+    renameActiveSystem, pluginBuildSeen,
   } = useDesignStore()
 
   const [isDeployed] = useState(isLiveEnvironment)
@@ -203,6 +204,7 @@ export default function FigmaSyncView({
   // whatever this endpoint last published, so `figmaLastPublishAt` IS the
   // connection signal.
   const connected = Boolean(figmaLastPublishAt)
+  const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
 
   return (
     <motion.div
@@ -227,68 +229,75 @@ export default function FigmaSyncView({
           editable-name pattern ExportView's own "Project" pill already uses,
           so there's one convention for "rename the project" across the app,
           not a second one invented here. ── */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/50 p-6">
-        <div className="flex items-center gap-4">
-          <FigmaLogo size={44} />
+      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface/50 p-5">
+        <div className="flex items-center gap-3.5">
+          <FigmaLogo size={32} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <input
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                // Commit what the FIELD holds, not the `nameDraft` closure:
-                // this handler captures the value from the render it was
-                // attached in, so a blur landing before React re-renders (a
-                // paste-then-tab, a programmatic blur) would commit a stale
-                // name. `currentTarget.value` is always the real one.
-                onBlur={(e) => commitName(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur()
-                  if (e.key === 'Escape') {
-                    // Put the field back before blurring, or onBlur above
-                    // would read the typed value and commit the very edit
-                    // Escape is meant to abandon.
-                    const el = e.currentTarget
-                    setNameDraft(projectName)
-                    setNameError(null)
-                    el.value = projectName
-                    el.blur()
-                  }
-                }}
-                placeholder="Escala"
-                aria-label="Project name"
-                title="Renaming your project changes the sync URL below"
-                className="text-lg font-semibold text-fg bg-transparent outline-none border-b border-transparent hover:border-line-strong focus:border-line-strong min-w-0 flex-shrink"
-                style={{ width: `${Math.max(nameDraft.length, 4)}ch` }}
-              />
-              <span className="text-lg font-semibold text-fg-faint flex-shrink-0">· Figma sync</span>
-            </div>
+            <input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              // Commit what the FIELD holds, not the `nameDraft` closure:
+              // this handler captures the value from the render it was
+              // attached in, so a blur landing before React re-renders (a
+              // paste-then-tab, a programmatic blur) would commit a stale
+              // name. `currentTarget.value` is always the real one.
+              onBlur={(e) => commitName(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+                if (e.key === 'Escape') {
+                  // Put the field back before blurring, or onBlur above
+                  // would read the typed value and commit the very edit
+                  // Escape is meant to abandon.
+                  const el = e.currentTarget
+                  setNameDraft(projectName)
+                  setNameError(null)
+                  el.value = projectName
+                  el.blur()
+                }
+              }}
+              placeholder="Escala"
+              aria-label="Project name"
+              title="Renaming your project changes the sync URL below"
+              className="block text-title font-semibold text-fg bg-transparent outline-none border-b border-transparent hover:border-line-strong focus:border-line-strong leading-tight min-w-0"
+              style={{ width: `${Math.max(nameDraft.length, 4)}ch` }}
+            />
             {nameError ? (
-              <p className="text-sm text-status-danger">{nameError}</p>
+              <p className="mt-1 text-caption text-status-danger">{nameError}</p>
             ) : (
-              <p className="flex items-center gap-1.5 text-sm text-fg-faint">
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-status-success-solid' : 'bg-line-strong'}`} aria-hidden />
-                {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not published yet'}
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption text-fg-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-status-success-solid' : 'bg-fg-faint'}`} aria-hidden />
+                  {connected
+                    ? <>Published {relativeTime(figmaLastPublishAt)}</>
+                    : 'Not published yet'}
+                </span>
+                {onOpenGithub && !githubRepo && (
+                  <>
+                    <span className="text-fg-faint" aria-hidden>·</span>
+                    <button
+                      type="button"
+                      onClick={onOpenGithub}
+                      title="This system only exists in this browser until you connect a repo"
+                      className="inline-flex items-center gap-1 hover:text-fg transition-colors"
+                    >
+                      Connect GitHub
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M4.5 2.5 8 6l-3.5 3.5" />
+                      </svg>
+                    </button>
+                  </>
+                )}
               </p>
             )}
           </div>
         </div>
 
-        {/* Nudge, not a banner — same weight as the "download the plugin"
-            cross-link below, shown only while there's nothing to lose yet.
-            Sync has no login/session of its own (see `connected` above), so
-            this is the one place in the flow reminding people a system
-            living only in this browser's storage has exactly one copy. Lives
-            inside the identity card, not as a floating sibling — backup
-            status is a fact about THIS system, same as the name and the
-            publish dot above it. */}
-        {onOpenGithub && !githubRepo && (
-          <button
-            onClick={onOpenGithub}
-            className="self-start flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg transition-colors"
-          >
-            Not backed up to a repository — Connect GitHub
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5" /></svg>
-          </button>
+        {onOpenDownload && (
+          <PluginInstallPromo
+            version={PLUGIN_VERSION}
+            updateAvailable={pluginUpdateAvailable}
+            onOpenInstall={onOpenDownload}
+          />
         )}
       </div>
 
@@ -461,16 +470,6 @@ export default function FigmaSyncView({
           )}
         </div>
       </div>
-
-      {onOpenDownload && (
-        <button
-          onClick={onOpenDownload}
-          className="self-start flex items-center gap-1.5 text-xs text-fg-muted hover:text-fg transition-colors"
-        >
-          Haven&apos;t installed the plugin yet? Download it
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5" /></svg>
-        </button>
-      )}
     </motion.div>
   )
 }

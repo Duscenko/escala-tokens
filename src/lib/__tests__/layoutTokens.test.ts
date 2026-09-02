@@ -26,6 +26,9 @@ import {
   resolveGridFrame,
   resolveLayoutRole,
   scaleRadiusFromLg,
+  completeRadiusScale,
+  matchRadiusPreset,
+  RADIUS_PRESETS,
   BASE_UNIT_RANGE,
   SELECTOR_STANDARD,
   SELECTOR_STEPS,
@@ -95,17 +98,43 @@ describe('base-unit scaling', () => {
 })
 
 describe('layout primitives', () => {
-  it('Rounded radius is a 7-step ramp with xs and xl', () => {
-    expect(RADIUS_STEPS).toEqual(['none', 'xs', 'sm', 'md', 'lg', 'xl', 'full'])
+  it('Sharp radius is the Tailwind / HeroUI 10-step ramp', () => {
+    expect(RADIUS_STEPS).toEqual(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'])
     expect(RADIUS_STANDARD).toEqual({
-      none: '0px', xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px', full: '9999px',
+      none: '0px', xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px',
+      '2xl': '16px', '3xl': '24px', '4xl': '32px', full: '9999px',
     })
   })
 
-  it('grades the radius ramp from lg using Rounded ratios', () => {
-    expect(scaleRadiusFromLg(24)).toMatchObject({
-      xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px',
+  it('grades the radius ramp from lg using Tailwind / HeroUI ratios', () => {
+    expect(scaleRadiusFromLg(8)).toMatchObject({
+      xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px',
+      '2xl': '16px', '3xl': '24px', '4xl': '32px',
     })
+    expect(scaleRadiusFromLg(24)).toMatchObject({
+      xs: '6px', sm: '12px', md: '18px', lg: '24px', xl: '36px',
+      '2xl': '48px', '3xl': '72px', '4xl': '96px',
+    })
+  })
+
+  it('named presets are points on the same formula, so slider and dropdown agree', () => {
+    expect(matchRadiusPreset(RADIUS_STANDARD)).toBe('Sharp')
+    for (const preset of RADIUS_PRESETS) {
+      expect(matchRadiusPreset(preset.values)).toBe(preset.label)
+      expect(preset.values).toMatchObject(scaleRadiusFromLg(parseFloat(preset.values.lg)))
+    }
+  })
+
+  it('completeRadiusScale fills 2xl/3xl/4xl from lg without rewriting hand-edited steps', () => {
+    const saved = {
+      none: '0px', xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px', full: '9999px',
+    }
+    expect(completeRadiusScale(saved)).toEqual({
+      none: '0px', xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px',
+      '2xl': '48px', '3xl': '72px', '4xl': '96px', full: '9999px',
+    })
+    expect(matchRadiusPreset(completeRadiusScale(saved))).toBeNull()
+    expect(completeRadiusScale({ ...saved, '2xl': '0px', '3xl': '0px' })['2xl']).toBe('48px')
   })
 
   it('spacing is a 4px grid including 0 and 5 (20px)', () => {
@@ -128,9 +157,9 @@ describe('layout primitives', () => {
 describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
-    expect(radius.action).toBe('md')
-    expect(radius.control).toBe('xs')
-    expect(radius.overlay).toBe('xl')
+    expect(radius.action).toBe('2xl')
+    expect(radius.control).toBe('sm')
+    expect(radius.overlay).toBe('4xl')
     expect(radius.pill).toBe('full')
     expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
     expect(defaultLayoutRoles('size').control).toBe('md')
@@ -182,7 +211,7 @@ describe('layout semantics', () => {
       stroke: defaultLayoutRoles('stroke'),
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
-    expect(css).toContain('--radius-action: var(--radius-md);')
+    expect(css).toContain('--radius-action: var(--radius-2xl);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')

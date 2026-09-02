@@ -8,16 +8,17 @@
 // live values, which is the question you have before any of the conceptual
 // copy — the same slot Create UI gives Installation. See `useIt.ts`.
 
-import { type ReactNode } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { AIContextButton } from '../../ui/AIContextButton'
 import { withAgentEnvelope } from '../../../lib/aiContext'
+import { useThemeHubHeaderActions } from '../themeHubHeaderActions'
 import {
   DownloadSkillButton, DocHeader, DocTitle, DocSection, CodeBlock, UseItBlock, CountBadge,
   Pager, type TocEntry,
 } from './blocks'
 import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 import {
-  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown,
+  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown, PrimitiveRamp,
   type FoundationDoc, type SystemDoc,
 } from './foundationDocs'
 import { GET_STARTED_KEY, colorPrev, introPager, overviewNext } from './getStarted'
@@ -59,35 +60,41 @@ export function overviewToc(): TocEntry[] {
 }
 
 export function FoundationArticle({
-  doc, system, onOpen, onEdit,
+  doc, system, onOpen, onEdit, hubMode,
 }: {
   doc: FoundationDoc
   system: SystemDoc
   onOpen: (key: string) => void
   /** Opens Variables · <foundation>. */
   onEdit: (foundationKey: string) => void
+  /** Theme Preview hub — page actions render in the fixed header band. */
+  hubMode?: boolean
 }) {
   const idx = FOUNDATION_DOCS.findIndex((f) => f.key === doc.key)
   const prev = idx === 0 ? colorPrev() : FOUNDATION_DOCS[idx - 1]
   const next = FOUNDATION_DOCS[idx + 1]
   const count = doc.tokenCount(system)
+  const headerActions = useMemo(() => (
+    <>
+      <AIContextButton
+        scope="variable"
+        markdown={() => withAgentEnvelope('variable', doc.label, foundationMarkdown(doc, system))}
+      />
+      <EditPill label={doc.label} onEdit={() => onEdit(doc.key)} />
+    </>
+  ), [doc, system, onEdit])
+  useThemeHubHeaderActions(hubMode ? headerActions : null)
 
   return (
     <div className="min-w-0 flex flex-col gap-8">
-      <DocHeader
-        section="Docs"
-        kind="Foundations"
-        title={doc.label}
-        actions={
-          <>
-            <AIContextButton
-              scope="variable"
-              markdown={() => withAgentEnvelope('variable', doc.label, foundationMarkdown(doc, system))}
-            />
-            <EditPill label={doc.label} onEdit={() => onEdit(doc.key)} />
-          </>
-        }
-      />
+      {!hubMode ? (
+        <DocHeader
+          section="Docs"
+          kind="Foundations"
+          title={doc.label}
+          actions={headerActions}
+        />
+      ) : null}
 
       <DocTitle
         title={doc.label}
@@ -128,7 +135,7 @@ export function FoundationArticle({
  *  column. This is what the old Design Rules page was, kept intact for the
  *  hand-off/print case the per-foundation pages don't cover. */
 export function OverviewArticle({
-  system, onOpen, title,
+  system, onOpen, title, hubMode,
 }: {
   system: SystemDoc
   onOpen: (key: string) => void
@@ -136,20 +143,26 @@ export function OverviewArticle({
    *  sheet titles itself after that theme instead of the generic
    *  "System reference", and the lead reads "this theme". */
   title?: string
+  /** Theme Preview hub — page actions render in the fixed header band. */
+  hubMode?: boolean
 }) {
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
   const intro = introPager(OVERVIEW_KEY)
   const heading = title?.trim() || 'System reference'
   const subject = title?.trim() ? 'this theme' : 'this system'
+  const headerActions = useMemo(() => <DownloadSkillButton />, [])
+  useThemeHubHeaderActions(hubMode ? headerActions : null)
 
   return (
     <div className="min-w-0 flex flex-col gap-8">
-      <DocHeader
-        section="Docs"
-        kind="Reference"
-        title={heading}
-        actions={<DownloadSkillButton />}
-      />
+      {!hubMode ? (
+        <DocHeader
+          section="Docs"
+          kind="Reference"
+          title={heading}
+          actions={headerActions}
+        />
+      ) : null}
 
       <DocTitle
         title={heading}
@@ -173,22 +186,18 @@ export function OverviewArticle({
       </section>
 
       {FOUNDATION_DOCS.map((f) => (
-        <section key={f.key} className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4 pt-2 border-t border-line">
-            <h3 id={`ov-${f.key}`} className="text-base font-semibold text-fg scroll-mt-4 pt-4">{f.label}</h3>
-            <button
-              onClick={() => onOpen(f.key)}
-              className="text-caption text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
-            >
-              Read the {f.label.toLowerCase()} page →
-            </button>
-          </div>
-          {f.sections.map((section) => (
-            <Block key={section.id} title={section.title} description={section.description}>
-              {section.render(system)}
-            </Block>
-          ))}
-        </section>
+        <OverviewFoundation
+          key={f.key}
+          f={f}
+          system={system}
+          onOpen={onOpen}
+          // The Color section alone is 8 blocks — 20+ ramps plus every
+          // categorical table — so on the theme doc (where `title` is set) it
+          // opens COLLAPSED to just the Accent + Neutral ramps, with a toggle
+          // for the rest. The hand-off / print sheet (`title` absent) still
+          // renders everything inline.
+          collapsible={f.key === 'color' && !!title?.trim()}
+        />
       ))}
 
       <Pager
@@ -197,6 +206,75 @@ export function OverviewArticle({
         onOpen={onOpen}
       />
     </div>
+  )
+}
+
+/** One foundation's stack of cards in the Overview sheet. `collapsible` (the
+ *  Color section on the theme doc) opens showing only the Accent + Neutral
+ *  primitive ramps behind an Expand toggle, so the reader isn't dropped into
+ *  20+ ramps and every categorical table before the next foundation. */
+function OverviewFoundation({
+  f, system, onOpen, collapsible,
+}: {
+  f: FoundationDoc
+  system: SystemDoc
+  onOpen: (key: string) => void
+  collapsible: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const showAll = !collapsible || open
+  const peekFamilies = system.primitiveFamilies.filter(
+    (fam) => fam.label === 'Accent' || fam.label === 'Neutral',
+  )
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-4 pt-2 border-t border-line">
+        <h3 id={`ov-${f.key}`} className="text-base font-semibold text-fg scroll-mt-4 pt-4">{f.label}</h3>
+        <div className="flex items-center gap-3">
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-caption text-fg-muted hover:text-fg hover:border-line-strong transition-colors whitespace-nowrap"
+            >
+              {open ? 'Collapse' : 'Expand'}
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`transition-transform ${open ? 'rotate-180' : ''}`}>
+                <path d="M3 4.5 6 7.5 9 4.5" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => onOpen(f.key)}
+            className="text-caption text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
+          >
+            Read the {f.label.toLowerCase()} page →
+          </button>
+        </div>
+      </div>
+      {showAll ? (
+        f.sections.map((section) => (
+          <Block key={section.id} title={section.title} description={section.description}>
+            {section.render(system)}
+          </Block>
+        ))
+      ) : (
+        <Block
+          title="Primitives"
+          description="The raw color ramps every semantic token aliases. Accent and Neutral shown — Expand for the states, alpha and the categorical roles."
+        >
+          <div className="flex flex-col gap-5">
+            {peekFamilies.map((fam) => (
+              <div key={fam.label} className="flex flex-col gap-1.5">
+                <span className="text-caption text-fg-muted">{fam.label}</span>
+                <PrimitiveRamp scale={fam.scale} naming={system.colorNaming} />
+              </div>
+            ))}
+          </div>
+        </Block>
+      )}
+    </section>
   )
 }
 

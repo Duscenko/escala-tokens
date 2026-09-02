@@ -373,7 +373,7 @@ export function SaveSidePanel({
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
-      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg">Current system</h2>
         {onCollapse && (
           <button
@@ -465,7 +465,7 @@ export function SaveSidePanel({
         </div>
 
         {/* Save to the local registry */}
-        <div className="flex flex-col gap-1.5 pt-4 border-t border-line/60 mt-auto">
+        <div className="flex flex-col gap-1.5 pt-4 border-t border-line mt-auto">
           <motion.button
             onClick={handleSave}
             whileHover={{ scale: 1.01 }}

@@ -71,9 +71,9 @@ export default function IntegrationStatusRail({
           </div>
         </div>
 
-        <section aria-labelledby={`${provider}-connection-heading`} className="border-t border-line/70 pt-4">
+        <section aria-labelledby={`${provider}-connection-heading`} className="border-t border-line pt-4">
           <h2 id={`${provider}-connection-heading`} className="text-mini font-semibold uppercase tracking-[0.16em] text-fg-faint">Connection</h2>
-          <dl className="mt-2 divide-y divide-line/60">
+          <dl className="mt-2 divide-y divide-line">
             {isGithub ? (
               <>
                 <StatusRow label="Account" value={githubCredentialSaved ? 'Credentials saved' : 'Not connected'} />
@@ -92,11 +92,11 @@ export default function IntegrationStatusRail({
           </dl>
         </section>
 
-        <section aria-labelledby={`${provider}-protocol-heading`} className="mt-5 border-t border-line/70 pt-4">
+        <section aria-labelledby={`${provider}-protocol-heading`} className="mt-5 border-t border-line pt-4">
           <h2 id={`${provider}-protocol-heading`} className="text-mini font-semibold uppercase tracking-[0.16em] text-fg-faint">Protocol</h2>
           {isGithub ? (
             <>
-              <dl className="mt-2 divide-y divide-line/60">
+              <dl className="mt-2 divide-y divide-line">
                 <StatusRow label="Snapshot" value={githubRepo ? '.escala/system.json' : 'On first push'} mono />
                 <StatusRow label="Visibility" value="Private recommended" />
                 <StatusRow label="Backup" value={githubRepo ? 'Repository linked' : 'Not configured'} />
@@ -105,7 +105,7 @@ export default function IntegrationStatusRail({
             </>
           ) : (
             <>
-              <dl className="mt-2 divide-y divide-line/60">
+              <dl className="mt-2 divide-y divide-line">
                 <StatusRow label="Transport" value="Published endpoint" />
                 <StatusRow label="Scope" value="Active design system" />
                 <StatusRow label="Backup" value={githubRepo ? githubRepo : 'No repository'} mono={Boolean(githubRepo)} />

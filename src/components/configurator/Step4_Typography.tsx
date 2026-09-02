@@ -170,8 +170,10 @@ function FontPickerPopover({
 // two drifted apart. Both read from `tableChrome` now; see the audit note at
 // the top of that file.
 //
-// `stacked` (the "All" view) drops the column header below the sticky group
-// label so both can pin without overlapping; otherwise it pins at the top.
+// `stacked` (later groups in the "All" view) drops the column header below
+// the sticky group label so both can pin without overlapping. The FIRST
+// visible table never stacks: its TOKEN NAME row pins at top-0 so it lines
+// up with “Text variables”, matching Radius.
 function TableHeader({ valueLabel, stacked = false }: { valueLabel: string; stacked?: boolean }) {
   return (
     <div className={tableHeaderClass(GRID, { stacked })}>
@@ -245,13 +247,16 @@ export default function Step4_Typography({
 
 
   // ── per-category tables ──
-  const familyTable = () => {
+  // `lead` = first visible table: skip the group label so TOKEN NAME sits
+  // on the same 52px row as “Text variables”, matching Radius. Later groups
+  // in the All view still get the sticky label + stacked header.
+  const familyTable = (lead = false) => {
     const rows = FONT_FAMILY_ROWS.filter((r) => match(r.key))
     if (!rows.length) return null
     return (
       <div>
-        {activeCategory === 'all' && <GroupLabel label="Font family" count={FONT_FAMILY_ROWS.length} />}
-        <TableHeader valueLabel="Family" stacked={activeCategory === 'all'} />
+        {activeCategory === 'all' && !lead && <GroupLabel label="Font family" count={FONT_FAMILY_ROWS.length} />}
+        <TableHeader valueLabel="Family" stacked={activeCategory === 'all' && !lead} />
         {rows.map((r, i) => {
           const family = r.role === 'display' ? displayFont : bodyFont
           const modified = family !== 'Inter'
@@ -290,13 +295,13 @@ export default function Step4_Typography({
     )
   }
 
-  const weightTable = () => {
+  const weightTable = (lead = false) => {
     const rows = FONT_WEIGHT_ROWS.filter((r) => match(r.name))
     if (!rows.length) return null
     return (
       <div>
-        {activeCategory === 'all' && <GroupLabel label="Font weight" count={FONT_WEIGHT_ROWS.length} />}
-        <TableHeader valueLabel="Weight" stacked={activeCategory === 'all'} />
+        {activeCategory === 'all' && !lead && <GroupLabel label="Font weight" count={FONT_WEIGHT_ROWS.length} />}
+        <TableHeader valueLabel="Weight" stacked={activeCategory === 'all' && !lead} />
         {rows.map((r, i) => {
           const n = weights[r.base] ?? FONT_WEIGHT_STANDARD[r.base]
           const modified = !r.italic && n !== FONT_WEIGHT_STANDARD[r.base]
@@ -329,13 +334,13 @@ export default function Step4_Typography({
     )
   }
 
-  const sizeTable = () => {
+  const sizeTable = (lead = false) => {
     const rows = TYPE_SCALE_KEYS.filter((k) => match(k))
     if (!rows.length) return null
     return (
       <div>
-        {activeCategory === 'all' && <GroupLabel label="Font size" count={TYPE_SCALE_KEYS.length} />}
-        <TableHeader valueLabel="Size" stacked={activeCategory === 'all'} />
+        {activeCategory === 'all' && !lead && <GroupLabel label="Font size" count={TYPE_SCALE_KEYS.length} />}
+        <TableHeader valueLabel="Size" stacked={activeCategory === 'all' && !lead} />
         {rows.map((key, i) => {
           const val = sizes[key] ?? FONT_SIZE_STANDARD[key]
           const modified = val !== FONT_SIZE_STANDARD[key]
@@ -360,13 +365,13 @@ export default function Step4_Typography({
     )
   }
 
-  const lineHeightTable = () => {
+  const lineHeightTable = (lead = false) => {
     const rows = TYPE_SCALE_KEYS.filter((k) => match(k))
     if (!rows.length) return null
     return (
       <div>
-        {activeCategory === 'all' && <GroupLabel label="Line height" count={TYPE_SCALE_KEYS.length} />}
-        <TableHeader valueLabel="Line height" stacked={activeCategory === 'all'} />
+        {activeCategory === 'all' && !lead && <GroupLabel label="Line height" count={TYPE_SCALE_KEYS.length} />}
+        <TableHeader valueLabel="Line height" stacked={activeCategory === 'all' && !lead} />
         {rows.map((key, i) => {
           const val = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
           const modified = val !== LINE_HEIGHT_STANDARD[key]
@@ -401,6 +406,13 @@ export default function Step4_Typography({
     (showFamily && FONT_FAMILY_ROWS.some((r) => match(r.key))) ||
     (showWeight && FONT_WEIGHT_ROWS.some((r) => match(r.name))) ||
     ((showSize || showLineHeight) && TYPE_SCALE_KEYS.some((k) => match(k)))
+
+  const leadKey: 'family' | 'weight' | 'size' | 'lineHeight' | null =
+    showFamily && FONT_FAMILY_ROWS.some((r) => match(r.key)) ? 'family'
+    : showWeight && FONT_WEIGHT_ROWS.some((r) => match(r.name)) ? 'weight'
+    : showSize && TYPE_SCALE_KEYS.some((k) => match(k)) ? 'size'
+    : showLineHeight && TYPE_SCALE_KEYS.some((k) => match(k)) ? 'lineHeight'
+    : null
 
   return (
     // No floating card (border/rounded-xl) and no enter animation — matches
@@ -447,10 +459,10 @@ export default function Step4_Typography({
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
               ) : (
                 <>
-                  {showFamily && familyTable()}
-                  {showWeight && weightTable()}
-                  {showSize && sizeTable()}
-                  {showLineHeight && lineHeightTable()}
+                  {showFamily && familyTable(leadKey === 'family')}
+                  {showWeight && weightTable(leadKey === 'weight')}
+                  {showSize && sizeTable(leadKey === 'size')}
+                  {showLineHeight && lineHeightTable(leadKey === 'lineHeight')}
                 </>
               )}
             </div>

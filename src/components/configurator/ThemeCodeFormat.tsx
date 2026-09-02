@@ -52,7 +52,7 @@ function highlightedCss(line: string): ReactNode {
 function CodeLine({ value, number, format }: { value: string; number: number; format: Format }) {
   return (
     <div className="grid min-w-max grid-cols-[48px_minmax(0,1fr)] text-body leading-[22px]">
-      <span aria-hidden className="select-none border-r border-line/60 pr-3 text-right font-mono text-fg-faint/70">{number}</span>
+      <span aria-hidden className="select-none border-r border-line pr-3 text-right font-mono text-fg-faint/70">{number}</span>
       <code className="min-w-max whitespace-pre px-4 font-mono text-fg-muted">{format === 'css' ? highlightedCss(value) : highlightedMarkdown(value)}</code>
     </div>
   )
@@ -96,7 +96,7 @@ export default function ThemeCodeFormat({ previewTheme, scopeToTheme = false, sh
 
   return (
     <section className="h-full min-h-0 flex flex-col bg-app" aria-label="Code format">
-      {showBreadcrumb ? <header className="flex-shrink-0 border-b border-line/60 px-5 py-3 foundation-layer-bar">
+      {showBreadcrumb ? <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint"><span>Theme preview</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span><span className="font-medium text-fg">{active.label}</span></nav>
       </header> : null}
       <div className="flex min-h-0 flex-1 p-3">

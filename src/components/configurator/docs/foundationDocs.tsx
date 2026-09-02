@@ -366,7 +366,7 @@ function AlphaRamp({ scale, naming }: { scale: Record<number, string>; naming: C
   )
 }
 
-function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
+export function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
   return (
     <div className="@container">
       <div className="overflow-x-auto">
@@ -900,9 +900,9 @@ line-height: var(--text-label-line-height);
   {
     key: 'radius',
     label: 'Border radius',
-    lead: 'Two layers: a 7-step primitive ramp (none → full) that holds the raw px, and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
+    lead: 'Two layers: a 10-step primitive ramp (none → full, Tailwind / HeroUI ratios from `lg`) that holds the raw px, and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
     why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising the ramp once, then naming what each corner is FOR, means a personality change is one slider and a nested checkbox never copies a modal’s rounding.',
-    usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (xs) under `action` (md) is for. Do not invent a new px on a component.',
+    usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (sm) under `action` (2xl) is for. Do not invent a new px on a component.',
     usageCode: `border-radius: var(--radius-action);
 
 .card   { border-radius: var(--radius-container); }
@@ -1036,7 +1036,7 @@ padding: var(--spacing-inset-surface);
             {SHADOW_STEPS.map((step) => (
               <div key={step} className="flex flex-col items-center gap-2">
                 <span
-                  className="w-24 h-14 rounded-xl bg-surface border border-line/40"
+                  className="w-24 h-14 rounded-xl bg-surface border border-line"
                   style={{ boxShadow: c.shadows[step] ?? 'none' }}
                 />
                 <span className="text-mini font-mono text-fg-faint">shadow-{step}</span>
@@ -1054,7 +1054,7 @@ padding: var(--spacing-inset-surface);
             {SHADOW_STEPS.map((step, i) => (
               <div
                 key={step}
-                className={`grid grid-cols-[80px_1fr] gap-4 px-4 py-2.5 items-baseline ${i ? 'border-t border-line/60' : ''}`}
+                className={`grid grid-cols-[80px_1fr] gap-4 px-4 py-2.5 items-baseline ${i ? 'border-t border-line' : ''}`}
               >
                 <code className="text-caption font-mono text-fg">{step}</code>
                 <code className="text-caption font-mono text-fg-muted break-all">{c.shadows[step] ?? 'none'}</code>

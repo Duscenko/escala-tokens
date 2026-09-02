@@ -15,11 +15,11 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
-import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
-import { useApplyAccentColor, useApplyGrayColor } from '../../lib/colorActions'
+import { useApplyAccentColor, useApplyGrayColor, resolveThemePages } from '../../lib/colorActions'
 import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, previewHarmony, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
@@ -36,6 +36,9 @@ import {
   inferSizeBase,
   matchRadiusPreset,
   scaleRadiusFromLg,
+  RADIUS_STEPS,
+  RADIUS_PRESETS,
+  RADIUS_DEFAULT_LG,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -44,7 +47,8 @@ import { adoptPreset } from '../../lib/adoptPreset'
 import { themeStylePreset } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
-import { COLOR_RAIL_WIDTH, ColorPickerPopover, curatedPaletteFor } from './colorControls'
+import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
+import SemanticTokenGroups from './SemanticTokenGroups'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { useI18n } from '../../lib/i18n'
 
@@ -81,7 +85,7 @@ function EditThemeIcon() {
 
 /**
  * The theme's identity — one editable name — as the rail's pinned top band. It's
- * `h-[54px]` because it sits on the SAME row as the canvas's view switcher (the
+ * `THEME_BAND_H` because it sits on the SAME row as the canvas's view switcher (the
  * rail is a sibling of that header, not a child of the view below it), and a
  * different height there would break the line across the two columns.
  *
@@ -103,7 +107,7 @@ export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
     setThemeLabel(previewTheme, next)
   }
   return (
-    <div className="h-[54px] flex-shrink-0 flex items-center px-3 border-b border-line/60">
+    <div className="flex-shrink-0 flex items-center border-b border-line px-3" style={{ height: THEME_BAND_H }}>
       <label
         className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-app pl-3 pr-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent-ui/15 ${nameError ? 'border-status-danger/70' : 'border-line-strong'}`}
         title={t('Rename theme')}
@@ -244,31 +248,152 @@ function InfoHint({ children }: { children: string }) {
 function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(label)} className="min-w-0 divide-y divide-line/70 overflow-visible rounded-xl border border-line bg-surface">
+    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl border border-line bg-surface">
       {children}
     </section>
   )
 }
 
+/**
+ * The foundations that have a quick panel below — and therefore the ONLY ones
+ * the Theme preview icon rail offers.
+ *
+ * Exported so the rail filters off this list instead of keeping its own copy:
+ * an icon that leads to an empty column claims a feature that isn't there, and
+ * a second list in `Configurator` is exactly how that drifts. `spacing`, `grid`
+ * and `icons` are absent because they have no quick control at all — they stay
+ * fully editable on the Variables tab, which always offers all nine.
+ *
+ * Adding a panel below means adding its key here, and nowhere else.
+ */
+export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow', 'sizes', 'stroke'] as const
+
+// Sun / moon, painted as CSS masks off the shipped assets (they carry a
+// hardcoded `stroke="white"`, so a bare <img> can't follow the button's ink).
+// Same technique — and the same two files — as the Themes Library's own
+// appearance toggle.
+const APPEARANCE_ICON: Record<ThemeAppearance, string> = {
+  light: '/icons/settings/light-mode.svg',
+  dark: '/icons/settings/dark-mode.svg',
+}
+
+/**
+ * Which appearance of this theme the canvas shows.
+ *
+ * Lives in the Color panel's CARD HEADER, not as a `SettingItem` row of its
+ * own: it is the one control here that writes no token (it re-reads each
+ * family's light ramp or its dark twin), and the two rows under it — the
+ * accent hue and the neutral tint — are exactly what it re-reads. A full row
+ * spent on a view control, above the two it qualifies, read as a third token
+ * setting.
+ */
+function AppearanceToggle({ value, onChange }: {
+  value: ThemeAppearance
+  onChange: (appearance: ThemeAppearance) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <span className="flex flex-shrink-0 items-center gap-px rounded-md border border-line bg-app/60 p-px" role="group" aria-label={t('Preview appearance')}>
+      {(['light', 'dark'] as const).map((appearance) => {
+        const on = value === appearance
+        const mask = `url('${APPEARANCE_ICON[appearance]}') center / contain no-repeat`
+        return (
+          <button
+            key={appearance}
+            type="button"
+            onClick={() => onChange(appearance)}
+            aria-pressed={on}
+            aria-label={t('Preview in {appearance}', { appearance: t(appearance) })}
+            title={t('Preview in {appearance}', { appearance: t(appearance) })}
+            // 24px target around a 14px glyph — the hit area grows, the mark
+            // does not, the rule `HitArea` follows everywhere else.
+            className={`grid h-6 w-6 place-items-center rounded transition-[background-color,opacity] ${
+              on ? 'bg-elevated text-fg opacity-100' : 'text-fg-muted opacity-40 hover:opacity-75'
+            } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+          >
+            <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
+          </button>
+        )
+      })}
+    </span>
+  )
+}
+
+/**
+ * One foundation's quick panel: a titled card, its controls, and the single
+ * door to the full token table.
+ *
+ * The "Go to advanced edition" button is `selectFoundation` in disguise —
+ * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
+ * lands on the very foundation you were adjusting, and the icon rail's
+ * selection survives the jump.
+ */
+function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children }: {
+  title: string
+  foundationKey: string
+  /** Header slot — the Color panel puts its light/dark toggle here. */
+  trailing?: React.ReactNode
+  onOpenAdvanced: (foundationKey: string) => void
+  children: React.ReactNode
+}) {
+  const { t } = useI18n()
+  return (
+    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl border border-line bg-surface">
+      <div className="flex min-h-9 items-center justify-between gap-2 px-3 pt-2.5">
+        <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
+        {trailing}
+      </div>
+      <div className="divide-y divide-line">{children}</div>
+      <div className="px-3 pb-3 pt-2">
+        <button
+          type="button"
+          onClick={() => onOpenAdvanced(foundationKey)}
+          className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-app px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <AdvancedIcon />
+          {t('Go to advanced edition')}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
-  label: string
+  label?: string
   hint?: string
   advancedLabel?: string
   onAdvanced?: () => void
   children: React.ReactNode
 }) {
   const { t } = useI18n()
-  return (
-    <div className="min-w-0 px-3 py-3">
-      <div className="mb-2 flex min-h-7 items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-caption font-medium text-fg">{t(label)}</span>
-        {(hint || (advancedLabel && onAdvanced)) && (
-          <span className="flex flex-shrink-0 items-center gap-0.5">
-            {hint ? <InfoHint>{t(hint)}</InfoHint> : null}
-            {advancedLabel && onAdvanced ? <HeaderAction label={t(advancedLabel)} onClick={onAdvanced}><AdvancedIcon /></HeaderAction> : null}
-          </span>
-        )}
+  const compact = !label
+  const trailing = (hint || (advancedLabel && onAdvanced)) ? (
+    <span className="flex flex-shrink-0 items-center gap-0.5">
+      {hint ? <InfoHint>{t(hint)}</InfoHint> : null}
+      {advancedLabel && onAdvanced ? <HeaderAction label={t(advancedLabel)} onClick={onAdvanced}><AdvancedIcon /></HeaderAction> : null}
+    </span>
+  ) : null
+
+  if (compact && hint && !advancedLabel) {
+    return (
+      <div className="min-w-0 px-3 py-2">
+        <div className="flex items-start gap-2">
+          {trailing}
+          <div className="min-w-0 flex-1">{children}</div>
+        </div>
       </div>
+    )
+  }
+
+  const hasHeader = Boolean(label || trailing)
+  return (
+    <div className={`min-w-0 px-3 ${compact ? 'py-2' : 'py-3'}`}>
+      {hasHeader && (
+        <div className={`flex min-h-7 items-center gap-2 ${compact ? 'mb-1 justify-end' : 'mb-2 justify-between'}`}>
+          {label ? <span className="min-w-0 truncate text-caption font-medium text-fg">{t(label)}</span> : null}
+          {trailing}
+        </div>
+      )}
       {children}
     </div>
   )
@@ -384,7 +509,7 @@ function Menu<T extends string>({
             {options.map((option, index) => (
               <Fragment key={option.value}>
               {option.group && option.group !== options[index - 1]?.group ? (
-                <div className={`px-2.5 pb-1 text-micro font-semibold uppercase tracking-[0.14em] text-fg-faint ${index ? 'mt-2 border-t border-line/60 pt-2' : 'pt-1'}`}>
+                <div className={`px-2.5 pb-1 text-micro font-semibold uppercase tracking-[0.14em] text-fg-faint ${index ? 'mt-2 border-t border-line pt-2' : 'pt-1'}`}>
                   {option.group}
                 </div>
               ) : null}
@@ -533,13 +658,12 @@ function TypeScaleCard({
   )
 }
 
-// The named presets are just points on ONE continuous axis: `scaleRadiusFromLg`
-// grades the whole ramp from `lg` (xs=lg/6 … xl=4lg/3), and Rounded's ramp is
-// exactly `lg=24`. So Radius gets the same drag-a-bar treatment as Sizes rather
-// than a dropdown — you scrub the roundness and the readout names whichever
-// preset you land on, or "Custom". 40 is the ceiling StepRadius already uses.
+// One base (`lg`) grades the Tailwind/HeroUI ramp. Named presets are points
+// on that formula (Sharp=8, Soft=12, Rounded=16, Pill=24), so the gallery,
+// the slider and Variables' Preset dropdown can never disagree. 40 is the
+// ceiling StepRadius already uses.
 const RADIUS_LG_MAX = 40
-const RADIUS_READOUT_STEPS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+const RADIUS_TILE = 36
 
 function RadiusCard({
   radius, onScrub, onScrubStart, onScrubEnd,
@@ -549,32 +673,56 @@ function RadiusCard({
   onScrubStart?: () => void
   onScrubEnd?: () => void
 }) {
-  const lg = Math.min(parseFloat(radius.lg ?? '24') || 0, RADIUS_LG_MAX)
+  const lg = Math.min(parseFloat(radius.lg ?? String(RADIUS_DEFAULT_LG)) || 0, RADIUS_LG_MAX)
   const preset = matchRadiusPreset(radius)
   return (
     <div>
-      <div className="flex items-end justify-between gap-2">
-        <div className="flex min-w-0 items-end gap-1" aria-hidden>
-          {RADIUS_READOUT_STEPS.map((step) => (
-            <span
-              key={step}
-              className="h-5 w-5 flex-shrink-0 border border-fg/40 bg-fg/10 transition-[border-radius]"
-              style={{ borderRadius: Math.min(parseFloat(radius[step] ?? '0') || 0, 10) }}
-            />
-          ))}
-        </div>
-        <div className="flex-shrink-0 text-right leading-none">
-          <span className="block text-heading font-semibold tabular-nums text-fg">{Math.round(lg)}</span>
-          <span className="mt-1 block text-micro uppercase tracking-wide text-fg-faint">
-            {preset ?? 'Custom'}
-          </span>
-        </div>
+      <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Radius preset">
+        {RADIUS_PRESETS.map((item) => {
+          const selected = preset === item.label
+          const itemLg = Math.round(parseFloat(item.values.lg) || 0)
+          return (
+            <button
+              key={item.label}
+              type="button"
+              aria-pressed={selected}
+              title={item.description}
+              onClick={() => onScrub(itemLg)}
+              className={`flex min-w-0 items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-[border-color,background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-line-strong bg-elevated text-fg' : 'border-line bg-app text-fg-faint hover:border-line-strong hover:text-fg'}`}
+            >
+              <span
+                className="h-5 w-5 flex-shrink-0 border border-fg/40 bg-fg/10"
+                style={{ borderRadius: Math.min(itemLg, 10) }}
+                aria-hidden
+              />
+              <span className="min-w-0 flex flex-col leading-tight">
+                <span className="text-micro font-medium">{item.label}</span>
+                <span className="text-nano tabular-nums text-fg-faint">{item.values.lg}</span>
+              </span>
+            </button>
+          )
+        })}
       </div>
-      <div className="mt-3 grid gap-x-1 text-center" style={{ gridTemplateColumns: `repeat(${RADIUS_READOUT_STEPS.length}, minmax(0, 1fr))` }}>
-        {RADIUS_READOUT_STEPS.map((step) => <span key={step} className="text-micro font-medium uppercase text-fg-faint">{step}</span>)}
-        {RADIUS_READOUT_STEPS.map((step) => (
-          <span key={step} className="text-mini tabular-nums text-fg-muted">{Math.round(parseFloat(radius[step] ?? '0') || 0)}</span>
-        ))}
+      <div className="mt-3 grid grid-cols-5 gap-x-1 gap-y-2" aria-label="Radius scale">
+        {RADIUS_STEPS.map((step) => {
+          const value = radius[step] ?? '0px'
+          const px = parseFloat(value) || 0
+          return (
+            <div key={step} className="flex min-w-0 flex-col items-center gap-1">
+              <span
+                className="border border-fg/35 bg-fg/10"
+                style={{
+                  width: RADIUS_TILE,
+                  height: RADIUS_TILE,
+                  borderRadius: step === 'full' ? 9999 : Math.min(px, RADIUS_TILE / 2),
+                }}
+                aria-hidden
+              />
+              <span className="text-micro font-medium text-fg">{step}</span>
+              <span className="text-nano tabular-nums text-fg-faint">{value}</span>
+            </div>
+          )
+        })}
       </div>
       <RangeInput
         min={0}
@@ -584,7 +732,7 @@ function RadiusCard({
         onChange={onScrub}
         onScrubStart={onScrubStart}
         onScrubEnd={onScrubEnd}
-        ariaLabel="Corner roundness"
+        ariaLabel="Base radius"
         className="mt-3"
       />
     </div>
@@ -642,7 +790,7 @@ function TintSlider({
   return (
     <div>
       <div
-        className="relative h-5 rounded-full border border-line/70"
+        className="relative h-5 rounded-full border border-line"
         style={{ background: `linear-gradient(to right, ${stops})` }}
       >
         <input
@@ -672,38 +820,46 @@ function TintSlider({
 }
 
 export default function ThemeQuickSettingsRail({
+  foundation,
   previewTheme,
   previewAppearance,
   onPreviewAppearanceChange,
-  onOpenColor,
-  onOpenTypography,
-  onOpenRadius,
-  onOpenShadow,
-  onOpenSizes,
+  onOpenAdvanced,
   onAccentPreview,
   stylePreview,
   onAdoptStyle,
+  onQuickEditOpenChange,
+  containedDrawerRootRef,
 }: {
+  /** Which foundation's quick panel to render — driven by the workspace's icon
+   *  rail, so the lit icon and the column on screen are the same decision. The
+   *  column used to stack ALL of them (Color / Typography / Shape / Components)
+   *  in one scroll, which left the rail with nothing to point at. */
+  foundation: string
   previewTheme: string
   previewAppearance: ThemeAppearance
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
-  onOpenColor: () => void
-  onOpenTypography: () => void
-  onOpenRadius: () => void
-  onOpenShadow: () => void
-  onOpenSizes: () => void
+  /** Opens the Variables tab on a foundation — ONE handler where there used to
+   *  be five `onOpen*` props plus a per-`SettingItem` `advancedLabel`, and
+   *  where `stroke` had none of its own (it borrowed Sizes'). Each panel now
+   *  carries a single "Go to advanced edition" button at its foot. */
+  onOpenAdvanced: (foundationKey: string) => void
   onAccentPreview?: (hex: string | null) => void
-  /** A System Style being tried on. The rail then REPORTS that style's own
-   *  tokens instead of the host theme's, and every control is disabled — the
-   *  try-on is ephemeral, so a write here would have nowhere to land. Without
-   *  it the rail kept showing the host theme's font/accent/radius while the
-   *  artefacts beside it rendered the preset's: the same screen describing two
-   *  different systems. */
+  /** A System Style being tried on. The rail dims and stops taking input until
+   *  the style is added to My themes; the preview canvas still renders the
+   *  preset via `resolveStylePreviewTokens`. */
   stylePreview?: StylePreview | null
   /** Fired when a try-on is adopted into the system (auto-adopt, or Reset on a
    *  previewed style). The shell re-points `previewTheme` and drops the
    *  ephemeral preview. */
   onAdoptStyle?: (themeKey: string) => void
+  /** Reports whether the Semantics quick-edit drawer (`TokenDetailsModal`,
+   *  `contained` — scoped to `ThemePreviewHub`'s own box) is open, so the
+   *  canvas beside this rail can cede matching space instead of letting the
+   *  drawer's absolutely-positioned panel paint over it. */
+  onQuickEditOpenChange?: (open: boolean) => void
+  /** Portal target for the contained token drawer — `ThemePreviewHub`'s root. */
+  containedDrawerRootRef?: RefObject<HTMLElement | null>
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -713,6 +869,7 @@ export default function ThemeQuickSettingsRail({
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [accentPickerOpen, setAccentPickerOpen] = useState(false)
   const [neutralPickerOpen, setNeutralPickerOpen] = useState(false)
+  const [semanticDrawerOpen, setSemanticDrawerOpen] = useState(false)
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -777,7 +934,10 @@ export default function ThemeQuickSettingsRail({
    */
   const resolveWriteTarget = (): string | null => {
     if (!tryOn) return previewTheme
-    const adopted = adoptPreset(tryOn.preset, previewAppearance)
+    // Auto-adopt as "<Style> Copy" — the first quick-settings edit is the user
+    // starting to iterate, so it lands in MY THEMES as a duplication of the
+    // style, not as the style itself.
+    const adopted = adoptPreset(tryOn.preset, previewAppearance, { asCopy: true, copyWord: t('Copy') })
     if ('error' in adopted) return null
     onAdoptStyle?.(adopted.key)
     return adopted.key
@@ -855,7 +1015,7 @@ export default function ThemeQuickSettingsRail({
             light: backgroundFromBase(linkedNeutral, 'light', s.neutralTint),
             dark: backgroundFromBase(linkedNeutral, 'dark', s.neutralTint),
           }
-        : { light: s.pageBackground, dark: s.darkBackground }
+        : resolveThemePages(s, themeKey)
 
       s.addCustomColor({
         key: familyKey,
@@ -947,32 +1107,61 @@ export default function ThemeQuickSettingsRail({
   const parsedStrokeSm = parseFloat(stroke?.sm ?? '1px')
   const strokeSm = Number.isFinite(parsedStrokeSm) ? parsedStrokeSm : 1
   const strokeIndex = Math.max(0, STROKE_SM_STOPS.findIndex((stop) => stop === strokeSm))
+  // A System Style try-on from the library is preview-only until "Add to
+  // system" — the rail dims and stops taking input so it reads as inactive
+  // beside an uncommitted style, not as something you can edit in place.
+  const previewingStyle = tryOn !== null
+  const disabledShell = previewingStyle ? 'opacity-50 pointer-events-none select-none' : ''
+  const drawerContained = Boolean(containedDrawerRootRef)
+  const colorPickerOpen = accentPickerOpen || neutralPickerOpen
+
+  useEffect(() => {
+    onQuickEditOpenChange?.(colorPickerOpen || semanticDrawerOpen)
+  }, [colorPickerOpen, semanticDrawerOpen, onQuickEditOpenChange])
+
+  useEffect(() => {
+    if (!semanticDrawerOpen) return
+    setAccentPickerOpen(false)
+    setNeutralPickerOpen(false)
+  }, [semanticDrawerOpen])
+
+  useEffect(() => {
+    if (!previewingStyle) return
+    setAccentPickerOpen(false)
+    setNeutralPickerOpen(false)
+  }, [previewingStyle])
+
   return (
     <aside
       aria-label={t('Quick settings')}
-      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line"
+      aria-disabled={previewingStyle || undefined}
+      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3"
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
-      <ThemeIdentityBand previewTheme={previewTheme} />
+      <div className={`flex-shrink-0 ${disabledShell}`}>
+        <ThemeIdentityBand previewTheme={previewTheme} />
+      </div>
       {tryOn && (
-        // NOT a lock any more. The rail used to go read-only here, which is the
-        // obstacle that produced "confusión y parálisis": the controls showed
-        // the style's real values and refused to move. Editing one now ADOPTS
-        // the style first (see `adoptFirst`), so the banner states the offer
-        // rather than a restriction.
-        <div className="flex-shrink-0 border-b border-line/60 px-3 py-2 text-mini leading-relaxed text-fg-muted">
-          Trying <span className="font-semibold text-fg">{tryOn.preset.shortLabel}</span> — edit anything below to
-          make it yours.
+        <div className="flex-shrink-0 border-b border-line px-3 py-2 text-mini leading-relaxed text-fg-muted">
+          Trying <span className="font-semibold text-fg">{tryOn.preset.shortLabel}</span> — add it from the
+          library to edit here.
         </div>
       )}
       {/* Only this region scrolls; the Undo bar below is a pinned footer, so it
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
+      <div className={`flex flex-1 min-h-0 flex-col ${disabledShell}`}>
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
       <div className="flex flex-col gap-4">
-        <SettingsSection label="Color">
-          <SettingItem label="Accent" hint="Brand hue. The light and dark ramps regenerate from this anchor." advancedLabel="Open advanced color" onAdvanced={onOpenColor}>
-            <div className="flex items-center gap-2">
+        {foundation === 'color' && (
+        <EditionCard
+          title="Color edition"
+          foundationKey="color"
+          trailing={<AppearanceToggle value={previewAppearance} onChange={onPreviewAppearanceChange} />}
+          onOpenAdvanced={onOpenAdvanced}
+        >
+          <SettingItem>
+            <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <SpectrumSlider
                   value={accent}
@@ -993,11 +1182,13 @@ export default function ThemeQuickSettingsRail({
               <div ref={accentSwatchRef} className="flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setAccentPickerOpen((open) => !open)}
+                  onClick={() => {
+                    setNeutralPickerOpen(false)
+                    setAccentPickerOpen((open) => !open)
+                  }}
                   aria-haspopup="dialog"
                   aria-expanded={accentPickerOpen}
-                  aria-label={`Accent color ${liveAccent} — open picker`}
-                  title={`${liveAccent} — open picker`}
+                  aria-label={`${t('Accent')} — ${liveAccent} — open picker`}
                   className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
                   style={{ background: liveAccent }}
                 />
@@ -1009,14 +1200,18 @@ export default function ThemeQuickSettingsRail({
                 label="Accent"
                 value={accent}
                 onChange={commitAccent}
-                palette={curatedPaletteFor('accent')}
+                dynamicAccentPalette
+                accentHueFrom={liveAccent}
                 appearance={previewAppearance}
+                contained={drawerContained}
+                containedRootRef={containedDrawerRootRef}
+                containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
           </SettingItem>
 
-          <SettingItem label="Neutral tint" hint="Controls how much accent hue the neutral ramp keeps, from pure gray to vivid." advancedLabel="Open advanced color" onAdvanced={onOpenColor}>
-            <div className="flex items-center gap-2">
+          <SettingItem>
+            <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <TintSlider
                   hueHex={liveNeutral}
@@ -1045,11 +1240,13 @@ export default function ThemeQuickSettingsRail({
               <div ref={neutralSwatchRef} className="flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setNeutralPickerOpen((open) => !open)}
+                  onClick={() => {
+                    setAccentPickerOpen(false)
+                    setNeutralPickerOpen((open) => !open)
+                  }}
                   aria-haspopup="dialog"
                   aria-expanded={neutralPickerOpen}
-                  aria-label={`Neutral color ${neutralChip} — open picker`}
-                  title={`${neutralChip} — open picker`}
+                  aria-label={`${t('Neutral tint')} — ${neutralChip} — open picker`}
                   className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
                   style={{ background: neutralChip }}
                 />
@@ -1061,34 +1258,36 @@ export default function ThemeQuickSettingsRail({
                 label="Neutral"
                 value={liveNeutral}
                 onChange={(hex) => commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))}
-                palette={curatedPaletteFor('neutral')}
+                dynamicNeutralPalette
+                neutralRampFrom={liveAccent}
                 appearance={previewAppearance}
+                contained={drawerContained}
+                containedRootRef={containedDrawerRootRef}
+                containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
           </SettingItem>
 
-          <SettingItem label="Preview mode" hint="Choose which appearance of this theme the artefacts display.">
-            <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-app p-1" role="group" aria-label={t('Preview appearance')}>
-              {(['light', 'dark'] as const).map((appearance) => {
-                const active = previewAppearance === appearance
-                return (
-                  <button
-                    key={appearance}
-                    type="button"
-                    onClick={() => onPreviewAppearanceChange(appearance)}
-                    aria-pressed={active}
-                    className={`h-7 rounded-md px-2 text-mini font-medium capitalize transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-elevated text-fg ring-1 ring-line' : 'text-fg-faint hover:text-fg'}`}
-                  >
-                    {t(appearance)}
-                  </button>
-                )
-              })}
-            </div>
-          </SettingItem>
-        </SettingsSection>
+        </EditionCard>
+        )}
 
-        <SettingsSection label="Typography">
-          <SettingItem label="Font family" advancedLabel="Open advanced typography" onAdvanced={onOpenTypography}>
+        {/* The theme's semantic colour roles, grouped exactly as the Semantics
+            table groups them. Scroll past the Edition card and you are editing
+            the same tokens, from the same projection — the card is the fast way
+            to move the whole system, this is the precise way to move one role. */}
+        {foundation === 'color' && (
+          <SemanticTokenGroups
+            previewTheme={previewTheme}
+            previewAppearance={previewAppearance}
+            onEditingChange={setSemanticDrawerOpen}
+            colorPickerOpen={colorPickerOpen}
+            containedRootRef={containedDrawerRootRef}
+          />
+        )}
+
+        {foundation === 'typography' && (
+        <EditionCard title="Text edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Font family">
             <Menu
               ariaLabel="Font family"
               value={typography.fontFamily}
@@ -1106,7 +1305,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together." advancedLabel="Open advanced typography" onAdvanced={onOpenTypography}>
+          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together.">
             <TypeScaleCard
               sizes={typography.sizes ?? {}}
               onScrubStart={() => beginScrub('Type scale updated')}
@@ -1117,10 +1316,12 @@ export default function ThemeQuickSettingsRail({
               })}
             />
           </SettingItem>
-        </SettingsSection>
+        </EditionCard>
+        )}
 
-        <SettingsSection label="Shape">
-          <SettingItem label="Radius" hint="Grades the complete corner-radius ramp from sharp to rounded." advancedLabel="Open advanced radius" onAdvanced={onOpenRadius}>
+        {foundation === 'radius' && (
+        <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Radius" hint="One base grades the Tailwind scale. Presets and Variables share the same formula.">
             <RadiusCard
               radius={radius}
               onScrubStart={() => beginScrub('Radius updated')}
@@ -1128,16 +1329,23 @@ export default function ThemeQuickSettingsRail({
               onScrub={(lg) => applyScrub('Radius updated', (themeKey) => setRadius(themeKey, scaleRadiusFromLg(lg, radius)))}
             />
           </SettingItem>
-          <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts." advancedLabel="Open advanced shadow" onAdvanced={onOpenShadow}>
+        </EditionCard>
+        )}
+
+        {foundation === 'shadow' && (
+        <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
               shadows={shadows}
               onChange={(value) => commit('Shadow depth updated', (themeKey) => setShadows(themeKey, value))}
             />
           </SettingItem>
-        </SettingsSection>
+        </EditionCard>
+        )}
 
-        <SettingsSection label="Components">
-          <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs." advancedLabel="Open advanced sizes" onAdvanced={onOpenSizes}>
+        {foundation === 'sizes' && (
+        <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
             <BaseUnitCard
               ariaLabel="Fields base size in pixels"
               kind="field"
@@ -1150,7 +1358,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Selectors" hint="Base size for checkbox, radio, and switch controls." advancedLabel="Open advanced sizes" onAdvanced={onOpenSizes}>
+          <SettingItem label="Selectors" hint="Base size for checkbox, radio, and switch controls.">
             <BaseUnitCard
               ariaLabel="Selector base size in pixels"
               kind="selector"
@@ -1162,8 +1370,12 @@ export default function ThemeQuickSettingsRail({
               onChange={(base) => applyScrub('Selector sizes updated', (themeKey) => setSelector(themeKey, buildSelectorsFromBase(base)))}
             />
           </SettingItem>
+        </EditionCard>
+        )}
 
-          <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged." advancedLabel="Open advanced sizes" onAdvanced={onOpenSizes}>
+        {foundation === 'stroke' && (
+        <EditionCard title="Stroke edition" foundationKey="stroke" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
             <div>
               <div className="flex items-baseline justify-between">
                 <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{t(strokeSm === 0 ? 'No border' : strokeSm < 1 ? 'Hairline' : 'Border')}</span>
@@ -1188,9 +1400,12 @@ export default function ThemeQuickSettingsRail({
               </div>
             </div>
           </SettingItem>
-        </SettingsSection>
+        </EditionCard>
+        )}
 
-        {(inferSizeBase(sizes) !== SIZE_DEFAULT_BASE || inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE) && (
+        {/* Scoped to the Sizes panel — it resets `sizes` + `selector`, the two
+            ramps that panel owns, so it has no business under Color or Stroke. */}
+        {foundation === 'sizes' && (inferSizeBase(sizes) !== SIZE_DEFAULT_BASE || inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE) && (
           <button
             type="button"
             onClick={() => commit('Sizes reset', (themeKey) => {
@@ -1208,7 +1423,7 @@ export default function ThemeQuickSettingsRail({
             row exists to remove. It resets to the style the theme came FROM
             (`themeOrigin`), or to the system defaults for a hand-made theme,
             and lands in the same 9s Undo as every other edit. */}
-        <div className="mt-1 flex items-center justify-between gap-2 border-t border-line/60 pt-3">
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-line pt-3">
           <div className="min-w-0">
             <p className="truncate text-mini font-medium text-fg-muted">{t('Reset theme')}</p>
             <p className="truncate text-micro text-fg-faint">{t(resetTargetLabel)}</p>
@@ -1228,13 +1443,14 @@ export default function ThemeQuickSettingsRail({
 
       <AnimatePresence>
         {undo && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className="flex-shrink-0 border-t border-line bg-app px-4 py-2">
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className={`flex-shrink-0 border-t border-line bg-app px-4 py-2 ${disabledShell}`}>
             <button type="button" onClick={restore} className="text-caption font-medium text-accent-ui hover:underline underline-offset-2">
               Undo {undo.label}
             </button>
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </aside>
   )
 }

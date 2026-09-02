@@ -128,7 +128,7 @@
     "radiusRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. Role → radius step (action → md)."
+      "description": "v6 additive. Role → radius step (action → 2xl on a fresh system)."
     },
     "gradients": { "type": "object", "additionalProperties": { "type": "string" } },
     "gradientsDark": { "type": "object", "additionalProperties": { "type": "string" } },

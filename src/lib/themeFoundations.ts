@@ -1,5 +1,5 @@
 import type { TypeRoleModes } from './typeRoles'
-import type { GridFrameModes } from './layoutTokens'
+import { completeRadiusScale, type GridFrameModes } from './layoutTokens'
 
 export interface ThemeTypographyTokens {
   fontFamily: string
@@ -82,7 +82,7 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     typography,
     spacing: mergeMap(source.spacing, override.spacing),
     padding: mergeMap(source.padding, override.padding),
-    radius: mergeMap(source.radius, override.radius),
+    radius: completeRadiusScale(mergeMap(source.radius, override.radius)),
     opacity: mergeMap(source.opacity, override.opacity),
     shadows: mergeMap(source.shadows, override.shadows),
     grid: mergeMap(source.grid, override.grid),

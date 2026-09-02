@@ -21,6 +21,7 @@ import {
   SPACING_STEPS,
   BREAKPOINT_STEPS,
   breakpointKey,
+  completeRadiusScale,
   type GridFrameModes,
 } from '../lib/layoutTokens'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
@@ -1482,7 +1483,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 64,
+      version: 66,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2513,6 +2514,30 @@ export const useDesignStore = create<DesignStore>()(
         seedThemeOrigin(persisted)
         if (Array.isArray(persisted.savedSystems)) {
           for (const sys of persisted.savedSystems) seedThemeOrigin(sys?.snapshot)
+        }
+        // v64→v66: radius gains Tailwind/HeroUI 2xl/3xl/4xl. Existing xs–xl
+        // values stay (a Rounded system keeps 16/24/32 on md/lg/xl); only
+        // missing or 0px working steps are filled from the current lg so the
+        // new keys exist without restyling saved systems. Bumped to 66 so
+        // stores that already wrote v65 before this fill existed re-run it.
+        const completeRadius = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          if (state.radius && typeof state.radius === 'object') {
+            state.radius = completeRadiusScale(state.radius)
+          }
+          const foundations = state.themeFoundations
+          if (foundations && typeof foundations === 'object') {
+            for (const key of Object.keys(foundations)) {
+              const entry = foundations[key]
+              if (entry?.radius && typeof entry.radius === 'object') {
+                entry.radius = completeRadiusScale(entry.radius)
+              }
+            }
+          }
+        }
+        completeRadius(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) completeRadius(sys?.snapshot)
         }
         return persisted
       },

@@ -10,6 +10,7 @@ import {
 import { slugify } from '../../lib/utils'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
+import { TOP_NAV_H } from './TopNav'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
@@ -406,7 +407,7 @@ function ThemeForm({
           accent, so the panel says WHICH theme it is before you read a word.
           Create used to have no header at all, which is why the two panels
           read as unrelated surfaces. */}
-      <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
         <span className={SWATCH} style={{ backgroundColor: slots.brand }} />
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">
           {isEdit ? 'Edit theme' : 'New theme'}
@@ -594,11 +595,11 @@ function ThemeForm({
  * `DOCK_LEFT` is `COLOR_RAIL_WIDTH`, imported rather than repeated, so a
  * collapsed rail (56px) can't leave the panel floating over it. `DOCK_TOP` is
  * measured off the rail itself when it's on screen and falls back to the
- * shell's own two-row height (72px TopNav + 52px toolbar) when it isn't — the
+ * shell's own two-row height (`TOP_NAV_H` + 52px toolbar) when it isn't — the
  * panel opens from Semantics and Gradients too, where that `<nav>` isn't
  * rendered.
  */
-const SHELL_ROWS = 72 + 52
+const SHELL_ROWS = TOP_NAV_H + 52
 /** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
  *  panel's usual 8px gap, so the drawer stops above the "Built by…" line.
  *  ColorPrimitives' family-edit drawer uses the identical value. */

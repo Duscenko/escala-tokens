@@ -1,10 +1,9 @@
 // Primary Color — the Color hub's "Primitives" tab: a Figma-style families
-import { tableHeaderClass, tableRowClass } from './tableChrome'
 // table (Accent · Neutral · State · custom families) listing every tone as a
 // token row with editable light/dark values, eye toggles on the theme
 // columns and a per-row picker. The family nav on the left doubles as the
-// promoted DEFINE surface Picker Color used to own — a quick-edit strip above
-// the table (hex field, "match states" wand, scale, algorithm settings) edits
+// promoted DEFINE surface Picker Color used to own — a quick-edit strip under
+// the column header (hex field, scale, algorithm settings) edits
 // whichever family is active, so palette definition and usage now live on one
 // screen. The nav groups families under a THEME folder (see BASE_FOLDER). A
 // "+ New theme" CTA below the folder list opens the SAME `ThemePanel`
@@ -18,7 +17,7 @@ import { tableHeaderClass, tableRowClass } from './tableChrome'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { useDesignStore, makeDesignDefaults } from '../../store/useDesignStore'
+import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
 import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
@@ -27,6 +26,7 @@ import {
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
+  resolveThemePages, resolveFamilyPages,
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
@@ -35,13 +35,15 @@ import {
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
-import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY } from '../../lib/themeSources'
+import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import ThemePanel from './ThemePanel'
 import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { TOP_NAV_H } from './TopNav'
+import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -59,11 +61,11 @@ export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as cons
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
 /** The family-edit drawer docks exactly like `ThemePanel` — these mirror its
- *  private `PANEL_W` (360) and `SHELL_ROWS` (72px TopNav + 52px toolbar), used
+ *  private `PANEL_W` (360) and `SHELL_ROWS` (`TOP_NAV_H` + 52px toolbar), used
  *  only as the width cap and the top fallback when the family `<nav>` hasn't
  *  been measured yet. */
 const DOCK_W = 360
-const DOCK_TOP_FALLBACK = 72 + 52
+const DOCK_TOP_FALLBACK = TOP_NAV_H + 52
 /** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
  *  same 8px breathing gap the panel keeps everywhere else, so the drawer stops
  *  ABOVE the "Built by…" line instead of overlapping it. `ThemePanel` uses the
@@ -152,6 +154,51 @@ function WcagPairChip({ label, fg, bg }: { label: string; fg: string; bg: string
 const OVERVIEW_FAMILY_KEYS = ['accent', 'accent-alpha', 'neutral'] as const
 const OVERVIEW_STATE_KEYS = ['error', 'warning', 'success', 'info'] as const
 
+/** Neutral-family picker — global neutral OR any custom family slotted as gray. */
+function familyUsesNeutralPicker(
+  f: Family,
+  homeOf: (family: Family) => { folder: string; group: FamilyGroup },
+): boolean {
+  if (f.isAlpha) return false
+  if (f.key === 'neutral') return true
+  return homeOf(f).group === 'Neutrals'
+}
+
+/** Accent-family picker — global accent OR any custom family slotted as brand. */
+function familyUsesAccentPicker(
+  f: Family,
+  homeOf: (family: Family) => { folder: string; group: FamilyGroup },
+): boolean {
+  if (f.isAlpha) return false
+  if (f.key === 'accent') return true
+  return homeOf(f).group === 'Accents'
+}
+
+/** The gray primitive the previewed theme reads — same target as Theme Preview. */
+function isPreviewThemeGrayFamily(
+  f: Family,
+  previewTheme: string,
+  themeSources: Record<string, { gray?: string } | undefined>,
+): boolean {
+  const grayKey = themeSources[previewTheme]?.gray ?? 'neutral'
+  if (f.key === 'neutral') return grayKey === 'neutral'
+  return f.customKey === grayKey
+}
+
+function curatedPaletteKeyForFamily(
+  f: Family,
+  themeSources: Record<string, ThemeSources>,
+): string {
+  if (f.key === 'neutral' || f.key === 'accent') return f.key
+  const custKey = f.customKey
+  if (!custKey) return f.key
+  const slot = familySlotFor(custKey, themeSources)
+  if (slot === 'gray') return 'neutral'
+  if (slot === 'brand') return 'accent'
+  if (slot) return slot
+  return f.key
+}
+
 // Mid interactive step — unmistakably translucent in nav/overview swatches.
 const ALPHA_NAV_TONE = 5
 
@@ -182,7 +229,7 @@ function OverviewSwatch({ family }: { family: Family }) {
 
 // Overview footer — one chrome recipe so borders never stack two grays.
 const overviewPanel = 'rounded-xl border border-line bg-surface overflow-hidden'
-const overviewDivide = 'divide-y divide-line/60'
+const overviewDivide = 'divide-y divide-line'
 
 /** Same column tracks as the tone table + sticky header — overview ramps must
  *  use this or the light/dark headers drift over the swatches when scrolling. */
@@ -196,14 +243,10 @@ const STRIP_CONTROL_HEIGHT = 36
 const QUICK_EDIT_STRIP_PAD = 12
 const QUICK_EDIT_STRIP_HEIGHT = STRIP_CONTROL_HEIGHT + QUICK_EDIT_STRIP_PAD * 2
 
-// The tone table's sticky column header used to pin its own `h-9` here, on the
-// stated grounds that 36px matched `STRIP_CONTROL_HEIGHT` — the quick-edit strip
-// directly above — so the two chrome rows would read as one band. Both halves of
-// that had stopped being true: the strip measures 60px, and `h-9` was being
-// overridden to 41px by the header's own content anyway (a 27px export button
-// plus padding), which left the cells 42px INSIDE a 41px header — a 1px overflow
-// that pushed the column rules past the seam they were meant to stop at.
-// It takes `tableChrome`'s standard 52px band now, like every other table.
+// The tone table's column header is the 52px band that lines up with
+// “Color variables” in the rail — same row as Radius's TOKEN NAME. The
+// quick-edit strip sits UNDER it, not above: putting the strip first is
+// what used to drop TOKEN NAME 60px below the title.
 
 function RampPreviewBlock({
   family,
@@ -230,7 +273,7 @@ function RampPreviewBlock({
     checkerboard: family.isAlpha,
   }
 
-  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line/60 min-w-0'
+  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line min-w-0'
 
   return (
     <div
@@ -239,7 +282,7 @@ function RampPreviewBlock({
       } ${active ? 'bg-accent-ui/[0.06]' : ''}`}
       style={PRIMITIVE_TABLE_GRID}
     >
-      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60">
+      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
         <OverviewSwatch family={family} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -293,7 +336,7 @@ function FamilyRampOverview({
   const solidDark = accentDark ? (accentDark[accessibleSolidTone(accentDark)] ?? accent!.base) : '#000'
 
   return (
-    <section className="border-t border-line/60 bg-app">
+    <section className="border-t border-line bg-app">
       <div className="px-4 py-6">
         <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-1">Scale guide</h3>
         <p className="text-caption text-fg-faint mb-3">Radix 1–12 — same meaning in every family below.</p>
@@ -313,12 +356,12 @@ function FamilyRampOverview({
         </ul>
       </div>
 
-      <div className="border-t border-line/60">
+      <div className="border-t border-line">
         <div className="px-4 pt-6 pb-3">
           <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
           <p className="text-caption text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
         </div>
-        <div className={`border-t border-line/60 ${overviewDivide}`}>
+        <div className={`border-t border-line ${overviewDivide}`}>
           {core.map((f) => (
             <RampPreviewBlock
               key={f.key}
@@ -330,7 +373,7 @@ function FamilyRampOverview({
           ))}
           {states.length > 0 ? (
             <>
-              <div className="grid items-center bg-elevated/20 border-t border-line/60" style={PRIMITIVE_TABLE_GRID}>
+              <div className="grid items-center bg-elevated/20" style={PRIMITIVE_TABLE_GRID}>
                 <div className="col-span-4 px-4 py-2.5">
                   <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">States</span>
                   <p className="text-mini text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
@@ -352,7 +395,7 @@ function FamilyRampOverview({
       </div>
 
       {accentLight && accentDark ? (
-        <div className="border-t border-line/60 px-4 py-6 flex flex-col gap-3">
+        <div className="border-t border-line px-4 py-6 flex flex-col gap-3">
           <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">WCAG contrast</h3>
           <p className="text-caption text-fg-faint">Live pairs from accent and neutral ramps.</p>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
@@ -1284,14 +1327,17 @@ export default function ColorPrimitives({
     }
   }
 
+  // When the previewed theme changes, land on THAT theme's accent so the
+  // quick-edit strip and table can't show one theme's preview beside another
+  // theme's ramp. Runs on `previewTheme` only — NOT on every family click.
   useEffect(() => {
     if (!managedThemesExternally) return
     const accentKey = themeAccentFamilyKey(previewTheme)
-    if (accentKey && accentKey !== activeFamily) {
+    if (accentKey) {
       setActiveFamily(accentKey)
       setExpandedTone(null)
     }
-  }, [activeFamily, managedThemesExternally, previewTheme, themeAccentFamilyKey])
+  }, [managedThemesExternally, previewTheme, themeAccentFamilyKey])
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -1315,6 +1361,27 @@ export default function ColorPrimitives({
   const editRef = useRef<HTMLDivElement>(null)
   const editPopRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLElement>(null)
+
+  // Which appearance the family-edit drawer's picker reads against. The base
+  // hex a family is anchored on is shared by both twins (tone 9 is identical
+  // light/dark), so this doesn't change WHAT you edit — it changes the SPECTRUM
+  // you judge it against: the SV canvas corners, and the Follows preview's page.
+  // Seeded from whatever's previewed when the drawer opens, then the user can
+  // flip it in the header without closing the drawer, switching the previewed
+  // appearance and reopening.
+  const [editAppearance, setEditAppearance] = useState<ThemeAppearance>('light')
+  useEffect(() => {
+    if (editFamily) setEditAppearance(activeAppearance)
+  }, [editFamily, activeAppearance])
+
+  // Theme-scoped accent — same read as Theme Preview's quick-settings rail, so
+  // the Primitives neutral picker and the Theme Preview neutral picker share
+  // one harmonized curated ramp and the same displayed value when linked.
+  const pickerThemeAccent = useMemo(() => {
+    const brandFamily = themeSources[previewTheme]?.brand ?? 'accent'
+    if (brandFamily === 'accent') return primaryColor
+    return customColors.find((c) => c.key === brandFamily)?.base ?? primaryColor
+  }, [previewTheme, themeSources, primaryColor, customColors])
 
   // The picker is 256px wide but the nav column is 198px AND scrolls
   // (`overflow-y-auto`), with two more `overflow:hidden` wrappers above it from
@@ -1402,8 +1469,19 @@ export default function ColorPrimitives({
     // Derived (Accent-Alpha) — nothing to set independently.
     if (f.isAlpha) return
     if (f.customKey) {
+      const refs = themeSources[previewTheme]
+      if (refs?.gray === f.customKey) return changeNeutral(hex)
+      if (refs?.brand === f.customKey) return changeAccent(hex)
+      for (const slot of ['error', 'warning', 'success', 'info'] as const) {
+        if (refs?.[slot] === f.customKey) return applyStateColor(slot, hex, false, previewTheme)
+      }
       try {
-        updateCustomColor(f.customKey, { base: hex, scale: generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground) })
+        const pages = resolveThemePages(useDesignStore.getState(), previewTheme)
+        updateCustomColor(f.customKey, {
+          base: hex,
+          scale: generateColorScale(hex, colorAlgorithm, contrastShift, pages.light),
+          darkScale: generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, pages.dark),
+        })
       } catch { /* invalid hex — ignore */ }
       return
     }
@@ -1425,6 +1503,15 @@ export default function ColorPrimitives({
   // `PANEL_W`; `dockLeft` follows the rail's collapsed/expanded width off the
   // shared constants so a collapsed rail can't leave it floating over the strip.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
+  const editingUsesNeutralPicker = editingFamily ? familyUsesNeutralPicker(editingFamily, homeOf) : false
+  const editingUsesAccentPicker = editingFamily ? familyUsesAccentPicker(editingFamily, homeOf) : false
+  const editingNeutralCoordinated = editingFamily
+    ? isPreviewThemeGrayFamily(editingFamily, previewTheme, themeSources)
+    : false
+  const editingFamilyPickerValue = editingFamily && editingNeutralCoordinated && linkNeutralToAccent
+    ? neutralFromBrand(pickerThemeAccent, neutralTint)
+    : editingFamily?.base ?? ''
+  const editingPickerAppearance = editingNeutralCoordinated ? activeAppearance : editAppearance
   // In Themes Library mode this drawer belongs to the library boundary, not
   // the nested Color families rail. It therefore opens exactly where “New
   // theme” opens: immediately to the right of the extreme-left library.
@@ -1444,16 +1531,38 @@ export default function ColorPrimitives({
             style={{
               position: 'fixed',
               left: dockLeft,
-              top: managedThemesExternally ? 72 : (navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK),
+              top: managedThemesExternally ? TOP_NAV_H : (navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK),
               bottom: DOCK_BOTTOM,
               width: Math.min(DOCK_W, Math.max(280, window.innerWidth - dockLeft - 16)),
             }}
             className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
           >
-            <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line/60 flex-shrink-0">
-              <span className={SWATCH} style={{ backgroundColor: editingFamily.base }} />
+            <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
+              <span className={SWATCH} style={{ backgroundColor: editingFamilyPickerValue }} />
               <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{editingFamily.label}</span>
-              <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
+              {/* Theme Preview's neutral picker follows the hub appearance with
+                  no local toggle — match that for the previewed theme's gray. */}
+              {!editingNeutralCoordinated && (
+              <div className="flex flex-shrink-0 rounded-md border border-line overflow-hidden" role="group" aria-label="Preview appearance">
+                {(['light', 'dark'] as const).map((mode) => {
+                  const on = editAppearance === mode
+                  const bg = mode === 'dark' ? darkBackground : pageBackground
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setEditAppearance(mode)}
+                      aria-pressed={on}
+                      className={`px-2 py-1 text-mini font-medium capitalize transition-colors ${on ? '' : 'bg-surface text-fg-muted hover:text-fg'}`}
+                      style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
+                    >
+                      {mode}
+                    </button>
+                  )
+                })}
+              </div>
+              )}
+              <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamilyPickerValue.toUpperCase()}</span>
               <button
                 type="button"
                 aria-label="Close"
@@ -1468,12 +1577,18 @@ export default function ColorPrimitives({
             </header>
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4">
               <ColorPickerPanel
-                value={editingFamily.base}
+                value={editingFamilyPickerValue}
                 onChange={(hex) => changeFamilyBase(editingFamily, hex)}
                 suggestions
-                palette={curatedPaletteFor(editingFamily.key)}
-                followAccent={editingFamily.key === 'accent'}
-                appearance={darkPreview ? 'dark' : 'light'}
+                palette={editingUsesNeutralPicker || editingUsesAccentPicker
+                  ? []
+                  : curatedPaletteFor(curatedPaletteKeyForFamily(editingFamily, themeSources))}
+                dynamicNeutralPalette={editingUsesNeutralPicker}
+                dynamicAccentPalette={editingUsesAccentPicker}
+                neutralRampFrom={editingUsesNeutralPicker ? pickerThemeAccent : undefined}
+                followAccent={editingUsesAccentPicker}
+                appearance={editingPickerAppearance}
+                fieldAppearance={editingPickerAppearance}
               />
             </div>
           </motion.div>
@@ -1494,17 +1609,20 @@ export default function ColorPrimitives({
       // neutral's two ramps take the tint exactly the way `useApplyGrayColor`
       // passes it — otherwise Reset would quietly hand back the untinted curve
       // and read as a bug the moment the tint is Tinted/Vivid.
-      const isNeutral = family.key === 'neutral'
+      const pages = family.customKey
+        ? resolveFamilyPages(useDesignStore.getState(), family.customKey)
+        : { light: pageBackground, dark: darkBackground, isGray: family.key === 'neutral' }
+      const isNeutral = family.key === 'neutral' || pages.isGray
       return {
-        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pageBackground, 'light', isNeutral ? neutralTint : undefined),
+        light: generateColorScale(family.base, colorAlgorithm, contrastShift, pages.light, 'light', isNeutral ? neutralTint : undefined),
         dark: isNeutral
-          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, darkBackground, neutralTint)
-          : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, darkBackground),
+          ? generateDarkColorScale(family.base, colorAlgorithm, contrastShift, pages.dark, neutralTint)
+          : generateFamilyDarkScale(family.base, colorAlgorithm, contrastShift, pages.dark),
       }
     } catch {
       return null
     }
-  }, [family.base, family.key, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
+  }, [family.base, family.key, family.customKey, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 
   const detailsModal = !family.isAlpha && expandedTone != null ? (() => {
     const tone = expandedTone
@@ -1557,7 +1675,7 @@ export default function ColorPrimitives({
       <div className="flex flex-1 min-h-0 items-stretch">
       <VariableCollectionRail navRef={navRef} collapsed={railCollapsed} ariaLabel="Color collections and groups">
         {railCollapsed ? (
-          <div className="relative flex items-center justify-center pb-3 mb-1 border-b border-line/60">
+          <div className="relative flex items-center justify-center pb-3 mb-1 border-b border-line">
             <FamilySwatch
               family={family}
               dark={darkPreview}
@@ -1821,16 +1939,65 @@ export default function ColorPrimitives({
         )}
       </VariableCollectionRail>
 
-      <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
+      <div className="flex-1 min-w-0 flex flex-col bg-app min-h-0">
         <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[24rem]">
-              {/* Quick-edit strip lives inside the scroll surface so its sticky
-                  stack lines up with the column header — the tone-9 anchor ring
-                  used to paint over "light"/"dark" when overview ramps scrolled
-                  under a header that shared the same z-index. */}
+              {/* Column header first — this 52px band is the one that lines
+                  up with “Color variables” in the rail, same as Radius's
+                  TOKEN NAME row. Sticky at top-0 so scrolling the tones
+                  never hides the eye toggles, per-column export, or the
+                  settings gear. */}
               <div
-                className="sticky top-0 z-20 flex items-center gap-2.5 pl-4 pr-3 border-b border-line/60 bg-app isolate"
-                style={{ height: QUICK_EDIT_STRIP_HEIGHT, paddingTop: QUICK_EDIT_STRIP_PAD, paddingBottom: QUICK_EDIT_STRIP_PAD }}
+                className={tableHeaderClass('grid')}
+                style={gridStyle}
+              >
+                <span className="flex items-center pl-4 border-r border-line">Primitive collection</span>
+                {appearanceColumns.map((col) => {
+                  const isPreviewed = activeAppearance === col
+                  return (
+                    <span key={col} className={`flex items-center px-2.5 border-r border-line min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                      <button
+                        onClick={() => onPreviewAppearanceChange?.(col)}
+                        aria-pressed={isPreviewed}
+                        title={isPreviewed ? `${col} — shown in preview` : `Show ${col} in the preview`}
+                        className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
+                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
+                        }`}
+                      >
+                        <EyeIcon active={isPreviewed} />
+                        <span className="truncate">{col}</span>
+                      </button>
+                      {/* Export lives per COLUMN, not per table: an icon here
+                          can only mean "this family, this appearance", which
+                          is exactly the scope a ramp is useful in. Offered on
+                          alpha families too now — `ColumnExportMenu` routes
+                          them through `buildAlphaFamilyExport` (reads
+                          `colors.primitiveAlpha`) instead of the solid-primitive
+                          pipeline, and narrows the format list to what that
+                          builder can produce correctly (see
+                          `ALPHA_EXPORT_FORMATS`). */}
+                      <ColumnExportMenu
+                        family={family.tokenPrefix}
+                        label={family.label}
+                        appearance={col}
+                        isAlpha={family.isAlpha}
+                        scale={col === 'light' ? family.light : family.dark}
+                      />
+                    </span>
+                  )
+                })}
+                <span className="flex items-center justify-center py-3 text-fg-faint" aria-hidden>
+                  <SlidersIcon />
+                </span>
+              </div>
+              {/* Quick-edit strip sits UNDER the column header, still inside
+                  the scroll surface so it pins below TOKEN NAME (`top` =
+                  the 52px header) rather than covering it. Isolate keeps
+                  the tone-9 anchor ring from painting over the header
+                  when overview ramps scroll underneath. */}
+              <div
+                className="sticky z-20 flex items-center gap-2.5 pl-4 pr-3 border-b border-line bg-app isolate"
+                style={{ height: QUICK_EDIT_STRIP_HEIGHT, top: TABLE_HEADER_PX, paddingTop: QUICK_EDIT_STRIP_PAD, paddingBottom: QUICK_EDIT_STRIP_PAD }}
               >
           {!railCollapsed && (
             family.isAlpha ? (
@@ -1861,7 +2028,7 @@ export default function ColorPrimitives({
                     const atDefault = family.base.toLowerCase() === def.toLowerCase()
                     return (
                       <>
-                        <span className="w-px self-stretch bg-line/60 my-1.5 flex-shrink-0" aria-hidden />
+                        <span className="w-px self-stretch bg-line my-1.5 flex-shrink-0" aria-hidden />
                         <button
                           type="button"
                           onClick={() => changeFamilyBase(family, def)}
@@ -1931,65 +2098,16 @@ export default function ColorPrimitives({
                 onLinkStates={(v) => {
                   setLinkStatesToAccent(v)
                   if (v) {
-                    applyStateColor('error', stateRecommendation.error, true)
-                    applyStateColor('warning', stateRecommendation.warning, true)
-                    applyStateColor('success', stateRecommendation.success, true)
-                    applyStateColor('info', stateRecommendation.info, true)
+                    applyStateColor('error', stateRecommendation.error, true, previewTheme)
+                    applyStateColor('warning', stateRecommendation.warning, true, previewTheme)
+                    applyStateColor('success', stateRecommendation.success, true, previewTheme)
+                    applyStateColor('info', stateRecommendation.info, true, previewTheme)
                   }
                 }}
                 linkedStatesPreview={stateRecommendation}
               />
             </ScaleSettingsModal>
           </div>
-              </div>
-              {/* Column header — light/dark eye toggles drive the preview theme.
-                  Sticky so it survives scrolling the tone rows below: without
-                  it, scrolling past row 1 hides the eye toggles, the per-column
-                  export icon and the settings gear — the only way back to any
-                  of them was scrolling back up. Sits under the quick-edit strip
-                  (`top` offset) and above scrolling rows (`z-10`). */}
-              <div
-                className={tableHeaderClass('grid')}
-                style={{ ...gridStyle, top: QUICK_EDIT_STRIP_HEIGHT }}
-              >
-                <span className="flex items-center pl-4 border-r border-line/60">Primitive collection</span>
-                {appearanceColumns.map((col) => {
-                  const isPreviewed = activeAppearance === col
-                  return (
-                    <span key={col} className={`flex items-center px-2.5 border-r border-line/60 min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
-                      <button
-                        onClick={() => onPreviewAppearanceChange?.(col)}
-                        aria-pressed={isPreviewed}
-                        title={isPreviewed ? `${col} — shown in preview` : `Show ${col} in the preview`}
-                        className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
-                          isPreviewed ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/50'
-                        }`}
-                      >
-                        <EyeIcon active={isPreviewed} />
-                        <span className="truncate">{col}</span>
-                      </button>
-                      {/* Export lives per COLUMN, not per table: an icon here
-                          can only mean "this family, this appearance", which
-                          is exactly the scope a ramp is useful in. Offered on
-                          alpha families too now — `ColumnExportMenu` routes
-                          them through `buildAlphaFamilyExport` (reads
-                          `colors.primitiveAlpha`) instead of the solid-primitive
-                          pipeline, and narrows the format list to what that
-                          builder can produce correctly (see
-                          `ALPHA_EXPORT_FORMATS`). */}
-                      <ColumnExportMenu
-                        family={family.tokenPrefix}
-                        label={family.label}
-                        appearance={col}
-                        isAlpha={family.isAlpha}
-                        scale={col === 'light' ? family.light : family.dark}
-                      />
-                    </span>
-                  )
-                })}
-                <span className="flex items-center justify-center py-3 text-fg-faint" aria-hidden>
-                  <SlidersIcon />
-                </span>
               </div>
 
               {visibleTones.length === 0 ? (
@@ -2004,7 +2122,7 @@ export default function ColorPrimitives({
                       className={tableRowClass(i, 'grid')}
                       style={gridStyle}
                     >
-                        <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60 text-fg-faint">
+                        <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
                           <PaletteIcon size={14} />
                           <code className="font-mono text-body text-fg-muted truncate">{name}</code>
                           {tone === BASE_TONE && (
@@ -2016,7 +2134,7 @@ export default function ColorPrimitives({
                           const solid = appearance === 'light' ? family.solidLight : family.solidDark
                           const setScale = appearance === 'light' ? family.setLight : family.setDark
                           return (
-                            <div key={appearance} className="flex items-center px-2.5 py-1.5 border-r border-line/60 min-w-0">
+                            <div key={appearance} className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">
                               {family.isAlpha ? (
                                 <AlphaHexCell
                                   value={scale[tone] ?? '#00000000'}

@@ -99,7 +99,7 @@ export default function AgentInstallPanel({
 
       {/* Client row + mode toggle. One line, the way the thing you're
           configuring and the thing you're configuring it with belong together. */}
-      <div className="flex items-center gap-3 px-3 pt-3 pb-3 border-b border-line/60">
+      <div className="flex items-center gap-3 px-3 pt-3 pb-3 border-b border-line">
         <div className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto">
           {TABS.map(({ id, label, logo }) => (
             <button
@@ -291,7 +291,7 @@ function StepRow({ n, step, last }: { n: number; step: Step; last: boolean }) {
   // with no command there's nothing for it to do.
   const split = !!step.code
   return (
-    <li className={`flex flex-col md:flex-row md:items-start gap-3 px-4 py-3.5 ${last ? '' : 'border-b border-line/60'}`}>
+    <li className={`flex flex-col md:flex-row md:items-start gap-3 px-4 py-3.5 ${last ? '' : 'border-b border-line'}`}>
       <div className={`flex items-start gap-2.5 min-w-0 ${split ? 'md:w-[42%] flex-shrink-0' : 'flex-1'}`}>
         <span className="text-mini font-mono tabular-nums text-fg-faint pt-0.5 flex-shrink-0">
           {String(n).padStart(2, '0')}
@@ -318,7 +318,7 @@ function CommandPane({ code, file }: { code: string; file?: string }) {
   return (
     <div className="rounded-lg border border-line bg-app overflow-hidden">
       {file && (
-        <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line/60 bg-elevated/40">
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line bg-elevated/40">
           <span className="text-mini font-mono text-fg-faint truncate">{file}</span>
           <CopyButton text={code} />
         </div>
@@ -353,7 +353,7 @@ function PromptPane({ prompt }: { prompt: string }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="rounded-lg border border-line bg-app overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line/60 bg-elevated/40">
+          <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line bg-elevated/40">
             <span className="text-mini font-mono text-fg-faint">prompt</span>
             <CopyButton text={prompt} />
           </div>

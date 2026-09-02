@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -16,11 +16,12 @@ import IntegrationStatusRail from './IntegrationStatusRail'
 import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { type DocsRailRow } from './DocsRail'
 import { FOUNDATION_DOCS } from './docs/foundationDocs'
-import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, RailToggle } from './colorControls'
+import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { GitHubPushState } from '../../lib/github'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
+import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -96,7 +97,7 @@ function ThemeViewSwitcher({ view, onChange }: {
 function IntegrationContextBar({ view, onBack }: { view: 'github' | 'figma'; onBack: () => void }) {
   const { t } = useI18n()
   return (
-    <header className="flex h-[54px] flex-shrink-0 items-center gap-2 border-b border-line/60 bg-app px-4">
+    <header className="flex h-[54px] flex-shrink-0 items-center gap-2 border-b border-line bg-app px-4">
       <HubBreadcrumb section={t(view === 'github' ? 'GitHub' : 'Figma')} onBack={onBack} />
     </header>
   )
@@ -136,12 +137,18 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 // The quick-settings rail stays outside the framed canvas so its property
 // controls remain fixed while the artefacts themselves scroll.
 function ArtefactsView({
-  previewTheme, previewAppearance, accentPreview, stylePreview,
+  previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
   accentPreview: string | null
   stylePreview: StylePreview | null
+  /** The Semantics quick-edit drawer (`TokenDetailsModal`, `contained`) is
+   *  scoped to `ThemePreviewHub`'s box and docks flush to the quick-settings
+   *  rail's right edge — beside the column, not over it. The canvas cedes
+   *  the full `PANEL_W` so artefacts reflow instead of sitting under the
+   *  fly-out. */
+  drawerOpen: boolean
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -166,7 +173,10 @@ function ArtefactsView({
       'border.focus': accentPreview,
     } : undefined,
   } : tokens
-  return <div className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6"><div className="mx-auto max-w-[1120px]"><div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-7 gap-y-8 items-start">{ARTEFACTS.map((artefact) => <div key={artefact.key} className="min-w-0 flex flex-col items-center gap-2"><ScaledArtefactCard artefact={artefact} t={paintedTokens} targetWidth={220} /><span className="text-caption font-medium text-fg-muted">{t(artefact.label)}</span></div>)}</div></div></div>
+  return <div
+    className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
+    style={drawerOpen ? { paddingLeft: PANEL_W } : undefined}
+  ><div className="mx-auto max-w-[1120px]"><div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-7 gap-y-8 items-start">{ARTEFACTS.map((artefact) => <div key={artefact.key} className="min-w-0 flex flex-col items-center gap-2"><ScaledArtefactCard artefact={artefact} t={paintedTokens} targetWidth={220} /><span className="text-caption font-medium text-fg-muted">{t(artefact.label)}</span></div>)}</div></div></div>
 }
 
 
@@ -446,7 +456,7 @@ function HubRail<Key extends string>({
       className="flex-shrink-0 h-full flex flex-col border-r border-line bg-app overflow-hidden transition-[width] duration-200"
       style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
     >
-      <div className={`h-[54px] flex-shrink-0 flex items-center border-b border-line/60 ${collapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-4 pr-2'}`}>
+      <div className={`h-[54px] flex-shrink-0 flex items-center border-b border-line ${collapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-4 pr-2'}`}>
         {!collapsed && <span className="min-w-0 truncate text-ui font-semibold text-fg">{title}</span>}
         <RailToggle
           collapsed={collapsed}
@@ -486,7 +496,7 @@ function HubRail<Key extends string>({
             </button>
           )
         })}
-        {footer && <div className={`${collapsed ? 'pt-2' : 'mt-3 border-t border-line/60 pt-3'}`}>{footer}</div>}
+        {footer && <div className={`${collapsed ? 'pt-2' : 'mt-3 border-t border-line pt-3'}`}>{footer}</div>}
       </div>
     </nav>
   )
@@ -599,7 +609,7 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
    *  as THIS theme's spec rather than a generic "System reference". */
   overviewTitle: string
 }) {
-  return <div className="flex-1 min-w-0 min-h-0"><DocsView activeFoundationKey={active} onSelectFoundationKey={onChange} onEditFoundation={onEditFoundation} exits={exits} overviewTitle={overviewTitle} /></div>
+  return <div className="flex-1 min-w-0 min-h-0"><DocsView activeFoundationKey={active} onSelectFoundationKey={onChange} onEditFoundation={onEditFoundation} exits={exits} overviewTitle={overviewTitle} hubMode /></div>
 }
 
 export default function ThemePreviewHub({
@@ -608,9 +618,14 @@ export default function ThemePreviewHub({
   onOpenSemanticFoundation, onOpenComponent, onOpenComponents,
   onEditFoundation, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
   onOpenSave, githubPushState, onGithubPushStateChange, docsExits,
+  quickFoundation,
 }: {
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
+  /** Which foundation's quick panel the artefacts rail shows — the shell's
+   *  `activeFoundation`, so the workspace icon rail and this column are one
+   *  selection instead of two. */
+  quickFoundation: string
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
@@ -640,6 +655,11 @@ export default function ThemePreviewHub({
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
+  // Whether the Semantics quick-edit drawer is open. Only meaningful on the
+  // artefacts surface (the only one that mounts `ThemeQuickSettingsRail`),
+  // so it's ANDed with `surface === 'artefacts'` at the one place that reads
+  // it rather than reset on every surface change.
+  const [quickEditOpen, setQuickEditOpen] = useState(false)
   const [showcase, setShowcase] = useState('all')
   const [docPage, setDocPage] = useState<string>(OVERVIEW_KEY)
   // ONE collapse preference for the whole hub, not one per view: it's the same
@@ -647,12 +667,14 @@ export default function ThemePreviewHub({
   // expanded again on System doc would read as two different columns — the
   // exact confusion merging them into `HubRail` exists to remove.
   const [railCollapsed, setRailCollapsed] = useState(false)
+  const [hubDocActions, setHubDocActions] = useState<ReactNode>(null)
+  const hubRootRef = useRef<HTMLElement>(null)
   const hubSurface: HubView | null = surface === 'artefacts' || surface === 'components' || surface === 'documentation'
     ? surface
     : null
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
-  return <section className="h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
+  return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
     <div className="flex-1 min-h-0 flex">
       {surface === 'components' && (
         <HubRail
@@ -692,20 +714,24 @@ export default function ThemePreviewHub({
       {surface === 'artefacts' && (
         <ThemeQuickSettingsRail
           key={previewTheme}
+          foundation={quickFoundation}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
           onPreviewAppearanceChange={(appearance) => {
             setAccentPreview(null)
             onPreviewAppearanceChange(appearance)
           }}
-          onOpenColor={onOpenColor}
-          onOpenTypography={onOpenTypography}
-          onOpenRadius={onOpenRadius}
-          onOpenShadow={() => onEditFoundation('shadow')}
-          onOpenSizes={() => onOpenSemanticFoundation('sizes')}
+          // "Go to advanced edition" IS `selectFoundation` — the shell handler
+          // that switches to the Variables tab on a given foundation. Passing
+          // it straight through is what makes the button land on the very
+          // foundation whose quick panel you were in; the five `onOpen*` props
+          // it replaces each hardcoded their own key (and `stroke` had none).
+          onOpenAdvanced={onEditFoundation}
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
           onAdoptStyle={onAdoptStyle}
+          onQuickEditOpenChange={setQuickEditOpen}
+          containedDrawerRootRef={hubRootRef}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
@@ -721,14 +747,21 @@ export default function ThemePreviewHub({
         {hubSurface ? (
           <div className="min-h-0 flex-1 bg-app p-3">
             <section aria-label={`${themeName} preview canvas`} className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-app">
-              <div className="flex h-14 flex-shrink-0 items-center justify-end px-3">
+              {/* One header band for every hub view — page actions (Copy page,
+                  etc.) sit immediately left of the switcher; the switcher stays
+                  pinned on the right when you move between Artefacts ·
+                  Components · Documentation. */}
+              <div className="flex flex-shrink-0 items-center justify-end gap-3 px-3" style={{ height: THEME_BAND_H }}>
+                {surface === 'documentation' && hubDocActions}
                 <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
               </div>
+              <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} /> : null}
+                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} drawerOpen={quickEditOpen} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={stylePreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
                 {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
+              </ThemeHubHeaderActionsProvider>
             </section>
           </div>
         ) : (

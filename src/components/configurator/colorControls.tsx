@@ -7,21 +7,32 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode,
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import chroma from 'chroma-js'
-import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralTintSpec, type NeutralTint } from '../../lib/colorUtils'
+import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralCuratedPalette, neutralTintSpec, type NeutralTint } from '../../lib/colorUtils'
 import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 
 // ── Gray flavor options for the neutral scale ──────────────────────────────
+// Radix's six neutral families at step 9 — same anchor role, subtle undertone
+// shift. Used by the neutral dropdown (`NEUTRAL_GROUPS`) and state presets.
 export const GRAY_FLAVORS: { label: string; hex: string }[] = [
-  { label: 'Gray Blue',    hex: '#4e5ba6' },
-  { label: 'Gray Cool',    hex: '#5d6b98' },
-  { label: 'Gray Modern',  hex: '#697586' },
-  { label: 'Gray Neutral', hex: '#6c737f' },
-  { label: 'Gray Iron',    hex: '#70707b' },
-  { label: 'Gray True',    hex: '#737373' },
-  { label: 'Gray Warm',    hex: '#79716b' },
+  { label: 'Gray',  hex: '#8d8d8d' },
+  { label: 'Mauve', hex: '#8e8c99' },
+  { label: 'Slate', hex: '#8b8d98' },
+  { label: 'Sage',  hex: '#868e8b' },
+  { label: 'Olive', hex: '#898e87' },
+  { label: 'Sand',  hex: '#8d8d86' },
+]
+
+/** One slate family stepped light → deep — static fallback when no hue source. */
+export const NEUTRAL_CURATED_PALETTE: { label: string; hex: string }[] = [
+  { label: 'Surface',  hex: '#f0f0f3' },
+  { label: 'Soft',     hex: '#e0e1e6' },
+  { label: 'Muted',    hex: '#cdced6' },
+  { label: 'Stone',    hex: '#8b8d98' },
+  { label: 'Graphite', hex: '#80838d' },
+  { label: 'Deep',     hex: '#60646c' },
 ]
 
 // ── Page-background options (Radix custom-palette "background" input) ──────
@@ -72,20 +83,27 @@ export const STATE_PRESETS: Record<IntentRole, { label: string; hex: string }[]>
 // stops reading as an error (the same rule `recommendStateColors` follows when
 // it blends chroma but never hue). Those slots therefore offer `STATE_PRESETS`,
 // the exact list the State Colors dropdown already shows, so no two entry
-// points can recommend different reds. Neutral is in that map for the same
-// reason — it's an intent (see CLAUDE.md), and a rainbow bar under a gray
-// ramp is as wrong as one under a red.
+// points can recommend different reds. Neutral is special: the dropdown keeps
+// Radix's six undertones at step 9 (`GRAY_FLAVORS`), while the Curated palette
+// bar shows one slate family stepped light → deep (`NEUTRAL_CURATED_PALETTE`).
+// Live pickers pass `dynamicNeutralPalette` so the bar is rebuilt from
+// `neutralCuratedPalette()` against the spectrum (or brand accent) instead.
 //
 // It lives HERE, beside `STATE_PRESETS`, rather than in either caller: both
 // Primitives' family pickers and "Add a theme"'s slot pickers need it, and a
 // second copy is exactly how `AddThemeModal` ended up hand-duplicating all four
 // status preset lists in the first place.
 const INTENT_KEYS: readonly string[] = ['neutral', 'error', 'warning', 'success', 'info']
-export function curatedPaletteFor(familyKey: string) {
+export function curatedPaletteFor(familyKey: string, hueSource?: string) {
+  if (familyKey === 'neutral') {
+    return hueSource ? neutralCuratedPalette(hueSource) : NEUTRAL_CURATED_PALETTE
+  }
   return INTENT_KEYS.includes(familyKey)
     ? STATE_PRESETS[familyKey as IntentRole]
     : INDUSTRY_SPECTRUM
 }
+
+export { neutralCuratedPalette }
 
 // The system's color chip — a rounded SQUARE, never a dot. Every swatch in
 // these controls (trigger · dropdown option · custom row · state row) shares it,
@@ -108,6 +126,10 @@ export const COLOR_RAIL_WIDTH = 240
 // them is what makes this a collapse rather than a hide (the same call
 // `FoundationIconRail` already makes: drop the labels, keep the glyphs).
 export const COLOR_RAIL_COLLAPSED_WIDTH = 56
+/** Dialog width — shared by Token Details and the contained colour picker. */
+export const PANEL_W = 360
+/** Pinned top band on the Theme Preview quick-settings rail. */
+export const THEME_BAND_H = 54
 
 /** The collapse/expand control. Lives in the family-heading row's trailing slot —
  *  that row was already `justify-between` around a lone label, i.e. the slot
@@ -163,7 +185,7 @@ export const BRAND_GROUPS: OptionGroup[] = PRESET_GROUPS.map((g) => ({
   badge: 'Tested',
   options: g.colors.map((c) => ({ label: c.label, hex: c.hex })),
 }))
-export const NEUTRAL_GROUPS: OptionGroup[] = [{ label: 'Grays', badge: 'Tested', options: GRAY_FLAVORS }]
+export const NEUTRAL_GROUPS: OptionGroup[] = [{ label: 'Undertones', badge: 'Tested', options: GRAY_FLAVORS }]
 export const BACKGROUND_GROUPS: OptionGroup[] = [{ label: 'Backgrounds', badge: 'Tested', options: BACKGROUND_OPTIONS }]
 
 // ── Dark page-background options ───────────────────────────────────────────
@@ -662,6 +684,13 @@ export const COLOR_PICKER_W = 288
  */
 export function ColorPickerPopover({
   open, onClose, anchor, label, value, onChange, palette, suggestions = true, appearance,
+  dynamicNeutralPalette,
+  dynamicAccentPalette,
+  neutralRampFrom,
+  accentHueFrom,
+  contained = false,
+  containedRootRef,
+  containedDockLeft = COLOR_RAIL_WIDTH,
 }: {
   open: boolean
   onClose: () => void
@@ -672,10 +701,27 @@ export function ColorPickerPopover({
   palette?: { label: string; hex: string }[]
   suggestions?: boolean
   appearance?: 'light' | 'dark'
+  dynamicNeutralPalette?: boolean
+  dynamicAccentPalette?: boolean
+  neutralRampFrom?: string
+  accentHueFrom?: string
+  /** Theme Preview: dock beside the quick-settings rail like `TokenDetailsModal`. */
+  contained?: boolean
+  containedRootRef?: RefObject<HTMLElement | null>
+  containedDockLeft?: number
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const place = usePopoverPlacement(anchor, open)
+  const place = usePopoverPlacement(anchor, open && !contained)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+
+  useLayoutEffect(() => {
+    if (!contained || !open) {
+      setPortalRoot(null)
+      return
+    }
+    setPortalRoot(containedRootRef?.current ?? null)
+  }, [contained, open, containedRootRef])
 
   // `useLayoutEffect`, so the first measurement lands BEFORE paint and the panel
   // never shows for a frame at the previous trigger's position. A stale `rect`
@@ -684,16 +730,16 @@ export function ColorPickerPopover({
   // here: clearing it in an effect would be a setState-in-effect cascade for a
   // value no one can see.
   useLayoutEffect(() => {
-    if (!open) return
+    if (!open || contained) return
     const measure = () => { const r = anchor.current?.getBoundingClientRect(); if (r) setRect(r) }
     measure()
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
     return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
-  }, [open, anchor])
+  }, [open, anchor, contained])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || contained) return
     function onDown(event: MouseEvent) {
       const target = event.target as Node
       // The panel is not a DOM descendant of the trigger, so checking only the
@@ -716,9 +762,94 @@ export function ColorPickerPopover({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey, true)
     }
-  }, [open, anchor, onClose])
+  }, [open, anchor, onClose, contained])
 
-  if (!open || !rect) return null
+  useEffect(() => {
+    if (!open || !contained) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose, contained])
+
+  if (!open) return null
+
+  const body = (
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+      <ColorPickerPanel
+        value={value}
+        onChange={onChange}
+        suggestions={suggestions}
+        palette={palette}
+        dynamicNeutralPalette={dynamicNeutralPalette}
+        dynamicAccentPalette={dynamicAccentPalette}
+        neutralRampFrom={neutralRampFrom}
+        accentHueFrom={accentHueFrom}
+        appearance={appearance}
+        fieldAppearance={appearance}
+      />
+    </div>
+  )
+
+  if (contained) {
+    if (!portalRoot) return null
+    return createPortal(
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onMouseDown={onClose}
+          className="absolute z-[60]"
+          style={{ left: containedDockLeft, top: 0, right: 0, bottom: 0 }}
+        >
+          <motion.div
+            ref={panelRef}
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${label} color`}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `min(${PANEL_W}px, calc(100% - 16px))`,
+            }}
+            className="relative flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden"
+          >
+            <div
+              className="flex flex-shrink-0 items-center gap-2 border-b border-line px-3 pr-10"
+              style={{ height: THEME_BAND_H }}
+            >
+              <span className={SWATCH} style={{ backgroundColor: value }} />
+              <h2 className="min-w-0 flex-1 truncate text-body font-semibold text-fg">{label}</h2>
+              <span className="flex-shrink-0 text-caption font-mono tabular-nums text-fg-faint">{value.toUpperCase()}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute right-3 flex h-7 w-7 items-center justify-center rounded-lg text-fg-faint transition-colors hover:bg-elevated/60 hover:text-fg"
+              style={{ top: (THEME_BAND_H - 28) / 2 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
+            {body}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>,
+      portalRoot,
+    )
+  }
+
+  if (!rect) return null
   return createPortal(
     <AnimatePresence>
       <motion.div
@@ -746,16 +877,7 @@ export function ColorPickerPopover({
           <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{label}</span>
           <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{value.toUpperCase()}</span>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-          <ColorPickerPanel
-            value={value}
-            onChange={onChange}
-            suggestions={suggestions}
-            palette={palette}
-            appearance={appearance}
-            fieldAppearance={appearance}
-          />
-        </div>
+        {body}
       </motion.div>
     </AnimatePresence>,
     document.body,
@@ -1227,7 +1349,11 @@ export function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
 // which left the 12-tone ramp grid ~136px for twelve cells + gaps — swatches
 // under 9px, unpickable and unreadable. 360 gives the grid ~240px (20px cells)
 // while still fitting beside the table on a laptop window.
-const PANEL_W = 360
+// (`PANEL_W` is defined above with `COLOR_RAIL_WIDTH`.)
+/** Pinned top band on the Theme Preview quick-settings rail. The contained
+ *  Token Details drawer header uses the same height so the two columns' top
+ *  rows line up when the fly-out is open. */
+// (`THEME_BAND_H` is defined above with `COLOR_RAIL_WIDTH`.)
 const THEME_DRAWER_LEFT = THEME_LIBRARY_WIDTH
 const THEME_DRAWER_TOP = 72
 const THEME_DRAWER_BOTTOM = 36
@@ -1273,6 +1399,10 @@ export function CssVarChip({ name }: { name: string }) {
 
 export function TokenDetailsModal({
   name, cssVarName, description, onReset, resetDisabled, onClose, reduce, sections, initialOpenKey,
+  dockLeft = THEME_DRAWER_LEFT,
+  contained = false,
+  containedRootRef,
+  containedDockLeft = COLOR_RAIL_WIDTH,
 }: {
   name: string
   /** The Figma mock doesn't show this, but the inline editor it replaces did
@@ -1294,6 +1424,32 @@ export function TokenDetailsModal({
   /** Kept for call-site compatibility. Token details now always use the
    *  shared Themes Library drawer position rather than a table-local popover. */
   anchorRef?: RefObject<HTMLElement | null>
+  /** Which vertical edge the drawer slides out from. Defaults to the Themes
+   *  Library's, which is right for the Semantics TABLE — that table spans
+   *  everything to the library's right, so any nearer edge would put the drawer
+   *  on top of the rows. The Theme preview quick column passes its OWN right
+   *  edge instead: its rows are only 240px wide and sit immediately left of the
+   *  canvas, so docking at the library would bury the list you're editing from. */
+  dockLeft?: number
+  /** The Semantics table's world is the viewport-fixed drawer above — leave
+   *  it alone. The Theme Preview hub's world is different: that drawer must
+   *  live and clip INSIDE `ThemePreviewHub`'s own box (a sibling of the
+   *  Themes Library / icon rail / TopNav, not a viewport-level overlay), and
+   *  dock flush to the quick-settings rail's RIGHT edge — the Figma fly-out
+   *  sits beside the column you're editing from, not on top of it.
+   *  `contained` switches both the overlay and the inner panel from `fixed`
+   *  (viewport) to `absolute` (nearest positioned ancestor, which is
+   *  `ThemePreviewHub`'s `relative` root), with `left: containedDockLeft`. */
+  contained?: boolean
+  /** When `contained`, portals the drawer onto this element — typically
+   *  `ThemePreviewHub`'s `relative` root — so `absolute inset-0` scopes to
+   *  the hub's own box instead of the quick-settings scroll column the
+   *  trigger lives in. Without this the panel clips inside the rail. */
+  containedRootRef?: RefObject<HTMLElement | null>
+  /** Horizontal inset for `contained` — the quick-settings rail width. The
+   *  panel docks flush to that column's RIGHT edge (Figma: fly-out from the
+   *  sidebar, not over it). Defaults to `COLOR_RAIL_WIDTH`. */
+  containedDockLeft?: number
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -1310,7 +1466,16 @@ export function TokenDetailsModal({
     return new Set(first ? [first.key] : [])
   })
 
-  return (
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (!contained) {
+      setPortalRoot(null)
+      return
+    }
+    setPortalRoot(containedRootRef?.current ?? null)
+  }, [contained, containedRootRef])
+
+  const dialog = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -1319,37 +1484,48 @@ export function TokenDetailsModal({
       onMouseDown={onClose}
       // This is an editing task, so it shares ThemePanel's left-docked drawer
       // position. A token-detail panel should never appear as a third modal
-      // language beside “New theme” and “Edit family color”.
-      className="fixed inset-0 z-50"
+      // language beside “New theme” and “Edit family color”. `contained`
+      // scopes both the overlay and the panel to ThemePreviewHub's own box
+      // instead of the viewport — see the prop's doc comment above.
+      className={contained ? 'absolute z-50' : 'fixed inset-0 z-50'}
+      style={contained ? { left: containedDockLeft, top: 0, right: 0, bottom: 0 } : undefined}
       role="dialog"
       aria-modal="true"
       aria-label="Token Details"
     >
       <motion.div
-        style={{
+        style={contained ? {
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `min(${PANEL_W}px, calc(100% - 16px))`,
+        } : {
           position: 'fixed',
-          left: THEME_DRAWER_LEFT,
+          left: dockLeft,
           top: THEME_DRAWER_TOP,
           bottom: THEME_DRAWER_BOTTOM,
-          width: `min(${PANEL_W}px, calc(100vw - ${THEME_DRAWER_LEFT + 16}px))`,
+          width: `min(${PANEL_W}px, calc(100vw - ${dockLeft + 16}px))`,
         }}
         initial={{ opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -16 }}
         transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative h-full flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden"
+        className="relative flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden"
       >
-        {/* Header — title + Reset, matching the Figma dialog. Close sits
-            absolutely in the corner (same position the design uses) rather
-            than in the flex row, so Reset stays flush right regardless of
-            title length. */}
-        <div className="flex items-center justify-between gap-3 pl-4 pr-10 h-10 border-b border-line flex-shrink-0">
-          <h2 className="text-ui font-semibold text-fg truncate">Token Details</h2>
+        {/* Header — `THEME_BAND_H` matches `ThemeIdentityBand` so the title
+            row lines up with the Name field when the drawer sits beside the
+            quick-settings column. Close is absolute so Reset stays flush. */}
+        <div
+          className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-line px-3 pr-10"
+          style={{ height: THEME_BAND_H }}
+        >
+          <h2 className="text-body font-semibold text-fg truncate">Token Details</h2>
           <button
             onClick={onReset}
             disabled={resetDisabled}
-            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-6 rounded-lg border border-line text-mini text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
+            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-7 rounded-lg border border-line text-mini text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
           >
             Reset
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1361,7 +1537,8 @@ export function TokenDetailsModal({
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
+          className="absolute right-3 w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-fg hover:bg-elevated/60 transition-colors"
+          style={{ top: (THEME_BAND_H - 28) / 2 }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
@@ -1372,7 +1549,7 @@ export function TokenDetailsModal({
               user text, so there's nothing here to save. Shown for context,
               styled like the Figma input/textarea so the dialog still reads
               as an editor, not just a viewer. */}
-          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line/60">
+          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line">
             <div className="flex h-6 rounded-md border border-line overflow-hidden">
               <span className="px-2 flex items-center bg-elevated text-mini text-fg-faint border-r border-line flex-shrink-0">Name</span>
               <span className="px-2 flex items-center flex-1 min-w-0 text-caption text-fg-muted font-mono truncate" title={name}>{name}</span>
@@ -1428,7 +1605,7 @@ export function TokenDetailsModal({
                         transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
                         style={{ overflow: 'hidden' }}
                       >
-                        <div className="px-2.5 pt-2 pb-2.5 border-t border-line/60">{s.content}</div>
+                        <div className="px-2.5 pt-2 pb-2.5 border-t border-line">{s.content}</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1440,6 +1617,12 @@ export function TokenDetailsModal({
       </motion.div>
     </motion.div>
   )
+
+  if (contained) {
+    if (!portalRoot) return null
+    return createPortal(dialog, portalRoot)
+  }
+  return dialog
 }
 
 // ── Delete-theme confirmation ──

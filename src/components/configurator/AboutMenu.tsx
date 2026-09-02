@@ -6,7 +6,7 @@ import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
 import { FIGMA_PLUGIN_ZIP, cn } from '../../lib/utils'
-import { BrandMark, FigmaGlyph } from './TopNav'
+import { BrandMark, FigmaGlyph, TOP_NAV_H } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
 import { BentoGrid } from '../ui/bento-grid'
@@ -943,15 +943,13 @@ export default function AboutMenu({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-[440px] h-full flex flex-col bg-app border-l border-line shadow-2xl"
       >
-        {/* Header — matches the shell's own 72px brand row, so the drawer reads
+        {/* Header — matches the shell's own brand row, so the drawer reads
             as an extension of the chrome rather than a floating sheet. */}
-        <div className="flex items-center justify-between gap-3 px-5 h-[72px] flex-shrink-0 border-b border-line">
-          <div className="min-w-0">
-            <div className="text-strong font-semibold text-fg leading-tight">Escala Tokens</div>
-            <div className="text-caption text-fg-faint leading-tight">
-              Design token infrastructure · schema v{TOKEN_SCHEMA_VERSION}
-            </div>
-          </div>
+        <div
+          className="flex items-center justify-between gap-3 px-4 flex-shrink-0 border-b border-line"
+          style={{ height: TOP_NAV_H }}
+        >
+          <div className="min-w-0 truncate text-ui font-semibold text-fg">Escala Tokens</div>
           <button
             onClick={onClose}
             aria-label="Close menu"

@@ -442,7 +442,7 @@ function Group({
             onAnimationComplete={() => setAnimating(false)}
             className={animating ? 'overflow-hidden' : ''}
           >
-            <div className="px-3 pt-3.5 pb-4 flex flex-col gap-4 border-t border-line/60">{children}</div>
+            <div className="px-3 pt-3.5 pb-4 flex flex-col gap-4 border-t border-line">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -882,7 +882,7 @@ export function QuickEditPanel({
 }) {
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
-      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
+      <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line flex-shrink-0">
         <HeaderPresets previewTheme={previewTheme} />
         {onCollapse && (
           <button

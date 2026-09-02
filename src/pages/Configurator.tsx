@@ -14,6 +14,7 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
+import { adoptPreset } from '../lib/adoptPreset'
 import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
@@ -31,6 +32,7 @@ import type { ThemeAppearance } from '../lib/themeModes'
 // single-purpose rail.
 type Tab = 'about' | 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
+import { QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
 import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
@@ -491,7 +493,7 @@ function ThemeWorkspaceTabs({
 }) {
   const { t } = useI18n()
   return (
-    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line/60 bg-surface px-3">
+    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line bg-surface pl-[8px] pr-3 xl:pr-4">
       <div
         role="tablist"
         aria-label={t('Theme workspace')}
@@ -546,7 +548,7 @@ function ThemeWorkspaceTabs({
 function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string; right?: ReactNode }) {
   const { t } = useI18n()
   return (
-    <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line/60 flex-shrink-0">
+    <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
         <Icon />
       </span>
@@ -912,6 +914,26 @@ export default function Configurator() {
     setTab('foundations')
     setThemeWorkspaceTab('primitives')
     setActiveFoundation(key)
+  }
+  /**
+   * The WORKSPACE icon rail's own handler — it picks a foundation without
+   * moving you between tabs.
+   *
+   * `selectFoundation` (above) forces `themeWorkspaceTab: 'primitives'`, which
+   * is right for every OUTSIDE door into the editor (Docs' "Edit tokens",
+   * TopNav, a quick panel's "Go to advanced edition") and wrong for the rail
+   * itself: on Theme preview the rail selects which QUICK PANEL you're
+   * editing, so jumping to the token table on every click made the rail
+   * useless there — it wasn't even lit. Same rail, two roles, one shared
+   * `activeFoundation`, so the choice survives the tab switch either way.
+   */
+  const selectWorkspaceFoundation = (key: string) => {
+    commitVisit()
+    setActiveFoundation(key)
+    // The quick panel only mounts on the artefacts surface (`ThemePreviewHub`),
+    // so picking a foundation from Components or Documentation would otherwise
+    // change nothing visible. Choosing a foundation IS "I want to edit it".
+    if (themeWorkspaceTab === 'preview' && themeHubSurface !== 'artefacts') setThemeHubSurface('artefacts')
   }
   const changeThemeWorkspaceTab = (next: ThemeWorkspaceTab) => {
     setThemeWorkspaceTab(next)
@@ -1290,8 +1312,8 @@ export default function Configurator() {
   // full panel. Save keeps the aside: it hosts the Overview + Connections
   // panel.
   // Theme exploration is now the central canvas, so the old 400px companion
-  // preview is retained only where it has a different job (Save connections).
-  const showPreview = exportMode === 'save'
+  // preview is retained only where it has a different job (Save connections)
+  // — plus the Variables tab, see `showPreview` below `foundationCanvas`.
 
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
@@ -1332,10 +1354,39 @@ export default function Configurator() {
   }
 
   const foundationCanvas = themesCanvas && themeWorkspaceTab === 'primitives'
+  // NOT extended to the Variables tab. The mockup's right-hand "VARIABLES
+  // PREVIEW" column already exists — it is `VariablesPreviewPane`, the inline
+  // aside every semantic table (Color, Type, Layout, Grid) renders as a sibling
+  // of its own scroll region, header text and all. Adding a second, shell-level
+  // aside beside it put the SAME specimen on screen twice and squeezed the
+  // token table to ~238px between them (measured at 1266px). One preview.
+  const showPreview = exportMode === 'save'
   const themeWorkspaceRailVisible = themesCanvas
+  /** The icon rail's entries for the active tab — see the rail's own note. */
+  const quickRailFoundations = (items: FoundationSection[]) =>
+    themeWorkspaceTab === 'preview'
+      ? items.filter((foundation) => (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))
+      : items
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
   const skipCenterHeader = themesCanvas || tab === 'about'
+
+  // A live System-Style try-on is a PREVIEW surface only — it holds no ramps in
+  // the store, so the Variables editor (ColorPrimitives et al.) can't reflect
+  // it and would keep showing the OPEN system's ramps under the tried-on
+  // style's name (the reported "click Core, still see the old ramps" bug). The
+  // moment the user leaves Theme Preview for an editing tab they're iterating,
+  // so materialise the try-on into a real theme named "<Style> Copy" (see
+  // `adoptPreset`'s `asCopy`) — the same auto-adopt `ThemeQuickSettingsRail`
+  // runs on its first control edit, hoisted to the navigation transition.
+  // `changePreviewTheme` clears `stylePreview`, so this fires once per try-on.
+  useEffect(() => {
+    if (!themesCanvas || themeWorkspaceTab === 'preview' || !stylePreview) return
+    const adopted = adoptPreset(stylePreview.preset, stylePreview.appearance, { asCopy: true, copyWord: t('Copy') })
+    if ('error' in adopted) { setStylePreview(null); return }
+    changePreviewTheme(adopted.key)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themesCanvas, themeWorkspaceTab, stylePreview])
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -1419,14 +1470,22 @@ export default function Configurator() {
           )}
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
+            // ONE rail, TWO roles — and it is lit in both, because both are a
+            // real selection of `activeFoundation`:
+            //  · Variables      → which token TABLE the centre column shows.
+            //  · Theme preview  → which QUICK PANEL the left column shows.
+            // Theme preview therefore only offers the foundations that HAVE a
+            // quick panel (`QUICK_PANEL_FOUNDATIONS`); Variables offers all
+            // nine. An icon leading to an empty column would claim a feature
+            // that isn't there — the same call the Figma Make toggle makes.
             <FoundationIconRail
               orientation="vertical"
-              active={themeWorkspaceTab === 'primitives' ? activeFoundation : null}
-              onSelect={selectFoundation}
+              active={activeFoundation}
+              onSelect={selectWorkspaceFoundation}
               groups={[
-                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-              ]}
+                { label: t('Variables'), items: quickRailFoundations(VARIABLE_FOUNDATIONS).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Styles'), items: quickRailFoundations(FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+              ].filter((group) => group.items.length > 0)}
             />
           )}
           {/* Center editor */}
@@ -1463,6 +1522,7 @@ export default function Configurator() {
                   <ThemePreviewHub
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
+                    quickFoundation={activeFoundation}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     stylePreview={stylePreview}

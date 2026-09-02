@@ -225,6 +225,39 @@ function buildIndustrySpectrum(): IndustryAccent[] {
 
 export const INDUSTRY_SPECTRUM: IndustryAccent[] = buildIndustrySpectrum()
 
+const ACCENT_CURATED_WINDOW = 6
+
+/** Six vivid brand swatches centered on `hueSourceHex` — for the accent picker's
+ *  Curated bar. Hue-neighbours on `INDUSTRY_SPECTRUM`, NOT a neutral ramp. */
+export function accentCuratedPalette(hueSourceHex: string): IndustryAccent[] {
+  const spectrum = INDUSTRY_SPECTRUM
+  const n = spectrum.length
+  if (n === 0) return []
+  if (n <= ACCENT_CURATED_WINDOW) return [...spectrum]
+
+  let sourceHue = 0
+  try {
+    const h = chroma(hueSourceHex).get('hsl.h')
+    sourceHue = typeof h === 'number' && !Number.isNaN(h) ? h : 0
+  } catch { /* invalid — fall through */ }
+
+  let bestIdx = 0
+  let bestDist = Infinity
+  for (let i = 0; i < n; i++) {
+    const h = chroma(spectrum[i].hex).get('hsl.h')
+    const hue = typeof h === 'number' && !Number.isNaN(h) ? h : 0
+    const dist = Math.abs(((hue - sourceHue + 540) % 360) - 180)
+    if (dist < bestDist) { bestDist = dist; bestIdx = i }
+  }
+
+  const half = Math.floor(ACCENT_CURATED_WINDOW / 2)
+  const out: IndustryAccent[] = []
+  for (let offset = -half; offset < ACCENT_CURATED_WINDOW - half; offset++) {
+    out.push(spectrum[(bestIdx + offset + n) % n])
+  }
+  return out
+}
+
 export function packById(id: IndustryId): IndustryPack {
   return INDUSTRY_PACKS.find((p) => p.id === id) ?? INDUSTRY_PACKS.find((p) => p.id === 'business')!
 }

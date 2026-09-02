@@ -553,7 +553,7 @@ export default function ExportWizard({
                   </button>
 
                   {includeComponents && (
-                    <div className="mt-3 pt-3 border-t border-line/60 flex flex-col gap-2.5">
+                    <div className="mt-3 pt-3 border-t border-line flex flex-col gap-2.5">
                       <div className="flex items-center gap-2 px-1">
                         <input
                           value={componentSearch}
@@ -960,7 +960,7 @@ export default function ExportWizard({
                   </p>
                 )}
 
-                <div className="flex items-center justify-between gap-3 pt-3 border-t border-line/60">
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-line">
                   <span className="flex items-center gap-1.5 min-w-0 text-body text-fg-muted">
                     <StatusDot ok={!!githubRepo} />
                     <span className="truncate">

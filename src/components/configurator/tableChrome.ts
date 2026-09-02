@@ -2,7 +2,15 @@
 // workspace. Nothing here is new design; it is the classes eight files were
 // already hand-copying, reconciled after an audit found them drifted.
 //
-// WHAT THE AUDIT FOUND (measured in the running app, dark chrome):
+// LINE HIERARCHY (chrome-wide, not table-only) — two roles, 1px always:
+//   `--line`         structure. Columns, header bands, this lattice, section
+//                    seams. `border-line` / `divide-line` / `bg-line`.
+//   `--line-strong`  control outline, only when fill is not the separator.
+// Ad-hoc `border-line/40`…`/80` are forbidden: a /60 header meeting a full
+// `--line` column is two colours on one T-junction, which is how the lattice
+// read as chaos. Draw a seam ONCE — left owns `border-r`, top owns `border-b`.
+//
+// WHAT THE ORIGINAL AUDIT FOUND (measured in the running app, dark chrome):
 //
 // 1. **The lattice had two weights.** A row rule was `border-line/40`
 //    (OKLab ΔL 0.047 against `--app`) while the COLUMN rule beside it was a
@@ -19,30 +27,30 @@
 //    content inside a taller row: measured 41 / 45 / 45px cells in a 46px row,
 //    which chops 1–5px out of every vertical rule on every one of 41 rows.
 // 4. **`border-line/60` and `border-line/40` were both in use for the same
-//    seam**, sometimes twenty lines apart in one file.
+//    seam**, sometimes twenty lines apart in one file. A later pass then
+//    made `/60` the table token while workspace columns stayed full `--line`,
+//    which reintroduced finding 1 at the T-junction between table and rail.
 // 5. **`TableHeader`, `GroupLabel` and `rowClass` were duplicated verbatim**
 //    between `VariablesTable` and `Step4_Typography`, and the row class string
 //    appeared nine times across eight files — which is how 1–4 happened, and
 //    how they would happen again.
 //
-// THE RULE, from here on: a token table's lattice is ONE weight, drawn ONCE.
+// THE RULE, from here on: a token table's lattice is ONE weight (`--line`),
+// drawn ONCE, the same weight as every other structural seam in the app.
 // Import these; do not re-type the classes.
 
 /** Row-2 height, shared with `CenterHeader` / `PreviewPanel` / `SaveSidePanel`
  *  so a table's column header lands on the app's one header line. */
+export const TABLE_HEADER_PX = 52
 export const TABLE_HEADER_H = 'h-[52px]'
 
 /**
- * THE divider weight for every rule in a token table — row, column and header
- * seam alike. `/60` is not a new value: it is the tint `ColorPrimitives`'
- * section seams and `ThemeCodeFormat`'s breadcrumb already used, so unifying
- * on it adopts the house value rather than inventing a fourth one. It sits
- * between the two it replaces (ΔL 0.069 against `--app`, vs the row rule's
- * 0.047 and the column rule's 0.113), which keeps the table quiet — the
- * direction `.impeccable.md` asks for — without letting the column rules
- * dissolve where they separate value from preview.
+ * THE divider weight for every structural rule in a token table — row, column
+ * and header seam alike. Full `--line`, matching workspace columns and header
+ * bands: a quieter `/60` next to a full-weight rail is two colours on one
+ * junction, which is the defect this constant exists to close.
  */
-export const TABLE_DIVIDER = 'border-line/60'
+export const TABLE_DIVIDER = 'border-line'
 
 /** Column rule — every cell except the last in a row. */
 export const TABLE_CELL_DIVIDER = `border-r ${TABLE_DIVIDER}`
@@ -92,12 +100,12 @@ export function tableRowClass(index: number, grid: string, opts: { zebra?: boole
  * `stacked` is the "All" view, where a sticky group label sits above the header
  * and it pins below that instead of at the top.
  *
- * The height is NOT overridable. `ColorPrimitives` had the one exception —
- * `h-9`, to match the quick-edit strip above it — and it had gone stale twice
- * over: the strip is 60px now, and the header's own content (a 27px export
- * button) was already overriding 36 to 41, leaving 42px cells inside a 41px
- * header. If a table ever earns a different band, give it a reason in writing
- * before adding the parameter back.
+ * The height is NOT overridable. Color's quick-edit strip used to sit ABOVE
+ * this band (and the header then pinned under it), which is why Color and
+ * Text drifted from Radius: Radius's `TOKEN NAME` row IS the 52px that lines
+ * up with “Radius variables”. The strip now sits BELOW the header. If a table
+ * ever earns a different band, give it a reason in writing before adding the
+ * parameter back.
  */
 export function tableHeaderClass(
   grid: string,

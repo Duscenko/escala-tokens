@@ -20,7 +20,7 @@ export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
   activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits, allowReference = true,
-  overviewTitle,
+  overviewTitle, hubMode,
 }: {
   /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
    *  (the whole-system sheet), or a foundation key. */
@@ -38,6 +38,8 @@ export default function DocsView({
    *  previewed theme's name so it reads as that theme's spec; omitted elsewhere,
    *  where it falls back to "System reference". */
   overviewTitle?: string
+  /** Theme Preview hub — page actions render in the fixed header band. */
+  hubMode?: boolean
 }) {
   const { t } = useI18n()
   const system = useSystemDoc()
@@ -97,9 +99,10 @@ export default function DocsView({
               system={system}
               onOpen={onSelectFoundationKey}
               onEdit={onEditFoundation}
+              hubMode={hubMode}
             />
           ) : allowReference ? (
-            <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} />
+            <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} hubMode={hubMode} />
           ) : null}
         </motion.div>
       </div>

@@ -227,7 +227,7 @@ function AppearanceToggle({
 }) {
   const { t } = useI18n()
   return (
-    <span className="flex flex-shrink-0 items-center gap-px rounded-md border border-line/70 bg-app/60 p-px">
+    <span className="flex flex-shrink-0 items-center gap-px rounded-md border border-line bg-app/60 p-px">
       {(['light', 'dark'] as const).map((appearance) => (
         <button
           key={appearance}
@@ -408,11 +408,11 @@ export default function ThemeLibraryRail({
     <aside
       className="flex-shrink-0 flex flex-col min-h-0"
       style={{ width: THEME_LIBRARY_WIDTH }}
-      aria-label={t('Themes Library')}
+      aria-label={t('Themes library')}
     >
-      <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 border-b border-line/60">
+      <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 border-b border-line">
         <div className="min-w-0">
-          <h2 className="text-ui font-semibold text-fg truncate">{t('Themes Library')}</h2>
+          <h2 className="text-ui font-semibold text-fg truncate">{t('Themes library')}</h2>
           <p className="text-mini text-fg-muted tabular-nums">{t('{count} in this system', { count: availableThemes.length })}</p>
         </div>
         <div className="flex-shrink-0">
@@ -423,7 +423,7 @@ export default function ThemeLibraryRail({
             title={t('Theme library options')}
             aria-haspopup="menu"
             aria-expanded={optionsOpen}
-            className={`grid h-8 w-8 place-items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${optionsOpen ? 'bg-elevated text-fg' : 'text-fg-faint hover:bg-elevated hover:text-fg'}`}
+            className={`grid h-8 w-8 place-items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${optionsOpen ? 'bg-surface text-fg' : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
           >
             <LibraryOptionsIcon />
           </button>
@@ -446,7 +446,7 @@ export default function ThemeLibraryRail({
 
       <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
         <div className="flex items-center justify-between gap-2 px-2 pb-1.5">
-          <span className="text-mini font-semibold uppercase tracking-widest text-fg-muted">{t('My themes')}</span>
+          <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
           {hasOwnTheme && (
             <button
               type="button"
@@ -576,9 +576,9 @@ export default function ThemeLibraryRail({
           )}
         </div>
 
-        <div className="mt-4 border-t border-line/60 pt-3">
+        <div className="mt-4 border-t border-line pt-3">
           <div className="flex items-center justify-between gap-2 px-2 pb-1.5">
-            <span className="text-mini font-semibold uppercase tracking-widest text-fg-muted">{t('System styles')}</span>
+            <span className="text-caption font-semibold text-fg-muted">{t('System styles')}</span>
             <span className="text-micro tabular-nums text-fg-faint">{THEME_STYLE_PRESETS.length}</span>
           </div>
           <div className="flex flex-col gap-1">
@@ -618,7 +618,7 @@ export default function ThemeLibraryRail({
                   </div>
                   {expanded && (
                     <div className="px-2 pb-2">
-                      <div className="grid grid-cols-2 gap-1 border-t border-line/60 pt-2 text-micro text-fg-muted">
+                      <div className="grid grid-cols-2 gap-1 border-t border-line pt-2 text-micro text-fg-muted">
                         <span className="truncate">{preset.foundations.typography?.fontFamily}</span>
                         {/* Appearance is NOT listed here any more — the toggle
                             above states it, and a readout beside a control that
@@ -650,7 +650,7 @@ export default function ThemeLibraryRail({
                           onClick={() => addPreset(preset, true)}
                           title={t('Add and edit colors')}
                           aria-label={t('Add and customize {name}', { name: preset.label })}
-                          className="h-7 w-7 grid place-items-center rounded-lg border border-line text-fg-muted hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                          className="h-7 w-7 grid place-items-center rounded-lg border border-line text-fg-muted hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                         >
                           <TuneIcon />
                         </button>

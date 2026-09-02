@@ -480,6 +480,56 @@ export function neutralFromBrand(hex: string, tint: NeutralTint = DEFAULT_NEUTRA
   }
 }
 
+const NEUTRAL_CURATED_LABELS = ['Surface', 'Soft', 'Muted', 'Stone', 'Graphite', 'Deep'] as const
+const NEUTRAL_CURATED_STEPS = [1, 3, 5, 7, 9, 11] as const
+const NEUTRAL_CURATED_FALLBACK: { label: string; hex: string }[] = [
+  { label: 'Surface', hex: '#f0f0f3' },
+  { label: 'Soft', hex: '#e0e1e6' },
+  { label: 'Muted', hex: '#cdced6' },
+  { label: 'Stone', hex: '#8b8d98' },
+  { label: 'Graphite', hex: '#80838d' },
+  { label: 'Deep', hex: '#60646c' },
+]
+
+/** Vivid anchor for `neutralCuratedPalette` — hue from the picker's spectrum
+ *  slider, saturation/lightness from the neutral tint spec (same target as
+ *  `neutralFromBrand`). Keeps the curated bar tied to the hue the user is
+ *  pointing at even when the field value is still a low-chroma grey. */
+export function neutralHueAnchorFromSpectrum(
+  hueDegrees: number,
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
+): string {
+  try {
+    const h = Number.isNaN(hueDegrees) ? 0 : hueDegrees
+    return chroma.hsl(h, neutralTintSpec(tint).brandSat, 0.46).hex()
+  } catch {
+    return '#80838d'
+  }
+}
+
+/** Six-step neutral ramp harmonized with a brand/spectrum hue — for the Curated
+ *  palette bar while editing accent or neutral. Recomputes when the picker
+ *  colour moves so the strip always matches what's on the spectrum. */
+export function neutralCuratedPalette(
+  hueSourceHex: string,
+  tint: NeutralTint = DEFAULT_NEUTRAL_TINT,
+  appearance: ScaleAppearance = 'light',
+): { label: string; hex: string }[] {
+  try {
+    const anchor = neutralFromBrand(hueSourceHex, tint)
+    const page = backgroundFromBase(anchor, appearance, tint)
+    const scale = appearance === 'dark'
+      ? generateDarkColorScale(anchor, 'radix', 0, page, tint)
+      : generateColorScale(anchor, 'radix', 0, page, appearance, tint)
+    return NEUTRAL_CURATED_STEPS.map((step, i) => ({
+      label: NEUTRAL_CURATED_LABELS[i],
+      hex: scale[step] ?? anchor,
+    }))
+  } catch {
+    return NEUTRAL_CURATED_FALLBACK
+  }
+}
+
 export function backgroundFromBase(
   baseHex: string,
   appearance: ScaleAppearance = 'light',

@@ -100,7 +100,7 @@ export default function Step7_Shadow({ tabBar, query, previewTheme }: { tabBar?:
                 onReset: () => setShadows({ ...shadows, [step]: standard ?? value }),
                 preview: (
                   <div
-                    className="w-9 h-9 rounded-lg bg-surface border border-line/40 flex-shrink-0"
+                    className="w-9 h-9 rounded-lg bg-surface border border-line flex-shrink-0"
                     style={{ boxShadow: swatch(value) }}
                   />
                 ),

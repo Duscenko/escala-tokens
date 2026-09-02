@@ -3,8 +3,8 @@
 // are intent aliases that ONLY reference a primitive key — never a new px.
 //
 // Naming (CSS / Figma / JSON), one convention:
-//   primitive  `{family}-{step}`     --radius-md, --spacing-5, --breakpoint-md
-//   semantic   `{family}-{intent}`   --radius-action: var(--radius-md)
+//   primitive  `{family}-{step}`     --radius-2xl, --spacing-5, --breakpoint-md
+//   semantic   `{family}-{intent}`   --radius-action: var(--radius-2xl)
 //                                   --breakpoint-mobile: calc(var(--breakpoint-md) - 1px)
 // Family prefixes stay identical so a consumer never has to guess `space-` vs
 // `spacing-`. Steps are the public scale names (xs/sm/md… and 0/1/2/3/4/5…).
@@ -12,49 +12,72 @@
 export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'selector' | 'stroke' | 'breakpoint'
 
 // ── Radius primitives ───────────────────────────────────────────────────────
+// Tailwind / HeroUI model: one base (`lg` = `--radius`) and named steps as
+// fixed ratios of it. Values at the default 8px base are the published table
+// (xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32).
+// `2.5xl` is NOT a step — neither Tailwind nor HeroUI ships it.
 
-export const RADIUS_STEPS = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'full'] as const
+export const RADIUS_WORKING_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
+export type RadiusWorkingStep = (typeof RADIUS_WORKING_STEPS)[number]
+
+export const RADIUS_SCALE_RATIOS: Record<RadiusWorkingStep, number> = {
+  xs: 0.25,
+  sm: 0.5,
+  md: 0.75,
+  lg: 1,
+  xl: 1.5,
+  '2xl': 2,
+  '3xl': 3,
+  '4xl': 4,
+}
+
+export const RADIUS_STEPS = ['none', ...RADIUS_WORKING_STEPS, 'full'] as const
 export type RadiusStep = (typeof RADIUS_STEPS)[number]
 
-export const RADIUS_PRESETS: { label: string; description: string; values: Record<RadiusStep, string> }[] = [
-  {
-    label: 'Sharp',
-    description: 'No rounding — sharp, precise',
-    values: { none: '0px', xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px', full: '9999px' },
-  },
-  {
-    label: 'Soft',
-    description: 'Moderate rounding — balanced, modern',
-    values: { none: '0px', xs: '2px', sm: '4px', md: '8px', lg: '12px', xl: '16px', full: '9999px' },
-  },
-  {
-    label: 'Rounded',
-    description: 'Generous rounding — friendly, approachable',
-    values: { none: '0px', xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px', full: '9999px' },
-  },
-  {
-    label: 'Pill',
-    description: 'Very rounded — playful, consumer apps',
-    values: { none: '0px', xs: '8px', sm: '12px', md: '20px', lg: '32px', xl: '40px', full: '9999px' },
-  },
-]
+/** HeroUI / Tailwind `--radius` default: 0.5rem = 8px. */
+export const RADIUS_DEFAULT_LG = 8
 
-/** System standard = Rounded. Fresh systems and per-token reset share this ramp. */
-export const RADIUS_STANDARD: Record<RadiusStep, string> = RADIUS_PRESETS[2].values
-
-/** Grade the ramp from `lg`. Ratios match Rounded (xs=lg/6 … xl=4lg/3). */
+/** Grade the whole ramp from `lg`. Ratios are Tailwind/HeroUI, not a hand-tuned personality. */
 export function scaleRadiusFromLg(lg: number, current?: Record<string, string>): Record<string, string> {
   const clamp = (n: number) => `${Math.max(0, Math.round(n))}px`
-  return {
-    ...current,
-    none: '0px',
-    xs: clamp(lg / 6),
-    sm: clamp(lg / 3),
-    md: clamp((lg * 2) / 3),
-    lg: clamp(lg),
-    xl: clamp((lg * 4) / 3),
-    full: '9999px',
+  const next: Record<string, string> = { ...current, none: '0px', full: '9999px' }
+  for (const step of RADIUS_WORKING_STEPS) next[step] = clamp(lg * RADIUS_SCALE_RATIOS[step])
+  return next
+}
+
+function radiusPreset(
+  label: string,
+  description: string,
+  lg: number,
+): { label: string; description: string; values: Record<RadiusStep, string> } {
+  return { label, description, values: scaleRadiusFromLg(lg) as Record<RadiusStep, string> }
+}
+
+export const RADIUS_PRESETS: { label: string; description: string; values: Record<RadiusStep, string> }[] = [
+  radiusPreset('Sharp', 'lg 8px — Tailwind / HeroUI default', 8),
+  radiusPreset('Soft', 'lg 12px — slightly softer controls', 12),
+  radiusPreset('Rounded', 'lg 16px — friendly, approachable', 16),
+  radiusPreset('Pill', 'lg 24px — generous, consumer apps', 24),
+]
+
+/** System standard = Sharp (HeroUI default). Roles pick 2xl/3xl/4xl so the look matches the previous Rounded ramp. */
+export const RADIUS_STANDARD: Record<RadiusStep, string> = RADIUS_PRESETS[0].values
+
+/** Fill missing (or 0px) working steps from the current `lg` without rewriting hand-edited values. */
+export function completeRadiusScale(current?: Record<string, string>): Record<string, string> {
+  const parsed = parseFloat(current?.lg ?? '')
+  const lg = Number.isFinite(parsed) && parsed > 0 ? parsed : RADIUS_DEFAULT_LG
+  const graded = scaleRadiusFromLg(lg)
+  const out: Record<string, string> = { ...graded }
+  if (!current) return out
+  for (const step of RADIUS_WORKING_STEPS) {
+    const raw = current[step]
+    const n = parseFloat(raw ?? '')
+    if (Number.isFinite(n) && n > 0) out[step] = raw as string
   }
+  out.none = current.none ?? '0px'
+  out.full = current.full ?? '9999px'
+  return out
 }
 
 export function matchRadiusPreset(radius: Record<string, string>): string | null {
@@ -383,10 +406,10 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
 }
 
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'xs' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: 'md' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: 'lg' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: 'xl' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'sm' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: '2xl' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: '3xl' },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: '4xl' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'surface', primitive: 'full' },
 ]
 

@@ -43,13 +43,23 @@ interface RainbowButtonProps
 }
 
 const RainbowButton = React.forwardRef<HTMLButtonElement, RainbowButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, style, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    // The ink is set inline, not via `text-primary-foreground`, because
+    // tailwind-merge treats a caller's `text-<size>` token (e.g. `text-ui`) as
+    // conflicting with the `text-*` color class and silently drops the color —
+    // leaving white label text on the white (dark-chrome) fill. An inline value
+    // can't be merged away, and `style` from props still overrides it.
+    const inkStyle =
+      (variant ?? "default") === "default"
+        ? { color: "var(--rainbow-ink)", ...style }
+        : style
     return (
       <Comp
         data-slot="button"
         className={cn(rainbowButtonVariants({ variant, size, className }))}
         ref={ref}
+        style={inkStyle}
         {...props}
       />
     )

@@ -60,7 +60,7 @@ function AxisControl({ axis, value, onChange }: { axis: VariantAxis; value: stri
   // Boolean-shaped axes (True/False) read better as a switch-like pill pair.
   const isBool = axis.values.length === 2 && axis.values.includes('True') && axis.values.includes('False')
   return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-line/50 last:border-b-0">
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-b-0">
       <span className="text-xs text-fg-muted">{axis.name}</span>
       {isBool ? (
         <button
@@ -101,7 +101,7 @@ function AxisControl({ axis, value, onChange }: { axis: VariantAxis; value: stri
 
 function OptionSwitch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-line/50 last:border-b-0">
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-line last:border-b-0">
       <span className="text-xs text-fg-muted">{label}</span>
       <button
         role="switch"
@@ -219,7 +219,7 @@ function Hero({
             ))}
             {slots && (
               <>
-                {def.axes.length > 0 && <div className="border-t border-line/70 my-1" />}
+                {def.axes.length > 0 && <div className="border-t border-line my-1" />}
                 <OptionSwitch label="Leading icon" checked={leadingIcon} onChange={onLeadingIconChange} />
                 <OptionSwitch label="Trailing icon" checked={trailingIcon} onChange={onTrailingIconChange} />
               </>
@@ -274,7 +274,7 @@ function KeyboardTable() {
         <span>Key</span>
         <span>Description</span>
       </div>
-      <div className="divide-y divide-line/60">
+      <div className="divide-y divide-line">
         {KEYBOARD_ROWS.map((row) => (
           <div key={row.key} className="grid grid-cols-[100px_1fr] gap-4 px-4 py-2.5 items-center">
             <kbd className="justify-self-start text-mini font-mono px-1.5 py-0.5 rounded border border-line-strong bg-elevated text-fg-muted">
@@ -298,7 +298,7 @@ function ApiPropsTable({ def }: { def: ComponentDef }) {
         <span>Type</span>
         <span>Description</span>
       </div>
-      <div className="divide-y divide-line/60">
+      <div className="divide-y divide-line">
         {def.props.map((prop) => (
           <div key={prop.name} className="grid grid-cols-[1fr_1fr_1.6fr] gap-4 px-4 py-2.5 items-start">
             <code className="text-xs text-[#5AADFF] font-mono break-all">{prop.name}</code>
@@ -319,7 +319,7 @@ function ApiVariantsTable({ def }: { def: ComponentDef }) {
         <span>Options</span>
         <span>Default</span>
       </div>
-      <div className="divide-y divide-line/60">
+      <div className="divide-y divide-line">
         {def.axes.map((axis) => (
           <div key={axis.name} className="grid grid-cols-[1fr_2fr_1fr] gap-4 px-4 py-2.5 items-start">
             <code className="text-xs text-[#5AADFF] font-mono">{axis.name}</code>

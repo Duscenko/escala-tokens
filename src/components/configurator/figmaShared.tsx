@@ -1,12 +1,6 @@
 import { type ReactNode } from 'react'
 
 // ── Shared between FigmaSyncView and FigmaDownloadView ──────────────────────
-// The two used to be one linear page (`FigmaConnectView`, retired — see
-// CLAUDE.md's Navigation model note on why it split): download-and-install is
-// a one-time procedure, checking sync status is a recurring one, and welding
-// them into one screen meant a returning user re-scrolled past install steps
-// they finished weeks ago just to reach the sync URL. `Step`/`FigmaLogo` are
-// the two bits of chrome both screens still need.
 
 // ─── Figma brand mark (full color) ────────────────────────────────────────────
 export function FigmaLogo({ size = 40 }: { size?: number }) {
@@ -62,4 +56,57 @@ export function relativeTime(iso: string | null): string {
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}h ago`
   return `${Math.floor(hours / 24)}d ago`
+}
+
+/** Install affordance inside the Sync hero — one Figma mark on the page, not a
+ *  second card that reads as a duplicate screen. Single row: name + version on
+ *  the left, download on the right. Helper copy only when an update exists. */
+export function PluginInstallPromo({
+  version,
+  updateAvailable,
+  onOpenInstall,
+}: {
+  version: string
+  updateAvailable: boolean
+  onOpenInstall: () => void
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 border-t border-line pt-4 ${
+        updateAvailable ? 'rounded-lg bg-accent-ui/[0.04] -mx-1 px-2 pb-2' : ''
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-body font-semibold text-fg">Plugin</p>
+          {updateAvailable ? (
+            <span className="inline-flex items-center rounded-full bg-accent-ui/10 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-ui">
+              Update available
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted border border-line">
+              v{version}
+            </span>
+          )}
+        </div>
+        {updateAvailable && (
+          <p className="mt-1 text-caption text-fg-muted leading-snug">
+            v{version} — download and re-import in Figma desktop.
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onOpenInstall}
+        aria-label={updateAvailable ? 'Download plugin update and open install steps' : 'Download plugin and open install steps'}
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-fg px-3 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
+          <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+        </svg>
+        {updateAvailable ? 'Download update' : 'Download'}
+      </button>
+    </div>
+  )
 }

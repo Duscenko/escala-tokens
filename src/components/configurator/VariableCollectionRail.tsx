@@ -91,7 +91,7 @@ export function RailControl({
 /** Separates a control block from the nav below it. Same hairline the rail
  *  already draws between Collections and Groups — one divider mark per rail. */
 export function RailDivider() {
-  return <div className="my-1.5 h-px bg-line/70" aria-hidden />
+  return <div className="my-1.5 h-px bg-line" aria-hidden />
 }
 
 /** What a foundation with no groups shows, instead of a heading over nothing.
@@ -224,7 +224,7 @@ export default function VariableCollectionRail({
         </div>
       </section>
 
-      <div className={`${collapsed ? 'my-2' : 'my-3'} h-px bg-line/70`} aria-hidden />
+      <div className={`${collapsed ? 'my-2' : 'my-3'} h-px bg-line`} aria-hidden />
 
       <section aria-labelledby="variable-groups-heading">
         {!collapsed && <h2 id="variable-groups-heading" className="px-1 pb-2 text-ui font-semibold text-fg">Groups</h2>}

@@ -261,9 +261,9 @@ export default function StepGradients({
 
       <div className="flex-1 min-w-0 flex flex-col bg-app">
       {/* ── Gradient type + the live bar it produces. Groups | icon-rail is
-          FoundationWorkbench. `border-line/60` since this sits between Groups
+          FoundationWorkbench. `border-line` since this sits between Groups
           above and the nav + table below. ── */}
-      <div className="flex flex-col flex-shrink-0 border-b border-line/60">
+      <div className="flex flex-col flex-shrink-0 border-b border-line">
         {/* No `foundation-layer-bar` (its `--surface` fill + inset hairline) and
             no local search box: the gradient list is three named rows in the
             rail, the workspace already owns "Search tokens", and a recessed
@@ -389,15 +389,15 @@ export default function StepGradients({
 
       {/* ── Gradient stops table ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-        <div className="flex-1 min-w-0 overflow-auto bg-app border-l border-line">
+        <div className="flex-1 min-w-0 overflow-auto bg-app">
           {selected ? (
             <div className="min-w-[28rem]">
               <div
-                className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
+                className="grid items-stretch h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
                 style={gridStyle}
               >
-                <span className="flex items-center pl-4 border-r border-line/60">Transparency</span>
-                <span className="flex items-center gap-2 border-r border-line/60 px-4">
+                <span className="flex items-center pl-4 border-r border-line">Transparency</span>
+                <span className="flex items-center gap-2 border-r border-line px-4">
                   Stops
                   {/* Which appearance the colour cells below EDIT. Same eye
                       affordance and the same `previewTheme` state as the
@@ -462,7 +462,7 @@ export default function StepGradients({
               </div>
 
               {locked && (
-                <p className="px-4 py-2 text-caption text-fg-faint border-b border-line/60">
+                <p className="px-4 py-2 text-caption text-fg-faint border-b border-line">
                   Each stop reads a <strong className="font-semibold text-fg-muted">tone of your accent ramp</strong>, so the gradient
                   re-resolves through the primitives whenever the accent changes — and the same tone resolves against the accent's
                   dark twin, so the dark appearance comes for free. Pick a different tone below, or unlock to use a free colour instead.
@@ -475,7 +475,7 @@ export default function StepGradients({
                   className={tableRowClass(i, 'grid')}
                   style={gridStyle}
                 >
-                  <div className="pl-4 pr-3 py-2.5 border-r border-line/60">
+                  <div className="pl-4 pr-3 py-2.5 border-r border-line">
                     <div className="flex items-center w-24 px-2 py-1.5 rounded-lg border border-line bg-surface">
                       <input
                         type="number"
@@ -495,7 +495,7 @@ export default function StepGradients({
                       colour, so it keeps the raw picker + hex. Showing bare hex
                       for a linked stop was the bug: it named a value that lived
                       nowhere in the system. */}
-                  <div className="flex items-center gap-2.5 px-4 py-2.5 border-r border-line/60 min-w-0">
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 border-r border-line min-w-0">
                     {locked && typeof s.tone === 'number' ? (
                       <>
                         <span

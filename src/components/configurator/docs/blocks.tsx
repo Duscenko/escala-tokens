@@ -52,7 +52,7 @@ export function CopyAgentContextButton({ text }: { text: string }) {
 /** Overview header — same chrome, global Skill markdown (zip still lives in Export).
  *  Labelled paste-only: install lives on Docs → Use in code. */
 export function DownloadSkillButton() {
-  return <AIContextButton scope="global" markdown={() => buildSkillExport().skillMd} />
+  return <AIContextButton scope="global" label="Copy page" markdown={() => buildSkillExport().skillMd} />
 }
 
 // ── Page chrome ──────────────────────────────────────────────────────────────
@@ -62,10 +62,19 @@ export function DownloadSkillButton() {
  *  not one shared "Documentation"); `kind` is the middle crumb — "Foundations"
  *  or a component category. */
 export function DocHeader({
-  section, kind, title, actions,
-}: { section: string; kind: string; title: string; actions: ReactNode }) {
+  section, kind, title, actions, extra, sticky = false,
+}: {
+  section: string; kind: string; title: string; actions: ReactNode
+  /** Rendered in the actions cluster after `actions` — e.g. a trailing control
+   *  that must stay rightmost. */
+  extra?: ReactNode
+  /** Pins the header to the top of the scrolling article (the Theme Preview hub). */
+  sticky?: boolean
+}) {
   return (
-    <div className="flex items-center justify-between gap-4 min-w-0 @max-[640px]:flex-col @max-[640px]:items-start">
+    <div className={`flex items-center justify-between gap-4 min-w-0 @max-[640px]:flex-col @max-[640px]:items-start ${
+      sticky ? 'sticky top-0 z-20 bg-app -mx-5 @min-[760px]:-mx-8 px-5 @min-[760px]:px-8 py-3 border-b border-line' : ''
+    }`}>
       {/* The MIDDLE crumb is the one that drops on a narrow window, not the
           page's own name: with the rail, the master list and the TOC all
           claiming width, three crumbs plus the actions truncated to
@@ -79,7 +88,7 @@ export function DocHeader({
         <span aria-hidden className="flex-shrink-0">/</span>
         <span className="text-fg font-medium truncate">{title}</span>
       </div>
-      <div className="flex items-center gap-3 max-w-full flex-shrink-0">{actions}</div>
+      <div className="flex items-center gap-3 max-w-full flex-shrink-0">{actions}{extra}</div>
     </div>
   )
 }
@@ -285,7 +294,7 @@ export function UseItBlock({ useIt }: { useIt: UseIt }) {
       </BlockChrome>
       <CodePane code={dest.code} minH={0} />
       {dest.note && (
-        <p className="px-4 py-2 text-caption leading-relaxed text-fg-faint border-t border-line/60 break-words">
+        <p className="px-4 py-2 text-caption leading-relaxed text-fg-faint border-t border-line break-words">
           {dest.note}
         </p>
       )}

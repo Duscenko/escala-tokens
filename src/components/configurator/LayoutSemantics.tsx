@@ -237,14 +237,14 @@ export default function LayoutSemantics({
                     id={`layout-role-${family}-${role.key}`}
                     className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                   >
-                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60">
+                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                       <span className="flex items-center gap-2 min-w-0">
                         <code className="font-mono text-body text-fg-muted truncate">{family}-{role.key}</code>
                         {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
                       </span>
                       <span className="text-caption text-fg-faint truncate">{role.description}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line/60 min-w-0">
+                    <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
                       <select
                         aria-label={`${role.key} primitive`}
                         value={step}
@@ -256,7 +256,7 @@ export default function LayoutSemantics({
                         ))}
                       </select>
                     </div>
-                    <div className="flex items-center px-3 py-2 border-r border-line/60 overflow-hidden gap-2">
+                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden gap-2">
                       <RolePreview family={family} value={resolved} accent={accent} />
                       <span className="text-caption font-mono text-fg-faint tabular-nums flex-shrink-0">{resolved || '—'}</span>
                     </div>

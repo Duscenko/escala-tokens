@@ -3,6 +3,7 @@ import { BRAND_SPECTRUM, BRAND_PRESETS } from '../brandPalette'
 import {
   INDUSTRY_PACKS,
   INDUSTRY_SPECTRUM,
+  accentCuratedPalette,
   hexEq,
   industryFromHex,
   industryFromHue,
@@ -71,6 +72,16 @@ describe('industry packs', () => {
     expect(INDUSTRY_SPECTRUM.map((a) => a.hex.toLowerCase())).toEqual(
       BRAND_SPECTRUM.map((a) => a.hex.toLowerCase()),
     )
+  })
+
+  it('accent curated palette returns six vivid neighbours, not neutrals', () => {
+    const aroundViolet = accentCuratedPalette('#875bf7')
+    expect(aroundViolet).toHaveLength(6)
+    expect(aroundViolet.some((s) => s.hex.toLowerCase() === '#875bf7')).toBe(true)
+    // Every swatch is a vetted brand accent from the spectrum — never a grey ramp step.
+    for (const swatch of aroundViolet) {
+      expect(INDUSTRY_SPECTRUM.some((a) => a.hex.toLowerCase() === swatch.hex.toLowerCase())).toBe(true)
+    }
   })
 
   it('sorts row swatches by ascending hue', () => {

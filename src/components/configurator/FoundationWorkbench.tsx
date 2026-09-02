@@ -34,7 +34,7 @@ export default function FoundationWorkbench({
   children: ReactNode
 }) {
   const embeddedRailHeader = (
-    <div className={`sticky top-0 z-20 flex h-[52px] items-center border-b border-line/60 bg-app ${railCollapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-3 pr-2'}`}>
+    <div className={`sticky top-0 z-20 flex h-[52px] items-center border-b border-line bg-app ${railCollapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-3 pr-2'}`}>
       {/* The foundation's OWN name, not a bare "Variables" — `label` is
           `section.variablesLabel` ("Color Variables", "Text Variables", …), so
           the rail header says which variables it lists. */}

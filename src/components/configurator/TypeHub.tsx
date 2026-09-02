@@ -33,7 +33,7 @@ export default function TypeHub({
         </div>
       ) : (
         <div className="flex-1 min-h-0">
-          <TypeSemantics tabBar={heading} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} />
+          <TypeSemantics tabBar={heading} query={query} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} />
         </div>
       )}
     </div>

@@ -137,13 +137,13 @@ const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
 }
 // A nav row's glyph comes from the SAME mapping the preview focus does, so the
 // icon can never imply a different grouping than the specimen it opens.
-const archIconFor = (key: string): ReactNode => {
+export const archIconFor = (key: string): ReactNode => {
   const focus = focusForNavKey(key)
   return focus ? FOCUS_ICON[focus] : CATEGORY_ICON.all
 }
 
 // Checkerboard under alpha swatches so transparency reads visually (vibrancy).
-const CHECKER_STYLE: React.CSSProperties = {
+export const CHECKER_STYLE: React.CSSProperties = {
   backgroundImage: 'repeating-conic-gradient(rgba(127,127,127,0.35) 0% 25%, transparent 0% 50%)',
   backgroundSize: '8px 8px',
 }
@@ -203,7 +203,7 @@ function rampsOf(
 }
 
 /** `neutral.12` → ['neutral', 12]; null for raw CSS (vibrancy alphas, blur). */
-function parseRef(label: string): [string, number] | null {
+export function parseRef(label: string): [string, number] | null {
   const m = /^([a-z-]+)\.(\d+)$/.exec(label)
   return m ? [m[1], Number(m[2])] : null
 }
@@ -211,7 +211,7 @@ function parseRef(label: string): [string, number] | null {
 // The mode's name + light/dark glyph used to live here; it's the collapsible
 // section header now (see TokenDetailsModal's `sections`), so this renders the
 // grid alone rather than printing a second label inside its own card.
-function ArchModeEditor({
+export function ArchModeEditor({
   label, value, scales, palette, kind, pageBackground, darkBackground, onPick,
 }: {
   /** That mode's own palette + polarity — the grid MUST resolve through these
@@ -461,7 +461,7 @@ function MatrixRow({
             striped rows nor goes dead on hover. `sticky` is itself a
             positioned value, so the overlays anchor to this cell without
             needing `relative`. */}
-        <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line/60 sticky left-0 z-10 bg-app">
+        <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
           <span
             aria-hidden
             className={`absolute inset-0 pointer-events-none ${
@@ -486,7 +486,7 @@ function MatrixRow({
         </div>
 
         {/* One value cell per theme — the previewed theme's column is tinted */}
-        {cols.map((col) => {
+        {cols.map((col, i) => {
           const tone = toneIndexOf(col.scale, col.value)
           // A role can draw from a different family in dark mode (content-inverse,
           // border-brand-alt) — badge the family that actually resolved this cell.
@@ -495,7 +495,7 @@ function MatrixRow({
             <button
               key={col.key}
               onClick={() => onToggle(col.key)}
-              className={`flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line/60 ${
+              className={`flex items-center min-w-0 px-2 py-2.5 text-left ${i < cols.length - 1 ? 'border-r border-line' : ''} ${
                 col.previewed ? 'bg-accent-ui/[0.06]' : ''
               }`}
               aria-label={`${col.key} value ${SCALE_META[effScale].label}-${tone ?? '?'}`}
@@ -620,7 +620,7 @@ function ScrollPager({
       {/* The pill is what lets the dots sit over scrolling rows and stay
           readable without dimming them — `bg-app/80` + blur rather than a
           solid bar, so the row underneath still reads as continuous. */}
-      <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-line/60 bg-app/80 px-1 py-0.5 backdrop-blur-sm opacity-60 hover:opacity-100 transition-opacity">
+      <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-line bg-app/80 px-1 py-0.5 backdrop-blur-sm opacity-60 hover:opacity-100 transition-opacity">
         {Array.from({ length: dots }, (_, i) => {
           const on = i === active
           return (
@@ -1252,7 +1252,7 @@ export default function Step3_SemanticTokens({
           </div>
         </VariableCollectionRail>
 
-        <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
+        <div className="flex-1 min-w-0 flex flex-col bg-app min-h-0">
 
         {/* Token table — scrolls internally; column header stays pinned.
             `tableRef` is what the Token Details dialog docks against, so it
@@ -1264,21 +1264,21 @@ export default function Step3_SemanticTokens({
             element itself. */}
         <div className="flex-1 min-w-0 flex min-h-0">
         <div className="relative flex-1 min-w-0 min-h-0">
-        <div ref={tableRef} className="h-full min-w-0 overflow-auto bg-app border-l border-line">
+        <div ref={tableRef} className="h-full min-w-0 overflow-auto bg-app">
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
             <div className="min-w-[28rem]">
               <div
-                className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
+                className="grid items-stretch h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
                 style={archGridStyle}
               >
                 {/* Pinned, matching the rows' own name cells below. `bg-app`
                     is its own, not inherited: the header div's background
                     scrolls with the header's content box, so without a fill
                     here the mode labels would slide visibly under this one. */}
-                <span className="flex items-center pl-4 border-r border-line/60 sticky left-0 z-10 bg-app">Token name</span>
-                {archModeKeys.map((mode) => {
+                <span className="flex items-center pl-4 border-r border-line sticky left-0 z-10 bg-app">Token name</span>
+                {archModeKeys.map((mode, i) => {
                   const isPreviewed = activeAppearance === kindOf(mode)
                   const label = archModeLabel(mode)
                   // Categorical's columns ARE `themeOrder`, one per theme,
@@ -1288,7 +1288,7 @@ export default function Step3_SemanticTokens({
                   // per-theme concept, which is what this used to guard.)
                   const deletable = themeCols.length > 1
                   return (
-                    <span key={mode} className={`flex items-center border-r border-line/60 min-w-0 px-1.5 py-1.5 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                    <span key={mode} className={`flex items-center min-w-0 px-1.5 py-1.5 ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''} ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       {/* Same "whole header is the preview toggle" affordance
                           the flat matrix's columns use — 'light'/'dark' are
                           always valid theme keys, and Categorical's added
@@ -1394,7 +1394,7 @@ export default function Step3_SemanticTokens({
                           flat matrix's `MatrixRow` carries; see its comment for
                           the opaque-base + two-overlay layering and why the
                           inner button needs `relative`. */}
-                      <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line/60 sticky left-0 z-10 bg-app">
+                      <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
                         <span
                           aria-hidden
                           className={`absolute inset-0 pointer-events-none ${
@@ -1416,18 +1416,13 @@ export default function Step3_SemanticTokens({
                           )}
                         </button>
                       </div>
-                      {archModeKeys.map((mode) => (
+                      {archModeKeys.map((mode, i) => (
                         <button
                           key={mode}
                           onClick={() => editable && (setDetailsMode(mode), setArchEditing(isOpen ? null : t.id))}
-                          // Border-r on EVERY mode column, including the last —
-                          // the header above already puts one after every mode
-                          // (unconditionally, see its `archModeKeys.map`), so
-                          // skipping it here for the final column left rows with
-                          // no divider before the trailing edit-icon cell while
-                          // the header still showed one. Same fix as the
-                          // Primitives table, which never had this gap.
-                          className="flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line/60"
+                          // Last mode has no `border-r`: the sticky trail owns
+                          // that seam (`border-l`) so the two never stack.
+                          className={`flex items-center min-w-0 px-2 py-2.5 text-left ${i < archModeKeys.length - 1 ? 'border-r border-line' : ''}`}
                         >
                           <TokenCell
                             v={t.modes[mode]}
@@ -1458,11 +1453,11 @@ export default function Step3_SemanticTokens({
           ) : (
           <div className="min-w-[26rem]">
             {/* Column header — one column per theme; custom themes are removable */}
-            <div className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
+            <div className="grid items-stretch h-[52px] border-b border-line bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
               {/* Pinned — see the arch header's matching cell. `sticky` is a
                   positioned value, so it still anchors the resize grip below
                   exactly as `relative` did. */}
-              <span className="group flex items-center pl-4 border-r border-line/60 sticky left-0 z-10 bg-app">
+              <span className="group flex items-center pl-4 border-r border-line sticky left-0 z-10 bg-app">
                 Token name
                 <span
                   onPointerDown={(e) => {
@@ -1479,7 +1474,7 @@ export default function Step3_SemanticTokens({
                   className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize opacity-0 group-hover:opacity-100 hover:bg-accent-ui/40 transition-opacity"
                 />
               </span>
-              {themeCols.map((t) => {
+              {themeCols.map((t, i) => {
                 const isPreviewed = activeAppearance === kindOf(t)
                 const displayName = themeDisplayName(t)
                 const canDelete = themeCols.length > 1
@@ -1496,7 +1491,9 @@ export default function Step3_SemanticTokens({
                     onDragLeave={() => setDropTarget((cur) => (cur === t ? null : cur))}
                     onDrop={(e) => { e.preventDefault(); if (dragThemeRef.current) reorderColumns(dragThemeRef.current, t); dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
                     onDragEnd={() => { dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
-                    className={`group relative flex items-center gap-1 px-1.5 py-2 border-r border-line/60 min-w-0 transition-colors ${
+                    className={`group relative flex items-center gap-1 px-1.5 py-2 min-w-0 transition-colors ${
+                      i < themeCols.length - 1 ? 'border-r border-line' : ''
+                    } ${
                       isPreviewed ? 'bg-accent-ui/[0.06]' : ''
                     } ${managedThemesExternally ? '' : 'cursor-grab active:cursor-grabbing'} ${dragTheme === t ? 'opacity-40' : ''}`}
                   >

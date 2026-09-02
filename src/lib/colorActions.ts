@@ -9,11 +9,14 @@
 // a swatch click visibly updates what's on screen.
 
 import { useCallback, useEffect, useRef } from 'react'
-import { useDesignStore } from '../store/useDesignStore'
-import { generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase, recommendStateColors } from './colorUtils'
+import { useDesignStore, type CustomColor, type ThemeSources } from '../store/useDesignStore'
+import {
+  generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
+  recommendStateColors, neutralFromBrand, type ColorAlgorithm, type NeutralTint,
+} from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { linkedStopsFor } from './gradients'
-import { neutralFromBrand } from '../components/configurator/colorControls'
+import { FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
@@ -57,6 +60,144 @@ function grayTokenUpdates(
   return updates
 }
 
+/** The two pages a theme's ramps grow out of. Tone 1 IS this pair. */
+export type ThemePageSource = {
+  pageBackground: string
+  darkBackground: string
+  neutralTint: NeutralTint
+  themeSources: Record<string, ThemeSources | undefined>
+  customColors: CustomColor[]
+}
+
+/**
+ * The page a theme's primitive ramps must be built against.
+ *
+ * Linked to a new accent: derive from that accent's harmony — the page follows
+ * the Neutral, which follows the Accent. This is the hole that left tone 1
+ * stuck on a leftover global purple (`#190f20`) after a custom-brand theme
+ * was retinted: the scoped applier only moved the page when the theme also
+ * owned a private gray, so a theme still reading the global Neutral kept
+ * growing its brand ramp out of the system's old paper.
+ *
+ * Unlinked with a private gray: that family's own page (derived from its
+ * base), never the leftover globals.
+ * Else: the system's `pageBackground` / `darkBackground`.
+ */
+export function resolveThemePages(
+  s: ThemePageSource,
+  themeKey: string,
+  linkedAccentHex?: string | null,
+): { light: string; dark: string; nextNeutral: string | null } {
+  if (linkedAccentHex) {
+    const nextNeutral = neutralFromBrand(linkedAccentHex, s.neutralTint)
+    return {
+      light: backgroundFromBase(nextNeutral, 'light', s.neutralTint),
+      dark: backgroundFromBase(nextNeutral, 'dark', s.neutralTint),
+      nextNeutral,
+    }
+  }
+  const grayKey = s.themeSources[themeKey]?.gray ?? GLOBAL_FAMILY.gray
+  const grayFamily = grayKey !== GLOBAL_FAMILY.gray
+    ? s.customColors.find((c) => c.key === grayKey)
+    : undefined
+  if (grayFamily) {
+    return {
+      light: backgroundFromBase(grayFamily.base, 'light', s.neutralTint),
+      dark: backgroundFromBase(grayFamily.base, 'dark', s.neutralTint),
+      nextNeutral: null,
+    }
+  }
+  return { light: s.pageBackground, dark: s.darkBackground, nextNeutral: null }
+}
+
+/**
+ * The page a custom family should regenerate against, plus whether it is some
+ * theme's Neutral (needs `generateDarkColorScale` + the tint, not the generic
+ * family dark transform).
+ */
+export function resolveFamilyPages(
+  s: ThemePageSource,
+  familyKey: string,
+): { light: string; dark: string; isGray: boolean } {
+  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
+    if (!refs) continue
+    if (refs.gray === familyKey) {
+      return { ...resolveThemePages(s, themeKey), isGray: true }
+    }
+  }
+  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
+    if (!refs) continue
+    if (FAMILY_SLOTS.some((slot) => slot !== 'gray' && refs[slot] === familyKey)) {
+      return { ...resolveThemePages(s, themeKey), isGray: false }
+    }
+  }
+  return { light: s.pageBackground, dark: s.darkBackground, isGray: false }
+}
+
+function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<string> {
+  const keys = new Set<string>()
+  const global = new Set(Object.values(GLOBAL_FAMILY))
+  for (const refs of Object.values(themeSources)) {
+    if (!refs) continue
+    for (const slot of FAMILY_SLOTS) {
+      if (refs[slot] && !global.has(refs[slot])) keys.add(refs[slot])
+    }
+  }
+  return keys
+}
+
+function customScalePair(
+  hex: string,
+  s: { colorAlgorithm: ColorAlgorithm; contrastShift: number; neutralTint: NeutralTint },
+  pages: { light: string; dark: string },
+  isGray: boolean,
+) {
+  return {
+    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light', isGray ? s.neutralTint : undefined),
+    darkScale: isGray
+      ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, s.neutralTint)
+      : generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+  }
+}
+
+/**
+ * Retint a theme that reads a CUSTOM brand family. Returns false when the
+ * theme still points at the global `accent`, so the caller can take the
+ * system-wide path.
+ *
+ * Exported so tests can drive the same transaction the hook runs, without a
+ * React render.
+ */
+export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: string): boolean {
+  const s = useDesignStore.getState()
+  const refs = s.themeSources[themeKey]
+  if (!refs || refs.brand === GLOBAL_FAMILY.brand) return false
+
+  const pages = resolveThemePages(s, themeKey, linked ? hex : null)
+  s.updateCustomColor(refs.brand, {
+    base: hex,
+    ...customScalePair(hex, s, pages, false),
+  })
+  if (pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray) {
+    s.updateCustomColor(refs.gray, {
+      base: pages.nextNeutral,
+      ...customScalePair(pages.nextNeutral, s, pages, true),
+    })
+  }
+  // Status families this theme privately owns sit on the same paper. Leave
+  // them on the leftover global page and they show the same stuck tone 1
+  // the brand just left.
+  const skip = new Set([refs.brand, ...(pages.nextNeutral && refs.gray !== GLOBAL_FAMILY.gray ? [refs.gray] : [])])
+  for (const slot of FAMILY_SLOTS) {
+    const key = refs[slot]
+    if (!key || key === GLOBAL_FAMILY[slot] || skip.has(key)) continue
+    const fam = s.customColors.find((c) => c.key === key)
+    if (!fam) continue
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray'))
+  }
+  return true
+}
+
 // Applies a new accent (brand) hex to `themeKey`. Built-in themes (light/dark)
 // share the global scale, so updating one refreshes every built-in theme's
 // already-mapped tokens together — otherwise switching themes would show a
@@ -66,7 +207,7 @@ function grayTokenUpdates(
 export function useApplyAccentColor() {
   const {
     setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds,
-    mergeThemeTokens, updateCustomColor,
+    mergeThemeTokens,
     setGrayBaseColor, setGrayLightScale, setGrayDarkScale,
     setPageBackground, setDarkBackground,
     gradients, updateGradient,
@@ -75,45 +216,7 @@ export function useApplyAccentColor() {
 
   return useCallback((hex: string, linked = true, themeKey = 'light') => {
     try {
-      const refs = themeSources[themeKey]
-      if (refs && refs.brand !== 'accent') {
-        // Retint the family this theme reads. No token resync needed here: the
-        // theme resolves through the family, so it follows automatically.
-        // When Neutral follows Accent, it also owns this theme's page. Build
-        // the brand ramp against that page in the same transaction; otherwise
-        // the neutral moved correctly but brand tone 1 kept the old global
-        // purple anchor.
-        const neutral = linked && refs.gray !== 'neutral'
-          ? neutralFromBrand(hex, neutralTint)
-          : null
-        const themeLightPage = neutral
-          ? backgroundFromBase(neutral, 'light', neutralTint)
-          : pageBackground
-        const themeDarkPage = neutral
-          ? backgroundFromBase(neutral, 'dark', neutralTint)
-          : darkBackground
-        const scale = generateColorScale(hex, colorAlgorithm, contrastShift, themeLightPage)
-        const dark = generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, themeDarkPage)
-        updateCustomColor(refs.brand, { base: hex, scale, darkScale: dark })
-        if (neutral) {
-          // Anchored to THIS neutral's own page, exactly like `useApplyGrayColor`'s
-          // scoped branch — otherwise moving the accent and moving the tint would
-          // leave the same theme with two different tone 1s.
-          // BOTH ramps, each from its OWN generator. This used to pick one
-          // generator off `themeKinds` and write that single ramp to `scale`
-          // AND `darkScale` — so a dark theme stored its dark ramp as the light
-          // one, and a light theme stored its light ramp as the dark twin. The
-          // neutral is also the one family whose dark twin needs
-          // `generateDarkColorScale` + the tint (see NEUTRAL_TINTS), which the
-          // `kind === 'dark'` branch only ever reached by accident.
-          updateCustomColor(refs.gray, {
-            base: neutral,
-            scale: generateColorScale(neutral, colorAlgorithm, contrastShift, themeLightPage, 'light', neutralTint),
-            darkScale: generateDarkColorScale(neutral, colorAlgorithm, contrastShift, themeDarkPage, neutralTint),
-          })
-        }
-        return
-      }
+      if (applyScopedAccentColor(hex, linked, themeKey)) return
 
       // The page follows the BASE, not the accent — so it only moves when the
       // base does, i.e. while the link is on. Unlinked, the user's base (and the
@@ -147,7 +250,11 @@ export function useApplyAccentColor() {
       setPrimaryDarkScale(scaleDark)
       if (pageMoved) {
         const s = useDesignStore.getState()
-        s.customColors.forEach((c) => s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) }))
+        const owned = privateFamilyKeys(s.themeSources)
+        s.customColors.forEach((c) => {
+          if (owned.has(c.key)) return
+          s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) })
+        })
       }
       // States (error/warning/success/info) optionally track the accent too —
       // same contract as the neutral link just above, for the four status
@@ -209,7 +316,7 @@ export function useApplyAccentColor() {
     } catch {
       /* invalid hex — ignore */
     }
-  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, updateCustomColor, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
+  }, [setPrimaryColor, setPrimaryScale, setPrimaryDarkScale, themes, themeOrder, themeSources, themeKinds, mergeThemeTokens, setGrayBaseColor, setGrayLightScale, setGrayDarkScale, setPageBackground, setDarkBackground, gradients, updateGradient, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint])
 }
 
 // Seeds any still-empty global ramp from its base hex on mount. The primitives
@@ -238,7 +345,11 @@ export function useEnsureColorScales() {
       if (empty(s.warningDarkScale)) s.setWarningDarkScale(genDark(s.warningColor))
       if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor))
       if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
-      s.customColors.forEach((c) => { if (empty(c.darkScale)) s.updateCustomColor(c.key, { darkScale: genDark(c.base) }) })
+      s.customColors.forEach((c) => {
+        if (!empty(c.darkScale)) return
+        const pages = resolveFamilyPages(s, c.key)
+        s.updateCustomColor(c.key, { darkScale: customScalePair(c.base, s, pages, pages.isGray).darkScale })
+      })
     } catch {
       /* invalid hex — ignore */
     }
@@ -290,9 +401,10 @@ export function useRegenerateScalesOnScaleSettings() {
       // and the accent applier use.
       s.setGrayLightScale(generateColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint))
       s.setGrayDarkScale(generateDarkColorScale(s.grayBaseColor, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint))
-      s.customColors.forEach((c) =>
-        s.updateCustomColor(c.key, { scale: gen(c.base), darkScale: genDark(c.base) }),
-      )
+      s.customColors.forEach((c) => {
+        const pages = resolveFamilyPages(s, c.key)
+        s.updateCustomColor(c.key, customScalePair(c.base, s, pages, pages.isGray))
+      })
     } catch {
       /* invalid hex — leave the ramps as they are */
     }
@@ -318,7 +430,10 @@ export function useApplyPageBackground() {
       const warningScale = gen(s.warningColor)
       const successScale = gen(s.successColor)
       const infoScale = gen(s.infoColor)
-      const customScales = s.customColors.map((c) => [c.key, gen(c.base)] as const)
+      const owned = privateFamilyKeys(s.themeSources)
+      const customScales = s.customColors
+        .filter((c) => !owned.has(c.key))
+        .map((c) => [c.key, gen(c.base)] as const)
 
       s.setPageBackground(hex)
       s.setPrimaryScale(brandScale)
@@ -394,6 +509,15 @@ export function useApplyGrayColor() {
           scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, bg, 'light', s.neutralTint),
           darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint),
         })
+        const pages = { light: bg, dark: darkBg }
+        for (const slot of FAMILY_SLOTS) {
+          if (slot === 'gray') continue
+          const key = refs[slot]
+          if (!key || key === GLOBAL_FAMILY[slot]) continue
+          const fam = s.customColors.find((c) => c.key === key)
+          if (!fam) continue
+          s.updateCustomColor(key, customScalePair(fam.base, s, pages, false))
+        }
         return
       }
 
@@ -411,7 +535,10 @@ export function useApplyGrayColor() {
       const warningScale = gen(s.warningColor)
       const successScale = gen(s.successColor)
       const infoScale = gen(s.infoColor)
-      const customScales = s.customColors.map((c) => [c.key, gen(c.base), genDark(c.base)] as const)
+      const owned = privateFamilyKeys(s.themeSources)
+      const customScales = s.customColors
+        .filter((c) => !owned.has(c.key))
+        .map((c) => [c.key, gen(c.base), genDark(c.base)] as const)
 
       s.setGrayBaseColor(hex)
       s.setPageBackground(bg)
@@ -481,10 +608,17 @@ export function useApplyStateColor() {
    *  contract as `useApplyGrayColor`'s `fromLink`. Every other path is a
    *  person setting the state by hand, which unlinks it, so their choice is
    *  never silently overwritten on the next accent change. */
-  return useCallback((role: StateRole, hex: string, fromLink = false) => {
+  return useCallback((role: StateRole, hex: string, fromLink = false, themeKey?: string) => {
     const s = useDesignStore.getState()
     try {
       if (!fromLink && s.linkStatesToAccent) s.setLinkStatesToAccent(false)
+      const refs = themeKey ? s.themeSources[themeKey] : undefined
+      const familyKey = refs?.[role]
+      if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
+        const pages = resolveThemePages(s, themeKey!)
+        s.updateCustomColor(familyKey, { base: hex, ...customScalePair(hex, s, pages, false) })
+        return
+      }
       const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
       const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
       if (role === 'error')        { s.setErrorColor(hex);   s.setErrorScale(scale); s.setErrorDarkScale(dark) }

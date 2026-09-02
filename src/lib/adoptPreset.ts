@@ -26,21 +26,33 @@ import type { ThemeAppearance } from './themeModes'
  * Mints `preset` as a real theme in the given appearance and records where it
  * came from (`themeOrigin`), which is what Reset later resets TO.
  *
+ * `asCopy` is the AUTO-ADOPT path: a try-on becomes real the moment the user
+ * starts iterating on it (opens the token editor, drags a quick-settings
+ * control). It names the theme `<shortLabel> Copy` — "Core Copy" — so the row
+ * in MY THEMES reads unmistakably as a duplication the user can pull apart from
+ * the original, not as the pristine style itself. The explicit "Add to system"
+ * button leaves `asCopy` off and keeps the clean name (`preset.label`), because
+ * that press is a deliberate "make this style mine".
+ *
  * Returns the new theme's key, or an error string — never throws.
  */
 export function adoptPreset(
   preset: ThemeStylePreset,
   appearance: ThemeAppearance,
+  opts: { asCopy?: boolean; copyWord?: string } = {},
 ): { key: string } | { error: string } {
   const themes = useDesignStore.getState().themes
-  // "Core", then "Core 2"… — a style can honestly be adopted more than once
-  // (two takes on the same starting point), so a collision renames rather than
-  // refusing.
-  let label = preset.label
+  // "Core", then "Core 2"… (explicit add) — or "Core Copy", "Core Copy 2"…
+  // (auto-adopt). A style can honestly be adopted more than once, so a collision
+  // renames rather than refusing.
+  const baseLabel = opts.asCopy
+    ? `${preset.shortLabel} ${opts.copyWord ?? 'Copy'}`
+    : preset.label
+  let label = baseLabel
   let key = slugify(label)
   let suffix = 2
   while (themes[key]) {
-    label = `${preset.label} ${suffix++}`
+    label = `${baseLabel} ${suffix++}`
     key = slugify(label)
   }
 

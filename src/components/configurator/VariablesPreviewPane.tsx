@@ -45,7 +45,7 @@ export default function VariablesPreviewPane({
         {children}
       </div>
       {dots > 0 && (
-        <div role="group" aria-label="Preview scroll position" className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 rounded-full border border-line/60 bg-app/80 py-1 backdrop-blur-sm">
+        <div role="group" aria-label="Preview scroll position" className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 rounded-full border border-line bg-app/80 py-1 backdrop-blur-sm">
           {Array.from({ length: dots }, (_, index) => (
             <button
               key={index}

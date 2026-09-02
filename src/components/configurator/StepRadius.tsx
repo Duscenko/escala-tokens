@@ -51,7 +51,7 @@ export default function StepRadius({ tabBar, query, previewTheme }: { tabBar?: R
     setSelectedPreset(matchRadiusPreset(next))
   }
 
-  const lgPx = pxToNum(radius.lg ?? '24px')
+  const lgPx = pxToNum(radius.lg ?? '8px')
 
   return (
     // Preset and roundness live in the rail's Groups section, next to the token
@@ -80,7 +80,7 @@ export default function StepRadius({ tabBar, query, previewTheme }: { tabBar?: R
                 icon={<CornerIcon />}
               />
             </RailControl>
-            <RailControl label="Roundness" trailing={`lg · ${radius.lg ?? '24px'}`}>
+            <RailControl label="Roundness" trailing={`lg · ${radius.lg ?? '8px'}`}>
               <input
                 type="range"
                 min={0}

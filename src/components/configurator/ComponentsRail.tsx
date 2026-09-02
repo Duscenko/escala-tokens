@@ -63,7 +63,7 @@ export default function ComponentsRail({
       className="flex-shrink-0 flex flex-col min-h-0 transition-[width] duration-200"
     >
       <div
-        className={`flex items-center h-[52px] flex-shrink-0 border-b border-line/60 ${
+        className={`flex items-center h-[52px] flex-shrink-0 border-b border-line ${
           collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
         }`}
       >
@@ -132,7 +132,7 @@ export default function ComponentsRail({
                     <span className="truncate">{cat}</span>
                   </button>
 
-                  <div className="flex flex-col gap-0.5 pl-2 ml-2 border-l border-line/60">
+                  <div className="flex flex-col gap-0.5 pl-2 ml-2 border-l border-line">
                     {items.map((comp) => {
                       const isSelected = selectedComponents.includes(comp.key)
                       const isActive = comp.key === activeKey

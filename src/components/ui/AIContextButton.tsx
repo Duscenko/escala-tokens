@@ -16,6 +16,8 @@ export interface AIContextButtonProps {
   scope: AIContextScope
   /** LLM-optimized markdown, or a thunk so Global can rebuild from live tokens. */
   markdown: string | (() => string)
+  /** Overrides the visible button text (still an i18n key). Toast copy is unchanged. */
+  label?: string
 }
 
 /**
@@ -26,10 +28,11 @@ export interface AIContextButtonProps {
  * to ship a Skill zip, component pages a copy button, foundations a quiet
  * “Copy Page”. One control, three payloads.
  */
-export function AIContextButton({ scope, markdown }: AIContextButtonProps) {
+export function AIContextButton({ scope, markdown, label }: AIContextButtonProps) {
   const copy = AI_CONTEXT_COPY[scope]
   const { t } = useI18n()
   const [done, setDone] = useState(false)
+  const shownLabel = label ? t(label) : t(copy.label)
 
   async function onCopy() {
     try {
@@ -43,35 +46,18 @@ export function AIContextButton({ scope, markdown }: AIContextButtonProps) {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <RainbowButton type="button" size="sm" onClick={onCopy} className="relative z-10">
-        {done ? (
-          <>
-            <span className="text-caption leading-none">✓</span>
-            {t(copy.done)}
-          </>
-        ) : (
-          <>
-            <SparkleCircleIcon size={14} />
-            {t(copy.label)}
-          </>
-        )}
-      </RainbowButton>
-      <span className="relative group/hint inline-flex">
-        <button
-          type="button"
-          aria-label={t('What {label} does', { label: t(copy.label) })}
-          className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-mini font-semibold leading-none hover:text-fg hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-        >
-          i
-        </button>
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute right-0 top-full mt-2 w-60 rounded-lg bg-fg text-app text-caption leading-snug px-2.5 py-2 text-left opacity-0 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100 transition-opacity duration-150 z-40 shadow-lg"
-        >
-          {t(copy.hint)}
-        </span>
-      </span>
-    </div>
+    <RainbowButton type="button" size="sm" onClick={onCopy} className="relative z-10">
+      {done ? (
+        <>
+          <span className="text-caption leading-none">✓</span>
+          {t(copy.done)}
+        </>
+      ) : (
+        <>
+          <SparkleCircleIcon size={14} />
+          {shownLabel}
+        </>
+      )}
+    </RainbowButton>
   )
 }

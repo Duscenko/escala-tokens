@@ -136,7 +136,7 @@ export default function SpectrumSlider({
         if (event.key === 'Home') { event.preventDefault(); onCommit(colorAtHue(position, 0)) }
         if (event.key === 'End') { event.preventDefault(); onCommit(colorAtHue(position, 359)) }
       }}
-      className={`relative h-5 rounded-full border border-line/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
+      className={`relative h-5 rounded-full border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
       style={{ background: `linear-gradient(to right, ${track})`, touchAction: 'none' }}
     >
       <span

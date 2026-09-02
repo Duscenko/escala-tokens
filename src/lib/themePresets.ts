@@ -316,7 +316,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Inter', 'Inter', 'comfortable'),
       spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_PRESETS[2].values },
+      radius: { ...RADIUS_PRESETS[3].values },
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },
@@ -411,7 +411,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('DM Sans', 'Fraunces', 'comfortable'),
       spacing: buildSpacingFromBase(5),
-      radius: { ...RADIUS_PRESETS[2].values },
+      radius: { ...RADIUS_PRESETS[3].values },
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },

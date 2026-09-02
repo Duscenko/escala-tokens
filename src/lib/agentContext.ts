@@ -11,6 +11,7 @@ import { COLOR_FIELD_INFO, type PreviewColorField } from './previewColorFields'
 import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import {
   LAYOUT_ROLES,
+  RADIUS_STEPS,
   STROKE_STANDARD,
   defaultLayoutRoles,
   mergeLayoutRoles,
@@ -39,7 +40,7 @@ export interface AgentFoundationTokens extends Partial<Record<PreviewColorField,
   shadows?: Record<string, string>
 }
 
-const RADIUS_ORDER = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'full']
+const RADIUS_ORDER = [...RADIUS_STEPS]
 const SIZE_ORDER = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
 const PADDING_ORDER = ['top', 'right', 'bottom', 'left']
 
@@ -446,7 +447,7 @@ function inputOtpRecipe(t: AgentFoundationTokens): string {
     '### Agent rules (Figma)',
     '',
     '- Load `figma-use` before mutating the file. Bind semantics; never primitives or raw hex.',
-    '- Corner radius on every cell: `Radius/action` (`--radius-action` → `--radius-md`).',
+    '- Corner radius on every cell: `Radius/action` (`--radius-action` → `--radius-' + rolesOf(t, 'radius').action + '`).',
     '- Stroke: `Stroke/control`. Focus ring spread: `Stroke/focus`. Paint: `Border/focus`.',
     '- Variant property `Size` values are `SM` · `MD` · `LG` (uppercase) and map to `Size/sm` · `Size/md` · `Size/lg`. `State` values are `Default` · `Filled` · `Error`.',
     '- One component set, not six loose components. Auto-layout gap tracks `--spacing-gap-*` above.',
