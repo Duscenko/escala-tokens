@@ -29,7 +29,7 @@ import {
  * `surface.input` ships as `{neutral.1}`, i.e. **exactly `surface.page`** (the
  * role's own comment says "same tone as surface.page by design"). With no fill
  * difference, the border is the ONLY thing identifying a text field, so
- * `border.default`'s `{ui:…}` solver is obliged to clear WCAG 1.4.11's 3:1 —
+ * `border.control`'s `{ui:…}` solver is obliged to clear WCAG 1.4.11's 3:1 —
  * and on a dark ramp the first tone that also clears APCA Lc 45 is tone 11, the
  * near-white TEXT tone. Measured across the six styles: a resting input in dark
  * drew a hairline at OKLab ΔL **+0.63 to +0.68** and **11–12:1** against its own
@@ -132,8 +132,8 @@ const A_STRONG_D = '{white-a.8}'
 const softBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.default': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  'border.strong': { light: A_STRONG_L, dark: A_STRONG_D },
+  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
 
@@ -142,8 +142,8 @@ const softBorders: ThemeStyleSemantics = {
 const glassBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.default': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  'border.strong': { light: A_STRONG_L, dark: A_STRONG_D },
+  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
   'border.subtle': { light: '{black-a.1}', dark: '{white-a.1}' },
   'border.rim-highlight': { light: '{white-a.9}', dark: '{white-a.4}' },
 }
@@ -155,8 +155,8 @@ const filledBorders: ThemeStyleSemantics = {
   // Dark input goes to 4, not 3: `DARK_DEPTH` just moved the card to 3, and a
   // filled field that matches its own card is not a filled field.
   'surface.input': { light: '{neutral.3}', dark: '{neutral-dark.4}' },
-  'border.default': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  'border.strong': { light: A_STRONG_L, dark: A_STRONG_D },
+  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
   'border.subtle': { light: '{black-a.1}', dark: '{white-a.1}' },
 }
 
@@ -169,8 +169,8 @@ const filledBorders: ThemeStyleSemantics = {
 const inkBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.default': { light: '{accent.10}', dark: '{accent.8}' },
-  'border.strong': { light: '{accent.12}', dark: '{accent.11}' },
+  'border.control': { light: '{accent.10}', dark: '{accent.8}' },
+  'border.control-hover': { light: '{accent.12}', dark: '{accent.11}' },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
 
@@ -295,6 +295,12 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // either: a flat field inside a heavy outline is the whole look.
     semantics: {
       ...DARK_DEPTH,
+      // Neo is the ONE style that overrides both halves of the split. Every
+      // other style softens the control boundary and leaves the decorative
+      // ladder on the schema; here the decorative ladder is the point, so all
+      // five rungs go to the ramp's text tone.
+      'border.control': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+      'border.control-hover': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.default': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.strong': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.subtle': { light: '{neutral.11}', dark: '{neutral-dark.11}' },

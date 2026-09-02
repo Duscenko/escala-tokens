@@ -4,8 +4,7 @@ import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePre
 import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
-import { ARTEFACTS } from '../preview/artefacts'
-import { ScaledArtefactCard } from '../preview/artefacts/ScaledArtefactCard'
+import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { Live, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { PHOSPHOR_CORE } from '../../lib/iconLibraries'
@@ -17,6 +16,7 @@ import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { type DocsRailRow } from './DocsRail'
 import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
+import { CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { GitHubPushState } from '../../lib/github'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -85,7 +85,7 @@ function ThemeViewSwitcher({ view, onChange }: {
         const current = Math.max(0, HUB_VIEWS.findIndex((item) => item.key === view))
         const next = (current + (event.key === 'ArrowRight' ? 1 : HUB_VIEWS.length - 1)) % HUB_VIEWS.length
         onChange(HUB_VIEWS[next].key)
-      }} className="flex h-8 items-center gap-0.5 rounded-lg border border-line bg-elevated/70 p-0.5 shadow-sm">
+      }} className={`flex h-8 items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}>
         {HUB_VIEWS.map((item) => {
           const active = item.key === view
           return <button key={item.key} type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} aria-label={t(item.label)} title={t(item.label)} onClick={() => onChange(item.key)} className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-inverse-action text-inverse-action-ink shadow-sm' : 'text-fg-faint hover:bg-surface hover:text-fg'}`}><ViewIcon view={item.key} /></button>
@@ -150,7 +150,6 @@ function ArtefactsView({
    *  fly-out. */
   drawerOpen: boolean
 }) {
-  const { t } = useI18n()
   const store = useDesignStore()
   const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
   const previewTokens = useMemo(
@@ -173,10 +172,16 @@ function ArtefactsView({
       'border.focus': accentPreview,
     } : undefined,
   } : tokens
-  return <div
-    className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
-    style={drawerOpen ? { paddingLeft: PANEL_W } : undefined}
-  ><div className="mx-auto max-w-[1120px]"><div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-7 gap-y-8 items-start">{ARTEFACTS.map((artefact) => <div key={artefact.key} className="min-w-0 flex flex-col items-center gap-2"><ScaledArtefactCard artefact={artefact} t={paintedTokens} targetWidth={220} /><span className="text-caption font-medium text-fg-muted">{t(artefact.label)}</span></div>)}</div></div></div>
+  return (
+    <div
+      className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
+      style={drawerOpen ? { paddingLeft: PANEL_W } : undefined}
+    >
+      <div className="mx-auto w-full">
+        <SystemCollage t={paintedTokens} projectName={store.projectName} />
+      </div>
+    </div>
+  )
 }
 
 

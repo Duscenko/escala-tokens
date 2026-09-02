@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   LAYOUT_ROLES,
+  RADIUS_NESTING,
+  concentricRadiusRoles,
+  concentricRadiusStep,
+  nestedRadius,
+  radiusNestingReport,
   LAYOUT_PRIMITIVE_STEPS,
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -256,5 +261,77 @@ describe('breakpoint + grid frame', () => {
     } as ReturnType<typeof mergeGridFrame>)
     expect(mixed.desktop.container).toBe('xl')
     expect(mixed.mobile.columns).toBe('4')
+  })
+})
+
+// ── Concentric radius nesting ───────────────────────────────────────────────
+// The relation that makes nested corners read as organic: inner = outer − the
+// padding between them. The ratio ladder never encoded it, so `radius.control`
+// satisfied it at exactly one point on the roundness slider, by coincidence.
+describe('concentric radius nesting', () => {
+  const spacing = SPACING_STANDARD
+  const roles = defaultLayoutRoles('radius')
+  const spacingRoles = defaultLayoutRoles('spacing')
+
+  it('never returns a negative inner radius', () => {
+    expect(nestedRadius(16, 12)).toBe(4)
+    expect(nestedRadius(12, 12)).toBe(0)
+    // Padding wider than the outer corner: the inner corner is square, not
+    // negative. A negative would flow straight into a CSS value.
+    expect(nestedRadius(8, 24)).toBe(0)
+  })
+
+  it('picks the roundest step that does not EXCEED the limit', () => {
+    // Undershooting reads as a slightly tighter inner corner. Overshooting is
+    // the collision, so the search may never land above the limit.
+    const radius = scaleRadiusFromLg(16) // xs4 sm8 md12 lg16 xl24 2xl32 3xl48 4xl64
+    // action = 2xl = 32, inset-control 12 → limit 20 → lg (16), never xl (24).
+    expect(concentricRadiusStep(radius, '2xl', 12)).toBe('lg')
+    const px = (step: string) => parseFloat(radius[step])
+    expect(px(concentricRadiusStep(radius, '2xl', 12))).toBeLessThanOrEqual(20)
+  })
+
+  it('collapses to none when the padding swallows the corner', () => {
+    expect(concentricRadiusStep(RADIUS_STANDARD, 'sm', 40)).toBe('none')
+  })
+
+  // The measured defect: the shipped default is concentric, and every OTHER
+  // preset breaks it. This asserts the rule now holds across the whole slider.
+  it('keeps control concentric across every preset', () => {
+    for (const preset of RADIUS_PRESETS) {
+      const next = concentricRadiusRoles(RADIUS_STANDARD, preset.values, roles, spacing, spacingRoles)
+      const report = radiusNestingReport(preset.values, next, spacing, spacingRoles)
+      const control = report.find((r) => r.inner === 'control')!
+      expect(control.broken, `${preset.label}: control ${control.innerPx} > limit ${control.limitPx}`).toBe(false)
+    }
+  })
+
+  it('leaves a hand-picked step alone', () => {
+    // `4xl` is nobody's concentric answer, so the rule must not steer it back.
+    const picked = { ...roles, control: '4xl' }
+    const next = concentricRadiusRoles(RADIUS_STANDARD, RADIUS_PRESETS[3].values, picked, spacing, spacingRoles)
+    expect(next.control).toBe('4xl')
+  })
+
+  it('reports the container-in-overlay collision instead of silently fixing it', () => {
+    // `radius.container` is every card's radius system-wide, so constraining it
+    // to a modal's padding would flatten cards nowhere near a modal. It stays a
+    // report — but it must BE reported, because it fails at the default.
+    const report = radiusNestingReport(RADIUS_STANDARD, roles, spacing, spacingRoles)
+    const pair = report.find((r) => r.inner === 'container')!
+    expect(pair.innerPx).toBe(24)
+    expect(pair.limitPx).toBe(12) // overlay 32 − inset-surface 20
+    expect(pair.broken).toBe(true)
+    const after = concentricRadiusRoles(RADIUS_STANDARD, RADIUS_PRESETS[2].values, roles, spacing, spacingRoles)
+    expect(after.container).toBe(roles.container)
+  })
+
+  it('only lists pairs that are genuinely flush', () => {
+    // A button floating inside a card is not nested in this sense and must not
+    // acquire a constraint it does not have.
+    expect(RADIUS_NESTING.map((p) => `${p.inner} in ${p.outer}`)).toEqual([
+      'control in action',
+      'container in overlay',
+    ])
   })
 })

@@ -4,7 +4,7 @@ import { syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { GitHubGlyph } from '../ui/icons'
 import { FigmaLogo, relativeTime } from './figmaShared'
-import { QUICK_SETTINGS_WIDTH, ThemeIdentityBand } from './ThemeQuickSettingsRail'
+import { QUICK_SETTINGS_WIDTH, ThemeIdentityBand, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
 
 type IntegrationProvider = 'github' | 'figma'
 
@@ -57,7 +57,7 @@ export default function IntegrationStatusRail({
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       <ThemeIdentityBand previewTheme={previewTheme} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <ThemeRailScrollRegion padClass="px-4 py-4">
         <div className="flex items-center gap-3 pb-4">
           <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg border border-line bg-surface text-fg">
             {isGithub ? <GitHubGlyph size={17} /> : <FigmaLogo size={22} />}
@@ -114,7 +114,7 @@ export default function IntegrationStatusRail({
             </>
           )}
         </section>
-      </div>
+      </ThemeRailScrollRegion>
     </aside>
   )
 }

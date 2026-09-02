@@ -16,7 +16,8 @@ const SPECIMEN_ARCH_IDS = [
   'surface.accent', 'surface.inverse', 'surface.overlay',
   'status.critical.surface', 'status.critical.content', 'status.critical.surface-solid', 'status.critical.on-solid',
   'status.warning.surface', 'status.warning.content', 'status.success.surface', 'status.success.content',
-  'border.default', 'border.subtle', 'border.strong', 'border.focus', 'border.accent', 'border.critical',
+  'border.control', 'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
+  'border.focus', 'border.accent', 'border.critical',
   'icon.primary', 'icon.secondary', 'icon.disabled', 'icon.accent',
 ]
 
@@ -74,12 +75,15 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   expect(tokens.surface).toBe(arch['surface.page'])
   expect(tokens.neutralFill).toBe(arch['surface.layer-1'])
   // `PreviewTokens.border` is the component stroke (inputs, selects), so it
-  // takes the CONTROL BOUNDARY — `border.default` since the border roles were
-  // split by job. It read `border.strong` while `default` was a decorative
-  // tone-5 hairline; `strong` is now the heavier emphasis step above the
-  // boundary, which a resting input must not draw.
-  expect(tokens.border).toBe(arch['border.default'])
+  // takes the CONTROL BOUNDARY. That role is `border.control` since phase 1
+  // split the neutral strokes by JOB; it was `border.default`, and before that
+  // `border.strong`. The resolved value never moved across either rename.
+  expect(tokens.border).toBe(arch['border.control'])
+  // The decorative outline stays on the ladder's lightest rung — see the note
+  // in previewTokens.ts for why it did NOT move up to `border.default`.
   expect(tokens.borderDefault).toBe(arch['border.subtle'])
+  // The two jobs must resolve to DIFFERENT values, or the split bought nothing.
+  expect(arch['border.control']).not.toBe(arch['border.default'])
   expect(inputSurfaceOf(tokens)).toBe(arch['surface.input'])
   expect(focusBorderOf(tokens)).toBe(arch['border.focus'])
   expect(statusSoftFillOf(tokens, 'Error', tokens.errorColor)).toBe(arch['status.critical.surface'])
@@ -142,8 +146,9 @@ describe('semantic preview wiring', () => {
     expect(d['status.critical.content']).not.toBe(l['status.critical.content'])
     expect(d['status.warning.content']).not.toBe(l['status.warning.content'])
 
-    // Dark layout stroke is quieter (neutral-dark.6 vs light neutral.9).
-    expect(d['border.strong']).not.toBe(l['border.strong'])
+    // Dark control boundary is not tone-for-tone with light (neutral-dark.12
+    // vs light neutral.9 — the dark ramp's APCA blind spot forces the walk up).
+    expect(d['border.control-hover']).not.toBe(l['border.control-hover'])
 
     // Collage fields still track arch roles in dark — the wiring, not the hex parity.
     expect(dark.onBrand).toBe(d['content.on-action'])

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { LOCALES, useI18n } from '../../lib/i18n'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
 // Section switching lives HERE — there is no left icon rail. The bar is split
@@ -10,8 +11,8 @@ import { LOCALES, useI18n } from '../../lib/i18n'
 // The right cluster: the token search (contextual — passed as `search`, only
 // present while the Generator workspace is open), then the language switcher and
 // the light/dark appearance toggle. Two things that used to live here are gone:
-//   • Export — it is not a global-chrome concern; its entry points are inside
-//     the Docs destination and the theme workspace's own hand-off rows.
+//   • Export — transversal; lives in the TopNav right cluster beside Language
+//     and Appearance (was on the theme-workspace tab strip beside GitHub/Figma).
 //   • The ☰ Workspace-settings menu — System library, Figma and GitHub are all
 //     reachable from their own surfaces now (SaveSidePanel, and the Figma /
 //     GitHub pills in the theme-workspace tab strip), and the one thing it
@@ -80,6 +81,8 @@ interface TopNavProps {
    *  Generator workspace is open; absent elsewhere. Sits at the LEFT of the
    *  right-hand cluster, before Language and Appearance. */
   search?: ReactNode
+  /** Guided export — transversal, same wizard as elsewhere in the shell. */
+  exportAction?: ReactNode
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -143,10 +146,8 @@ function HelpIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="8" cy="8" r="5.5" /><path d="M6.45 6.35a1.7 1.7 0 0 1 3.3.56c0 1.45-1.7 1.65-1.7 2.8M8 11.7h.01" /></svg>
 }
 
-// Global icon actions share one interaction language. Keeping this as one
-// primitive prevents GitHub, locale, and appearance from drifting apart as
-// their individual menus and states evolve.
-const GLOBAL_ICON_ACTION = 'grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-line bg-app text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated/60 hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
+// Global icon actions — same gray shell as `ThemeViewSwitcher`.
+const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-colors ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
 // Appearance is one action, not a two-choice segment. The glyph shows the
 // destination: sun while dark is active, moon while light is active.
@@ -177,6 +178,9 @@ function AppearanceToggle({
  *  that dock under TopNav add another 52 for their top fallback. */
 export const TOP_NAV_H = 52
 
+/** Fallback until the live lockup is measured — mark + wordmark + `px-3`. */
+const TOP_NAV_CONTENT_BRAND_W = 168
+
 // Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
 // #18181B) so the lockup inverts with the theme instead of going invisible on
 // the dark chrome; the middle ring keeps its 0.3 opacity, which reads on both.
@@ -199,13 +203,29 @@ export function BrandMark({ size = 32 }: { size?: number } = {}) {
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
 }: TopNavProps) {
   const { locale, setLocale, t } = useI18n()
   const [languageOpen, setLanguageOpen] = useState(false)
   const [docsMenuOpen, setDocsMenuOpen] = useState(false)
   const languageRootRef = useRef<HTMLDivElement>(null)
   const docsRootRef = useRef<HTMLDivElement>(null)
+  const brandContentRef = useRef<HTMLDivElement>(null)
+  const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_CONTENT_BRAND_W)
+
+  // Measured from the lockup itself (w-max), not the column `brandWidth` — so
+  // Generator's 196px theme-library block cannot drag the nav when About uses
+  // the same content-sized lockup.
+  useLayoutEffect(() => {
+    const inner = brandContentRef.current
+    const outer = inner?.parentElement
+    if (!inner || !outer) return
+    const padX =
+      (parseFloat(getComputedStyle(outer).paddingLeft) || 0)
+      + (parseFloat(getComputedStyle(outer).paddingRight) || 0)
+    const w = inner.getBoundingClientRect().width + padX
+    if (w > 0) setNavAnchorBrandW(w)
+  }, [brandWidth, railCollapsed, locale])
 
   useEffect(() => {
     if (!languageOpen) return
@@ -249,26 +269,30 @@ export default function TopNav({
           truncated: "Escala Tokens" is the product name, not a title that can
           ellipsize inside its own lockup. */}
       <div
-        className={`flex items-center gap-2.5 flex-shrink-0 transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
+        className={`flex flex-shrink-0 items-center transition-[width] duration-200 ${brandWidth ? 'border-r border-line' : ''} ${
           railCollapsed ? 'justify-center px-0' : 'px-3'
         }`}
         style={brandWidth ? { width: brandWidth } : undefined}
       >
-        <BrandMark size={24} />
-        {!railCollapsed && (
-          <div className="text-ui font-semibold text-fg whitespace-nowrap leading-none">Escala Tokens</div>
-        )}
+        <div ref={brandContentRef} className="flex w-max items-center gap-2.5">
+          <BrandMark size={24} />
+          {!railCollapsed && (
+            <div className="text-ui font-semibold text-fg whitespace-nowrap leading-none">Escala Tokens</div>
+          )}
+        </div>
       </div>
 
-      {/* Balanced three-column chrome: the section nav stays optically centered
-          while the search + language + appearance cluster is pinned right.
-          The RIGHT track is `minmax(min-content,1fr)` so it never collapses
-          under the nav — when the window narrows, the empty LEFT track gives up
-          its width first and the search field (`flex-1 min-w-0` inside) shrinks,
-          rather than the cluster overrunning the centred nav. */}
-      <div className="grid flex-1 min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center gap-2 px-3 xl:px-4">
-        <span aria-hidden />
-        <nav aria-label={t('Sections')} className="hidden min-[860px]:flex items-center gap-3 lg:gap-5 min-w-0">
+      <div className="min-w-0 flex-1 self-stretch" aria-hidden />
+
+      {/* Section nav — screen position is (W + B)/2 where B is the lockup width,
+          NOT the column `brandWidth`. Anchored on the header so a wider brand
+          block (theme library, Components rail) and the contextual Search
+          cluster never move it. */}
+      <nav
+        aria-label={t('Sections')}
+        className="absolute top-1/2 z-[1] hidden min-[860px]:flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 lg:gap-5 min-w-0"
+        style={{ left: `calc(50% + ${navAnchorBrandW / 2}px)` }}
+      >
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {
@@ -332,16 +356,12 @@ export default function TopNav({
               </button>
             )
           })}
-        </nav>
+      </nav>
 
-        {/* Right cluster: contextual token search, then Language + Appearance.
-            The "Escala Tokens on GitHub" repo link used to lead here and was the
-            odd one out — Language and Appearance change THIS session, that link
-            leaves the app for the source, and its GitHub mark collided with the
-            user's OWN repo-sync mark in the tab strip. It moved to the footer.
-            `min-w-0` so the search shrinks (not the centered nav) when the
-            window narrows; the two icon controls stay `flex-shrink-0`. */}
-        <div className="col-start-3 flex items-center justify-self-end gap-2 min-w-0">
+      {/* Right cluster — absolute so contextual Search width never shifts the
+          section nav. Sits above the centred band; controls stay clickable. */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center gap-2 pl-2 pr-3 xl:pr-4">
+        <div className="pointer-events-auto flex min-w-0 items-center gap-2">
           {search}
           {/* Locale stays visible inside the menu; the trigger is icon-only so
               it has the same 32px footprint as the other global controls. */}
@@ -353,7 +373,7 @@ export default function TopNav({
               title={t('Language')}
               aria-haspopup="menu"
               aria-expanded={languageOpen}
-              className={`${GLOBAL_ICON_ACTION} ${languageOpen ? 'border-line-strong bg-elevated text-fg' : ''}`}
+              className={`${GLOBAL_ICON_ACTION} ${languageOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''}`}
             >
               <MaskGlyph src="/icons/settings/languages.svg" className="h-4 w-4" />
             </button>
@@ -377,6 +397,7 @@ export default function TopNav({
           </div>
 
           <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+          {exportAction}
         </div>
       </div>
     </header>

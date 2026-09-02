@@ -7,6 +7,7 @@ import {
   RADIUS_PRESETS,
   RADIUS_STANDARD,
   RADIUS_STEPS,
+  concentricRadiusRoles,
   matchRadiusPreset,
   scaleRadiusFromLg,
 } from '../../lib/layoutTokens'
@@ -29,7 +30,17 @@ export default function StepRadius({ tabBar, query, previewTheme }: { tabBar?: R
   const { store, foundations, patch } = useThemeFoundations(previewTheme)
   const { primaryColor, themes } = store
   const radius = foundations.radius
-  const setRadius = (value: Record<string, string>) => patch({ radius: value })
+  // Regrading the ramp moves `radius.action`, and `radius.control` is the
+  // radius of whatever sits FLUSH inside it — so it has to move with it or the
+  // corners stop being concentric. Measured before this: the shipped default
+  // satisfied the relation and every other preset broke it (Rounded by 12px).
+  // `concentricRadiusRoles` only re-derives a role that was still tracking, so
+  // a hand-picked step survives; see its note for why `container` does not
+  // track.
+  const setRadius = (value: Record<string, string>) => patch({
+    radius: value,
+    radiusRoles: concentricRadiusRoles(radius, value, foundations.radiusRoles, foundations.spacing, foundations.spacingRoles),
+  })
   const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchRadiusPreset(radius))
 
   const accentColor = themes.light?.primary || primaryColor || '#9522e9'

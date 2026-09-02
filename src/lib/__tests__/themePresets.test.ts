@@ -65,13 +65,13 @@ describe('system style presets', () => {
       const get = resolve(preset)
       for (const mode of ['light', 'dark'] as const) {
         const input = get('surface', 'input', mode)
-        const raw = get('border', 'default', mode)
+        const raw = get('border', 'control', mode)
         expect(input, `${preset.id} ${mode} surface.input`).toBeTruthy()
-        expect(raw, `${preset.id} ${mode} border.default`).toBeTruthy()
+        expect(raw, `${preset.id} ${mode} border.control`).toBeTruthy()
         const border = raw.length > 7 ? over(raw, input) : raw
         expect(
           checkContrast(border, input),
-          `${preset.id} · ${mode}: border.default ${raw} on surface.input ${input}`,
+          `${preset.id} · ${mode}: border.control ${raw} on surface.input ${input}`,
         ).toBeGreaterThanOrEqual(3)
       }
     }
@@ -86,7 +86,7 @@ describe('system style presets', () => {
       if (preset.id === 'neo-brutalism') continue
       const get = resolve(preset)
       const input = get('surface', 'input', 'dark')
-      const raw = get('border', 'default', 'dark')
+      const raw = get('border', 'control', 'dark')
       const border = raw.length > 7 ? over(raw, input) : raw
       expect(
         okL(border) - okL(input),

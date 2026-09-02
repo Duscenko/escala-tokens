@@ -36,6 +36,7 @@ import {
   inferSizeBase,
   matchRadiusPreset,
   scaleRadiusFromLg,
+  concentricRadiusRoles,
   RADIUS_STEPS,
   RADIUS_PRESETS,
   RADIUS_DEFAULT_LG,
@@ -131,6 +132,47 @@ export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
           />
           <span className="ml-auto grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-elevated group-hover:text-fg-muted group-focus-within:bg-elevated group-focus-within:text-fg"><EditThemeIcon /></span>
       </label>
+    </div>
+  )
+}
+
+/** Top fade on a rail scroll body — visible only once content has scrolled up
+ *  under the pinned `ThemeIdentityBand`, not at rest. */
+export function ThemeRailScrollRegion({
+  children,
+  className = '',
+  padClass = 'px-3 py-3',
+}: {
+  children: React.ReactNode
+  className?: string
+  padClass?: string
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const sync = () => setScrolled(el.scrollTop > 1)
+    sync()
+    el.addEventListener('scroll', sync, { passive: true })
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', sync)
+      ro.disconnect()
+    }
+  }, [])
+
+  return (
+    <div className={`relative min-h-0 flex-1 ${className}`}>
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-app via-app/90 to-transparent transition-opacity duration-150 ${scrolled ? 'opacity-100' : 'opacity-0'}`}
+      />
+      <div ref={scrollRef} className={`h-full min-h-0 overflow-y-auto ${padClass}`}>
+        {children}
+      </div>
     </div>
   )
 }
@@ -896,7 +938,13 @@ export default function ThemeQuickSettingsRail({
   // the write has to land on the NEWLY minted theme — a key that does not exist
   // yet at render time. `commit`/`applyScrub` resolve it and pass it in.
   const setTypography = (key: string, value: typeof typography) => patchThemeFoundations(key, { typography: value })
-  const setRadius = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { radius: value })
+  // Keeps the nested corners concentric when the roundness scrub regrades the
+  // ramp — same rule and same call as the Radius foundation's own editor, so
+  // the two entry points cannot disagree about the geometry.
+  const setRadius = (key: string, value: Record<string, string>) => patchThemeFoundations(key, {
+    radius: value,
+    radiusRoles: concentricRadiusRoles(radius, value, foundations.radiusRoles, foundations.spacing, foundations.spacingRoles),
+  })
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
   const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
@@ -1154,7 +1202,7 @@ export default function ThemeQuickSettingsRail({
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className={`flex flex-1 min-h-0 flex-col ${disabledShell}`}>
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
+      <ThemeRailScrollRegion>
       <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
         {foundation === 'color' && (
         <EditionCard
@@ -1443,7 +1491,7 @@ export default function ThemeQuickSettingsRail({
           </button>
         </div>
       </div>
-      </div>
+      </ThemeRailScrollRegion>
 
       <AnimatePresence>
         {undo && (

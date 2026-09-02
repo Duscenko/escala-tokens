@@ -13,7 +13,7 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
-import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
+import { CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { adoptPreset } from '../lib/adoptPreset'
 import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
@@ -22,6 +22,7 @@ import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
+import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import type { ThemeAppearance } from '../lib/themeModes'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
@@ -282,23 +283,8 @@ const SaveIcon: ComponentType = () => (
   </svg>
 )
 
-// Figma brand mark (monochrome — tracks currentColor so it inherits the header tint).
-const FigmaIcon: ComponentType = () => (
-  <svg width="11" height="16" viewBox="0 0 38 57" fill="currentColor" aria-hidden>
-    <path d="M9.5 57C14.7467 57 19 52.7467 19 47.5V38H9.5C4.25329 38 0 42.2533 0 47.5C0 52.7467 4.25329 57 9.5 57Z" />
-    <path d="M0 28.5C0 23.2533 4.25329 19 9.5 19H19V38H9.5C4.25329 38 0 33.7467 0 28.5Z" />
-    <path d="M0 9.5C0 4.25329 4.25329 0 9.5 0H19V19H9.5C4.25329 19 0 14.7467 0 9.5Z" />
-    <path d="M19 0H28.5C33.7467 0 38 4.25329 38 9.5C38 14.7467 33.7467 19 28.5 19H19V0Z" />
-    <path d="M38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5Z" />
-  </svg>
-)
-
-// GitHub brand mark (monochrome — tracks currentColor like the Figma glyph).
-const GitHubIcon: ComponentType = () => (
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-  </svg>
-)
+const FigmaIcon: ComponentType = () => <FigmaGlyph size={18} />
+const GitHubIcon: ComponentType = () => <GitHubGlyph size={18} />
 
 const ExportIcon: ComponentType = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -317,14 +303,9 @@ type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
  *  by glyph alone (its name lived in a `title`, i.e. behind a hover); and the
  *  status dot was stamped into the bottom-right corner of a 32px icon button,
  *  overlapping the glyph it was trying to annotate. Splitting them gives the dot
- *  its own slot at the head of the pill and lets the label say the name out loud
- *  — the same "named, separately selectable destination" shape the workspace
- *  tabs (Theme preview · Variables · Get code) already use one row up.
- *
- *  The dot reports the LIVE request too, not just "ever connected": these two
- *  states (`githubPushState` / `figmaPublishState`) already existed at this call
- *  site and had nowhere to show. Colour is never the only carrier — `aria-label`
- *  and `title` both spell the status out in words. */
+ *  its own slot at the head of the pill. The name is icon-only on screen —
+ *  `aria-label` and `title` carry "GitHub — connected" / "Figma — publishing…"
+ *  for hover and screen readers. */
 type SyncStatus = 'ok' | 'idle' | 'busy' | 'error'
 
 const SYNC_DOT: Record<SyncStatus, string> = {
@@ -335,7 +316,7 @@ const SYNC_DOT: Record<SyncStatus, string> = {
 }
 
 function SyncPill({
-  label, status, statusText, active, Icon, onClick,
+  label, status, statusText, active, Icon, onClick, rail = false,
 }: {
   label: string
   status: SyncStatus
@@ -344,26 +325,43 @@ function SyncPill({
   active: boolean
   Icon: ComponentType
   onClick: () => void
+  /** Match `FoundationIconRail` icon buttons when docked in the vertical rail. */
+  rail?: boolean
 }) {
+  const shared = {
+    type: 'button' as const,
+    onClick,
+    'aria-pressed': active,
+    'aria-label': `${label} — ${statusText}`,
+    title: `${label} — ${statusText}`,
+  }
+  const activeCls = active
+    ? `${WORKSPACE_CHIP_ACTIVE} text-fg`
+    : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
+
+  if (rail) {
+    return (
+      <button
+        {...shared}
+        className={`relative flex flex-shrink-0 items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+          active
+            ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
+            : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
+        }`}
+      >
+        <span aria-hidden className={`absolute top-1.5 left-1.5 h-1.5 w-1.5 rounded-full ${SYNC_DOT[status]}`} />
+        <Icon />
+      </button>
+    )
+  }
+
   return (
     <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={`${label} — ${statusText}`}
-      title={`${label} — ${statusText}`}
-      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        active
-          ? `${WORKSPACE_CHIP_ACTIVE} text-fg`
-          : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
-      }`}
+      {...shared}
+      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${activeCls}`}
     >
       <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${SYNC_DOT[status]}`} />
       <Icon />
-      {/* The name drops before the glyph does: below ~1320px this row also holds
-          three workspace tabs and the token search, and a pill that still shows
-          its mark and its dot is a smaller loss than a search field that wraps. */}
-      <span className="hidden min-[1320px]:inline text-caption font-medium">{label}</span>
     </button>
   )
 }
@@ -469,28 +467,12 @@ function WorkspaceTabIcon({ source }: { source: string }) {
   return <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
 }
 
-function ExportPill({ onClick }: { onClick: () => void }) {
-  const { t } = useI18n()
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong px-2.5 text-caption font-medium text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-    >
-      <ExportIcon />
-      <span>{t('Export')}</span>
-    </button>
-  )
-}
-
 function ThemeWorkspaceTabs({
   value,
   onChange,
-  right,
 }: {
   value: ThemeWorkspaceTab
   onChange: (tab: ThemeWorkspaceTab) => void
-  right?: ReactNode
 }) {
   const { t } = useI18n()
   return (
@@ -540,8 +522,21 @@ function ThemeWorkspaceTabs({
           )
         })}
       </div>
-      {right && <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">{right}</div>}
     </div>
+  )
+}
+
+function ExportPill({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong px-2.5 text-caption font-medium text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+    >
+      <ExportIcon />
+      <span>{t('Export')}</span>
+    </button>
   )
 }
 
@@ -1015,7 +1010,7 @@ export default function Configurator() {
       window narrows. Icons are the supplied assets: `search.svg` via mask +
       currentColor, `search-comands.svg` as the ⌘K keycap. */}
   const tokenSearchField = (
-    <label className="flex h-8 flex-1 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg border border-line bg-app px-2.5 text-fg-muted transition-colors hover:border-line-strong focus-within:border-fg">
+    <label className={`flex h-8 flex-1 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg px-2.5 text-fg-muted transition-colors ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${CHROME_CONTROL_FOCUS}`}>
       <span
         aria-hidden
         className="h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint"
@@ -1041,45 +1036,36 @@ export default function Configurator() {
     </label>
   )
 
-  const themeWorkspaceActions = (
+  const themeWorkspaceSyncRail = (
     <>
-    {/* The Primitives tab used to carry `HomeActions` here — with `hideSystems`
-        that was ONLY the "Reset the whole system to defaults" pill. Removed:
-        it's a rarely-wanted, no-undo action given equal billing with GitHub,
-        Figma and Search, and the per-token / per-family resets (the tone-row
-        "reset to standard" icons, the quick-edit strip's per-family reset) are
-        the ones anyone actually reaches for. Matches CLAUDE.md's own line that
-        the whole-system reset was pulled from the UI. */}
-    {/* One pill per destination — see `SyncPill`. The "Sync" caption is gone: it
-        labelled a pair that no longer shares a container, and neither pill needs
-        a word to say it syncs. */}
-    <SyncPill
-      label="GitHub"
-      Icon={GitHubIcon}
-      status={githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle'}
-      statusText={
-        githubPushState === 'pushing' ? t('pushing…')
-          : githubPushState === 'error' ? t('push failed')
-          : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
-          : t('not connected')
-      }
-      active={themeWorkspaceTab === 'preview' && themeHubSurface === 'github'}
-      onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') }}
-    />
-    <SyncPill
-      label="Figma"
-      Icon={FigmaIcon}
-      status={figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle'}
-      statusText={
-        figmaPublishState === 'publishing' ? t('publishing…')
-          : figmaPublishState === 'error' ? t('publish failed')
-          : store.figmaLastPublishAt ? t('published')
-          : t('not published yet')
-      }
-      active={themeWorkspaceTab === 'preview' && themeHubSurface === 'figma'}
-      onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') }}
-    />
-    <ExportPill onClick={() => openThemeExport(previewTheme)} />
+      <SyncPill
+        rail
+        label="GitHub"
+        Icon={GitHubIcon}
+        status={githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle'}
+        statusText={
+          githubPushState === 'pushing' ? t('pushing…')
+            : githubPushState === 'error' ? t('push failed')
+            : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
+            : t('not connected')
+        }
+        active={themeWorkspaceTab === 'preview' && themeHubSurface === 'github'}
+        onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') }}
+      />
+      <SyncPill
+        rail
+        label="Figma"
+        Icon={FigmaIcon}
+        status={figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle'}
+        statusText={
+          figmaPublishState === 'publishing' ? t('publishing…')
+            : figmaPublishState === 'error' ? t('publish failed')
+            : store.figmaLastPublishAt ? t('published')
+            : t('not published yet')
+        }
+        active={themeWorkspaceTab === 'preview' && themeHubSurface === 'figma'}
+        onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') }}
+      />
     </>
   )
 
@@ -1404,6 +1390,7 @@ export default function Configurator() {
         // Contextual: the token search only filters the Generator workspace's
         // tables, so it's absent on About / Components / Docs.
         search={themesCanvas ? tokenSearchField : undefined}
+        exportAction={<ExportPill onClick={openSectionExport} />}
         brandWidth={themeLibraryVisible ? THEME_LIBRARY_WIDTH : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
@@ -1462,12 +1449,9 @@ export default function Configurator() {
             views paint `bg-app` and the hairline from the first column. */}
         <div className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themeLibraryVisible || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}>
           {/* On the Themes workspace the tab strip is a FULL-WIDTH row above the
-              icon rail + editor, not the first thing inside <main>: its left
-              edge meets the Themes Library column's border and its underline
-              runs unbroken across the icon-rail column too. The rail then
-              begins below it — no header band of its own. */}
+              icon rail + editor. GitHub and Figma sync live in the rail footer. */}
           {themesCanvas && (
-            <ThemeWorkspaceTabs value={themeWorkspaceTab} onChange={changeThemeWorkspaceTab} right={themeWorkspaceActions} />
+            <ThemeWorkspaceTabs value={themeWorkspaceTab} onChange={changeThemeWorkspaceTab} />
           )}
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
@@ -1483,6 +1467,7 @@ export default function Configurator() {
               orientation="vertical"
               active={activeFoundation}
               onSelect={selectWorkspaceFoundation}
+              footer={themeWorkspaceSyncRail}
               groups={[
                 { label: t('Variables'), items: quickRailFoundations(VARIABLE_FOUNDATIONS).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
                 { label: t('Styles'), items: quickRailFoundations(FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
@@ -1693,6 +1678,7 @@ export default function Configurator() {
             attribution's own type size. Text + mark rather than a bare glyph —
             there's no 24px target pressure on a 28px rule, and the word is what
             makes it unambiguous next to a copyright notice. */}
+        <div className="flex h-full flex-shrink-0 items-center gap-2">
         <a
           href="https://github.com/Duscenko/escala-tokens"
           target="_blank"
@@ -1717,6 +1703,18 @@ export default function Configurator() {
           />
           <span className="hidden sm:inline">Source</span>
         </a>
+        <a
+          href="https://github.com/Duscenko/escala-tokens?tab=MIT-1-ov-file"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Read the MIT License"
+          title="Read the MIT License"
+          className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        >
+          <span className="hidden sm:inline">MIT License</span>
+          <span className="sm:hidden">MIT</span>
+        </a>
+        </div>
       </footer>
 
       {/* Guided export — Source → Format → Export. TRANSVERSAL now: reachable

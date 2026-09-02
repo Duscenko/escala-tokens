@@ -513,7 +513,7 @@ ${selectedComponents.length > 0
 .card {
   background: var(--color-surface-1);
   backdrop-filter: var(--panel-blur);
-  border: var(--stroke-control) solid var(--color-border-strong);
+  border: var(--stroke-control) solid var(--color-border-default);
   border-radius: var(--radius-container);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-inset-surface);

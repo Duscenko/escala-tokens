@@ -208,6 +208,12 @@
   --status-info: #0284c7;
   --status-info-solid: #0ea5e9;
   --rainbow-ink: #fafafa;
+  --rainbow-fill-a: #121213;
+  --rainbow-fill-b: rgba(18, 18, 19, 0.6);
+  --rainbow-fill-c: rgba(18, 18, 19, 0);
+  --rainbow-outline-fill-a: #ffffff;
+  --rainbow-outline-fill-b: rgba(18, 18, 19, 0.6);
+  --rainbow-outline-fill-c: rgba(18, 18, 19, 0);
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
   --color-3: oklch(69.6% 0.165 251);
@@ -245,6 +251,12 @@
   --inverse-action-hover: #27272a;
   --inverse-action-ink: #fafafa;
   --rainbow-ink: #fafafa;
+  --rainbow-fill-a: #121213;
+  --rainbow-fill-b: rgba(18, 18, 19, 0.6);
+  --rainbow-fill-c: rgba(18, 18, 19, 0);
+  --rainbow-outline-fill-a: #ffffff;
+  --rainbow-outline-fill-b: rgba(18, 18, 19, 0.6);
+  --rainbow-outline-fill-c: rgba(18, 18, 19, 0);
   --status-danger: #dc2626;
   --status-danger-solid: #ef4444;
   --status-success: #059669;
@@ -374,6 +386,12 @@
 
   color-scheme: dark;
   --rainbow-ink: #18181b;
+  --rainbow-fill-a: #ffffff;
+  --rainbow-fill-b: rgba(255, 255, 255, 0.6);
+  --rainbow-fill-c: rgba(0, 0, 0, 0);
+  --rainbow-outline-fill-a: #0a0a0a;
+  --rainbow-outline-fill-b: rgba(255, 255, 255, 0.6);
+  --rainbow-outline-fill-c: rgba(0, 0, 0, 0);
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
   --color-3: oklch(69.6% 0.165 251);

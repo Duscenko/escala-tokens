@@ -3306,6 +3306,60 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > - `focusRingRef` no longer exists as a separate function; `uiBoundaryRef` supersedes it and
 >   is called with `start: 9` for the focus ring, `start: 8` for the control boundary.
 
+> **UPDATE (phase 1 of `design-plans/foundations-geometry-and-strokes.md`): the neutral
+> strokes are split by JOB into FIVE roles, and the two names above moved.** The control
+> boundary is `border.control` / `border.control-hover` now; `border.default` /
+> `border.strong` became the middle and top rungs of a purely DECORATIVE ladder. **Every
+> number in the two notes above is still true — it is attached to the new names. Not one
+> resolved value moved.**
+> - **Why.** Measured against the HeroUI DTCG export, the border family used **2 of the 6
+>   rungs** the neutral ramp generates in the near-page band and skipped the four between:
+>   ΔL to the light page went `subtle` 0.072 → *nothing* → `default` 0.352, a 4.9× jump.
+>   The reference's whole ladder (separator 0.080 · border 0.099 · separator-2 0.121 ·
+>   separator-3 0.151) fits inside that gap, and neutral tones **5 and 6 were referenced by
+>   no role at all, in any theme**. The ramp was never the problem; the assignment was.
+> - **The fix is not to soften the boundary.** That would trade a real 1.4.11 guarantee for
+>   a look. It is to stop making one name do two jobs: decoration (separates regions,
+>   carries no state, **no contrast floor**) is `subtle` / `default` / `strong`; the control
+>   boundary (the stroke IS the control) is `control` / `control-hover`, inheriting the
+>   `{ui:…}` / `{ui+:…}` solvers verbatim. Measured after: decorative 0.072 / 0.112 / 0.156
+>   light and 0.084 / 0.117 / 0.165 dark; `control` still 3.26:1 / Lc 59.9 light and
+>   11.99:1 / Lc 75.2 dark.
+> - **`control-hover` is not a nicety — it is why the split needed five roles, not four.**
+>   The Figma plugin already drew every control's hover stroke from `border.strong` (20+
+>   call sites) on the old reading where `strong` WAS the emphasis boundary. Pointing those
+>   at the new decorative `strong` would make hover *lighter* than rest — the stroke
+>   receding on hover. It stays `{ui+:…}`-solved for the reason that note already gives.
+> - **A rename like this is only safe if it is total, and the test suite proved it wasn't
+>   at first** — seven failures, every one a consumer still naming the old role:
+>   - **`themePresets.ts` was the dangerous one.** All six System Styles override the field
+>     border with an alpha precisely because the solver has to walk to a near-white tone in
+>     dark (the ΔL +0.63…+0.68 "highlight, not a boundary" measurement in that file's own
+>     header). Those overrides now target `border.control` / `border.control-hover`; leaving
+>     them on `default` would have handed every style back the hard border that note exists
+>     to remove. Neo-Brutalism overrides **both** halves — its border IS the design.
+>   - **`color/audit.ts`** audits `border.control` under the `ui-component` intent. Had that
+>     entry stayed on `border.default`, the matrix would have started demanding 3:1 of a
+>     decorative hairline *and* gone green the day someone repinned the real boundary. The
+>     three decorative rungs are audited as `decorative` — measured and reported, no
+>     threshold — so a rung drifting heavy enough to be mistaken for a boundary still shows.
+>   - `previewTokens`, `SemanticSpecimens`, `foundationDocs`, `exporters` and the plugin's
+>     `ARCH_ROLE_MAP` / `pair()` lookups all follow the boundary. Every lookup list keeps
+>     the OLD name as a fallback candidate, so a payload predating the split resolves to the
+>     same value.
+> - **`PreviewTokens.borderDefault` (card edges) deliberately did NOT move** to the new
+>   middle rung, even though tone 4 is the closer match to the reference. Every System Style
+>   overrides `border.subtle` with its own alpha and none override the new `border.default`,
+>   so the repoint silently gave six curated styles a solid neutral card edge. Tried,
+>   measured, reverted — phase 1 separates the jobs, it does not redecorate.
+> - **Two tests lock the shape**: `border.control` / `control-hover` still resolve to
+>   `neutral.8` / `neutral.9` (light) and `neutral-dark.11` / `.12` (dark) — the same four
+>   labels the pre-split test asserted — and the decorative ladder is three distinct,
+>   ascending rungs **every one of which stays lighter than the boundary**. A decorative
+>   stroke outweighing the boundary is this same bug pointing the other way.
+> - Role count 61 → **63**. No `schemaVersion` bump: additive keys plus two renamed ones
+>   under `colors.architecture.tokens`.
+
 > **UPDATE: every architecture but Categorical was DELETED — Astryx, shadcn/ui, Apple-HIG
 > Vibrancy, Material-3 Tonal and IBM Carbon are gone from the codebase, not merely hidden
 > from the picker.** They had already been retired from `ARCHITECTURE_OPTIONS` in store v50
@@ -3378,6 +3432,45 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > above: six `action.ghost.*` (split by intent), three `border.ring.*` and
 > `border.rim-highlight` were added, and five existing roles (`surface.selected`
 > + the four `status.*.surface`) moved from a solid tone to their alpha twin.
+> **Now 61 — and the solid pair the note above deferred has landed, for all four
+> severities at once, exactly as it said it would have to.** See
+> `design-plans/foundations-geometry-and-strokes.md` (phase 0). What forced it was a
+> real failure, not a tidy-up: in Figma, InlineAlert Info shipped a `#1570ef` stroke on
+> a `#131c2a` fill — **both byte-identical to `code.ts`'s own `pair()` fallbacks**, so
+> the role was provably binding to nothing. `ARCH_ROLE_MAP.categorical` had no
+> `status-info` entry at all, and there was no `status.info.surface-solid` to bind a
+> stroke to even if it had. Added `{warning,success,info}.surface-solid` + `.on-solid`
+> (`{fam.solid}`/`{on:fam.solid}` light, `{fam.12}`/`{on:fam.12}` dark — critical's
+> exact shape; measured 5.1–5.2:1 light and 9.5:1 dark, all four clear AA).
+> - **`status.*.border` is new and is the load-bearing part.** The stroke of a status
+>   surface was a magic number in *three* places that disagreed: the plugin's
+>   InlineAlert at `fillP(k.solid, 0.4)`, its AlertBanner at `0.45`, and the
+>   configurator's own specimen at `` `${c}33` `` — **40 % in Figma against 20 % in the
+>   preview, same component**. That is precisely the drift the "every specimen is a
+>   catalogue renderer" rule exists to stop, and nothing caught it because none of the
+>   three read a token. All four severities now resolve `{fam-a.6}`, the same step
+>   `border.ring.*` already uses. Verified live in the browser: the three alerts render
+>   `rgba(6,114,244,0.37)` / `rgba(1,146,49,0.35)` / `rgba(244,117,6,0.37)`, matching
+>   the projected token hex for hex.
+> - **It is ALPHA by contract, and there's a test.** The tint it sits on is alpha too
+>   (`status.*.surface` is `{fam-a.3}`), so a solid stroke composites against a
+>   different backdrop than its own fill and the two drift apart on any surface that
+>   isn't the page. `categorical.test.ts` asserts every `status.*.border` label ends in
+>   `-a.N`, and a second test asserts all four severities carry the **identical** role
+>   shape (`surface · content · surface-solid · on-solid · border`) — the
+>   "one decision across all four" rule made checkable instead of re-argued.
+> - **Not measured for WCAG 1.4.11**: this is the edge of a MESSAGE, not a control
+>   boundary. The severity is carried by `status.*.content` and the glyph. The status
+>   role that *does* bear a boundary obligation is `border.critical`/`.warning`/
+>   `.success`, unchanged.
+> - **No `schemaVersion` bump** — new keys under `colors.architecture.tokens`, the same
+>   additive precedent as `shadowsDark`/`gradientsDark`; an older plugin ignores them.
+> - **`fillOf()` in the plugin is alpha-aware now.** It read an 8-digit fallback hex
+>   with `hexToRgb`, silently dropping the alpha channel and painting a translucent role
+>   fully opaque whenever the variable was missing. v7 made semantic colours
+>   translucent, so that was the "keeps working while quietly wrong" failure v7's own
+>   note warns about — a scrim or an alert stroke at 100 %. A bound COLOR variable
+>   supplies its own alpha, so both paths now agree.
 
 > **DECISION: there is no `border.focus.critical` — an invalid, focused input shows the
 > normal accent focus ring, not an error-coloured one.** Raised by the same external audit

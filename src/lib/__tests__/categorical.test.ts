@@ -42,15 +42,54 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 51 roles across five groups', () => {
+  it('ships 63 roles across five groups', () => {
     // 39 + status.info.surface + status.info.content (Info had a full ramp
     // and zero roles referencing it) + the alpha-backed set (see
     // design-plans/alpha-primitives.md): six action.ghost.* split by intent
     // (neutral/brand/danger × hover/pressed), three border.ring.* focus
-    // halos, and border.rim-highlight.
-    expect(roleIds).toHaveLength(51)
+    // halos, and border.rim-highlight. = 51.
+    //
+    // +10 from design-plans/foundations-geometry-and-strokes.md phase 0: four
+    // status.*.border (the stroke of a status surface, which both renderers
+    // were painting from a magic alpha and disagreeing about) and the solid
+    // pair for the three severities that lacked one — warning/success/info ×
+    // surface-solid + on-solid. Critical already had its pair.
+    // +2 from phase 1: the neutral strokes split by JOB, so the control
+    // boundary keeps its solver under `border.control` / `border.control-hover`
+    // while `default` / `strong` become the two decorative rungs the ramp
+    // already generated and no role referenced.
+    expect(roleIds).toHaveLength(63)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
+    }
+  })
+
+  // The rule this file's own history kept re-deciding by hand: a severity gets
+  // a role because ALL FOUR do, never because one component needed it. Adding
+  // `status.info.surface-solid` alone would have made Info the second-best
+  // equipped severity while warning and success still had none.
+  it('gives every severity the identical role shape', () => {
+    const SHAPE = ['surface', 'content', 'surface-solid', 'on-solid', 'border']
+    for (const sev of ['critical', 'warning', 'success', 'info']) {
+      const own = roleIds.filter((id) => id.startsWith(`status.${sev}.`))
+        .map((id) => id.slice(`status.${sev}.`.length)).sort()
+      expect(own, sev).toEqual([...SHAPE].sort())
+    }
+  })
+
+  // A status stroke MUST stay alpha. The tint it sits on is alpha too
+  // (`status.*.surface` is `{fam-a.3}`), so a solid stroke composites against
+  // a different backdrop than its own fill and the two drift apart on any
+  // surface that isn't the page. Repinning one to a solid tone would look
+  // right on the default page and wrong everywhere else — exactly the class of
+  // bug that only shows up in a screenshot, so it gets a test.
+  it('resolves every status border to a translucent value', () => {
+    for (const sev of ['critical', 'warning', 'success', 'info']) {
+      const token = view.categories.find((c) => c.key === 'status')
+        ?.tokens.find((t) => t.key === `${sev}.border`)
+      for (const mode of ['light', 'dark'] as const) {
+        expect(token?.modes[mode].label, `${sev}.border ${mode}`).toMatch(/-a\.\d+$/)
+      }
     }
   })
 
@@ -91,13 +130,38 @@ describe('the categorical catalogue is complete', () => {
   // deleted IBM Carbon projection once proved for a sibling architecture's own
   // border-strong), so the walk lands on 11 for the default seed, not 8/9
   // mirrored from light.
-  it('border.default is the accessible control boundary, border.strong one step past it', () => {
+  // Phase 1 renamed these two — `border.default`/`border.strong` became
+  // `border.control`/`border.control-hover` — and the point of the rename is
+  // that NOTHING moved. These are the same four labels the old test asserted.
+  it('border.control is the accessible boundary, border.control-hover one step past it', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('default')?.light.label).toBe('neutral.8')
-    expect(label('default')?.dark.label).toBe('neutral-dark.11')
-    expect(label('strong')?.light.label).toBe('neutral.9')
-    expect(label('strong')?.dark.label).toBe('neutral-dark.12')
+    expect(label('control')?.light.label).toBe('neutral.8')
+    expect(label('control')?.dark.label).toBe('neutral-dark.11')
+    expect(label('control-hover')?.light.label).toBe('neutral.9')
+    expect(label('control-hover')?.dark.label).toBe('neutral-dark.12')
+  })
+
+  // The reason the split exists: the neutral ramp generates six rungs in the
+  // near-page band and the border roles used TWO of them, so there was nothing
+  // between a hairline and the boundary. Asserting the rungs are DISTINCT and
+  // ORDERED is what stops a later edit from collapsing the ladder back.
+  it('gives the decorative ladder three distinct, ascending rungs', () => {
+    const label = (key: string) =>
+      view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
+    expect(label('subtle')?.light.label).toBe('neutral.3')
+    expect(label('default')?.light.label).toBe('neutral.4')
+    expect(label('strong')?.light.label).toBe('neutral.5')
+    expect(label('subtle')?.dark.label).toBe('neutral-dark.4')
+    expect(label('default')?.dark.label).toBe('neutral-dark.5')
+    expect(label('strong')?.dark.label).toBe('neutral-dark.6')
+    // And every decorative rung stays LIGHTER than the control boundary — a
+    // decorative stroke that outweighs the boundary is the bug this split was
+    // made to remove, just pointing the other way.
+    for (const mode of ['light', 'dark'] as const) {
+      const tone = (key: string) => Number(label(key)?.[mode].label.split('.')[1])
+      expect(tone('strong'), mode).toBeLessThan(tone('control'))
+    }
   })
 
   // border.focus is SOLVED against the page, not pinned — a fixed tone can't

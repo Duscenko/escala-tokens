@@ -40,10 +40,25 @@ referencia ningún rol de la proyección Categorical, en ningún tema.
 
 ---
 
-## Fase 0 — Cerrar la fuga de literales
+## Fase 0 — Cerrar la fuga de literales — ✅ HECHA
 
 **Prioridad máxima, riesgo nulo, sin migración.** Es lo que se ve en Figma y
 lo que rompe la garantía central del proyecto.
+
+> **Resultado.** 51 → 61 roles. `status.*.border` para las cuatro severidades
+> (`{fam-a.6}`) y el par sólido para warning/success/info. Dos tests nuevos en
+> `categorical.test.ts` fijan que el trazo siga siendo alfa y que las cuatro
+> severidades compartan forma. Verificado en el navegador: los alerts pintan
+> `rgba(6,114,244,0.37)` / `rgba(1,146,49,0.35)` / `rgba(244,117,6,0.37)`,
+> idénticos al token proyectado. Suite completa en verde (455 + 2 fallos
+> esperados), `tsc -b` limpio, plugin reempaquetado (build `0d5d89c0b53b`).
+>
+> **Hallazgo extra, encontrado en vivo durante la verificación:** el knob del
+> Switch estaba a `#ffffff` sobre una pista `brandSolid`. Con un acento pálido
+> (`#d1e7ff`, medido en la app) daba **1,27:1** — invisible. Ahora usa
+> `content.on-action`, la tinta que el sistema ya resuelve contra ese relleno:
+> **9,69:1**. Es el mismo defecto que el resto de la auditoría, sólo que en un
+> componente en vez de en un token.
 
 ### 0.1 · El estado Info cae en un fallback hardcodeado
 
@@ -104,28 +119,58 @@ separa unos de otros y deja los primeros anotados como tales.
 
 ---
 
-## Fase 1 — La escalera de trazos decorativos
+## Fase 1 — La escalera de trazos decorativos — ✅ HECHA
 
 **No bajar `border.default`. Partirlo.** Bajarlo sin más tira la garantía
 1.4.11 que el solver `{ui:…}` existe para dar.
 
-| Rol | Claro | Oscuro | Trabajo |
-|---|---|---|---|
-| `border.subtle` | `{neutral.3}` | `{neutral-dark.4}` | Divisiones, reglas de tabla |
-| `border.default` | `{neutral.4}` | `{neutral-dark.5}` | **Nuevo sentido**: contorno decorativo |
-| `border.strong` | `{neutral.5}` | `{neutral-dark.6}` | Agrupación con énfasis |
-| `border.control` | `{ui:neutral.8}` | `{ui:neutral-dark.8}` | **Nuevo**: la frontera con obligación |
+**Salieron CINCO roles, no cuatro.** El plan proponía cuatro; auditando los
+consumidores apareció que el plugin dibuja el hover de todos los controles con
+`border.strong` (20+ llamadas), sobre la lectura vieja de que `strong` era la
+frontera de énfasis. Dejar esas llamadas apuntando al nuevo `strong` decorativo
+habría hecho que el hover fuera **más claro** que el reposo — el trazo
+retrocediendo al pasar el ratón. El concepto necesitaba nombre propio.
 
-`border.control` hereda el solver y los valores actuales de `border.default`,
-así que **la garantía de accesibilidad no se mueve ni un punto** — sólo cambia
-de nombre el rol que la lleva. Lo que cambia es que ahora existen tres peldaños
-decorativos donde antes había uno.
+| Rol | Claro | Oscuro | ΔL vs página | Trabajo |
+|---|---|---|---:|---|
+| `border.subtle` | `{neutral.3}` | `{neutral-dark.4}` | 0,072 / 0,084 | Divisiones, reglas |
+| `border.default` | `{neutral.4}` | `{neutral-dark.5}` | 0,112 / 0,117 | **Nuevo sentido**: contorno |
+| `border.strong` | `{neutral.5}` | `{neutral-dark.6}` | 0,156 / 0,165 | Agrupación con énfasis |
+| `border.control` | `{ui:neutral.8}` | `{ui:neutral-dark.8}` | 0,352 / 0,681 | **Nuevo**: frontera 1.4.11 |
+| `border.control-hover` | `{ui+:neutral.8}` | `{ui+:neutral-dark.8}` | 0,446 / 0,756 | **Nuevo**: su hover |
 
-Riesgo real: todo lo que hoy apunta a `border.default` esperando una frontera
-pasa a tener un trazo cuatro veces más suave. Hay que reapuntar esos consumos
-a `border.control` en el mismo commit — `specimens.tsx`, el `borderDefault` /
-`borderStrong` del plugin y `previewTokens`. Es un rename mecánico pero no
-puede quedar a medias.
+Los tres peldaños decorativos caen en 0,072–0,156, la banda exacta de la
+referencia (0,080 · 0,099 · 0,121 · 0,151). `border.control` sigue midiendo
+**3,26:1 / Lc 59,9** en claro y **11,99:1 / Lc 75,2** en oscuro — idéntico a lo
+que medía `border.default` antes. No se movió ni un valor.
+
+> **El rename no podía quedar a medias, y la suite lo demostró:** siete fallos,
+> todos consumidores que aún nombraban el rol viejo.
+> - **`themePresets.ts` era el peligroso.** Los seis System Styles ablandan el
+>   borde del campo con un alfa justamente porque el solver llega a un tono
+>   casi blanco en oscuro. Si esos overrides se quedan en `default`, los seis
+>   estilos recuperan el borde duro que esa nota existe para quitar. Ahora
+>   apuntan a `border.control` / `control-hover`; Neo sobreescribe las dos
+>   mitades, porque su borde *es* el diseño.
+> - **`color/audit.ts`**: la matriz audita `border.control` bajo intención
+>   `ui-component`. Dejarla en `border.default` habría exigido 3:1 a una línea
+>   decorativa **y** se habría puesto verde el día que alguien repinche la
+>   frontera real. Los tres peldaños decorativos se auditan como `decorative`:
+>   medidos y reportados, sin umbral.
+> - `previewTokens`, `SemanticSpecimens`, `foundationDocs`, `exporters` y el
+>   `ARCH_ROLE_MAP` / `pair()` del plugin siguen la frontera. Cada lista de
+>   búsqueda conserva el nombre viejo como candidato, así que un payload
+>   anterior al split resuelve al mismo valor.
+>
+> **Lo que NO se movió, a propósito:** `PreviewTokens.borderDefault` (el borde
+> de las tarjetas) sigue en `border.subtle` aunque el tono 4 sea mejor match con
+> la referencia. Se probó y se revirtió: los seis estilos sobreescriben
+> `border.subtle` con su propio alfa y ninguno sobreescribe el nuevo
+> `border.default`, así que el cambio les daba en silencio un borde neutro
+> sólido. La fase separa trabajos, no redecora.
+>
+> Roles 61 → 63. Suite en verde (456 + 2 esperados), `tsc -b` limpio, los cinco
+> roles verificados renderizando en la tabla de Semantics de la app.
 
 ---
 

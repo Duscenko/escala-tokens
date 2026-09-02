@@ -1195,8 +1195,8 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     label: 'Stroke',
     lead: 'Line weight — not paint. A 4-step primitive ramp (none · sm · md · lg = 0 / 1 / 2 / 4px) and intent aliases for divider, control border, and focus-ring spread. Color stays on `border.*`.',
     why: 'Border width and focus-ring spread used to be leftover 1px / 1.5px / 2px / 3px in components. That is four answers to "how thick is a line." One even grid plus named jobs means an outline button and an input share `stroke-control`, and the focus ring is a WCAG 2.4.13 2px spread (`stroke-focus`) whose paint is still `border.focus`.',
-    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-strong)`. Dividers use `stroke-divider`. Focus: `box-shadow: 0 0 0 var(--stroke-focus) …border.focus…`. Never put a hex in a stroke token.',
-    usageCode: `border: var(--stroke-control) solid var(--color-border-strong);
+    usage: 'Compose width and color: `border: var(--stroke-control) solid var(--color-border-control)`. Dividers use `stroke-divider`. Focus: `box-shadow: 0 0 0 var(--stroke-focus) …border.focus…`. Never put a hex in a stroke token.',
+    usageCode: `border: var(--stroke-control) solid var(--color-border-control);
 
 .hr { border-top: var(--stroke-divider) solid var(--color-border-subtle); }
 

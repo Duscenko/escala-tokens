@@ -14,6 +14,22 @@ export function GitHubGlyph({ size = 12 }: { size?: number }) {
   )
 }
 
+/** Figma brand mark — monochrome, tracks currentColor. Same path the
+ *  configurator chrome uses; SocialLoginButton and the icon rail share it
+ *  so a login artefact can't drift from the mark on the sync control. */
+export function FigmaGlyph({ size = 16 }: { size?: number }) {
+  const width = (size * 38) / 57
+  return (
+    <svg width={width} height={size} viewBox="0 0 38 57" fill="currentColor" aria-hidden>
+      <path d="M9.5 57C14.7467 57 19 52.7467 19 47.5V38H9.5C4.25329 38 0 42.2533 0 47.5C0 52.7467 4.25329 57 9.5 57Z" />
+      <path d="M0 28.5C0 23.2533 4.25329 19 9.5 19H19V38H9.5C4.25329 38 0 33.7467 0 28.5Z" />
+      <path d="M0 9.5C0 4.25329 4.25329 0 9.5 0H19V19H9.5C4.25329 19 0 14.7467 0 9.5Z" />
+      <path d="M19 0H28.5C33.7467 0 38 4.25329 38 9.5C38 14.7467 33.7467 19 28.5 19H19V0Z" />
+      <path d="M38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5Z" />
+    </svg>
+  )
+}
+
 /** Sliders / "tune" — per-row scale editors, picker toggles, algorithm
  *  surfaces. The Color hub's scale-guide trigger uses SparkleCircleIcon. */
 export function SlidersIcon({ size = 15, className = '' }: { size?: number; className?: string }) {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { RailGroup } from './SectionRail'
 import { WORKSPACE_CHIP_HOVER } from './themeWorkspaceLayout'
 
@@ -42,80 +43,76 @@ export const FOUNDATION_ICON_RAIL_WIDTH = 64
 // SectionRail; this component doesn't apply there.
 
 export default function FoundationIconRail({
-  groups, active, onSelect, orientation = 'horizontal',
+  groups, active, onSelect, orientation = 'horizontal', footer,
 }: {
   groups: RailGroup[]
   /** Highlighted entry key. */
   active: string | null
   onSelect: (key: string) => void
   orientation?: 'horizontal' | 'vertical'
+  /** Sync destinations (GitHub · Figma) — pinned to the foot of the vertical rail. */
+  footer?: ReactNode
 }) {
   const vertical = orientation === 'vertical'
   return (
     <nav
       aria-label="Variable foundations"
       className={vertical
-        // The `ThemeWorkspaceTabs` strip now spans the full width ABOVE this
-        // rail (it reaches the Themes Library column's edge), so the rail no
-        // longer carries a 52px header band of its own — the icons just begin
-        // near the top with `pt-2`. Group spacing is per-group (`pt-3` / `mt-3`).
+        // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
+        // icons begin near the top with `pt-2`. Group spacing is per-group.
         ? 'h-full flex-shrink-0 flex flex-col items-center border-r border-line bg-app pt-2 pb-3 overflow-y-auto scrollbar-thin'
         : 'flex items-center gap-4'}
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >
-      {groups.map((group, gi) => (
-        <div
-          key={group.label ?? gi}
-          className={vertical
-            // First group sits at the top under the full-width tab strip; every
-            // later group carries its own separator rule + top margin.
-            ? `flex flex-col items-center gap-1.5 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
-            : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
-        >
-          {group.items.map(({ key, label, Icon }) => {
-            const on = active === key
-            const maskSize = VARIABLE_ICON_MASK_SIZE[key] ?? '100%'
-            return (
-              <button
-                key={key}
-                onClick={() => onSelect(key)}
-                aria-current={on ? 'page' : undefined}
-                aria-label={label}
-                title={label}
-                className={`flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                  on
-                    // Full opacity, not the old /[0.83]. That softening blended
-                    // the fill toward the page, which quietly undid the ink's
-                    // contrast guarantee: --accent-ink is solved against the
-                    // ACCENT, not against an 83% composite of it. Any fill that
-                    // wants to stay legible has to be the real accent.
-                    ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-                    : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
-                }`}
-              >
-                {VARIABLE_ICON_SOURCES[key]
-                  ? <span
-                      aria-hidden
-                    className={`h-5 w-5 ${on ? 'drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]' : 'opacity-90'}`}
-                      style={{
-                        // A mask makes every glyph inherit the button's semantic
-                        // foreground. The previous <img> depended on `dark:invert`,
-                        // which does not follow the editor's independent chrome
-                        // appearance and could render a dark glyph on dark chrome.
-                        backgroundColor: 'currentColor',
-                        maskImage: `url(${VARIABLE_ICON_SOURCES[key]})`,
-                        WebkitMaskImage: `url(${VARIABLE_ICON_SOURCES[key]})`,
-                        maskSize, WebkitMaskSize: maskSize,
-                        maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
-                        maskPosition: 'center', WebkitMaskPosition: 'center',
-                      }}
-                    />
-                  : Icon && <Icon />}
-              </button>
-            )
-          })}
+      <div className={vertical ? 'flex w-full flex-col items-center' : 'contents'}>
+        {groups.map((group, gi) => (
+          <div
+            key={group.label ?? gi}
+            className={vertical
+              ? `flex flex-col items-center gap-1.5 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
+              : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
+          >
+            {group.items.map(({ key, label, Icon }) => {
+              const on = active === key
+              const maskSize = VARIABLE_ICON_MASK_SIZE[key] ?? '100%'
+              return (
+                <button
+                  key={key}
+                  onClick={() => onSelect(key)}
+                  aria-current={on ? 'page' : undefined}
+                  aria-label={label}
+                  title={label}
+                  className={`flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                    on
+                      ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
+                      : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
+                  }`}
+                >
+                  {VARIABLE_ICON_SOURCES[key]
+                    ? <span
+                        aria-hidden
+                        className={`h-5 w-5 ${on ? 'drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]' : 'opacity-90'}`}
+                        style={{
+                          backgroundColor: 'currentColor',
+                          maskImage: `url(${VARIABLE_ICON_SOURCES[key]})`,
+                          WebkitMaskImage: `url(${VARIABLE_ICON_SOURCES[key]})`,
+                          maskSize, WebkitMaskSize: maskSize,
+                          maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat',
+                          maskPosition: 'center', WebkitMaskPosition: 'center',
+                        }}
+                      />
+                    : Icon && <Icon />}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+      {vertical && footer ? (
+        <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-3">
+          {footer}
         </div>
-      ))}
+      ) : null}
     </nav>
   )
 }

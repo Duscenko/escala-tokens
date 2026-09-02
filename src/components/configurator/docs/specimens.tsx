@@ -18,6 +18,7 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { phosphorCoreBody, phosphorIconMaskUrl } from '../../../lib/phosphorIcons'
 import { useI18n } from '../../../lib/i18n'
+import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
 
 export type AxisValues = Record<string, string>
 
@@ -48,6 +49,24 @@ function statusColor(t: PreviewTokens, name: string): string {
     case 'Info': return t.infoColor ?? '#2e90fa'
     default: return t.neutralText // Neutral
   }
+}
+
+/** The stroke of a status surface — `status.<severity>.border`, an alpha token.
+ *
+ *  This used to be `` `${c}33` `` inline: the status SOLID at a hardcoded 20%.
+ *  The Figma plugin drew the same edge at 40% (`fillP(k.solid, 0.4)`) and its
+ *  AlertBanner at 45%, so one component had three different answers depending
+ *  on which renderer you asked — the exact drift the "every specimen is a
+ *  catalogue renderer" rule exists to stop, invisible because none of the three
+ *  read a token. The flat catalogue has no equivalent role, so a flat system
+ *  keeps the old expression rather than being handed a value it can't resolve. */
+function statusBorder(t: PreviewTokens, status: string, c: string): string {
+  const sev = status === 'Error' || status === 'Danger' ? 'critical'
+    : status === 'Warning' ? 'warning'
+    : status === 'Success' ? 'success'
+    : status === 'Info' ? 'info'
+    : null
+  return (sev && t.archTokens?.[`status.${sev}.border`]) || `${c}33`
 }
 
 const focusRing = (t: PreviewTokens, accent: string): string => {
@@ -354,7 +373,7 @@ const SELECT_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number 
   LG: { sizeKey: 'lg', h: 48, f: 14 },
 }
 
-function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
+function SelectSpecimen({ t, v, w }: SpecimenProps) {
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
   const error = state === 'Error'
@@ -370,7 +389,7 @@ function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
       style={{
         ...baseFont(t),
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        width: 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: '0 12px',
+        width: w ?? 240, height: sizeOf(t, sz.sizeKey, sz.h), padding: '0 12px',
         borderRadius: radiusRoleOf(t, 'action'),
         border: `${strokeControl(t)} solid ${border}`,
         background: disabled ? t.disabledBg : inputSurfaceOf(t),
@@ -450,7 +469,15 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
           <span
             style={{
               position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob,
-              borderRadius: 999, background: '#ffffff',
+              // ON: the knob sits on `brandSolid`, so it takes the ink solved
+              // against that fill — the same `content.on-action` the Checkbox's
+              // tick and the Button's label already use. It was literal white,
+              // which is right for a dark accent and invisible for a pale one:
+              // `solidInkPair` flips a pale brand's ink to near-black precisely
+              // because white fails on it, and the knob was ignoring that.
+              // OFF the track is `neutralFill`, where the page's own surface is
+              // the conventional knob and stays correct in both appearances.
+              borderRadius: 999, background: on ? t.onBrand : t.surface,
               boxShadow: '0 1px 2px rgba(10,13,18,0.2)', transition: 'left 0.15s',
             }}
           />
@@ -756,10 +783,27 @@ function FABButtonSpecimen({ t, v }: SpecimenProps) {
 }
 
 const PROVIDER_MARKS: Record<string, { glyph: string; color: string }> = {
+  // THIRD-PARTY BRAND MARKS — deliberately literal, never tokens. A vendor's
+  // logo does not retint with the user's accent; Google blue is Google blue in
+  // every system. Same rule as `public/ide-logos/*` in AgentInstallPanel. Any
+  // sweep for hardcoded colour should skip this table and the App Store button.
   Google: { glyph: 'G', color: '#4285f4' },
   Apple: { glyph: '', color: '#111111' },
   GitHub: { glyph: '', color: '#111111' },
-  Figma: { glyph: 'F', color: '#a259ff' },
+  Figma: { glyph: '', color: '#111111' },
+}
+
+function ProviderMark({ provider, color }: { provider: string; color: string }) {
+  if (provider === 'GitHub') return <GitHubGlyph size={17} />
+  if (provider === 'Figma') return <FigmaGlyph size={17} />
+  if (provider === 'Apple') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M17.05 12.54c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.15-.47 7.82 1.31 10.38.87 1.25 1.9 2.66 3.26 2.61 1.31-.05 1.8-.85 3.38-.85 1.58 0 2.02.85 3.4.82 1.41-.02 2.3-1.27 3.16-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.73-1.05-2.76-4.17ZM14.44 4.9c.72-.87 1.2-2.08 1.07-3.29-1.03.04-2.29.69-3.03 1.56-.67.77-1.25 2-1.09 3.19 1.15.09 2.33-.59 3.05-1.46Z" />
+      </svg>
+    )
+  }
+  return <span style={{ color, lineHeight: 1, fontWeight: 600 }}>{PROVIDER_MARKS[provider]?.glyph ?? 'G'}</span>
 }
 
 function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
@@ -777,16 +821,11 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
         height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
         borderRadius: radiusRoleOf(t, 'action'),
         background: t.surface, border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
+        color: t.neutralText,
         ...typeOf(t, 'button'),
       }}
     >
-      {provider === 'GitHub' ? (
-        <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
-      ) : provider === 'Apple' ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M17.05 12.54c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.15-.47 7.82 1.31 10.38.87 1.25 1.9 2.66 3.26 2.61 1.31-.05 1.8-.85 3.38-.85 1.58 0 2.02.85 3.4.82 1.41-.02 2.3-1.27 3.16-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.73-1.05-2.76-4.17ZM14.44 4.9c.72-.87 1.2-2.08 1.07-3.29-1.03.04-2.29.69-3.03 1.56-.67.77-1.25 2-1.09 3.19 1.15.09 2.33-.59 3.05-1.46Z" /></svg>
-      ) : (
-        <span style={{ ...typeOf(t, 'heading-xs'), color: mark.color, lineHeight: 1 }}>{mark.glyph}</span>
-      )}
+      <ProviderMark provider={provider} color={mark.color} />
       {translate('Continue with {provider}', { provider })}
     </button>
   )
@@ -1052,7 +1091,8 @@ function RadioGroupSpecimen({ t }: { t: PreviewTokens }) {
 function MiniSwitch({ t, on }: { t: PreviewTokens; on: boolean }) {
   return (
     <span role="switch" aria-checked={on} style={{ width: 36, height: 20, borderRadius: radiusRoleOf(t, 'pill'), background: on ? t.brandSolid : t.neutralFill, position: 'relative', display: 'inline-block', flexShrink: 0 }}>
-      <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: '#ffffff', boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
+      {/* Same rule as SwitchSpecimen's knob — see the comment there. */}
+      <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: on ? t.onBrand : t.surface, boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
     </span>
   )
 }
@@ -1084,7 +1124,7 @@ function SwitchGroupSpecimen({ t, w }: SpecimenProps) {
 // so it can't lie.
 const SLIDER_DEFAULT = 60
 
-function SliderSpecimen({ t }: { t: PreviewTokens }) {
+function SliderSpecimen({ t, w }: SpecimenProps) {
   // Starts at 0 and animates up to SLIDER_DEFAULT on mount — "step entry"
   // motion (see CLAUDE.md's design principles), not decoration: it's what
   // tells you this IS a live control the instant the panel opens, before
@@ -1142,7 +1182,7 @@ function SliderSpecimen({ t }: { t: PreviewTokens }) {
 
   const active = drag || hover || focus
   return (
-    <div style={{ ...baseFont(t), width: 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ ...baseFont(t), width: w ?? 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
         <span style={{ color: t.fgMuted }}>Border radius</span>
         {/* Tabular so the number doesn't jitter the row width as it changes. */}
@@ -1324,7 +1364,11 @@ const PRESENCE: Record<string, (t: PreviewTokens) => string> = {
   Online: (t) => t.successColor ?? '#17b26a',
   Away: (t) => t.warningColor ?? '#f79009',
   Busy: (t) => t.errorColor,
-  Offline: () => '#98a2b3',
+  // The other three presences resolve from the status ramps, so retinting
+  // Success/Warning/Error moves them. Offline was a frozen grey, which meant a
+  // tinted-neutral system showed three on-brand dots and one from a palette it
+  // does not contain. It is the absence of a signal, so it reads as muted ink.
+  Offline: (t) => t.fgMuted ?? '#717680',
 }
 
 function StatusBadgeSpecimen({ t, v }: SpecimenProps) {
@@ -1504,7 +1548,7 @@ function AlertBannerSpecimen({ t, v }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
   return (
-    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 10, width: 380, padding: '10px 14px', borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${c}33` }}>
+    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 10, width: 380, padding: '10px 14px', borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <span style={{ ...typeOf(t, 'body-sm'), flex: 1 }}>
         {status === 'Error' ? 'Sync failed — tokens were not published.' : status === 'Warning' ? 'Your trial ends in 3 days.' : status === 'Success' ? 'All tokens are synced to Figma.' : 'Scheduled maintenance on Sunday 02:00 UTC.'}
@@ -1521,7 +1565,7 @@ function InlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
   return (
-    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${c}33` }}>
+    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
         {children ?? (
@@ -1954,6 +1998,9 @@ export function Live({
   toggle,
   lift = false,
   hoverState,
+  w,
+  children,
+  elev,
 }: {
   /** Catalogue key — indexes both SPECIMENS and the axes read above. */
   c: string
@@ -1974,6 +2021,13 @@ export function Live({
    *  is exactly the state a real drag would put it in. Still has to name a state
    *  the catalogue offers — the `pick` below drops it otherwise. */
   hoverState?: string
+  /** Forwards `SpecimenProps.w` / `children` / `elev`. Opt-in, same contract
+   *  as calling the specimen directly — omitted call sites (Color collage)
+   *  stay byte-identical. Needed so a labelled artefact button still paints
+   *  the shipped Hover/Pressed variants. */
+  w?: number | string
+  children?: ReactNode
+  elev?: string
 }) {
   const render = SPECIMENS[c]
   const states = axisValues(c, 'State')
@@ -2005,7 +2059,11 @@ export function Live({
 
   return (
     <motion.span
-      style={{ display: 'inline-flex', cursor: flip ? 'pointer' : undefined }}
+      style={{
+        display: w != null ? 'flex' : 'inline-flex',
+        width: w,
+        cursor: flip ? 'pointer' : undefined,
+      }}
       // Motion, not colour — safe on every component, State axis or not.
       animate={reduce ? undefined : { y: lift && hover ? -2 : 0 }}
       whileTap={reduce ? undefined : { scale: 0.97 }}
@@ -2026,7 +2084,7 @@ export function Live({
       tabIndex={flip ? 0 : undefined}
       onKeyDown={flip ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip() } } : undefined}
     >
-      {render({ t, v: merged, icons })}
+      {render({ t, v: merged, icons, w, children, elev })}
     </motion.span>
   )
 }

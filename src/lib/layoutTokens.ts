@@ -45,6 +45,137 @@ export function scaleRadiusFromLg(lg: number, current?: Record<string, string>):
   return next
 }
 
+// ── Concentric nesting ──────────────────────────────────────────────────────
+// What makes a radius read as ORGANIC is not its value, it is that nested
+// curves are CONCENTRIC: the inner radius equals the outer one minus the
+// padding between them, so the two arcs stay parallel. Break it and the corner
+// looks wrong even though every number in the table is defensible on its own.
+//
+// The ratio ladder above never encoded that relation — `radius.control` was a
+// fixed alias (`sm`), so it only satisfied the rule at ONE point on the
+// roundness slider, and by coincidence. Measured against `inset-control` (12px
+// at the default 4px spacing base):
+//
+//   preset   lg   action(2xl)   required = action − 12   control(sm)   delta
+//   Sharp     8        16                4                    4          0
+//   Soft     12        24               12                    6         -6
+//   Rounded  16        32               20                    8        -12
+//   Pill     24        48               36                   12        -24
+//
+// A second pair fails at the DEFAULT, not just off it: a card (`container`,
+// 24) sitting flush inside a modal (`overlay`, 32) with `inset-surface` 20
+// requires 12 and gets 24 — the inner arc extends past where the outer one
+// allows, which is the visible corner collision.
+
+/** The largest radius an element flush inside `outer` may take, given the
+ *  padding between them. Never negative: at or past the padding the inner
+ *  corner is square. */
+export function nestedRadius(outer: number, inset: number): number {
+  return Math.max(0, outer - inset)
+}
+
+/**
+ * The primitive STEP a nested role should alias — the roundest step that does
+ * not exceed `nestedRadius`. Returns a step key, never a raw px, so the
+ * "semantics only ever reference a primitive" contract in this file's header
+ * holds: what is derived is WHICH primitive, not a new value.
+ *
+ * Falling back DOWN (roundest step ≤ the limit) rather than to the nearest is
+ * deliberate. Undershooting reads as a slightly tighter inner corner — fine,
+ * and common. Overshooting is the collision this exists to prevent, so the
+ * search may never land above the limit.
+ */
+export function concentricRadiusStep(
+  radius: Record<string, string>,
+  outerStep: string,
+  insetPx: number,
+): RadiusStep {
+  const px = (step: string) => parseFloat(radius[step] ?? '') || 0
+  const limit = nestedRadius(px(outerStep), insetPx)
+  let best: RadiusStep = 'none'
+  for (const step of RADIUS_WORKING_STEPS) {
+    if (px(step) <= limit && px(step) >= px(best)) best = step
+  }
+  return best
+}
+
+/** The flush-nesting pairs this system actually contains. A pair belongs here
+ *  only when the inner element sits against the outer one's inner edge — a
+ *  chip inside a field, a card filling a modal body. A button floating in the
+ *  middle of a card is not nested in this sense and has no constraint. */
+export const RADIUS_NESTING: { inner: string; outer: string; inset: string; note: string }[] = [
+  { inner: 'control', outer: 'action', inset: 'inset-control', note: 'Chip, icon button or checkbox inside a field.' },
+  { inner: 'container', outer: 'overlay', inset: 'inset-surface', note: 'Card filling a modal or popover body.' },
+]
+
+export interface RadiusNestingCheck {
+  inner: string
+  outer: string
+  /** Resolved px for the inner role as currently aliased. */
+  innerPx: number
+  /** The most the inner role may be: outer − inset. */
+  limitPx: number
+  inset: string
+  insetPx: number
+  note: string
+  /** Only an inner radius ABOVE the limit breaks the corner. Below it merely
+   *  reads a touch tighter, which is a look, not a defect. */
+  broken: boolean
+}
+
+/** Report every nesting pair against the current ramps. Pure — hand it the
+ *  resolved maps and it tells you which corners collide. */
+export function radiusNestingReport(
+  radius: Record<string, string>,
+  radiusRoles: Record<string, string> | undefined,
+  spacing: Record<string, string>,
+  spacingRoles: Record<string, string> | undefined,
+): RadiusNestingCheck[] {
+  const radiusPx = (role: string) => parseFloat(resolveLayoutRole('radius', radiusRoles, radius, role, '0px')) || 0
+  const spacingPx = (role: string) => parseFloat(resolveLayoutRole('spacing', spacingRoles, spacing, role, '0px')) || 0
+  return RADIUS_NESTING.map(({ inner, outer, inset, note }) => {
+    const innerPx = radiusPx(inner)
+    const insetPx = spacingPx(inset)
+    const limitPx = nestedRadius(radiusPx(outer), insetPx)
+    return { inner, outer, innerPx, limitPx, inset, insetPx, note, broken: innerPx > limitPx }
+  })
+}
+
+/**
+ * Re-derive the nested radius roles after the ramp is regraded, so moving the
+ * roundness slider keeps the corners concentric instead of breaking them.
+ *
+ * Only `control` actually tracks, and that asymmetry is the point rather than
+ * an omission. `control ⊂ action` is a genuinely DERIVED value — nothing else
+ * decides what a chip inside a field should be. `container ⊂ overlay` is not:
+ * `radius.container` is every card's radius system-wide, so constraining it to
+ * fit a modal's padding would flatten cards that are nowhere near a modal. That
+ * pair is a composition tension for the designer to resolve (round the modal
+ * less, or accept a tighter inner card) — `radiusNestingReport` surfaces it,
+ * this does not silently "fix" it.
+ *
+ * A role is only re-derived when it still equals what the rule produced for the
+ * PREVIOUS ramp — the same detect-don't-assume discipline the v47/v49 store
+ * migrations use. Hand-pick a step and it stays picked; the rule stops steering
+ * a value someone chose on purpose.
+ */
+export function concentricRadiusRoles(
+  prevRadius: Record<string, string>,
+  nextRadius: Record<string, string>,
+  roles: Record<string, string> | undefined,
+  spacing: Record<string, string>,
+  spacingRoles?: Record<string, string>,
+): Record<string, string> {
+  const out = mergeLayoutRoles('radius', roles)
+  for (const { inner, outer, inset } of RADIUS_NESTING) {
+    if (inner !== 'control') continue
+    const insetPx = parseFloat(resolveLayoutRole('spacing', spacingRoles, spacing, inset, '0px')) || 0
+    if (out[inner] !== concentricRadiusStep(prevRadius, out[outer], insetPx)) continue
+    out[inner] = concentricRadiusStep(nextRadius, out[outer], insetPx)
+  }
+  return out
+}
+
 function radiusPreset(
   label: string,
   description: string,

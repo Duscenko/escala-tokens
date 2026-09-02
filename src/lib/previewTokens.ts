@@ -264,12 +264,24 @@ export function resolvePreviewTokens(
         put('disabledBg', 'action.disabled')
         put('disabledText', 'content.disabled')
         // `PreviewTokens.border` is the component stroke (inputs, selects), so
-        // it takes `border.default` — which IS the control boundary since the
-        // border roles were split by job (WCAG 1.4.11 + APCA Lc 45). It used
-        // to read `border.strong` back when `default` was a decorative tone-5
-        // hairline; `strong` is now the heavier EMPHASIS step above the
-        // boundary, which is not what a resting input should draw.
-        put('border', 'border.default')
+        // it takes the CONTROL BOUNDARY — the role carrying WCAG 1.4.11 + APCA
+        // Lc 45. That role is `border.control` since phase 1 of
+        // design-plans/foundations-geometry-and-strokes.md split the neutral
+        // strokes by JOB; it was `border.default`, and before that
+        // `border.strong`. The value is unchanged across all three renames —
+        // only the name moved, so nothing here restyles.
+        put('border', 'border.control')
+        // `PreviewTokens.borderDefault` is the DECORATIVE outline (card edges,
+        // panel boundaries). It STAYS on `border.subtle` even though phase 1
+        // added a middle rung that is arguably the better match (tone 4, ΔL
+        // 0.112, against the reference export's own panel border at 0.099).
+        // Moving it was tried and reverted: every System Style overrides
+        // `border.subtle` with its own alpha (Glass sits at `{black-a.1}`,
+        // nearly invisible, on purpose) and none of them override the new
+        // `border.default`, so the repoint silently gave six curated styles a
+        // solid neutral card edge. Phase 1's job is to separate decoration from
+        // the control boundary, not to redecorate — the new rungs are added
+        // vocabulary, and moving a consumer onto one is its own decision.
         put('borderDefault', 'border.subtle')
         put('errorColor', 'status.critical.content')
         put('warningColor', 'status.warning.content')

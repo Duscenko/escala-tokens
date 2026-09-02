@@ -173,23 +173,34 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.primary',   bg: 'surface.selected', intent: 'body-text' },
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
     { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'body-text' },
-    // `ui-component`, and it MUST pass — `border.default` is the control
-    // boundary now (the border roles were split by job: decoration has no
-    // floor, the boundary targets WCAG 1.4.11 + APCA Lc 45). This entry used
-    // to be `decorative` with a note claiming "the architecture currently has
-    // NO 1.4.11-compliant border role at all"; that was true when `default`
-    // was a tone-5 hairline and is false now — light {neutral.8} = 3.26/Lc60,
-    // dark {neutral-dark.11} = 11.99/Lc75.
-    { fg: 'border.default',    bg: 'surface.page',    intent: 'ui-component' },
-    // Emphasis, one step past the boundary — audited as `ui-component` too,
-    // since anything heavier than a passing boundary passes by construction.
-    { fg: 'border.strong',     bg: 'surface.page',    intent: 'ui-component' },
+    // `ui-component`, and it MUST pass — this is the control boundary, the one
+    // stroke that identifies a control (WCAG 1.4.11 + APCA Lc 45). It carried
+    // the name `border.default` until phase 1 of
+    // design-plans/foundations-geometry-and-strokes.md split the neutral
+    // strokes by JOB; the values are unchanged — light {neutral.8} = 3.26/Lc60,
+    // dark {neutral-dark.11} = 11.99/Lc75. Auditing it under the NEW name is
+    // what keeps the guarantee attached to the role that actually bears it: had
+    // this entry been left on `border.default`, the matrix would have started
+    // demanding 3:1 from a decorative hairline and gone green the day someone
+    // repinned the real boundary.
+    { fg: 'border.control',       bg: 'surface.page', intent: 'ui-component' },
+    // Hover/emphasis, one step past the boundary — audited as `ui-component`
+    // too, since anything heavier than a passing boundary passes by
+    // construction.
+    { fg: 'border.control-hover', bg: 'surface.page', intent: 'ui-component' },
     { fg: 'border.focus',     bg: 'surface.page',    intent: 'ui-component' },
     // DECORATIVE by decision — brand emphasis, not a state indicator. Anything
     // signalling selected/focused/active must use border.focus, which is
     // solved to clear both floors. See the note on CATEGORICAL_ROLES.
     { fg: 'border.accent',     bg: 'surface.page',    intent: 'decorative' },
+    // The decorative ladder. No contrast floor BY DESIGN — these separate
+    // regions and carry no state. They are audited anyway (as `decorative`, so
+    // they are measured and reported without a threshold) rather than left out,
+    // because a rung that silently drifted heavy enough to be mistaken for a
+    // boundary is exactly what the report exists to surface.
     { fg: 'border.subtle',     bg: 'surface.page',    intent: 'decorative' },
+    { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
+    { fg: 'border.strong',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.critical',   bg: 'surface.input',   intent: 'ui-component' },
     { fg: 'border.warning',    bg: 'surface.input',   intent: 'ui-component' },
     { fg: 'border.success',    bg: 'surface.input',   intent: 'ui-component' },

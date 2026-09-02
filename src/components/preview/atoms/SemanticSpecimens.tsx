@@ -722,9 +722,17 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 // ── Border — strokes in the contexts where they're actually judged ──────────
 export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
-  const def = s('border-primary', ['border.default'], t.border || '#d0d5dd')
-  const strong = s('border-primary', ['border.strong', 'border.emphasized', 'border.input'], t.border || '#d0d5dd')
+  // The CONTROL BOUNDARY pair. `border.default` / `border.strong` stay in each
+  // candidate list so a payload predating the phase-1 split still resolves to
+  // the roles that used to carry this job — the value is identical either way,
+  // only the name moved.
+  const control = s('border-primary', ['border.control', 'border.default'], t.border || '#d0d5dd')
+  const controlHover = s('border-primary', ['border.control-hover', 'border.strong', 'border.emphasized'], t.border || '#d0d5dd')
+  // The DECORATIVE ladder, three ascending rungs. `default` and `strong` mean
+  // decoration now; before the split there was only `subtle` here.
   const subtle = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || '#e9eaeb')
+  const def = s('border-secondary', ['border.default'], t.borderDefault || '#e9eaeb')
+  const strong = s('border-secondary', ['border.strong'], t.border || '#d0d5dd')
   const accent = s('border-brand', ['border.accent', 'border.ring'], t.brandSolid)
   const active = s('border-brand', ['border.focus', 'border.active', 'border.ring'], t.brandSolid)
   const critical = s('border-error', ['border.critical', 'destructive.fill'], t.errorColor)
@@ -754,14 +762,15 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   return (
     <Frame t={t}>
       {/* Borders are only judgeable on the thing they outline — a swatch of a
-          1px stroke tells you nothing about whether an input reads.
-          `border.default` is the control boundary now (WCAG 1.4.11 + APCA
-          Lc 45 — see semanticArchitectures.ts), so it's what a resting input
-          binds to; `border.strong` moved to Containers below, where it
-          actually belongs (emphasis, not the default input weight). */}
+          1px stroke tells you nothing about whether an input reads. This
+          section is the CONTROL BOUNDARY (WCAG 1.4.11 + APCA Lc 45); the
+          decorative ladder is in Containers below. Rest and hover sit next to
+          each other on purpose: hover has to read as heavier than rest, and a
+          pinned tone silently collapses the two on a tinted-neutral system. */}
       <Section t={t} title="Inputs">
         <div className="flex flex-col gap-2">
-          <Field slot={def} text="Default" />
+          <Field slot={control} text="Default" />
+          <Field slot={controlHover} text="Hover" />
           <Field slot={active} text="Focused" ringSlot={ring} />
           <Field slot={critical} text="Invalid" />
           {/* The severity halo: the solid boundary stays the field's own
@@ -778,19 +787,20 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
         </div>
       </Section>
 
-      {/* Three containers, ascending weight: subtle (decorative) → accent
-          (decorative, brand-tinted) → strong (emphasis — the ONE step past
-          the control boundary, e.g. a selected card's own edge). */}
+      {/* The DECORATIVE ladder, side by side — which is the only way to judge
+          it. Three rungs that carry no state and no contrast floor, ascending:
+          subtle → default → strong, plus the brand-tinted one. Before the
+          phase-1 split this row showed subtle → accent → the emphasis
+          BOUNDARY, i.e. two decorative weights and one that wasn't. */}
       <Section t={t} title="Containers">
         <div className="flex gap-2.5">
-          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${subtle.css}`, borderRadius: r, padding: 12 }}>
-            <TokenMark slot={subtle} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
-          </div>
+          {[subtle, def, strong].map((slot) => (
+            <div key={slot.label} style={{ flex: 1, minWidth: 0, border: `1px solid ${slot.css}`, borderRadius: r, padding: 12 }}>
+              <TokenMark slot={slot} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
+            </div>
+          ))}
           <div style={{ flex: 1, minWidth: 0, border: `1px solid ${accent.css}`, borderRadius: r, padding: 12 }}>
             <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${strong.css}`, borderRadius: r, padding: 12 }}>
-            <TokenMark slot={strong} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
         </div>
       </Section>
