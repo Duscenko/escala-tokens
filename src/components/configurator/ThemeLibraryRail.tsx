@@ -51,7 +51,7 @@ function LibraryOptionsIcon() {
   return (
     <span
       aria-hidden
-      className="h-5 w-5 bg-current"
+      className="h-3.5 w-3.5 bg-current"
       style={{
         WebkitMask: "url('/icons/settings/sub-menu-context.svg') center / contain no-repeat",
         mask: "url('/icons/settings/sub-menu-context.svg') center / contain no-repeat",
@@ -60,14 +60,22 @@ function LibraryOptionsIcon() {
   )
 }
 
-/** Alpha-white glass wash — no border shift on hover. Shared by rows and icon controls. */
+/** 28×28 target — shared footprint; fill only on hover (or active). */
+const THEME_RAIL_CHIP =
+  'grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-[color,background-color]'
+
+/** Alpha-white glass wash on hover — no resting fill. */
 const THEME_RAIL_GLASS_HOVER = 'hover:bg-white/45 dark:hover:bg-white/[0.06]'
 
-/** 28×28 icon control — glass hover, no resting border. */
+/** Icon control inside a chip — menu, add, delete. */
 const THEME_RAIL_ICON_BTN =
-  `flex items-center justify-center w-7 h-7 rounded-lg text-fg-faint transition-colors hover:text-fg ${THEME_RAIL_GLASS_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`
+  `${THEME_RAIL_CHIP} ${THEME_RAIL_GLASS_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`
 
 const THEME_RAIL_ICON_BTN_ACTIVE = 'bg-white/45 dark:bg-white/[0.06] text-fg'
+
+/** Numeric count — same footprint as icon chips (System styles tally). */
+const THEME_RAIL_COUNT_BADGE =
+  `${THEME_RAIL_CHIP} text-micro font-medium tabular-nums leading-none`
 
 /** Inactive list row — transparent at rest, glass on hover. */
 const THEME_RAIL_ROW_IDLE = `border-transparent ${THEME_RAIL_GLASS_HOVER}`
@@ -422,7 +430,7 @@ export default function ThemeLibraryRail({
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
-      <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 border-b border-line">
+      <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3.5 border-b border-line">
         <div className="min-w-0">
           <h2 className="text-ui font-semibold text-fg truncate">{t('Themes library')}</h2>
           <p className="text-mini text-fg-muted tabular-nums">{t('{count} in this system', { count: availableThemes.length })}</p>
@@ -457,7 +465,7 @@ export default function ThemeLibraryRail({
       </div>
 
       <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
-        <div className="flex items-center justify-between gap-2 px-2 pb-1.5">
+        <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
           <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
           {hasOwnTheme && (
             <button
@@ -533,7 +541,7 @@ export default function ThemeLibraryRail({
                       onClick={() => setDeleteKey(key)}
                       aria-label={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
                       title={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                      className={`w-7 h-7 grid place-items-center rounded-lg text-fg-faint transition-colors ${THEME_RAIL_GLASS_HOVER} hover:text-status-danger`}
+                      className={`${THEME_RAIL_ICON_BTN} hover:text-status-danger focus-visible:ring-status-danger/50`}
                     >
                       <TrashIcon />
                     </button>
@@ -589,9 +597,11 @@ export default function ThemeLibraryRail({
         </div>
 
         <div className="mt-4 border-t border-line pt-3">
-          <div className="flex items-center justify-between gap-2 px-2 pb-1.5">
+          <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
             <span className="text-caption font-semibold text-fg-muted">{t('System styles')}</span>
-            <span className="text-micro tabular-nums text-fg-faint">{THEME_STYLE_PRESETS.length}</span>
+            <span className={THEME_RAIL_COUNT_BADGE} title={t('{count} system styles', { count: THEME_STYLE_PRESETS.length })}>
+              {THEME_STYLE_PRESETS.length}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             {THEME_STYLE_PRESETS.map((preset) => {

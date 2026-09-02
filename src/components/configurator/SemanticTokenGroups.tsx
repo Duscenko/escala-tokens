@@ -66,6 +66,8 @@ export default function SemanticTokenGroups({
   /** When a colour picker drawer opens, dismiss token editing — only one
    *  contained fly-out at a time. */
   colorPickerOpen = false,
+  /** Vertical gap between accordion rows — must match the edition-card stack. */
+  stackGap = 'gap-3',
   /** `ThemePreviewHub`'s `relative` root — the drawer portals here so it
    *  slides from the hub's left edge, not from inside the rail scroll area. */
   containedRootRef,
@@ -74,6 +76,7 @@ export default function SemanticTokenGroups({
   previewAppearance: ThemeAppearance
   onEditingChange?: (open: boolean) => void
   colorPickerOpen?: boolean
+  stackGap?: string
   containedRootRef?: RefObject<HTMLElement | null>
 }) {
   const reduce = useReducedMotion() ?? false
@@ -127,7 +130,7 @@ export default function SemanticTokenGroups({
 
   return (
     <>
-      <div className="flex flex-col gap-1.5">
+      <div className={`flex flex-col ${stackGap}`}>
         {categories.map((category) => {
           const open = openGroup === category.key
           return (

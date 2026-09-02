@@ -64,6 +64,9 @@ import { useI18n } from '../../lib/i18n'
  */
 export const QUICK_SETTINGS_WIDTH = COLOR_RAIL_WIDTH
 
+/** One vertical rhythm for edition cards and semantic accordion rows. */
+const QUICK_RAIL_STACK_GAP = 'gap-3'
+
 function defaultThemeLabel(key: string) {
   if (key === 'light') return 'Light'
   if (key === 'dark') return 'Dark'
@@ -1152,7 +1155,7 @@ export default function ThemeQuickSettingsRail({
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className={`flex flex-1 min-h-0 flex-col ${disabledShell}`}>
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
-      <div className="flex flex-col gap-4">
+      <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
         {foundation === 'color' && (
         <EditionCard
           title="Color edition"
@@ -1279,6 +1282,7 @@ export default function ThemeQuickSettingsRail({
           <SemanticTokenGroups
             previewTheme={previewTheme}
             previewAppearance={previewAppearance}
+            stackGap={QUICK_RAIL_STACK_GAP}
             onEditingChange={setSemanticDrawerOpen}
             colorPickerOpen={colorPickerOpen}
             containedRootRef={containedDrawerRootRef}

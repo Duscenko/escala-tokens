@@ -194,9 +194,9 @@
   --accent-ui: #7f56d9;
   --accent-solid: #7f56d9;
   --accent-ink: #ffffff;
-  --inverse-action: #fafafa;
-  --inverse-action-hover: #f0f0f2;
-  --inverse-action-ink: #18181b;
+  --inverse-action: #18181b;
+  --inverse-action-hover: #27272a;
+  --inverse-action-ink: #fafafa;
   /* Status — light. Ink shades clear AA on --app; warning goes to amber-700
      because amber-500/600 fails on white. */
   --status-danger: #dc2626;
@@ -241,6 +241,9 @@
   --fg-faint: #737373;
   --line: #e5e5e5;
   --line-strong: #d4d4d4;
+  --inverse-action: #18181b;
+  --inverse-action-hover: #27272a;
+  --inverse-action-ink: #fafafa;
   --rainbow-ink: #fafafa;
   --status-danger: #dc2626;
   --status-danger-solid: #ef4444;
@@ -353,6 +356,11 @@
   --fg-faint: #7b7b83;
   --line: #232326;
   --line-strong: #3a3a3f;
+  /* Active workspace-tab icon chip — dark fill, light glyph (same inversion
+     as light chrome; was missing here so `.dark` inherited the light values). */
+  --inverse-action: #0a0a0a;
+  --inverse-action-hover: #27272a;
+  --inverse-action-ink: #fafafa;
   /* Status — dark. Ink lightens to the -400 shade (what the `dark:` variants
      used); solids stay saturated at their light value. */
   --status-danger: #f87171;
