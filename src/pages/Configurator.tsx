@@ -992,8 +992,8 @@ export default function Configurator() {
     <TokenSearchField value={colorQuery} onChange={setColorQuery} />
   )
 
-  const themeWorkspaceSyncRail = (
-    <>
+  const themeWorkspaceSyncFooter = (
+    <div className="flex items-center gap-1">
       <SyncPill
         rail
         label="GitHub"
@@ -1022,7 +1022,7 @@ export default function Configurator() {
         active={themeWorkspaceTab === 'preview' && themeHubSurface === 'figma'}
         onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') }}
       />
-    </>
+    </div>
   )
 
   // ── Resolve center header + body for the current mode ──
@@ -1393,6 +1393,7 @@ export default function Configurator() {
             onStylePreview={setStylePreview}
             activeStylePreview={stylePreview}
             firstRun={firstRun}
+            syncFooter={themeWorkspaceSyncFooter}
           />
         )}
 
@@ -1402,7 +1403,7 @@ export default function Configurator() {
             views paint `bg-app` and the hairline from the first column. */}
         <div className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themeLibraryVisible || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}>
           {/* On the Themes workspace the tab strip is a FULL-WIDTH row above the
-              icon rail + editor. GitHub and Figma sync live in the rail footer. */}
+              icon rail + editor. GitHub and Figma sync live in ThemeLibraryRail. */}
           {themesCanvas && (
             <ThemeWorkspaceTabs
               value={themeWorkspaceTab}
@@ -1424,7 +1425,6 @@ export default function Configurator() {
               orientation="vertical"
               active={activeFoundation}
               onSelect={selectWorkspaceFoundation}
-              footer={themeWorkspaceSyncRail}
               groups={[
                 { label: t('Variables'), items: quickRailFoundations(VARIABLE_FOUNDATIONS).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
                 { label: t('Styles'), items: quickRailFoundations(FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },

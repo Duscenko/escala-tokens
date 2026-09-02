@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
@@ -296,6 +296,7 @@ export default function ThemeLibraryRail({
   onStylePreview,
   activeStylePreview,
   firstRun = false,
+  syncFooter,
 }: {
   previewTheme: string
   onPreviewThemeChange: (theme: string) => void
@@ -316,6 +317,8 @@ export default function ThemeLibraryRail({
    *  preview, they're simply not offered as a choice on a screen whose whole
    *  job right now is "start from a System Style". */
   firstRun?: boolean
+  /** GitHub · Figma sync destinations — pinned above the app footer. */
+  syncFooter?: ReactNode
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -685,6 +688,15 @@ export default function ThemeLibraryRail({
           </div>
         </div>
       </nav>
+
+      {syncFooter && (
+        <div className="flex-shrink-0 border-t border-line px-2 py-2.5">
+          <div className="flex items-center gap-1 pl-0.5">
+            {syncFooter}
+            <span className="text-caption font-medium text-fg-muted">{t('Sync')}</span>
+          </div>
+        </div>
+      )}
 
       <ThemePanel
         open={editor !== false}
