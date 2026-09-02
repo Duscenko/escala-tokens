@@ -107,7 +107,7 @@ export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
     setThemeLabel(previewTheme, next)
   }
   return (
-    <div className="flex-shrink-0 flex items-center border-b border-line px-3" style={{ height: THEME_BAND_H }}>
+    <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
       <label
         className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-app pl-3 pr-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent-ui/15 ${nameError ? 'border-status-danger/70' : 'border-line-strong'}`}
         title={t('Rename theme')}
@@ -248,7 +248,7 @@ function InfoHint({ children }: { children: string }) {
 function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl border border-line bg-surface">
+    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-surface">
       {children}
     </section>
   )
@@ -338,7 +338,7 @@ function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children 
 }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl border border-line bg-surface">
+    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-surface">
       <div className="flex min-h-9 items-center justify-between gap-2 px-3 pt-2.5">
         <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
         {trailing}

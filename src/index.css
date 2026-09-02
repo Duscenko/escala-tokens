@@ -346,7 +346,7 @@
      2.68:1, under the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on
      `--surface`. */
   --app: #0a0a0a;
-  --surface: #1c1c1f;
+  --surface: #18181b;
   --elevated: #2a2a2f;
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
@@ -365,7 +365,7 @@
   --status-info-solid: #0ea5e9;
 
   color-scheme: dark;
-  --rainbow-ink: #1c1c1f;
+  --rainbow-ink: #18181b;
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
   --color-3: oklch(69.6% 0.165 251);

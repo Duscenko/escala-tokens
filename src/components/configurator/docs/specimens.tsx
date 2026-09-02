@@ -12,7 +12,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -581,7 +581,7 @@ function CardSpecimen({ t, w, children, elev }: SpecimenProps) {
       style={{
         ...baseFont(t), width: w ?? 280, padding: paddingOf(t),
         borderRadius: radiusRoleOf(t, 'container'),
-        ...panelStyle(t, t.neutralFill || t.surface),
+        ...cardSurfaceStyle(t),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: shadowOf(t, elev ?? 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
         display: 'flex', flexDirection: 'column', gap: 8,

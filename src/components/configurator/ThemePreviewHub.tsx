@@ -672,6 +672,17 @@ export default function ThemePreviewHub({
   const hubSurface: HubView | null = surface === 'artefacts' || surface === 'components' || surface === 'documentation'
     ? surface
     : null
+  const store = useDesignStore()
+  const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const stylePreviewTokens = useMemo(
+    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
+    [stylePreview, store, previewTheme],
+  )
+  const hubCanvasTokens = stylePreviewTokens ?? liveTokens
+  // The canvas is the theme's PAGE (`surface.page` / `background-primary`), not
+  // workspace chrome (`--app` / `--surface`) — otherwise artefacts float on a
+  // fill that isn't the background they ship on.
+  const pageCanvasColor = hubCanvasTokens.pageBackground ?? hubCanvasTokens.surface
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
   return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
@@ -746,7 +757,11 @@ export default function ThemePreviewHub({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {hubSurface ? (
           <div className="min-h-0 flex-1 bg-app p-3">
-            <section aria-label={`${themeName} preview canvas`} className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-app">
+            <section
+              aria-label={`${themeName} preview canvas`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${previewAppearance === 'dark' ? 'dark' : 'light'}`}
+              style={{ background: pageCanvasColor }}
+            >
               {/* One header band for every hub view — page actions (Copy page,
                   etc.) sit immediately left of the switcher; the switcher stays
                   pinned on the right when you move between Artefacts ·

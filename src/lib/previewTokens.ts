@@ -446,3 +446,15 @@ export function panelStyle(t: PreviewTokens, hex: string): CSSProperties {
   }
   return { background: hex }
 }
+
+/** Raised container fill — categorical `surface.layer-1`, flat `background-secondary`. */
+export function elevatedSurfaceOf(t: PreviewTokens): string {
+  return archTokenOf(t, 'surface.layer-1', t.neutralFill || t.surface)
+}
+
+/** Card / grouped-panel fill. Cards are elevation, never the `page` panel blend. */
+export function cardSurfaceStyle(t: PreviewTokens): CSSProperties {
+  const fill = elevatedSurfaceOf(t)
+  if (t.panelBackground === 'translucent') return panelStyle(t, fill)
+  return { background: fill }
+}

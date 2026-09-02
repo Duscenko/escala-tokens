@@ -131,7 +131,7 @@ export default function SemanticTokenGroups({
         {categories.map((category) => {
           const open = openGroup === category.key
           return (
-            <section key={category.key} className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+            <section key={category.key} className="min-w-0 overflow-hidden rounded-xl bg-surface">
               <button
                 type="button"
                 onClick={() => setOpenGroup(open ? null : category.key)}
