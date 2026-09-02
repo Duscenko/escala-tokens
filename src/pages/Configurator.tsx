@@ -13,6 +13,7 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
+import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { adoptPreset } from '../lib/adoptPreset'
 import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
@@ -351,10 +352,10 @@ function SyncPill({
       aria-pressed={active}
       aria-label={`${label} — ${statusText}`}
       title={`${label} — ${statusText}`}
-      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
         active
-          ? 'border-line-strong bg-elevated text-fg shadow-sm'
-          : 'border-line bg-app text-fg-muted hover:border-line-strong hover:bg-elevated/60 hover:text-fg'
+          ? `${WORKSPACE_CHIP_ACTIVE} text-fg`
+          : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
       }`}
     >
       <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${SYNC_DOT[status]}`} />
@@ -474,7 +475,7 @@ function ExportPill({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong bg-transparent px-2.5 text-caption font-medium text-fg transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:border-fg-faint active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong px-2.5 text-caption font-medium text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
     >
       <ExportIcon />
       <span>{t('Export')}</span>
@@ -523,14 +524,14 @@ function ThemeWorkspaceTabs({
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(item.key)}
               title={t(item.label)}
-              className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-2 rounded-xl border py-1 pl-1 pr-2 text-caption font-medium transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
-                ? 'border-line-strong bg-app text-fg shadow-sm'
-                : 'border-transparent bg-elevated/45 text-fg-muted hover:border-line hover:bg-elevated hover:text-fg'
+              className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-2 rounded-xl py-1 pl-1 pr-2 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
+                ? `${WORKSPACE_CHIP_ACTIVE} text-fg shadow-sm`
+                : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
               }`}
             >
-              <span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border transition-colors ${active
-                ? 'border-transparent bg-inverse-action text-inverse-action-ink'
-                : 'border-line bg-surface text-fg-faint group-hover:text-fg-muted'
+              <span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg transition-colors ${active
+                ? 'bg-inverse-action text-inverse-action-ink'
+                : 'bg-white/45 dark:bg-white/[0.06] text-fg-faint group-hover:text-fg-muted'
               }`}>
                 <WorkspaceTabIcon source={item.icon} />
               </span>

@@ -60,6 +60,18 @@ function LibraryOptionsIcon() {
   )
 }
 
+/** Alpha-white glass wash — no border shift on hover. Shared by rows and icon controls. */
+const THEME_RAIL_GLASS_HOVER = 'hover:bg-white/45 dark:hover:bg-white/[0.06]'
+
+/** 28×28 icon control — glass hover, no resting border. */
+const THEME_RAIL_ICON_BTN =
+  `flex items-center justify-center w-7 h-7 rounded-lg text-fg-faint transition-colors hover:text-fg ${THEME_RAIL_GLASS_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`
+
+const THEME_RAIL_ICON_BTN_ACTIVE = 'bg-white/45 dark:bg-white/[0.06] text-fg'
+
+/** Inactive list row — transparent at rest, glass on hover. */
+const THEME_RAIL_ROW_IDLE = `border-transparent ${THEME_RAIL_GLASS_HOVER}`
+
 function ResetStyleIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -90,7 +102,7 @@ function ThemeLibraryOptionsPopover({
             type="button"
             role="menuitem"
             onClick={onResetSuggestedStyles}
-            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-white/45 dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
           >
             <ResetStyleIcon />
             <span className="text-caption font-medium">{t('Reset system style')}</span>
@@ -423,7 +435,7 @@ export default function ThemeLibraryRail({
             title={t('Theme library options')}
             aria-haspopup="menu"
             aria-expanded={optionsOpen}
-            className={`grid h-8 w-8 place-items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${optionsOpen ? 'bg-surface text-fg' : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
+            className={`${THEME_RAIL_ICON_BTN} ${optionsOpen ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
           >
             <LibraryOptionsIcon />
           </button>
@@ -453,7 +465,7 @@ export default function ThemeLibraryRail({
               onClick={() => { clearStylePreview(); setEditor('new') }}
               aria-label={t('Create theme')}
               title={t('Create theme')}
-              className="w-6 h-6 grid place-items-center rounded-md text-fg-faint hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 transition-colors"
+              className={THEME_RAIL_ICON_BTN}
             >
               <PlusIcon />
             </button>
@@ -484,7 +496,7 @@ export default function ThemeLibraryRail({
                 className={`group relative flex items-center gap-2 p-1.5 rounded-xl border transition-colors ${
                   active
                     ? 'border-accent-ui/30 bg-app shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
-                    : 'border-transparent hover:border-line hover:bg-white/45 dark:hover:bg-white/[0.06]'
+                    : THEME_RAIL_ROW_IDLE
                 }`}
               >
                 <button
@@ -521,7 +533,7 @@ export default function ThemeLibraryRail({
                       onClick={() => setDeleteKey(key)}
                       aria-label={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
                       title={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                      className="w-6 h-6 grid place-items-center rounded-md bg-app/90 text-fg-faint hover:text-status-danger transition-colors"
+                      className={`w-7 h-7 grid place-items-center rounded-lg text-fg-faint transition-colors ${THEME_RAIL_GLASS_HOVER} hover:text-status-danger`}
                     >
                       <TrashIcon />
                     </button>
@@ -561,7 +573,7 @@ export default function ThemeLibraryRail({
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
               whileHover={reduceMotion ? undefined : { scale: 1.015 }}
               whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-              className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong p-1.5 text-left transition-colors hover:border-accent-ui/60 hover:bg-accent-ui/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              className={`group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong p-1.5 text-left transition-colors ${THEME_RAIL_GLASS_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
             >
               <span
                 aria-hidden
@@ -586,7 +598,7 @@ export default function ThemeLibraryRail({
               const expanded = selectedPreset === preset.id
               const kind = kindOf(preset)
               return (
-                <div key={preset.id} className={`rounded-xl border transition-colors ${expanded ? 'border-line bg-surface' : 'border-transparent hover:border-line hover:bg-surface/60'}`}>
+                <div key={preset.id} className={`rounded-xl border transition-colors ${expanded ? 'border-line bg-surface' : THEME_RAIL_ROW_IDLE}`}>
                   <div className="flex items-center gap-1.5 p-1.5">
                     <button
                       type="button"
@@ -650,7 +662,7 @@ export default function ThemeLibraryRail({
                           onClick={() => addPreset(preset, true)}
                           title={t('Add and edit colors')}
                           aria-label={t('Add and customize {name}', { name: preset.label })}
-                          className="h-7 w-7 grid place-items-center rounded-lg border border-line text-fg-muted hover:bg-surface hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                          className={`h-7 w-7 grid place-items-center rounded-lg text-fg-muted transition-colors ${THEME_RAIL_GLASS_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
                         >
                           <TuneIcon />
                         </button>

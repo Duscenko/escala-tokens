@@ -1,10 +1,11 @@
 import type { RailGroup } from './SectionRail'
+import { WORKSPACE_CHIP_HOVER } from './themeWorkspaceLayout'
 
 const VARIABLE_ICON_SOURCES: Record<string, string> = {
   'theme-preview': '/icons/theme-hub-icons/Icon/theme.svg',
   color: '/icons/set-variables/color-variables.svg',
   typography: '/icons/set-variables/text-variables.svg',
-  radius: '/icons/set-variables/radius-variables.svg',
+  radius: '/icons/set-variables/radius-variables-2.svg',
   spacing: '/icons/set-variables/spacing-variables.svg',
   shadow: '/icons/set-variables/shadow-variables.svg',
   grid: '/icons/set-variables/grid-variables.svg',
@@ -20,7 +21,7 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
   'theme-preview': '88%',
   color: '115%',
   typography: '130%',
-  radius: '225%',
+  radius: '115%',
   spacing: '145%',
   shadow: '130%',
   grid: '145%',
@@ -81,7 +82,7 @@ export default function FoundationIconRail({
                 aria-current={on ? 'page' : undefined}
                 aria-label={label}
                 title={label}
-                className={`flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                className={`flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                   on
                     // Full opacity, not the old /[0.83]. That softening blended
                     // the fill toward the page, which quietly undid the ink's
@@ -89,9 +90,7 @@ export default function FoundationIconRail({
                     // ACCENT, not against an 83% composite of it. Any fill that
                     // wants to stay legible has to be the real accent.
                     ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-                    // Mirrors the System styles rows: a quiet surface and a
-                    // structural edge appear together on hover.
-                    : 'text-fg-muted hover:border-line hover:bg-surface/60 hover:text-fg'
+                    : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
                 }`}
               >
                 {VARIABLE_ICON_SOURCES[key]
