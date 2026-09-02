@@ -4,6 +4,7 @@ import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
 import type { ArtefactProps } from './types'
 
+const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const InputOTP = SPECIMENS.InputOTP
 const TextLink = SPECIMENS.TextLink
@@ -36,18 +37,26 @@ function OTPScreen({ t, compact }: ArtefactProps) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <InputOTP t={t} v={{ State: 'Filled' }} />
-        </div>
+        {/* Same elevated sheet as Login's — this is step two of that flow, so
+            the two screens have to agree about what a content surface is. It
+            also gives the STATUS ramp a real surface to sit on rather than the
+            bare page. See `SpecimenProps.elev`. */}
+        <Card t={t} v={{}} w="100%" elev="lg">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-group', '16px') }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <InputOTP t={t} v={{ State: 'Filled' }} />
+            </div>
 
-        <InlineAlert t={t} v={{ Status: 'Error' }} w="100%">
-          <span style={{ ...typeStyleOf(t, 'button') }}>Incorrect code</span>
-          <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
-            2 attempts remaining before it resets.
-          </span>
-        </InlineAlert>
+            <InlineAlert t={t} v={{ Status: 'Error' }} w="100%">
+              <span style={{ ...typeStyleOf(t, 'button') }}>Incorrect code</span>
+              <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
+                2 attempts remaining before it resets.
+              </span>
+            </InlineAlert>
 
-        <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Verify</Button>
+            <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Verify</Button>
+          </div>
+        </Card>
 
         <p style={{ margin: 0, textAlign: 'center', ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
           Didn’t get a code?{' '}

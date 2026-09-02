@@ -9,13 +9,16 @@ import { getStoredClaim, setStoredClaim, syncProjectId } from '../../lib/figmaSy
 import {
   getStoredToken, setStoredToken, clearStoredToken,
   validateToken, listRepos, createRepo, pushFiles, getFile,
-  type GitHubUser, type GitHubRepo,
+  type GitHubUser, type GitHubRepo, type GitHubPushState,
 } from '../../lib/github'
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
 import { GitHubGlyph } from '../ui/icons'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
+  embedded?: boolean
+  /** Mirrors an explicit push in the persistent top-bar status affordance. */
+  onPushStateChange?: (state: GitHubPushState) => void
 }
 
 // Every failure `githubOAuth.ts`/`api/github-oauth.ts` can hand back, worded
@@ -37,12 +40,10 @@ function oauthErrorMessage(code: string): string {
   return OAUTH_ERROR_COPY[code] ?? 'Could not connect to GitHub. Paste a token below instead.'
 }
 
-type PushState = 'idle' | 'pushing' | 'done' | 'error'
-
 const TOKEN_URL =
   'https://github.com/settings/tokens/new?scopes=repo&description=Escala%20token%20sync'
 
-export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
+export default function GitHubConnectView({ onClose, embedded = false, onPushStateChange }: GitHubConnectViewProps) {
   const { projectName, githubRepo, setGithubRepo, githubLastPushAt, setGithubLastPushAt } =
     useDesignStore()
 
@@ -65,7 +66,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
   const [repoError, setRepoError] = useState<string | null>(null)
 
   // ── Push ──
-  const [pushState, setPushState] = useState<PushState>('idle')
+  const [pushState, setPushState] = useState<GitHubPushState>('idle')
   const [pushLog, setPushLog] = useState<string[]>([])
   const [pushError, setPushError] = useState<string | null>(null)
 
@@ -142,6 +143,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
     setUser(null)
     setRepos([])
     setGithubRepo(null)
+    onPushStateChange?.('idle')
   }
 
   async function restoreFromRepo(fullName: string) {
@@ -211,6 +213,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
     const token = getStoredToken()
     if (!token || !githubRepo) return
     setPushState('pushing')
+    onPushStateChange?.('pushing')
     setPushError(null)
     setPushLog([])
     const files = [
@@ -244,9 +247,11 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
         source: 'github',
       })
       setPushState('done')
+      onPushStateChange?.('done')
     } catch (e) {
       setPushError(e instanceof Error ? e.message : 'Push failed.')
       setPushState('error')
+      onPushStateChange?.('error')
     }
   }
 
@@ -255,7 +260,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-8 max-w-2xl p-8"
+      className={`flex flex-col max-w-3xl ${embedded ? 'gap-5 p-6' : 'gap-8 p-8'}`}
     >
       {onClose && (
         <button
@@ -272,7 +277,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
       {/* ── Step 1: Connect ── */}
       <section className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-500' : 'bg-line-strong'}`} />
+          <span className={`w-2 h-2 rounded-full ${user ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
           <h3 className="text-sm font-semibold text-fg">1 · Connect your account</h3>
         </div>
 
@@ -285,7 +290,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
             </div>
             <button
               onClick={disconnect}
-              className="text-xs text-fg-faint hover:text-red-500 transition-colors px-2 py-1 rounded border border-line hover:border-red-300"
+              className="text-xs text-fg-faint hover:text-status-danger transition-colors px-2 py-1 rounded border border-line hover:border-status-danger/40"
             >
               Disconnect
             </button>
@@ -311,7 +316,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
                   <GitHubGlyph size={14} />
                   {oauthBusy ? 'Waiting for GitHub…' : 'Continue with GitHub'}
                 </button>
-                <div className="flex items-center gap-2 text-[11px] text-fg-faint">
+                <div className="flex items-center gap-2 text-caption text-fg-faint">
                   <span className="flex-1 h-px bg-line" />
                   or paste a token
                   <span className="flex-1 h-px bg-line" />
@@ -323,7 +328,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
               <a href={TOKEN_URL} target="_blank" rel="noreferrer" className="text-[#5AADFF] hover:underline">
                 Personal Access Token
               </a>{' '}
-              with the <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">repo</code> scope
+              with the <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">repo</code> scope
               and paste it here. It's stored only in this browser.
             </p>
             <div className="flex items-center gap-2">
@@ -344,7 +349,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
                 {authBusy ? 'Connecting…' : 'Connect'}
               </button>
             </div>
-            {authError && <p className="text-xs text-red-500">{authError}</p>}
+            {authError && <p className="text-xs text-status-danger">{authError}</p>}
           </>
         )}
       </section>
@@ -352,7 +357,7 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
       {/* ── Step 2: Pick a repository ── */}
       <section className={`rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3 ${!user ? 'opacity-40 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${githubRepo ? 'bg-emerald-500' : 'bg-line-strong'}`} />
+          <span className={`w-2 h-2 rounded-full ${githubRepo ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
           <h3 className="text-sm font-semibold text-fg">2 · Pick a repository</h3>
         </div>
 
@@ -387,12 +392,12 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
             {repoBusy ? 'Creating…' : 'Create private repo'}
           </button>
         </div>
-        {repoError && <p className="text-xs text-red-500">{repoError}</p>}
+        {repoError && <p className="text-xs text-status-danger">{repoError}</p>}
         {restoreState === 'loading' && (
           <p className="text-xs text-fg-faint">Looking for {ESCALA_SYSTEM_PATH}…</p>
         )}
         {restoreState === 'restored' && (
-          <p className="text-xs text-emerald-600">Restored the editor from this repo.</p>
+          <p className="text-xs text-status-success">Restored the editor from this repo.</p>
         )}
         {restoreState === 'empty' && (
           <p className="text-xs text-fg-faint">
@@ -400,10 +405,10 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
           </p>
         )}
         {restoreState === 'error' && (
-          <p className="text-xs text-red-500">Could not read {ESCALA_SYSTEM_PATH} from this repo.</p>
+          <p className="text-xs text-status-danger">Could not read {ESCALA_SYSTEM_PATH} from this repo.</p>
         )}
         {githubRepo && repos.find((r) => r.full_name === githubRepo)?.private === false && (
-          <p className="text-xs text-amber-600">
+          <p className="text-xs text-status-warning">
             This repository is public. The publish claim in {ESCALA_SYSTEM_PATH} would be visible to anyone — use a private repo to save a system you care about.
           </p>
         )}
@@ -412,16 +417,16 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
       {/* ── Step 3: Push ── */}
       <section className={`rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3 ${!githubRepo || !user ? 'opacity-40 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-emerald-500' : 'bg-line-strong'}`} />
+          <span className={`w-2 h-2 rounded-full ${pushState === 'done' ? 'bg-status-success-solid' : 'bg-line-strong'}`} />
           <h3 className="text-sm font-semibold text-fg">3 · Push your design system</h3>
         </div>
         <p className="text-xs text-fg-faint leading-relaxed">
-          Commits <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>,{' '}
-          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">variables.css</code>,{' '}
-          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code> and{' '}
-          <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">{ESCALA_SYSTEM_PATH}</code> to{' '}
-          <span className="text-fg-muted font-mono text-[11px]">{githubRepo ?? '—'}</span>.
-          The <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">.escala</code> file is the
+          Commits <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>,{' '}
+          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">variables.css</code>,{' '}
+          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">README.md</code> and{' '}
+          <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">{ESCALA_SYSTEM_PATH}</code> to{' '}
+          <span className="text-fg-muted font-mono text-caption">{githubRepo ?? '—'}</span>.
+          The <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">.escala</code> file is the
           editor — without it, this repo is an export, not a save. Keep the repo private: it can hold the publish claim.
           {githubLastPushAt && (
             <span> Last push: {new Date(githubLastPushAt).toLocaleString()}.</span>
@@ -438,21 +443,21 @@ export default function GitHubConnectView({ onClose }: GitHubConnectViewProps) {
         {pushLog.length > 0 && (
           <ul className="flex flex-col gap-1">
             {pushLog.map((p, i) => (
-              <li key={p} className="text-[11px] font-mono text-fg-faint flex items-center gap-1.5">
+              <li key={p} className="text-caption font-mono text-fg-faint flex items-center gap-1.5">
                 {pushState === 'pushing' && i === pushLog.length - 1 ? (
                   <span className="w-2.5 h-2.5 rounded-full border border-fg-faint border-t-transparent animate-spin" />
                 ) : (
-                  <span className="text-emerald-500">✓</span>
+                  <span className="text-status-success">✓</span>
                 )}
                 {p}
               </li>
             ))}
           </ul>
         )}
-        {pushError && <p className="text-xs text-red-500">{pushError}</p>}
+        {pushError && <p className="text-xs text-status-danger">{pushError}</p>}
         {pushState === 'done' && githubRepo && (
           <div className="flex flex-col gap-1">
-            <p className="text-xs text-emerald-600">✓ Saved to My design systems</p>
+            <p className="text-xs text-status-success">✓ Saved to My design systems</p>
             <a
               href={`https://github.com/${githubRepo}`}
               target="_blank"

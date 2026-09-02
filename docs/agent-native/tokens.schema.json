@@ -10,7 +10,7 @@
     "schemaVersion": {
       "type": "integer",
       "minimum": 3,
-      "description": "TOKEN_SCHEMA_VERSION in src/lib/tokenGenerator.ts. Live version is 6 (additive layout/type roles). Plugin SUPPORTED_SCHEMA_VERSION is 6."
+      "description": "TOKEN_SCHEMA_VERSION in src/lib/tokenGenerator.ts. Live version is 7. Theme foundation collections are additive under foundationsByTheme."
     },
     "project": {
       "type": "string",
@@ -49,6 +49,18 @@
           },
           "description": "Theme name → role id → hex. Role keys are the current catalogue only (no stale architecture keys)."
         },
+        "themeModes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["light", "dark"],
+            "properties": {
+              "light": { "type": "object", "additionalProperties": { "type": "string" } },
+              "dark": { "type": "object", "additionalProperties": { "type": "string" } }
+            }
+          },
+          "description": "Canonical theme model: theme name → light/dark appearance → semantic role id → hex."
+        },
         "themeOrder": {
           "type": "array",
           "items": { "type": "string" },
@@ -69,6 +81,14 @@
           }
         }
       }
+    },
+    "foundationsByTheme": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Additive resolved foundation collections keyed by library theme. Existing root foundation fields remain the compatibility fallback."
     },
     "typography": {
       "type": "object",

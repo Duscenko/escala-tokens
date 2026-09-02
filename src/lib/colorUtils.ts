@@ -5,7 +5,7 @@ import { wcagRatio, apcaLc } from './color/apca'
 // Every EMITTED hex goes through gamut mapping. `chroma.oklch(...).hex()` clips
 // per channel, which shifts hue (measured: up to 10°) and lightness (up to 0.06)
 // for out-of-gamut steps — see docs/color/P0-BASELINE.md, defect H6.
-import { oklchToHex } from './color/gamut'
+import { oklchToHex, hexToOklch, maxChromaSrgb, srgbCusp } from './color/gamut'
 
 // ── Color-scale algorithms ───────────────────────────────────────────────────
 // Each algorithm builds a 12-tone ramp (light → dark) in OKLCH following the
@@ -903,6 +903,44 @@ export function chromeAccent(
   return readableAccent(seed, page)
 }
 
+/** Where the dark chrome's brand wash sits in OKLab L. Measured, not chosen:
+ *  the reference this was tuned against (`#3B0600`) reads L 0.229. */
+const CHROME_WASH_L = 0.229
+
+/**
+ * The brand-tinted stop of the dark chrome's Layer-0 background gradient —
+ * **constant depth, maximum chroma at that depth**, taken from the accent's HUE
+ * only.
+ *
+ * This replaced reading a ramp tone (`primaryDarkScale[6]`), which is a
+ * *lightness*-driven pick and therefore lands wherever that hue's ramp happens
+ * to put it. Measured, the default accent's tone 6 (`#49266c`) sits at L 0.352
+ * carrying only **63 % of the chroma available at that lightness** — which is
+ * exactly what reads as muddy: mid-dark and under-saturated is brown, not
+ * brand. The reference target (`#3B0600`) sits at L 0.229 at **100 %** of the
+ * wall.
+ *
+ * So: pin L to `CHROME_WASH_L` and take `maxChromaSrgb` at that L for the hue.
+ *  - Hue-adaptive by construction — the hue is the only input that varies.
+ *  - Can never leave sRGB: `maxChromaSrgb` IS the gamut wall, so there's no
+ *    mapping step to overshoot (see the "never emit a colour by clipping"
+ *    rule).
+ *  - Constant DEPTH across hues, so the chrome carries the same visual weight
+ *    for any brand; only the hue changes. Reproduces the reference exactly for
+ *    a red seed (`#3b0600`) and gives the default violet `#2a0048`.
+ *
+ * Light chrome is deliberately NOT routed through this: its gradient runs
+ * pale-tint → white and has no depth problem to solve.
+ */
+export function darkChromeWash(seedHex: string, fallback = '#1c1c1c'): string {
+  try {
+    const { h } = hexToOklch(seedHex)
+    return oklchToHex(CHROME_WASH_L, maxChromaSrgb(CHROME_WASH_L, h), h)
+  } catch {
+    return fallback
+  }
+}
+
 // Accent ink for app chrome (rail labels, section titles): brand tone 9 is tuned
 // for white surfaces, so over the dark theme it can dip below readable contrast.
 // Brightens the hue in steps until it clears 4.5:1 on the given background.
@@ -941,6 +979,72 @@ export function readableInk(bg: string, darkInk = '#0a0d12', lightInk = '#ffffff
 // front is the cheaper fix: pick one and the anchor itself already passes.
 //
 // The criterion is white ink on the fill (4.5:1 / 7:1), the same guarantee
+// ── Moving a colour along the HUE axis ──────────────────────────────────────
+//
+// Changing hue while holding L and C ABSOLUTE is wrong twice over, and both
+// failures were measured on the shipped accent (#9522e9, L .547 C .265 H 304):
+//
+//  1. It RATCHETS. sRGB's chroma ceiling is hue-dependent, so the first sweep
+//     through a narrow hue clamps the chroma and every later hue inherits the
+//     clamp. Sweeping 304° → 200° → 120° → 60° → back to 304° left C at .094
+//     where that hue allows .258 — a one-way slide into mud that no amount of
+//     dragging undoes.
+//  2. It reads as MUD. At a fixed L = .48 the ceiling swings .082 (cyan) to
+//     .256 (magenta). A hue strip drawn at one lightness is only as vivid as
+//     its dullest hue.
+//
+// The fix is to carry what the colour MEANS relative to its own hue, not its
+// absolute coordinates: how far toward the gamut wall it sits (`saturation`),
+// and where it sits relative to the lightness at which that hue peaks
+// (`lightness`, 0.5 == exactly at the cusp). Both are hue-independent, so a
+// round trip is lossless and a vivid colour stays vivid at every angle.
+//
+// Hue is the only thing the caller changes. The ramp generator is untouched —
+// this only picks the anchor hex that lands on tone 9.
+
+export interface HuePosition {
+  /** 0–1, chroma as a fraction of what this hue can reach at that lightness. */
+  saturation: number
+  /** 0–1, lightness relative to the hue's cusp. 0.5 sits exactly on it. */
+  lightness: number
+}
+
+export function readHuePosition(hex: string): { hue: number; position: HuePosition } {
+  let l = 0.6
+  let c = 0.15
+  let hue = 0
+  try {
+    const ok = hexToOklch(hex)
+    l = ok.l
+    c = ok.c
+    hue = Number.isNaN(ok.h) ? 0 : ok.h
+  } catch { /* an unparseable value still yields a usable position */ }
+  const cusp = srgbCusp(hue)
+  const ceiling = maxChromaSrgb(l, hue)
+  return {
+    hue,
+    position: {
+      saturation: ceiling > 0 ? Math.min(1, c / ceiling) : 0,
+      lightness: l <= cusp.l
+        ? (cusp.l > 0 ? 0.5 * (l / cusp.l) : 0.5)
+        : 0.5 + 0.5 * ((l - cusp.l) / Math.max(1e-6, 1 - cusp.l)),
+    },
+  }
+}
+
+export function colorAtHue(position: HuePosition, hue: number): string {
+  const h = ((hue % 360) + 360) % 360
+  const cusp = srgbCusp(h)
+  const t = Math.min(1, Math.max(0, position.lightness))
+  // Piecewise-linear through the cusp, so "a dark version of this hue" stays a
+  // dark version — the cusp just moves to wherever this hue can be vivid.
+  const l = t <= 0.5
+    ? cusp.l * (t / 0.5)
+    : cusp.l + (1 - cusp.l) * ((t - 0.5) / 0.5)
+  const safeL = Math.min(0.98, Math.max(0.04, l))
+  return oklchToHex(safeL, maxChromaSrgb(safeL, h) * Math.min(1, Math.max(0, position.saturation)), h)
+}
+
 // `accessibleSolidTone` walks the ramp for — NOT contrast against the page.
 // Hue is never touched; only lightness (searched, not offset) and chroma, so
 // every suggestion still reads as the user's colour.

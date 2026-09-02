@@ -32,7 +32,7 @@ function FamilyRow({ role, family }: { role: string; family: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-app px-4 py-3">
       <span className="min-w-0">
-        <span className="block text-[10px] uppercase tracking-widest text-fg-faint">{role}</span>
+        <span className="block text-mini uppercase tracking-widest text-fg-faint">{role}</span>
         <span className="block text-base text-fg truncate" style={{ fontFamily: `'${family}', sans-serif` }}>{family}</span>
       </span>
       <button
@@ -43,8 +43,8 @@ function FamilyRow({ role, family }: { role: string; family: string }) {
           }
         }}
         aria-label={`Copy ${role.toLowerCase()} font family`}
-        className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
-          copied ? 'bg-emerald-500 text-white' : 'bg-elevated text-fg hover:bg-elevated/70'
+        className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-body font-medium transition-colors ${
+          copied ? 'bg-status-success-solid text-white' : 'bg-elevated text-fg hover:bg-elevated/70'
         }`}
       >
         {copied ? 'Copied' : 'Copy family'}
@@ -107,10 +107,10 @@ export function FontFamilyPreview({ tokens }: { tokens: PreviewTokens }) {
         className="w-full flex items-center justify-between gap-3 rounded-xl border border-line bg-app px-4 py-3 text-left hover:border-line-strong transition-colors"
       >
         <span className="min-w-0">
-          <span className="block text-[10px] uppercase tracking-widest text-fg-faint">Active font</span>
+          <span className="block text-mini uppercase tracking-widest text-fg-faint">Active font</span>
           <span className="block text-sm font-medium text-fg truncate" style={{ fontFamily: `'${body}', sans-serif` }}>{body}</span>
         </span>
-        <span className="flex-shrink-0 text-[12px] font-medium text-accent-ui">View family</span>
+        <span className="flex-shrink-0 text-body font-medium text-accent-ui">View family</span>
       </button>
       <AnimatePresence>
         {open && <FontFamilyModal tokens={tokens} onClose={() => setOpen(false)} />}

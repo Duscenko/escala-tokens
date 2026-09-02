@@ -7,6 +7,7 @@ import {
   PADDING_STANDARD,
   RADIUS_STANDARD,
   SIZE_STANDARD,
+  SELECTOR_STANDARD,
   SPACING_STANDARD,
   STROKE_STANDARD,
   GRID_STANDARD,
@@ -34,6 +35,8 @@ import { slugify } from '../lib/utils'
 // store's constants), so a value import here would create a runtime cycle.
 import type { SemanticArchitecture } from '../lib/semanticArchitectures'
 import { aiSourceFromLegacyLibrary, type IconAiSourceKey } from '../lib/iconLibraries'
+import { themeModeKey, type ThemeAppearance, type ThemeSemanticModes } from '../lib/themeModes'
+import type { ThemeFoundationOverride } from '../lib/themeFoundations'
 
 interface ColorScale {
   [key: number]: string // 1–12 tones
@@ -346,9 +349,20 @@ export interface DesignSnapshot {
   infoDarkScale: ColorScale
   customColors: CustomColor[]
   themes: Record<string, Record<string, string>>
+  /** Canonical semantic values: every library theme owns Light and Dark. */
+  themeSemantics: ThemeSemanticModes
   themeOrder: string[]
   themeKinds: Record<string, 'light' | 'dark'>
+  // Display-only names for the Theme Library and Theme Preview hub. Theme keys
+  // remain stable because they are used by the token engine and integrations.
+  themeLabels: Record<string, string>
   themeSources: Record<string, ThemeSources>
+  /** Theme-scoped overrides of the existing foundation collections. */
+  themeFoundations: Record<string, ThemeFoundationOverride>
+  /** Which System Style a theme was adopted FROM (theme key → preset id).
+   *  Design data, not chrome: it is what "Reset" resets TO. A theme with no
+   *  entry was made by hand and resets to the system defaults instead. */
+  themeOrigin: Record<string, string>
   typography: TypographyTokens
   spacing: Record<string, string>
   radius: Record<string, string>
@@ -356,6 +370,8 @@ export interface DesignSnapshot {
   shadows: Record<string, string>
   grid: Record<string, string>
   sizes: Record<string, string>
+  /** Square selector glyphs (checkbox · radio · switch · badge dot), xs–xl. */
+  selector: Record<string, string>
   /** Border-width / ring-spread primitive ramp (none · sm · md · lg). */
   stroke: Record<string, string>
   // Per-side surface padding (top/right/bottom/left) for padded surfaces.
@@ -364,6 +380,7 @@ export interface DesignSnapshot {
   radiusRoles: Record<string, string>
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
+  selectorRoles: Record<string, string>
   strokeRoles: Record<string, string>
   breakpointRoles: Record<string, string>
   /** Desktop / mobile layout recipes. Gutter/margin alias spacing; container aliases a breakpoint. */
@@ -463,9 +480,16 @@ export function makeDesignDefaults(): DesignSnapshot {
     infoDarkScale: {},
     customColors: [],
     themes: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
+    themeSemantics: {
+      light: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
+      dark: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
+    },
     themeOrder: ['light', 'dark'],
     themeKinds: { light: 'light', dark: 'dark' },
+    themeLabels: {},
     themeSources: {},
+    themeFoundations: {},
+    themeOrigin: {},
     typography: {
       fontFamily: 'Inter',
       headingFontFamily: 'Inter',
@@ -480,11 +504,13 @@ export function makeDesignDefaults(): DesignSnapshot {
     shadows: { ...SHADOW_DEFAULT },
     grid: { ...GRID_DEFAULT },
     sizes: { ...SIZE_STANDARD },
+    selector: { ...SELECTOR_STANDARD },
     stroke: { ...STROKE_STANDARD },
     padding: { ...PADDING_STANDARD },
     radiusRoles: defaultLayoutRoles('radius'),
     spacingRoles: defaultLayoutRoles('spacing'),
     sizeRoles: defaultLayoutRoles('size'),
+    selectorRoles: defaultLayoutRoles('selector'),
     strokeRoles: defaultLayoutRoles('stroke'),
     breakpointRoles: defaultLayoutRoles('breakpoint'),
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
@@ -500,8 +526,8 @@ export function makeDesignDefaults(): DesignSnapshot {
     // returning users, and never reaches for this constant).
     selectedComponents: [...ESSENTIAL_COMPONENT_KEYS],
     completedFoundations: [],
-    iconLibrary: 'untitled',
-    iconAiSource: 'untitled',
+    iconLibrary: 'phosphor',
+    iconAiSource: 'phosphor',
     customIcons: [],
     figmaLastPublishAt: null,
     githubRepo: null,
@@ -559,8 +585,14 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
     ...snapshot,
     themeOrder: [themeKey],
     themes: { [themeKey]: snapshot.themes[themeKey] },
+    themeSemantics: snapshot.themeSemantics[themeKey]
+      ? { [themeKey]: snapshot.themeSemantics[themeKey] }
+      : {},
     themeKinds: snapshot.themeKinds[themeKey] ? { [themeKey]: snapshot.themeKinds[themeKey] } : {},
+    themeLabels: snapshot.themeLabels[themeKey] ? { [themeKey]: snapshot.themeLabels[themeKey] } : {},
     themeSources: snapshot.themeSources[themeKey] ? { [themeKey]: snapshot.themeSources[themeKey] } : {},
+    themeFoundations: snapshot.themeFoundations[themeKey] ? { [themeKey]: snapshot.themeFoundations[themeKey] } : {},
+    themeOrigin: snapshot.themeOrigin?.[themeKey] ? { [themeKey]: snapshot.themeOrigin[themeKey] } : {},
     architectureOverrides,
   }
 }
@@ -572,11 +604,15 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
 function buildSavedSystemEntry(
   state: Pick<DesignStore, 'githubRepo' | 'projectName' | 'projectDescription'>,
   snapshot: DesignSnapshot,
+  /** Overrides the entry name + local id slug (a theme-scoped save names the
+   *  kit after the theme, not the project). A connected repo still wins the id. */
+  nameOverride?: string,
 ): SavedSystem {
-  const id = state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
+  const name = nameOverride?.trim() || state.projectName
+  const id = state.githubRepo ?? `local:${slugify(name) || 'design-system'}`
   return {
     id,
-    name: state.projectName,
+    name,
     description: state.projectDescription,
     repo: state.githubRepo ?? '',
     savedAt: new Date().toISOString(),
@@ -700,13 +736,20 @@ interface DesignStore {
   // keys. `themeKinds` records whether a theme reads as light or dark — it
   // drives the recommended tones and which gray ramp seeds it.
   themes: Record<string, Record<string, string>>
+  themeSemantics: ThemeSemanticModes
   themeOrder: string[]
   themeKinds: Record<string, 'light' | 'dark'>
+  themeLabels: Record<string, string>
   // Per-theme primitive palettes — only custom "style themes" have an entry;
   // light/dark fall back to the global scales.
   themeSources: Record<string, ThemeSources>
+  themeFoundations: Record<string, ThemeFoundationOverride>
+  themeOrigin: Record<string, string>
+  setThemeOrigin: (key: string, presetId: string | null) => void
   setThemeToken: (theme: string, key: string, value: string) => void
   mergeThemeTokens: (theme: string, partial: Record<string, string>) => void
+  setThemeModeToken: (theme: string, appearance: ThemeAppearance, key: string, value: string) => void
+  mergeThemeModeTokens: (theme: string, appearance: ThemeAppearance, partial: Record<string, string>) => void
   addTheme: (key: string, kind: 'light' | 'dark', sources: ThemeSources) => void
   removeTheme: (key: string) => void
   // Reorder the theme columns (drag-to-reorder in the Semantic matrix).
@@ -715,6 +758,7 @@ interface DesignStore {
   // preserves column order. No-op for the protected light/dark keys or on a
   // collision with an existing key.
   renameTheme: (oldKey: string, newKey: string) => void
+  setThemeLabel: (key: string, label: string) => void
   // Update a theme's mode + palette in place, keeping its token overrides. Works
   // for light/dark too — giving them a palette entry decouples them from the
   // global scales (they then read their own frozen ramps via sourceScaleFor).
@@ -722,6 +766,8 @@ interface DesignStore {
   // Updates a custom theme's own palette (no-op for light/dark, which have no
   // palette entry and draw from the global scales instead).
   mergeThemeSources: (key: string, partial: Partial<ThemeSources>) => void
+  setThemeFoundations: (key: string, foundations: ThemeFoundationOverride | null) => void
+  patchThemeFoundations: (key: string, partial: ThemeFoundationOverride) => void
 
   // Step 4 — Typography
   typography: TypographyTokens
@@ -742,6 +788,8 @@ interface DesignStore {
   setShadows: (s: Record<string, string>) => void
   setGrid: (g: Record<string, string>) => void
   setSizes: (s: Record<string, string>) => void
+  selector: Record<string, string>
+  setSelector: (s: Record<string, string>) => void
   stroke: Record<string, string>
   setStroke: (s: Record<string, string>) => void
 
@@ -752,12 +800,14 @@ interface DesignStore {
   radiusRoles: Record<string, string>
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
+  selectorRoles: Record<string, string>
   strokeRoles: Record<string, string>
   breakpointRoles: Record<string, string>
   gridFrame: GridFrameModes
   setRadiusRoles: (r: Record<string, string>) => void
   setSpacingRoles: (r: Record<string, string>) => void
   setSizeRoles: (r: Record<string, string>) => void
+  setSelectorRoles: (r: Record<string, string>) => void
   setStrokeRoles: (r: Record<string, string>) => void
   setBreakpointRoles: (r: Record<string, string>) => void
   setGridFrame: (f: GridFrameModes) => void
@@ -855,11 +905,16 @@ interface DesignStore {
   saveCurrentSystem: () => void
   // Same save, scoped to ONE theme (see `scopeSnapshotToTheme`) — the "just
   // this theme" half of the Kits save-scope choice, for systems carrying more
-  // than one theme. Uses the SAME id rule `saveCurrentSystem` does (repo id,
-  // else a slug of the project name) — the popover's own "reusing a name
-  // updates that kit" rule applies here exactly as it already does for a
-  // full save; this doesn't add a second naming convention.
-  saveCurrentSystemAsTheme: (themeKey: string) => void
+  // than one theme.
+  //
+  // `name` overrides the entry's name AND its local id slug. The Kits popover
+  // omits it (the scoped save updates the project's own kit, matching its
+  // "reusing a name updates that kit" copy). The Export wizard, opened for a
+  // specific theme, passes the THEME's name so the snapshot registers as that
+  // theme's kit (`local:apollo`) rather than overwriting the whole-project one —
+  // "the snapshot name must match the theme name". A connected GitHub repo still
+  // pins the id (`buildSavedSystemEntry`), so `name` only moves the local slug.
+  saveCurrentSystemAsTheme: (themeKey: string, name?: string) => void
   // Adopt an imported snapshot as the active system AND register it in the
   // local registry with 'imported' provenance (Import your design system flow).
   applyImportedSystem: (snapshot: DesignSnapshot) => void
@@ -947,19 +1002,73 @@ export const useDesignStore = create<DesignStore>()(
         }),
 
       setThemeToken: (theme, key, value) =>
-        set((state) => ({
-          themes: {
-            ...state.themes,
-            [theme]: { ...state.themes[theme], [key]: value },
-          },
-        })),
+        set((state) => {
+          const appearance = state.themeKinds[theme] ?? 'light'
+          const currentModes = state.themeSemantics[theme] ?? {
+            light: appearance === 'light' ? (state.themes[theme] ?? {}) : {},
+            dark: appearance === 'dark' ? (state.themes[theme] ?? {}) : {},
+          }
+          const next = { ...currentModes[appearance], [key]: value }
+          return {
+            themes: { ...state.themes, [theme]: next },
+            themeSemantics: {
+              ...state.themeSemantics,
+              [theme]: { ...currentModes, [appearance]: next },
+            },
+          }
+        }),
       mergeThemeTokens: (theme, partial) =>
-        set((state) => ({
-          themes: {
-            ...state.themes,
-            [theme]: { ...state.themes[theme], ...partial },
-          },
-        })),
+        set((state) => {
+          const appearance = state.themeKinds[theme] ?? 'light'
+          const currentModes = state.themeSemantics[theme] ?? {
+            light: appearance === 'light' ? (state.themes[theme] ?? {}) : {},
+            dark: appearance === 'dark' ? (state.themes[theme] ?? {}) : {},
+          }
+          const next = { ...currentModes[appearance], ...partial }
+          return {
+            themes: { ...state.themes, [theme]: next },
+            themeSemantics: {
+              ...state.themeSemantics,
+              [theme]: { ...currentModes, [appearance]: next },
+            },
+          }
+        }),
+      setThemeModeToken: (theme, appearance, key, value) =>
+        set((state) => {
+          const preferred = state.themeKinds[theme] ?? 'light'
+          const currentModes = state.themeSemantics[theme] ?? {
+            light: preferred === 'light' ? (state.themes[theme] ?? {}) : {},
+            dark: preferred === 'dark' ? (state.themes[theme] ?? {}) : {},
+          }
+          const next = { ...currentModes[appearance], [key]: value }
+          return {
+            themeSemantics: {
+              ...state.themeSemantics,
+              [theme]: { ...currentModes, [appearance]: next },
+            },
+            ...(appearance === preferred
+              ? { themes: { ...state.themes, [theme]: next } }
+              : {}),
+          }
+        }),
+      mergeThemeModeTokens: (theme, appearance, partial) =>
+        set((state) => {
+          const preferred = state.themeKinds[theme] ?? 'light'
+          const currentModes = state.themeSemantics[theme] ?? {
+            light: preferred === 'light' ? (state.themes[theme] ?? {}) : {},
+            dark: preferred === 'dark' ? (state.themes[theme] ?? {}) : {},
+          }
+          const next = { ...currentModes[appearance], ...partial }
+          return {
+            themeSemantics: {
+              ...state.themeSemantics,
+              [theme]: { ...currentModes, [appearance]: next },
+            },
+            ...(appearance === preferred
+              ? { themes: { ...state.themes, [theme]: next } }
+              : {}),
+          }
+        }),
       // Add a custom "style theme" with its own primitive palette. The token
       // map starts empty ({}) — Step3's auto-populate effect seeds every role
       // from the palette's recommended tones on the next render.
@@ -968,8 +1077,13 @@ export const useDesignStore = create<DesignStore>()(
           if (state.themes[key]) return state
           return {
             themes: { ...state.themes, [key]: { ...EMPTY_SEMANTIC } },
+            themeSemantics: {
+              ...state.themeSemantics,
+              [key]: { light: { ...EMPTY_SEMANTIC }, dark: { ...EMPTY_SEMANTIC } },
+            },
             themeOrder: [...state.themeOrder, key],
             themeKinds: { ...state.themeKinds, [key]: kind },
+            themeLabels: { ...state.themeLabels, [key]: key.replace(/-/g, ' ') },
             themeSources: { ...state.themeSources, [key]: sources },
           }
         }),
@@ -978,6 +1092,27 @@ export const useDesignStore = create<DesignStore>()(
           if (!state.themeSources[key]) return state
           return { themeSources: { ...state.themeSources, [key]: { ...state.themeSources[key], ...partial } } }
         }),
+      setThemeOrigin: (key, presetId) =>
+        set((state) => {
+          const { [key]: _, ...rest } = state.themeOrigin ?? {}
+          return { themeOrigin: presetId ? { ...rest, [key]: presetId } : rest }
+        }),
+      setThemeFoundations: (key, foundations) =>
+        set((state) => {
+          if (!state.themes[key]) return state
+          const { [key]: _, ...rest } = state.themeFoundations
+          return { themeFoundations: foundations ? { ...rest, [key]: foundations } : rest }
+        }),
+      patchThemeFoundations: (key, partial) =>
+        set((state) => {
+          if (!state.themes[key]) return state
+          return {
+            themeFoundations: {
+              ...state.themeFoundations,
+              [key]: { ...state.themeFoundations[key], ...partial },
+            },
+          }
+        }),
       removeTheme: (key) =>
         set((state) => {
           if (!state.themes[key]) return state
@@ -985,12 +1120,42 @@ export const useDesignStore = create<DesignStore>()(
           // export. Any single theme (including light/dark) may be removed.
           if (Object.keys(state.themes).length <= 1) return state
           const { [key]: _, ...themes } = state.themes
-          const { [key]: __, ...themeKinds } = state.themeKinds
-          const { [key]: ___, ...themeSources } = state.themeSources
+          const { [key]: __, ...themeSemantics } = state.themeSemantics
+          const { [key]: ___, ...themeKinds } = state.themeKinds
+          const { [key]: ____, ...themeLabels } = state.themeLabels
+          const { [key]: _____, ...themeSources } = state.themeSources
+          const { [key]: ______, ...themeFoundations } = state.themeFoundations
+          const { [key]: _______, ...themeOrigin } = state.themeOrigin ?? {}
+          // `architectureOverrides` is keyed `arch → token → THEME MODE KEY`,
+          // so a deleted theme leaves `"gone::light"` / `"gone::dark"` entries
+          // behind — ref data pointing at a theme that no longer exists. The
+          // same pruning `scopeSnapshotToTheme` already does when a kit is
+          // saved scoped to one theme; it just never ran on delete. It matters
+          // more now that a System Style writes overrides on adopt, so trying
+          // styles on and deleting them used to accumulate orphans forever.
+          const prefixes = [themeModeKey(key, 'light'), themeModeKey(key, 'dark')]
+          const architectureOverrides = Object.fromEntries(
+            Object.entries(state.architectureOverrides).map(([arch, tokens]) => [
+              arch,
+              Object.fromEntries(
+                Object.entries(tokens)
+                  .map(([token, modes]) => [
+                    token,
+                    Object.fromEntries(Object.entries(modes).filter(([mode]) => !prefixes.includes(mode))),
+                  ] as const)
+                  .filter(([, modes]) => Object.keys(modes).length > 0),
+              ),
+            ]),
+          )
           return {
             themes,
+            themeSemantics,
             themeKinds,
+            themeLabels,
             themeSources,
+            themeFoundations,
+            themeOrigin,
+            architectureOverrides,
             themeOrder: state.themeOrder.filter((t) => t !== key),
           }
         }),
@@ -1009,23 +1174,42 @@ export const useDesignStore = create<DesignStore>()(
           if (oldKey === newKey || !newKey) return state
           if (state.themes[newKey]) return state // collision — keep as-is
           const { [oldKey]: tokens, ...restThemes } = state.themes
+          const { [oldKey]: modes, ...restModeThemes } = state.themeSemantics
           const { [oldKey]: kind, ...restKinds } = state.themeKinds
+          const { [oldKey]: label, ...restLabels } = state.themeLabels
           const { [oldKey]: sources, ...restSources } = state.themeSources
+          const { [oldKey]: foundations, ...restFoundations } = state.themeFoundations
+          const { [oldKey]: origin, ...restOrigin } = state.themeOrigin ?? {}
           return {
             themes: { ...restThemes, [newKey]: tokens },
+            themeSemantics: modes ? { ...restModeThemes, [newKey]: modes } : restModeThemes,
             themeKinds: { ...restKinds, [newKey]: kind },
+            themeLabels: label ? { ...restLabels, [newKey]: label } : restLabels,
             themeSources: sources
               ? { ...restSources, [newKey]: sources }
               : restSources,
+            themeFoundations: foundations
+              ? { ...restFoundations, [newKey]: foundations }
+              : restFoundations,
+            themeOrigin: origin ? { ...restOrigin, [newKey]: origin } : restOrigin,
             themeOrder: state.themeOrder.map((t) => (t === oldKey ? newKey : t)),
           }
+        }),
+      setThemeLabel: (key, label) =>
+        set((state) => {
+          if (!state.themes[key]) return state
+          const next = label.trim()
+          if (!next) return state
+          return { themeLabels: { ...state.themeLabels, [key]: next } }
         }),
       updateTheme: (key, kind, sources) =>
         set((state) => {
           if (!state.themes[key]) return state
+          const modes = state.themeSemantics[key]
           return {
             themeKinds: { ...state.themeKinds, [key]: kind },
             themeSources: { ...state.themeSources, [key]: sources },
+            ...(modes ? { themes: { ...state.themes, [key]: modes[kind] } } : {}),
           }
         }),
 
@@ -1039,10 +1223,12 @@ export const useDesignStore = create<DesignStore>()(
       setPadding: (p) => set({ padding: p }),
       setGrid: (g) => set({ grid: g }),
       setSizes: (s) => set({ sizes: s }),
+      setSelector: (s) => set({ selector: s }),
       setStroke: (s) => set({ stroke: s }),
       setRadiusRoles: (r) => set({ radiusRoles: mergeLayoutRoles('radius', r) }),
       setSpacingRoles: (r) => set({ spacingRoles: mergeLayoutRoles('spacing', r) }),
       setSizeRoles: (r) => set({ sizeRoles: mergeLayoutRoles('size', r) }),
+      setSelectorRoles: (r) => set({ selectorRoles: mergeLayoutRoles('selector', r) }),
       setStrokeRoles: (r) => set({ strokeRoles: mergeLayoutRoles('stroke', r) }),
       setBreakpointRoles: (r) => set({ breakpointRoles: mergeLayoutRoles('breakpoint', r) }),
       setGridFrame: (f) => set((state) => {
@@ -1119,7 +1305,7 @@ export const useDesignStore = create<DesignStore>()(
       resetFoundationsProgress: () => set({ completedFoundations: [] }),
 
       // Icon Library — Untitled UI is the only bundled set.
-      setIconLibrary: (_key) => set({ iconLibrary: 'untitled' }),
+      setIconLibrary: (_key) => set({ iconLibrary: 'phosphor' }),
       setIconAiSource: (key) => set({ iconAiSource: key }),
 
       addCustomIcon: (name, svg) =>
@@ -1261,11 +1447,11 @@ export const useDesignStore = create<DesignStore>()(
               : [...state.savedSystems, entry],
           }
         }),
-      saveCurrentSystemAsTheme: (themeKey) =>
+      saveCurrentSystemAsTheme: (themeKey, name) =>
         set((state) => {
           const full = captureSnapshot(state as unknown as DesignSnapshot)
           const snapshot = scopeSnapshotToTheme(full, themeKey)
-          const entry = buildSavedSystemEntry(state, snapshot)
+          const entry = buildSavedSystemEntry(state, snapshot, name)
           return {
             savedSystems: state.savedSystems.some((s) => s.id === entry.id)
               ? state.savedSystems.map((s) => (s.id === entry.id ? entry : s))
@@ -1296,7 +1482,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 58,
+      version: 64,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2231,6 +2417,102 @@ export const useDesignStore = create<DesignStore>()(
           // know what they already have, and guessing would suppress a real
           // update hint; it self-populates on their next download.
           if (persisted.pluginBuildSeen === undefined) persisted.pluginBuildSeen = null
+        }
+        // v58→v59: Theme names are now user-editable display labels. Keep
+        // engine keys stable and seed an empty label map for existing systems.
+        const seedThemeLabels = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          if (!state.themeLabels || typeof state.themeLabels !== 'object') state.themeLabels = {}
+        }
+        seedThemeLabels(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) seedThemeLabels(sys?.snapshot)
+        }
+        // v59→v60: one library theme owns a Light and a Dark semantic map.
+        // Preserve the old map in its preferred appearance; the opposite map
+        // starts empty and is deterministically populated from the same ramps
+        // when Semantics opens or the preview/export resolver reads it.
+        const seedThemeSemantics = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          if (!state.themeSemantics || typeof state.themeSemantics !== 'object') state.themeSemantics = {}
+          for (const key of state.themeOrder ?? Object.keys(state.themes ?? {})) {
+            if (state.themeSemantics[key]?.light && state.themeSemantics[key]?.dark) continue
+            const preferred: ThemeAppearance = state.themeKinds?.[key] === 'dark' ? 'dark' : 'light'
+            const legacy = state.themes?.[key] ?? {}
+            state.themeSemantics[key] = {
+              light: preferred === 'light' ? { ...legacy } : {},
+              dark: preferred === 'dark' ? { ...legacy } : {},
+            }
+          }
+        }
+        seedThemeSemantics(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) seedThemeSemantics(sys?.snapshot)
+        }
+        // v60→v61: architecture overrides now identify both the library theme
+        // and its appearance. Older Categorical overrides used one bare theme
+        // key per column; retain each edit under that theme's preferred mode.
+        const scopeArchitectureOverrides = (state: any) => {
+          if (!state?.architectureOverrides || typeof state.architectureOverrides !== 'object') return
+          for (const tokens of Object.values<any>(state.architectureOverrides)) {
+            if (!tokens || typeof tokens !== 'object') continue
+            for (const [token, modes] of Object.entries<any>(tokens)) {
+              if (!modes || typeof modes !== 'object') continue
+              const scoped: Record<string, string> = {}
+              for (const [mode, value] of Object.entries<string>(modes)) {
+                if (mode.includes('::')) {
+                  scoped[mode] = value
+                  continue
+                }
+                const appearance: ThemeAppearance = state.themeKinds?.[mode] === 'dark' ? 'dark' : 'light'
+                scoped[themeModeKey(mode, appearance)] = value
+              }
+              tokens[token] = scoped
+            }
+          }
+        }
+        scopeArchitectureOverrides(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) scopeArchitectureOverrides(sys?.snapshot)
+        }
+        // v61→v62: selector primitives (checkbox / radio / switch / badge dot)
+        // became a real collection. They were hardcoded 15/18 in the specimens
+        // before, which is exactly what SELECTOR_STANDARD's base of 3 produces —
+        // so seeding it is a visual no-op for every existing system. Keeps any
+        // step the user already has, the same shape as v55's stroke backfill.
+        const seedSelector = (state: any) => {
+          if (!state) return
+          state.selector = { ...SELECTOR_STANDARD, ...(state.selector ?? {}) }
+          state.selectorRoles = mergeLayoutRoles('selector', state.selectorRoles)
+        }
+        seedSelector(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) seedSelector(sys?.snapshot)
+        }
+        // v62→v63: style themes may override the existing foundation
+        // collections. Empty means byte-identical global fallback for every
+        // system created before this feature.
+        const seedThemeFoundations = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          if (!state.themeFoundations || typeof state.themeFoundations !== 'object') {
+            state.themeFoundations = {}
+          }
+        }
+        seedThemeFoundations(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) seedThemeFoundations(sys?.snapshot)
+        }
+        // v63→v64: which System Style a theme was adopted from, so Reset
+        // knows what to reset TO. Empty for every pre-existing theme, which is
+        // the honest answer — they were made by hand and reset to the system
+        // defaults, exactly as they would have before this field existed.
+        const seedThemeOrigin = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          if (!state.themeOrigin || typeof state.themeOrigin !== 'object') state.themeOrigin = {}
+        }
+        seedThemeOrigin(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) seedThemeOrigin(sys?.snapshot)
         }
         return persisted
       },

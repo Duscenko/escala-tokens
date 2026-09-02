@@ -5,6 +5,11 @@ import { DEFAULT_PUBLISH_ORIGIN } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 
+/** Ephemeral UI feedback for an explicit user-initiated Figma publish. This
+ * deliberately does not live in the persisted design-system store: a spinner
+ * or failed request belongs to the current interaction, not the system. */
+export type FigmaPublishState = 'idle' | 'publishing' | 'done' | 'error'
+
 // Single source of truth for the publish-to-Figma flow. Both the manual "Sync"
 // pill (TopNav), the Figma connect view, and the auto-sync subscription go
 // through here so they all hit the same endpoint and update the same status.

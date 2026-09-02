@@ -1,4 +1,5 @@
 // Gradients foundation — create named gradients (linear/radial, angle, stops),
+import { tableRowClass } from './tableChrome'
 // assign them to preview surfaces (card covers, avatars), and ship them in the
 // export. Store-driven: every edit writes straight to `gradients` /
 // `gradientAssignments`, so the live previews + tokens.json track instantly.
@@ -20,6 +21,7 @@ import { themeBrandRamp } from '../../lib/themeSources'
 import ColorField from '../ui/ColorField'
 import RailSelect from '../ui/RailSelect'
 import { SlidersIcon } from '../ui/icons'
+import VariableCollectionRail from './VariableCollectionRail'
 
 /** The same glyph pair ColorPrimitives' light/dark column headers use — the
  *  eye is already the app's "this is the appearance being previewed" mark, so
@@ -60,7 +62,7 @@ function AssignSelect({ label, value, onChange, gradients }: {
         <select
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong appearance-none cursor-pointer"
+          className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-line bg-surface text-ui text-fg outline-none focus:border-line-strong appearance-none cursor-pointer"
         >
           <option value="">None</option>
           {gradients.map((g) => (
@@ -78,6 +80,8 @@ export default function StepGradients({
   tabBar?: ReactNode
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
+  /** Returns to the System colors family collection without leaving Color. */
+  onBackToSystemColors?: () => void
 } = {}) {
   const store = useDesignStore()
   const {
@@ -107,7 +111,6 @@ export default function StepGradients({
   const rampPrefix = themeSources[previewTheme]?.brand ?? 'accent'
 
   const [selectedId, setSelectedId] = useState<string | null>(gradients[0]?.id ?? null)
-  const [query, setQuery] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsPlace = usePopoverPlacement(settingsRef, settingsOpen, { prefer: 360, max: 520 })
@@ -152,7 +155,8 @@ export default function StepGradients({
     if (!selected) return
     const stops = selected.stops.map((s, idx) => {
       if (idx !== i) return s
-      const { darkColor: _drop, ...rest } = s
+      const rest = { ...s }
+      delete rest.darkColor
       return rest
     })
     patch({ stops })
@@ -203,9 +207,6 @@ export default function StepGradients({
     patch({ stops: selected.stops.filter((_, idx) => idx !== i) })
   }
 
-  const q = query.trim().toLowerCase()
-  const visible = q ? gradients.filter((g) => g.name.toLowerCase().includes(q)) : gradients
-
   const linkable = selected ? isLinkable(selected.id) : false
   const locked = !!selected && linkable && selected.linked === true
   const toneNames = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
@@ -213,68 +214,82 @@ export default function StepGradients({
    *  `sky-9` while a theme whose brand slot is the Sky family is previewed. */
   const tokenNameFor = (tone: number, ap: GradientAppearance = 'light') =>
     `${rampPrefix}${ap === 'dark' ? '-dark' : ''}-${toneNames[tone - 1] ?? tone}`
-  /** The gradient as this THEME renders it — the shared call every bar, chip
-   *  and swatch on this screen goes through, so none of them can disagree
-   *  about which accent the preview is showing. */
-  const cssFor = (g: GradientDef, ap: GradientAppearance = appearance) =>
-    gradientToCss(g, ap, ap === appearance ? ramp : undefined)
-
   // Three tracks, matching the reference: position · color · row actions.
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: 'minmax(9rem,1fr) minmax(12rem,1.6fr) minmax(10rem,1fr)',
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="relative h-full flex items-stretch">
+      <VariableCollectionRail ariaLabel="Color collections and gradient groups">
+        <div role="navigation" aria-label="Gradient groups" className="space-y-0.5">
+          {gradients.map((g) => {
+            const active = g.id === selectedId
+            return (
+              <div key={g.id} className="group relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(g.id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
+                  <span className="flex-1 min-w-0 truncate text-ui font-medium">{g.name}</span>
+                </button>
+                {gradients.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => { if (selectedId === g.id) setSelectedId(gradients.find((x) => x.id !== g.id)?.id ?? null); removeGradient(g.id) }}
+                    aria-label={`Delete ${g.name}`}
+                    title={`Delete ${g.name}`}
+                    className="absolute right-1.5 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-status-danger opacity-0 group-hover:opacity-100 transition-opacity bg-elevated"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <button type="button" onClick={create} className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-line-strong px-3 py-2 text-ui text-fg-faint hover:border-fg-faint hover:text-fg transition-colors">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
+          New gradient
+        </button>
+      </VariableCollectionRail>
+
+      <div className="flex-1 min-w-0 flex flex-col bg-app">
       {/* ── Gradient type + the live bar it produces. Groups | icon-rail is
           FoundationWorkbench. `border-line/60` since this sits between Groups
           above and the nav + table below. ── */}
-      <div className="flex items-stretch flex-shrink-0 border-b border-line/60">
-        <div className="w-[198px] flex-shrink-0 flex flex-col justify-center gap-1.5 px-4 py-5 bg-app">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Gradient type</span>
-          {selected ? (
-            <RailSelect
-              value={selected.type}
-              options={TYPE_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
-              onChange={(t) => patch({ type: t })}
-              ariaLabel="Gradient type"
-              icon={
-                <span
-                  className="block w-4 h-4 rounded-full ring-1 ring-black/10"
-                  style={{ background: gradientToCss(selected, appearance) }}
-                  aria-hidden
-                />
-              }
-            />
-          ) : (
-            <span className="text-[13px] text-fg-faint">—</span>
-          )}
-        </div>
-        {/* pr-3 (12px) — mirrors ColorPrimitives' matching row. */}
-        <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line">
-        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter gradients"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
+      <div className="flex flex-col flex-shrink-0 border-b border-line/60">
+        {/* No `foundation-layer-bar` (its `--surface` fill + inset hairline) and
+            no local search box: the gradient list is three named rows in the
+            rail, the workspace already owns "Search tokens", and a recessed
+            header here read as a stray coloured band. Just the breadcrumb, flush
+            on the page. */}
+        <div className="flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
+          <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
         </div>
         <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
           {selected ? (
             <>
+              <div className="w-[180px] flex-shrink-0 rounded-2xl bg-elevated px-3 py-2.5">
+                <RailSelect
+                  value={selected.type}
+                  options={TYPE_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
+                  onChange={(t) => patch({ type: t })}
+                  ariaLabel="Gradient type"
+                  icon={
+                    <span
+                      className="block w-4 h-4 rounded-full ring-1 ring-black/10"
+                      style={{ background: gradientToCss(selected, appearance) }}
+                      aria-hidden
+                    />
+                  }
+                />
+              </div>
               {/* The bar IS the preview — same role the ramp plays on
                   Primitives: row 1's right cell always shows the thing the
                   left cell's control defines. */}
@@ -306,7 +321,7 @@ export default function StepGradients({
               </div>
               {selected.type === 'linear' && (
                 <label className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-fg-faint">Angle</span>
+                  <span className="text-caption text-fg-faint">Angle</span>
                   <input
                     type="range"
                     min={0}
@@ -316,7 +331,7 @@ export default function StepGradients({
                     className="w-28 accent-fg"
                     aria-label="Gradient angle"
                   />
-                  <span className="text-[12px] font-mono tabular-nums text-fg w-9 text-right">{selected.angle}°</span>
+                  <span className="text-body font-mono tabular-nums text-fg w-9 text-right">{selected.angle}°</span>
                 </label>
               )}
               {/* Gear — the name, CSS var and surface assignments. Mirrors
@@ -330,7 +345,7 @@ export default function StepGradients({
                   aria-expanded={settingsOpen}
                   aria-label="Gradient settings — name and surface assignments"
                   title="Gradient settings"
-                  className={`w-9 h-9 rounded-[13px] flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                     settingsOpen ? 'bg-elevated border-line-strong text-fg' : 'border-line-strong bg-surface text-fg-muted hover:text-fg hover:border-fg-faint'
                   }`}
                 >
@@ -350,14 +365,14 @@ export default function StepGradients({
                       <input
                         value={selected.name}
                         onChange={(e) => patch({ name: e.target.value })}
-                        className="px-3 py-2 rounded-lg border border-line bg-surface text-[13px] text-fg outline-none focus:border-line-strong"
+                        className="px-3 py-2 rounded-lg border border-line bg-surface text-ui text-fg outline-none focus:border-line-strong"
                       />
-                      <span className="text-[10px] font-mono text-fg-faint">--gradient-{gradientSlug(selected)}</span>
+                      <span className="text-mini font-mono text-fg-faint">--gradient-{gradientSlug(selected)}</span>
                     </label>
                     <div className="flex flex-col gap-2 border-t border-line pt-3">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-semibold text-fg">Assignments</span>
-                        <span className="text-[11px] text-fg-faint">Which gradient renders on each surface in the live previews.</span>
+                        <span className="text-caption text-fg-faint">Which gradient renders on each surface in the live previews.</span>
                       </div>
                       <AssignSelect label="Card cover" value={gradientAssignments.cover} gradients={gradients} onChange={(id) => setGradientAssignment('cover', id)} />
                       <AssignSelect label="Avatars" value={gradientAssignments.avatar} gradients={gradients} onChange={(id) => setGradientAssignment('avatar', id)} />
@@ -370,65 +385,19 @@ export default function StepGradients({
             <span className="text-sm text-fg-faint">No gradients yet — create one to get started.</span>
           )}
         </div>
-        </div>
       </div>
 
-      {/* ── Row 3 — gradient nav + the stops table ── */}
+      {/* ── Gradient stops table ── */}
       <div className="flex-1 min-h-0 flex items-stretch">
-        <nav aria-label="Gradients" className="w-[198px] flex-shrink-0 h-full py-1.5 px-2 flex flex-col gap-0.5 overflow-y-auto bg-app">
-          <button
-            type="button"
-            onClick={create}
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-fg-muted hover:bg-elevated/50 hover:text-fg transition-colors"
-          >
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
-            New gradient
-          </button>
-          {visible.map((g) => {
-            const active = g.id === selectedId
-            const assigned = gradientAssignments.cover === g.id || gradientAssignments.avatar === g.id
-            return (
-              <div key={g.id} className="group relative flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(g.id)}
-                  aria-current={active}
-                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
-                  <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{g.name}</span>
-                  {assigned && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" title="In use" aria-hidden />}
-                </button>
-                {gradients.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => { if (selectedId === g.id) setSelectedId(gradients.find((x) => x.id !== g.id)?.id ?? null); removeGradient(g.id) }}
-                    aria-label={`Delete ${g.name}`}
-                    title={`Delete ${g.name}`}
-                    className="absolute right-1.5 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-elevated"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </div>
-            )
-          })}
-          {visible.length === 0 && (
-            <p className="px-2.5 py-3 text-[12px] text-fg-faint">No gradients match “{query}”.</p>
-          )}
-        </nav>
-
         <div className="flex-1 min-w-0 overflow-auto bg-app border-l border-line">
           {selected ? (
             <div className="min-w-[28rem]">
               <div
-                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
+                className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-10"
                 style={gridStyle}
               >
-                <span className="pl-4 py-3 border-r border-line">Transparency</span>
-                <span className="flex items-center gap-2 border-r border-line px-4 py-3">
+                <span className="flex items-center pl-4 border-r border-line/60">Transparency</span>
+                <span className="flex items-center gap-2 border-r border-line/60 px-4">
                   Stops
                   {/* Which appearance the colour cells below EDIT. Same eye
                       affordance and the same `previewTheme` state as the
@@ -442,7 +411,7 @@ export default function StepGradients({
                         onClick={() => onPreviewThemeChange?.(ap)}
                         aria-pressed={appearance === ap}
                         title={appearance === ap ? `Editing the ${ap} appearance` : `Edit the ${ap} appearance`}
-                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-mini font-medium transition-colors ${
                           appearance === ap ? 'text-accent-ui bg-accent-ui/[0.08]' : 'text-fg-faint hover:text-fg-muted'
                         }`}
                       >
@@ -465,7 +434,7 @@ export default function StepGradients({
                       title={locked
                         ? 'Colors follow the accent. Unlock to edit the stops by hand.'
                         : 'Relink to the accent — replaces the stops with accent-derived colors.'}
-                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium normal-case tracking-normal transition-colors ${
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-mini font-medium normal-case tracking-normal transition-colors ${
                         locked ? 'bg-elevated text-fg ring-1 ring-line' : 'text-fg-faint hover:text-fg'
                       }`}
                     >
@@ -493,7 +462,7 @@ export default function StepGradients({
               </div>
 
               {locked && (
-                <p className="px-4 py-2 text-[11px] text-fg-faint border-b border-line/40">
+                <p className="px-4 py-2 text-caption text-fg-faint border-b border-line/60">
                   Each stop reads a <strong className="font-semibold text-fg-muted">tone of your accent ramp</strong>, so the gradient
                   re-resolves through the primitives whenever the accent changes — and the same tone resolves against the accent's
                   dark twin, so the dark appearance comes for free. Pick a different tone below, or unlock to use a free colour instead.
@@ -503,12 +472,10 @@ export default function StepGradients({
               {selected.stops.map((s, i) => (
                 <div
                   key={i}
-                  className={`grid items-center border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-                    i % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-                  }`}
+                  className={tableRowClass(i, 'grid')}
                   style={gridStyle}
                 >
-                  <div className="pl-4 pr-3 py-2.5 border-r border-line">
+                  <div className="pl-4 pr-3 py-2.5 border-r border-line/60">
                     <div className="flex items-center w-24 px-2 py-1.5 rounded-lg border border-line bg-surface">
                       <input
                         type="number"
@@ -517,9 +484,9 @@ export default function StepGradients({
                         value={s.pos}
                         onChange={(e) => updateStop(i, 'pos', Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                         aria-label={`Stop ${i + 1} position`}
-                        className="w-full bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full bg-transparent text-body font-mono tabular-nums text-fg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                      <span className="text-[10px] text-fg-faint">%</span>
+                      <span className="text-mini text-fg-faint">%</span>
                     </div>
                   </div>
 
@@ -528,7 +495,7 @@ export default function StepGradients({
                       colour, so it keeps the raw picker + hex. Showing bare hex
                       for a linked stop was the bug: it named a value that lived
                       nowhere in the system. */}
-                  <div className="flex items-center gap-2.5 px-4 py-2.5 border-r border-line min-w-0">
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 border-r border-line/60 min-w-0">
                     {locked && typeof s.tone === 'number' ? (
                       <>
                         <span
@@ -540,7 +507,7 @@ export default function StepGradients({
                           {/* The token NAME carries the appearance, matching the
                               exported prefixes (`accent-9` / `accent-dark-9`) —
                               same tone, other ramp, no inversion. */}
-                          <span className="text-[12px] font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone, appearance)} — ${stopColor(s, appearance).toUpperCase()}`}>
+                          <span className="text-body font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone, appearance)} — ${stopColor(s, appearance).toUpperCase()}`}>
                             {tokenNameFor(s.tone, appearance)}
                           </span>
                           <ScaleRow
@@ -567,17 +534,17 @@ export default function StepGradients({
                           ariaLabel={`Stop ${i + 1} ${appearance} color`}
                           size={22}
                         />
-                        <span className="flex-1 min-w-0 flex items-center gap-2 text-[12px] font-mono text-fg-muted truncate">
+                        <span className="flex-1 min-w-0 flex items-center gap-2 text-body font-mono text-fg-muted truncate">
                           {stopColor(s, appearance).toUpperCase()}
                           {isDark && !s.darkColor && (
-                            <span className="text-[10px] font-sans text-fg-faint whitespace-nowrap">same as light</span>
+                            <span className="text-mini font-sans text-fg-faint whitespace-nowrap">same as light</span>
                           )}
                           {isDark && s.darkColor && (
                             <button
                               type="button"
                               onClick={() => clearStopDark(i)}
                               title="Drop the dark override — render the light colour in both"
-                              className="text-[10px] font-sans text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
+                              className="text-mini font-sans text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
                             >
                               reset
                             </button>
@@ -594,7 +561,7 @@ export default function StepGradients({
                       disabled={selected.stops.length <= 2}
                       aria-label={`Remove stop ${i + 1}`}
                       title={selected.stops.length <= 2 ? 'A gradient needs at least two stops' : `Remove stop ${i + 1}`}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-fg-faint hover:text-status-danger hover:bg-status-danger/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-faint"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
@@ -610,6 +577,7 @@ export default function StepGradients({
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

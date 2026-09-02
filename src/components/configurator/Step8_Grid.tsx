@@ -1,12 +1,16 @@
 import { type ReactNode } from 'react'
-import { useDesignStore, GRID_DEFAULT } from '../../store/useDesignStore'
+import { GRID_DEFAULT } from '../../store/useDesignStore'
+import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import VariablesTable from './VariablesTable'
 import { BREAKPOINT_STEPS, breakpointKey } from '../../lib/layoutTokens'
 
 const KEYS = BREAKPOINT_STEPS.map(breakpointKey)
 
-export default function Step8_Grid({ tabBar }: { tabBar?: ReactNode } = {}) {
-  const { grid, setGrid, primaryColor, primaryScale } = useDesignStore()
+export default function Step8_Grid({ tabBar, query, previewTheme }: { tabBar?: ReactNode; query?: string; previewTheme?: string } = {}) {
+  const { store, foundations, patch } = useThemeFoundations(previewTheme)
+  const { primaryColor, primaryScale } = store
+  const grid = foundations.grid
+  const setGrid = (value: Record<string, string>) => patch({ grid: value })
   const accent = primaryScale[9] ?? primaryColor
 
   const rows = KEYS
@@ -38,7 +42,12 @@ export default function Step8_Grid({ tabBar }: { tabBar?: ReactNode } = {}) {
       <VariablesTable
         title="Breakpoints"
         searchLabel="Filter breakpoints"
+        // Railed like every other foundation: Grid was the one section with no
+        // collections column at all, so its table started 240px left of
+        // everyone else's and the Collections list it owns was unreachable.
+        railed
         tabBar={tabBar}
+        query={query}
         groups={[{ valueLabel: 'Min width', rows }]}
       />
     </div>

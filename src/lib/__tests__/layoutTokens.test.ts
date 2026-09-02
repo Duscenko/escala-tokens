@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   LAYOUT_ROLES,
+  LAYOUT_PRIMITIVE_STEPS,
   PADDING_STANDARD,
   RADIUS_STANDARD,
   RADIUS_STEPS,
@@ -25,7 +26,73 @@ import {
   resolveGridFrame,
   resolveLayoutRole,
   scaleRadiusFromLg,
+  BASE_UNIT_RANGE,
+  SELECTOR_STANDARD,
+  SELECTOR_STEPS,
+  SIZE_DEFAULT_BASE,
+  SELECTOR_DEFAULT_BASE,
+  buildSelectorsFromBase,
+  buildSizesFromBase,
+  hairlineSafe,
+  inferSelectorBase,
+  inferSizeBase,
+  type LayoutFamily,
 } from '../layoutTokens'
+
+const EVERY_BASE = (() => {
+  const out: number[] = []
+  for (let b = BASE_UNIT_RANGE.min; b <= BASE_UNIT_RANGE.max + 1e-9; b += BASE_UNIT_RANGE.step) out.push(b)
+  return out
+})()
+
+describe('base-unit scaling', () => {
+  // The whole feature rests on this: if the default base did NOT reproduce the
+  // shipped ramp, adding the slider would silently restyle every system.
+  it('the default field base reproduces SIZE_STANDARD exactly', () => {
+    expect(buildSizesFromBase(SIZE_DEFAULT_BASE)).toEqual(SIZE_STANDARD)
+  })
+
+  it('the default selector base reproduces the values the specimens hardcoded', () => {
+    expect(SELECTOR_DEFAULT_BASE).toBe(3)
+    expect(SELECTOR_STANDARD).toEqual({
+      xs: '12px', sm: '15px', md: '18px', lg: '21px', xl: '24px',
+    })
+    // 15 and 18 were `box = small ? 15 : 18` in CheckboxSpecimen/RadioSpecimen.
+    expect(SELECTOR_STANDARD.sm).toBe('15px')
+    expect(SELECTOR_STANDARD.md).toBe('18px')
+  })
+
+  it('every base in range round-trips through inference', () => {
+    for (const base of EVERY_BASE) {
+      expect(inferSizeBase(buildSizesFromBase(base)), `size @ ${base}`).toBeCloseTo(base, 10)
+      expect(inferSelectorBase(buildSelectorsFromBase(base)), `selector @ ${base}`).toBeCloseTo(base, 10)
+    }
+  })
+
+  it('a hand-edited ramp infers no base, so the UI can say "Custom"', () => {
+    expect(inferSizeBase({ ...SIZE_STANDARD, lg: '50px' })).toBeNull()
+    expect(inferSelectorBase({ ...SELECTOR_STANDARD, md: '19px' })).toBeNull()
+    expect(inferSizeBase(undefined)).toBeNull()
+    expect(inferSizeBase({})).toBeNull()
+  })
+
+  it('selector steps stay a 5-step glyph ramp, distinct from control heights', () => {
+    expect(SELECTOR_STEPS).toEqual(['xs', 'sm', 'md', 'lg', 'xl'])
+    // 24px is `size` xs but `selector` xl — the reason these are two ramps.
+    expect(SELECTOR_STANDARD.xl).toBe(SIZE_STANDARD.xs)
+  })
+
+  it('hairlines are floored to 1px below 2dppx and left alone above it', () => {
+    expect(hairlineSafe('0.5px', 1)).toBe('1px')
+    expect(hairlineSafe('0.5px', 1.5)).toBe('1px')
+    expect(hairlineSafe('0.5px', 2)).toBe('0.5px')
+    expect(hairlineSafe('0.5px', 3)).toBe('0.5px')
+    // Whole pixels and zero are never touched, at any density.
+    expect(hairlineSafe('1px', 1)).toBe('1px')
+    expect(hairlineSafe('2px', 1)).toBe('2px')
+    expect(hairlineSafe('0px', 1)).toBe('0px')
+  })
+})
 
 describe('layout primitives', () => {
   it('Rounded radius is a 7-step ramp with xs and xl', () => {
@@ -72,14 +139,12 @@ describe('layout semantics', () => {
   })
 
   it('every default alias exists on that family\'s primitive scale', () => {
+    // Read from LAYOUT_PRIMITIVE_STEPS, not a ternary chain per family: the
+    // chain ended in a catch-all that silently checked any NEW family against
+    // stroke's steps, so adding one produced a bogus failure rather than
+    // coverage. This version covers every family the moment it's registered.
     for (const [family, roles] of Object.entries(LAYOUT_ROLES)) {
-      const steps = new Set(
-        family === 'radius' ? RADIUS_STEPS
-        : family === 'spacing' ? SPACING_STEPS
-        : family === 'size' ? Object.keys(SIZE_STANDARD)
-        : family === 'breakpoint' ? BREAKPOINT_STEPS
-        : Object.keys(STROKE_STANDARD),
-      )
+      const steps = new Set(LAYOUT_PRIMITIVE_STEPS[family as LayoutFamily])
       for (const role of roles) {
         expect(steps.has(role.primitive), `${family}-${role.key} → ${role.primitive}`).toBe(true)
       }

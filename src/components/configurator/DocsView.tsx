@@ -7,10 +7,11 @@ import { motion } from 'framer-motion'
 import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
 import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
-import { isGuideKey, type DocsExits } from './docs/getStarted'
+import { GUIDE_MCP_KEY, isGuideKey, type DocsExits } from './docs/getStarted'
 import { useSystemDoc, OVERVIEW_KEY, foundationDoc } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
 import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
+import { useI18n } from '../../lib/i18n'
 
 export { OVERVIEW_KEY }
 export { GET_STARTED_KEY } from './docs/getStarted'
@@ -18,7 +19,8 @@ export { CHANGELOG_KEY } from './docs/changelogArticle'
 export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
-  activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits,
+  activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits, allowReference = true,
+  overviewTitle,
 }: {
   /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
    *  (the whole-system sheet), or a foundation key. */
@@ -29,23 +31,34 @@ export default function DocsView({
   onEditFoundation: (foundationKey: string) => void
   /** Leaves Docs for Figma / Export / Save / GitHub — the Get started recipes. */
   exits: DocsExits
+  /** The global Docs menu contains operating pages only. Token reference
+   *  remains available in the preview's contextual documentation surface. */
+  allowReference?: boolean
+  /** Title for the whole-system overview sheet. The Theme Preview hub passes the
+   *  previewed theme's name so it reads as that theme's spec; omitted elsewhere,
+   *  where it falls back to "System reference". */
+  overviewTitle?: string
 }) {
+  const { t } = useI18n()
   const system = useSystemDoc()
   const articleRef = useRef<HTMLDivElement>(null)
 
-  const guide = isGuideKey(activeFoundationKey)
-  const isChangelog = activeFoundationKey === CHANGELOG_KEY
-  const isFaq = activeFoundationKey === FAQ_KEY
-  const doc = !guide && !isChangelog && !isFaq && activeFoundationKey !== OVERVIEW_KEY
-    ? foundationDoc(activeFoundationKey)
+  const pageKey = !allowReference && !isGuideKey(activeFoundationKey) && activeFoundationKey !== CHANGELOG_KEY && activeFoundationKey !== FAQ_KEY
+    ? GUIDE_MCP_KEY
+    : activeFoundationKey
+  const guide = isGuideKey(pageKey)
+  const isChangelog = pageKey === CHANGELOG_KEY
+  const isFaq = pageKey === FAQ_KEY
+  const doc = allowReference && !guide && !isChangelog && !isFaq && pageKey !== OVERVIEW_KEY
+    ? foundationDoc(pageKey)
     : undefined
 
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
-  }, [activeFoundationKey])
+  }, [pageKey])
 
   const toc = guide
-    ? getStartedToc(activeFoundationKey)
+    ? getStartedToc(activeFoundationKey, t)
     : isChangelog
       ? changelogToc()
       : isFaq
@@ -55,23 +68,24 @@ export default function DocsView({
           : overviewToc()
 
   return (
-    <div className="h-full flex min-h-0">
+    <div className="h-full w-full min-w-0 flex min-h-0 overflow-hidden">
       {/* Page. Remount-and-fade on `key`, NOT an AnimatePresence exit→enter
           pair — see ComponentsView's identical note; the shell's own center
           swap avoids `mode="wait"` for the same reason. */}
-      <div ref={articleRef} className="flex-1 min-w-0 overflow-y-auto">
+      <div ref={articleRef} className="@container flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain">
         <motion.div
-          key={activeFoundationKey}
+          key={pageKey}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
-          className="max-w-4xl mx-auto px-6 lg:px-10 py-8"
+          className="w-full min-w-0 max-w-4xl mx-auto px-5 @min-[760px]:px-8 py-7"
         >
           {guide ? (
             <GetStartedArticle
-              pageKey={activeFoundationKey}
+              pageKey={pageKey}
               onOpen={onSelectFoundationKey}
               exits={exits}
+              showPager={allowReference}
             />
           ) : isChangelog ? (
             <ChangelogArticle />
@@ -84,9 +98,9 @@ export default function DocsView({
               onOpen={onSelectFoundationKey}
               onEdit={onEditFoundation}
             />
-          ) : (
-            <OverviewArticle system={system} onOpen={onSelectFoundationKey} />
-          )}
+          ) : allowReference ? (
+            <OverviewArticle system={system} onOpen={onSelectFoundationKey} title={overviewTitle} />
+          ) : null}
         </motion.div>
       </div>
 

@@ -34,7 +34,7 @@ const ModalSpec = SPECIMENS.Modal
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2.5 min-w-0">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
+      <span className="text-mini uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
       {children}
     </section>
   )

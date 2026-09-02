@@ -24,6 +24,10 @@ export interface RepoFile {
   content: string
 }
 
+/** Ephemeral UI state for an explicit repository push. Never persist this:
+ * a page reload must not claim that a previous request is still running. */
+export type GitHubPushState = 'idle' | 'pushing' | 'done' | 'error'
+
 // ── Token storage ───────────────────────────────────────────────────────────
 
 export function getStoredToken(): string | null {

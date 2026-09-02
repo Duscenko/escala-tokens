@@ -23,12 +23,12 @@ const FOUNDATION_LABELS: Record<FoundationKey, string> = {
 
 function StatusPill({ status }: { status: 'detected' | 'derived' | 'default' }) {
   const styles = {
-    detected: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    derived: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+    detected: 'bg-status-success/10 text-status-success',
+    derived: 'bg-status-info/10 text-status-info',
     default: 'bg-elevated text-fg-faint',
   }[status]
   const label = { detected: 'Detected', derived: 'Derived', default: 'Defaults' }[status]
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${styles}`}>{label}</span>
+  return <span className={`px-2 py-0.5 rounded-full text-mini font-semibold uppercase tracking-wide ${styles}`}>{label}</span>
 }
 
 function RampStrip({ pick }: { pick: FamilyPick }) {
@@ -48,14 +48,14 @@ function FamilyRow({ label, pick }: { label: string; pick?: FamilyPick }) {
       {pick ? (
         <>
           <RampStrip pick={pick} />
-          <span className="text-[11px] text-fg-faint truncate">
+          <span className="text-caption text-fg-faint truncate">
             {pick.source === 'ramp'
               ? `“${pick.name}” — ${pick.preservedTones.length}/12 tones from your file`
               : `from “${pick.name}” (${pick.baseHex}) — ramp generated`}
           </span>
         </>
       ) : (
-        <span className="text-[11px] text-fg-faint">not in the file — generated for you</span>
+        <span className="text-caption text-fg-faint">not in the file — generated for you</span>
       )}
     </div>
   )
@@ -171,7 +171,7 @@ export default function ImportSystemModal({
           <h2 className="text-sm font-semibold text-fg">
             {step === 'intake' ? 'Import your design system' : 'Review import'}
           </h2>
-          <span className="text-[11px] text-fg-faint truncate">
+          <span className="text-caption text-fg-faint truncate">
             {step === 'intake'
               ? 'any tokens JSON — we detect its structure'
               : fileName ?? 'pasted JSON'}
@@ -191,7 +191,7 @@ export default function ImportSystemModal({
             <>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="import-json" className="text-xs font-medium text-fg">Paste your tokens JSON</label>
-                <p className="text-[11px] text-fg-faint">
+                <p className="text-caption text-fg-faint">
                   Any structure works — our own tokens.json, W3C design tokens ($value), Tailwind-style
                   palettes, or ad-hoc maps. We detect ramps, semantic tokens and foundations, and generate
                   whatever's missing.
@@ -203,7 +203,7 @@ export default function ImportSystemModal({
                   rows={9}
                   spellCheck={false}
                   placeholder={'{\n  "colors": { "primary": { "500": "#7c3aed", … } },\n  "spacing": { "1": "4px", … }\n}'}
-                  className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 font-mono text-[12px] leading-relaxed text-fg placeholder:text-fg-faint focus:border-fg outline-none transition-colors resize-none"
+                  className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 font-mono text-body leading-relaxed text-fg placeholder:text-fg-faint focus:border-fg outline-none transition-colors resize-none"
                 />
               </div>
 
@@ -224,7 +224,7 @@ export default function ImportSystemModal({
                 </p>
                 <button
                   onClick={() => fileRef.current?.click()}
-                  className="text-[11px] font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong rounded-lg px-3 py-1.5 transition-colors"
+                  className="text-caption font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong rounded-lg px-3 py-1.5 transition-colors"
                 >
                   Browse files
                 </button>
@@ -238,7 +238,7 @@ export default function ImportSystemModal({
               </div>
 
               {parseError && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs text-red-500">
+                <div className="rounded-xl border border-status-danger/30 bg-status-danger/5 px-4 py-3 text-xs text-status-danger">
                   {parseError}
                 </div>
               )}
@@ -257,7 +257,7 @@ export default function ImportSystemModal({
               </div>
 
               {analysis.fastPath === 'escala' && (
-                <div className="rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-[11px] text-fg-muted">
+                <div className="rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-caption text-fg-muted">
                   ✓ Recognized as an Escala export — everything maps 1:1.
                 </div>
               )}
@@ -288,7 +288,7 @@ export default function ImportSystemModal({
                   <h3 className="text-xs font-semibold text-fg">Semantic tokens</h3>
                   <StatusPill status={mappedLight + mappedDark > 0 ? 'detected' : 'derived'} />
                 </div>
-                <p className="text-[11px] text-fg-muted leading-relaxed">
+                <p className="text-caption text-fg-muted leading-relaxed">
                   {mappedLight > 0
                     ? <>Light: <span className="font-medium text-fg">{mappedLight} of {totalRoles}</span> roles mapped from your file · {totalRoles - mappedLight} derived from your primitives.</>
                     : <>No semantic layer detected — all {totalRoles} roles derived from your primitives.</>}
@@ -298,7 +298,7 @@ export default function ImportSystemModal({
                     : <>Dark theme created automatically.</>}
                 </p>
                 {analysis.semantics.unmapped.length > 0 && (
-                  <p className="text-[11px] text-fg-faint">
+                  <p className="text-caption text-fg-faint">
                     {analysis.semantics.unmapped.length} color token{analysis.semantics.unmapped.length > 1 ? 's' : ''} didn't match any role and won't be imported.
                   </p>
                 )}
@@ -313,7 +313,7 @@ export default function ImportSystemModal({
                     <div key={k} className="flex items-center gap-3">
                       <span className="text-xs text-fg w-24 flex-shrink-0">{FOUNDATION_LABELS[k]}</span>
                       <StatusPill status={r.status} />
-                      <span className="text-[11px] text-fg-faint">
+                      <span className="text-caption text-fg-faint">
                         {r.status === 'detected' ? `${r.count} token${r.count > 1 ? 's' : ''} from your file` : 'Escala defaults'}
                       </span>
                     </div>
@@ -327,8 +327,8 @@ export default function ImportSystemModal({
                   <h3 className="text-xs font-semibold text-fg">Needs attention</h3>
                   <ul className="flex flex-col gap-1">
                     {analysis.issues.map((issue, i) => (
-                      <li key={i} className="text-[11px] text-fg-muted leading-relaxed flex gap-1.5">
-                        <span className="text-amber-500 flex-shrink-0">•</span>
+                      <li key={i} className="text-caption text-fg-muted leading-relaxed flex gap-1.5">
+                        <span className="text-status-warning flex-shrink-0">•</span>
                         {issue.message}
                       </li>
                     ))}
@@ -343,7 +343,7 @@ export default function ImportSystemModal({
                       />
                       <span className="text-xs text-fg">
                         Merge &amp; fix tokens
-                        <span className="block text-[11px] text-fg-faint font-normal mt-0.5">
+                        <span className="block text-caption text-fg-faint font-normal mt-0.5">
                           Collapse light/dark/alpha ramp variants into single families — one accent
                           (extras become accent-2), one neutral, and the four state colors.
                           {analysis.merge && ` Merged ${analysis.merge.variantsMerged} variants · skipped ${analysis.merge.alphaDropped} alpha twins.`}
@@ -360,7 +360,7 @@ export default function ImportSystemModal({
                     />
                     <span className="text-xs text-fg">
                       Organize &amp; normalize
-                      <span className="block text-[11px] text-fg-faint font-normal mt-0.5">
+                      <span className="block text-caption text-fg-faint font-normal mt-0.5">
                         Snap off-ramp semantic values onto their family ramps. Exports normalize
                         either way — this just keeps the editor consistent from the start.
                       </span>
@@ -387,12 +387,12 @@ export default function ImportSystemModal({
             </>
           ) : confirmingLeave ? (
             <>
-              <span className="text-[11px] text-fg-muted flex-1 min-w-0">
+              <span className="text-caption text-fg-muted flex-1 min-w-0">
                 {githubRepo
                   ? `Import as a new system? Anything changed since your last push to ${githubRepo} will be lost.`
                   : 'Import as a new system? Your current unsaved system will be lost.'}
               </span>
-              <button onClick={confirmImport} className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors flex-shrink-0">
+              <button onClick={confirmImport} className="text-xs font-medium text-status-danger hover:text-status-danger transition-colors flex-shrink-0">
                 Import anyway
               </button>
               <button onClick={() => setConfirmingLeave(false)} className="text-xs text-fg-faint hover:text-fg transition-colors flex-shrink-0">

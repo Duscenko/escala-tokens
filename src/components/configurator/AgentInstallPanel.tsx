@@ -88,8 +88,8 @@ export default function AgentInstallPanel({
     <div className="rounded-xl border border-line bg-surface/50 overflow-hidden">
       {inWizard && (
         <div className="px-4 pt-3.5 pb-1 flex flex-col gap-1">
-          <span className="text-[13px] font-medium text-fg">Connect your agent</span>
-          <p className="text-[12px] text-fg-muted leading-relaxed">
+          <span className="text-ui font-medium text-fg">Connect your agent</span>
+          <p className="text-body text-fg-muted leading-relaxed">
             Publish this system (Sync), then connect it below so the agent resolves real values instead of
             guessing. Run everything in the <strong className="font-medium text-fg">product</strong> repo: the
             app you are building, not Escala.
@@ -107,7 +107,7 @@ export default function AgentInstallPanel({
               type="button"
               aria-pressed={tab === id}
               onClick={() => setTab(id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-body font-medium whitespace-nowrap transition-colors ${
                 tab === id ? 'bg-elevated text-fg shadow-sm' : 'text-fg-faint hover:text-fg'
               }`}
             >
@@ -129,7 +129,7 @@ export default function AgentInstallPanel({
                 aria-pressed={effectiveMode === m}
                 onClick={() => setMode(m)}
                 title={m === 'mcp' ? 'Run the steps yourself' : 'Hand the whole setup to the agent'}
-                className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider font-mono transition-colors ${
+                className={`px-2.5 py-1 text-mini font-semibold uppercase tracking-wider font-mono transition-colors ${
                   effectiveMode === m ? 'bg-fg text-app' : 'bg-surface text-fg-faint hover:text-fg'
                 }`}
               >
@@ -145,7 +145,7 @@ export default function AgentInstallPanel({
       ) : (
         <>
           {!inWizard && !teaser && tab !== 'make' && (
-            <p className="px-4 pt-3 text-[12px] text-fg-faint leading-relaxed">
+            <p className="px-4 pt-3 text-body text-fg-faint leading-relaxed">
               Publish this system first (Figma → Sync). The server resolves against the published
               system, so there has to be one. Run these in the{' '}
               <strong className="font-medium text-fg-muted">product</strong> repo.
@@ -293,12 +293,12 @@ function StepRow({ n, step, last }: { n: number; step: Step; last: boolean }) {
   return (
     <li className={`flex flex-col md:flex-row md:items-start gap-3 px-4 py-3.5 ${last ? '' : 'border-b border-line/60'}`}>
       <div className={`flex items-start gap-2.5 min-w-0 ${split ? 'md:w-[42%] flex-shrink-0' : 'flex-1'}`}>
-        <span className="text-[10px] font-mono tabular-nums text-fg-faint pt-0.5 flex-shrink-0">
+        <span className="text-mini font-mono tabular-nums text-fg-faint pt-0.5 flex-shrink-0">
           {String(n).padStart(2, '0')}
         </span>
         <div className="min-w-0">
-          <span className="block text-[13px] font-medium text-fg">{step.title}</span>
-          <p className="text-[11.5px] text-fg-faint leading-relaxed mt-0.5">{step.body}</p>
+          <span className="block text-ui font-medium text-fg">{step.title}</span>
+          <p className="text-caption text-fg-faint leading-relaxed mt-0.5">{step.body}</p>
         </div>
       </div>
       {step.code && (
@@ -319,13 +319,13 @@ function CommandPane({ code, file }: { code: string; file?: string }) {
     <div className="rounded-lg border border-line bg-app overflow-hidden">
       {file && (
         <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line/60 bg-elevated/40">
-          <span className="text-[10.5px] font-mono text-fg-faint truncate">{file}</span>
+          <span className="text-mini font-mono text-fg-faint truncate">{file}</span>
           <CopyButton text={code} />
         </div>
       )}
       <div className="flex items-start gap-2 px-3 py-2.5">
-        {!file && <span className="text-[11.5px] font-mono text-fg-faint select-none flex-shrink-0">$</span>}
-        <pre className="flex-1 min-w-0 text-[11.5px] font-mono text-fg leading-relaxed whitespace-pre-wrap break-all m-0">
+        {!file && <span className="text-caption font-mono text-fg-faint select-none flex-shrink-0">$</span>}
+        <pre className="flex-1 min-w-0 text-caption font-mono text-fg leading-relaxed whitespace-pre-wrap break-all m-0">
           {code}
         </pre>
         {!file && (
@@ -344,8 +344,8 @@ function PromptPane({ prompt }: { prompt: string }) {
   return (
     <div className="flex flex-col md:flex-row md:items-start gap-3 px-4 py-4">
       <div className="md:w-[42%] flex-shrink-0 min-w-0">
-        <span className="block text-[13px] font-medium text-fg">Paste this to your agent</span>
-        <p className="text-[11.5px] text-fg-faint leading-relaxed mt-0.5">
+        <span className="block text-ui font-medium text-fg">Paste this to your agent</span>
+        <p className="text-caption text-fg-faint leading-relaxed mt-0.5">
           It adds the server, proves the connection by reading your system back, and tells the agent
           to resolve tokens instead of inventing values. Publish first (Sync). There has to be a
           published system to read.
@@ -354,10 +354,10 @@ function PromptPane({ prompt }: { prompt: string }) {
       <div className="flex-1 min-w-0">
         <div className="rounded-lg border border-line bg-app overflow-hidden">
           <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line/60 bg-elevated/40">
-            <span className="text-[10.5px] font-mono text-fg-faint">prompt</span>
+            <span className="text-mini font-mono text-fg-faint">prompt</span>
             <CopyButton text={prompt} />
           </div>
-          <pre className="px-3 py-2.5 text-[11.5px] font-mono text-fg leading-relaxed whitespace-pre-wrap break-words m-0">
+          <pre className="px-3 py-2.5 text-caption font-mono text-fg leading-relaxed whitespace-pre-wrap break-words m-0">
             {prompt}
           </pre>
         </div>

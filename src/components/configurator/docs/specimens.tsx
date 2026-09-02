@@ -12,11 +12,12 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf, sizeRoleOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, panelStyle, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
-import { UNTITLED_CORE } from '../../../lib/iconLibraries'
-import { findUntitledIcon, untitledIconMaskUrl } from '../../../lib/untitledIcons'
+import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
+import { phosphorCoreBody, phosphorIconMaskUrl } from '../../../lib/phosphorIcons'
+import { useI18n } from '../../../lib/i18n'
 
 export type AxisValues = Record<string, string>
 
@@ -57,6 +58,35 @@ const focusRing = (t: PreviewTokens, accent: string): string => {
 const strokeControl = (t: PreviewTokens) => strokeRoleOf(t, 'control', '1px')
 const strokeFocus = (t: PreviewTokens) => strokeRoleOf(t, 'focus', '2px')
 
+/** The drawn edge of a checkbox / radio / switch knob, from the Selector ramp.
+ *  Fallbacks are the values these specimens hardcoded before the ramp existed,
+ *  so a token-less caller renders exactly as it used to. */
+const selectorGlyph = (t: PreviewTokens, small: boolean) =>
+  selectorOf(t, small ? 'sm' : 'md', small ? 15 : 18)
+
+/**
+ * WCAG 2.2 target size (2.5.8): the POINTER target must be at least 24×24,
+ * which an 18px checkbox is not. The fix is a transparent hit area around the
+ * glyph, never a bigger glyph — growing the box would change the design to
+ * satisfy a rule about the touch target. Reuses the `size` role `hit`, which
+ * already means exactly this ("Close button and icon-only hit area").
+ */
+function HitArea({ t, box, children }: { t: PreviewTokens; box: number; children: ReactNode }) {
+  const min = sizeRoleOf(t, 'hit', '24px')
+  return (
+    <span style={{ minWidth: min, minHeight: min, display: 'inline-grid', placeItems: 'center', flexShrink: 0 }}>
+      {children}
+    </span>
+  )
+}
+
+/** Pull the label back by however much the hit area overhangs the glyph, so the
+ *  target grows without the optical gap changing. */
+const hitGap = (t: PreviewTokens, box: number, gap: number) => {
+  const min = parseFloat(sizeRoleOf(t, 'hit', '24px')) || 24
+  return Math.max(2, gap - Math.max(0, (min - box) / 2))
+}
+
 /** Eases every property a State variant can change. 140ms sits in the
  *  micro-feedback band — long enough to read as a transition, short enough that
  *  the control still feels immediate under the cursor. */
@@ -86,9 +116,9 @@ function SpecimenSpinner({ size, color, track }: { size: number; color: string; 
   )
 }
 
-// ── Icons — Untitled UI, bundled locally ─────────────────────────────────────
-// Specimens render Untitled glyphs from the pre-built catalog. Concept names
-// map through UNTITLED_CORE so Button/Input slots stay stable.
+// ── Icons — Phosphor, bundled locally ───────────────────────────────────────
+// Specimens render Phosphor glyphs (regular weight) from the committed catalog.
+// Concept names map through PHOSPHOR_CORE so Button/Input slots stay stable.
 
 export type IconConcept =
   | 'star' | 'arrow' | 'search' | 'eye'
@@ -98,19 +128,12 @@ export type IconConcept =
   | 'chevron' | 'close'
 
 export function iconName(_prefix: string, concept: IconConcept): string {
-  return UNTITLED_CORE[concept] ?? concept
+  return PHOSPHOR_CORE[concept] ?? concept
 }
 
-// PascalCase export name for copy snippets (`import SearchLg from "@untitledui/icons/SearchLg"`).
-export const ICON_COMPONENT: Record<IconConcept, string> = {
-  star: 'Star01', arrow: 'ArrowRight', search: 'SearchLg', eye: 'Eye',
-  plus: 'Plus', upload: 'Upload01', info: 'InfoCircle', success: 'CheckCircle',
-  warning: 'AlertTriangle', error: 'XCircle', home: 'Home01', box: 'Cube01',
-  grid: 'Grid01', image: 'Image01', text: 'Type01', settings: 'Settings01',
-  palette: 'Palette', bookmark: 'Bookmark', heart: 'Heart', share: 'Share01',
-  user: 'User01', users: 'Users01', zap: 'Zap', check: 'Check',
-  chevron: 'ChevronDown', close: 'XClose',
-}
+// PascalCase component name for copy snippets
+// (`import { MagnifyingGlass } from "@phosphor-icons/react"`).
+export const ICON_COMPONENT: Record<IconConcept, string> = PHOSPHOR_CORE_COMPONENT as Record<IconConcept, string>
 
 /** Which components expose leading/trailing icon slots, and their default glyphs. */
 export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconConcept }> = {
@@ -121,8 +144,8 @@ export const ICON_SLOTS: Record<string, { leading: IconConcept; trailing: IconCo
 export interface IconOpts { prefix: string; leading: boolean; trailing: boolean }
 
 function PreviewIcon({ concept, size = 16, color = 'currentColor' }: { prefix?: string; concept: IconConcept; size?: number; color?: string }) {
-  const icon = findUntitledIcon(UNTITLED_CORE[concept] ?? '')
-  const mask = icon ? untitledIconMaskUrl(icon) : undefined
+  const body = phosphorCoreBody(PHOSPHOR_CORE[concept] ?? '')
+  const mask = body ? phosphorIconMaskUrl(body) : undefined
   return (
     <span
       aria-hidden
@@ -139,7 +162,7 @@ function PreviewIcon({ concept, size = 16, color = 'currentColor' }: { prefix?: 
   )
 }
 
-/** A glyph resolved from the bundled Untitled UI catalog. */
+/** A glyph resolved from the bundled Phosphor catalog (regular weight). */
 export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewTokens; concept: IconConcept; size?: number; color?: string }) {
   return <PreviewIcon concept={concept} size={size} color={color} />
 }
@@ -174,7 +197,27 @@ export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewToke
  * never anticipated. The specimen still owns every visual: colour, radius,
  * padding, type role. Only the words move.
  */
-export interface SpecimenProps { t: PreviewTokens; v: AxisValues; icons?: IconOpts; w?: number | string; children?: ReactNode }
+export interface SpecimenProps {
+  t: PreviewTokens; v: AxisValues; icons?: IconOpts; w?: number | string; children?: ReactNode
+  /**
+   * Which step of the SHADOW ramp this specimen sits on. Honoured by `Card`
+   * only, and opt-in exactly like `w` and `children` — every pre-existing call
+   * site omits it and keeps rendering `sm`, byte for byte.
+   *
+   * It exists because a Card is the only page-level SURFACE in the catalogue,
+   * and the artefacts are the only place a page-level surface appears. `sm` is
+   * right for a 280px demo card in the Components playground and far too quiet
+   * for a full-width sheet on a phone screen — which is why the System Styles
+   * differed by elevation on paper and looked identical in the preview.
+   * Measured before this landed: across all five artefacts, THREE screens
+   * (Login, Verify code, Profile) rendered zero box-shadows at all, so
+   * switching Core (Subtle ramp) to Material (Strong ramp) repainted nothing.
+   *
+   * It is a token REFERENCE, never a value — `shadowOf` resolves it against the
+   * system's own ramp, so an artefact still cannot invent an elevation.
+   */
+  elev?: string
+}
 
 // ── Button (Color × Style × State) ────────────────────────────────────────────
 
@@ -258,6 +301,7 @@ const INPUT_META: Record<string, { label: string; placeholder: string; prefix?: 
 }
 
 function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
+  const { t: translate } = useI18n()
   const state = v.State ?? 'Default'
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const h = INPUT_HEIGHTS[v.Size ?? 'MD'] ?? 40
@@ -275,7 +319,7 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>
-        {meta.label}
+        {translate(meta.label)}
       </span>
       <div
         style={{
@@ -296,7 +340,7 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
       </div>
       <span style={{ ...typeOf(t, 'helper'), color: error ? t.errorColor : t.fgMuted }}>
-        {error ? 'This field is required.' : 'This is a hint text.'}
+        {translate(error ? 'This field is required.' : 'This is a hint text.')}
       </span>
     </div>
   )
@@ -345,29 +389,32 @@ function SelectSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 // ── Checkbox (Checked × State) ────────────────────────────────────────────────
 
 function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
+  const { t: translate } = useI18n()
   const checked = (v.Checked ?? 'True') === 'True'
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
   const small = (v.Size ?? 'MD') === 'SM'
-  const box = small ? 15 : 18
+  const box = selectorGlyph(t, small)
   const fill = disabled ? t.disabledBg : checked ? t.brandSolid : t.surface
   const line = disabled ? t.disabledBg : checked ? t.brandSolid : state === 'Hover' ? t.brandSolid : (t.border ?? '#d0d5dd')
   return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: small ? 8 : 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <span
-        style={{
-          width: box, height: box, borderRadius: radiusRoleOf(t, 'control'),
-          background: fill, border: `${strokeControl(t)} solid ${line}`,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
-          transition: STATE_TRANSITION,
-        }}
-      >
-        {checked && (
-          <PreviewIcon concept="check" size={small ? 9 : 11} color={disabled ? t.disabledText : t.onBrand} />
-        )}
-      </span>
-      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Remember me</span>
+    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, box, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
+      <HitArea t={t} box={box}>
+        <span
+          style={{
+            width: box, height: box, borderRadius: radiusRoleOf(t, 'control'),
+            background: fill, border: `${strokeControl(t)} solid ${line}`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
+            transition: STATE_TRANSITION,
+          }}
+        >
+          {checked && (
+            <PreviewIcon concept="check" size={Math.round(box * 0.61)} color={disabled ? t.disabledText : t.onBrand} />
+          )}
+        </span>
+      </HitArea>
+      <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>{translate('Remember me')}</span>
     </label>
   )
 }
@@ -379,30 +426,36 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
   const small = (v.Size ?? 'MD') === 'SM'
-  const trackW = small ? 32 : 40
-  const trackH = small ? 18 : 22
-  const knob = trackH - 4
+  // The KNOB is the selector glyph — the same square a checkbox is drawn in.
+  // Track height is knob + the 2px inset either side; width keeps the shipped
+  // MD proportion (knob 18 → track 40). At the default ramp MD is unchanged;
+  // SM normalizes from a knob of 14 (which matched no scale) to the ramp's 15.
+  const knob = selectorGlyph(t, small)
+  const trackH = knob + 4
+  const trackW = knob + (small ? 18 : 22)
   const track = disabled ? t.disabledBg : on ? (state === 'Hover' ? darken(t.brandSolid, 0.4) : t.brandSolid) : (state === 'Hover' ? darken(t.neutralFill, 0.3) : t.neutralFill)
   return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: small ? 8 : 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <span
-        role="switch"
-        aria-checked={on}
-        style={{
-          width: trackW, height: trackH, borderRadius: radiusRoleOf(t, 'pill'), background: track, position: 'relative',
-          transition: STATE_TRANSITION,
-          boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
-          display: 'inline-block',
-        }}
-      >
+    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, trackH, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
+      <HitArea t={t} box={trackH}>
         <span
+          role="switch"
+          aria-checked={on}
           style={{
-            position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob,
-            borderRadius: 999, background: '#ffffff',
-            boxShadow: '0 1px 2px rgba(10,13,18,0.2)', transition: 'left 0.15s',
+            width: trackW, height: trackH, borderRadius: radiusRoleOf(t, 'pill'), background: track, position: 'relative',
+            transition: STATE_TRANSITION,
+            boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
+            display: 'inline-block',
           }}
-        />
-      </span>
+        >
+          <span
+            style={{
+              position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob,
+              borderRadius: 999, background: '#ffffff',
+              boxShadow: '0 1px 2px rgba(10,13,18,0.2)', transition: 'left 0.15s',
+            }}
+          />
+        </span>
+      </HitArea>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Notifications</span>
     </label>
   )
@@ -522,7 +575,7 @@ function DividerSpecimen({ t, v, w }: SpecimenProps) {
 
 // ── Single-variant specimens ──────────────────────────────────────────────────
 
-function CardSpecimen({ t, w, children }: SpecimenProps) {
+function CardSpecimen({ t, w, children, elev }: SpecimenProps) {
   return (
     <div
       style={{
@@ -530,7 +583,7 @@ function CardSpecimen({ t, w, children }: SpecimenProps) {
         borderRadius: radiusRoleOf(t, 'container'),
         ...panelStyle(t, t.neutralFill || t.surface),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
-        boxShadow: shadowOf(t, 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
+        boxShadow: shadowOf(t, elev ?? 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
         display: 'flex', flexDirection: 'column', gap: 8,
       }}
     >
@@ -710,6 +763,7 @@ const PROVIDER_MARKS: Record<string, { glyph: string; color: string }> = {
 }
 
 function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
+  const { t: translate } = useI18n()
   const provider = v.Provider ?? 'Google'
   const mark = PROVIDER_MARKS[provider] ?? PROVIDER_MARKS.Google
   const large = (v.Size ?? 'MD') === 'LG'
@@ -733,7 +787,7 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
       ) : (
         <span style={{ ...typeOf(t, 'heading-xs'), color: mark.color, lineHeight: 1 }}>{mark.glyph}</span>
       )}
-      Continue with {provider}
+      {translate('Continue with {provider}', { provider })}
     </button>
   )
 }
@@ -963,9 +1017,12 @@ function RadioSpecimen({ t, v }: SpecimenProps) {
   const state = v.State ?? 'Default'
   const disabled = state === 'Disabled'
   const small = (v.Size ?? 'MD') === 'SM'
+  const d = selectorGlyph(t, small)
   return (
-    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: small ? 8 : 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <RadioDot t={t} checked={checked} disabled={disabled} focused={state === 'Focused'} d={small ? 15 : 18} />
+    <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, d, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
+      <HitArea t={t} box={d}>
+        <RadioDot t={t} checked={checked} disabled={disabled} focused={state === 'Focused'} d={d} />
+      </HitArea>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Monthly billing</span>
     </label>
   )
@@ -981,8 +1038,10 @@ function RadioGroupSpecimen({ t }: { t: PreviewTokens }) {
     <fieldset role="radiogroup" style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: 8, padding: 0 }}>Billing period</legend>
       {options.map((o) => (
-        <label key={o.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <RadioDot t={t} checked={o.checked} />
+        <label key={o.label} style={{ display: 'inline-flex', alignItems: 'center', gap: hitGap(t, selectorGlyph(t, false), 10), cursor: 'pointer' }}>
+          <HitArea t={t} box={selectorGlyph(t, false)}>
+            <RadioDot t={t} checked={o.checked} d={selectorGlyph(t, false)} />
+          </HitArea>
           <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{o.label}</span>
         </label>
       ))}
@@ -1110,7 +1169,7 @@ function SliderSpecimen({ t }: { t: PreviewTokens }) {
           else if (e.key === 'End') { e.preventDefault(); setValue(100) }
         }}
         style={{
-          position: 'relative', height: 6, borderRadius: 999, background: t.neutralFill,
+          position: 'relative', height: 6, borderRadius: 999, backgroundColor: t.neutralFill,
           // Padding-free hit area: 6px is under every touch-target guideline, so
           // the row above and below the track is claimed with a transparent
           // border-box rather than by making the visible track fatter.

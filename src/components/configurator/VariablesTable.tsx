@@ -1,5 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import ScrubInput, { isScrubbable } from '../ui/ScrubInput'
+import VariableCollectionRail, { RailNoGroups } from './VariableCollectionRail'
+import {
+  TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
+  tableHeaderClass, tableRowClass,
+} from './tableChrome'
 
 // Flush, filterable variables table shared by every token foundation (Radius ·
 // Spacing · Sizes · Shadow · Grid) — a top bar (title · count ·
@@ -46,31 +51,36 @@ function ResetIcon() {
   )
 }
 
+// `h-[52px]`, the app's one row-2 height — the same band the rail's own header
+// occupies beside it, so the two bottom borders are one continuous line across
+// the two columns. It was `py-3` (39.5px measured) against the rail's 52px, and
+// every other table in the app had drifted to its own third value.
+// Cells set only their horizontal padding; the row's height and `items-stretch`
+// place them.
+//
+// Re-exported so the many call sites that already import it from here keep
+// working; `tableChrome` is where it (and the rest of the table's chrome) is
+// now defined, once, for every table in the workspace.
+export { TABLE_HEADER_H } from './tableChrome'
+
 function TableHeader({ valueLabel, stacked, grid }: { valueLabel: string; stacked: boolean; grid: string }) {
   return (
-    <div className={`${grid} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10 ${stacked ? 'top-[34px]' : 'top-0'}`}>
-      <span className="pl-4 py-3 border-r border-line">Token name</span>
-      <span className="px-3 py-3 border-r border-line">{valueLabel}</span>
-      <span className="px-3 py-3 border-r border-line">Preview</span>
-      <span className="py-3" aria-hidden />
+    <div className={tableHeaderClass(grid, { stacked })}>
+      <span className={`${TABLE_HEAD_CELL} pl-4`}>Token name</span>
+      <span className={`${TABLE_HEAD_CELL} px-3`}>{valueLabel}</span>
+      <span className={`${TABLE_HEAD_CELL} px-3`}>Preview</span>
+      <span aria-hidden />
     </div>
   )
 }
 
 function GroupLabel({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-app border-b border-line sticky top-0 z-20">
-      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
-      <span className="text-[11px] font-mono tabular-nums text-fg-faint">{count}</span>
+    <div className={TABLE_GROUP_LABEL}>
+      <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
+      <span className="text-caption font-mono tabular-nums text-fg-faint">{count}</span>
     </div>
   )
-}
-
-function rowClass(index: number, grid: string) {
-  const isEven = index % 2 === 1
-  return `${grid} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-    isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-  }`
 }
 
 export default function VariablesTable({
@@ -83,6 +93,7 @@ export default function VariablesTable({
   railed = false,
   railBody,
   footer,
+  query,
 }: {
   title: string
   groups: VariableGroup[]
@@ -91,6 +102,15 @@ export default function VariablesTable({
   /** Color/Type hub tab strip — replaces the title when present. */
   tabBar?: ReactNode
   searchLabel?: string
+  /**
+   * Controlled filter string, owned by the workspace's own "Search tokens"
+   * field (`colorQuery` in Configurator). When it's a string — even `''` — this
+   * table drops its OWN top bar entirely: the workspace chrome already carries
+   * the search and the "Primitives / Semantics" collection is named in the rail,
+   * so an inner heading + a second search box was the same thing twice. Leave it
+   * `undefined` to get the self-contained bar back (the non-workspace path).
+   */
+  query?: string
   /** Give the value column the room (long CSS values, e.g. shadow ramps). */
   wideValues?: boolean
   /**
@@ -112,8 +132,10 @@ export default function VariablesTable({
    */
   footer?: ReactNode
 }) {
-  const [query, setQuery] = useState('')
-  const q = query.trim().toLowerCase()
+  const controlled = query !== undefined
+  const [innerQuery, setInnerQuery] = useState('')
+  const activeQuery = controlled ? query : innerQuery
+  const q = activeQuery.trim().toLowerCase()
   const grid = wideValues ? GRID_WIDE : GRID
 
   const total = groups.reduce((n, g) => n + g.rows.length, 0)
@@ -129,14 +151,17 @@ export default function VariablesTable({
     .filter((g) => g.rows.length > 0)
   const stacked = groups.length > 1
 
-  const topBar = (
+  // Suppressed whole in the workspace: `ThemeWorkspaceTabs` already carries the
+  // "Primitives" tab and the "Search tokens" field, and the rail names the
+  // active collection — this bar was all three a second time.
+  const topBar = controlled ? null : (
     <div className={`foundation-layer-bar flex ${tabBar ? 'items-stretch' : 'items-center justify-between'} gap-3 h-[52px] ${tabBar ? 'pr-3' : 'pl-4 pr-3'} flex-shrink-0`}>
         {tabBar ? (
-          <div className="flex-1 min-w-0">{tabBar}</div>
+          <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
         ) : (
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className={railed ? 'text-[11px] font-semibold uppercase tracking-widest text-fg-muted truncate' : 'text-sm text-fg truncate'}>{title}</span>
-          <span className="text-[11px] font-mono tabular-nums text-fg-faint">{total}</span>
+          <span className={railed ? 'text-caption font-semibold uppercase tracking-widest text-fg-muted truncate' : 'text-sm text-fg truncate'}>{title}</span>
+          <span className="text-caption font-mono tabular-nums text-fg-faint">{total}</span>
         </div>
         )}
         <div className="flex items-center gap-3 min-w-0 self-center">
@@ -148,14 +173,14 @@ export default function VariablesTable({
             </svg>
             <input
               type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={innerQuery}
+              onChange={(e) => setInnerQuery(e.target.value)}
               placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
               aria-label={searchLabel}
             />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
+            {innerQuery && (
+              <button onClick={() => setInnerQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
             )}
           </div>
         </div>
@@ -163,19 +188,19 @@ export default function VariablesTable({
   )
 
   const rows = filtered.length === 0 ? (
-    <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{query}”.</div>
+    <div className="px-4 py-12 text-center text-sm text-fg-faint">No tokens match “{activeQuery}”.</div>
   ) : (
     filtered.map((g) => (
       <div key={g.label ?? 'tokens'}>
         {stacked && g.label && <GroupLabel label={g.label} count={g.rows.length} />}
         <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} grid={grid} />
         {g.rows.map((r, i) => (
-          <div key={r.name} className={rowClass(i, grid)}>
-            <div className="flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line">
-              <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
+          <div key={r.name} className={tableRowClass(i, grid)}>
+            <div className={`flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`}>
+              <code className="font-mono text-body text-fg-muted truncate">{r.name}</code>
               {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
             </div>
-            <div className="flex items-center px-3 py-2 border-r border-line">
+            <div className={`flex items-center px-3 py-2 ${TABLE_CELL_DIVIDER}`}>
               {/* Reserved per GROUP, not per row: a group whose rows are all
                   numeric (spacing, radius, sizes, grid) gets the slot on every
                   row so the inputs stay on one x, and a group with none
@@ -188,7 +213,7 @@ export default function VariablesTable({
                 reserveHandle={g.scrubbable}
               />
             </div>
-            <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">{r.preview}</div>
+            <div className={`flex items-center px-3 py-2 overflow-hidden ${TABLE_CELL_DIVIDER}`}>{r.preview}</div>
             <button
               onClick={r.onReset}
               disabled={!r.modified}
@@ -221,7 +246,11 @@ export default function VariablesTable({
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
-        <div className="w-[198px] flex-shrink-0 border-r border-line bg-app overflow-y-auto">{railBody}</div>
+        <VariableCollectionRail>
+          {/* A heading over nothing reads as a section that failed to load —
+              Stroke and Grid genuinely have no groups, so they say so. */}
+          {railBody ? <div className="flex flex-col gap-0.5">{railBody}</div> : <RailNoGroups />}
+        </VariableCollectionRail>
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {topBar}
           <div className="flex-1 min-w-0 overflow-auto">

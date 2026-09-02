@@ -38,9 +38,9 @@ export function ToastHost() {
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-none flex items-center gap-2 rounded-xl bg-fg text-app px-3.5 py-2 text-[12.5px] font-medium shadow-lg"
+            className="pointer-events-none flex items-center gap-2 rounded-xl bg-fg text-app px-3.5 py-2 text-body font-medium shadow-lg"
           >
-            <span className="text-emerald-400" aria-hidden>✓</span>
+            <span className="text-status-success" aria-hidden>✓</span>
             {toast.message}
           </motion.div>
         )}

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
+import type { ThemeAppearance } from '../../lib/themeModes'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live } from '../configurator/docs/specimens'
 import { CopyButton } from '../configurator/docs/blocks'
@@ -56,7 +57,7 @@ const CATEGORY_TITLE: Record<string, string> = {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2.5">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
+      <span className="text-mini uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
       {children}
     </section>
   )
@@ -207,11 +208,23 @@ const PANEL_TABS: { key: PanelTab; label: string }[] = [
  *  with concave bottom corners. Height stays `h-[52px]` so this row lines up
  *  with CenterHeader. Type stays 12px — a 400px column splits into 133px cells,
  *  and ColorHub's 15px would put the longest label close to truncating. */
-function PanelTabBar({ tab, onChange }: { tab: PanelTab; onChange: (t: PanelTab) => void }) {
+function PanelTabBar({
+  tab, onChange, workspace = false,
+}: {
+  tab: PanelTab
+  onChange: (t: PanelTab) => void
+  workspace?: boolean
+}) {
+  const tabs = workspace
+    ? PANEL_TABS.filter((item) => item.key !== 'md').map((item) => ({
+        ...item,
+        label: item.key === 'preview' ? 'Components' : item.label,
+      }))
+    : PANEL_TABS
   return (
     <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px]">
       <div role="tablist" aria-label="Panel view" className="color-hub-tab-strip flex items-end h-full w-full min-w-0">
-        {PANEL_TABS.map((t) => {
+        {tabs.map((t) => {
           const active = tab === t.key
           return (
             <button
@@ -253,13 +266,13 @@ function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: st
   return (
     <div className="flex-1 min-h-0 min-w-0 flex flex-col">
       <div className="flex items-center gap-2 px-4 h-9 border-b border-line/60 flex-shrink-0">
-        <span className="text-[11px] font-mono text-fg-faint truncate">{file}</span>
+        <span className="text-caption font-mono text-fg-faint truncate">{file}</span>
         <span className="ml-auto flex-shrink-0"><CopyButton text={md} label="Copy" /></span>
       </div>
       {/* `whitespace-pre` + its own x-scroll: markdown tables are wider than
           400px and wrapping them would destroy the alignment that makes them
           readable as tables. */}
-      <pre className="flex-1 min-h-0 min-w-0 overflow-auto px-4 py-3 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
+      <pre className="flex-1 min-h-0 min-w-0 overflow-auto px-4 py-3 text-caption font-mono leading-relaxed text-fg-muted whitespace-pre">
         {md}
       </pre>
     </div>
@@ -289,7 +302,7 @@ function ArtefactsPane({ tokens }: { tokens: PreviewTokens }) {
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-4 flex flex-col gap-3">
         <button
           onClick={() => setExpanded(null)}
-          className="self-start flex-shrink-0 flex items-center gap-1.5 text-[11px] text-fg-faint hover:text-fg transition-colors"
+          className="self-start flex-shrink-0 flex items-center gap-1.5 text-caption text-fg-faint hover:text-fg transition-colors"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M7.5 2.5 4 6l3.5 3.5" />
@@ -323,12 +336,14 @@ export default function PreviewPanel({
   categoryKey = null,
   mdWholeSystem = false,
   previewTheme = 'light',
+  previewAppearance,
   iconLibraryKey = null,
   onCollapse,
   onEditTypeRole,
   onEditLayoutRole,
   onEditColorToken,
   onEditColorGroup,
+  workspace = false,
 }: {
   focus?: SemanticFocus | 'all' | null
   /** Active text-role group while Typography · Semantics is open. */
@@ -344,6 +359,8 @@ export default function PreviewPanel({
   mdWholeSystem?: boolean
   /** Theme whose tokens the atoms render in — driven by the Semantic eye toggle. */
   previewTheme?: string
+  /** Light/Dark appearance inside the selected library theme. */
+  previewAppearance?: ThemeAppearance
   /** When set (Icons foundation), the panel previews that library's glyphs. */
   iconLibraryKey?: string | null
   /** When set, shows a header button to collapse the panel. */
@@ -356,8 +373,10 @@ export default function PreviewPanel({
   onEditColorToken?: (id: string) => void
   /** Jump Color · Semantics to a group (collage overview → category). */
   onEditColorGroup?: (key: SemanticFocusKey) => void
+  /** Promotes the existing artefacts/specimens into the central Themes canvas. */
+  workspace?: boolean
 }) {
-  const tokens = usePreviewTokens(previewTheme)
+  const tokens = usePreviewTokens(previewTheme, previewAppearance)
   const specimen = focus && focus !== 'all' ? focus : null
 
   // Tab state is LOCAL, deliberately: nothing outside this panel reads it (the
@@ -367,7 +386,7 @@ export default function PreviewPanel({
   // Color then Radius keeps you on `.MD` — and resets when the whole aside is
   // handed to another panel (Save, "+ Theme"), which is the right moment to
   // land back on the specimen.
-  const [tab, setTab] = useState<PanelTab>('preview')
+  const [tab, setTab] = useState<PanelTab>(() => workspace ? 'artefacts' : 'preview')
 
   // The section both new tabs are scoped to. `PreviewPanel` only ever renders
   // inside the Variables Generator (see `showPreview` in Configurator), so
@@ -394,7 +413,8 @@ export default function PreviewPanel({
   // did, and "Login" vs "Artefacts" depending on a click is a title that moves
   // under you. The specific screen is already named on its own card/back row.
   const title =
-    tab === 'md' ? mdFile
+    workspace ? 'Theme Preview'
+    : tab === 'md' ? mdFile
     : tab === 'artefacts' ? 'Artefacts'
     : previewTitle
   // Show which theme is on display when it isn't the default light one. Both
@@ -403,7 +423,7 @@ export default function PreviewPanel({
   // suppresses it on Preview — a glyph sheet has no theme, but the artefact is
   // still painted in one even while Icons is the active foundation.
   const themeInTab = tab === 'artefacts' || (tab === 'preview' && !iconLibraryKey)
-  const themeBadge = themeInTab && previewTheme && previewTheme !== 'light' ? previewTheme : null
+  const themeBadge = (workspace || themeInTab) && previewTheme && (workspace || previewTheme !== 'light') ? previewTheme : null
   const collageIconPrefix = 'untitled'
 
   return (
@@ -412,7 +432,7 @@ export default function PreviewPanel({
       <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
         <h2 className="text-sm font-semibold text-fg truncate">{title}</h2>
         {themeBadge && (
-          <span className="px-1.5 py-0.5 rounded-md bg-elevated text-[10px] font-medium text-accent-ui capitalize">
+          <span className="px-1.5 py-0.5 rounded-md bg-elevated text-mini font-medium text-accent-ui capitalize">
             {themeBadge}
           </span>
         )}
@@ -431,7 +451,7 @@ export default function PreviewPanel({
         )}
       </header>
 
-      <PanelTabBar tab={tab} onChange={setTab} />
+      <PanelTabBar tab={tab} onChange={setTab} workspace={workspace} />
 
       {/* Only the ACTIVE tab is mounted. `.MD` rebuilds a few hundred tokens of
           markdown and the artefact runs a dozen specimens — neither should pay
@@ -443,7 +463,7 @@ export default function PreviewPanel({
         artefact ? (
           <ArtefactsPane tokens={tokens} />
         ) : (
-          <div className="flex-1 min-h-0 flex items-center justify-center px-8 text-center text-[12.5px] text-fg-faint">
+          <div className="flex-1 min-h-0 flex items-center justify-center px-8 text-center text-body text-fg-faint">
             No artefacts yet.
           </div>
         )

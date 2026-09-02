@@ -51,7 +51,7 @@ import {
 } from '../../../lib/layoutTokens'
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { fontStack } from '../../../lib/fonts'
-import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
+import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 
 /** The Overview page — the whole-system reference sheet the old Design Rules
  *  view was. Not a foundation key, so it can never collide with one. Get
@@ -352,10 +352,10 @@ function AlphaRamp({ scale, naming }: { scale: Record<number, string>; naming: C
                 >
                   <span className="absolute inset-0" style={{ background: hex }} />
                 </span>
-                <span className="text-[9px] font-mono tabular-nums text-fg-faint">
+                <span className="text-micro font-mono tabular-nums text-fg-faint">
                   {toneLabel(naming, Number(tone))}
                 </span>
-                <span className="text-[8px] font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
+                <span className="text-nano font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
                   {hex.toUpperCase()}
                 </span>
               </div>
@@ -380,10 +380,10 @@ function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; namin
                   style={{ background: hex }}
                   title={hex}
                 />
-                <span className="text-[9px] font-mono tabular-nums text-fg-faint">
+                <span className="text-micro font-mono tabular-nums text-fg-faint">
                   {toneLabel(naming, Number(tone))}
                 </span>
-                <span className="text-[8px] font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
+                <span className="text-nano font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
                   {hex.toUpperCase()}
                 </span>
               </div>
@@ -400,7 +400,7 @@ function ValueCell({ hex, label }: { hex: string; label: string }) {
   return (
     <span className="flex items-center gap-2 min-w-0 px-2 h-7 rounded-md border border-line bg-surface">
       <Swatch hex={hex} />
-      <span className="truncate text-[11px] font-mono text-fg-muted">{label}</span>
+      <span className="truncate text-caption font-mono text-fg-muted">{label}</span>
     </span>
   )
 }
@@ -428,11 +428,11 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
         {/* Column captions. The dark pair is a single visual block, so its two
             captions sit inside the dark panel with the cells they label. */}
         <div className="grid items-end gap-x-3 pb-2" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token names</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Primitives · light</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · light</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint pl-3">Primitives · dark</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · dark</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Token names</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Primitives · light</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Hex · light</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint pl-3">Primitives · dark</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Hex · dark</span>
         </div>
         <div className="relative">
           {/* The dark panel spans the last two columns for every row at once —
@@ -447,7 +447,7 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
               <div key={r.role.key} className="grid items-center gap-x-3" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
                 <span className="flex items-center gap-2 min-w-0">
                   <Swatch hex={r.lightHex} />
-                  <span className="truncate text-[12px] text-fg" title={r.role.key}>{r.role.key}</span>
+                  <span className="truncate text-body text-fg" title={r.role.key}>{r.role.key}</span>
                 </span>
                 <ValueCell hex={r.lightHex} label={r.lightRef} />
                 <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
@@ -471,7 +471,7 @@ function RoleBand({ rows }: { rows: ResolvedRole[] }) {
       {rows.map((r) => (
         <span
           key={r.role.key}
-          className="flex-1 min-w-[8rem] px-3 py-2.5 text-[11px] text-center truncate"
+          className="flex-1 min-w-[8rem] px-3 py-2.5 text-caption text-center truncate"
           style={{ background: r.lightHex }}
           title={`${r.role.key} — ${r.lightHex}`}
         >
@@ -499,7 +499,7 @@ function CategoricalRoleBand({ rows }: { rows: ResolvedCategoricalToken[] }) {
       {rows.map((r) => (
         <span
           key={r.id}
-          className="flex-1 min-w-[8rem] px-3 py-2.5 text-[11px] text-center truncate"
+          className="flex-1 min-w-[8rem] px-3 py-2.5 text-caption text-center truncate"
           style={{ background: r.lightHex }}
           title={`${r.id} — ${r.lightHex}`}
         >
@@ -516,11 +516,11 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
     <div className="overflow-x-auto">
       <div className="min-w-[672px]">
         <div className="grid items-end gap-x-3 pb-2" style={{ gridTemplateColumns: '13rem 1fr 1fr 1fr 1fr' }}>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Token names</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Primitives · light</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · light</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint pl-3">Primitives · dark</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Hex · dark</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Token names</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Primitives · light</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Hex · light</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint pl-3">Primitives · dark</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Hex · dark</span>
         </div>
         <div className="relative">
           <div
@@ -534,9 +534,9 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
                 <span className="flex flex-col gap-0.5 min-w-0">
                   <span className="flex items-center gap-2 min-w-0">
                     <Swatch hex={r.lightHex} />
-                    <span className="truncate text-[12px] text-fg" title={r.id}>{r.id}</span>
+                    <span className="truncate text-body text-fg" title={r.id}>{r.id}</span>
                   </span>
-                  {r.role && <span className="text-[10px] text-fg-faint truncate pl-[26px]" title={r.role}>{r.role}</span>}
+                  {r.role && <span className="text-mini text-fg-faint truncate pl-[26px]" title={r.role}>{r.role}</span>}
                 </span>
                 <ValueCell hex={r.lightHex} label={r.lightRef} />
                 <ValueCell hex={r.lightHex} label={r.lightHex.toUpperCase() || '—'} />
@@ -574,7 +574,7 @@ function renderCategoricalCategory(categoryKey: string, flatRows: (c: SystemDoc)
  *  (grid settings, surface padding) and a chart would add nothing. */
 function KeyValues({ entries }: { entries: [string, string][] }) {
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-mono text-fg-muted">
+    <div className="flex flex-wrap gap-x-5 gap-y-1 text-caption font-mono text-fg-muted">
       {entries.map(([key, value]) => (
         <span key={key}>{key} <span className="text-fg-faint">{value}</span></span>
       ))}
@@ -596,7 +596,7 @@ function LayoutRolesBlock({
     <div className="flex flex-col gap-5">
       {LAYOUT_ROLE_GROUPS[family].map((g) => (
         <div key={g.id} className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
           {LAYOUT_ROLES[family].filter((r) => r.group === g.id).map((role) => {
             const step = map[role.key]
             const live = family === 'breakpoint' && role.key === 'mobile'
@@ -604,13 +604,13 @@ function LayoutRolesBlock({
               : `${family}-${step} · ${resolveLayoutRole(family, map, primitives, role.key) || '—'}`
             return (
               <div key={role.key} className="flex items-baseline gap-4 min-w-0">
-                <span className="w-44 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                <span className="w-44 flex-shrink-0 text-mini font-mono text-fg-faint">
                   {family}-{role.key}
                 </span>
-                <span className="flex-1 min-w-0 text-[12px] text-fg truncate">
+                <span className="flex-1 min-w-0 text-body text-fg truncate">
                   {role.description}
                 </span>
-                <span className="flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                <span className="flex-shrink-0 text-mini font-mono text-fg-faint">
                   → {live}
                 </span>
               </div>
@@ -684,7 +684,7 @@ color:      var(--color-content-on-action);
           <div className="flex flex-col gap-5">
             {c.primitiveFamilies.map((fam) => (
               <div key={fam.label} className="flex flex-col gap-1.5">
-                <span className="text-[11px] text-fg-muted">{fam.label}</span>
+                <span className="text-caption text-fg-muted">{fam.label}</span>
                 <PrimitiveRamp scale={fam.scale} naming={c.colorNaming} />
               </div>
             ))}
@@ -699,16 +699,16 @@ color:      var(--color-content-on-action);
           <div className="flex flex-col gap-5">
             {c.alphaFamilies.map((fam) => (
               <div key={fam.label} className="flex flex-col gap-1.5">
-                <span className="text-[11px] text-fg-muted">{fam.label} <span className="text-fg-faint">— twin, solved vs the page</span></span>
+                <span className="text-caption text-fg-muted">{fam.label} <span className="text-fg-faint">— twin, solved vs the page</span></span>
                 <AlphaRamp scale={fam.scale} naming={c.colorNaming} />
               </div>
             ))}
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-fg-muted">Black <span className="text-fg-faint">— fixed ladder</span></span>
+              <span className="text-caption text-fg-muted">Black <span className="text-fg-faint">— fixed ladder</span></span>
               <AlphaRamp scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-fg-muted">White <span className="text-fg-faint">— fixed ladder</span></span>
+              <span className="text-caption text-fg-muted">White <span className="text-fg-faint">— fixed ladder</span></span>
               <AlphaRamp scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} />
             </div>
           </div>
@@ -785,7 +785,7 @@ line-height: var(--text-label-line-height);
               ['Body', c.typography.fontFamily],
             ] as const).map(([label, family]) => (
               <div key={label} className="flex items-baseline gap-4 min-w-0">
-                <span className="w-32 flex-shrink-0 text-[10px] font-mono text-fg-faint">{label}</span>
+                <span className="w-32 flex-shrink-0 text-mini font-mono text-fg-faint">{label}</span>
                 <span className="flex-1 min-w-0 truncate text-[22px] text-fg" style={{ fontFamily: fontStack(family) }}>
                   {family}
                 </span>
@@ -809,7 +809,7 @@ line-height: var(--text-label-line-height);
                 const display = key.startsWith('display')
                 return (
                   <div key={key} className="flex items-baseline gap-4 min-w-0">
-                    <span className="w-32 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                    <span className="w-32 flex-shrink-0 text-mini font-mono text-fg-faint">
                       {key} · {size}
                     </span>
                     <span
@@ -846,7 +846,7 @@ line-height: var(--text-label-line-height);
                   >
                     Ag
                   </span>
-                  <span className="text-[10px] font-mono text-fg-faint">
+                  <span className="text-mini font-mono text-fg-faint">
                     {w.key} · {c.typography.weights?.[w.key] ?? w.weight}
                   </span>
                 </div>
@@ -865,12 +865,12 @@ line-height: var(--text-label-line-height);
             <div className="flex flex-col gap-5">
               {TYPE_ROLE_GROUPS.map((g) => (
                 <div key={g.id} className="flex flex-col gap-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+                  <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
                   {typeRolesInGroup(g.id).map((role) => {
                     const style = resolveTypeStyle(roles[role.key].desktop, c.typography)
                     return (
                       <div key={role.key} className="flex items-baseline gap-4 min-w-0">
-                        <span className="w-36 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                        <span className="w-36 flex-shrink-0 text-mini font-mono text-fg-faint">
                           text-{role.key}
                         </span>
                         <span
@@ -899,7 +899,7 @@ line-height: var(--text-label-line-height);
   // ── Radius ─────────────────────────────────────────────────────────────────
   {
     key: 'radius',
-    label: 'Border Radius',
+    label: 'Border radius',
     lead: 'Two layers: a 7-step primitive ramp (none → full) that holds the raw px, and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
     why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising the ramp once, then naming what each corner is FOR, means a personality change is one slider and a nested checkbox never copies a modal’s rounding.',
     usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (xs) under `action` (md) is for. Do not invent a new px on a component.',
@@ -928,7 +928,7 @@ line-height: var(--text-label-line-height);
                   className="w-14 h-14 border-2 border-accent-ui/60 bg-accent-ui/[0.08]"
                   style={{ borderRadius: c.radius[step] ?? '0px' }}
                 />
-                <span className="text-[10px] font-mono text-fg-faint">
+                <span className="text-mini font-mono text-fg-faint">
                   {step} · {c.radius[step] ?? '—'}
                 </span>
               </div>
@@ -979,7 +979,7 @@ padding: var(--spacing-inset-surface);
                 const px = parseFloat(value) || 0
                 return (
                   <div key={step} className="flex items-center gap-4">
-                    <span className="w-24 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                    <span className="w-24 flex-shrink-0 text-mini font-mono text-fg-faint">
                       {step} · {value}
                     </span>
                     <span className="h-2.5 rounded-full bg-accent-ui" style={{ width: `${(px / maxSpacing) * 100}%` }} />
@@ -1039,7 +1039,7 @@ padding: var(--spacing-inset-surface);
                   className="w-24 h-14 rounded-xl bg-surface border border-line/40"
                   style={{ boxShadow: c.shadows[step] ?? 'none' }}
                 />
-                <span className="text-[10px] font-mono text-fg-faint">shadow-{step}</span>
+                <span className="text-mini font-mono text-fg-faint">shadow-{step}</span>
               </div>
             ))}
           </div>
@@ -1056,8 +1056,8 @@ padding: var(--spacing-inset-surface);
                 key={step}
                 className={`grid grid-cols-[80px_1fr] gap-4 px-4 py-2.5 items-baseline ${i ? 'border-t border-line/60' : ''}`}
               >
-                <code className="text-[11px] font-mono text-fg">{step}</code>
-                <code className="text-[11px] font-mono text-fg-muted break-all">{c.shadows[step] ?? 'none'}</code>
+                <code className="text-caption font-mono text-fg">{step}</code>
+                <code className="text-caption font-mono text-fg-muted break-all">{c.shadows[step] ?? 'none'}</code>
               </div>
             ))}
           </div>
@@ -1103,8 +1103,8 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
               ] as const).map(([label, f]) => (
                 <div key={label} className="flex flex-col gap-2">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{label}</span>
-                    <span className="text-[10px] font-mono text-fg-faint">
+                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{label}</span>
+                    <span className="text-mini font-mono text-fg-faint">
                       {f.columns} col · {f.gutter} gutter · {f.margin} margin · {f.container === 'none' ? 'fluid' : f.container}
                     </span>
                   </div>
@@ -1166,9 +1166,9 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
           <div className="flex flex-col gap-2">
             {Object.entries(c.sizes).map(([key, value]) => (
               <div key={key} className="flex items-center gap-4">
-                <span className="w-24 flex-shrink-0 text-[10px] font-mono text-fg-faint">{key} · {value}</span>
+                <span className="w-24 flex-shrink-0 text-mini font-mono text-fg-faint">{key} · {value}</span>
                 <span
-                  className="rounded-lg border border-accent-ui/50 bg-accent-ui/[0.08] flex items-center px-3 text-[10px] font-mono text-fg-muted"
+                  className="rounded-lg border border-accent-ui/50 bg-accent-ui/[0.08] flex items-center px-3 text-mini font-mono text-fg-muted"
                   style={{ height: parseFloat(value) || 24, minWidth: 140 }}
                 >
                   {value}
@@ -1222,7 +1222,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
               const px = parseFloat(value) || 0
               return (
                 <div key={step} className="flex items-center gap-4">
-                  <span className="w-28 flex-shrink-0 text-[10px] font-mono text-fg-faint">
+                  <span className="w-28 flex-shrink-0 text-mini font-mono text-fg-faint">
                     {step} · {value}
                   </span>
                   <span className="flex-1 h-6 flex items-center">
@@ -1268,10 +1268,10 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
         description: 'The set every preview, component doc and export references.',
         render: () => (
             <KeyValues entries={[
-              ['library', UNTITLED_LIBRARY.key],
-              ['name', UNTITLED_LIBRARY.label],
-              ['npm', UNTITLED_LIBRARY.npm],
-              ['repo', UNTITLED_LIBRARY.repo],
+              ['library', PHOSPHOR_LIBRARY.key],
+              ['name', PHOSPHOR_LIBRARY.label],
+              ['npm', PHOSPHOR_LIBRARY.npm],
+              ['repo', PHOSPHOR_LIBRARY.repo],
             ]} />
           ),
       },
@@ -1288,12 +1288,12 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
                     className="w-12 h-12 rounded-lg border border-line bg-surface flex items-center justify-center text-fg [&_svg]:w-6 [&_svg]:h-6"
                     dangerouslySetInnerHTML={{ __html: icon.svg }}
                   />
-                  <span className="text-[10px] font-mono text-fg-faint truncate max-w-full">{icon.name}</span>
+                  <span className="text-mini font-mono text-fg-faint truncate max-w-full">{icon.name}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[13px] text-fg-faint leading-relaxed">
+            <p className="text-ui text-fg-faint leading-relaxed">
               None yet — upload one in Variables · Icons and it ships in <code className="font-mono">tokens.json</code>.
             </p>
           )

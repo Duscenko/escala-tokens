@@ -67,7 +67,7 @@ export function DeviceFrame({
           BOTH claims — a scaled photo is neither true size nor showing its
           margin in real px, and the text is illegible at that scale anyway. */}
       {!compact && (
-        <p className="text-[10px] text-fg-faint text-center tabular-nums">
+        <p className="text-mini text-fg-faint text-center tabular-nums">
           Mobile · true size · page margin {frame.margin} from Grid
         </p>
       )}

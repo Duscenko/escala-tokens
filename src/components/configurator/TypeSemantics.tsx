@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useDesignStore } from '../../store/useDesignStore'
+import { tableHeaderClass, tableRowClass } from './tableChrome'
+import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack } from '../../lib/fonts'
 import {
   FONT_WEIGHT_BASES,
@@ -19,17 +20,17 @@ import {
   type TypeRoleModes,
   type TypeWeightKey,
 } from '../../lib/typeRoles'
+import SemanticGroupRail from './SemanticGroupRail'
+import VariablesPreviewPane from './VariablesPreviewPane'
+import { usePreviewTokens } from '../../lib/previewTokens'
+import type { ThemeAppearance } from '../../lib/themeModes'
+import { TypeRolesPreview } from '../preview/atoms/TypeRolesPreview'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
 
 const GRID = 'grid grid-cols-[minmax(8.5rem,1fr)_minmax(13rem,1.35fr)_minmax(13rem,1.35fr)_minmax(7rem,1fr)_2.5rem]'
 
-function rowClass(index: number) {
-  const isEven = index % 2 === 1
-  return `${GRID} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-    isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-  }`
-}
+const rowClass = (index: number) => tableRowClass(index, GRID)
 
 const FAMILY_OPTIONS: { value: TypeFamilyRole; label: string }[] = [
   { value: 'display', label: 'Display' },
@@ -57,7 +58,7 @@ function AliasSelect<T extends string>({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-[11px] font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -78,7 +79,7 @@ function ViewportCell({
   onChange: (next: TypeAlias) => void
 }) {
   return (
-    <div className="flex items-center gap-1 px-2 py-2 border-r border-line min-w-0">
+    <div className="flex items-center gap-1 px-2 py-2 border-r border-line/60 min-w-0">
       <AliasSelect
         value={alias.size}
         options={SIZE_OPTIONS}
@@ -113,18 +114,27 @@ export default function TypeSemantics({
   tabBar,
   onFocusChange,
   revealRole,
+  railCollapsed = false,
+  previewTheme = 'light',
+  previewAppearance,
 }: {
   tabBar?: ReactNode
   onFocusChange?: (f: TypeFocus) => void
   /** Preview specimen asked to open this role's row (`key` + `seq` so repeats work). */
   revealRole?: { key: string; seq: number } | null
+  railCollapsed?: boolean
+  previewTheme?: string
+  previewAppearance?: ThemeAppearance
 }) {
-  const { typography, setTypography } = useDesignStore()
+  const { foundations, patch } = useThemeFoundations(previewTheme)
+  const typography = foundations.typography
+  const setTypography = (value: typeof typography) => patch({ typography: value })
   const roles = mergeTypeRoles(typography.roles)
   const [group, setGroup] = useState<TypeFocus>('all')
   const [query, setQuery] = useState('')
   const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
   const [flashKey, setFlashKey] = useState<string | null>(null)
+  const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
 
   useEffect(() => {
     onFocusChange?.(group)
@@ -168,46 +178,38 @@ export default function TypeSemantics({
   const rows = typeRolesInGroup(group).filter((r) =>
     !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
   )
+  const revealFromPreview = (key: string) => {
+    const spec = TYPE_ROLE_BY_KEY[key]
+    if (!spec) return
+    setQuery('')
+    setGroup(spec.group)
+    setFlashKey(key)
+    window.setTimeout(() => document.getElementById(`type-role-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40)
+    window.setTimeout(() => setFlashKey(null), 1400)
+  }
 
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
-        <nav aria-label="Text role groups" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
-          <button
-            type="button"
-            onClick={() => setGroup('all')}
-            aria-current={group === 'all'}
-            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              group === 'all' ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-            }`}
-          >
-            <span className="text-[13px] flex-1 min-w-0 truncate">All</span>
-            <span className={`text-[11px] font-mono tabular-nums ${group === 'all' ? 'text-fg-muted' : 'text-fg-faint'}`}>{TYPE_ROLES.length}</span>
-          </button>
-          {TYPE_ROLE_GROUPS.map((g) => {
-            const n = typeRolesInGroup(g.id).length
-            const on = group === g.id
-            return (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => setGroup(g.id)}
-                aria-current={on}
-                title={g.hint}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                  on ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                }`}
-              >
-                <span className="text-[13px] flex-1 min-w-0 truncate">{g.label}</span>
-                <span className={`text-[11px] font-mono tabular-nums ${on ? 'text-fg-muted' : 'text-fg-faint'}`}>{n}</span>
-              </button>
-            )
-          })}
-        </nav>
+        <SemanticGroupRail
+          ariaLabel="Text role groups"
+          active={group}
+          collapsed={railCollapsed}
+          onChange={setGroup}
+          items={[
+            { key: 'all', label: 'All', count: TYPE_ROLES.length, shortLabel: 'ALL' },
+            ...TYPE_ROLE_GROUPS.map((item) => ({
+              key: item.id,
+              label: item.label,
+              count: typeRolesInGroup(item.id).length,
+              hint: item.hint,
+            })),
+          ]}
+        />
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-            <div className="flex-1 min-w-0">{tabBar}</div>
+            <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
             <div className="self-center flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line flex-shrink-0">
               {(['desktop', 'mobile'] as const).map((v) => (
                 <button
@@ -215,7 +217,7 @@ export default function TypeSemantics({
                   type="button"
                   onClick={() => setPreviewViewport(v)}
                   aria-pressed={previewViewport === v}
-                  className={`px-2 py-1 rounded text-[11px] font-medium capitalize transition-colors ${
+                  className={`px-2 py-1 rounded text-caption font-medium capitalize transition-colors ${
                     previewViewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
                   }`}
                 >
@@ -233,7 +235,7 @@ export default function TypeSemantics({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search…"
-                className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+                className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
                 aria-label="Filter text roles"
               />
               {query && (
@@ -242,13 +244,14 @@ export default function TypeSemantics({
             </div>
           </div>
 
+          <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[42rem]">
-              <div className={`${GRID} items-center px-0 bg-app sticky top-0 z-10 border-b border-line`}>
-                <div className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Role</div>
-                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Desktop</div>
-                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Mobile</div>
-                <div className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
+              <div className={tableHeaderClass(GRID)}>
+                <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Role</div>
+                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Desktop</div>
+                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Mobile</div>
+                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
                 <div />
               </div>
               {rows.length === 0 ? (
@@ -263,12 +266,12 @@ export default function TypeSemantics({
                     id={`type-role-${role.key}`}
                     className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                   >
-                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60">
                       <span className="flex items-center gap-2 min-w-0">
-                        <code className="font-mono text-[12px] text-fg-muted truncate">text-{role.key}</code>
+                        <code className="font-mono text-body text-fg-muted truncate">text-{role.key}</code>
                         {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
                       </span>
-                      <span className="text-[11px] text-fg-faint truncate">{role.description}</span>
+                      <span className="text-caption text-fg-faint truncate">{role.description}</span>
                     </div>
                     <ViewportCell
                       roleKey={role.key}
@@ -282,7 +285,7 @@ export default function TypeSemantics({
                       alias={modes.mobile}
                       onChange={(alias) => patchRole(role.key, 'mobile', alias)}
                     />
-                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
+                    <div className="flex items-center px-3 py-2 border-r border-line/60 overflow-hidden">
                       <span
                         className="text-fg truncate leading-none"
                         style={{
@@ -308,6 +311,10 @@ export default function TypeSemantics({
                 )
               })}
             </div>
+          </div>
+          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`}>
+            <TypeRolesPreview tokens={previewTokens} focus={group} onEditRole={revealFromPreview} />
+          </VariablesPreviewPane>
           </div>
         </div>
       </div>

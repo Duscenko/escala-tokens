@@ -967,16 +967,16 @@ export const CATEGORIES = ['Button & Actions', 'Form Controls', 'Indicators', 'C
 // ── Figma import scope ───────────────────────────────────────────────────────
 // `figmaSets` above names the component set(s) a key maps to in the plugin's
 // full CATALOG (../escala-figma-plugin/src/code.ts) — the variant matrix the
-// plugin CAN build. That catalogue is unwired today: rendering all 58 specs as
-// real Figma variants (1,403 combinations) locked the file on import, so the
-// live import instead builds a FIXED 9-component sample sheet
-// ('⬡ Components Overview') regardless of which components are selected here.
+// plugin CAN build. The default live import builds a FIXED 9-component sample
+// sheet ('⬡ Components Overview'). Its explicit Full catalogue option builds
+// all 58 component types, using representative source variants that cover each
+// axis value instead of materializing the 1,403-combination cartesian product.
 //
 // Every one of the 58 still ships as a full spec — props, variant axes,
 // tokens, accessibility notes — into `tokens.json` (`atoms`) and the agent
 // bundle. Only the keys below additionally land as real component nodes in a
-// Figma file today. Don't infer this from `figmaSets.length` — that field
-// describes catalogue capability, not current import behavior.
+// Figma file in the DEFAULT mode. Don't infer this from `figmaSets.length` —
+// that field describes full-catalogue capability.
 //
 // Keep this list in lockstep with the plugin's `SAMPLE` array in code.ts.
 export const FIGMA_SAMPLE_KEYS: readonly string[] = [

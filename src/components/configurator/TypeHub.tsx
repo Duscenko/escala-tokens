@@ -1,62 +1,39 @@
-import type { ReactNode } from 'react'
 import Step4_Typography from './Step4_Typography'
 import TypeSemantics, { type TypeFocus } from './TypeSemantics'
-import { ChromeTabBackground } from '../ui/ChromeTabShape'
+import type { ThemeAppearance } from '../../lib/themeModes'
 
 export type TypeTab = 'primary' | 'semantics'
 
-const TABS: { key: TypeTab; label: string }[] = [
-  { key: 'primary', label: 'Primitives' },
-  { key: 'semantics', label: 'Semantics' },
-]
-
-// Typography hub — Color's primitives/semantics split applied to type.
-// Primitives are the scale (family, weight, size, line-height). Semantics
-// are named text styles (label, placeholder, heading, …) that alias those
-// primitives, with Desktop and Mobile mappings.
+// The workspace owns the primitive/semantic depth. This wrapper only chooses
+// Typography's existing table for that depth.
 export default function TypeHub({
-  typeTab,
-  onTypeTabChange,
+  mode,
   onFocusChange,
   revealRole,
+  railCollapsed = false,
+  previewTheme,
+  previewAppearance,
+  query,
 }: {
-  typeTab: TypeTab
-  onTypeTabChange: (t: TypeTab) => void
+  mode: TypeTab
   onFocusChange?: (f: TypeFocus) => void
   revealRole?: { key: string; seq: number } | null
+  railCollapsed?: boolean
+  previewTheme?: string
+  previewAppearance?: ThemeAppearance
+  query?: string
 }) {
-  const tabBar = (
-    <div className="color-hub-tab-strip flex items-end h-full w-full min-w-0">
-      {TABS.map((t) => {
-        const active = typeTab === t.key
-        return (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => onTypeTabChange(t.key)}
-            aria-pressed={active}
-            className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
-          >
-            <ChromeTabBackground />
-            <span className="relative grid place-items-center">
-              <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
-              <span className="col-start-1 row-start-1">{t.label}</span>
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
+  const heading = <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{mode === 'semantics' ? 'Type semantics' : 'Typography primitives'}</span>
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      {typeTab === 'primary' ? (
+      {mode === 'primary' ? (
         <div className="flex-1 min-h-0">
-          <Step4_Typography tabBar={tabBar} />
+          <Step4_Typography tabBar={heading} query={query} previewTheme={previewTheme} />
         </div>
       ) : (
         <div className="flex-1 min-h-0">
-          <TypeSemantics tabBar={tabBar} onFocusChange={onFocusChange} revealRole={revealRole} />
+          <TypeSemantics tabBar={heading} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} />
         </div>
       )}
     </div>

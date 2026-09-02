@@ -31,8 +31,8 @@ export function RoleEditCard({
       <div className="flex items-start gap-2 min-w-0 pr-7">
         {swatch}
         <div className="min-w-0 flex-1">
-          <span className="block text-[10px] font-mono text-fg-faint truncate">{token}</span>
-          <span className="block text-[12px] text-fg truncate">{label}</span>
+          <span className="block text-mini font-mono text-fg-faint truncate">{token}</span>
+          <span className="block text-body text-fg truncate">{label}</span>
         </div>
       </div>
       {editable && (

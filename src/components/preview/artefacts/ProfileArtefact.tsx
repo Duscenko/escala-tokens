@@ -4,10 +4,10 @@ import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
 import type { ArtefactProps } from './types'
 
+const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Avatar = SPECIMENS.Avatar
 const StatusBadge = SPECIMENS.StatusBadge
-const Divider = SPECIMENS.Divider
 const SwitchGroup = SPECIMENS.SwitchGroup
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
@@ -37,11 +37,16 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
           <StatusBadge t={t} v={{ Status: 'Online' }} />
         </div>
 
-        <Divider t={t} v={{}} w="100%" />
-
-        <SwitchGroup t={t} v={{}} w="100%" />
-
-        <Divider t={t} v={{}} w="100%" />
+        {/* A grouped settings CARD, which is what a settings section actually
+            is — and deliberately `md`, one step under Login's `lg` sheet. Two
+            artefacts on two steps of the same ramp is what makes an elevation
+            language legible; one step everywhere just reads as "there is a
+            shadow". It also retires the two `Divider`s that used to fence this
+            block off: a card and a rule are two answers to the same grouping
+            question, and the card is the one that carries elevation. */}
+        <Card t={t} v={{}} w="100%" elev="md">
+          <SwitchGroup t={t} v={{}} w="100%" />
+        </Card>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
           <span

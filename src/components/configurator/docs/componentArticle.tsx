@@ -17,7 +17,7 @@
 import { useState } from 'react'
 import { COMPONENTS, isInFigmaSample, type ComponentDef, type VariantAxis } from '../../../lib/componentCatalogue'
 import { agentContextMarkdown } from '../../../lib/agentContext'
-import { UNTITLED_LIBRARY } from '../../../lib/iconLibraries'
+import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
 import { withAlpha } from '../../../lib/colorUtils'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { SPECIMENS, snippetFor, ICON_SLOTS, PANEL_COMPONENTS, type AxisValues, type IconOpts } from './specimens'
@@ -176,7 +176,7 @@ function Hero({
           left={
             <div className="flex items-center gap-2.5 min-w-0">
               <ViewToggle view={view} onChange={setView} />
-              <span className="text-[11px] font-mono text-fg-faint truncate">{fileNameFor(def)}</span>
+              <span className="text-caption font-mono text-fg-faint truncate">{fileNameFor(def)}</span>
             </div>
           }
         >
@@ -194,7 +194,7 @@ function Hero({
               <span className="text-xs text-fg-faint">No live preview for this component yet.</span>
             )}
             {variantCount > 1 && (
-              <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line">
+              <span className="absolute top-3 right-3 text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line">
                 {variantIndex(def, values)} of {variantCount} variants
               </span>
             )}
@@ -226,11 +226,11 @@ function Hero({
             )}
           </div>
           {slots ? (
-            <p className="text-[10px] text-fg-faint leading-relaxed px-1 pt-2">
-              Icons come from Untitled UI — <span className="font-medium text-fg-muted">{UNTITLED_LIBRARY.label}</span>.
+            <p className="text-mini text-fg-faint leading-relaxed px-1 pt-2">
+              Icons come from <span className="font-medium text-fg-muted">{PHOSPHOR_LIBRARY.label}</span>.
             </p>
           ) : (
-            <p className="text-[10px] text-fg-faint leading-relaxed px-1 pt-2">
+            <p className="text-mini text-fg-faint leading-relaxed px-1 pt-2">
               Same axes as the Figma variant set the plugin generates.
             </p>
           )}
@@ -250,8 +250,8 @@ function AxisExample({ def, axis, tokens }: { def: ComponentDef; axis: VariantAx
     <div className="flex flex-col gap-2.5">
       <h4 id={`axis-${axis.name.toLowerCase()}`} className="text-sm font-semibold text-fg scroll-mt-4">{axis.name}</h4>
       <p className="text-xs text-fg-muted leading-relaxed">
-        <code className="font-mono text-[11px]">{axis.name}</code> has {axis.values.length} option{axis.values.length === 1 ? '' : 's'} —{' '}
-        {axis.values.join(' · ')}. Defaults to <code className="font-mono text-[11px]">{axis.values[0]}</code>; each option maps 1:1 to
+        <code className="font-mono text-caption">{axis.name}</code> has {axis.values.length} option{axis.values.length === 1 ? '' : 's'} —{' '}
+        {axis.values.join(' · ')}. Defaults to <code className="font-mono text-caption">{axis.values[0]}</code>; each option maps 1:1 to
         the Figma variant axis the plugin generates.
       </p>
       <PreviewCode surface={tokens.surface} code={code}>
@@ -270,14 +270,14 @@ function AxisExample({ def, axis, tokens }: { def: ComponentDef; axis: VariantAx
 function KeyboardTable() {
   return (
     <div className="rounded-xl border border-line overflow-hidden">
-      <div className="grid grid-cols-[100px_1fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-[10px] uppercase tracking-wider text-fg-faint">
+      <div className="grid grid-cols-[100px_1fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-mini uppercase tracking-wider text-fg-faint">
         <span>Key</span>
         <span>Description</span>
       </div>
       <div className="divide-y divide-line/60">
         {KEYBOARD_ROWS.map((row) => (
           <div key={row.key} className="grid grid-cols-[100px_1fr] gap-4 px-4 py-2.5 items-center">
-            <kbd className="justify-self-start text-[10px] font-mono px-1.5 py-0.5 rounded border border-line-strong bg-elevated text-fg-muted">
+            <kbd className="justify-self-start text-mini font-mono px-1.5 py-0.5 rounded border border-line-strong bg-elevated text-fg-muted">
               {row.key}
             </kbd>
             <span className="text-xs text-fg-muted leading-relaxed">{row.description}</span>
@@ -293,7 +293,7 @@ function KeyboardTable() {
 function ApiPropsTable({ def }: { def: ComponentDef }) {
   return (
     <div className="rounded-xl border border-line overflow-hidden">
-      <div className="grid grid-cols-[1fr_1fr_1.6fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-[10px] uppercase tracking-wider text-fg-faint">
+      <div className="grid grid-cols-[1fr_1fr_1.6fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-mini uppercase tracking-wider text-fg-faint">
         <span>Prop</span>
         <span>Type</span>
         <span>Description</span>
@@ -302,7 +302,7 @@ function ApiPropsTable({ def }: { def: ComponentDef }) {
         {def.props.map((prop) => (
           <div key={prop.name} className="grid grid-cols-[1fr_1fr_1.6fr] gap-4 px-4 py-2.5 items-start">
             <code className="text-xs text-[#5AADFF] font-mono break-all">{prop.name}</code>
-            <code className="text-[10px] text-fg-faint font-mono break-all" title={prop.type}>{prop.type}</code>
+            <code className="text-mini text-fg-faint font-mono break-all" title={prop.type}>{prop.type}</code>
             <p className="text-xs text-fg-muted leading-snug">{prop.description}</p>
           </div>
         ))}
@@ -314,7 +314,7 @@ function ApiPropsTable({ def }: { def: ComponentDef }) {
 function ApiVariantsTable({ def }: { def: ComponentDef }) {
   return (
     <div className="rounded-xl border border-line overflow-hidden">
-      <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-[10px] uppercase tracking-wider text-fg-faint">
+      <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 px-4 py-2 border-b border-line bg-surface/60 text-mini uppercase tracking-wider text-fg-faint">
         <span>Variant</span>
         <span>Options</span>
         <span>Default</span>
@@ -325,12 +325,12 @@ function ApiVariantsTable({ def }: { def: ComponentDef }) {
             <code className="text-xs text-[#5AADFF] font-mono">{axis.name}</code>
             <div className="flex flex-wrap gap-1">
               {axis.values.map((v) => (
-                <code key={v} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-elevated/80 border border-line text-fg-muted">
+                <code key={v} className="text-mini font-mono px-1.5 py-0.5 rounded bg-elevated/80 border border-line text-fg-muted">
                   "{v}"
                 </code>
               ))}
             </div>
-            <code className="text-[10px] font-mono text-fg-muted">"{axis.values[0]}"</code>
+            <code className="text-mini font-mono text-fg-muted">"{axis.values[0]}"</code>
           </div>
         ))}
       </div>
@@ -348,7 +348,7 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
     return (
       <div className="rounded-xl border border-dashed border-line bg-surface/40 p-4 flex items-center gap-2.5">
         <FigmaGlyph className="text-fg-faint flex-shrink-0" />
-        <p className="text-[11px] text-fg-faint leading-relaxed">
+        <p className="text-caption text-fg-faint leading-relaxed">
           Not rendered in Figma yet — building all 58 specs as real variants locks the file on import, so today this one ships as a full spec (props, tokens, accessibility) in <code className="font-mono">tokens.json</code> and your coding agent's context, not as a component node in the file.
         </p>
       </div>
@@ -359,17 +359,17 @@ export function FigmaShipList({ component }: { component: ComponentDef }) {
       <div className="flex items-center gap-2">
         <FigmaGlyph className="text-fg-muted" />
         <p className="text-xs font-semibold text-fg">Ships in Figma</p>
-        <span className="text-[10px] text-fg-faint ml-auto">
+        <span className="text-mini text-fg-faint ml-auto">
           {component.figmaSets.length} {component.figmaSets.length === 1 ? 'set' : 'sets'}
           {variantCount > 1 && ` · ${variantCount} variants`}
         </span>
       </div>
-      <p className="text-[11px] text-fg-faint leading-relaxed">
+      <p className="text-caption text-fg-faint leading-relaxed">
         One of the 9 components on the '⬡ Components Overview' sample sheet every import builds — every fill, stroke and radius bound to your variables (component → semantic → primitive):
       </p>
       <div className="flex flex-wrap gap-1.5">
         {component.figmaSets.map((s) => (
-          <span key={s} className="text-[11px] px-2 py-0.5 rounded-md bg-elevated/80 text-fg-muted border border-line">
+          <span key={s} className="text-caption px-2 py-0.5 rounded-md bg-elevated/80 text-fg-muted border border-line">
             {s}
           </span>
         ))}
@@ -404,7 +404,7 @@ function RelatedComponents({ def, onOpen }: { def: ComponentDef; onOpen: (c: Com
             className="text-left rounded-xl border border-line bg-surface/40 p-4 hover:border-line-strong transition-colors"
           >
             <p className="text-xs font-semibold text-fg">{c.label}</p>
-            <p className="text-[11px] text-fg-faint leading-relaxed mt-1 line-clamp-2">{c.description}</p>
+            <p className="text-caption text-fg-faint leading-relaxed mt-1 line-clamp-2">{c.description}</p>
           </button>
         ))}
       </div>
@@ -447,7 +447,7 @@ export function ComponentArticle({
   const [trailingIcon, setTrailingIcon] = useState(false)
   const slots = ICON_SLOTS[def.key]
   const icons = slots
-    ? { prefix: UNTITLED_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
+    ? { prefix: PHOSPHOR_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
     : undefined
 
   const heroCode = snippetFor(def, values, icons)
@@ -522,7 +522,7 @@ export function ComponentArticle({
       <section className="flex flex-col gap-2.5">
         <SectionHeading id="accessibility">Accessibility</SectionHeading>
         {INTERACTIVE_CATEGORIES.has(def.category) && <KeyboardTable />}
-        <p className="text-[13px] text-fg-muted leading-relaxed">{def.accessibility}</p>
+        <p className="text-ui text-fg-muted leading-relaxed">{def.accessibility}</p>
       </section>
 
       {/* Ships in Figma */}
@@ -539,13 +539,13 @@ export function ComponentArticle({
         <SectionHeading id="api">API Reference</SectionHeading>
         {def.props.length > 0 && (
           <>
-            <p className="text-[11px] uppercase tracking-wider text-fg-faint">Props</p>
+            <p className="text-caption uppercase tracking-wider text-fg-faint">Props</p>
             <ApiPropsTable def={def} />
           </>
         )}
         {def.axes.length > 0 && (
           <>
-            <p className="text-[11px] uppercase tracking-wider text-fg-faint mt-1">Variants</p>
+            <p className="text-caption uppercase tracking-wider text-fg-faint mt-1">Variants</p>
             <ApiVariantsTable def={def} />
           </>
         )}

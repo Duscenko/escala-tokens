@@ -47,7 +47,7 @@ export default function Step6_Opacity() {
         ]}
         footer={
           <div className="flex flex-col gap-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Opacity scale</span>
+            <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Opacity scale</span>
             <div
               className="flex rounded-xl overflow-hidden border border-line"
               style={{ ...CHECKER, backgroundSize: '14px 14px' }}
@@ -55,7 +55,7 @@ export default function Step6_Opacity() {
               {Object.entries(opacity).map(([key, value]) => (
                 <div key={key} className="flex-1 flex flex-col items-center">
                   <div className="w-full h-14" style={{ backgroundColor: accent, opacity: toAlpha(value) }} />
-                  <span className="text-[10px] font-mono text-fg-faint py-1.5 bg-surface w-full text-center border-t border-line">
+                  <span className="text-mini font-mono text-fg-faint py-1.5 bg-surface w-full text-center border-t border-line">
                     {key}
                   </span>
                 </div>

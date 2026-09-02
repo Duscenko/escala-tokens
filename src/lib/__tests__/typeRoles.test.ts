@@ -99,3 +99,53 @@ describe('typeStyleCss (preview / docs / components)', () => {
     expect(mobile.lineHeight).toBe('16px')
   })
 })
+
+// ── Type-scale modes (rail quick setting) ──────────────────────────────────
+import {
+  TYPE_SCALE_MODES,
+  buildTypeScale,
+  inferTypeScaleMode,
+  FONT_SIZE_STANDARD,
+  LINE_HEIGHT_STANDARD,
+} from '../typographyStandard'
+
+describe('type-scale modes', () => {
+  it('Default is FONT_SIZE_STANDARD verbatim — a no-op for existing systems', () => {
+    const built = buildTypeScale(1)
+    expect(built.sizes).toEqual(FONT_SIZE_STANDARD)
+    expect(built.lineHeights).toEqual(LINE_HEIGHT_STANDARD)
+    expect(inferTypeScaleMode(FONT_SIZE_STANDARD)).toBe('default')
+  })
+
+  it('every mode round-trips through inference', () => {
+    for (const mode of TYPE_SCALE_MODES) {
+      expect(inferTypeScaleMode(buildTypeScale(mode.factor).sizes)).toBe(mode.key)
+    }
+  })
+
+  it('a hand-edited size map matches no mode → "Custom"', () => {
+    expect(inferTypeScaleMode({ ...FONT_SIZE_STANDARD, 'text-md': '17px' })).toBeNull()
+    expect(inferTypeScaleMode(undefined)).toBeNull()
+    expect(inferTypeScaleMode({})).toBeNull()
+  })
+
+  it('modes are strictly ordered and never collapse an adjacent step', () => {
+    const md = TYPE_SCALE_MODES.map((m) => parseFloat(buildTypeScale(m.factor).sizes['text-md']))
+    for (let i = 1; i < md.length; i++) expect(md[i]).toBeGreaterThan(md[i - 1])
+    // No two adjacent text-* steps within a mode land on the same px.
+    for (const mode of TYPE_SCALE_MODES) {
+      const s = buildTypeScale(mode.factor).sizes
+      const text = ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'].map((k) => parseFloat(s[k]))
+      for (let i = 1; i < text.length; i++) expect(text[i]).toBeGreaterThan(text[i - 1])
+    }
+  })
+
+  it('line-heights scale at the same factor, so the size→leading ratio holds', () => {
+    for (const mode of TYPE_SCALE_MODES) {
+      const built = buildTypeScale(mode.factor)
+      const ratio = parseFloat(built.lineHeights['text-md']) / parseFloat(built.sizes['text-md'])
+      const stdRatio = parseFloat(LINE_HEIGHT_STANDARD['text-md']) / parseFloat(FONT_SIZE_STANDARD['text-md'])
+      expect(ratio).toBeCloseTo(stdRatio, 1)
+    }
+  })
+})

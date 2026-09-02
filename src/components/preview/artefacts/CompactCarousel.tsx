@@ -56,7 +56,7 @@ export function CompactCarousel({
           {ARTEFACTS.map((a) => (
             <div key={a.key} className="snap-center flex flex-col items-center gap-2">
               <ScaledArtefactCard artefact={a} t={tokens} targetWidth={COMPACT_WIDTH} onExpand={() => onExpand(a)} />
-              <span className="text-[11px] font-medium text-fg-muted">{a.label}</span>
+              <span className="text-caption font-medium text-fg-muted">{a.label}</span>
             </div>
           ))}
         </div>

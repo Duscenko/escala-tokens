@@ -4,6 +4,7 @@ import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
 import type { ArtefactProps } from './types'
 
+const Card = SPECIMENS.Card
 const Button = SPECIMENS.Button
 const Input = SPECIMENS.Input
 const Divider = SPECIMENS.Divider
@@ -60,12 +61,20 @@ function CheckoutScreen({ t, compact }: ArtefactProps) {
           <Input t={t} v={{ Type: 'E-Mail' }} w="100%" />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
-          <LineItem t={t} label="Pro plan (monthly)" amount="$12.00" />
-          <LineItem t={t} label="Promo SAVE20" amount="−$2.40" />
-          <Divider t={t} v={{}} w="100%" />
-          <LineItem t={t} label="Total" amount="$9.60" bold />
-        </div>
+        {/* The receipt is the one block on this screen that is a distinct
+            OBJECT rather than a run of fields, so it gets the card. `sm` on
+            purpose — a summary panel sits below a sign-in sheet (`lg`) and a
+            settings group (`md`) in the same set, which is how three artefacts
+            end up reading three steps of one ramp instead of one step three
+            times. */}
+        <Card t={t} v={{}} w="100%" elev="sm">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
+            <LineItem t={t} label="Pro plan (monthly)" amount="$12.00" />
+            <LineItem t={t} label="Promo SAVE20" amount="−$2.40" />
+            <Divider t={t} v={{}} w="100%" />
+            <LineItem t={t} label="Total" amount="$9.60" bold />
+          </div>
+        </Card>
 
         <InlineAlert t={t} v={{ Status: 'Success' }} w="100%">
           <span style={{ ...typeStyleOf(t, 'button') }}>Promo applied</span>

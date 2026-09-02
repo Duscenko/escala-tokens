@@ -67,7 +67,7 @@ export default function ComponentsRail({
           collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'
         }`}
       >
-        {!collapsed && <span className="text-[13px] font-semibold text-fg truncate">Components</span>}
+        {!collapsed && <span className="text-ui font-semibold text-fg truncate">Components</span>}
         <button
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -81,7 +81,7 @@ export default function ComponentsRail({
 
       <nav aria-label="Components" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-3 flex flex-col gap-1">
         {groups.length === 0 && !collapsed && (
-          <p className="text-[11px] text-fg-faint px-2 pt-1 leading-relaxed">No components match “{search.trim()}”.</p>
+          <p className="text-caption text-fg-faint px-2 pt-1 leading-relaxed">No components match “{search.trim()}”.</p>
         )}
 
         {collapsed
@@ -118,7 +118,7 @@ export default function ComponentsRail({
                     onClick={() => first && onSelect(first)}
                     aria-current={categoryActive && activeKey === first?.key ? 'page' : undefined}
                     title={cat}
-                    className={`flex items-center h-9 w-full gap-2 px-2.5 rounded-xl text-[13px] text-left transition-all ${
+                    className={`flex items-center h-9 w-full gap-2 px-2.5 rounded-xl text-ui text-left transition-all ${
                       categoryActive
                         ? 'bg-white text-accent-ui font-medium shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)] dark:bg-white/12 dark:shadow-none'
                         : 'text-fg-muted hover:text-fg hover:bg-white/60 dark:hover:bg-white/10'
@@ -149,7 +149,7 @@ export default function ComponentsRail({
                               onSelect(comp)
                             }
                           }}
-                          className={`flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg text-[12px] cursor-pointer transition-colors ${
+                          className={`flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg text-body cursor-pointer transition-colors ${
                             isActive
                               ? 'bg-surface text-fg border border-line shadow-sm'
                               : 'text-fg-muted hover:bg-elevated/40 hover:text-fg border border-transparent'
@@ -160,7 +160,7 @@ export default function ComponentsRail({
                             {!isInFigmaSample(comp.key) && (
                               <span
                                 title="No renderiza como componente en el import de Figma hoy — ships como spec para tu agente/código"
-                                className="flex-shrink-0 text-[9px] leading-none px-1 py-0.5 rounded border border-line-strong/60 text-fg-faint uppercase tracking-wide"
+                                className="flex-shrink-0 text-micro leading-none px-1 py-0.5 rounded border border-line-strong/60 text-fg-faint uppercase tracking-wide"
                               >
                                 Code
                               </span>

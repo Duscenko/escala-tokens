@@ -169,7 +169,7 @@ export function LayoutRolesPreview({
     <div className="flex flex-col gap-4">
       {LAYOUT_ROLE_GROUPS[family].map((g) => (
         <section key={g.id} className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
           {LAYOUT_ROLES[family].filter((r) => r.group === g.id).map((role) => (
             <RoleEditCard
               key={role.key}

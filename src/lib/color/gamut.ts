@@ -269,6 +269,57 @@ export function oklchToHex(l: number, c: number, h: number): string {
   return oklchToHexClipped(gamutMapSrgb({ l, c, h: Number.isNaN(h) ? 0 : h }))
 }
 
+/**
+ * The largest chroma sRGB can represent at this lightness and hue.
+ *
+ * A STRICT bisection on `inSrgbGamut`, not `gamutMapSrgb` — that one is allowed
+ * to overshoot by up to one JND (it optimises for perceptual closeness to an
+ * out-of-gamut input), which is right for mapping a colour and wrong for asking
+ * "how saturated can this hue actually get". Callers use the answer as a
+ * denominator, so it has to be the real wall.
+ */
+export function maxChromaSrgb(l: number, h: number): number {
+  if (l <= 0 || l >= 1) return 0
+  const hue = Number.isNaN(h) ? 0 : h
+  if (inSrgbGamut({ l, c: MAX_SEARCH_CHROMA, h: hue })) return MAX_SEARCH_CHROMA
+  let lo = 0
+  let hi = MAX_SEARCH_CHROMA
+  while (hi - lo > SEARCH_EPS) {
+    const mid = (lo + hi) / 2
+    if (inSrgbGamut({ l, c: mid, h: hue })) lo = mid
+    else hi = mid
+  }
+  return lo
+}
+
+/** No sRGB colour exceeds this in OKLCH; the bisection never needs to look higher. */
+const MAX_SEARCH_CHROMA = 0.4
+
+/**
+ * The CUSP — the lightness at which a hue reaches its maximum chroma, and that
+ * chroma. Every hue peaks somewhere different (measured: yellow-green at
+ * L 0.94, blue at L 0.58), which is exactly why a hue strip drawn at ONE fixed
+ * lightness reads as mud: it is only as vivid as its dullest hue at that L. At
+ * L 0.48 the sRGB ceiling swings 0.082 (cyan) to 0.256 (magenta) — 3.1x.
+ *
+ * Cached per whole degree: the scan is ~190 bisections and callers ask for it
+ * once per gradient stop, on every render of a slider.
+ */
+const cuspCache = new Map<number, { l: number; c: number }>()
+
+export function srgbCusp(h: number): { l: number; c: number } {
+  const hue = ((Math.round(Number.isNaN(h) ? 0 : h) % 360) + 360) % 360
+  const hit = cuspCache.get(hue)
+  if (hit) return hit
+  let best = { l: 0.5, c: 0 }
+  for (let l = 0.02; l < 1; l += 0.005) {
+    const c = maxChromaSrgb(l, hue)
+    if (c > best.c) best = { l, c }
+  }
+  cuspCache.set(hue, best)
+  return best
+}
+
 /** `oklch()` CSS string, for wide-gamut output (P3 and beyond). No clipping. */
 export function oklchToCss({ l, c, h }: OKLCH, precision = 4): string {
   const r = (n: number) => Number(n.toFixed(precision))

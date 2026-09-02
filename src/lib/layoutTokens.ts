@@ -1,4 +1,4 @@
-// Layout tokens — Radius · Spacing · Size · Stroke · Breakpoint.
+// Layout tokens — Radius · Spacing · Size · Selector · Stroke · Breakpoint.
 // Same contract as typeRoles.ts: primitives are the scale (raw px). Semantics
 // are intent aliases that ONLY reference a primitive key — never a new px.
 //
@@ -9,7 +9,7 @@
 // Family prefixes stay identical so a consumer never has to guess `space-` vs
 // `spacing-`. Steps are the public scale names (xs/sm/md… and 0/1/2/3/4/5…).
 
-export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'stroke' | 'breakpoint'
+export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'selector' | 'stroke' | 'breakpoint'
 
 // ── Radius primitives ───────────────────────────────────────────────────────
 
@@ -110,14 +110,109 @@ export const SIZE_STANDARD: Record<SizeStep, string> = {
   xs: '24px', sm: '32px', md: '40px', lg: '48px', xl: '56px', '2xl': '64px',
 }
 
+/**
+ * The ramp is `base × multiplier`, exactly like Spacing's — and the multipliers
+ * below are not a new invention: 24/32/40/48/56/64 IS 4 × 6/8/10/12/14/16, so
+ * `buildSizesFromBase(SIZE_DEFAULT_BASE)` reproduces SIZE_STANDARD byte for byte.
+ * That's what makes the base-unit slider safe to add to an existing system.
+ */
+export const FIELD_MULTIPLIERS: Record<SizeStep, number> = {
+  xs: 6, sm: 8, md: 10, lg: 12, xl: 14, '2xl': 16,
+}
+export const SIZE_DEFAULT_BASE = 4
+
+/** Shared 3–5px range for both base units, per the sizing spec. */
+export const BASE_UNIT_RANGE = { min: 3, max: 5, step: 0.5 } as const
+
+export function buildSizesFromBase(base: number): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const step of SIZE_STEPS) out[step] = `${Math.round(base * FIELD_MULTIPLIERS[step])}px`
+  return out
+}
+
+// ── Selector primitives ─────────────────────────────────────────────────────
+// Checkbox / radio / toggle / badge — a SQUARE glyph, not a control height, so
+// it needs its own ramp rather than borrowing Size's. At base 3 this yields
+// 12/15/18/21/24, and 15/18 are the exact values the specimens hardcoded before
+// this collection existed — so the default is a visual no-op.
+//
+// A selector below 24px does NOT meet WCAG 2.2 target size on its own; callers
+// wrap it in a transparent hit area (`size` role `hit`, 24px). Growing the glyph
+// is not the fix — the padded target is.
+
+export const SELECTOR_STEPS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+export type SelectorStep = (typeof SELECTOR_STEPS)[number]
+
+export const SELECTOR_MULTIPLIERS: Record<SelectorStep, number> = {
+  xs: 4, sm: 5, md: 6, lg: 7, xl: 8,
+}
+export const SELECTOR_DEFAULT_BASE = 3
+
+export function buildSelectorsFromBase(base: number): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const step of SELECTOR_STEPS) out[step] = `${Math.round(base * SELECTOR_MULTIPLIERS[step])}px`
+  return out
+}
+
+export const SELECTOR_STANDARD = buildSelectorsFromBase(SELECTOR_DEFAULT_BASE)
+
+/**
+ * The base a ramp was generated from, or null when it was hand-edited into a
+ * shape no base produces. Inferred rather than stored, the same call
+ * `matchRadiusPreset` makes: a stored base can silently disagree with the ramp
+ * beside it, an inferred one cannot. null surfaces as "Custom" in the UI.
+ */
+function inferBase(
+  map: Record<string, string> | undefined,
+  multipliers: Record<string, number>,
+  steps: readonly string[],
+): number | null {
+  if (!map) return null
+  const anchor = parseFloat(map[steps[0]] ?? '')
+  if (!Number.isFinite(anchor)) return null
+  const base = anchor / multipliers[steps[0]]
+  if (!(base > 0)) return null
+  for (const step of steps) {
+    if (map[step] !== `${Math.round(base * multipliers[step])}px`) return null
+  }
+  return base
+}
+
+export const inferSizeBase = (sizes?: Record<string, string>) =>
+  inferBase(sizes, FIELD_MULTIPLIERS, SIZE_STEPS)
+export const inferSelectorBase = (map?: Record<string, string>) =>
+  inferBase(map, SELECTOR_MULTIPLIERS, SELECTOR_STEPS)
+
 // ── Stroke primitives (weight, not paint) ───────────────────────────────────
-// Even grid. 1.5px and 3px leftovers snap onto this. WCAG 2.4.13 min ring = 2px.
+// Even grid. 3px leftovers snap onto this. WCAG 2.4.13 min ring = 2px.
 
 export const STROKE_STEPS = ['none', 'sm', 'md', 'lg'] as const
 export type StrokeStep = (typeof STROKE_STEPS)[number]
 
 export const STROKE_STANDARD: Record<StrokeStep, string> = {
   none: '0px', sm: '1px', md: '2px', lg: '4px',
+}
+
+/**
+ * The global border-width control drives `sm` and ONLY `sm`.
+ *
+ * `sm` is what both `stroke-divider` and `stroke-control` alias, so moving it
+ * is what "all components" means. `md` is left alone deliberately: it backs
+ * `stroke-focus`, and WCAG 2.4.13 puts a 2px floor under a focus indicator —
+ * a global multiplier would drag the ring under it at the low end.
+ */
+export const STROKE_SM_STOPS = [0, 0.5, 1, 1.5, 2] as const
+
+/**
+ * A sub-pixel hairline only renders cleanly at 2dppx or better; at 1x the
+ * browser rounds it to an artefact (or to nothing). Floor it to 1px there.
+ * `dpr` is passed in rather than read off `window` so this stays pure — the
+ * exported CSS makes the same call with a `min-resolution: 2dppx` media query.
+ */
+export function hairlineSafe(value: string, dpr: number): string {
+  const px = parseFloat(value)
+  if (!Number.isFinite(px) || px <= 0 || px >= 1 || dpr >= 2) return value
+  return '1px'
 }
 
 // ── Breakpoint primitives ───────────────────────────────────────────────────
@@ -276,6 +371,9 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
     { id: 'control', label: 'Control', hint: 'Default and density heights.' },
     { id: 'special', label: 'Special', hint: 'Hit areas and FABs.' },
   ],
+  selector: [
+    { id: 'glyph', label: 'Glyph', hint: 'The drawn box, dot or track.' },
+  ],
   stroke: [
     { id: 'line', label: 'Line', hint: 'Border width and focus ring spread.' },
   ],
@@ -311,6 +409,12 @@ export const SIZE_ROLES: LayoutRole[] = [
   { key: 'fab', label: 'FAB', description: 'Floating action button.', group: 'special', primitive: 'xl' },
 ]
 
+export const SELECTOR_ROLES: LayoutRole[] = [
+  { key: 'control', label: 'Control', description: 'Checkbox, radio, switch track height.', group: 'glyph', primitive: 'md' },
+  { key: 'compact', label: 'Compact', description: 'The same glyphs in a dense row or table.', group: 'glyph', primitive: 'sm' },
+  { key: 'indicator', label: 'Indicator', description: 'Badge dot, status pip, unread marker.', group: 'glyph', primitive: 'xs' },
+]
+
 export const STROKE_ROLES: LayoutRole[] = [
   { key: 'divider', label: 'Divider', description: 'Separator, table rules, layout splits.', group: 'line', primitive: 'sm' },
   { key: 'control', label: 'Control', description: 'Input, card, outline button border-width.', group: 'line', primitive: 'sm' },
@@ -326,6 +430,7 @@ export const LAYOUT_ROLES: Record<LayoutFamily, LayoutRole[]> = {
   radius: RADIUS_ROLES,
   spacing: SPACING_ROLES,
   size: SIZE_ROLES,
+  selector: SELECTOR_ROLES,
   stroke: STROKE_ROLES,
   breakpoint: BREAKPOINT_ROLES,
 }
@@ -334,6 +439,7 @@ export const LAYOUT_PRIMITIVE_STEPS: Record<LayoutFamily, readonly string[]> = {
   radius: RADIUS_STEPS,
   spacing: SPACING_STEPS,
   size: SIZE_STEPS,
+  selector: SELECTOR_STEPS,
   stroke: STROKE_STEPS,
   breakpoint: BREAKPOINT_STEPS,
 }
@@ -352,6 +458,7 @@ const PRIMITIVE_SET: Record<LayoutFamily, Set<string>> = {
   radius: new Set(RADIUS_STEPS),
   spacing: new Set(SPACING_STEPS),
   size: new Set(SIZE_STEPS),
+  selector: new Set(SELECTOR_STEPS),
   stroke: new Set(STROKE_STEPS),
   breakpoint: new Set(BREAKPOINT_STEPS),
 }
@@ -418,6 +525,7 @@ export function allLayoutRoleCssVars(roles: {
   radius?: Record<string, string>
   spacing?: Record<string, string>
   size?: Record<string, string>
+  selector?: Record<string, string>
   stroke?: Record<string, string>
   breakpoint?: Record<string, string>
 }): string[] {
@@ -425,6 +533,7 @@ export function allLayoutRoleCssVars(roles: {
     ...layoutRoleCssVars('radius', roles.radius),
     ...layoutRoleCssVars('spacing', roles.spacing),
     ...layoutRoleCssVars('size', roles.size),
+    ...layoutRoleCssVars('selector', roles.selector),
     ...layoutRoleCssVars('stroke', roles.stroke),
     ...layoutRoleCssVars('breakpoint', roles.breakpoint),
   ]

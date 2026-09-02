@@ -1,42 +1,38 @@
-import { useEffect } from 'react'
 import Step3_SemanticTokens, { type SemanticFocus } from './Step3_SemanticTokens'
 import StepGradients from './StepGradients'
 import ColorPrimitives from './ColorPrimitives'
-import { ChromeTabBackground } from '../ui/ChromeTabShape'
+import type { ThemeAppearance } from '../../lib/themeModes'
 
 export type ColorTab = 'primary' | 'semantics' | 'gradients'
 
-const TABS: { key: ColorTab; label: string }[] = [
-  { key: 'primary', label: 'Primitives' },
-  { key: 'semantics', label: 'Semantics' },
-  { key: 'gradients', label: 'Gradients' },
-]
-
-// The Color hub unifies the primitive families' DEFINE-and-USE table
-// (ColorPrimitives — family nav, per-family quick edit and the usage table
-// all live there now, Picker Color's old job folded in), the semantic alias
-// matrix (Step3) and the gradient tokens (StepGradients) under one
-// foundation, switched by a three-tab pill bar. The bar is always pinned
-// above the content — same position for every tab.
-//
-// The tabs themselves use a Chrome-style strip: the active tab lifts on
-// `bg-app` with concave bottom corners; inactive tabs stay flat on a lightly
-// tinted strip — lighter than the old full-width tint block + bottom bar.
+// The workspace owns the depth (Primitives / Semantics). Color owns only its
+// content. Keeping a second depth selector here made the two rows disagree
+// about the current task. Gradients is the one Color-local collection and is
+// reached from the compact action in the foundation toolbar.
 export default function ColorHub({
-  colorTab,
-  onColorTabChange,
+  mode,
   onFocusChange,
   previewTheme,
+  previewAppearance,
   onPreviewThemeChange,
+  onPreviewAppearanceChange,
+  query,
+  onQueryChange,
   focusFamilyKey,
   railCollapsed,
   revealRole,
+  managedThemesExternally = false,
+  onOpenGradients,
+  onBackToSystemColors,
 }: {
-  colorTab: ColorTab
-  onColorTabChange: (t: ColorTab) => void
+  mode: ColorTab
   onFocusChange?: (f: SemanticFocus | 'all') => void
   previewTheme?: string
+  previewAppearance?: ThemeAppearance
   onPreviewThemeChange?: (theme: string) => void
+  onPreviewAppearanceChange?: (appearance: ThemeAppearance) => void
+  query?: string
+  onQueryChange?: (value: string) => void
   /** Forwarded to ColorPrimitives — switches its active family (e.g. a family
    *  NewTokenWizard just created). */
   focusFamilyKey?: string | null
@@ -50,78 +46,50 @@ export default function ColorHub({
   railCollapsed?: boolean
   /** Preview specimen asked to open this token's row (`key` + `seq` so repeats work). */
   revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
+  /** The Themes Library is the sole owner of theme selection and lifecycle. */
+  managedThemesExternally?: boolean
+  /** Gradients is a System colors collection, reached from its family rail. */
+  onOpenGradients?: () => void
+  onBackToSystemColors?: () => void
 }) {
-  useEffect(() => {
-    if (!revealRole?.key) return
-    onColorTabChange('semantics')
-  }, [revealRole?.key, revealRole?.seq])
-  // Chrome-style tab strip — three equal cells, active one merges into the
-  // content panel below via matching `bg-app` + concave bottom corners.
-  const tabBar = (
-    <div className="color-hub-tab-strip flex items-end h-full w-full min-w-0">
-      {TABS.map((t) => {
-        const active = colorTab === t.key
-        return (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => onColorTabChange(t.key)}
-            aria-pressed={active}
-            className={`color-hub-tab ${active ? 'color-hub-tab-active' : ''}`}
-          >
-            <ChromeTabBackground />
-            {/* The label is stacked over an invisible SEMIBOLD copy of itself,
-                which reserves the widest state's width. Without it, activating
-                a tab thickens its text, widening the button and nudging the
-                tabs after it a couple of pixels — a small but constant wobble
-                every time you switch. */}
-            <span className="relative grid place-items-center">
-              <span aria-hidden className="invisible font-semibold col-start-1 row-start-1">{t.label}</span>
-              <span className="col-start-1 row-start-1">{t.label}</span>
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-
   return (
     <div className="h-full flex flex-col min-h-0">
-      {colorTab === 'primary' ? (
-        // Flush — Groups | icon-rail is FoundationWorkbench. Tabs sit on the
-        // table-side header next to search, same slot on every Color tab.
+      {mode === 'primary' ? (
         <div className="flex-1 min-h-0">
           <ColorPrimitives
-            tabBar={tabBar}
+            query={query}
             previewTheme={previewTheme}
+            previewAppearance={previewAppearance}
             onPreviewThemeChange={onPreviewThemeChange}
+            onPreviewAppearanceChange={onPreviewAppearanceChange}
             focusFamilyKey={focusFamilyKey}
             railCollapsed={railCollapsed}
+            managedThemesExternally={managedThemesExternally}
+            onOpenGradients={onOpenGradients}
           />
         </div>
-      ) : colorTab === 'semantics' ? (
-        // Same treatment as Primitives — flush, no padding wrapper and no
-        // standalone tabBar row: Step3 shares that row with its own "Tokens"
-        // header, so the tabs land in the SAME place on both tabs instead of
-        // jumping to a separate strip above the content.
+      ) : mode === 'semantics' ? (
         <div className="flex-1 min-h-0">
           <Step3_SemanticTokens
-            tabBar={tabBar}
+            query={query}
+            onQueryChange={onQueryChange}
             onFocusChange={onFocusChange}
             previewTheme={previewTheme}
+            previewAppearance={previewAppearance}
             onPreviewThemeChange={onPreviewThemeChange}
+            onPreviewAppearanceChange={onPreviewAppearanceChange}
             railCollapsed={railCollapsed}
             revealRole={revealRole}
+            managedThemesExternally={managedThemesExternally}
           />
         </div>
       ) : (
-        // Gradients owns the same three-row shell as the other two tabs now —
-        // flush, no padding wrapper, tabBar rendered inside its own header row.
         <div className="flex-1 min-h-0">
           <StepGradients
-            tabBar={tabBar}
+            tabBar={<span className="text-ui text-fg-muted"><span>Color / </span><strong className="font-semibold text-fg">Gradients</strong></span>}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
+            onBackToSystemColors={onBackToSystemColors}
           />
         </div>
       )}

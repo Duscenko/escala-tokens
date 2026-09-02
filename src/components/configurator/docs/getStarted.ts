@@ -8,26 +8,17 @@ import { FOUNDATION_DOCS, OVERVIEW_KEY } from './foundationDocs'
 
 export const GET_STARTED_KEY = '__get-started'
 export const GUIDE_FIGMA_KEY = '__guide-figma'
-export const GUIDE_CODE_KEY = '__guide-code'
+export const GUIDE_MCP_KEY = '__guide-mcp'
 
 /**
- * TWO destinations, not three. "Use in code" and "Use with AI" were separate
- * pages answering the SAME question — how do my tokens reach my repo — and
- * giving the same answer twice ("reference roles, never invent a hex"; the CSS
- * page said it in prose, the AI page enforced it through `resolve_token`).
- * CSS variables, W3C JSON, a GitHub repo and the MCP server all land in one
- * place: the product repo. Figma is the genuinely different destination — a
- * design tool, a plugin, variables in a file.
- *
- * `GUIDE_AI_KEY` is GONE, not deprecated: the rail row, the TOC branch, the
- * markdown branch and the `TITLE` entry all went with it. Anything that used
- * to deep-link the AI page (About's "learn AI" CTA) points at
- * `GUIDE_CODE_KEY` now — the section it wants (`#connect`) lives there.
+ * Docs now exposes only the destinations that need their own operating
+ * instructions: Figma and the live MCP connection. Code formats stay in the
+ * Generator's own export surface, where they are selected.
  */
 export const GUIDE_PAGES: { key: string; label: string }[] = [
   { key: GET_STARTED_KEY, label: 'Get started' },
   { key: GUIDE_FIGMA_KEY, label: 'Use in Figma' },
-  { key: GUIDE_CODE_KEY, label: 'Use in code' },
+  { key: GUIDE_MCP_KEY, label: 'MCP' },
 ]
 
 /** Get started → two destinations → the token sheet. */

@@ -45,7 +45,7 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
         </div>
         <div className="flex flex-wrap gap-1.5">
           {synced.map((s) => (
-            <span key={s} className="text-[11px] px-2 py-1 rounded-full bg-elevated text-fg-muted border border-line">
+            <span key={s} className="text-caption px-2 py-1 rounded-full bg-elevated text-fg-muted border border-line">
               {s}
             </span>
           ))}
@@ -55,14 +55,14 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
       {/* ── Step 1 — Download ── */}
       <Step n={1} title="Download the plugin">
         <p className="text-xs text-fg-faint leading-relaxed">
-          A small package with the plugin&apos;s <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code> and build output.
+          A small package with the plugin&apos;s <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code> and build output.
         </p>
         {updateAvailable ? (
           <p className="text-xs leading-relaxed text-accent-ui bg-accent-ui/10 border border-accent-ui/20 rounded-lg px-3 py-2">
             A newer plugin build is available (<span className="font-semibold">v{PLUGIN_VERSION}</span>). Re-download below and re-import it in Figma to pick up the latest changes.
           </p>
         ) : (
-          <p className="text-[11px] text-fg-faint">Current version: <span className="font-medium text-fg-muted">v{PLUGIN_VERSION}</span></p>
+          <p className="text-caption text-fg-faint">Current version: <span className="font-medium text-fg-muted">v{PLUGIN_VERSION}</span></p>
         )}
         <a
           href={PLUGIN_ZIP}
@@ -83,7 +83,7 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
         <ol className="flex flex-col gap-1.5 text-xs text-fg-faint leading-relaxed list-decimal pl-4">
           <li>Unzip the download.</li>
           <li>In the Figma desktop app: <span className="text-fg-muted">Plugins → Development → Import plugin from manifest…</span></li>
-          <li>Select the unzipped <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code>.</li>
+          <li>Select the unzipped <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code>.</li>
           <li>Run it from <span className="text-fg-muted">Plugins → Development → Escala DS</span>.</li>
         </ol>
       </Step>

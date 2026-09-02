@@ -34,7 +34,7 @@ export interface RailGroup {
 
 function GroupLabel({ label }: { label: string }) {
   return (
-    <span className="px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+    <span className="px-2.5 pt-3 pb-1 text-mini font-semibold uppercase tracking-widest text-fg-faint">
       {label}
     </span>
   )
@@ -79,7 +79,7 @@ export default function SectionRail({
       <div
         className={`flex items-center h-[52px] flex-shrink-0 border-b border-line/60 ${collapsed ? 'justify-center px-0' : 'justify-between pl-3 pr-2'}`}
       >
-        {!collapsed && <span className="text-[13px] font-semibold text-fg truncate">{title}</span>}
+        {!collapsed && <span className="text-ui font-semibold text-fg truncate">{title}</span>}
         <button
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -103,7 +103,7 @@ export default function SectionRail({
                 onClick={() => onSelect(key)}
                 aria-current={on ? 'page' : undefined}
                 title={label}
-                className={`flex items-center h-9 rounded-xl text-[13px] text-left transition-all ${
+                className={`flex items-center h-9 rounded-xl text-ui text-left transition-all ${
                   collapsed ? 'w-9 mx-auto justify-center' : 'w-full gap-2 px-2.5'
                 } ${
                   on

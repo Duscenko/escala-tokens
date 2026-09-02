@@ -39,6 +39,7 @@ describe('token schema contract (docs/agent-native)', () => {
     expect(json.strokeRoles && typeof json.strokeRoles).toBe('object')
     expect(json.sizeRoles && typeof json.sizeRoles).toBe('object')
     expect(json.spacingRoles && typeof json.spacingRoles).toBe('object')
+    expect(json.foundationsByTheme && typeof json.foundationsByTheme).toBe('object')
     expect(json.borders?.width).toEqual(json.stroke)
   })
 })

@@ -3,7 +3,9 @@ import { radiusRoleOf, spacingRoleOf, typeStyleOf } from '../../../lib/previewTo
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
 import type { ArtefactProps } from './types'
+import { useI18n } from '../../../lib/i18n'
 
+const Card = SPECIMENS.Card
 const Input = SPECIMENS.Input
 const Button = SPECIMENS.Button
 const Checkbox = SPECIMENS.Checkbox
@@ -19,12 +21,13 @@ const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, rol
  *  Divider rather than a hand-drawn line, so the stroke width and colour are the
  *  system's `divider` role in both halves. */
 function OrRule({ t }: { t: PreviewTokens }) {
+  const { t: translate } = useI18n()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: gap(t, 'gap-control', '8px') }}>
       <span style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
         <Divider t={t} v={{}} w="100%" />
       </span>
-      <span style={{ ...typeStyleOf(t, 'helper', { leading: false }), color: t.fgMuted || '#717680' }}>or</span>
+      <span style={{ ...typeStyleOf(t, 'helper', { leading: false }), color: t.fgMuted || '#717680' }}>{translate('or')}</span>
       <span style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
         <Divider t={t} v={{}} w="100%" />
       </span>
@@ -51,6 +54,7 @@ function OrRule({ t }: { t: PreviewTokens }) {
  * CTA. 48px covers HIG 44."
  */
 function LoginScreen({ t, compact }: ArtefactProps) {
+  const { t: translate } = useI18n()
   const muted = t.fgMuted || '#717680'
 
   return (
@@ -72,33 +76,41 @@ function LoginScreen({ t, compact }: ArtefactProps) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-tight', '4px') }}>
           <h3 style={{ margin: 0, ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>
-            Welcome back
+            {translate('Welcome back')}
           </h3>
           <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
-            Sign in to continue to your workspace.
+            {translate('Sign in to continue to your workspace.')}
           </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-group', '16px') }}>
-          <Input t={t} v={{ Type: 'E-Mail' }} w="100%" />
-          <Input t={t} v={{ Type: 'Password' }} w="100%" />
-          <Checkbox t={t} v={{ Checked: 'True' }} />
-          {/* `touch` is the system's own mobile-CTA height role; LG resolves the
-              same `lg` primitive it points at. */}
-          <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">Sign in</Button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-group', '16px') }}>
-          <OrRule t={t} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
-            <SocialLoginButton t={t} v={{ Provider: 'Google' }} w="100%" />
-            <SocialLoginButton t={t} v={{ Provider: 'Apple' }} w="100%" />
+        {/* The sign-in CARD — a real elevated surface, not a bare form on the
+            page. Two reasons, and the second is why it landed: it is the
+            canonical shape of this screen on mobile, and it is the only thing
+            on the most-looked-at artefact that reads the SHADOW ramp. Before
+            it, this screen rendered zero box-shadows, so a System Style's
+            elevation language (Subtle · Soft · Strong · hard offset · warm)
+            was invisible on the screen people judge a style by. `elev="lg"`
+            is a token reference — the sheet is as heavy as the style says it
+            is, and no heavier. */}
+        <Card t={t} v={{}} w="100%" elev="lg">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-group', '16px') }}>
+            <Input t={t} v={{ Type: 'E-Mail' }} w="100%" />
+            <Input t={t} v={{ Type: 'Password' }} w="100%" />
+            <Checkbox t={t} v={{ Checked: 'True' }} />
+            {/* `touch` is the system's own mobile-CTA height role; LG resolves
+                the same `lg` primitive it points at. */}
+            <Button t={t} v={{ Style: 'Solid', Size: 'LG' }} w="100%">{translate('Sign in')}</Button>
+            <OrRule t={t} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: gap(t, 'gap-control', '8px') }}>
+              <SocialLoginButton t={t} v={{ Provider: 'Google' }} w="100%" />
+              <SocialLoginButton t={t} v={{ Provider: 'Apple' }} w="100%" />
+            </div>
           </div>
-        </div>
+        </Card>
 
         <p style={{ margin: 0, textAlign: 'center', ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
-          Don’t have an account?{' '}
-          <TextLink t={t} v={{}}>Sign up</TextLink>
+          {translate('Don’t have an account?')}{' '}
+          <TextLink t={t} v={{}}>{translate('Sign up')}</TextLink>
         </p>
       </div>
     </DeviceFrame>

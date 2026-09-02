@@ -206,7 +206,7 @@ function Ranges({ t, bps, desktopMin }: { t: PreviewTokens; bps: Breakpoint[]; d
 function Block({ t, title, children }: { t: PreviewTokens; title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2.5 min-w-0">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
+      <span className="text-mini uppercase tracking-widest text-fg-faint px-0.5">{title}</span>
       <div
         className="p-4 flex flex-col gap-3 min-w-0"
         style={{

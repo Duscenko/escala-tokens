@@ -29,6 +29,5 @@ dist-ssr
 # otherwise be a 260 KB file that conflicts on every branch.
 reports/
 
-# Untitled UI glyph catalog — regenerate with `npm run gen:untitled-icons`.
-# Untitled's license allows using the icons, not redistributing the set.
-src/generated/untitled-icons.ts
+# Phosphor's glyph catalog IS committed (MIT). Regenerate with
+# `npm run gen:phosphor-icons` after bumping @phosphor-icons/core.

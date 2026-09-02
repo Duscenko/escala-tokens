@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { tableRowClass } from './tableChrome'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
@@ -15,10 +16,17 @@ import { resolveThemePalette } from '../../lib/themeSources'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
-  COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import ThemePanel from './ThemePanel'
+import { usePreviewTokens } from '../../lib/previewTokens'
+import { SEMANTIC_SPECIMENS } from '../preview/atoms/SemanticSpecimens'
+import {
+  appearanceFromModeKey, appearanceOrder, semanticModesFor, themeModeKey,
+  type ThemeAppearance,
+} from '../../lib/themeModes'
+import VariablesPreviewPane from './VariablesPreviewPane'
+import VariableCollectionRail from './VariableCollectionRail'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -154,6 +162,14 @@ const CHECKER_STYLE: React.CSSProperties = {
 // same job but taught a second interaction for the same task — and hid the
 // role's description, which is half of why you open the editor at all.
 const PICKABLE_FAMILIES = ['accent', 'neutral', 'neutral-dark', 'error', 'warning', 'success', 'info'] as const
+// The alpha twins, listed AFTER the solids in the architecture picker so any
+// role can be re-pointed at a translucent primitive (16 Categorical roles
+// already are — `action.ghost.*`, `surface.overlay`, `border.ring.*`, the
+// `status.*.surface` tints — and a hand override can move any other one there
+// too). Shown unconditionally: an earlier build gated them on "is the current
+// ref alpha", which meant a solid role could never be switched to alpha.
+const ALPHA_FAMILIES = ['accent-a', 'neutral-a', 'error-a', 'warning-a', 'success-a', 'info-a', 'black-a', 'white-a'] as const
+const ARCH_PICKABLE_FAMILIES = [...PICKABLE_FAMILIES, ...ALPHA_FAMILIES] as const
 
 // Built through `scaleLookup` — the SAME resolver the architecture table and
 // the export use — so the swatch you click is the colour that mode will
@@ -162,12 +178,19 @@ const PICKABLE_FAMILIES = ['accent', 'neutral', 'neutral-dark', 'error', 'warnin
 // tints, and picking one silently stored a ref that resolves to a completely
 // different (dark-twin) colour. Every mode showed an identical grid, which is
 // what made the bug invisible.
+//
+// `pageBackground`/`darkBackground` are REQUIRED for the alpha twins to
+// resolve (`{accent-a.N}` is composited on demand against the page); omitting
+// them is why the alpha rows rendered empty. `black-a`/`white-a` are constants
+// and resolve regardless.
 function rampsOf(
   scales: GlobalScales,
   palette?: ThemePalette,
   kind: 'light' | 'dark' = 'light',
+  pageBackground?: string,
+  darkBackground?: string,
 ): Record<string, Record<number, string> | undefined> {
-  const look = scaleLookup(scales, palette, kind)
+  const look = scaleLookup(scales, palette, kind, pageBackground, darkBackground)
   const build = (fam: string) => {
     const out: Record<number, string> = {}
     for (let tone = 1; tone <= 12; tone++) {
@@ -176,7 +199,7 @@ function rampsOf(
     }
     return Object.keys(out).length ? out : undefined
   }
-  return Object.fromEntries(PICKABLE_FAMILIES.map((fam) => [fam, build(fam)]))
+  return Object.fromEntries(ARCH_PICKABLE_FAMILIES.map((fam) => [fam, build(fam)]))
 }
 
 /** `neutral.12` → ['neutral', 12]; null for raw CSS (vibrancy alphas, blur). */
@@ -189,12 +212,15 @@ function parseRef(label: string): [string, number] | null {
 // section header now (see TokenDetailsModal's `sections`), so this renders the
 // grid alone rather than printing a second label inside its own card.
 function ArchModeEditor({
-  label, value, scales, palette, kind, onPick,
+  label, value, scales, palette, kind, pageBackground, darkBackground, onPick,
 }: {
   /** That mode's own palette + polarity — the grid MUST resolve through these
    *  (see `rampsOf`), or a dark mode offers light swatches. */
   palette?: ThemePalette
   kind: 'light' | 'dark'
+  /** Required for the alpha twins to resolve — see `rampsOf`. */
+  pageBackground?: string
+  darkBackground?: string
   /** Display text — the theme's name (accent-prefixed for a custom theme) or
    *  the plain 'light'/'dark' word for Vibrancy/Tonal. Used for the grid's
    *  accessible name; the visible label is the section header's. */
@@ -204,7 +230,7 @@ function ArchModeEditor({
   onPick: (ref: string) => void
 }) {
   const parsed = parseRef(value.label)
-  const ramps = rampsOf(scales, palette, kind)
+  const ramps = rampsOf(scales, palette, kind, pageBackground, darkBackground)
   const family = parsed?.[0] ?? 'accent'
   const tone = parsed?.[1] ?? null
 
@@ -217,7 +243,7 @@ function ArchModeEditor({
           chip, so you couldn't compare candidates while choosing. Same widget
           the colour picker used to carry as its "Palette" block. */}
       <SystemRampGrid
-        ramps={PICKABLE_FAMILIES.map((key) => ({ key, scale: ramps[key] }))}
+        ramps={ARCH_PICKABLE_FAMILIES.map((key) => ({ key, scale: ramps[key] }))}
         selected={tone != null ? { family, tone } : null}
         onPick={(fam, t) => onPick(`{${fam}.${t}}`)}
         ariaLabel={`Pick a token for ${label}`}
@@ -246,7 +272,7 @@ function TokenCell({
     <span className="flex flex-col items-start gap-1 min-w-0 max-w-full">
       <Chip
         {...(onEdit ? { onClick: onEdit, type: 'button' as const, title: `${v.label} — click to read from another primitive` } : {})}
-        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border text-[11px] font-mono text-fg-muted max-w-full ${
+        className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border text-caption font-mono text-fg-muted max-w-full ${
           edited ? 'border-accent-ui' : 'border-line'
         } ${onEdit ? 'hover:border-line-strong hover:text-fg transition-colors cursor-pointer' : ''}`}
       >
@@ -258,7 +284,7 @@ function TokenCell({
       </Chip>
       {fallback && (
         <span
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-elevated/70 border border-line text-[9.5px] font-mono text-fg-faint max-w-full"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-elevated/70 border border-line text-micro font-mono text-fg-faint max-w-full"
           title={`Opaque WCAG fallback (${fallback.css}) — applied when backdrop-filter / vibrancy is unavailable`}
         >
           <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" className="flex-shrink-0 opacity-70" aria-hidden>
@@ -289,7 +315,7 @@ function AliasBadge({ scale, tone, color, naming }: { scale: RoleScale; tone: nu
     ? (tone != null ? baseLabelForTone(tone) : '—')
     : (tone != null ? toneLabel(naming, tone) : '—')
   return (
-    <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-[11px] font-mono text-fg-muted max-w-full">
+    <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md bg-surface border border-line text-caption font-mono text-fg-muted max-w-full">
       <span
         className="w-3.5 h-3.5 rounded-[3px] flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
         style={{ backgroundColor: color || 'var(--elevated)' }}
@@ -349,7 +375,7 @@ function ToneAxisRow() {
   return (
     <div className="grid grid-cols-12 gap-1" aria-hidden>
       {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-        <span key={n} className="text-[8px] font-mono tabular-nums leading-none text-center text-fg-faint">
+        <span key={n} className="text-nano font-mono tabular-nums leading-none text-center text-fg-faint">
           {n}
         </span>
       ))}
@@ -386,15 +412,6 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-/** Sun (light) / moon (dark) glyph used by the per-theme editor labels. */
-function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
-  return kind === 'light' ? (
-    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-amber-500"><circle cx="6" cy="6" r="2.4" fill="currentColor"/><path d="M6 1v1.4M6 9.6V11M1 6h1.4M9.6 6H11M2.5 2.5l1 1M8.5 8.5l1 1M9.5 2.5l-1 1M3.5 8.5l-1 1" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>
-  ) : (
-    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-indigo-400"><path d="M10 7.2A4.2 4.2 0 1 1 4.8 2a3.3 3.3 0 0 0 5.2 5.2z" fill="currentColor"/></svg>
-  )
-}
-
 function MatrixRow({
   role,
   index,
@@ -414,7 +431,10 @@ function MatrixRow({
   flash?: boolean
   gridStyle: React.CSSProperties
   naming: ColorNaming
-  onToggle: () => void
+  /** `colKey` set = a specific appearance column's cell was clicked, so Token
+   *  Details should open on THAT section; omitted (name / tune button) means
+   *  "open on whatever's previewed". */
+  onToggle: (colKey?: string) => void
 }) {
   const isEven = index % 2 === 1
 
@@ -423,7 +443,7 @@ function MatrixRow({
       id={`color-role-${role.key}`}
       className={flash ? COLOR_FLASH : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}
     >
-      <div className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]" style={gridStyle}>
+      <div className={tableRowClass(index, 'grid', { zebra: false })} style={gridStyle}>
         {/* Name only — description + copyable var move into the expanded editor
             so each row stays a single, compact line.
             `sticky left-0` — the mirror of the trailing settings column's own
@@ -441,7 +461,7 @@ function MatrixRow({
             striped rows nor goes dead on hover. `sticky` is itself a
             positioned value, so the overlays anchor to this cell without
             needing `relative`. */}
-        <div className="flex items-center gap-3 py-2.5 pl-4 pr-3 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
+        <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line/60 sticky left-0 z-10 bg-app">
           <span
             aria-hidden
             className={`absolute inset-0 pointer-events-none ${
@@ -453,14 +473,14 @@ function MatrixRow({
               absolutely-positioned siblings otherwise sit on top of in-flow
               content, and the expanded state's 40%-opacity blue would visibly
               wash the token name. */}
-          <button onClick={onToggle} aria-label={`Edit ${role.label} scale`} className="relative flex items-center gap-2.5 min-w-0 text-left flex-1">
+          <button onClick={() => onToggle()} aria-label={`Edit ${role.label} scale`} className="relative flex items-center gap-2 min-w-0 text-left flex-1">
             {/* Color-token marker — a palette glyph, not a fill: the actual value
                 already shows in the Light/Dark columns, so a per-row swatch just
                 duplicated it. */}
             <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
               <PaletteIcon size={16} />
             </span>
-            <code className="font-mono text-[12px] text-fg-muted truncate" title={role.label}>{role.label}</code>
+            <code className="font-mono text-body text-fg-muted truncate" title={role.label}>{role.label}</code>
             {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from recommended" />}
           </button>
         </div>
@@ -474,8 +494,8 @@ function MatrixRow({
           return (
             <button
               key={col.key}
-              onClick={onToggle}
-              className={`flex items-center min-w-0 px-3 py-3 text-left border-r border-line ${
+              onClick={() => onToggle(col.key)}
+              className={`flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line/60 ${
                 col.previewed ? 'bg-accent-ui/[0.06]' : ''
               }`}
               aria-label={`${col.key} value ${SCALE_META[effScale].label}-${tone ?? '?'}`}
@@ -488,7 +508,7 @@ function MatrixRow({
         {/* Filter / edit toggle — opens Token Details. Glass plate is on
             `STICKY_TRAIL` so the icon stays readable over scrolling modes. */}
         <button
-          onClick={onToggle}
+          onClick={() => onToggle()}
           aria-expanded={expanded}
           aria-label={expanded ? 'Close Token Details' : 'Edit scale'}
           className={`group flex items-center justify-center h-full py-2.5 text-fg-muted hover:text-fg transition-colors ${STICKY_TRAIL} ${
@@ -507,7 +527,7 @@ function MatrixRow({
  *  root — the SAME 198px `ColorPrimitives`' family nav and this section's own
  *  "Token architecture" / category-nav cells use, so the table's left edge
  *  lands on the one column line every row above it already shares. */
-const NAME_MIN_TRACK = '11rem'
+const NAME_MIN_TRACK = '10rem'
 /** Trailing tune / add-theme track — keep overlay width in lockstep. */
 const TRAIL_TRACK = '2.75rem'
 
@@ -630,18 +650,43 @@ function ScrollPager({
   )
 }
 
+function SemanticPreviewPane({
+  previewTheme,
+  previewAppearance,
+  focus,
+  onEditToken,
+}: {
+  previewTheme: string
+  previewAppearance: ThemeAppearance
+  focus: SemanticFocus
+  onEditToken: (id: string) => void
+}) {
+  const tokens = usePreviewTokens(previewTheme, previewAppearance)
+  return (
+    <VariablesPreviewPane watch={`${focus}/${previewTheme}/${previewAppearance}`}>
+      {SEMANTIC_SPECIMENS[focus]({ tokens, onEditToken })}
+    </VariablesPreviewPane>
+  )
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step3_SemanticTokens({
   onFocusChange,
   previewTheme,
+  previewAppearance,
   onPreviewThemeChange,
-  tabBar,
+  onPreviewAppearanceChange,
+  query: externalQuery,
+  onQueryChange,
   railCollapsed = false,
   revealRole,
+  managedThemesExternally = false,
 }: {
-  /** Color's three-tab bar — Groups | icon-rail lives in FoundationWorkbench. */
-  tabBar?: ReactNode
+  /** Shared with the Foundation toolbar so search occupies one consistent
+   *  position across Primitives and Semantics. */
+  query?: string
+  onQueryChange?: (value: string) => void
   /** Reports which semantic GROUP is selected so the shell can point the
    *  preview at it. Deliberately NOT the same value as the nav's own category
    *  state: this component owns that internally (flat and non-flat keep
@@ -651,7 +696,9 @@ export default function Step3_SemanticTokens({
   onFocusChange?: (f: SemanticFocus | 'all') => void
   /** Theme currently rendered in the right-hand preview (eye toggle). */
   previewTheme?: string
+  previewAppearance?: ThemeAppearance
   onPreviewThemeChange?: (theme: string) => void
+  onPreviewAppearanceChange?: (appearance: ThemeAppearance) => void
   /** Collapses this tab's 198px left column to a 56px glyph strip — the SAME
    *  state Primitives' family rail uses (`colorRailCollapsed`, owned by
    *  `Configurator` because TopNav sizes its brand divider from the column's
@@ -661,6 +708,8 @@ export default function Step3_SemanticTokens({
   railCollapsed?: boolean
   /** Preview specimen asked to open this token / group (`key` + `seq` so repeats work). */
   revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
+  /** Theme lifecycle belongs to the shared Themes Library rail. */
+  managedThemesExternally?: boolean
 }) {
   const store = useDesignStore()
   const {
@@ -668,8 +717,8 @@ export default function Step3_SemanticTokens({
     primaryDarkScale, errorDarkScale, warningDarkScale, successDarkScale, infoDarkScale,
     grayLightScale, grayDarkScale, customColors,
     pageBackground, darkBackground,
-    themes, themeOrder, themeKinds, themeSources, colorNaming,
-    setThemeToken, removeTheme, setThemeOrder,
+    themes, themeSemantics, themeOrder, themeKinds, themeSources, colorNaming,
+    setThemeModeToken, removeTheme, setThemeOrder,
     panelBackground, setPanelBackground,
     semanticArchitecture, architectureOverrides,
     setArchitectureOverride,
@@ -717,17 +766,26 @@ export default function Step3_SemanticTokens({
 
   // Ramp + recommended value resolution shared with the token export
   // (lib/semanticRoles.ts) so the editor and exports never disagree.
-  const scaleFor = (theme: string, role: Role, kind: 'light' | 'dark') =>
-    sourceScaleFor(role, kind, scales, resolveThemePalette(themeSources[theme], kind, store))
+  const activeTheme = previewTheme && themeOrder.includes(previewTheme)
+    ? previewTheme
+    : (themeOrder[0] ?? 'light')
+  const preferredAppearance = themeKinds[activeTheme] ?? 'light'
+  const activeAppearance = previewAppearance ?? preferredAppearance
+  const activeThemeSemantics = semanticModesFor(themeSemantics, themes, activeTheme, preferredAppearance)
+  const scaleFor = (appearance: ThemeAppearance, role: Role) =>
+    sourceScaleFor(role, appearance, scales, resolveThemePalette(themeSources[activeTheme], appearance, store))
 
-  const themeCols = themeOrder.filter((t) => themes[t])
-  // Per-column widths (px) — a view preference, kept local (not a token). Drag a
-  // column's right edge to resize. The default fits the longest source name a
-  // cell shows (`neutral-900` wants 75px next to its swatch) without truncating;
-  // at the old 112 every neutral row read "neutr…".
-  const DEFAULT_COL_W = 160
-  const MIN_COL_W = 76
-  const MAX_COL_W = 260
+  // The theme's spectrum leads the matrix: dark-spectrum themes use Dark →
+  // Light, while light-spectrum themes use Light → Dark. Preview selection is
+  // independent and never mutates this stable per-theme ordering.
+  const themeCols = appearanceOrder(preferredAppearance)
+  const archThemeCols = themeCols.map((appearance) => themeModeKey(activeTheme, appearance))
+  // Columns grow evenly with the table by default. A drag only turns the
+  // adjusted column into a fixed track; otherwise Light and Dark use the
+  // available width homogeneously, including when the preview rail closes.
+  const DEFAULT_COL_W = 124
+  const MIN_COL_W = 104
+  const MAX_COL_W = 184
   const [colWidths, setColWidths] = useState<Record<string, number>>({})
   const widthOf = (t: string) => colWidths[t] ?? DEFAULT_COL_W
   // The "Token name" column is resizable too. It fills the row by default (null
@@ -736,19 +794,15 @@ export default function Step3_SemanticTokens({
   // spans the full width.
   const MIN_NAME_W = 150
   const MAX_NAME_W = 520
-  const DEFAULT_NAME_W = 288
+  const DEFAULT_NAME_W = 204
   const [nameWidth, setNameWidth] = useState<number | null>(null)
-  const themeTracks = `${themeCols.map((t) => `${widthOf(t)}px`).join(' ')} ${TRAIL_TRACK}`
+  const themeTrack = (theme: string) => colWidths[theme] == null
+    ? `minmax(${MIN_COL_W}px, 1fr)`
+    : `${widthOf(theme)}px`
+  const themeTracks = `${themeCols.map(themeTrack).join(' ')} ${TRAIL_TRACK}`
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: nameWidth == null
-      // `minmax(NAME_MIN_TRACK,1fr)`, not `minmax(0,1fr)`. The 1fr still takes
-      // every spare pixel exactly as before, so nothing changes at the widths
-      // this table normally runs at — but a `0` floor let the track collapse
-      // to literally nothing once the fixed theme tracks outgrew the pane,
-      // which is the case this column now has to survive: it's PINNED, so it
-      // has to still be there at full horizontal scroll. Same floor the arch
-      // table's own name track has always carried.
-      ? `minmax(${NAME_MIN_TRACK},1fr) ${themeTracks}`
+      ? `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${themeTracks}`
       : `${nameWidth}px ${themeTracks} minmax(0,1fr)`,
   }
 
@@ -760,8 +814,9 @@ export default function Step3_SemanticTokens({
   const dragThemeRef = useRef<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const reorderColumns = (from: string, to: string) => {
+    if (managedThemesExternally) return
     if (from === to) return
-    const next = themeCols.filter((t) => t !== from)
+    const next: string[] = [...themeCols].filter((t) => t !== from)
     const at = next.indexOf(to)
     next.splice(at < 0 ? next.length : at, 0, from)
     setThemeOrder(next)
@@ -813,36 +868,39 @@ export default function Step3_SemanticTokens({
     Object.keys(successScale).length > 0 &&
     Object.keys(infoScale).length    > 0
 
-  const recHexOf = (theme: string, role: Role, kind: 'light' | 'dark') =>
-    recHexFor(role, kind, scaleFor(theme, role, kind))
+  const recHexOf = (appearance: ThemeAppearance, role: Role) =>
+    recHexFor(role, appearance, scaleFor(appearance, role))
 
-  const kindOf = (theme: string): 'light' | 'dark' => themeKinds[theme] ?? 'light'
+  const kindOf = (mode: string): ThemeAppearance =>
+    appearanceFromModeKey(mode) ?? (mode === 'dark' ? 'dark' : 'light')
 
   // Column display name — built-in themes carry the chosen color family's name
   // in front ("Purple light" / "Purple dark") so the matrix reads as *this*
   // system's themes, matching Home's family dropdown. Custom themes keep the
   // name the user gave them; an off-catalogue accent falls back to plain
   // light/dark.
-  const themeDisplayName = (t: string): string => {
-    if (t !== 'light' && t !== 'dark') return t
-    const accent = primaryColor.toLowerCase()
-    const family =
-      findOption(BRAND_GROUPS, accent)?.label ??
-      customColors.find((c) => c.base.toLowerCase() === accent)?.label
-    return family ? `${family} ${t}` : t
-  }
+  const themeDisplayName = (mode: string): string => kindOf(mode) === 'dark' ? 'Dark' : 'Light'
 
   const isModified = (role: Role) =>
-    themeCols.some((t) => {
-      const cur = themes[t]?.[role.key]
-      const rec = recHexOf(t, role, kindOf(t))
+    themeCols.some((appearance) => {
+      const cur = activeThemeSemantics[appearance]?.[role.key]
+      const rec = recHexOf(appearance, role)
       return !!cur && !!rec && cur.toLowerCase() !== rec.toLowerCase()
     })
 
   // UI state — category is controllable; falls back to internal state standalone.
   const [activeCategory, setInternalCategory] = useState<SemanticCategory>('all')
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
+  // Which section Token Details should open on. Set to a specific appearance
+  // key when a value cell IN that column is clicked; `null` for every other
+  // open path (the row name, the tune icon, the Variables-preview panel, a
+  // reveal-from-specimen), which then falls back to the previewed appearance.
+  // Fixes: opening a role always landed on the theme's *preferred* appearance
+  // (usually Dark), ignoring which column you actually clicked.
+  const [detailsMode, setDetailsMode] = useState<string | null>(null)
+  const [localQuery, setLocalQuery] = useState('')
+  const query = externalQuery ?? localQuery
+  const setQuery = onQueryChange ?? setLocalQuery
   const [flashKey, setFlashKey] = useState<string | null>(null)
   /** The token table's scroll container — the Token Details dialog's anchor. */
   const tableRef = useRef<HTMLDivElement>(null)
@@ -866,13 +924,13 @@ export default function Step3_SemanticTokens({
   // whenever a family moves, so the architecture projections track Primitives.
   const resolvedPalettes = useMemo(() => {
     const out: Record<string, NonNullable<ReturnType<typeof resolveThemePalette>>> = {}
-    for (const t of Object.keys(themeSources)) {
-      const p = resolveThemePalette(themeSources[t], themeKinds[t] ?? 'light', store)
-      if (p) out[t] = p
+    for (const appearance of themeCols) {
+      const p = resolveThemePalette(themeSources[activeTheme], appearance, store)
+      if (p) out[themeModeKey(activeTheme, appearance)] = p
     }
     return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeSources, themeKinds, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, customColors])
+  }, [activeTheme, themeSources, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, customColors])
 
   const archView = useMemo(
     () =>
@@ -880,7 +938,19 @@ export default function Step3_SemanticTokens({
         ? null
         : buildArchitectureView(
             semanticArchitecture,
-            { themes, themeKinds, themePalettes: resolvedPalettes, scales, accent: primaryColor, pageBackground, darkBackground },
+            {
+              themes: Object.fromEntries(
+                themeCols.map((appearance) => [themeModeKey(activeTheme, appearance), activeThemeSemantics[appearance]]),
+              ),
+              themeKinds: Object.fromEntries(
+                themeCols.map((appearance) => [themeModeKey(activeTheme, appearance), appearance]),
+              ),
+              themePalettes: resolvedPalettes,
+              scales,
+              accent: primaryColor,
+              pageBackground,
+              darkBackground,
+            },
             errorColor,
             architectureOverrides[semanticArchitecture] ?? {},
             // Every theme in the workspace — Categorical resolves one column
@@ -888,10 +958,10 @@ export default function Step3_SemanticTokens({
             // ArchitectureView.modeKeys). Passing it uniformly means "+ Theme"
             // just works the moment Categorical's math supports it, with no
             // per-architecture branch needed here.
-            themeCols,
+            archThemeCols,
           ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, themes, themeKinds, resolvedPalettes, architectureOverrides, themeCols, pageBackground, darkBackground],
+    [semanticArchitecture, primaryColor, errorColor, primaryScale, grayLightScale, grayDarkScale, errorScale, warningScale, successScale, infoScale, activeThemeSemantics, resolvedPalettes, architectureOverrides, themeCols, archThemeCols, pageBackground, darkBackground],
   )
   // Sidebar selection for non-flat architectures ('all' + the schema's groups).
   const [archCategory, setArchCategory] = useState<string>('all')
@@ -917,9 +987,9 @@ export default function Step3_SemanticTokens({
   }
 
   function resetRole(role: Role) {
-    themeCols.forEach((t) => {
-      const hex = recHexOf(t, role, kindOf(t))
-      if (hex) setThemeToken(t, role.key, hex)
+    themeCols.forEach((appearance) => {
+      const hex = recHexOf(appearance, role)
+      if (hex) setThemeModeToken(activeTheme, appearance, role.key, hex)
     })
   }
 
@@ -930,18 +1000,17 @@ export default function Step3_SemanticTokens({
   useEffect(() => {
     if (!ready) return
     ALL_ROLES.forEach((role) => {
-      themeCols.forEach((t) => {
-        const kind = kindOf(t)
-        const src = scaleFor(t, role, kind)
-        const cur = themes[t]?.[role.key]
+      themeCols.forEach((appearance) => {
+        const src = scaleFor(appearance, role)
+        const cur = activeThemeSemantics[appearance]?.[role.key]
         if (!cur || toneIndexOf(src, cur) === null) {
-          const hex = recHexOf(t, role, kind)
-          if (hex) setThemeToken(t, role.key, hex)
+          const hex = recHexOf(appearance, role)
+          if (hex) setThemeModeToken(activeTheme, appearance, role.key, hex)
         }
       })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, grayLightScale, grayDarkScale, primaryScale, errorScale, warningScale, successScale, infoScale, themeOrder, themeSources])
+  }, [ready, grayLightScale, grayDarkScale, primaryScale, errorScale, warningScale, successScale, infoScale, activeTheme, themeSources])
 
   const q = query.trim().toLowerCase()
 
@@ -1002,6 +1071,29 @@ export default function Step3_SemanticTokens({
     }
   }
 
+  const previewFocus = focusForNavKey(activeKey) ?? 'surface'
+  const editFromPreview = (id: string) => {
+    setQuery('')
+    // From the Variables-preview panel there's no column — open on whatever
+    // appearance the preview is currently showing.
+    setDetailsMode(null)
+    if (isFlat) {
+      const category = flatCategoryForRole(id)
+      if (category) selectCategory(category)
+      setExpandedRole(id)
+    } else {
+      const category = archView ? archNavForToken(id, archView.categories) : null
+      if (category) {
+        setArchCategory(category)
+        onFocusChange?.(focusForNavKey(category) ?? 'all')
+      }
+      setArchEditing(id)
+    }
+    setFlashKey(id)
+    window.setTimeout(() => document.getElementById(`color-role-${id}`)?.scrollIntoView({ block: 'center' }), 60)
+    window.setTimeout(() => setFlashKey(null), 1400)
+  }
+
   // Non-flat table rows — straight from the projection, filtered by search.
   // Keys repeat across groups (content.primary vs action.primary), so rows are
   // group-qualified: unique React keys AND unambiguous names in the All view.
@@ -1022,6 +1114,7 @@ export default function Step3_SemanticTokens({
   useEffect(() => {
     if (!revealRole?.key) return
     setQuery('')
+    setDetailsMode(null)
 
     if (revealRole.as === 'group') {
       const focus = revealRole.key as SemanticFocus
@@ -1073,7 +1166,7 @@ export default function Step3_SemanticTokens({
   // otherwise collapse to 0 on narrow panes (overflow-auto scrolls). Value
   // track count follows `modeKeys` — 2 for Vibrancy/Tonal (fixed), N for
   // Categorical (one per theme, so "+ Theme" actually grows the table).
-  const archModeKeys = archView?.modeKeys ?? ['light', 'dark']
+  const archModeKeys = archView?.modeKeys ?? archThemeCols
   /**
    * The heading for one value column. A PER_THEME architecture's columns ARE
    * the project's themes, so they take the user's own theme names; a fixed-mode
@@ -1101,7 +1194,7 @@ export default function Step3_SemanticTokens({
   ].join('/')
   const archGridStyle: React.CSSProperties = {
     // Last track = the edit toggle, mirroring the flat matrix's trailing column.
-    gridTemplateColumns: `minmax(${NAME_MIN_TRACK},1.4fr) ${archModeKeys.map(() => 'minmax(8.5rem,1fr)').join(' ')} ${TRAIL_TRACK}`,
+    gridTemplateColumns: `minmax(${DEFAULT_NAME_W}px, 1.15fr) ${archModeKeys.map(() => `minmax(${MIN_COL_W}px, 1fr)`).join(' ')} ${TRAIL_TRACK}`,
   }
 
   if (!ready) {
@@ -1120,13 +1213,8 @@ export default function Step3_SemanticTokens({
     <div className="h-full flex flex-col">
       {/* ── Body: categories flush under Groups; tabs · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
-        <nav
-          aria-label="Token categories"
-          className={`flex-shrink-0 h-full py-1.5 flex flex-col gap-0.5 overflow-y-auto bg-app transition-[width] duration-200 ${
-            railCollapsed ? 'items-center px-2' : 'px-2'
-          }`}
-          style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-        >
+        <VariableCollectionRail collapsed={railCollapsed} ariaLabel="Color collections and groups">
+          <div role="navigation" aria-label="Semantic color groups" className={`flex flex-col gap-0.5 ${railCollapsed ? 'items-center' : ''}`}>
           {navItems.map((item) => {
             const isActive = activeKey === item.key
             return (
@@ -1145,7 +1233,7 @@ export default function Step3_SemanticTokens({
                   <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>
                   {!railCollapsed && (
                     <>
-                      <span className="flex-1 min-w-0 truncate text-[13px] font-medium">{item.label}</span>
+                      <span className="flex-1 min-w-0 truncate text-ui font-medium">{item.label}</span>
                       {item.modified > 0 && (
                         <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent-ui" aria-hidden />
                       )}
@@ -1161,54 +1249,10 @@ export default function Step3_SemanticTokens({
               </div>
             )
           })}
-        </nav>
+          </div>
+        </VariableCollectionRail>
 
         <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
-        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          {isFlat && activeCategory === 'background' && (
-            <div className="self-center flex items-center gap-2 flex-shrink-0">
-              <span className="text-[11px] text-fg-faint">Panel background</span>
-              <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
-                {(['solid', 'translucent'] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setPanelBackground(v)}
-                    aria-pressed={panelBackground === v}
-                    className={`px-2 py-1 rounded text-[11px] font-medium capitalize transition-colors ${
-                      panelBackground === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
-                    }`}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter tokens"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                aria-label="Clear filter"
-                className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
 
         {/* Token table — scrolls internally; column header stays pinned.
             `tableRef` is what the Token Details dialog docks against, so it
@@ -1218,23 +1262,24 @@ export default function Step3_SemanticTokens({
             the bottom of the VIEWPORT of the table, not at the bottom of its
             (taller, wider) content, so they can't live inside the scrolling
             element itself. */}
-        <div className="relative flex-1 min-w-0 flex min-h-0">
-        <div ref={tableRef} className="flex-1 min-w-0 overflow-auto bg-app border-l border-line">
+        <div className="flex-1 min-w-0 flex min-h-0">
+        <div className="relative flex-1 min-w-0 min-h-0">
+        <div ref={tableRef} className="h-full min-w-0 overflow-auto bg-app border-l border-line">
           {!isFlat && archView ? (
             // ── Architecture table — read-only, schema-faithful: rows and
             // values come straight from the projection the export emits. ──
             <div className="min-w-[28rem]">
               <div
-                className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
+                className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20"
                 style={archGridStyle}
               >
                 {/* Pinned, matching the rows' own name cells below. `bg-app`
                     is its own, not inherited: the header div's background
                     scrolls with the header's content box, so without a fill
                     here the mode labels would slide visibly under this one. */}
-                <span className="pl-4 py-3 border-r border-line sticky left-0 z-10 bg-app">Token name</span>
+                <span className="flex items-center pl-4 border-r border-line/60 sticky left-0 z-10 bg-app">Token name</span>
                 {archModeKeys.map((mode) => {
-                  const isPreviewed = previewTheme === mode
+                  const isPreviewed = activeAppearance === kindOf(mode)
                   const label = archModeLabel(mode)
                   // Categorical's columns ARE `themeOrder`, one per theme,
                   // same as the flat matrix — so every column is a real,
@@ -1243,7 +1288,7 @@ export default function Step3_SemanticTokens({
                   // per-theme concept, which is what this used to guard.)
                   const deletable = themeCols.length > 1
                   return (
-                    <span key={mode} className={`flex items-center border-r border-line min-w-0 px-1.5 py-1.5 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                    <span key={mode} className={`flex items-center border-r border-line/60 min-w-0 px-1.5 py-1.5 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       {/* Same "whole header is the preview toggle" affordance
                           the flat matrix's columns use — 'light'/'dark' are
                           always valid theme keys, and Categorical's added
@@ -1253,7 +1298,7 @@ export default function Step3_SemanticTokens({
                           user-arranged matrix, so reordering columns has no
                           meaning to preserve. */}
                       <button
-                        onClick={() => onPreviewThemeChange?.(mode)}
+                        onClick={() => onPreviewAppearanceChange?.(kindOf(mode))}
                         aria-label={isPreviewed ? `${label} is shown in preview` : `Preview theme ${label}`}
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${label} — shown in preview` : `Show ${label} in the preview`}
@@ -1271,20 +1316,20 @@ export default function Step3_SemanticTokens({
                           Vibrancy/Tonal's fixed light/dark), so the edit
                           affordance isn't gated on `isThemeCol` the way
                           delete is. */}
-                      <button
+                      {!managedThemesExternally && <button
                         onClick={() => openAddTheme(mode)}
                         aria-label={`Edit theme ${label}`}
                         title={`Edit theme ${label}`}
                         className="text-fg-faint hover:text-fg transition-colors flex-shrink-0 px-1"
                       >
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                      </button>
-                      {deletable && (
+                      </button>}
+                      {!managedThemesExternally && deletable && (
                         <button
                           onClick={() => setThemeToDelete(mode)}
                           aria-label={`Remove theme ${label}`}
                           title={`Remove theme ${label}`}
-                          className="text-fg-faint hover:text-red-500 transition-colors flex-shrink-0 px-1"
+                          className="text-fg-faint hover:text-status-danger transition-colors flex-shrink-0 px-1"
                         >
                           <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
                         </button>
@@ -1307,7 +1352,7 @@ export default function Step3_SemanticTokens({
                     modes should make the MIDDLE of the table scroll, not
                     shove this column away. */}
                 <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
-                  {true ? (
+                  {!managedThemesExternally ? (
                     <button
                       onClick={() => openAddTheme()}
                       aria-label="Add a theme"
@@ -1342,14 +1387,14 @@ export default function Step3_SemanticTokens({
                       // `group` so the pinned name cell can re-paint this row's
                       // hover tint over its own opaque base (the flat matrix's
                       // row already carried it).
-                      className="grid items-center border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04]"
+                      className={tableRowClass(idx, 'grid', { zebra: false })}
                       style={archGridStyle}
                     >
                       {/* Pinned name cell — the arch half of the same fix the
                           flat matrix's `MatrixRow` carries; see its comment for
                           the opaque-base + two-overlay layering and why the
                           inner button needs `relative`. */}
-                      <div className="flex items-center gap-2.5 py-2.5 pl-4 pr-3 min-w-0 border-r border-line sticky left-0 z-10 bg-app">
+                      <div className="flex items-center gap-2 py-2 pl-3 pr-2 min-w-0 border-r border-line/60 sticky left-0 z-10 bg-app">
                         <span
                           aria-hidden
                           className={`absolute inset-0 pointer-events-none ${
@@ -1358,14 +1403,14 @@ export default function Step3_SemanticTokens({
                         />
                         <span aria-hidden className="absolute inset-0 pointer-events-none group-hover:bg-black/[0.025] dark:group-hover:bg-white/[0.04]" />
                         <button
-                          onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
-                          className="relative flex items-center gap-2.5 min-w-0 text-left flex-1"
+                          onClick={() => editable && (setDetailsMode(null), setArchEditing(isOpen ? null : t.id))}
+                          className="relative flex items-center gap-2 min-w-0 text-left flex-1"
                           aria-label={`Edit ${t.name} scale`}
                         >
                           <span className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-fg-muted" aria-hidden>
                             <PaletteIcon size={16} />
                           </span>
-                          <code className="font-mono text-[12px] text-fg-muted truncate" title={t.name}>{t.name}</code>
+                          <code className="font-mono text-body text-fg-muted truncate" title={t.name}>{t.name}</code>
                           {archModeKeys.some((m) => t.edited?.[m]) && (
                             <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified from the schema" />
                           )}
@@ -1374,7 +1419,7 @@ export default function Step3_SemanticTokens({
                       {archModeKeys.map((mode) => (
                         <button
                           key={mode}
-                          onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
+                          onClick={() => editable && (setDetailsMode(mode), setArchEditing(isOpen ? null : t.id))}
                           // Border-r on EVERY mode column, including the last —
                           // the header above already puts one after every mode
                           // (unconditionally, see its `archModeKeys.map`), so
@@ -1382,7 +1427,7 @@ export default function Step3_SemanticTokens({
                           // no divider before the trailing edit-icon cell while
                           // the header still showed one. Same fix as the
                           // Primitives table, which never had this gap.
-                          className="flex items-center min-w-0 px-3 py-3 text-left border-r border-line"
+                          className="flex items-center min-w-0 px-2 py-2.5 text-left border-r border-line/60"
                         >
                           <TokenCell
                             v={t.modes[mode]}
@@ -1394,7 +1439,7 @@ export default function Step3_SemanticTokens({
                       ))}
                       {/* Filter / edit toggle — glass plate on `STICKY_TRAIL`. */}
                       <button
-                        onClick={() => editable && setArchEditing(isOpen ? null : t.id)}
+                        onClick={() => editable && (setDetailsMode(null), setArchEditing(isOpen ? null : t.id))}
                         aria-expanded={isOpen}
                         aria-label={isOpen ? 'Close Token Details' : 'Edit scale'}
                         disabled={!editable}
@@ -1413,11 +1458,11 @@ export default function Step3_SemanticTokens({
           ) : (
           <div className="min-w-[26rem]">
             {/* Column header — one column per theme; custom themes are removable */}
-            <div className="grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
+            <div className="grid items-stretch h-[52px] border-b border-line/60 bg-app text-mini font-semibold uppercase tracking-widest text-fg-faint sticky top-0 z-20" style={gridStyle}>
               {/* Pinned — see the arch header's matching cell. `sticky` is a
                   positioned value, so it still anchors the resize grip below
                   exactly as `relative` did. */}
-              <span className="group pl-4 py-3 border-r border-line sticky left-0 z-10 bg-app">
+              <span className="group flex items-center pl-4 border-r border-line/60 sticky left-0 z-10 bg-app">
                 Token name
                 <span
                   onPointerDown={(e) => {
@@ -1435,14 +1480,15 @@ export default function Step3_SemanticTokens({
                 />
               </span>
               {themeCols.map((t) => {
-                const isPreviewed = previewTheme === t
+                const isPreviewed = activeAppearance === kindOf(t)
                 const displayName = themeDisplayName(t)
                 const canDelete = themeCols.length > 1
                 return (
                   <span
                     key={t}
-                    draggable
+                    draggable={!managedThemesExternally}
                     onDragStart={(e) => {
+                      if (managedThemesExternally) { e.preventDefault(); return }
                       if (resizingRef.current) { e.preventDefault(); return }
                       dragThemeRef.current = t; setDragTheme(t); e.dataTransfer.effectAllowed = 'move'
                     }}
@@ -1450,9 +1496,9 @@ export default function Step3_SemanticTokens({
                     onDragLeave={() => setDropTarget((cur) => (cur === t ? null : cur))}
                     onDrop={(e) => { e.preventDefault(); if (dragThemeRef.current) reorderColumns(dragThemeRef.current, t); dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
                     onDragEnd={() => { dragThemeRef.current = null; setDragTheme(null); setDropTarget(null) }}
-                    className={`group relative flex items-center gap-1 px-1.5 py-2 border-r border-line min-w-0 cursor-grab active:cursor-grabbing transition-colors ${
+                    className={`group relative flex items-center gap-1 px-1.5 py-2 border-r border-line/60 min-w-0 transition-colors ${
                       isPreviewed ? 'bg-accent-ui/[0.06]' : ''
-                    } ${dragTheme === t ? 'opacity-40' : ''}`}
+                    } ${managedThemesExternally ? '' : 'cursor-grab active:cursor-grabbing'} ${dragTheme === t ? 'opacity-40' : ''}`}
                   >
                     {dropTarget === t && (
                       <span className="absolute inset-y-0 left-0 w-0.5 bg-accent-ui z-20" aria-hidden />
@@ -1460,7 +1506,7 @@ export default function Step3_SemanticTokens({
                     {/* Whole name is the toggle — the active theme reads as a
                         highlighted pill (same language as the category rail). */}
                     <button
-                      onClick={() => onPreviewThemeChange?.(t)}
+                      onClick={() => onPreviewAppearanceChange?.(kindOf(t))}
                       aria-label={isPreviewed ? `${displayName} is shown in preview` : `Preview theme ${displayName}`}
                       aria-pressed={isPreviewed}
                       title={isPreviewed ? `${displayName} — shown in preview` : `Show ${displayName} in the preview`}
@@ -1485,20 +1531,20 @@ export default function Step3_SemanticTokens({
                         one-shot form with no edit entry point, so a typo'd
                         name or a slot you wanted pointed elsewhere meant
                         deleting the theme and starting over. */}
-                    <button
+                    {!managedThemesExternally && <button
                       onClick={() => openAddTheme(t)}
                       aria-label={`Edit theme ${displayName}`}
                       title={`Edit theme ${displayName}`}
                       className="text-fg-faint hover:text-fg transition-colors flex-shrink-0"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                    </button>
-                    {canDelete && (
+                    </button>}
+                    {!managedThemesExternally && canDelete && (
                       <button
                         onClick={() => setThemeToDelete(t)}
                         aria-label={`Remove theme ${displayName}`}
                         title={`Remove theme ${displayName}`}
-                        className="text-fg-faint hover:text-red-500 transition-colors flex-shrink-0"
+                        className="text-fg-faint hover:text-status-danger transition-colors flex-shrink-0"
                       >
                         <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 2 2 10M2 2l8 8"/></svg>
                       </button>
@@ -1525,14 +1571,14 @@ export default function Step3_SemanticTokens({
                   viewport, since it's the one with the full 89-role matrix
                   and no architecture curating it down. */}
               <span className={`flex items-center justify-center py-1.5 ${STICKY_TRAIL}`}>
-                <button
+                {!managedThemesExternally && <button
                   onClick={() => openAddTheme()}
                   aria-label="Add a theme"
                   title="Add a theme — its roles resolve through the primary colors"
                   className="flex items-center justify-center w-7 h-7 rounded-lg border border-line text-fg-faint hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M6 2v8M2 6h8"/></svg>
-                </button>
+                </button>}
               </span>
             </div>
 
@@ -1546,15 +1592,15 @@ export default function Step3_SemanticTokens({
                   key={role.key}
                   role={role}
                   index={idx}
-                  cols={themeCols.map((t) => {
-                    const kind = kindOf(t)
+                  cols={themeCols.map((appearance) => {
+                    const kind = kindOf(appearance)
                     return {
-                      key: t,
+                      key: appearance,
                       kind,
-                      scale: scaleFor(t, role, kind),
-                      value: themes[t]?.[role.key] ?? '',
-                      recTone: recToneFor(role, kind, scaleFor(t, role, kind)),
-                      previewed: previewTheme === t,
+                      scale: scaleFor(appearance, role),
+                      value: activeThemeSemantics[appearance]?.[role.key] ?? '',
+                      recTone: recToneFor(role, kind, scaleFor(appearance, role)),
+                      previewed: activeAppearance === appearance,
                     }
                   })}
                   modified={isModified(role)}
@@ -1562,7 +1608,10 @@ export default function Step3_SemanticTokens({
                   flash={flashKey === role.key}
                   gridStyle={gridStyle}
                   naming={colorNaming}
-                  onToggle={() => setExpandedRole((cur) => (cur === role.key ? null : role.key))}
+                  onToggle={(colKey) => {
+                    setDetailsMode(colKey ?? null)
+                    setExpandedRole((cur) => (cur === role.key ? null : role.key))
+                  }}
                 />
               ))
             )}
@@ -1571,7 +1620,9 @@ export default function Step3_SemanticTokens({
         </div>
         <ScrollPager scrollRef={tableRef} watch={scrollWatch} reduce={reduce} />
         </div>
+        <SemanticPreviewPane previewTheme={activeTheme} previewAppearance={activeAppearance} focus={previewFocus} onEditToken={editFromPreview} />
         </div>
+      </div>
       </div>
 
       {/* Token Details — one instance per architecture kind, since flat and
@@ -1583,15 +1634,15 @@ export default function Step3_SemanticTokens({
         {isFlat && expandedRole && (() => {
           const role = ALL_ROLES.find((r) => r.key === expandedRole)
           if (!role) return null
-          const cols: ThemeCol[] = themeCols.map((t) => {
-            const kind = kindOf(t)
+          const cols: ThemeCol[] = themeCols.map((appearance) => {
+            const kind = kindOf(appearance)
             return {
-              key: t,
+              key: appearance,
               kind,
-              scale: scaleFor(t, role, kind),
-              value: themes[t]?.[role.key] ?? '',
-              recTone: recToneFor(role, kind, scaleFor(t, role, kind)),
-              previewed: previewTheme === t,
+              scale: scaleFor(appearance, role),
+              value: activeThemeSemantics[appearance]?.[role.key] ?? '',
+              recTone: recToneFor(role, kind, scaleFor(appearance, role)),
+              previewed: activeAppearance === appearance,
             }
           })
           return (
@@ -1602,10 +1653,16 @@ export default function Step3_SemanticTokens({
               description={cleanDescription(role.description)}
               onReset={() => resetRole(role)}
               resetDisabled={!isModified(role)}
-              onClose={() => setExpandedRole(null)}
+              onClose={() => { setExpandedRole(null); setDetailsMode(null) }}
               reduce={reduce}
               anchorRef={tableRef}
-              initialOpenKey={previewTheme}
+              // The clicked column's own key (`col.key` is a bare 'light' /
+              // 'dark', which is exactly what the sections below are keyed by);
+              // absent that, the previewed appearance. This was
+              // `themeModeKey(...)` — a 'Theme::light' string that matched NO
+              // section, so it always silently fell through to `sections[0]`
+              // (the theme's preferred appearance, usually Dark).
+              initialOpenKey={detailsMode ?? activeAppearance}
               sections={cols.map((col) => ({
                 key: col.key,
                 label: col.key,
@@ -1616,7 +1673,7 @@ export default function Step3_SemanticTokens({
                       scale={col.scale}
                       selectedTone={toneIndexOf(col.scale, col.value)}
                       recommendedTone={col.recTone}
-                      onChange={(hex) => setThemeToken(col.key, role.key, hex)}
+                      onChange={(hex) => setThemeModeToken(activeTheme, col.kind, role.key, hex)}
                     />
                     {/* Per-section now, not once at the bottom: with the modes
                         collapsible, a single trailing axis would belong to
@@ -1642,10 +1699,14 @@ export default function Step3_SemanticTokens({
                 for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, t.id, mode, null)
               }}
               resetDisabled={!archModeKeys.some((m) => t.edited?.[m])}
-              onClose={() => setArchEditing(null)}
+              onClose={() => { setArchEditing(null); setDetailsMode(null) }}
               reduce={reduce}
               anchorRef={tableRef}
-              initialOpenKey={previewTheme}
+              // `archModeKeys` may be bare 'light'/'dark' (categorical) OR
+              // 'Theme::light' mode keys — so resolve the previewed fallback by
+              // MATCHING `kindOf`, not by assuming a format. A clicked column
+              // always passes its own exact `mode` string via `detailsMode`.
+              initialOpenKey={detailsMode ?? (archModeKeys.find((m) => kindOf(m) === activeAppearance) ?? archModeKeys[0])}
               // No ToneAxisRow in these sections: SystemRampGrid prints its own
               // 1–12 axis under each mode's ramps, and a bare grid-cols-12 row
               // would sit misaligned anyway — it lacks the grid's leading
@@ -1663,6 +1724,8 @@ export default function Step3_SemanticTokens({
                       scales={scales}
                       palette={resolvedPalettes[mode]}
                       kind={kindOf(mode)}
+                      pageBackground={pageBackground}
+                      darkBackground={darkBackground}
                       label={archModeLabel(mode)}
                       onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
                     />
@@ -1682,7 +1745,7 @@ export default function Step3_SemanticTokens({
           />
         )}
       </AnimatePresence>
-      <ThemePanel
+      {!managedThemesExternally && <ThemePanel
         open={addThemeOpen !== false}
         editKey={typeof addThemeOpen === 'string' ? addThemeOpen : null}
         onClose={() => setAddThemeOpen(false)}
@@ -1693,7 +1756,7 @@ export default function Step3_SemanticTokens({
           if (previewTheme === oldKey) onPreviewThemeChange?.(newKey)
           setAddThemeOpen((cur) => (cur === oldKey ? newKey : cur))
         }}
-      />
+      />}
     </div>
   )
 }

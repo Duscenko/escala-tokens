@@ -4,14 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore, RESERVED_COLOR_KEYS, type ThemePalette, type ThemeSources } from '../../store/useDesignStore'
 import { resolveThemePalette, FAMILY_SLOTS, type FamilySlot } from '../../lib/themeSources'
 import {
-  BASE_TONE, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony, readableInk,
+  BASE_TONE, backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, previewHarmony, readableInk,
   type NeutralTint,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import {
-  SWATCH, ScaleRow, usePopoverPlacement, curatedPaletteFor,
+  SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
 } from './colorControls'
 
@@ -34,12 +34,6 @@ const SLOTS: { slot: FamilySlot; label: string; family: string }[] = [
   { slot: 'info',    label: 'Info',    family: 'info' },
 ]
 
-/** Rendered width of the slot picker's panel. A literal number rather than
- *  `w-64`, because the panel is `fixed`-positioned and the same value has to
- *  clamp it inside the viewport — and `w-64` is 288px here, not 256 (this app's
- *  root font-size is 18px). */
-const PICKER_W = 288
-
 /** One slot's row: a clickable swatch + name + hex that opens the SAME
  *  `ColorPickerPanel` popover Primitives' family rows use, over the ramp that
  *  slot resolves to. Same interaction, same panel, same curated palette — this
@@ -57,90 +51,6 @@ function SlotRow({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-  // Tall panel in a narrow 400px column — same measurement the other pickers
-  // use rather than a fixed max-height.
-  const place = usePopoverPlacement(ref, open)
-
-  // Portaled to <body> and positioned `fixed`, for the same reason
-  // `ColumnExportMenu` and Primitives' family picker are: this row lives inside
-  // the panel body's `overflow-y-auto`, which CLIPS an absolutely-positioned
-  // ~540px panel at that container's bottom edge. No z-index fixes an overflow
-  // clip.
-  const [rect, setRect] = useState<DOMRect | null>(null)
-  useEffect(() => {
-    if (!open) { setRect(null); return }
-    const measure = () => { const r = ref.current?.getBoundingClientRect(); if (r) setRect(r) }
-    measure()
-    window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true) }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      const t = e.target as Node
-      // The panel is no longer a DOM descendant of the row, so checking only
-      // the row would close the picker on its own clicks.
-      if (ref.current?.contains(t) || panelRef.current?.contains(t)) return
-      setOpen(false)
-    }
-    // Escape closes the PICKER, not the whole panel. Both this and the aside's
-    // own Escape handler sit on `document`, so this one runs in the CAPTURE
-    // phase — document-capture fires before document-bubble, and stopping
-    // propagation there keeps the aside's handler from also firing. Without
-    // it, dismissing a colour picker threw away the half-filled theme behind
-    // it, which is a lot to lose to one keystroke.
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey, true)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey, true)
-    }
-  }, [open])
-
-  const panel = open && rect
-    ? createPortal(
-        <AnimatePresence>
-          <motion.div
-            ref={panelRef}
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            role="dialog"
-            aria-label={`${label} color`}
-            onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              position: 'fixed',
-              left: Math.min(rect.left, window.innerWidth - PICKER_W - 12),
-              ...(place.up
-                ? { bottom: window.innerHeight - rect.top + 8 }
-                : { top: rect.bottom + 8 }),
-              maxHeight: place.max,
-              width: PICKER_W,
-            }}
-            className="z-[60] rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden"
-          >
-            <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-shrink-0">
-              <span className={SWATCH} style={{ backgroundColor: value }} />
-              <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{label}</span>
-              <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{value.toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
-              <ColorPickerPanel value={value} onChange={onChange} suggestions palette={curatedPaletteFor(family)} />
-            </div>
-          </motion.div>
-        </AnimatePresence>,
-        document.body,
-      )
-    : null
 
   return (
     <div className="flex items-center gap-3">
@@ -157,12 +67,20 @@ function SlotRow({
           }`}
         >
           <span className={SWATCH} style={{ backgroundColor: value }} />
-          <span className="flex-1 min-w-0 text-left text-[13px] text-fg truncate">{label}</span>
+          <span className="flex-1 min-w-0 text-left text-ui text-fg truncate">{label}</span>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
             <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        {panel}
+        <ColorPickerPopover
+          open={open}
+          onClose={() => setOpen(false)}
+          anchor={ref}
+          label={label}
+          value={value}
+          onChange={onChange}
+          palette={curatedPaletteFor(family)}
+        />
       </div>
       <div className="flex-1 min-w-0">
         <ScaleRow scale={scale} showNumbers={false} ariaLabel={`${label} scale`} />
@@ -223,24 +141,45 @@ export function slotsFromAccent(hex: string, tint: NeutralTint): Record<FamilySl
  *
  * Both are handled here, once, so neither entry point can drift again.
  */
-function scalesForSlot(slot: FamilySlot, hex: string, s: ReturnType<typeof useDesignStore.getState>) {
+/**
+ * The two pages a minted family's ramps are anchored to.
+ *
+ * Normally the SYSTEM's pages — a theme is a reading of one set of primitives,
+ * and they all sit on the same paper. A System Style is the exception: it
+ * brings its own neutral AND its own `neutralTint`, and the page is derived
+ * from exactly that pair (`backgroundFromBase`). Anchoring a warm `tinted`
+ * neutral to the open system's white page is what made every style adopt
+ * identically — the same defect `stylePreviewOverlay` carried, and it has to be
+ * fixed in BOTH or "Add to system" stops matching what was previewed.
+ */
+export interface MintPages { light: string; dark: string }
+
+function scalesForSlot(
+  slot: FamilySlot,
+  hex: string,
+  s: ReturnType<typeof useDesignStore.getState>,
+  neutralTint: NeutralTint = s.neutralTint,
+  pages: MintPages = { light: s.pageBackground, dark: s.darkBackground },
+) {
   if (slot === 'gray') {
     return {
-      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground, 'light', s.neutralTint),
-      darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground, s.neutralTint),
+      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light, 'light', neutralTint),
+      darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark, neutralTint),
     }
   }
   return {
-    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground),
-    darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground),
+    scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
+    darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
   }
 }
 
-function mintTheme(
+export function mintTheme(
   chosen: Record<FamilySlot, string>,
   kind: 'light' | 'dark',
   nameLabel: string,
   editKey: string | null,
+  neutralTint?: NeutralTint,
+  pages?: MintPages,
 ): { key: string; renamedFrom?: string } | { error: string } {
   const s = useDesignStore.getState()
   const typed = nameLabel.trim()
@@ -285,7 +224,7 @@ function mintTheme(
         key: familyKey,
         label: titleCaseKey(familyKey),
         base: slotHex,
-        ...scalesForSlot(slot, slotHex, s),
+        ...scalesForSlot(slot, slotHex, s, neutralTint, pages),
       })
       refs[slot] = familyKey
     }
@@ -347,7 +286,7 @@ function ThemeForm({
   const {
     themes, themeKinds, themeSources, neutralTint,
     primaryColor, grayBaseColor, errorColor, warningColor, successColor, infoColor,
-    colorAlgorithm, contrastShift, pageBackground, darkBackground,
+    colorAlgorithm, contrastShift,
   } = store
   const isEdit = !!editKey
   // light/dark are the export's reserved keys (semantic / semanticDark) — their
@@ -391,6 +330,15 @@ function ThemeForm({
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
+  // A theme's page belongs to its Neutral, not to whichever system happened
+  // to be open while the theme was created. Tone 1 is the page anchor for
+  // every family, so using the global purple page here made newly minted
+  // green/orange/blue themes keep a purple first step forever.
+  const themePages = useMemo(() => ({
+    light: backgroundFromBase(slots.gray, 'light', neutralTint),
+    dark: backgroundFromBase(slots.gray, 'dark', neutralTint),
+  }), [slots.gray, neutralTint])
+
   function setAccent(hex: string) {
     setErr(null)
     setSlots((prev) => {
@@ -423,13 +371,13 @@ function ThemeForm({
     try {
       if (dark) {
         return isNeutral
-          ? generateDarkColorScale(hex, colorAlgorithm, contrastShift, darkBackground, neutralTint)
-          : generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, darkBackground)
+          ? generateDarkColorScale(hex, colorAlgorithm, contrastShift, themePages.dark, neutralTint)
+          : generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, themePages.dark)
       }
-      return generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground, 'light', isNeutral ? neutralTint : undefined)
+      return generateColorScale(hex, colorAlgorithm, contrastShift, themePages.light, 'light', isNeutral ? neutralTint : undefined)
     } catch { return {} }
   }
-  const deps = [dark, colorAlgorithm, contrastShift, pageBackground, darkBackground, neutralTint]
+  const deps = [dark, colorAlgorithm, contrastShift, themePages.light, themePages.dark, neutralTint]
   /* eslint-disable react-hooks/exhaustive-deps */
   const scales: Record<FamilySlot, Record<number, string>> = {
     brand:   useMemo(() => rampFor(slots.brand, false), [slots.brand, ...deps]),
@@ -443,14 +391,14 @@ function ThemeForm({
 
   function handleSubmit() {
     setErr(null)
-    const result = mintTheme(slots, kind, name, editKey)
+    const result = mintTheme(slots, kind, name, editKey, neutralTint, themePages)
     if ('error' in result) { setErr(result.error); return }
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
     else if (!isEdit) onCreated?.(result.key)
     onClose()
   }
 
-  const page = dark ? darkBackground : pageBackground
+  const page = dark ? themePages.dark : themePages.light
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
@@ -463,7 +411,7 @@ function ThemeForm({
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">
           {isEdit ? 'Edit theme' : 'New theme'}
         </h2>
-        <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">
+        <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
           {slots.brand.toUpperCase()}
         </span>
         <button
@@ -496,7 +444,7 @@ function ThemeForm({
             title={nameLocked ? 'Locked — reserved export key' : undefined}
             autoFocus={!nameLocked}
             spellCheck={false}
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none placeholder:text-fg-faint focus:border-fg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-line bg-surface text-body text-fg outline-none placeholder:text-fg-faint focus:border-fg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           />
           {/* The ACTIVE side is painted in that mode's real page colour, ink
               solved against it — so the selection is visible regardless of
@@ -504,14 +452,14 @@ function ThemeForm({
           <div className="flex flex-shrink-0 rounded-lg border border-line overflow-hidden" role="group" aria-label="Theme mode">
             {(['light', 'dark'] as const).map((k) => {
               const on = kind === k
-              const bg = k === 'dark' ? darkBackground : pageBackground
+              const bg = k === 'dark' ? themePages.dark : themePages.light
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => setKind(k)}
                   aria-pressed={on}
-                  className={`px-2 py-1.5 text-[11px] font-medium capitalize transition-colors ${
+                  className={`px-2 py-1.5 text-caption font-medium capitalize transition-colors ${
                     on ? '' : 'bg-surface text-fg-muted hover:text-fg'
                   }`}
                   style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
@@ -523,7 +471,7 @@ function ThemeForm({
           </div>
         </div>
         {nameLocked && (
-          <p className="text-[10.5px] text-fg-faint -mt-1.5">Name locked — reserved export key.</p>
+          <p className="text-mini text-fg-faint -mt-1.5">Name locked — reserved export key.</p>
         )}
 
         {/* Accent — the one required decision. `.light`/`.dark` are the app's
@@ -536,7 +484,7 @@ function ThemeForm({
           style={{ backgroundColor: page }}
           aria-live="polite"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint mb-2.5">
+          <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-2.5">
             {dark ? 'Dark theme' : 'Light theme'} · accent
           </p>
           <ColorPickerPanel
@@ -562,8 +510,8 @@ function ThemeForm({
             className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-elevated/50 transition-colors"
           >
             <span className="flex-1 min-w-0">
-              <span className="block text-[12px] font-medium text-fg">Adjust colours</span>
-              <span className="block text-[10.5px] text-fg-faint">
+              <span className="block text-body font-medium text-fg">Adjust colours</span>
+              <span className="block text-mini text-fg-faint">
                 {derived.size === FAMILY_SLOTS.length - 1
                   ? 'Neutral and the four states follow the accent'
                   : `${FAMILY_SLOTS.length - 1 - derived.size} set by hand`}
@@ -584,8 +532,8 @@ function ThemeForm({
               >
                 <section className={`${dark ? 'dark' : 'light'} border-t border-line p-3 flex flex-col gap-2.5`} style={{ backgroundColor: page }}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Slots</span>
-                    <span className="text-[10.5px] text-fg-faint">{dark ? 'Dark ramps' : 'Light ramps'}</span>
+                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Slots</span>
+                    <span className="text-mini text-fg-faint">{dark ? 'Dark ramps' : 'Light ramps'}</span>
                   </div>
                   {SLOTS.map(({ slot, label, family }) => (
                     <SlotRow
@@ -603,7 +551,7 @@ function ThemeForm({
           </AnimatePresence>
         </div>
 
-        {err ? <p className="text-[11px] text-red-500">{err}</p> : null}
+        {err ? <p className="text-caption text-status-danger">{err}</p> : null}
       </div>
 
       {/* Pinned footer — the commit stays reachable without scrolling past the
@@ -664,6 +612,8 @@ export default function ThemePanel({
   onCreated,
   appearance = 'light',
   railCollapsed = false,
+  dockLeftOverride,
+  dockTopOverride,
 }: {
   open: boolean
   onClose: () => void
@@ -674,12 +624,17 @@ export default function ThemePanel({
   /** Primitives' family column can collapse to a swatch strip; the dock
    *  follows it so the panel never overlaps the column it sits beside. */
   railCollapsed?: boolean
+  /** Alternate rail boundary for callers outside Color (Themes Library). */
+  dockLeftOverride?: number
+  /** Alternate shell row boundary for callers outside Color. */
+  dockTopOverride?: number
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [dockTop, setDockTop] = useState(SHELL_ROWS)
 
   useLayoutEffect(() => {
     if (!open) return
+    if (dockTopOverride != null) return
     const measure = () => {
       const nav = document.querySelector('nav[aria-label="Color families"]')
       const t = nav?.getBoundingClientRect().top
@@ -688,7 +643,7 @@ export default function ThemePanel({
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [open])
+  }, [open, dockTopOverride])
 
   useEffect(() => {
     if (!open) return
@@ -714,7 +669,8 @@ export default function ThemePanel({
 
   if (typeof document === 'undefined') return null
 
-  const dockLeft = railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH
+  const dockLeft = dockLeftOverride ?? (railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH)
+  const effectiveDockTop = dockTopOverride ?? dockTop
   const width = typeof window === 'undefined'
     ? PANEL_W
     : Math.min(PANEL_W, Math.max(280, window.innerWidth - dockLeft - 16))
@@ -734,7 +690,7 @@ export default function ThemePanel({
           style={{
             position: 'fixed',
             left: dockLeft,
-            top: dockTop,
+            top: effectiveDockTop,
             bottom: DOCK_BOTTOM,
             width,
           }}

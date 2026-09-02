@@ -1,18 +1,34 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useDesignStore } from '../../store/useDesignStore'
-import { isLiveEnvironment } from '../../lib/figmaSync'
-import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
-import ThemeToggle from './ThemeToggle'
+import { LOCALES, useI18n } from '../../lib/i18n'
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
 // Section switching lives HERE — there is no left icon rail. The bar is split
 // by a vertical divider that continues down the workspace: the brand block on
 // the left sits over the token-controls column, the nav + actions on the right
 // sit over the canvas.
+//
+// The right cluster: the token search (contextual — passed as `search`, only
+// present while the Generator workspace is open), then the language switcher and
+// the light/dark appearance toggle. Two things that used to live here are gone:
+//   • Export — it is not a global-chrome concern; its entry points are inside
+//     the Docs destination and the theme workspace's own hand-off rows.
+//   • The ☰ Workspace-settings menu — System library, Figma and GitHub are all
+//     reachable from their own surfaces now (SaveSidePanel, and the Figma /
+//     GitHub pills in the theme-workspace tab strip), and the one thing it
+//     owned that IS global chrome — the appearance toggle — moved out here.
+//
+// The token search sat in the Themes-workspace tab strip for a while (the
+// argument being "per-workspace tool, not global chrome"), then came back up
+// here at the user's call: it's the workspace's primary way to FIND a token,
+// and the tab strip was already carrying the two Sync pills plus three tabs —
+// one row doing four jobs. Up here it sits beside the other two session
+// controls (Language, Appearance) and the tab strip breathes. It is still
+// contextual, not global: `Configurator` passes `search` only on the Generator
+// tab (`themesCanvas`), so it's absent on About / Components / Docs where there
+// are no tokens to filter. `colorSearchRef` / ⌘K are unchanged.
 
-// FOUR destinations: read "what this is" (About, first — see below), EDIT the
-// system (Variables Generator), browse the component catalogue (Components),
+// FOUR destinations: read "what this is" (About, first — see below), EXPLORE
+// and edit the system by theme, browse the component catalogue (Components),
 // or read the token reference (Docs). Components and Docs used to be one
 // "Documentation" destination with two groups sharing a rail (Foundations +
 // Categories) — split apart because browsing components and reading token
@@ -28,10 +44,11 @@ import ThemeToggle from './ThemeToggle'
 // visitor there by default (`hasOnboarded()`, `lib/onboarding.ts`), making it
 // the workspace's landing surface without reviving a wizard/HomeView.
 export type TopNavKey = 'about' | 'variables' | 'components' | 'docs'
+export type DocsMenuPage = 'mcp' | 'figma' | 'changelog' | 'faq'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'about', label: 'About' },
-  { key: 'variables', label: 'Variables Generator' },
+  { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
   { key: 'docs', label: 'Docs' },
 ]
@@ -40,24 +57,6 @@ interface TopNavProps {
   /** Lit nav item, or null in the export/connect views. */
   nav: TopNavKey | null
   onNav: (key: TopNavKey) => void
-  exportMode: 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
-  /** Opens the sync-status screen — connection state, live sync URL,
-   *  auto-sync toggle. The higher-frequency of the two Sync-hub rows (see
-   *  `SyncHubPopover`), which is why the trigger pill itself reads "Sync". */
-  onOpenSync: () => void
-  /** Opens the download-and-install screen — a one-time procedure, split out
-   *  from `onOpenSync` so checking sync status doesn't mean re-scrolling past
-   *  install instructions you finished once already. */
-  onOpenDownload: () => void
-  /** Opens the guided export wizard (CSS · Tailwind · Tokens · MD). Lives here,
-   *  not in a per-foundation header, because exporting is TRANSVERSAL — it
-   *  isn't a property of whichever foundation you happen to be editing, it's
-   *  something you reach for from anywhere in the app. */
-  onExport: () => void
-  /** Whether the export wizard is currently open, for the pill's active state —
-   *  the same convention `exportMode === 'figma-sync'/'figma-download'/'github'`
-   *  already uses for the pills beside it. */
-  exportOpen?: boolean
   /** Mirrors the left rail's own collapsed state — when the rail shrinks to
    *  an icon strip, the brand block above it shrinks the same way, so the
    *  divider between them stays one continuous line at every width. */
@@ -67,8 +66,28 @@ interface TopNavProps {
    *  (export/connect views), so the block sizes to its content and drops the
    *  border rather than leaving a rule that leads nowhere. */
   brandWidth?: number | null
-  previewTheme: string
-  onThemeChange: (theme: string) => void
+  chromeAppearance: 'light' | 'dark'
+  onChromeAppearanceChange: (appearance: 'light' | 'dark') => void
+  /** Opens one of Docs' focused subpages. Docs itself is a menu trigger, not
+   *  a catch-all landing page. */
+  onOpenDocsPage?: (page: DocsMenuPage) => void
+  /** Language switcher — placeholder until i18n lands. Optional: with no
+   *  handler the control still renders (matching the design), it just doesn't
+   *  do anything yet. */
+  onOpenLanguages?: () => void
+  /** The token-search field, built by `Configurator` (which owns `colorQuery` /
+   *  `colorSearchRef` and every consumer of the query). Passed only while the
+   *  Generator workspace is open; absent elsewhere. Sits at the LEFT of the
+   *  right-hand cluster, before Language and Appearance. */
+  search?: ReactNode
+}
+
+// A hard-#white asset painted with `currentColor` via a CSS mask — the
+// `ViewIcon` / `FolderIcon` pattern. The svg's own fill is ignored; only its
+// alpha is read, so one file serves every ink and both chromes.
+function MaskGlyph({ src, className = 'h-4 w-4' }: { src: string; className?: string }) {
+  const mask = `url('${src}') center / contain no-repeat`
+  return <span aria-hidden className={`${className} bg-current`} style={{ WebkitMask: mask, mask }} />
 }
 
 // Figma brand mark — monochrome, tracks currentColor. `className` is
@@ -87,168 +106,68 @@ export function FigmaGlyph({ className }: { className?: string } = {}) {
   )
 }
 
-// Export mark — a share/box-out arrow, the same glyph the per-foundation
-// Export pill used before it moved here.
-function ExportGlyph() {
+function SunIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20.7914 12.6074C21.0355 12.3981 21.1575 12.2935 21.2023 12.169C21.2415 12.0598 21.2415 11.9402 21.2023 11.831C21.1575 11.7065 21.0355 11.6018 20.7914 11.3926L12.3206 4.13196C11.9004 3.77176 11.6903 3.59166 11.5124 3.58725C11.3578 3.58342 11.2101 3.65134 11.1124 3.77122C11 3.90915 11 4.18589 11 4.73936V9.03462C8.86532 9.40807 6.91159 10.4897 5.45971 12.1139C3.87682 13.8845 3.00123 16.1759 3 18.551V19.1629C4.04934 17.8989 5.35951 16.8765 6.84076 16.1659C8.1467 15.5394 9.55842 15.1683 11 15.0705V19.2606C11 19.8141 11 20.0908 11.1124 20.2288C11.2101 20.3486 11.3578 20.4166 11.5124 20.4127C11.6903 20.4083 11.9004 20.2282 12.3206 19.868L20.7914 12.6074Z" />
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="8" cy="8" r="2.6" />
+      <path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M12.6 3.4l-.9.9M4.3 11.7l-.9.9" />
     </svg>
   )
 }
 
-// The outline-pill shape for TopNav's secondary action (Sync) — icon + a
-// label that hides under `sm`. `rounded-[13px]`, not `rounded-full` — the
-// same proportional squircle every other 9-size (36px) chrome control uses
-// (ThemeToggle, the About button beside it, ColorPrimitives' gear), so the
-// whole action cluster on the right of the bar shares one corner language
-// instead of pills sitting next to circles sitting next to squircles.
-function NavPill({
-  onClick, active, label, title, ariaLabel, children, ariaHasPopup, ariaExpanded,
-}: {
-  onClick: () => void
-  active?: boolean
-  label: string
-  title?: string
-  ariaLabel?: string
-  children: ReactNode
-  ariaHasPopup?: boolean
-  ariaExpanded?: boolean
-}) {
+function MoonIcon() {
   return (
-    <button
-      onClick={onClick}
-      aria-label={ariaLabel ?? label}
-      aria-haspopup={ariaHasPopup}
-      aria-expanded={ariaExpanded}
-      title={title}
-      className={`h-9 px-3.5 rounded-[13px] flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors border ${
-        active
-          ? 'border-line-strong bg-elevated text-fg'
-          : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
-      }`}
-    >
-      {children}
-      <span className="hidden sm:inline">{label}</span>
-    </button>
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M13.2 10.3A5.7 5.7 0 0 1 5.7 2.8 5.7 5.7 0 1 0 13.2 10.3Z" />
+    </svg>
   )
 }
 
-// ── The Sync hub — a compact 2-row popover, same anchor/dismiss contract as
-// HomeActions.tsx's KitsPopover (outside-click + Escape, framer-motion fade+
-// slide). Routes, doesn't do work itself: Sync (check connection status/live
-// URL) and Download (get the plugin, one-time). These used to be three
-// numbered steps stacked on ONE screen (`FigmaConnectView`, retired) that
-// auto-published tokens on every open — including opens where you only
-// wanted to glance at the sync URL. Splitting means checking status doesn't
-// mean re-scrolling past install instructions you finished once already.
-function SyncHubPopover({
-  onClose, onOpenSync, onOpenDownload, updateAvailable = false,
-}: {
-  onClose: () => void
-  onOpenSync: () => void
-  onOpenDownload: () => void
-  /** The shipped plugin build differs from the one the user last downloaded. */
-  updateAvailable?: boolean
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [onClose])
-
+function ChevronDownIcon({ open }: { open: boolean }) {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.98 }}
-      transition={{ duration: 0.15 }}
-      className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-line bg-surface shadow-[0_16px_48px_-12px_rgba(0,0,0,0.28)] z-50 overflow-hidden p-1.5"
-      role="dialog"
-      aria-label="Figma sync"
+    <svg
+      width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
     >
-      <button
-        onClick={() => { onOpenSync(); onClose() }}
-        className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-elevated/60 transition-colors"
-      >
-        <span className="flex-shrink-0 mt-0.5">
-          <FigmaGlyph />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[13px] font-semibold text-fg">Sync</span>
-          <span className="block text-[11.5px] text-fg-faint leading-relaxed">Connection status and your live sync URL.</span>
-        </span>
-      </button>
-      <button
-        onClick={() => { onOpenDownload(); onClose() }}
-        className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-elevated/60 transition-colors"
-      >
-        <span className="flex-shrink-0 mt-0.5 text-fg-muted" aria-hidden>
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
-            <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
-          </svg>
-        </span>
-        <span className="min-w-0">
-          <span className="flex items-center gap-1.5">
-            <span className="block text-[13px] font-semibold text-fg">Download plugin</span>
-            {updateAvailable && (
-              <span className="flex-shrink-0 text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent-ui/10 text-accent-ui">
-                Update
-              </span>
-            )}
-          </span>
-          <span className="block text-[11.5px] text-fg-faint leading-relaxed">
-            {updateAvailable
-              ? `A newer build is ready — v${PLUGIN_VERSION}. Re-download and re-import in Figma.`
-              : 'Get the .zip and install it in Figma.'}
-          </span>
-        </span>
-      </button>
-    </motion.div>
+      <path d="m3 4.5 3 3 3-3" />
+    </svg>
   )
 }
 
-// The filled, primary-CTA pill — Export's shape now, GitHub Connect's before
-// it. Export took over both the STYLE and the rightmost slot: it's the one
-// action that's always relevant regardless of what you're doing, the same
-// reason Connect used to sit here.
-function PrimaryPill({
-  onClick, active, label, title, ariaLabel, children,
+function ClockIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="8" cy="8" r="5.5" /><path d="M8 4.8v3.4l2.25 1.35" /></svg>
+}
+
+function HelpIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="8" cy="8" r="5.5" /><path d="M6.45 6.35a1.7 1.7 0 0 1 3.3.56c0 1.45-1.7 1.65-1.7 2.8M8 11.7h.01" /></svg>
+}
+
+// Global icon actions share one interaction language. Keeping this as one
+// primitive prevents GitHub, locale, and appearance from drifting apart as
+// their individual menus and states evolve.
+const GLOBAL_ICON_ACTION = 'grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-line bg-app text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated/60 hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
+
+// Appearance is one action, not a two-choice segment. The glyph shows the
+// destination: sun while dark is active, moon while light is active.
+function AppearanceToggle({
+  value, onChange,
 }: {
-  onClick: () => void
-  active?: boolean
-  label: string
-  title?: string
-  ariaLabel?: string
-  children: ReactNode
+  value: 'light' | 'dark'
+  onChange: (appearance: 'light' | 'dark') => void
 }) {
+  const { t } = useI18n()
+  const isDark = value === 'dark'
+  const next = isDark ? 'light' : 'dark'
   return (
     <button
-      onClick={onClick}
-      aria-label={ariaLabel ?? label}
-      title={title}
-      // Same `rounded-[13px]` as `NavPill` beside it — see that component's
-      // note. Export is the one filled pill in the row; it still has to
-      // share the row's corner language, not stand out as the one pill.
-      className={`px-4 h-9 rounded-[13px] text-[13px] font-semibold bg-fg text-app transition-all hover:opacity-90 whitespace-nowrap inline-flex items-center gap-1.5 ${
-        active ? 'ring-2 ring-fg/30' : ''
-      }`}
+      type="button"
+      onClick={() => onChange(next)}
+      aria-label={t(isDark ? 'Light appearance' : 'Dark appearance')}
+      title={t(isDark ? 'Light appearance' : 'Dark appearance')}
+      className={GLOBAL_ICON_ACTION}
     >
-      {children}
-      <span className="hidden sm:inline">{label}</span>
+      {isDark ? <SunIcon /> : <MoonIcon />}
     </button>
   )
 }
@@ -274,19 +193,49 @@ export function BrandMark() {
 }
 
 export default function TopNav({
-  nav, onNav, exportMode, onOpenSync, onOpenDownload, onExport, exportOpen = false,
-  railCollapsed = false, brandWidth = null, previewTheme, onThemeChange,
+  nav, onNav, railCollapsed = false, brandWidth = null,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search,
 }: TopNavProps) {
-  const { projectCreated, autoSyncFigma, pluginBuildSeen } = useDesignStore()
-  const [syncHubOpen, setSyncHubOpen] = useState(false)
-  // Only after a first download do we have a baseline to compare against — a
-  // first-time user has nothing to "update" from, so `null` shows no hint.
-  const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
+  const { locale, setLocale, t } = useI18n()
+  const [languageOpen, setLanguageOpen] = useState(false)
+  const [docsMenuOpen, setDocsMenuOpen] = useState(false)
+  const languageRootRef = useRef<HTMLDivElement>(null)
+  const docsRootRef = useRef<HTMLDivElement>(null)
 
-  // z-30 (not 20): Sync/Download popovers hang below this bar. The Color
-  // primitives quick-edit strip is `sticky z-20 isolate` in the canvas —
-  // equal z-index paints later siblings on top, so the ramp and Color
-  // Agent used to cover the hub. This stacking context has to win.
+  useEffect(() => {
+    if (!languageOpen) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!languageRootRef.current?.contains(event.target as Node)) setLanguageOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLanguageOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [languageOpen])
+
+  useEffect(() => {
+    if (!docsMenuOpen) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!docsRootRef.current?.contains(event.target as Node)) setDocsMenuOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDocsMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [docsMenuOpen])
+
+  // z-30 (not 20): the header must stay above the Color primitives quick-edit
+  // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
     <header className="relative z-30 flex items-stretch h-[72px] flex-shrink-0 bg-app border-b border-line">
       {/* Brand block — spans the left column below, so its right border and the
@@ -301,111 +250,129 @@ export default function TopNav({
         <BrandMark />
         {!railCollapsed && (
           <div className="min-w-0">
-            <div className="text-[14px] font-semibold text-fg truncate leading-tight">Escala Tokens</div>
-            <div className="text-[11.5px] text-fg-faint leading-tight">Token generator</div>
+            <div className="text-strong font-semibold text-fg truncate leading-tight">Escala Tokens</div>
+            <div className="text-caption text-fg-faint leading-tight">{t('Token generator')}</div>
           </div>
         )}
       </div>
 
-      {/* Nav + actions */}
-      <div className="flex-1 min-w-0 flex items-center justify-end gap-4 lg:gap-8 px-4 lg:px-8">
-        {projectCreated && (
-          <nav aria-label="Sections" className="hidden md:flex items-center gap-6 lg:gap-8 min-w-0">
-            {NAV_ITEMS.map(({ key, label }) => {
-              const on = nav === key
+      {/* Balanced three-column chrome: the section nav stays optically centered
+          while the search + language + appearance cluster is pinned right.
+          The RIGHT track is `minmax(min-content,1fr)` so it never collapses
+          under the nav — when the window narrows, the empty LEFT track gives up
+          its width first and the search field (`flex-1 min-w-0` inside) shrinks,
+          rather than the cluster overrunning the centred nav. */}
+      <div className="grid flex-1 min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center gap-3 px-4 xl:px-6">
+        <span aria-hidden />
+        <nav aria-label={t('Sections')} className="hidden min-[860px]:flex items-center gap-4 lg:gap-6 xl:gap-8 min-w-0">
+          {NAV_ITEMS.map(({ key, label }) => {
+            const on = nav === key
+            if (key === 'docs') {
+              const pages: { key: DocsMenuPage; label: string; icon: ReactNode }[] = [
+                { key: 'mcp', label: 'MCP', icon: <MaskGlyph src="/icons/settings/mcp.svg" className="h-4 w-4" /> },
+                { key: 'figma', label: 'Use in Figma', icon: <FigmaGlyph className="h-3.5 w-3.5" /> },
+                { key: 'changelog', label: 'Changelog', icon: <ClockIcon /> },
+                { key: 'faq', label: 'FAQ', icon: <HelpIcon /> },
+              ]
               return (
-                <button
+                <div
                   key={key}
-                  onClick={() => onNav(key)}
-                  aria-current={on ? 'page' : undefined}
-                  className={`text-[14px] whitespace-nowrap transition-colors ${
-                    on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
-                  }`}
+                  ref={docsRootRef}
+                  className="relative"
                 >
-                  {label}
-                </button>
-              )
-            })}
-          </nav>
-        )}
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {projectCreated && (
-            <>
-              {/* ONE Figma control, one pill — but now it opens a 2-row hub
-                  instead of jumping straight into a screen. It used to go
-                  straight to `FigmaConnectView` (retired — see
-                  `figmaShared.tsx`), which stacked download+import+sync as
-                  three numbered steps on one page and auto-published tokens
-                  on every open, including opens where you only wanted the
-                  sync URL. Split into `FigmaSyncView`/`FigmaDownloadView` —
-                  see `SyncHubPopover` above — because "download the plugin"
-                  is a one-time procedure and "check my sync status" is a
-                  recurring one, and welding them together made the common
-                  case (checking status) pay the cost of re-reading the rare
-                  one (install instructions) every time. Labelled "Sync", not
-                  "Plugin": checking status is the higher-frequency of the
-                  two rows inside the hub, so that's what the trigger itself
-                  advertises. The small dot is unrelated to the hub — it's
-                  the SAME auto-sync-is-live signal it always was, still a
-                  property of the pill regardless of which row you'd open. */}
-              <div className="relative">
-                <NavPill
-                  onClick={() => setSyncHubOpen((v) => !v)}
-                  active={exportMode === 'figma-sync' || exportMode === 'figma-download' || syncHubOpen}
-                  label="Sync"
-                  title="Sync status or download the Figma plugin"
-                  ariaLabel="Figma sync"
-                  ariaHasPopup
-                  ariaExpanded={syncHubOpen}
-                >
-                  <span className="relative inline-flex">
-                    <FigmaGlyph />
-                    {isLiveEnvironment() && autoSyncFigma && (
-                      <span className="absolute -right-1 -top-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-app" />
-                    )}
-                    {/* A newer plugin build is downloadable — distinct signal
-                        from the green auto-sync dot, so it sits bottom-right. */}
-                    {pluginUpdateAvailable && (
-                      <span className="absolute -right-1 -bottom-0.5 w-1.5 h-1.5 rounded-full bg-accent-ui ring-2 ring-app" />
-                    )}
-                  </span>
-                </NavPill>
-                <AnimatePresence>
-                  {syncHubOpen && (
-                    <SyncHubPopover
-                      onClose={() => setSyncHubOpen(false)}
-                      onOpenSync={onOpenSync}
-                      onOpenDownload={onOpenDownload}
-                      updateAvailable={pluginUpdateAvailable}
-                    />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocsMenuOpen((open) => !open)
+                    }}
+                    aria-current={on ? 'page' : undefined}
+                    aria-haspopup="menu"
+                    aria-expanded={docsMenuOpen}
+                    className={`flex items-center gap-1 rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+                      on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
+                    }`}
+                  >
+                    {t(label)}
+                    <ChevronDownIcon open={docsMenuOpen} />
+                  </button>
+                  {docsMenuOpen && (
+                    <div role="menu" aria-label={t('Docs')} className="absolute left-1/2 top-full z-[80] mt-1.5 w-40 -translate-x-1/2 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl">
+                      {pages.map((page, index) => (
+                        <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => { setDocsMenuOpen(false); onOpenDocsPage?.(page.key) }}
+                            className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+                          >
+                            <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+                            {t(page.label)}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-              {/* Export — the primary CTA now, in both style and position:
-                  it took over the filled black pill and the rightmost slot
-                  that used to belong to a standalone "Connect" GitHub button.
-                  GitHub wasn't dropped — it's reachable from INSIDE the export
-                  wizard's own "Save this design system" card (`onConnectGithub`
-                  there), which is a better home for it: pushing to a repo is
-                  something you do as part of getting your tokens out, not a
-                  parallel top-level destination competing with Export for the
-                  same "ship this system" intent. Transversal for the same
-                  reason it was before — not scoped to whichever foundation
-                  you're editing, so it lives in the global bar, not a
-                  per-section header. */}
-              <PrimaryPill
-                onClick={onExport}
-                active={exportOpen}
-                label="Export"
-                title="Copy or download this system as CSS · Tailwind · Tokens · MD"
-                ariaLabel="Export tokens"
+                </div>
+              )
+            }
+            return (
+              <button
+                key={key}
+                onClick={() => onNav(key)}
+                aria-current={on ? 'page' : undefined}
+                className={`rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+                  on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
+                }`}
               >
-                <ExportGlyph />
-              </PrimaryPill>
-            </>
-          )}
-          <ThemeToggle previewTheme={previewTheme} onThemeChange={onThemeChange} />
+                {t(label)}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Right cluster: contextual token search, then Language + Appearance.
+            The "Escala Tokens on GitHub" repo link used to lead here and was the
+            odd one out — Language and Appearance change THIS session, that link
+            leaves the app for the source, and its GitHub mark collided with the
+            user's OWN repo-sync mark in the tab strip. It moved to the footer.
+            `min-w-0` so the search shrinks (not the centered nav) when the
+            window narrows; the two icon controls stay `flex-shrink-0`. */}
+        <div className="col-start-3 flex items-center justify-self-end gap-2 min-w-0">
+          {search}
+          {/* Locale stays visible inside the menu; the trigger is icon-only so
+              it has the same 32px footprint as the other global controls. */}
+          <div ref={languageRootRef} className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => { onOpenLanguages?.(); setLanguageOpen((open) => !open) }}
+              aria-label={t('Select language')}
+              title={t('Language')}
+              aria-haspopup="menu"
+              aria-expanded={languageOpen}
+              className={`${GLOBAL_ICON_ACTION} ${languageOpen ? 'border-line-strong bg-elevated text-fg' : ''}`}
+            >
+              <MaskGlyph src="/icons/settings/languages.svg" className="h-4 w-4" />
+            </button>
+            {languageOpen && (
+              <div role="menu" aria-label={t('Select language')} className="absolute right-0 top-full z-[80] mt-2 w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl">
+                {LOCALES.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={locale === option.key}
+                    onClick={() => { setLocale(option.key); setLanguageOpen(false) }}
+                    className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+                  >
+                    <span>{option.label}</span>
+                    <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
         </div>
       </div>
     </header>

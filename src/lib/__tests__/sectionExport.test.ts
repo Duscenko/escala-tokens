@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { buildSectionExport } from '../sectionExport'
+import { buildCSS } from '../exporters'
 import { generateTokenJSON } from '../tokenGenerator'
 import { useDesignStore, makeDesignDefaults } from '../../store/useDesignStore'
 import { generateColorScale, generateFamilyDarkScale } from '../colorUtils'
@@ -121,10 +122,10 @@ describe('buildSectionExport color markdown ↔ tokens.json', () => {
     expect(mdAlpha.has('white-a-8')).toBe(true)
   })
 
-  it('adds no dark twin to a system that has no dark theme', () => {
+  it('keeps both appearance twins because every library theme owns light and dark', () => {
     seedTwoAppearanceSystem({ themeOrder: ['light'], themes: { light: {} }, themeKinds: { light: 'light' } })
     const md = buildSectionExport('color', 'md', 'hex', { modes: ['light'] })
-    expect([...mdPrimitives(md)].some((t) => t.includes('-dark-'))).toBe(false)
+    expect([...mdPrimitives(md)].some((t) => t.includes('-dark-'))).toBe(true)
     expect(mdPrimitives(md).has('accent-9')).toBe(true)
   })
 
@@ -159,5 +160,62 @@ describe('buildSectionExport grid', () => {
     expect(md).toContain('`var(--spacing-6)`')
     expect(md).toContain('`var(--spacing-4)`')
     expect(md).toContain('`var(--breakpoint-xl)`')
+  })
+})
+
+// ── Selectors ride inside the Sizes section ─────────────────────────────────
+// They are a second primitive ramp under one collection, so the Export wizard's
+// checkbox list (derived from ALL_SECTIONS) is unchanged — but every renderer
+// still has to emit them, or the slider edits a token that never ships.
+describe('buildSectionExport sizes carries the selector ramp', () => {
+  beforeEach(() => {
+    useDesignStore.setState(makeDesignDefaults())
+  })
+
+  it('CSS emits both primitive ramps and both role sets', () => {
+    const css = buildSectionExport('sizes', 'css', 'hex')
+    expect(css).toContain('--size-md: 40px;')
+    expect(css).toContain('--selector-md: 18px;')
+    expect(css).toContain('--size-control: var(--size-md);')
+    expect(css).toContain('--selector-control: var(--selector-md);')
+  })
+
+  it('markdown documents the ramp and the WCAG target-size pairing', () => {
+    const md = buildSectionExport('sizes', 'md', 'hex')
+    expect(md).toContain('`--selector-md`')
+    expect(md).toContain('--size-hit')
+  })
+
+  it('tokens.json ships selector beside sizes', () => {
+    const json = JSON.parse(buildSectionExport('sizes', 'tokens', 'hex'))
+    expect(json.selector.md).toBe('18px')
+    expect(json.selectorRoles.control).toBe('md')
+  })
+})
+
+// A sub-pixel border only renders as a hairline at 2dppx+; below that the
+// browser rounds it into an artefact. The preview floors it in JS
+// (`hairlineSafe`); the shipped CSS has to make the same promise.
+describe('buildCSS hairline guard', () => {
+  beforeEach(() => { useDesignStore.setState(makeDesignDefaults()) })
+
+  it('emits no media query while every stroke step is a whole pixel', () => {
+    expect(buildCSS(useDesignStore.getState())).not.toContain('max-resolution')
+  })
+
+  it('floors a sub-pixel step to 1px on standard-density displays', () => {
+    useDesignStore.setState({ stroke: { ...useDesignStore.getState().stroke, sm: '0.5px' } })
+    const css = buildCSS(useDesignStore.getState())
+    expect(css).toContain('--stroke-sm: 0.5px;')
+    expect(css).toMatch(/@media \(max-resolution: 1\.99dppx\) \{\s*:root \{\s*--stroke-sm: 1px;/)
+    // The focus ring is a different step and is never a hairline candidate.
+    expect(css).toContain('--stroke-md: 2px;')
+    expect(css).toContain('--stroke-focus: var(--stroke-md);')
+  })
+
+  it('ships the selector ramp and its roles in the full stylesheet', () => {
+    const css = buildCSS(useDesignStore.getState())
+    expect(css).toContain('--selector-md: 18px;')
+    expect(css).toContain('--selector-control: var(--selector-md);')
   })
 })

@@ -3,7 +3,7 @@
 // component docs render from the exact same resolved values. Fallbacks cover
 // empty semantic tokens so previews never render with undefined colors.
 
-import type { CSSProperties } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 import { withAlpha, readableInk, darkShadowMap } from './colorUtils'
@@ -11,22 +11,46 @@ import { gradientToCss } from './gradients'
 import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { buildArchitectureView } from './semanticArchitectures'
-import { fontStack } from './fonts'
+import { fontStack, loadGoogleFont } from './fonts'
 import { typeStyleCss } from './typeRoles'
-import { resolveLayoutRole, extractBreakpoints, type LayoutFamily } from './layoutTokens'
+import { resolveLayoutRole, extractBreakpoints, hairlineSafe, type LayoutFamily } from './layoutTokens'
+import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
+import { resolveThemeFoundations } from './themeFoundations'
 
 type StoreState = ReturnType<typeof useDesignStore.getState>
+
+/**
+ * `hairlineSafe` over a whole stroke ramp. The DPR read is guarded because this
+ * module is imported by node-environment tests; `2` is the honest default there
+ * (nothing is being painted, so nothing needs the 1x floor).
+ */
+function hairlineSafeMap(stroke: Record<string, string>): Record<string, string> {
+  const dpr = typeof window === 'undefined' ? 2 : window.devicePixelRatio || 1
+  if (dpr >= 2) return stroke
+  return Object.fromEntries(Object.entries(stroke).map(([k, v]) => [k, hairlineSafe(v, dpr)]))
+}
 
 // Role lookup for the fallback resolver below.
 const ROLE_BY_KEY: Record<string, (typeof ALL_ROLES)[number]> =
   Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]))
 
-export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): PreviewTokens {
-  const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor, radius, spacing, typography, panelBackground } = store
+export function resolvePreviewTokens(
+  store: StoreState,
+  themeKey = 'light',
+  appearance: ThemeAppearance = store.themeKinds?.[themeKey] ?? 'light',
+): PreviewTokens {
+  const foundations = resolveThemeFoundations(store, themeKey)
+  const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor } = store
+  const { radius, spacing, typography, panelBackground } = foundations
   // Render the requested theme (driven by the Semantic table's eye toggle).
   // A custom "style theme" carries its own palette — use it for the fallbacks.
-  const semanticTokens = store.themes[themeKey] ?? store.themes.light ?? {}
-  const kind = store.themeKinds?.[themeKey] ?? 'light'
+  const semanticTokens = semanticModesFor(
+    store.themeSemantics,
+    store.themes,
+    themeKey,
+    store.themeKinds?.[themeKey] ?? 'light',
+  )[appearance]
+  const kind = appearance
   // A theme references primitive FAMILIES — resolve them now so the preview
   // tracks whatever those families currently are.
   const pal = resolveThemePalette(store.themeSources?.[themeKey], kind, store)
@@ -86,18 +110,32 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // ...and against the previewed THEME's own brand ramp, so a custom theme's
   // cover/avatar carry that theme's accent instead of the default one. `pal`
   // is already this theme's resolved palette, so `pal.brand` IS the ramp — no
-  // second resolution path to drift from. Undefined for a theme with no
-  // `themeSources` entry (the built-in light/dark), where the stops' cached
-  // global-accent colours are the right answer anyway.
+  // second resolution path to drift from.
+  //
+  // `pal` is undefined for any theme with no `themeSources` entry — the
+  // built-ins, and every STYLE TRY-ON, which deliberately drops that entry so
+  // the projection can't be pinned to it. Falling through to the stops' cached
+  // hexes there is what left the Login artefact's Acme mark and the card cover
+  // on the open system's violet while the whole screen around them read blue:
+  // a linked stop is a REFERENCE (`tone`), so it has to resolve against
+  // whichever accent ramp is actually in play. That is this store's own brand
+  // ramp for the appearance — which in a try-on's overlay store IS the preset's
+  // ramp. Byte-identical for the ordinary case: `linkedStopsFor` caches exactly
+  // `primaryScale[tone]` / `primaryDarkScale[tone]` into the stops, so the
+  // fallback resolves to the same hexes it replaces, and an UNLINKED stop
+  // (no `tone`) keeps its hand-picked colour either way.
   const gradientCssFor = (id: string | null) => {
     const g = id ? store.gradients.find((x) => x.id === id) : null
-    return g ? gradientToCss(g, kind === 'dark' ? 'dark' : 'light', pal?.brand) : undefined
+    if (!g) return undefined
+    const brandRamp = pal?.brand ?? (kind === 'dark' ? store.primaryDarkScale : store.primaryScale)
+    return gradientToCss(g, kind === 'dark' ? 'dark' : 'light', brandRamp)
   }
+  // background-primary is base.white in light / gray tone 12 in dark
+  // (semanticRoles) — fall back to pageBackground, never the light ramp
+  // (which rendered dark themes white).
+  const surface = resolveRole('background-primary') || store.pageBackground || '#ffffff'
   const tokens: PreviewTokens = {
-    // background-primary is base.white in light / gray tone 12 in dark
-    // (semanticRoles) — fall back to pageBackground, never the light ramp
-    // (which rendered dark themes white).
-    surface: resolveRole('background-primary') || store.pageBackground || '#ffffff',
+    surface,
     brandSolid,
     brandText: resolveRole('content-brand') || brandFallback || '#9522e9',
     // Label ink on the brand fill — contrast-driven so a bright accent (where
@@ -122,28 +160,42 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
     semanticMap: semanticTokens,
     radius,
     spacing,
-    padding: store.padding,
+    padding: foundations.padding,
     typography,
     panelBackground,
-    pageBackground: (store.themeKinds?.[themeKey] ?? 'light') === 'light' ? store.pageBackground : undefined,
-    sizes: store.sizes,
-    stroke: store.stroke,
-    radiusRoles: store.radiusRoles,
-    spacingRoles: store.spacingRoles,
-    sizeRoles: store.sizeRoles,
-    strokeRoles: store.strokeRoles,
-    breakpointRoles: store.breakpointRoles,
-    gridFrame: store.gridFrame,
+    // The PREVIEWED THEME's page, in both appearances — this was
+    // `kind === 'light' ? store.pageBackground : undefined`, i.e. the system's
+    // global page in light and nothing at all in dark. Both halves were wrong
+    // for the same reason: `panelBackground: 'page'` means "this panel blends
+    // into the page it sits on", and the page a theme sits on is its own
+    // `background-primary`, not the open system's. Under the old read a
+    // `page`-panelled style (Retro) rendered its panels on whatever paper the
+    // system had in light and silently fell back to the surface-1 token in
+    // dark — so the treatment meant two different things per appearance.
+    pageBackground: surface,
+    sizes: foundations.sizes,
+    selector: foundations.selector,
+    // A sub-pixel hairline only renders cleanly at 2dppx+; below that the
+    // browser rounds it into an artefact. Floored here so the preview agrees
+    // with the `min-resolution: 2dppx` guard the exported CSS ships.
+    stroke: hairlineSafeMap(foundations.stroke),
+    radiusRoles: foundations.radiusRoles,
+    spacingRoles: foundations.spacingRoles,
+    sizeRoles: foundations.sizeRoles,
+    selectorRoles: foundations.selectorRoles,
+    strokeRoles: foundations.strokeRoles,
+    breakpointRoles: foundations.breakpointRoles,
+    gridFrame: foundations.gridFrame,
     // Shadows are the one foundation that can't ship a single value for both
     // appearances: the ramp's near-black shadow colour IS the dark page, so in
     // dark every elevation composited to within 0.36 of one 8-bit level of the
     // background — invisible, not subtle. Derived here rather than at each call
     // site so EVERY specimen (Card, Modal, Toast, the collage) gets a readable
     // elevation in dark, not just the Shadow foundation's own preview.
-    shadows: kind === 'dark' ? darkShadowMap(store.shadows) : store.shadows,
-    grid: store.grid,
-    opacity: store.opacity,
-    iconPrefix: 'untitled',
+    shadows: kind === 'dark' ? darkShadowMap(foundations.shadows) : foundations.shadows,
+    grid: foundations.grid,
+    opacity: foundations.opacity,
+    iconPrefix: 'phosphor',
     coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),
     avatarGradient: gradientCssFor(store.gradientAssignments?.avatar ?? null),
   }
@@ -163,12 +215,13 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
   // and hand the previewed mode's resolved colours to the atoms, so the preview
   // shows the architecture the user is actually editing.
   if (arch !== 'flat') {
+    const modeKey = themeModeKey(themeKey, appearance)
     const view = buildArchitectureView(
       arch,
       {
-        themes: store.themes,
-        themeKinds: store.themeKinds ?? {},
-        themePalettes: pal ? { [themeKey]: pal } : {},
+        themes: { [modeKey]: semanticTokens },
+        themeKinds: { [modeKey]: appearance },
+        themePalettes: pal ? { [modeKey]: pal } : {},
         scales: globalScales,
         accent: primaryColor,
         pageBackground: store.pageBackground,
@@ -179,7 +232,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
       // Only the previewed theme — Categorical resolves whatever keys it's
       // given, and the preview only ever needs the one it's rendering.
       // Vibrancy/Tonal ignore this param entirely (always light/dark).
-      [themeKey],
+      [modeKey],
     )
     if (view) {
       const flatMap: Record<string, string> = {}
@@ -187,7 +240,7 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
         for (const tk of cat.tokens) {
           // Categorical resolves `themeKey` directly; Vibrancy/Tonal only ever
           // carry 'light'/'dark', so fall back to the kind for those.
-          const v = tk.modes[themeKey] ?? tk.modes[dark ? 'dark' : 'light']
+          const v = tk.modes[modeKey] ?? tk.modes[dark ? 'dark' : 'light']
           if (v) flatMap[`${cat.key}.${tk.key}`] = v.css
         }
       }
@@ -233,9 +286,17 @@ export function resolvePreviewTokens(store: StoreState, themeKey = 'light'): Pre
 }
 
 /** Hook variant — re-renders whenever any token in the store changes. */
-export function usePreviewTokens(themeKey = 'light'): PreviewTokens {
+export function usePreviewTokens(
+  themeKey = 'light',
+  appearance?: ThemeAppearance,
+): PreviewTokens {
   const store = useDesignStore()
-  return resolvePreviewTokens(store, themeKey)
+  const tokens = resolvePreviewTokens(store, themeKey, appearance ?? store.themeKinds?.[themeKey] ?? 'light')
+  useEffect(() => {
+    loadGoogleFont(tokens.typography.fontFamily)
+    loadGoogleFont(tokens.typography.headingFontFamily ?? tokens.typography.fontFamily)
+  }, [tokens.typography.fontFamily, tokens.typography.headingFontFamily])
+  return tokens
 }
 
 // ── Small resolution helpers shared by the preview atoms ───────────────────
@@ -279,6 +340,9 @@ export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): st
 export function sizeRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('size', t.sizeRoles, t.sizes ?? {}, role, fallback)
 }
+export function selectorRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
+  return resolveLayoutRole('selector', t.selectorRoles, t.selector ?? {}, role, fallback)
+}
 export function strokeRoleOf(t: PreviewTokens, role: string, fallback = '1px'): string {
   return resolveLayoutRole('stroke', t.strokeRoles, t.stroke ?? {}, role, fallback)
 }
@@ -286,11 +350,13 @@ export function layoutRoleOf(t: PreviewTokens, family: LayoutFamily, role: strin
   const primitives = family === 'radius' ? t.radius
     : family === 'spacing' ? t.spacing
     : family === 'size' ? t.sizes
+    : family === 'selector' ? t.selector
     : family === 'stroke' ? t.stroke
     : extractBreakpoints(t.grid)
   const roles = family === 'radius' ? t.radiusRoles
     : family === 'spacing' ? t.spacingRoles
     : family === 'size' ? t.sizeRoles
+    : family === 'selector' ? t.selectorRoles
     : family === 'stroke' ? t.strokeRoles
     : t.breakpointRoles
   return resolveLayoutRole(family, roles, primitives ?? {}, role, fallback)
@@ -344,6 +410,12 @@ export function sizeOf(t: PreviewTokens, key: string, fallback: number): number 
   const n = raw ? parseFloat(raw) : NaN
   return Number.isFinite(n) ? n : fallback
 }
+/** Selector glyph edge (px) — the square a checkbox/radio/switch is drawn in. */
+export function selectorOf(t: PreviewTokens, key: string, fallback: number): number {
+  const raw = t.selector?.[key]
+  const n = raw ? parseFloat(raw) : NaN
+  return Number.isFinite(n) ? n : fallback
+}
 /** Elevation from the Shadow foundation — xs–2xl, with a safe CSS fallback. */
 export function shadowOf(t: PreviewTokens, key: string, fallback: string): string {
   return t.shadows?.[key] || fallback
@@ -367,8 +439,8 @@ export function panelStyle(t: PreviewTokens, hex: string): CSSProperties {
   if (t.panelBackground === 'translucent') {
     return { background: withAlpha(hex, 0.7), backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }
   }
-  // 'page' — panels reuse the primitives page background (light themes only;
-  // dark themes fall back to the token color since pageBackground is unset).
+  // 'page' — panels reuse the previewed theme's own page surface, so they read
+  // as flat against it in both appearances.
   if (t.panelBackground === 'page' && t.pageBackground) {
     return { background: t.pageBackground }
   }

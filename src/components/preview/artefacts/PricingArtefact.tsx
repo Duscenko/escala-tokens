@@ -55,7 +55,11 @@ function PricingScreen({ t, compact }: ArtefactProps) {
 
         <RadioGroup t={t} v={{}} />
 
-        <Card t={t} v={{}} w="100%">
+        {/* The top of the ramp. A "Most popular" plan is the one card in the
+            whole artefact set whose whole job is to sit ABOVE everything around
+            it, so it takes `xl` — the step nothing else uses. See
+            `SpecimenProps.elev`. */}
+        <Card t={t} v={{}} w="100%" elev="xl">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ ...typeStyleOf(t, 'heading-xs'), color: t.neutralText }}>Pro</span>
             <Badge t={t} v={{ Color: 'Brand', Style: 'Soft' }}>Most popular</Badge>

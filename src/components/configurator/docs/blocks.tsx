@@ -12,6 +12,7 @@
 import { useState, type ReactNode } from 'react'
 import { buildSkillExport } from '../../../lib/skillExport'
 import { AIContextButton } from '../../ui/AIContextButton'
+import { useI18n } from '../../../lib/i18n'
 import type { UseIt, UseItDestId } from './useIt'
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
@@ -29,10 +30,10 @@ export function CopyButton({
     <button
       onClick={copy}
       title={title}
-      className="flex items-center gap-1.5 text-[11px] text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
+      className="flex items-center gap-1.5 text-caption text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
     >
       {copied ? (
-        <><span className="text-emerald-500">✓</span> Copied</>
+        <><span className="text-status-success">✓</span> Copied</>
       ) : (
         <>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2" /></svg>
@@ -64,21 +65,21 @@ export function DocHeader({
   section, kind, title, actions,
 }: { section: string; kind: string; title: string; actions: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex items-center justify-between gap-4 min-w-0 @max-[640px]:flex-col @max-[640px]:items-start">
       {/* The MIDDLE crumb is the one that drops on a narrow window, not the
           page's own name: with the rail, the master list and the TOC all
           claiming width, three crumbs plus the actions truncated to
           "Components / B… / B", which names nothing. The section and the
           page survive at every width; the group in between is already visible
           in the rail. */}
-      <div className="flex items-center gap-1.5 text-[11px] text-fg-faint min-w-0">
+      <div className="flex items-center gap-1.5 text-caption text-fg-faint min-w-0">
         <span className="flex-shrink-0">{section}</span>
         <span aria-hidden className="hidden lg:inline flex-shrink-0">/</span>
         <span className="hidden lg:inline truncate">{kind}</span>
         <span aria-hidden className="flex-shrink-0">/</span>
         <span className="text-fg font-medium truncate">{title}</span>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">{actions}</div>
+      <div className="flex items-center gap-3 max-w-full flex-shrink-0">{actions}</div>
     </div>
   )
 }
@@ -90,7 +91,7 @@ export function DocTitle({
     <div className="flex flex-col gap-1.5 -mt-3">
       <div className="flex items-center gap-2.5 flex-wrap">
         <h2 className="text-2xl font-semibold text-fg">{title}</h2>
-        <span className="text-[10px] uppercase tracking-widest text-fg-faint mt-1.5">{eyebrow}</span>
+        <span className="text-mini uppercase tracking-widest text-fg-faint mt-1.5">{eyebrow}</span>
         {meta && <span className="mt-1.5">{meta}</span>}
       </div>
       {/* The lead paragraph IS the "Description"/"Overview" section — it carries
@@ -135,7 +136,7 @@ export function DocSection({
   return (
     <section className="flex flex-col gap-2.5">
       <SectionHeading id={id}>{title}</SectionHeading>
-      {description && <Prose text={description} className="text-[13px] text-fg-muted leading-relaxed" />}
+      {description && <Prose text={description} className="text-ui text-fg-muted leading-relaxed" />}
       {children}
     </section>
   )
@@ -162,7 +163,7 @@ export function ViewToggle({
           key={v}
           onClick={() => onChange(v)}
           aria-pressed={view === v}
-          className={`px-2.5 py-1 rounded-md text-[11px] font-medium capitalize transition-colors ${
+          className={`px-2.5 py-1 rounded-md text-caption font-medium capitalize transition-colors ${
             view === v ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
           }`}
         >
@@ -176,7 +177,7 @@ export function ViewToggle({
 export function CodePane({ code, minH = 60 }: { code: string; minH?: number }) {
   return (
     <pre
-      className="px-4 py-3 text-[11px] font-mono leading-relaxed text-fg-muted overflow-x-auto whitespace-pre bg-surface/40"
+      className="px-4 py-3 text-caption font-mono leading-relaxed text-fg-muted overflow-x-auto whitespace-pre bg-surface/40"
       style={{ minHeight: minH }}
     >
       {code}
@@ -188,7 +189,7 @@ export function CodePane({ code, minH = 60 }: { code: string; minH?: number }) {
 export function CodeBlock({ file, code }: { file: string; code: string }) {
   return (
     <div className="rounded-xl border border-line overflow-hidden">
-      <BlockChrome left={<span className="text-[11px] font-mono text-fg-faint truncate">{file}</span>}>
+      <BlockChrome left={<span className="text-caption font-mono text-fg-faint truncate">{file}</span>}>
         <CopyButton text={code} />
       </BlockChrome>
       <CodePane code={code} />
@@ -226,7 +227,7 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
   return (
     <div className="flex flex-col items-center gap-2.5 min-w-0">
       {children}
-      <span className="text-[10px] text-fg-faint">{label}</span>
+      <span className="text-mini text-fg-faint">{label}</span>
     </div>
   )
 }
@@ -270,7 +271,7 @@ export function UseItBlock({ useIt }: { useIt: UseIt }) {
                 role="tab"
                 aria-selected={d.id === dest.id}
                 onClick={() => setActive(d.id)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-md text-caption font-medium transition-colors ${
                   d.id === dest.id ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
                 }`}
               >
@@ -284,7 +285,7 @@ export function UseItBlock({ useIt }: { useIt: UseIt }) {
       </BlockChrome>
       <CodePane code={dest.code} minH={0} />
       {dest.note && (
-        <p className="px-4 py-2 text-[11px] leading-relaxed text-fg-faint border-t border-line/60 break-words">
+        <p className="px-4 py-2 text-caption leading-relaxed text-fg-faint border-t border-line/60 break-words">
           {dest.note}
         </p>
       )}
@@ -295,7 +296,7 @@ export function UseItBlock({ useIt }: { useIt: UseIt }) {
 /** Small count pill next to a page title ("32 tokens"). */
 export function CountBadge({ children }: { children: ReactNode }) {
   return (
-    <span className="text-[10px] px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line">
+    <span className="text-mini px-2 py-0.5 rounded-full bg-elevated/80 text-fg-faint border border-line">
       {children}
     </span>
   )
@@ -313,12 +314,12 @@ export function OnThisPage({
   }
   return (
     <nav aria-label="On this page" className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-widest text-fg-faint mb-1">On this page</span>
+      <span className="text-mini uppercase tracking-widest text-fg-faint mb-1">On this page</span>
       {entries.map((entry) => (
         <button
           key={entry.id}
           onClick={() => jump(entry.id)}
-          className={`text-left text-[12px] py-0.5 transition-colors text-fg-muted hover:text-fg ${entry.sub ? 'pl-3' : ''}`}
+          className={`text-left text-body py-0.5 transition-colors text-fg-muted hover:text-fg ${entry.sub ? 'pl-3' : ''}`}
         >
           {entry.label}
         </button>
@@ -336,6 +337,7 @@ export function Pager({
   next?: { key: string; label: string }
   onOpen: (key: string) => void
 }) {
+  const { t } = useI18n()
   return (
     <div className="flex items-stretch justify-between gap-3 pt-2 border-t border-line">
       {prev ? (
@@ -343,8 +345,8 @@ export function Pager({
           onClick={() => onOpen(prev.key)}
           className="flex flex-col items-start gap-0.5 rounded-xl border border-line px-4 py-2.5 hover:border-line-strong transition-colors"
         >
-          <span className="text-[10px] text-fg-faint">← Previous</span>
-          <span className="text-xs font-medium text-fg">{prev.label}</span>
+          <span className="text-mini text-fg-faint">← {t('Previous')}</span>
+          <span className="text-xs font-medium text-fg">{t(prev.label)}</span>
         </button>
       ) : <span />}
       {next ? (
@@ -352,8 +354,8 @@ export function Pager({
           onClick={() => onOpen(next.key)}
           className="flex flex-col items-end gap-0.5 rounded-xl border border-line px-4 py-2.5 hover:border-line-strong transition-colors"
         >
-          <span className="text-[10px] text-fg-faint">Next →</span>
-          <span className="text-xs font-medium text-fg">{next.label}</span>
+          <span className="text-mini text-fg-faint">{t('Next')} →</span>
+          <span className="text-xs font-medium text-fg">{t(next.label)}</span>
         </button>
       ) : <span />}
     </div>

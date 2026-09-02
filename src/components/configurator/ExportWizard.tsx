@@ -4,7 +4,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import {
   buildWizardExport, collectionMeta, primitiveFamilyMeta, isAiFormat, selectionCount,
   WIZARD_DESTINATIONS, WIZARD_FORMAT_BADGE, wizardFormatLabel, ALL_WIZARD_COLLECTIONS,
-  type WizardCollection, type WizardFormat, type WizardStructure, type WizardSelection,
+  type WizardCollection, type WizardDestination, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { type ColorFormat } from '../../lib/sectionExport'
 import { slugify, FIGMA_PLUGIN_ZIP } from '../../lib/utils'
@@ -71,14 +71,14 @@ function Radio({ on }: { on: boolean }) {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-line last:border-b-0">
-      <span className="text-[13px] text-fg-muted flex-shrink-0">{label}</span>
-      <span className="text-[13px] font-semibold text-fg text-right min-w-0 truncate">{value}</span>
+      <span className="text-ui text-fg-muted flex-shrink-0">{label}</span>
+      <span className="text-ui font-semibold text-fg text-right min-w-0 truncate">{value}</span>
     </div>
   )
 }
 
 function StatusDot({ ok }: { ok: boolean }) {
-  return <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ok ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
+  return <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ok ? 'bg-status-success-solid' : 'bg-line-strong'}`} aria-hidden />
 }
 
 function timeAgo(iso: string): string {
@@ -114,13 +114,21 @@ function toArrayBuffer(data: Uint8Array): ArrayBuffer {
 export default function ExportWizard({
   onClose,
   onConnectGithub,
+  onAddSyncOption,
   initialCollections = ALL_WIZARD_COLLECTIONS,
+  initialModes,
+  themeScope = null,
+  themeScopeLabel,
 }: {
   onClose: () => void
   /** Closes the wizard and opens the dedicated GitHub connect flow — the
    *  wizard links out rather than re-implementing PAT auth + repo push
    *  itself, so there's still only ONE GitHub-connect flow in the app. */
   onConnectGithub?: () => void
+  /** Closes the wizard and opens the live-sync setup (`FigmaSyncView`). Same
+   *  link-out pattern as `onConnectGithub`: Step 2's "Add sync option" is a
+   *  door to that one flow, not a second sync UI. Omit ⇒ the link isn't shown. */
+  onAddSyncOption?: () => void
   /** Pre-checked collections — the shell passes the section you opened it from,
    *  so "Export" from Typography starts scoped to Typography. Opened with no
    *  scoping (Components, Docs, the bare TopNav pill), it defaults to EVERY
@@ -128,14 +136,29 @@ export default function ExportWizard({
    *  one, and starting partial silently under-shipped anyone who hit Next
    *  without first reading the checklist. */
   initialCollections?: WizardCollection[]
+  /** Optional appearance preselection. Theme Preview uses this to open the
+   * existing wizard for the selected theme; no second exporter is involved. */
+  initialModes?: string[]
+  /** Set when the wizard was opened for ONE theme (Theme Preview → Export). The
+   *  Step 3 snapshot then names itself after that theme and saves theme-scoped
+   *  (`saveCurrentSystemAsTheme`), instead of the whole-project `saveCurrentSystem`. */
+  themeScope?: string | null
+  /** Display name of `themeScope` (its label, falling back to the key). */
+  themeScopeLabel?: string
 }) {
   // Subscribe so counts track edits made while the wizard is open.
   const store = useDesignStore()
   const {
-    projectName, setProjectName, saveCurrentSystem, savedSystems,
+    projectName, setProjectName, saveCurrentSystem, saveCurrentSystemAsTheme, savedSystems,
     githubRepo, githubLastPushAt,
     selectedComponents, toggleComponent, setSelectedComponents,
   } = store
+
+  // A theme-scoped run has ONE name: the label edited in Theme Preview's
+  // property rail. Keeping a second editable draft here let the visible theme,
+  // saved kit and export summary disagree. Whole-system runs still bind their
+  // field directly to `projectName`.
+  const snapshotName = themeScope ? (themeScopeLabel ?? themeScope) : projectName
   const meta = useMemo(() => collectionMeta(), [store])
   // Of the selected components, how many the live Figma import actually
   // renders as real component nodes today (the fixed 9-item sample sheet) —
@@ -152,9 +175,13 @@ export default function ExportWizard({
 
   const [step, setStep] = useState<Step>(1)
   const [collections, setCollections] = useState<WizardCollection[]>(initialCollections)
-  const [modes, setModes] = useState<string[]>(allModes)
+  const [modes, setModes] = useState<string[]>(() => initialModes?.filter((mode) => allModes.includes(mode)).length ? initialModes.filter((mode) => allModes.includes(mode)) : allModes)
   const [families, setFamilies] = useState<string[]>(famMeta.map((f) => f.key))
   const [format, setFormat] = useState<WizardFormat>('escala')
+  // GitHub is a destination but not a generated file format: its existing
+  // exporter pushes the canonical repository bundle. Keep this separate so
+  // selecting it cannot accidentally create a second export pipeline.
+  const [destination, setDestination] = useState<WizardDestination>('escala')
   const [structure, setStructure] = useState<WizardStructure>('single')
   const [colorFormat] = useState<ColorFormat>('hex')
   const [includeAliases, setIncludeAliases] = useState(true)
@@ -173,13 +200,15 @@ export default function ExportWizard({
   const [preview, setPreview] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
 
-  // Same id `saveCurrentSystem` builds — lets the button read "Save changes"
-  // once this exact project already has a registry entry.
-  const savedId = githubRepo ?? `local:${slugify(projectName) || 'design-system'}`
+  // Same id the matching store action builds — lets the button read "Save
+  // changes" once this exact kit already has a registry entry. A theme-scoped
+  // run keys off the theme's name (see `buildSavedSystemEntry`'s `nameOverride`).
+  const savedId = githubRepo ?? `local:${slugify(snapshotName) || 'design-system'}`
   const savedEntry = savedSystems.find((s) => s.id === savedId)
 
   function handleSaveSystem() {
-    saveCurrentSystem()
+    if (themeScope) saveCurrentSystemAsTheme(themeScope, snapshotName)
+    else saveCurrentSystem()
     setJustSaved(true)
     setTimeout(() => setJustSaved(false), 2200)
   }
@@ -209,7 +238,19 @@ export default function ExportWizard({
   )
   const ai = isAiFormat(format)
   // Escala JSON and the AI zips are each one document by contract.
-  const isWholeDocument = format === 'escala' || ai
+  const isGitHubDestination = destination === 'github'
+  const isWholeDocument = format === 'escala' || ai || isGitHubDestination
+  const exportActionLabel = isGitHubDestination
+    ? 'Continue to GitHub'
+    : done
+      ? 'Download again'
+      : format === 'escala'
+        ? 'Download Figma tokens'
+        : format === 'w3c'
+          ? 'Download W3C tokens'
+          : ai
+            ? 'Download agent context'
+            : `Export ${files.length} ${files.length === 1 ? 'file' : 'files'}`
   const canNext = step === 1
     ? collections.length > 0
       && (!collections.includes('semantics') || modes.length > 0)
@@ -223,7 +264,17 @@ export default function ExportWizard({
   const toggleFamily = (k: string) =>
     setFamilies((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]))
 
+  function selectDestination(next: WizardDestination) {
+    setDestination(next)
+    if (next === 'github') return
+    setFormat(next === 'agent-bundle' && format === 'skill' ? 'skill' : next)
+  }
+
   function runExport() {
+    if (isGitHubDestination) {
+      onConnectGithub?.()
+      return
+    }
     files.forEach((f, i) => setTimeout(() => download(f), i * 120))
     setDone(true)
   }
@@ -268,13 +319,13 @@ export default function ExportWizard({
                   aria-current={active ? 'step' : undefined}
                 >
                   <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 transition-colors ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-caption font-semibold flex-shrink-0 transition-colors ${
                       complete ? 'bg-accent-solid text-accent-ink' : active ? 'bg-accent-solid text-accent-ink' : 'bg-elevated text-fg-faint'
                     }`}
                   >
                     {complete ? <CheckIcon /> : s.n}
                   </span>
-                  <span className={`text-[13px] truncate ${active || complete ? 'font-semibold text-accent-ui' : 'text-fg-faint'}`}>
+                  <span className={`text-ui truncate ${active || complete ? 'font-semibold text-accent-ui' : 'text-fg-faint'}`}>
                     {s.label}
                   </span>
                 </button>
@@ -297,8 +348,8 @@ export default function ExportWizard({
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
           {step === 1 && (
             <>
-              <h2 className="text-[17px] font-semibold text-fg">What do you want to export?</h2>
-              <p className="text-[13px] text-fg-muted mt-1">
+              <h2 className="text-title font-semibold text-fg">What do you want to export?</h2>
+              <p className="text-ui text-fg-muted mt-1">
                 {sourceTab === 'foundations'
                   ? 'Foundations are your design tokens — colors, typography, spacing…'
                   : 'Components are the UI elements built from those tokens.'}
@@ -314,24 +365,24 @@ export default function ExportWizard({
                 <button
                   onClick={() => setSourceTab('foundations')}
                   aria-pressed={sourceTab === 'foundations'}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-ui font-medium transition-colors ${
                     sourceTab === 'foundations' ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
                   }`}
                 >
                   Foundations
-                  <span className="text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
+                  <span className="text-caption font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
                     {collections.length}/{meta.length}
                   </span>
                 </button>
                 <button
                   onClick={() => setSourceTab('components')}
                   aria-pressed={sourceTab === 'components'}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-ui font-medium transition-colors ${
                     sourceTab === 'components' ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
                   }`}
                 >
                   Components
-                  <span className="text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
+                  <span className="text-caption font-mono tabular-nums px-1.5 py-0.5 rounded-full bg-elevated text-fg-faint">
                     {includeComponents ? selectedComponents.length : 0}/{COMPONENT_KEYS.length}
                   </span>
                 </button>
@@ -349,19 +400,19 @@ export default function ExportWizard({
                       match its own two siblings. */}
                   <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
                     <div className="flex items-center justify-between gap-2 px-1 pb-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">
+                      <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
                         {collections.length} of {meta.length} selected
                       </span>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setCollections(meta.map((c) => c.key))}
-                          className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                         >
                           All
                         </button>
                         <button
                           onClick={() => setCollections([])}
-                          className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                         >
                           None
                         </button>
@@ -380,12 +431,12 @@ export default function ExportWizard({
                             }`}
                           >
                             <CheckBox on={on} />
-                            <span className={`flex-1 min-w-0 truncate text-[13px] ${on ? 'text-fg font-medium' : 'text-fg-muted'}`}>
+                            <span className={`flex-1 min-w-0 truncate text-ui ${on ? 'text-fg font-medium' : 'text-fg-muted'}`}>
                               {c.label}
                             </span>
-                            <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{c.count} vars</span>
+                            <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{c.count} vars</span>
                             {c.modes && (
-                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent-ui/10 text-accent-ui flex-shrink-0">
+                              <span className="text-caption px-2 py-0.5 rounded-full bg-accent-ui/10 text-accent-ui flex-shrink-0">
                                 {c.modes.length} modes
                               </span>
                             )}
@@ -405,23 +456,23 @@ export default function ExportWizard({
                   {collections.includes('primitives') && famMeta.length > 1 && (
                     <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
                       <div className="flex items-center justify-between gap-2 px-1 pb-2">
-                        <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Families</span>
+                        <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">Families</span>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setFamilies(famMeta.map((f) => f.key))}
-                            className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                            className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                           >
                             All
                           </button>
                           <button
                             onClick={() => setFamilies([])}
-                            className="px-2 py-1 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                            className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                           >
                             None
                           </button>
                         </div>
                       </div>
-                      <span className="block px-1 pb-2 text-[12px] text-fg-muted">Color · Primitives</span>
+                      <span className="block px-1 pb-2 text-body text-fg-muted">Color · Primitives</span>
                       <div className="flex flex-wrap gap-2 px-1">
                         {famMeta.map((f) => {
                           const on = families.includes(f.key)
@@ -430,26 +481,26 @@ export default function ExportWizard({
                               key={f.key}
                               onClick={() => toggleFamily(f.key)}
                               aria-pressed={on}
-                              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border transition-colors ${
+                              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-ui font-medium border transition-colors ${
                                 on ? 'border-accent-ui text-accent-ui bg-accent-ui/[0.07]' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
                               }`}
                             >
                               {f.label}
-                              <span className="text-[11px] font-mono tabular-nums text-fg-faint">{f.count}</span>
+                              <span className="text-caption font-mono tabular-nums text-fg-faint">{f.count}</span>
                             </button>
                           )
                         })}
                       </div>
                       {families.length === 0 && (
-                        <p className="px-1 pt-2.5 text-[12px] text-red-500">Pick at least one family to ship the primitives.</p>
+                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one family to ship the primitives.</p>
                       )}
                     </div>
                   )}
 
                   {collections.includes('semantics') && (
                     <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
-                      <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Modes</span>
-                      <span className="block px-1 pb-2 text-[12px] text-fg-muted">Color · Semantics</span>
+                      <span className="block px-1 pb-2 text-caption font-semibold uppercase tracking-widest text-fg-faint">Modes</span>
+                      <span className="block px-1 pb-2 text-body text-fg-muted">Color · Semantics</span>
                       <div className="flex flex-wrap gap-2 px-1">
                         {allModes.map((m) => {
                           const on = modes.includes(m)
@@ -458,7 +509,7 @@ export default function ExportWizard({
                               key={m}
                               onClick={() => toggleMode(m)}
                               aria-pressed={on}
-                              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium border transition-colors ${
+                              className={`px-3.5 py-1.5 rounded-full text-ui font-medium border transition-colors ${
                                 on ? 'border-accent-ui text-accent-ui bg-accent-ui/[0.07]' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
                               }`}
                             >
@@ -468,7 +519,7 @@ export default function ExportWizard({
                         })}
                       </div>
                       {modes.length === 0 && (
-                        <p className="px-1 pt-2.5 text-[12px] text-red-500">Pick at least one mode to ship the semantic layer.</p>
+                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one mode to ship the semantic layer.</p>
                       )}
                     </div>
                   )}
@@ -492,11 +543,11 @@ export default function ExportWizard({
                   >
                     <CheckBox on={includeComponents} />
                     <span className="flex-1 min-w-0">
-                      <span className={`block text-[13px] ${includeComponents ? 'text-fg font-medium' : 'text-fg-muted'}`}>
+                      <span className={`block text-ui ${includeComponents ? 'text-fg font-medium' : 'text-fg-muted'}`}>
                         Include components in this export
                       </span>
                     </span>
-                    <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">
+                    <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">
                       {selectedComponents.length}/{COMPONENT_KEYS.length}
                     </span>
                   </button>
@@ -509,17 +560,17 @@ export default function ExportWizard({
                           onChange={(e) => setComponentSearch(e.target.value)}
                           placeholder="Search components"
                           aria-label="Search components"
-                          className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-line bg-surface text-[12px] text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
+                          className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-line bg-surface text-body text-fg outline-none focus:border-line-strong placeholder:text-fg-faint"
                         />
                         <button
                           onClick={() => setSelectedComponents(COMPONENT_KEYS)}
-                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                         >
                           All
                         </button>
                         <button
                           onClick={() => setSelectedComponents([])}
-                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                          className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
                         >
                           None
                         </button>
@@ -534,11 +585,11 @@ export default function ExportWizard({
                             ),
                           })).filter((g) => g.items.length > 0)
                           if (cats.length === 0) {
-                            return <p className="text-[12px] text-fg-faint py-2">No components match "{componentSearch}".</p>
+                            return <p className="text-body text-fg-faint py-2">No components match "{componentSearch}".</p>
                           }
                           return cats.map(({ cat, items }) => (
                             <div key={cat} className="flex flex-col gap-0.5">
-                              <span className="text-[10px] text-fg-faint uppercase tracking-widest">{cat}</span>
+                              <span className="text-mini text-fg-faint uppercase tracking-widest">{cat}</span>
                               {items.map((c) => {
                                 const on = selectedComponents.includes(c.key)
                                 return (
@@ -551,7 +602,7 @@ export default function ExportWizard({
                                     }`}
                                   >
                                     <CheckBox on={on} />
-                                    <span className={`text-[12.5px] truncate ${on ? 'text-fg' : 'text-fg-muted'}`}>{c.label}</span>
+                                    <span className={`text-body truncate ${on ? 'text-fg' : 'text-fg-muted'}`}>{c.label}</span>
                                   </button>
                                 )
                               })}
@@ -560,7 +611,7 @@ export default function ExportWizard({
                         })()}
                       </div>
                       {selectedComponents.length === 0 && (
-                        <p className="px-1 text-[12px] text-fg-faint">No components selected — none will ship.</p>
+                        <p className="px-1 text-body text-fg-faint">No components selected — none will ship.</p>
                       )}
                     </div>
                   )}
@@ -571,33 +622,52 @@ export default function ExportWizard({
 
           {step === 2 && (
             <>
-              <h2 className="text-[17px] font-semibold text-fg">Where is this going?</h2>
-              <p className="text-[13px] text-fg-muted mt-1">Pick the place you work. Not a file format.</p>
+              <h2 className="text-title font-semibold text-fg">Where is this going?</h2>
+              <p className="text-ui text-fg-muted mt-1">Pick the place you work. Not a file format.</p>
 
               <div className="mt-5 rounded-xl border border-line bg-surface/50 p-3">
-                <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Destination</span>
+                <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                  <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">Destination</span>
+                  {onAddSyncOption && (
+                    <button
+                      type="button"
+                      onClick={onAddSyncOption}
+                      className="flex items-center gap-1 text-caption font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:underline"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden>
+                        <path d="M7 2.75v8.5M2.75 7h8.5" />
+                      </svg>
+                      Add sync option
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-col gap-2">
                   {WIZARD_DESTINATIONS.map((f) => {
-                    const on = f.key === 'agent-bundle' ? ai : format === f.key
+                    const isGitHub = f.key === 'github'
+                    const on = isGitHub
+                      ? isGitHubDestination
+                      : f.key === 'agent-bundle'
+                        ? !isGitHubDestination && ai
+                        : !isGitHubDestination && destination === f.key
                     const isEscala = f.key === 'escala'
-                    const badge = WIZARD_FORMAT_BADGE[f.key]
+                    const badge = f.key === 'github' ? 'Repository' : WIZARD_FORMAT_BADGE[f.key]
                     return (
                       <div
                         key={f.key}
                         className={`rounded-lg border transition-colors ${on ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'}`}
                       >
                         <button
-                          onClick={() => setFormat(f.key === 'agent-bundle' && format === 'skill' ? 'skill' : f.key)}
+                          onClick={() => selectDestination(f.key)}
                           aria-pressed={on}
                           className="flex items-center gap-3 w-full px-3 py-2.5 text-left"
                         >
                           <Radio on={on} />
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-2 flex-wrap">
-                              <span className={`block text-[13px] ${on ? 'text-fg font-medium' : 'text-fg'}`}>{f.label}</span>
+                              <span className={`block text-ui ${on ? 'text-fg font-medium' : 'text-fg'}`}>{f.label}</span>
                               {badge && (
                                 <span
-                                  className={`px-1.5 py-[1px] rounded-full text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 ${
+                                  className={`px-1.5 py-[1px] rounded-full text-mini font-semibold uppercase tracking-wide flex-shrink-0 ${
                                     isEscala
                                       ? 'bg-accent-ui/15 text-accent-ui'
                                       : 'border border-line-strong text-fg-faint'
@@ -607,12 +677,12 @@ export default function ExportWizard({
                                 </span>
                               )}
                             </span>
-                            <span className="block text-[12px] text-fg-faint">{f.hint}</span>
+                            <span className="block text-body text-fg-faint">{f.hint}</span>
                           </span>
                         </button>
                         {isEscala && (
                           <div className="px-3 pb-3 pl-[42px] flex flex-col gap-1.5">
-                            <p className="text-[11px] text-fg-faint leading-relaxed">
+                            <p className="text-caption text-fg-faint leading-relaxed">
                               This is the exact payload the <strong className="text-fg-muted font-medium">Escala Figma plugin</strong> imports —
                               the same JSON Sync already publishes.
                             </p>
@@ -620,7 +690,7 @@ export default function ExportWizard({
                               href={FIGMA_PLUGIN_ZIP}
                               download
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 self-start text-[11px] font-semibold text-accent-ui hover:underline"
+                              className="inline-flex items-center gap-1.5 self-start text-caption font-semibold text-accent-ui hover:underline"
                             >
                               <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                                 <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
@@ -643,8 +713,8 @@ export default function ExportWizard({
                             >
                               <CheckBox on={format === 'skill'} />
                               <span className="min-w-0">
-                                <span className="block text-[12.5px] text-fg">Figma Make only (smaller zip)</span>
-                                <span className="block text-[11px] text-fg-faint leading-relaxed">
+                                <span className="block text-body text-fg">Figma Make only (smaller zip)</span>
+                                <span className="block text-caption text-fg-faint leading-relaxed">
                                   Cursor and Claude want the full package. Make uploads the smaller zip as-is.
                                 </span>
                               </span>
@@ -657,9 +727,23 @@ export default function ExportWizard({
                 </div>
               </div>
 
+              {isGitHubDestination ? (
+                <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-fg-muted"><GitHubGlyph size={14} /></span>
+                    <div className="min-w-0">
+                      <p className="text-ui font-medium text-fg">Publish the complete system to a repository</p>
+                      <p className="mt-1 text-body leading-relaxed text-fg-faint">
+                        Escala will use the existing GitHub exporter to commit <code className="font-mono text-fg-muted">tokens.json</code>, <code className="font-mono text-fg-muted">variables.css</code>, <code className="font-mono text-fg-muted">README.md</code> and the restorable system snapshot.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
               {format === 'w3c' && (
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
-                <span className="block px-1 pb-2 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Output structure</span>
+                <span className="block px-1 pb-2 text-caption font-semibold uppercase tracking-widest text-fg-faint">Output structure</span>
                 <div className="flex flex-col gap-2">
                   {STRUCTURES.map((s) => {
                     const on = structure === s.key
@@ -674,8 +758,8 @@ export default function ExportWizard({
                       >
                         <Radio on={on} />
                         <span className="min-w-0">
-                          <span className="block text-[13px] text-fg">{s.label}</span>
-                          <span className="block text-[12px] text-fg-faint truncate">{s.hint}</span>
+                          <span className="block text-ui text-fg">{s.label}</span>
+                          <span className="block text-body text-fg-faint truncate">{s.hint}</span>
                         </span>
                       </button>
                     )
@@ -685,7 +769,7 @@ export default function ExportWizard({
               )}
 
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3 flex flex-col gap-2">
-                <span className="px-1 text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Options</span>
+                <span className="px-1 text-caption font-semibold uppercase tracking-widest text-fg-faint">Options</span>
                 {format === 'w3c' && (
                   <>
                     <button
@@ -695,8 +779,8 @@ export default function ExportWizard({
                     >
                       <CheckBox on={includeAliases} />
                       <span className="min-w-0">
-                        <span className="block text-[13px] text-fg">Include aliases (variable references)</span>
-                        <span className="block text-[12px] text-fg-faint truncate">
+                        <span className="block text-ui text-fg">Include aliases (variable references)</span>
+                        <span className="block text-body text-fg-faint truncate">
                           Semantics ship as <code className="font-mono">{'{color.accent.600}'}</code> instead of a loose hex
                         </span>
                       </span>
@@ -710,7 +794,7 @@ export default function ExportWizard({
                         this exact case (see `w3cTreeFor`), so this is only
                         telling the truth about output the checkbox above can't. */}
                     {includeAliases && collections.includes('semantics') && !collections.includes('primitives') && (
-                      <p className="px-3 text-[11.5px] text-fg-faint leading-snug">
+                      <p className="px-3 text-caption text-fg-faint leading-snug">
                         Primitives isn't part of this export, so aliases have nothing to point at —
                         Semantics will ship resolved hex values regardless of this toggle.
                       </p>
@@ -719,7 +803,7 @@ export default function ExportWizard({
                 )}
                 {format === 'escala' && (
                   <>
-                    <p className="px-3 py-2 text-[12px] text-fg-muted">
+                    <p className="px-3 py-2 text-body text-fg-muted">
                       Figma always ships the whole document (typography, spacing, radius…) regardless of
                       the collections picked above — the plugin needs the full contract to import cleanly.
                       Components are the one part Step 1&apos;s toggle controls: on ships{' '}
@@ -727,7 +811,7 @@ export default function ExportWizard({
                       as <code className="font-mono">atoms</code>, off ships none.
                     </p>
                     {includeComponents && selectedComponents.length > 0 && (
-                      <p className="px-3 pb-2 text-[12px] text-fg-muted">
+                      <p className="px-3 pb-2 text-body text-fg-muted">
                         Of those, the import renders <strong className="text-fg font-medium">{figmaRenderedCount}</strong> as real
                         components in the file today (the '⬡ Components Overview' sample sheet — building
                         all 58 as variants locks Figma on import). The remaining{' '}
@@ -738,26 +822,31 @@ export default function ExportWizard({
                   </>
                 )}
                 {ai && (
-                  <p className="px-3 py-2 text-[12px] text-fg-muted">
+                  <p className="px-3 py-2 text-body text-fg-muted">
                     {format === 'skill'
                       ? 'The smaller zip is what Figma Make uploads as-is. Collections picked above are ignored.'
                       : 'The zip is the guide your agent reads, plus checkers and templates, generated from this system. Drop the unzipped folder into the product repo — not Escala. Collections picked above are ignored.'}
                   </p>
                 )}
               </div>
+                </>
+              )}
             </>
           )}
 
           {step === 3 && (
             <>
-              <h2 className="text-[17px] font-semibold text-fg">Summary and export</h2>
-              <p className="text-[13px] text-fg-muted mt-1">Review your settings and start the export</p>
+              <h2 className="text-title font-semibold text-fg">{isGitHubDestination ? 'Review GitHub delivery' : 'Summary and export'}</h2>
+              <p className="text-ui text-fg-muted mt-1">
+                {isGitHubDestination ? 'Confirm the repository bundle, then continue to connect and push it.' : 'Review your settings and deliver the selected artifact.'}
+              </p>
 
               <div className="mt-5 rounded-xl border border-line bg-surface/50 overflow-hidden">
                 <SummaryRow
                   label="Collections"
                   value={
-                    format === 'escala' ? 'All (Figma needs the full contract)'
+                    isGitHubDestination ? 'All (GitHub publishes the complete system)'
+                      : format === 'escala' ? 'All (Figma needs the full contract)'
                       : ai ? 'All (one package)'
                         : collections.map((c) => meta.find((m) => m.key === c)?.label ?? c).join(', ')
                   }
@@ -769,11 +858,11 @@ export default function ExportWizard({
                   />
                 )}
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
-                {(collections.includes('semantics') || ai) && (
-                  <SummaryRow label="Modes" value={modes.join(', ')} />
+                {(collections.includes('semantics') || ai || isGitHubDestination) && (
+                  <SummaryRow label="Modes" value={isGitHubDestination ? 'All' : modes.join(', ')} />
                 )}
-                <SummaryRow label="Going to" value={wizardFormatLabel(format)} />
-                <SummaryRow label="Structure" value={files.length > 1 ? `${files.length} files` : 'Single file'} />
+                <SummaryRow label="Going to" value={isGitHubDestination ? 'GitHub repository' : wizardFormatLabel(format)} />
+                <SummaryRow label="Structure" value={isGitHubDestination ? 'Repository bundle · 4 files' : files.length > 1 ? `${files.length} files` : 'Single file'} />
                 {/* Mirrors `w3cTreeFor`'s own condition exactly — aliases only ever
                     ship when Primitives is part of THIS export, or the row
                     would claim "Included" for a file shipping hex. */}
@@ -786,7 +875,9 @@ export default function ExportWizard({
                 <SummaryRow
                   label="Components"
                   value={
-                    format !== 'escala'
+                    isGitHubDestination
+                      ? 'Included in tokens.json'
+                      : format !== 'escala'
                       ? 'Not shipped — Figma only'
                       : includeComponents
                         ? `${selectedComponents.length} of ${COMPONENT_KEYS.length} · ${figmaRenderedCount} render in Figma`
@@ -795,16 +886,16 @@ export default function ExportWizard({
                 />
               </div>
 
-              {done && (
-                <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3.5">
-                  <span className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Exported {files.length} {files.length === 1 ? 'file' : 'files'}
+              {done && !isGitHubDestination && (
+                <div className="mt-4 rounded-xl border border-status-success/40 bg-status-success/10 px-4 py-3.5">
+                  <span className="text-ui font-medium text-status-success">
+                    Downloaded {files.length} {files.length === 1 ? 'file' : 'files'}
                     {!isWholeDocument ? ` · ${varCount} variables` : ''}
                   </span>
                 </div>
               )}
 
-              {ai && (
+              {ai && !isGitHubDestination && (
                 <div className="mt-4">
                   <AgentInstallPanel
                     key={format}
@@ -814,96 +905,106 @@ export default function ExportWizard({
                 </div>
               )}
 
-              {/* Save & sync — the payoff step is also where the system gets an
-                  identity: name it, keep it in the local registry, optionally
-                  wire it to GitHub. This is the ONLY place that flow was
-                  missing from — Save & Share already has it, but a first-time
-                  user exporting from Variables had no path to it at all. Saves
-                  the WHOLE current system, not just this export's scope (same
-                  as Save & Share's own Save button), so the helper line below
-                  says so explicitly rather than implying "Typography" saved
-                  when this wizard opened scoped to Typography. */}
+              {/* Local saving stays separate from a downloaded export. GitHub
+                  changes that payoff: its own exporter commits the restorable
+                  snapshot alongside the three delivery files. */}
               <div className="mt-4 rounded-xl border border-line bg-surface/50 p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Save this design system</span>
-                  {savedEntry && (
-                    <span className="text-[11px] text-fg-faint flex-shrink-0">
+                  <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
+                    {isGitHubDestination ? 'GitHub exporter' : <>Save a reusable snapshot <span className="normal-case font-medium tracking-normal">(optional)</span></>}
+                  </span>
+                  {!isGitHubDestination && savedEntry && (
+                    <span className="text-caption text-fg-faint flex-shrink-0">
                       Last saved {timeAgo(savedEntry.savedAt)}
                     </span>
                   )}
                 </div>
+                {isGitHubDestination ? (
+                  <p className="text-body leading-relaxed text-fg-muted">
+                    Review the repository, authentication and commit in the dedicated GitHub flow. A successful push also stores a restorable <code className="font-mono text-caption">.escala/system.json</code> snapshot.
+                  </p>
+                ) : (
                 <div className="flex items-center gap-2">
-                  <input
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="e.g. Acme Design System"
-                    aria-label="Design system name"
-                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-surface text-[13px] font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
-                  />
+                  {themeScope ? (
+                    <div aria-label="Snapshot name (matches the theme)" className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
+                      <span className="flex-shrink-0 text-caption text-fg-faint">Name</span>
+                      <span className="truncate text-ui font-medium text-fg">{snapshotName}</span>
+                    </div>
+                  ) : (
+                    <input
+                      value={snapshotName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      placeholder="e.g. Acme Design System"
+                      aria-label="Design system name"
+                      className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-surface text-ui font-medium text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
+                    />
+                  )}
                   <button
                     onClick={handleSaveSystem}
-                    className={`flex-shrink-0 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
-                      justSaved ? 'bg-emerald-500 text-white' : 'bg-fg text-app hover:opacity-90'
+                    className={`flex-shrink-0 px-3.5 py-2 rounded-lg text-ui font-semibold border transition-colors ${
+                      justSaved ? 'border-status-success bg-status-success-solid text-white' : 'border-line-strong bg-app text-fg hover:bg-elevated'
                     }`}
                   >
-                    {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save'}
+                    {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save snapshot'}
                   </button>
                 </div>
-                <p className="text-[11px] text-fg-faint -mt-1">
-                  Saves the whole design system to your local registry — not just this export's scope.
-                </p>
+                )}
+                {!isGitHubDestination && themeScope && (
+                  <p className="text-caption text-fg-faint -mt-1">
+                    This run exports one theme — the snapshot is named after it (<span className="font-medium text-fg-muted">{themeScopeLabel ?? themeScope}</span>) and saved as its own kit in the local registry, separate from the whole-system one. Exporting never saves it automatically.
+                  </p>
+                )}
+                {!isGitHubDestination && !themeScope && (
+                  <p className="text-caption text-fg-faint -mt-1">
+                    Saves the whole design system to your local registry. Exporting never saves it automatically.
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between gap-3 pt-3 border-t border-line/60">
-                  <span className="flex items-center gap-1.5 min-w-0 text-[12px] text-fg-muted">
+                  <span className="flex items-center gap-1.5 min-w-0 text-body text-fg-muted">
                     <StatusDot ok={!!githubRepo} />
                     <span className="truncate">
                       {githubRepo
                         ? `${githubRepo}${githubLastPushAt ? ` · pushed ${timeAgo(githubLastPushAt)}` : ''}`
-                        : 'Not synced to GitHub'}
+                        : 'GitHub — not connected'}
                     </span>
                   </span>
                   {onConnectGithub && (
                     <button
                       onClick={onConnectGithub}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-line-strong text-fg hover:bg-elevated transition-colors"
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body font-semibold border border-line-strong text-fg hover:bg-elevated transition-colors"
                     >
                       <GitHubGlyph />
-                      {githubRepo ? 'Push to GitHub' : 'Connect GitHub'}
+                      {isGitHubDestination ? (githubRepo ? 'Open GitHub exporter' : 'Connect GitHub') : (githubRepo ? 'Push to GitHub' : 'Connect GitHub')}
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-1 rounded-xl border border-line bg-surface/50 p-2">
+              {!isGitHubDestination && <div className="mt-4 flex items-center gap-1 rounded-xl border border-line bg-surface/50 p-2">
                 <button
                   onClick={() => setPreview((v) => !v)}
                   aria-pressed={preview}
-                  className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${preview ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
+                  className={`px-3 py-1.5 rounded-lg text-ui font-medium transition-colors ${preview ? 'bg-elevated text-fg' : 'text-fg-muted hover:text-fg'}`}
                 >
                   Preview
                 </button>
                 <button
                   onClick={copyAll}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-fg-muted hover:text-fg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-ui font-medium text-fg-muted hover:text-fg transition-colors"
                 >
                   {copied ? <><CheckIcon />Copied</> : 'Copy'}
                 </button>
-                <button
-                  onClick={runExport}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-fg-muted hover:text-fg transition-colors"
-                >
-                  Download
-                </button>
-              </div>
+              </div>}
 
-              {preview && (
+              {preview && !isGitHubDestination && (
                 <div className="mt-3 rounded-xl border border-line bg-surface/40 overflow-hidden">
                   {files.map((f) => (
                     <div key={f.name} className="border-b border-line last:border-b-0">
-                      <div className="px-4 py-2 text-[11px] font-mono text-fg-faint bg-elevated/40">
+                      <div className="px-4 py-2 text-caption font-mono text-fg-faint bg-elevated/40">
                         {f.binary ? `${f.name} · the guide your agent reads` : f.name}
                       </div>
-                      <pre className="px-4 py-3 text-[12px] leading-relaxed font-mono text-fg-muted whitespace-pre overflow-x-auto max-h-64">
+                      <pre className="px-4 py-3 text-body leading-relaxed font-mono text-fg-muted whitespace-pre overflow-x-auto max-h-64">
                         {f.content}
                       </pre>
                     </div>
@@ -918,7 +1019,7 @@ export default function ExportWizard({
         <div className="flex items-center justify-between gap-3 px-6 h-16 border-t border-line flex-shrink-0">
           <button
             onClick={() => (step === 1 ? onClose() : (setStep((s) => (s - 1) as Step), setDone(false)))}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
+            className="px-4 py-2 rounded-lg text-ui font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong transition-colors"
           >
             {step === 1 ? 'Cancel' : 'Back'}
           </button>
@@ -926,20 +1027,22 @@ export default function ExportWizard({
             <button
               onClick={() => canNext && setStep((s) => (s + 1) as Step)}
               disabled={!canNext}
-              className="px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity"
+              className="px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity"
             >
               Next
             </button>
           ) : (
             <button
               onClick={runExport}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink transition-opacity hover:opacity-90"
             >
-              <svg width="13" height="13" viewBox="0 0 11 11" fill="none" aria-hidden>
-                <path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M1 8.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-              Export
+              {isGitHubDestination ? <GitHubGlyph size={13} /> : (
+                <svg width="13" height="13" viewBox="0 0 11 11" fill="none" aria-hidden>
+                  <path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M1 8.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              )}
+              {exportActionLabel}
             </button>
           )}
         </div>

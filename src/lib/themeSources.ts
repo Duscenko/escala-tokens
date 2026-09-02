@@ -99,8 +99,16 @@ export function themeBrandRamp(
   themeSources: Record<string, ThemeSources>,
   themeKinds: Record<string, 'light' | 'dark'>,
   p: PrimitiveScales,
+  /**
+   * Force the appearance the ramp resolves in, ignoring `themeKinds[themeKey]`.
+   * The Escala CHROME needs the previewed theme's brand FAMILY but painted for
+   * its OWN light/dark — otherwise previewing a light theme while the workspace
+   * is in dark mode bleeds a light-ramp splash into the dark chrome. The
+   * preview canvas itself still resolves in the theme's real appearance.
+   */
+  kindOverride?: 'light' | 'dark',
 ): ColorScale | undefined {
-  const kind = themeKinds[themeKey] ?? 'light'
+  const kind = kindOverride ?? themeKinds[themeKey] ?? 'light'
   const brand = themeSources[themeKey]?.brand ?? GLOBAL_FAMILY.brand
   return scaleForFamily(brand, kind, p) ?? scaleForFamily(GLOBAL_FAMILY.brand, kind, p)
 }

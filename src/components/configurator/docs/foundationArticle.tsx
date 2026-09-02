@@ -73,7 +73,7 @@ export function FoundationArticle({
   const count = doc.tokenCount(system)
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="min-w-0 flex flex-col gap-8">
       <DocHeader
         section="Docs"
         kind="Foundations"
@@ -128,29 +128,38 @@ export function FoundationArticle({
  *  column. This is what the old Design Rules page was, kept intact for the
  *  hand-off/print case the per-foundation pages don't cover. */
 export function OverviewArticle({
-  system, onOpen,
-}: { system: SystemDoc; onOpen: (key: string) => void }) {
+  system, onOpen, title,
+}: {
+  system: SystemDoc
+  onOpen: (key: string) => void
+  /** When set (the Theme Preview hub passes the previewed theme's name), the
+   *  sheet titles itself after that theme instead of the generic
+   *  "System reference", and the lead reads "this theme". */
+  title?: string
+}) {
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
   const intro = introPager(OVERVIEW_KEY)
+  const heading = title?.trim() || 'System reference'
+  const subject = title?.trim() ? 'this theme' : 'this system'
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="min-w-0 flex flex-col gap-8">
       <DocHeader
         section="Docs"
         kind="Reference"
-        title="System reference"
+        title={heading}
         actions={<DownloadSkillButton />}
       />
 
       <DocTitle
-        title="System reference"
+        title={heading}
         eyebrow="Reference"
-        lead="The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage."
+        lead={`The full specification of ${subject}, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.`}
         meta={<CountBadge>{total} tokens</CountBadge>}
       />
 
       <section id="start" className="flex flex-col gap-2 scroll-mt-4">
-        <p className="text-[13px] text-fg-muted leading-relaxed">
+        <p className="text-ui text-fg-muted leading-relaxed">
           Looking for how this lands in Figma or in your product repo?{' '}
           <button
             type="button"
@@ -169,7 +178,7 @@ export function OverviewArticle({
             <h3 id={`ov-${f.key}`} className="text-base font-semibold text-fg scroll-mt-4 pt-4">{f.label}</h3>
             <button
               onClick={() => onOpen(f.key)}
-              className="text-[11px] text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
+              className="text-caption text-fg-faint hover:text-fg transition-colors whitespace-nowrap"
             >
               Read the {f.label.toLowerCase()} page →
             </button>
@@ -198,12 +207,12 @@ function Block({
   title, description, children,
 }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-app overflow-hidden">
-      <div className="px-6 pt-5 pb-3">
+    <div className="min-w-0 rounded-2xl border border-line bg-app overflow-hidden">
+      <div className="px-4 @min-[760px]:px-6 pt-5 pb-3">
         <h4 className="text-[15px] font-semibold text-fg">{title}</h4>
-        {description && <p className="text-[13px] text-fg-muted mt-1 max-w-2xl leading-relaxed">{description}</p>}
+        {description && <p className="text-ui text-fg-muted mt-1 max-w-2xl leading-relaxed">{description}</p>}
       </div>
-      <div className="px-6 pb-6">{children}</div>
+      <div className="min-w-0 px-4 @min-[760px]:px-6 pb-6">{children}</div>
     </div>
   )
 }

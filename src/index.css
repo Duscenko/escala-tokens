@@ -45,6 +45,26 @@
   initial-value: #d4d4d4;
 }
 
+/* ── Status roles ──────────────────────────────────────────────────────────
+   The app's OWN status colors, finally tokenised. Before this there were
+   ~130 raw `text-red-500` / `bg-emerald-500` / `text-amber-600` /
+   `dark:text-*-400` scattered across ~15 files — the token generator's own
+   chrome not following a token system. Two roles per status:
+     --status-<x>        the INK — text / icon on the page (light: -600 shade,
+                         dark: -400), used at any opacity for soft tints too.
+     --status-<x>-solid  the FILL — buttons, status dots (+ text-white).
+   Values ARE the Tailwind shades the code already used, just centralised, so
+   this pass is a consistency fix, not a restyle. Registered so a theme switch
+   interpolates them like the neutrals. */
+@property --status-danger { syntax: "<color>"; inherits: true; initial-value: #dc2626; }
+@property --status-danger-solid { syntax: "<color>"; inherits: true; initial-value: #ef4444; }
+@property --status-success { syntax: "<color>"; inherits: true; initial-value: #059669; }
+@property --status-success-solid { syntax: "<color>"; inherits: true; initial-value: #10b981; }
+@property --status-warning { syntax: "<color>"; inherits: true; initial-value: #b45309; }
+@property --status-warning-solid { syntax: "<color>"; inherits: true; initial-value: #f59e0b; }
+@property --status-info { syntax: "<color>"; inherits: true; initial-value: #0284c7; }
+@property --status-info-solid { syntax: "<color>"; inherits: true; initial-value: #0ea5e9; }
+
 /* Class-strategy dark mode: `.dark` on <html> activates the dark palette. */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -76,6 +96,21 @@
      hardcoded text-white: a light accent needs dark ink, and on dark chrome the
      accent brightens so it needs dark ink there too. */
   --color-accent-ink: var(--accent-ink);
+  /* High-emphasis neutral action. Kept independent from chrome appearance so
+     Export remains a near-white payoff button with dark ink in both modes. */
+  --color-inverse-action: var(--inverse-action);
+  --color-inverse-action-hover: var(--inverse-action-hover);
+  --color-inverse-action-ink: var(--inverse-action-ink);
+  /* Status roles — see the @property block above. `text-status-danger`,
+     `bg-status-danger-solid`, `border-status-warning/40`, etc. */
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-solid: var(--status-danger-solid);
+  --color-status-success: var(--status-success);
+  --color-status-success-solid: var(--status-success-solid);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-solid: var(--status-warning-solid);
+  --color-status-info: var(--status-info);
+  --color-status-info-solid: var(--status-info-solid);
   --animate-agent-ring-drift: agent-ring-drift 10s linear infinite;
   @keyframes agent-ring-drift {
     to {
@@ -106,6 +141,28 @@
     from { height: var(--radix-accordion-content-height); }
     to { height: 0; }
   }
+
+  /* ── Type scale ──────────────────────────────────────────────────────────
+     The app had NO type ramp — just `:root { font: 18px }` and ~730 arbitrary
+     `text-[11px]` / `text-[10.5px]` / `text-[12.5px]` literals (20 distinct
+     sizes, half-pixel values included). These nine roles absorb every one of
+     them. Fixed px, matching the arbitrary values' own non-scaling behaviour;
+     half-pixel sizes round to the nearest role (a ≤0.5px change on ~80
+     elements). Line-height is deliberately NOT paired here — the old
+     `text-[Npx]` set font-size only and inherited leading; keep that.
+     Names are ROLES, not a t-shirt ramp, so they don't collide with
+     Tailwind's own `text-xs/sm/base…` (still used ~220× and untouched this
+     pass — unifying those is a separate, visual-change migration). */
+  --text-nano: 8px;      /* micro axis labels, ⌘K keycap row */
+  --text-micro: 9px;     /* tone numbers, dense mono meta */
+  --text-mini: 10px;     /* table meta, eyebrow captions */
+  --text-caption: 11px;  /* secondary labels, hints */
+  --text-body: 12px;     /* default dense UI text */
+  --text-ui: 13px;       /* primary rows, buttons, inputs */
+  --text-strong: 14px;   /* section titles in-chrome, brand lockup */
+  --text-title: 17px;    /* modal / panel H2 */
+  --text-heading: 20px;  /* large numeric readouts */
+  --text-display: 26px;  /* About stat figures */
 }
 
 :root {
@@ -125,6 +182,19 @@
   --accent-ui: #7f56d9;
   --accent-solid: #7f56d9;
   --accent-ink: #ffffff;
+  --inverse-action: #fafafa;
+  --inverse-action-hover: #f0f0f2;
+  --inverse-action-ink: #18181b;
+  /* Status — light. Ink shades clear AA on --app; warning goes to amber-700
+     because amber-500/600 fails on white. */
+  --status-danger: #dc2626;
+  --status-danger-solid: #ef4444;
+  --status-success: #059669;
+  --status-success-solid: #10b981;
+  --status-warning: #b45309;
+  --status-warning-solid: #f59e0b;
+  --status-info: #0284c7;
+  --status-info-solid: #0ea5e9;
   --rainbow-ink: #fafafa;
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
@@ -160,6 +230,14 @@
   --line: #e5e5e5;
   --line-strong: #d4d4d4;
   --rainbow-ink: #fafafa;
+  --status-danger: #dc2626;
+  --status-danger-solid: #ef4444;
+  --status-success: #059669;
+  --status-success-solid: #10b981;
+  --status-warning: #b45309;
+  --status-warning-solid: #f59e0b;
+  --status-info: #0284c7;
+  --status-info-solid: #0ea5e9;
 
   color-scheme: light;
 }
@@ -225,18 +303,57 @@
 }
 
 .dark {
-  /* ── Dark theme ── */
+  /* ── Dark theme ──
+     Retuned so the FILL separates a control from the page and the EDGE stops
+     shouting. Reported as "too loaded": with ~227 hand-rolled
+     `border border-line` controls, every button and input drew a rectangle in a
+     colour BRIGHTER than its own fill, on top of the column dividers that
+     already structure the screen.
+
+     Measured in OKLab ΔL (WCAG is useless this close to black — every pair here
+     lands 1.1–1.3:1 either way, the same near-black compression the shadow note
+     documents):
+       before  surface/app 0.060 · edge/app 0.124 · edge-on-its-own-surface 0.064
+       after   surface/app 0.083 · edge/app 0.113 · edge-on-its-own-surface 0.030
+     So the control outline drops to LESS THAN HALF its weight, the dividers
+     keep ~91 % of theirs (they read against `--app`, not against a surface),
+     and a control is actually EASIER to find than before because its fill now
+     separates more strongly than the outline used to.
+
+     No accessibility is lost, and this was checked rather than assumed: the old
+     borders already failed WCAG 1.4.11 badly (1.18:1 against their own surface,
+     1.31:1 against the page, against a 3.0 requirement), so they were carrying
+     visual weight, never boundary duty. The accessible boundary is the focus
+     ring, which is `--accent-ui`-derived and does pass.
+
+     Neutrals now carry a slight cool tint instead of being pure grey — pure
+     #171717/#262626 is the flat "default dark" look; a trace of chroma is what
+     reads as a deliberate dark theme.
+
+     `--fg-faint` moved #6b6b6b → #7b7b83: on the raised surface it measured
+     2.68:1, under the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on
+     `--surface`. */
   --app: #0a0a0a;
-  --surface: #171717;
-  --elevated: #262626;
+  --surface: #1c1c1f;
+  --elevated: #2a2a2f;
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
-  --fg-faint: #6b6b6b;
-  --line: #262626;
-  --line-strong: #404040;
+  --fg-faint: #7b7b83;
+  --line: #232326;
+  --line-strong: #3a3a3f;
+  /* Status — dark. Ink lightens to the -400 shade (what the `dark:` variants
+     used); solids stay saturated at their light value. */
+  --status-danger: #f87171;
+  --status-danger-solid: #ef4444;
+  --status-success: #34d399;
+  --status-success-solid: #10b981;
+  --status-warning: #fbbf24;
+  --status-warning-solid: #f59e0b;
+  --status-info: #38bdf8;
+  --status-info-solid: #0ea5e9;
 
   color-scheme: dark;
-  --rainbow-ink: #171717;
+  --rainbow-ink: #1c1c1f;
   --color-1: oklch(66.2% 0.225 25.9);
   --color-2: oklch(60.4% 0.26 302);
   --color-3: oklch(69.6% 0.165 251);
@@ -302,6 +419,81 @@ body {
   cursor: pointer;
 }
 
+/* Theme quick-edit ranges share one compact, responsive interaction model.
+   The native input still owns pointer capture and keyboard behavior; only its
+   paint is replaced. Progress is a CSS variable so dragging changes the track
+   in the same frame as the value, without waiting for a transition. */
+.quick-settings-range {
+  --quick-range-progress: 0%;
+  display: block;
+  width: 100%;
+  height: 20px;
+  margin-inline: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.quick-settings-range:focus-visible {
+  outline: none;
+}
+.quick-settings-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent-solid) 0 var(--quick-range-progress),
+    color-mix(in srgb, var(--fg) 16%, transparent) var(--quick-range-progress) 100%
+  );
+}
+.quick-settings-range::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid var(--accent-solid);
+  border-radius: 999px;
+  background: var(--app);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
+  transition: transform 100ms var(--ease-out-quint), box-shadow 100ms ease-out;
+}
+.quick-settings-range:hover::-webkit-slider-thumb,
+.quick-settings-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-solid) 16%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
+}
+.quick-settings-range:active::-webkit-slider-thumb {
+  transform: scale(1.18);
+}
+.quick-settings-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+}
+.quick-settings-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-solid);
+}
+.quick-settings-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent-solid);
+  border-radius: 999px;
+  background: var(--app);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
+  transition: transform 100ms var(--ease-out-quint), box-shadow 100ms ease-out;
+}
+.quick-settings-range:hover::-moz-range-thumb,
+.quick-settings-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-solid) 16%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 24%, transparent);
+}
+.quick-settings-range:active::-moz-range-thumb {
+  transform: scale(1.18);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
   .animate-rainbow {
@@ -310,6 +502,10 @@ body {
   .color-hub-tab,
   .color-hub-tab::before,
   .color-hub-tab-bg {
+    transition: none;
+  }
+  .quick-settings-range::-webkit-slider-thumb,
+  .quick-settings-range::-moz-range-thumb {
     transition: none;
   }
   ::view-transition-old(root),

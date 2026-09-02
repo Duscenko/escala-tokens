@@ -1,4 +1,5 @@
 // Primary Color — the Color hub's "Primitives" tab: a Figma-style families
+import { tableHeaderClass, tableRowClass } from './tableChrome'
 // table (Accent · Neutral · State · custom families) listing every tone as a
 // token row with editable light/dark values, eye toggles on the theme
 // columns and a per-row picker. The family nav on the left doubles as the
@@ -14,7 +15,7 @@
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
 // never disagree.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults } from '../../store/useDesignStore'
@@ -34,10 +35,13 @@ import {
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
-import { themesUsingFamily, FAMILY_SLOTS } from '../../lib/themeSources'
+import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import ThemePanel from './ThemePanel'
+import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
+import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
+import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -115,13 +119,13 @@ function WcagBadge({ fg, bg }: { fg: string; bg: string }) {
   const r = checkContrast(fg, bg)
   const cls =
     r >= 4.5
-      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+      ? 'text-status-success bg-status-success/10'
       : r >= 3
-      ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
-      : 'text-red-600 dark:text-red-400 bg-red-500/10'
+      ? 'text-status-warning bg-status-warning/10'
+      : 'text-status-danger bg-status-danger/10'
   const tag = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'LG' : '✕'
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[10px] font-semibold tabular-nums ${cls}`}>
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-mini font-semibold tabular-nums ${cls}`}>
       {r.toFixed(2)}:1 {tag}
     </span>
   )
@@ -131,14 +135,14 @@ function WcagPairChip({ label, fg, bg }: { label: string; fg: string; bg: string
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       <span
-        className="w-9 h-7 rounded-md flex items-center justify-center text-[12px] font-semibold flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
+        className="w-9 h-7 rounded-md flex items-center justify-center text-body font-semibold flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
         style={{ backgroundColor: bg, color: fg }}
         aria-hidden
       >
         Aa
       </span>
       <span className="flex flex-col min-w-0 gap-0.5">
-        <span className="font-mono text-[10.5px] text-fg-muted truncate" title={label}>{label}</span>
+        <span className="font-mono text-mini text-fg-muted truncate" title={label}>{label}</span>
         <WcagBadge fg={fg} bg={bg} />
       </span>
     </div>
@@ -183,7 +187,7 @@ const overviewDivide = 'divide-y divide-line/60'
 /** Same column tracks as the tone table + sticky header — overview ramps must
  *  use this or the light/dark headers drift over the swatches when scrolling. */
 const PRIMITIVE_TABLE_GRID: CSSProperties = {
-  gridTemplateColumns: 'minmax(9rem,1.1fr) repeat(2, minmax(8.5rem,1fr)) 2.75rem',
+  gridTemplateColumns: 'minmax(12rem,1.15fr) repeat(2, minmax(10rem,1fr)) 2.75rem',
 }
 
 /** Quick-edit strip: Color Agent is `size-icon` (36px). Hex + ramp match that,
@@ -191,6 +195,15 @@ const PRIMITIVE_TABLE_GRID: CSSProperties = {
 const STRIP_CONTROL_HEIGHT = 36
 const QUICK_EDIT_STRIP_PAD = 12
 const QUICK_EDIT_STRIP_HEIGHT = STRIP_CONTROL_HEIGHT + QUICK_EDIT_STRIP_PAD * 2
+
+// The tone table's sticky column header used to pin its own `h-9` here, on the
+// stated grounds that 36px matched `STRIP_CONTROL_HEIGHT` — the quick-edit strip
+// directly above — so the two chrome rows would read as one band. Both halves of
+// that had stopped being true: the strip measures 60px, and `h-9` was being
+// overridden to 41px by the header's own content anyway (a 27px export button
+// plus padding), which left the cells 42px INSIDE a 41px header — a 1px overflow
+// that pushed the column rules past the seam they were meant to stop at.
+// It takes `tableChrome`'s standard 52px band now, like every other table.
 
 function RampPreviewBlock({
   family,
@@ -217,7 +230,7 @@ function RampPreviewBlock({
     checkerboard: family.isAlpha,
   }
 
-  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line min-w-0'
+  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line/60 min-w-0'
 
   return (
     <div
@@ -226,19 +239,19 @@ function RampPreviewBlock({
       } ${active ? 'bg-accent-ui/[0.06]' : ''}`}
       style={PRIMITIVE_TABLE_GRID}
     >
-      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60">
         <OverviewSwatch family={family} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[13px] font-semibold text-fg truncate">{family.label}</span>
+            <span className="text-ui font-semibold text-fg truncate">{family.label}</span>
             {active ? (
-              <span className="text-[9px] font-semibold uppercase tracking-widest text-accent-ui flex-shrink-0">Editing</span>
+              <span className="text-micro font-semibold uppercase tracking-widest text-accent-ui flex-shrink-0">Editing</span>
             ) : null}
           </div>
           {family.isAlpha ? (
-            <p className="text-[10px] text-fg-faint mt-0.5">Translucent ramp · checkerboard shows alpha</p>
+            <p className="text-mini text-fg-faint mt-0.5">Translucent ramp · checkerboard shows alpha</p>
           ) : (
-            <p className="text-[10px] font-mono text-fg-faint mt-0.5 truncate">{family.base.toUpperCase()}</p>
+            <p className="text-mini font-mono text-fg-faint mt-0.5 truncate">{family.base.toUpperCase()}</p>
           )}
         </div>
       </div>
@@ -280,17 +293,17 @@ function FamilyRampOverview({
   const solidDark = accentDark ? (accentDark[accessibleSolidTone(accentDark)] ?? accent!.base) : '#000'
 
   return (
-    <section className="border-t border-line bg-app">
+    <section className="border-t border-line/60 bg-app">
       <div className="px-4 py-6">
-        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint mb-1">Scale guide</h3>
-        <p className="text-[11px] text-fg-faint mb-3">Radix 1–12 — same meaning in every family below.</p>
+        <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-1">Scale guide</h3>
+        <p className="text-caption text-fg-faint mb-3">Radix 1–12 — same meaning in every family below.</p>
         <ul className="flex flex-col gap-2.5">
           {TONE_BANDS.map((band, i) => (
             <li key={band.max} className="flex gap-3 min-w-0">
-              <span className="w-9 flex-shrink-0 font-mono text-[11px] tabular-nums text-fg-faint pt-px">
+              <span className="w-9 flex-shrink-0 font-mono text-caption tabular-nums text-fg-faint pt-px">
                 {toneRangeLabel(band.max, i)}
               </span>
-              <span className="text-[12px] leading-snug text-fg-muted min-w-0">
+              <span className="text-body leading-snug text-fg-muted min-w-0">
                 <span className="font-medium text-fg">{band.label}</span>
                 {' — '}
                 {TONE_DESCRIPTIONS.find((d) => d.max === band.max)?.text}
@@ -302,10 +315,10 @@ function FamilyRampOverview({
 
       <div className="border-t border-line/60">
         <div className="px-4 pt-6 pb-3">
-          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
-          <p className="text-[11px] text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
+          <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
+          <p className="text-caption text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
         </div>
-        <div className={`border-t border-line ${overviewDivide}`}>
+        <div className={`border-t border-line/60 ${overviewDivide}`}>
           {core.map((f) => (
             <RampPreviewBlock
               key={f.key}
@@ -319,8 +332,8 @@ function FamilyRampOverview({
             <>
               <div className="grid items-center bg-elevated/20 border-t border-line/60" style={PRIMITIVE_TABLE_GRID}>
                 <div className="col-span-4 px-4 py-2.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">States</span>
-                  <p className="text-[10px] text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
+                  <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">States</span>
+                  <p className="text-mini text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
                 </div>
               </div>
               {states.map((f) => (
@@ -340,8 +353,8 @@ function FamilyRampOverview({
 
       {accentLight && accentDark ? (
         <div className="border-t border-line/60 px-4 py-6 flex flex-col gap-3">
-          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">WCAG contrast</h3>
-          <p className="text-[11px] text-fg-faint">Live pairs from accent and neutral ramps.</p>
+          <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">WCAG contrast</h3>
+          <p className="text-caption text-fg-faint">Live pairs from accent and neutral ramps.</p>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
             <WcagPairChip label="Accent text · light" fg={accentLight[12] ?? '#000'} bg={accentLight[1] ?? '#fff'} />
             <WcagPairChip label="Accent text · dark" fg={accentDark[12] ?? '#fff'} bg={accentDark[1] ?? '#000'} />
@@ -542,8 +555,8 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
             className="z-50 rounded-2xl border border-line bg-app shadow-xl flex flex-col overflow-hidden normal-case tracking-normal"
           >
             <div className="flex items-baseline justify-between gap-2 px-4 pt-3 pb-2 flex-shrink-0">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Format</span>
-              <span className="text-[11px] font-normal text-fg-faint truncate">{label} · {appearance}</span>
+              <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Format</span>
+              <span className="text-caption font-normal text-fg-faint truncate">{label} · {appearance}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-3 flex flex-col gap-1.5">
                   {(isAlpha
@@ -564,24 +577,24 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
                     role="group"
                     aria-label={`${MENU_FORMAT_LABEL[f.key] ?? f.label} — ${label} ${appearance}`}
                     className={`flex items-stretch rounded-xl border transition-colors ${
-                      copyDone || downloadDone ? 'border-emerald-500/60 bg-emerald-500/[0.08]' : 'border-line hover:border-line-strong'
+                      copyDone || downloadDone ? 'border-status-success/60 bg-status-success/[0.08]' : 'border-line hover:border-line-strong'
                     }`}
                   >
                     <div className="flex-1 min-w-0 px-3 py-2">
                       <span className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium text-fg">{MENU_FORMAT_LABEL[f.key] ?? f.label}</span>
+                        <span className="text-ui font-medium text-fg">{MENU_FORMAT_LABEL[f.key] ?? f.label}</span>
                         {badge && (
-                          <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-[9px] font-semibold uppercase tracking-wide flex-shrink-0">
+                          <span className="px-1.5 py-[1px] rounded-full bg-accent-ui/15 text-accent-ui text-micro font-semibold uppercase tracking-wide flex-shrink-0">
                             {badge}
                           </span>
                         )}
                         {(copyDone || downloadDone) && (
-                          <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                          <span className="ml-auto text-caption font-semibold text-status-success flex-shrink-0">
                             {copyDone ? 'Copied' : 'Downloaded'}
                           </span>
                         )}
                       </span>
-                      <span className="block text-[11.5px] font-normal text-fg-faint truncate">
+                      <span className="block text-caption font-normal text-fg-faint truncate">
                         {/* Escala JSON is a whole-document contract — say so here
                             rather than let it read as family-scoped like the rest. */}
                         {f.key === 'escala' ? 'The whole tokens.json — not scoped to this ramp' : f.hint}
@@ -715,8 +728,8 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compa
         aria-label={ariaLabel}
         className={
           compact
-            ? 'w-[4.25rem] flex-shrink-0 bg-transparent text-[11px] font-mono tabular-nums text-fg px-1 py-0 outline-none'
-            : 'flex-1 min-w-0 bg-app text-[12px] font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors'
+            ? 'w-[4.25rem] flex-shrink-0 bg-transparent text-caption font-mono tabular-nums text-fg px-1 py-0 outline-none'
+            : 'flex-1 min-w-0 bg-app text-body font-mono tabular-nums text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-1.5 py-1 outline-none transition-colors'
         }
       />
       {!compact && (
@@ -774,7 +787,7 @@ function AlphaHexCell({ value, solid, solidName, compact }: { value: string; sol
       </span>
       <span
         className={`min-w-0 truncate font-mono tabular-nums text-fg-muted ${
-          compact ? 'w-[4.25rem] flex-shrink-0 text-[11px]' : 'w-full text-[12px] px-1.5 py-1'
+          compact ? 'w-[4.25rem] flex-shrink-0 text-caption' : 'w-full text-body px-1.5 py-1'
         }`}
         title={title}
       >
@@ -830,25 +843,33 @@ const CUSTOM_FOLDER = '__custom'
 
 export default function ColorPrimitives({
   previewTheme = 'light',
+  previewAppearance,
   onPreviewThemeChange,
+  onPreviewAppearanceChange,
   focusFamilyKey,
-  tabBar,
+  query: externalQuery,
   railCollapsed = false,
+  managedThemesExternally = false,
 }: {
   previewTheme?: string
+  previewAppearance?: ThemeAppearance
   onPreviewThemeChange?: (theme: string) => void
+  onPreviewAppearanceChange?: (appearance: ThemeAppearance) => void
   /** External request to switch the active family (e.g. NewTokenWizard just
    *  created it) — a family key (`custom-<slug>`), re-applied whenever it
    *  changes to a new value. */
   focusFamilyKey?: string | null
-  /** The Primitives/Semantics/Gradients tab pill bar, rendered by ColorHub —
-   *  passed down instead of pre-wrapped so it can share a row with search
-   *  on the table side. Groups | icon-rail lives in FoundationWorkbench. */
-  tabBar?: ReactNode
+  /** Shared with the Foundation toolbar so search occupies one consistent
+   *  position across Primitives and Semantics. */
+  query?: string
   /** Collapses this view's own 198px left column to a swatch strip. LIFTED
    *  to `Configurator` so TopNav's brand block and FoundationWorkbench's
    *  Groups cell track the same width. */
   railCollapsed?: boolean
+  /** Suppresses duplicate theme lifecycle controls when Themes Library owns them. */
+  managedThemesExternally?: boolean
+  /** Opens Gradients, a collection in the System colors rail. */
+  onOpenGradients?: () => void
 }) {
   const store = useDesignStore()
   const {
@@ -875,7 +896,10 @@ export default function ColorPrimitives({
   // from Home's "Start setting tokens" CTA).
   useEnsureColorScales()
 
-  const darkPreview = (themeKinds[previewTheme] ?? 'light') === 'dark'
+  const preferredAppearance = themeKinds[previewTheme] ?? 'light'
+  const activeAppearance = previewAppearance ?? preferredAppearance
+  const appearanceColumns = appearanceOrder(preferredAppearance)
+  const darkPreview = activeAppearance === 'dark'
 
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
@@ -904,7 +928,7 @@ export default function ColorPrimitives({
 
   // ── Families table state ──
   const [activeFamily, setActiveFamily] = useState('accent')
-  const [query, setQuery] = useState('')
+  const query = externalQuery ?? ''
   // Which tone's Token Details dialog is open, and which appearance that
   // dialog is currently editing. Rows used to expand INLINE here while the
   // identical job on the Semantics tab opened a dialog — same hub, same "edit
@@ -1053,7 +1077,30 @@ export default function ColorPrimitives({
     customColors, updateCustomColor,
   ])
 
-  const family = families.find((f) => f.key === activeFamily) ?? families[0]
+  /**
+   * The Themes Library owns the active theme. In that workspace Primitives is
+   * a collection for the selected theme, not a catalogue of every theme's
+   * private families. Keep shared slots (neutral/status) when that theme uses
+   * them, but never leak another theme's accent into this rail or overview.
+   */
+  const activeThemeFamilies = useMemo(() => {
+    if (!managedThemesExternally) return families
+    // Resolve every slot the way `resolveThemePalette` does: the theme's own
+    // family reference when it sets one, else the GLOBAL family. A system with
+    // no "+Theme" families has no `themeSources` entry at all, so without the
+    // global fallback this filtered to nothing — the rail lost Accent, its
+    // alpha twin and the shared neutral/status ramps. The fallback keeps those
+    // (exactly as before the Themes Library split) while still never letting
+    // another theme's private accent family leak in.
+    const refs = themeSources[previewTheme]
+    const sources = new Set(FAMILY_SLOTS.map((slot) => refs?.[slot] || GLOBAL_FAMILY[slot]))
+    return families.filter((item) => {
+      const sourceKey = item.customKey ?? item.alphaOf ?? item.key.replace(/-alpha$/, '')
+      return sources.has(sourceKey)
+    })
+  }, [families, managedThemesExternally, previewTheme, themeSources])
+
+  const family = activeThemeFamilies.find((f) => f.key === activeFamily) ?? activeThemeFamilies[0] ?? families[0]
 
   // ── Folders (Figma-style collections) ──
   // The nav groups families by the ROLE they serve, not by insertion order:
@@ -1109,14 +1156,25 @@ export default function ColorPrimitives({
       .map((k) => ({
         key: k,
         label:
-          k === BASE_FOLDER ? 'Theme 1'
+          k === BASE_FOLDER ? (managedThemesExternally ? 'System colors' : 'Theme 1')
           : k === CUSTOM_FOLDER ? 'Custom'
           : k.charAt(0).toUpperCase() + k.slice(1),
         groups: FAMILY_GROUPS
           .map((label) => ({ label, items: byFolder.get(k)!.get(label) ?? [] }))
           .filter((g) => g.items.length > 0),
       }))
-  }, [families, homeOf, themeOrder])
+  }, [families, homeOf, managedThemesExternally, themeOrder])
+
+  const visibleNavFolders = useMemo(() => {
+    if (!managedThemesExternally) return navFolders
+    return [{
+      key: BASE_FOLDER,
+      label: 'System colors',
+      groups: FAMILY_GROUPS
+        .map((label) => ({ label, items: activeThemeFamilies.filter((family) => homeOf(family).group === label) }))
+        .filter((group) => group.items.length > 0),
+    }]
+  }, [activeThemeFamilies, homeOf, managedThemesExternally, navFolders])
 
   // Collapsed nav sections. Keys are a whole folder's own key, or
   // `<folder>/<group>` for one of its Accents/Neutrals/States groups, so the
@@ -1172,7 +1230,7 @@ export default function ColorPrimitives({
         next.add(folderKey)
       } else {
         // was collapsed → open it, collapse the rest
-        navFolders.forEach((f) => {
+        visibleNavFolders.forEach((f) => {
           if (f.key === folderKey) next.delete(f.key)
           else next.add(f.key)
         })
@@ -1225,6 +1283,15 @@ export default function ColorPrimitives({
       setExpandedTone(null)
     }
   }
+
+  useEffect(() => {
+    if (!managedThemesExternally) return
+    const accentKey = themeAccentFamilyKey(previewTheme)
+    if (accentKey && accentKey !== activeFamily) {
+      setActiveFamily(accentKey)
+      setExpandedTone(null)
+    }
+  }, [activeFamily, managedThemesExternally, previewTheme, themeAccentFamilyKey])
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -1358,7 +1425,10 @@ export default function ColorPrimitives({
   // `PANEL_W`; `dockLeft` follows the rail's collapsed/expanded width off the
   // shared constants so a collapsed rail can't leave it floating over the strip.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
-  const dockLeft = railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH
+  // In Themes Library mode this drawer belongs to the library boundary, not
+  // the nested Color families rail. It therefore opens exactly where “New
+  // theme” opens: immediately to the right of the extreme-left library.
+  const dockLeft = managedThemesExternally ? THEME_LIBRARY_WIDTH : (railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH)
   const editPortal = editingFamily && navRect
     ? createPortal(
         <AnimatePresence>
@@ -1374,7 +1444,7 @@ export default function ColorPrimitives({
             style={{
               position: 'fixed',
               left: dockLeft,
-              top: navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK,
+              top: managedThemesExternally ? 72 : (navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK),
               bottom: DOCK_BOTTOM,
               width: Math.min(DOCK_W, Math.max(280, window.innerWidth - dockLeft - 16)),
             }}
@@ -1383,7 +1453,7 @@ export default function ColorPrimitives({
             <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line/60 flex-shrink-0">
               <span className={SWATCH} style={{ backgroundColor: editingFamily.base }} />
               <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{editingFamily.label}</span>
-              <span className="text-[11px] font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
+              <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamily.base.toUpperCase()}</span>
               <button
                 type="button"
                 aria-label="Close"
@@ -1439,10 +1509,11 @@ export default function ColorPrimitives({
   const detailsModal = !family.isAlpha && expandedTone != null ? (() => {
     const tone = expandedTone
     const name = rowName(tone)
-    const modes = [
-      { key: 'light' as const, value: family.light[tone] ?? '#ffffff', std: standardScales?.light[tone], set: (hex: string) => setTone(family.light, family.setLight, tone, hex) },
-      { key: 'dark' as const, value: family.dark[tone] ?? '#000000', std: standardScales?.dark[tone], set: (hex: string) => setTone(family.dark, family.setDark, tone, hex) },
-    ]
+    const modesByAppearance = {
+      light: { key: 'light' as const, value: family.light[tone] ?? '#ffffff', std: standardScales?.light[tone], set: (hex: string) => setTone(family.light, family.setLight, tone, hex) },
+      dark: { key: 'dark' as const, value: family.dark[tone] ?? '#000000', std: standardScales?.dark[tone], set: (hex: string) => setTone(family.dark, family.setDark, tone, hex) },
+    }
+    const modes = appearanceColumns.map((appearance) => modesByAppearance[appearance])
     const modified = modes.some((m) => m.std && m.value.toLowerCase() !== m.std.toLowerCase())
     return (
       <TokenDetailsModal
@@ -1484,12 +1555,7 @@ export default function ColorPrimitives({
     <div className="h-full flex flex-col">
       {/* ── Body: folders flush under Groups; tabs · ramp · table on the right ── */}
       <div className="flex flex-1 min-h-0 items-stretch">
-      <nav
-        ref={navRef}
-        aria-label="Color families"
-        className="flex-shrink-0 h-full overflow-y-auto py-1.5 px-2 flex flex-col bg-app transition-[width] duration-200"
-        style={{ width: railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-      >
+      <VariableCollectionRail navRef={navRef} collapsed={railCollapsed} ariaLabel="Color collections and groups">
         {railCollapsed ? (
           <div className="relative flex items-center justify-center pb-3 mb-1 border-b border-line/60">
             <FamilySwatch
@@ -1500,7 +1566,7 @@ export default function ColorPrimitives({
           </div>
         ) : null}
         {railCollapsed ? (
-          navFolders.flatMap((folder) => folder.groups).map((group, gi, all) => (
+          visibleNavFolders.flatMap((folder) => folder.groups).map((group, gi) => (
             <div key={`${group.label}-${gi}`} className="flex flex-col items-center gap-0.5">
               {gi > 0 && <span className="w-6 h-px bg-line my-1.5 flex-shrink-0" aria-hidden />}
               {group.items.map((f) => {
@@ -1524,9 +1590,10 @@ export default function ColorPrimitives({
             </div>
           ))
         ) : (
-        navFolders.map((folder) => {
-          const folderCollapsed = collapsedGroups.has(folder.key)
+        visibleNavFolders.map((folder) => {
+          const folderCollapsed = managedThemesExternally && folder.key === BASE_FOLDER ? false : collapsedGroups.has(folder.key)
           const folderPreviewed = folderThemeKey(folder.key) === previewTheme
+          const fixedFolder = managedThemesExternally && folder.key === BASE_FOLDER
           return (
           <div key={folder.key} className="flex flex-col">
             {/* Theme folder — the outer level. Its Accents/Neutrals/States sit
@@ -1546,30 +1613,32 @@ export default function ColorPrimitives({
                 from the nav's edge. When the trash button DOES render, `gap-1`
                 alone separates it from the label — same flush-right pattern
                 every other trailing icon in this nav already uses. */}
+            {/* `fixedFolder` (the Themes workspace's single "System colors"
+                wrapper) renders NO header: it was a non-interactive row —
+                `onClick` undefined, `tabIndex={-1}`, no chevron, only ever ONE
+                of them — so it added a nesting level without adding
+                information, exactly the `hideHeader` case the Custom group
+                already handles. Its Accents / Neutrals / States groups render
+                directly under the section's own "Groups" heading. */}
+            {!fixedFolder && (
             <div className="group/folder relative flex items-center w-full">
             <button
               type="button"
-              onClick={() => { toggleFolderExclusive(folder.key); selectFolderTheme(folder.key) }}
+              onClick={() => { toggleFolderExclusive(folder.key); if (!managedThemesExternally) selectFolderTheme(folder.key) }}
               aria-expanded={!folderCollapsed}
               aria-current={folderPreviewed ? 'true' : undefined}
               title={folderPreviewed ? `${folder.label} — shown in preview` : folderThemeKey(folder.key) ? `Preview the ${folder.label} theme` : undefined}
-              className={`w-full flex items-center gap-1.5 pl-2.5 pr-8 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+              className={`w-full flex items-center gap-1.5 pl-2.5 pr-8 pt-2.5 pb-1 text-body font-semibold transition-colors ${
                 folderPreviewed ? 'text-accent-ui' : 'text-fg-muted hover:text-fg'
               }`}
             >
               <span className="flex-shrink-0 flex items-center">
-                {folderPreviewed ? (
-                  <EyeIcon active />
-                ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-                  </svg>
-                )}
+                {folderPreviewed ? <EyeIcon active /> : <FolderIcon size={12} />}
               </span>
               <span className="flex-1 text-left truncate">{folder.label}</span>
             </button>
             <div className="absolute right-2.5 top-0 bottom-0 flex items-center gap-1.5 pointer-events-none">
-              {folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
+              {!managedThemesExternally && folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1578,7 +1647,7 @@ export default function ColorPrimitives({
                   }}
                   aria-label={`Delete theme ${folder.label}`}
                   title={`Delete the ${folder.label} theme — its color families stay, and move to Custom`}
-                  className="pointer-events-auto flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/folder:opacity-100 focus-visible:opacity-100 transition-all"
+                  className="pointer-events-auto flex-shrink-0 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-status-danger hover:bg-status-danger/10 opacity-0 group-hover/folder:opacity-100 focus-visible:opacity-100 transition-all"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -1590,6 +1659,7 @@ export default function ColorPrimitives({
               </svg>
             </div>
             </div>
+            )}
             <AnimatePresence initial={false}>
               {!folderCollapsed && (
                 <motion.div
@@ -1607,17 +1677,15 @@ export default function ColorPrimitives({
           // information, so it renders its families directly.
           const hideHeader = folder.key === CUSTOM_FOLDER
           return (
-            <div key={groupKey} className="flex flex-col gap-0.5 pl-2">
+            <div key={groupKey} className={`flex flex-col gap-0.5 ${fixedFolder ? '' : 'pl-2'}`}>
             {!hideHeader && (
             <button
               type="button"
               onClick={() => toggleGroup(groupKey)}
               aria-expanded={!collapsed}
-              className="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint hover:text-fg-muted transition-colors"
+              className="flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-caption font-semibold text-fg-faint hover:text-fg-muted transition-colors"
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
-                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-              </svg>
+              <FolderIcon size={11} />
               <span className="flex-1 text-left">{group.label}</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`}>
                 <path d="M6 9l6 6 6-6" />
@@ -1659,7 +1727,7 @@ export default function ColorPrimitives({
                       onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
                       className="flex-1 min-w-0 text-left"
                     >
-                      <span className="block truncate text-[13px] font-medium">{f.label}</span>
+                      <span className="block truncate text-ui font-medium">{f.label}</span>
                     </button>
                   </div>
                   {/* Edit — stays visible on the active row so the affordance is
@@ -1704,7 +1772,7 @@ export default function ColorPrimitives({
                         className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-all ${
                           usedBy.length
                             ? 'text-fg-faint opacity-0 group-hover/fam:opacity-60 cursor-not-allowed'
-                            : 'text-fg-faint hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/fam:opacity-100'
+                            : 'text-fg-faint hover:text-status-danger hover:bg-status-danger/10 opacity-0 group-hover/fam:opacity-100'
                         }`}
                       >
                         {usedBy.length ? (
@@ -1737,13 +1805,13 @@ export default function ColorPrimitives({
           )
         })
         )}
-        {!railCollapsed && (
+        {!railCollapsed && !managedThemesExternally && (
           <button
             type="button"
             onClick={() => setAddThemeOpen((v) => !v)}
             aria-haspopup="dialog"
             aria-expanded={addThemeOpen}
-            className="mt-2 mx-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 py-2 text-[12px] font-medium text-fg-faint hover:text-fg hover:border-fg-faint hover:bg-elevated/40 transition-colors"
+            className="mt-2 mx-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 py-2 text-body font-medium text-fg-faint hover:text-fg hover:border-fg-faint hover:bg-elevated/40 transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
               <path d="M12 5v14M5 12h14" />
@@ -1751,29 +1819,9 @@ export default function ColorPrimitives({
             New theme
           </button>
         )}
-      </nav>
+      </VariableCollectionRail>
 
       <div className="flex-1 min-w-0 flex flex-col bg-app border-l border-line min-h-0">
-        <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-          <div className="flex-1 min-w-0">{tabBar}</div>
-          <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-              aria-label="Filter tokens"
-            />
-            {query && (
-              <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-            )}
-          </div>
-        </div>
         <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[24rem]">
               {/* Quick-edit strip lives inside the scroll surface so its sticky
@@ -1901,16 +1949,16 @@ export default function ColorPrimitives({
                   of them was scrolling back up. Sits under the quick-edit strip
                   (`top` offset) and above scrolling rows (`z-10`). */}
               <div
-                className="sticky z-10 grid items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint"
+                className={tableHeaderClass('grid')}
                 style={{ ...gridStyle, top: QUICK_EDIT_STRIP_HEIGHT }}
               >
-                <span className="pl-4 py-3 border-r border-line">Token name</span>
-                {(['light', 'dark'] as const).map((col) => {
-                  const isPreviewed = previewTheme === col
+                <span className="flex items-center pl-4 border-r border-line/60">Primitive collection</span>
+                {appearanceColumns.map((col) => {
+                  const isPreviewed = activeAppearance === col
                   return (
-                    <span key={col} className={`flex items-center px-2.5 py-2 border-r border-line min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
+                    <span key={col} className={`flex items-center px-2.5 border-r border-line/60 min-w-0 ${isPreviewed ? 'bg-accent-ui/[0.06]' : ''}`}>
                       <button
-                        onClick={() => onPreviewThemeChange?.(col)}
+                        onClick={() => onPreviewAppearanceChange?.(col)}
                         aria-pressed={isPreviewed}
                         title={isPreviewed ? `${col} — shown in preview` : `Show ${col} in the preview`}
                         className={`flex items-center gap-1.5 flex-1 min-w-0 px-1.5 py-1 rounded-md transition-colors ${
@@ -1950,53 +1998,41 @@ export default function ColorPrimitives({
                 visibleTones.map((tone, i) => {
                   const name = rowName(tone)
                   const expanded = expandedTone === tone
-                  const isEven = i % 2 === 1
-                  const darkTone = tone
                   return (
                     <div
                       key={tone}
-                      className={`grid items-stretch group border-t border-line/40 transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-                        isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-                      }`}
+                      className={tableRowClass(i, 'grid')}
                       style={gridStyle}
                     >
-                        <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line text-fg-faint">
+                        <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line/60 text-fg-faint">
                           <PaletteIcon size={14} />
-                          <code className="font-mono text-[12px] text-fg-muted truncate">{name}</code>
+                          <code className="font-mono text-body text-fg-muted truncate">{name}</code>
                           {tone === BASE_TONE && (
-                            <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">anchor</span>
+                            <span className="text-nano font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-elevated text-fg-faint flex-shrink-0">anchor</span>
                           )}
                         </div>
-                        <div className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">
-                          {family.isAlpha ? (
-                            <AlphaHexCell
-                              value={family.light[tone] ?? '#00000000'}
-                              solid={family.solidLight?.[tone]}
-                              solidName={solidRowName(tone)}
-                            />
-                          ) : (
-                            <HexCell
-                              value={family.light[tone] ?? '#ffffff'}
-                              onChange={(hex) => setTone(family.light, family.setLight, tone, hex)}
-                              ariaLabel={`${name} light value`}
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center px-2.5 py-1.5 border-r border-line min-w-0">
-                          {family.isAlpha ? (
-                            <AlphaHexCell
-                              value={family.dark[darkTone] ?? '#00000000'}
-                              solid={family.solidDark?.[darkTone]}
-                              solidName={solidRowName(darkTone)}
-                            />
-                          ) : (
-                            <HexCell
-                              value={family.dark[darkTone] ?? '#000000'}
-                              onChange={(hex) => setTone(family.dark, family.setDark, darkTone, hex)}
-                              ariaLabel={`${name} dark value`}
-                            />
-                          )}
-                        </div>
+                        {appearanceColumns.map((appearance) => {
+                          const scale = appearance === 'light' ? family.light : family.dark
+                          const solid = appearance === 'light' ? family.solidLight : family.solidDark
+                          const setScale = appearance === 'light' ? family.setLight : family.setDark
+                          return (
+                            <div key={appearance} className="flex items-center px-2.5 py-1.5 border-r border-line/60 min-w-0">
+                              {family.isAlpha ? (
+                                <AlphaHexCell
+                                  value={scale[tone] ?? '#00000000'}
+                                  solid={solid?.[tone]}
+                                  solidName={solidRowName(tone)}
+                                />
+                              ) : (
+                                <HexCell
+                                  value={scale[tone] ?? (appearance === 'light' ? '#ffffff' : '#000000')}
+                                  onChange={(hex) => setTone(scale, setScale, tone, hex)}
+                                  ariaLabel={`${name} ${appearance} value`}
+                                />
+                              )}
+                            </div>
+                          )
+                        })}
                         {family.isAlpha ? (
                           // Derived, not editable — see AlphaHexCell.
                           <div aria-hidden className="flex items-center justify-center w-full h-full text-fg-faint/40">
@@ -2005,7 +2041,7 @@ export default function ColorPrimitives({
                         ) : (
                           <button
                             onClick={() => {
-                              setDetailMode(darkPreview ? 'dark' : 'light')
+                              setDetailMode(activeAppearance)
                               setExpandedTone((cur) => (cur === tone ? null : tone))
                             }}
                             aria-haspopup="dialog"
@@ -2024,7 +2060,7 @@ export default function ColorPrimitives({
                 })
               )}
 
-              <FamilyRampOverview families={families} activeKey={activeFamily} namingLabels={namingLabels} />
+              <FamilyRampOverview families={activeThemeFamilies} activeKey={family.key} namingLabels={namingLabels} />
             </div>
         </div>
       </div>
@@ -2064,13 +2100,13 @@ export default function ColorPrimitives({
 
       {/* The ONE theme panel — same component, same docked position, whether
           it's opened from here or from Semantics' `+` / column pencil. */}
-      <ThemePanel
+      {!managedThemesExternally && <ThemePanel
         open={addThemeOpen}
         onClose={() => setAddThemeOpen(false)}
         appearance={darkPreview ? 'dark' : 'light'}
         railCollapsed={railCollapsed}
         onCreated={(key) => { onPreviewThemeChange?.(key); setAddThemeOpen(false) }}
-      />
+      />}
     </div>
   )
 }

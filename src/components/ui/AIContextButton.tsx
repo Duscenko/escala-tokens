@@ -7,6 +7,7 @@ import {
 import { SparkleCircleIcon } from './icons'
 import { RainbowButton } from './rainbow-button'
 import { showToast } from './Toast'
+import { useI18n } from '../../lib/i18n'
 
 export type { AIContextScope }
 
@@ -27,16 +28,17 @@ export interface AIContextButtonProps {
  */
 export function AIContextButton({ scope, markdown }: AIContextButtonProps) {
   const copy = AI_CONTEXT_COPY[scope]
+  const { t } = useI18n()
   const [done, setDone] = useState(false)
 
   async function onCopy() {
     try {
       await navigator.clipboard.writeText(resolveMarkdown(markdown))
       setDone(true)
-      showToast(copy.toast)
+      showToast(t(copy.toast))
       window.setTimeout(() => setDone(false), 2000)
     } catch {
-      showToast('Couldn’t copy — try again')
+      showToast(t('Couldn’t copy — try again'))
     }
   }
 
@@ -45,29 +47,29 @@ export function AIContextButton({ scope, markdown }: AIContextButtonProps) {
       <RainbowButton type="button" size="sm" onClick={onCopy} className="relative z-10">
         {done ? (
           <>
-            <span className="text-[11px] leading-none">✓</span>
-            {copy.done}
+            <span className="text-caption leading-none">✓</span>
+            {t(copy.done)}
           </>
         ) : (
           <>
             <SparkleCircleIcon size={14} />
-            {copy.label}
+            {t(copy.label)}
           </>
         )}
       </RainbowButton>
       <span className="relative group/hint inline-flex">
         <button
           type="button"
-          aria-label={`What ${copy.label} does`}
-          className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-[10px] font-semibold leading-none hover:text-fg hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+          aria-label={t('What {label} does', { label: t(copy.label) })}
+          className="w-4 h-4 rounded-full border border-line-strong text-fg-muted flex items-center justify-center text-mini font-semibold leading-none hover:text-fg hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
         >
           i
         </button>
         <span
           role="tooltip"
-          className="pointer-events-none absolute right-0 top-full mt-2 w-60 rounded-lg bg-fg text-app text-[11px] leading-snug px-2.5 py-2 text-left opacity-0 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100 transition-opacity duration-150 z-40 shadow-lg"
+          className="pointer-events-none absolute right-0 top-full mt-2 w-60 rounded-lg bg-fg text-app text-caption leading-snug px-2.5 py-2 text-left opacity-0 group-hover/hint:opacity-100 group-focus-within/hint:opacity-100 transition-opacity duration-150 z-40 shadow-lg"
         >
-          {copy.hint}
+          {t(copy.hint)}
         </span>
       </span>
     </div>

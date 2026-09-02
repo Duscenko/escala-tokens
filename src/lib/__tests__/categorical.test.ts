@@ -9,6 +9,11 @@ import { buildSystem } from '../color/audit'
 import { buildCategoricalSymbolicTokens, generateTokenJSON } from '../tokenGenerator'
 import { buildWizardExport } from '../exportWizard'
 import { unzipStore } from '../zipStore'
+import { iconAiContext } from '../iconLibraries'
+
+// The default AI icon source's repo — asserted dynamically so the Skill/README
+// icon block can change default without editing string literals here.
+const DEFAULT_ICON_REPO = iconAiContext(undefined).source.repo
 
 /**
  * Categorical ships a nested role contract: dotted ids internally
@@ -340,9 +345,9 @@ describe('the Skill export format', () => {
     expect(foundationsMd).toContain('## Shadows')
     expect(foundationsMd).toContain('/Shadow/')
     expect(foundationsMd).toContain('## Icons')
-    expect(foundationsMd).toContain('https://github.com/untitleduico/icons')
+    expect(foundationsMd).toContain(DEFAULT_ICON_REPO)
     expect(md).toContain('### Icons')
-    expect(md).toContain('https://github.com/untitleduico/icons')
+    expect(md).toContain(DEFAULT_ICON_REPO)
     expect(md).toContain('When generating UI for this product, use icons from')
   })
 

@@ -10,13 +10,19 @@
     <meta property="og:description" content="Escala Tokens — Token generator. Build a minimal, custom design token system and sync it live to Figma." />
     <meta property="og:type" content="website" />
     <script>
-      // Apply persisted theme before paint to avoid a flash. Default: light.
+      // Apply persisted theme before paint to avoid a flash. Default: DARK —
+      // only an explicit stored 'light' opts out, so a first visit and a
+      // storage failure both land dark. Must stay the exact inverse of
+      // `getTheme()` in src/lib/theme.ts or the pre-paint class and the app's
+      // own read disagree for one frame.
       (function () {
         try {
-          if (localStorage.getItem('sd-theme') === 'dark') {
+          if (localStorage.getItem('sd-theme') !== 'light') {
             document.documentElement.classList.add('dark');
           }
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
       })();
     </script>
   </head>

@@ -1,25 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore, type SavedSystem } from '../../store/useDesignStore'
-import { isLiveEnvironment, publishTokens, syncUrl as buildSyncUrl } from '../../lib/figmaSync'
+import { isLiveEnvironment, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
 import { slugify } from '../../lib/utils'
 import { FigmaLogo, BackToEditor, relativeTime } from './figmaShared'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
+  embedded?: boolean
   /** Cross-link to the sibling destination — see FigmaDownloadView's own note. */
   onOpenDownload?: () => void
   /** Opens GitHubConnectView — surfaced as a nudge when unconnected, see below. */
   onOpenGithub?: () => void
-  /** Opens Save & Share — used only by the systems list's empty state, to
+  /** Opens the System library — used only by the systems list's empty state, to
    *  create/import a system rather than rebuilding that flow here. */
   onOpenSave?: () => void
+  /** Shared manual-publish feedback from Configurator, so this screen and the
+   *  persistent header always report the same request. */
+  publishState: FigmaPublishState
+  onRequestSync: () => void
 }
-
-type PublishState = 'idle' | 'publishing' | 'done' | 'error'
-
-/** Same beat `useAutoFigmaSync` debounces on — see the publish effect below. */
-const PUBLISH_DEBOUNCE_MS = 1500
 
 // One row in "Your design systems" for a NON-active saved entry — the active
 // one renders inline in the parent instead (just a name + badge, nothing
@@ -58,10 +58,10 @@ function SystemRow({
             aria-label={`Rename ${sys.name}`}
             className="flex-1 min-w-0 text-xs text-fg bg-transparent outline-none border-b border-line-strong"
           />
-          <button onClick={onRenameSubmit} className="text-[10px] font-medium text-emerald-500 hover:text-emerald-600 flex-shrink-0">Save</button>
-          <button onClick={onRenameCancel} className="text-[10px] text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
+          <button onClick={onRenameSubmit} className="text-mini font-medium text-status-success hover:text-status-success flex-shrink-0">Save</button>
+          <button onClick={onRenameCancel} className="text-mini text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
         </div>
-        {renameError && <p className="text-[10px] text-red-500">{renameError}</p>}
+        {renameError && <p className="text-mini text-status-danger">{renameError}</p>}
       </div>
     )
   }
@@ -77,32 +77,34 @@ function SystemRow({
               hero above already prints "Last published 5m ago" with it, and a
               copied-in variant rendered "5 min ago" one card lower — two
               vocabularies for one concept on one screen. */}
-          <span className="text-[10px] text-fg-faint flex-shrink-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity">saved {relativeTime(sys.savedAt)}</span>
+          <span className="text-mini text-fg-faint flex-shrink-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity">saved {relativeTime(sys.savedAt)}</span>
           <button onClick={onStartRename} aria-label={`Rename ${sys.name}`} className="p-1 rounded text-fg-faint hover:text-fg hover:bg-elevated transition-colors flex-shrink-0">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </button>
-          <button onClick={onStartDelete} aria-label={`Remove ${sys.name}`} className="p-1 rounded text-fg-faint hover:text-red-500 hover:bg-elevated transition-colors flex-shrink-0">
+          <button onClick={onStartDelete} aria-label={`Remove ${sys.name}`} className="p-1 rounded text-fg-faint hover:text-status-danger hover:bg-elevated transition-colors flex-shrink-0">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" /></svg>
           </button>
         </>
       ) : (
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[10px] text-fg-faint">Remove?</span>
-          <button onClick={onConfirmDelete} className="text-[10px] font-medium text-red-500 hover:text-red-600 transition-colors">Remove</button>
-          <button onClick={onCancelDelete} className="text-[10px] text-fg-faint hover:text-fg transition-colors">Cancel</button>
+          <span className="text-mini text-fg-faint">Remove?</span>
+          <button onClick={onConfirmDelete} className="text-mini font-medium text-status-danger hover:text-status-danger transition-colors">Remove</button>
+          <button onClick={onCancelDelete} className="text-mini text-fg-faint hover:text-fg transition-colors">Cancel</button>
         </div>
       )}
     </div>
   )
 }
 
-// ─── Sync status — a RECURRING check, not a procedure. This is the one place
-// that still auto-publishes on mount (moved verbatim from the retired
-// `FigmaConnectView`, see figmaShared.tsx): opening THIS screen is what
-// "check my sync status" means, so publishing the instant it opens is the
-// correct default — FigmaDownloadView has no such effect any more, since
-// downloading a file was never a reason to hit /api/tokens. ──────────────────
-export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, onOpenSave }: FigmaSyncViewProps = {}) {
+// ─── Sync status and explicit publish ───────────────────────────────────────
+// Opening this surface is intentionally read-only. Its parent owns the manual
+// publish request and status so the top-nav Sync control and this screen always
+// show the same in-flight feedback. Downloading the plugin never invokes
+// /api/tokens.
+export default function FigmaSyncView({
+  onClose, embedded = false, onOpenDownload, onOpenGithub, onOpenSave,
+  publishState, onRequestSync,
+}: FigmaSyncViewProps) {
   const {
     projectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
     githubRepo, savedSystems, loadSystem, removeSavedSystem, renameSavedSystem,
@@ -113,7 +115,6 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
   // Per-system scoped endpoint (re-reads projectName each render so it stays current).
   const syncUrl = buildSyncUrl()
 
-  const [publishState, setPublishState] = useState<PublishState>('idle')
   const [copied, setCopied] = useState(false)
 
   // ── "Your design systems" — see SystemRow above. Only one row is ever
@@ -191,48 +192,6 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
     if (commitName(activeDraft)) setRenamingActive(false)
   }
 
-  // `syncUrl` (not just `isDeployed`) is the real trigger: it changes whenever
-  // the ACTIVE system does — the hero's rename field or the "Your design
-  // systems" list's loadSystem() below — and this screen doesn't remount on
-  // either (same exportMode, same centerKey), so with only `isDeployed` in the
-  // deps this fired once and never noticed a switch.
-  //
-  // But `syncUrl` is derived from `projectName`, which the hero input sets on
-  // every KEYSTROKE — and each distinct slug is its own blob server-side
-  // (`put(\`tokens/<project>.json\`)` in api/tokens.ts). Publishing straight
-  // off the dep change wrote one blob per character typed ("g", "gh", "gho"…),
-          // polluting leftover blobs. A bare `/api/tokens` (no ?project=) is
-          // rejected — each keystroke would still have created a new slug.
-  // So: publish immediately on mount (opening this screen IS the status
-  // check), debounce every later change on the same 1.5s beat
-  // `useAutoFigmaSync` already uses for exactly this reason.
-  const publishedOnceRef = useRef(false)
-
-  useEffect(() => {
-    if (!isDeployed) return
-    let cancelled = false
-    // Set synchronously in both branches so the card never claims the PREVIOUS
-    // system's "published" state while a new publish is still pending.
-    setPublishState('publishing')
-    const run = () => {
-      publishTokens().then((ok) => {
-        if (!cancelled) setPublishState(ok ? 'done' : 'error')
-      })
-    }
-    if (!publishedOnceRef.current) {
-      publishedOnceRef.current = true
-      run()
-      return () => {
-        cancelled = true
-      }
-    }
-    const timer = setTimeout(run, PUBLISH_DEBOUNCE_MS)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [isDeployed, syncUrl])
-
   function copyUrl() {
     navigator.clipboard.writeText(syncUrl)
     setCopied(true)
@@ -250,7 +209,7 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-8 max-w-2xl p-8"
+      className={`flex flex-col max-w-3xl ${embedded ? 'gap-5 p-6' : 'gap-8 p-8'}`}
     >
       {onClose && <BackToEditor onClose={onClose} />}
 
@@ -304,11 +263,11 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
               <span className="text-lg font-semibold text-fg-faint flex-shrink-0">· Figma sync</span>
             </div>
             {nameError ? (
-              <p className="text-sm text-red-500">{nameError}</p>
+              <p className="text-sm text-status-danger">{nameError}</p>
             ) : (
               <p className="flex items-center gap-1.5 text-sm text-fg-faint">
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-line-strong'}`} aria-hidden />
-                {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not synced yet'}
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-status-success-solid' : 'bg-line-strong'}`} aria-hidden />
+                {connected ? <>Last published <span className="text-fg-muted">{relativeTime(figmaLastPublishAt)}</span></> : 'Not published yet'}
               </p>
             )}
           </div>
@@ -336,9 +295,28 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
       {isDeployed ? (
         <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface/50 p-5">
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-fg">Your live sync URL</p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-fg">Your live sync URL</p>
+              <button
+                onClick={onRequestSync}
+                disabled={publishState === 'publishing'}
+                className="inline-flex flex-shrink-0 items-center gap-2 rounded-lg bg-fg px-3 py-1.5 text-xs font-semibold text-app transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+              >
+                {publishState === 'publishing' ? (
+                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <path d="M8 2a6 6 0 1 1-5.2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <path d="M13.5 5.5A6 6 0 1 0 14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M13.5 1.8v3.7H9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                {publishState === 'publishing' ? 'Publishing…' : publishState === 'error' ? 'Retry sync' : 'Sync now'}
+              </button>
+            </div>
             <p className="text-xs text-fg-faint leading-relaxed">
-              In the plugin&apos;s <span className="text-fg-muted">Live Sync</span> tab, paste this endpoint and hit sync — your latest tokens are already published here.
+              In the plugin&apos;s <span className="text-fg-muted">Live Sync</span> tab, paste this endpoint, use <span className="text-fg-muted">Sync now</span> to publish your current tokens, then hit sync in Figma.
             </p>
             {/* This is the whole "protocol": the URL is a function of the
                 PROJECT NAME above, full stop — never colours, themes, radius,
@@ -347,24 +325,24 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
                 renaming the project changes which URL that is. Said
                 explicitly here so it reads as "by design" rather than as a
                 stale/broken URL the next time a colour edit doesn't move it. */}
-            <p className="text-[11px] text-fg-faint leading-relaxed">
+            <p className="text-caption text-fg-faint leading-relaxed">
               This URL only changes when you rename the project (the field above) — never when you edit colours, themes, or any other token.
             </p>
             <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2 mt-1">
               <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
-              <button onClick={copyUrl} className="text-[10px] text-fg-faint hover:text-fg transition flex-shrink-0">
+              <button onClick={copyUrl} className="text-mini text-fg-faint hover:text-fg transition flex-shrink-0">
                 {copied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               {publishState === 'publishing' && (
-                <><span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /><span className="text-fg-faint">Publishing your tokens…</span></>
+                <><span className="w-1.5 h-1.5 rounded-full bg-status-warning-solid animate-pulse" /><span className="text-fg-faint">Publishing your tokens…</span></>
               )}
               {publishState === 'done' && (
-                <><span className="text-emerald-500">✓</span><span className="text-fg-muted">Tokens published — the plugin picks them up on its next sync.</span></>
+                <><span className="text-status-success">✓</span><span className="text-fg-muted">Tokens published — the plugin picks them up on its next sync.</span></>
               )}
               {publishState === 'error' && (
-                <><span className="w-1.5 h-1.5 rounded-full bg-red-400" /><span className="text-fg-faint">Couldn&apos;t publish automatically — open the plugin&apos;s Import tab to paste tokens manually.</span></>
+                <><span className="w-1.5 h-1.5 rounded-full bg-status-danger-solid" /><span className="text-fg-faint">Couldn&apos;t publish your tokens. Retry sync, or use the plugin&apos;s Import tab to paste them manually.</span></>
               )}
             </div>
           </div>
@@ -373,7 +351,7 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
           <div className="flex items-start justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2.5">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-fg">Keep Figma in sync</p>
-              <p className="text-[11px] text-fg-faint leading-relaxed mt-0.5">
+              <p className="text-caption text-fg-faint leading-relaxed mt-0.5">
                 Re-publish automatically after every edit.
               </p>
             </div>
@@ -383,7 +361,7 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
               aria-label="Toggle auto-sync to Figma"
               onClick={() => setAutoSyncFigma(!autoSyncFigma)}
               className={`relative flex-shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors ${
-                autoSyncFigma ? 'bg-emerald-500' : 'bg-line-strong'
+                autoSyncFigma ? 'bg-status-success-solid' : 'bg-line-strong'
               }`}
             >
               <span
@@ -397,20 +375,18 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
       ) : (
         <div className="rounded-xl border border-line bg-surface/50 p-5">
           <p className="text-xs text-fg-faint leading-relaxed">
-            Live sync runs against your deployed app. Deploy to a live URL first, then reopen this screen to publish your tokens to{' '}
-            <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code> automatically. For now, use the plugin&apos;s <span className="text-fg-muted">Import</span> tab with the exported <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>.
+            Live sync runs against your deployed app. Deploy to a live URL first, then use <span className="text-fg-muted">Sync now</span> to publish your tokens to{' '}
+            <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>. For now, use the plugin&apos;s <span className="text-fg-muted">Import</span> tab with the exported <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">tokens.json</code>.
           </p>
         </div>
       )}
 
       {/* Managing several systems across several Figma files means the
           question "which one am I about to paste into THIS file" needs an
-          answer right here, not two screens away in Save & Share. Reuses the
+          answer right here, not two screens away in the System library. Reuses the
           same registry/actions that screen's grid does — this is a second
-          VIEW of it, not a second copy. Loading a row re-publishes via the
-          effect above (syncUrl is in its deps), so clicking a system is the
-          whole "get me its info" step: load → auto-publish → copy from the
-          URL field above, which now reflects it. */}
+          VIEW of it, not a second copy. Loading a row only changes the
+          endpoint; publish it deliberately with Sync now. */}
       <div className="flex flex-col gap-2">
         <h3 className="text-xs text-fg-faint uppercase tracking-wide px-1">Your design systems</h3>
         <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface/50 p-2">
@@ -431,10 +407,10 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
                   aria-label={`Rename ${projectName}`}
                   className="flex-1 min-w-0 text-xs text-fg bg-transparent outline-none border-b border-line-strong"
                 />
-                <button onClick={submitActiveRename} className="text-[10px] font-medium text-emerald-500 hover:text-emerald-600 flex-shrink-0">Save</button>
-                <button onClick={() => { setRenamingActive(false); setNameError(null) }} className="text-[10px] text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
+                <button onClick={submitActiveRename} className="text-mini font-medium text-status-success hover:text-status-success flex-shrink-0">Save</button>
+                <button onClick={() => { setRenamingActive(false); setNameError(null) }} className="text-mini text-fg-faint hover:text-fg flex-shrink-0">Cancel</button>
               </div>
-              {nameError && <p className="text-[10px] text-red-500">{nameError}</p>}
+              {nameError && <p className="text-mini text-status-danger">{nameError}</p>}
             </div>
           ) : (
             <div className="flex items-center gap-1 px-3 py-2 rounded-lg bg-elevated/60 group">
@@ -446,20 +422,20 @@ export default function FigmaSyncView({ onClose, onOpenDownload, onOpenGithub, o
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
               </button>
-              <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-emerald-500/15 text-emerald-500">Active</span>
+              <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-micro font-semibold uppercase tracking-wide bg-status-success/15 text-status-success">Active</span>
             </div>
           )}
 
           {otherSystems.length === 0 ? (
             <div className="flex items-center justify-between gap-2 px-3 py-2">
-              <p className="text-[11px] text-fg-faint">
+              <p className="text-caption text-fg-faint">
                 {savedSystems.length === 0
                   ? "You haven't saved this design system yet."
                   : 'Save another system to switch between them here.'}
               </p>
               {onOpenSave && (
-                <button onClick={onOpenSave} className="text-[11px] text-fg-muted hover:text-fg transition-colors flex-shrink-0">
-                  {savedSystems.length === 0 ? 'Save it →' : 'Save & Share →'}
+                <button onClick={onOpenSave} className="text-caption text-fg-muted hover:text-fg transition-colors flex-shrink-0">
+                  {savedSystems.length === 0 ? 'Save it →' : 'System library →'}
                 </button>
               )}
             </div>

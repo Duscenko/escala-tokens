@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
+import { useI18n } from '../../lib/i18n'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
@@ -73,22 +74,22 @@ function Chevron({ open }: { open: boolean }) {
 
 /** Inline code chip — same treatment FigmaDownloadView uses for `manifest.json`. */
 function C({ children }: { children: ReactNode }) {
-  return <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted font-mono">{children}</code>
+  return <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted font-mono">{children}</code>
 }
 
 function P({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn('text-[12.5px] leading-relaxed text-fg-muted', className)}>{children}</p>
+  return <p className={cn('text-body leading-relaxed text-fg-muted', className)}>{children}</p>
 }
 
 /** A token tier: name, the chain step it aliases, one honest example. */
 function Tier({ n, name, detail, example }: { n: number; name: string; detail: string; example: string }) {
   return (
     <div className="flex gap-3">
-      <span className="flex-shrink-0 w-4 text-[11px] font-mono tabular-nums text-fg-faint pt-[3px]">{n}</span>
+      <span className="flex-shrink-0 w-4 text-caption font-mono tabular-nums text-fg-faint pt-[3px]">{n}</span>
       <div className="min-w-0 flex flex-col gap-0.5">
-        <span className="text-[12.5px] font-medium text-fg">{name}</span>
-        <span className="text-[12.5px] leading-relaxed text-fg-muted">{detail}</span>
-        <span className="text-[11px] font-mono text-fg-faint break-all">{example}</span>
+        <span className="text-body font-medium text-fg">{name}</span>
+        <span className="text-body leading-relaxed text-fg-muted">{detail}</span>
+        <span className="text-caption font-mono text-fg-faint break-all">{example}</span>
       </div>
     </div>
   )
@@ -175,7 +176,7 @@ export const SECTIONS: { key: AboutSection; label: string; hint: string; body: R
           Typography, Spacing, Radius, and a Components collection whose variables alias the
           semantic roles.
         </P>
-        <ol className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-fg-muted list-decimal pl-4">
+        <ol className="flex flex-col gap-1.5 text-body leading-relaxed text-fg-muted list-decimal pl-4">
           <li>Download the plugin and unzip it.</li>
           <li>Figma desktop → <span className="text-fg">Plugins → Development → Import plugin from manifest…</span></li>
           <li>Pick the unzipped <C>manifest.json</C>, then run <span className="text-fg">Escala DS</span>.</li>
@@ -189,7 +190,7 @@ export const SECTIONS: { key: AboutSection; label: string; hint: string; body: R
         <a
           href={FIGMA_PLUGIN_ZIP}
           download
-          className="inline-flex items-center gap-1.5 self-start text-[12px] font-semibold text-accent-ui hover:underline"
+          className="inline-flex items-center gap-1.5 self-start text-body font-semibold text-accent-ui hover:underline"
         >
           <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
@@ -300,7 +301,7 @@ function ContactRow({ icon, label, href }: { icon: ReactNode; label: string; hre
       href={href}
       target={href.startsWith('mailto:') ? undefined : '_blank'}
       rel={href.startsWith('mailto:') ? undefined : 'noreferrer'}
-      className="flex items-center gap-2.5 px-2 h-8 -mx-2 rounded-lg text-[12.5px] text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+      className="flex items-center gap-2.5 px-2 h-8 -mx-2 rounded-lg text-body text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
     >
       <span className="text-fg-faint flex-shrink-0">{icon}</span>
       <span className="truncate">{label}</span>
@@ -401,8 +402,8 @@ export function AboutAccordion({
             <AccordionTrigger className={`${bleed ? '-mx-6 px-6' : pad} hover:bg-elevated/40`}>
               <Icon className="h-4 w-4 flex-shrink-0 mt-0.5 text-fg-faint" />
               <span className="flex-1 min-w-0">
-                <span className="block text-[13px] font-medium text-fg leading-tight">{s.label}</span>
-                <span className="block text-[11.5px] text-fg-faint leading-tight mt-1">{s.hint}</span>
+                <span className="block text-ui font-medium text-fg leading-tight">{s.label}</span>
+                <span className="block text-caption text-fg-faint leading-tight mt-1">{s.hint}</span>
               </span>
             </AccordionTrigger>
             <AccordionContent className={bleed ? '-mx-6 px-6' : pad}>
@@ -428,7 +429,7 @@ export function AboutAccordion({
 export function AboutContact({ pad = 'px-5', card = false }: { pad?: string; card?: boolean }) {
   const body = (
     <>
-      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">Contact</span>
+      <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">Contact</span>
       <P>
         Built and maintained by <span className="text-fg">Cesar Durango</span>,
         design systems and design engineering.
@@ -480,7 +481,7 @@ function ImagePlaceholder({ label, className }: { label: string; className?: str
         <circle cx="8.5" cy="8.5" r="1.5" />
         <path d="m21 15-5-5L5 21" />
       </svg>
-      <span className="text-[11.5px] font-medium text-center px-4">{label}</span>
+      <span className="text-caption font-medium text-center px-4">{label}</span>
     </div>
   )
 }
@@ -502,15 +503,15 @@ function Stat({ value, label, delay = 0 }: { value: number; label: string; delay
       whileHover={reduceMotion ? undefined : { y: -2, transition: { duration: 0.15, ease: EASE } }}
       className="flex flex-col gap-0.5"
     >
-      <span className="text-[26px] font-semibold text-fg tabular-nums inline-flex items-baseline">
+      <span className="text-display font-semibold text-fg tabular-nums inline-flex items-baseline">
         {reduceMotion ? (
           value
         ) : (
-          <NumberTicker value={value} delay={delay} className="text-[26px] font-semibold text-fg tabular-nums" />
+          <NumberTicker value={value} delay={delay} className="text-display font-semibold text-fg tabular-nums" />
         )}
         +
       </span>
-      <span className="text-[11.5px] text-fg-muted leading-snug">{label}</span>
+      <span className="text-caption text-fg-muted leading-snug">{label}</span>
     </motion.div>
   )
 }
@@ -549,11 +550,11 @@ function FeatureCard({
         span,
       )}
     >
-      <span className="relative z-10 flex items-center gap-1.5 text-[13px] font-semibold text-fg">
+      <span className="relative z-10 flex items-center gap-1.5 text-ui font-semibold text-fg">
         <Icon className="h-3.5 w-3.5 text-fg-faint" aria-hidden />
         {title}
       </span>
-      <div className="relative z-10 flex flex-col gap-2.5 text-[12.5px] leading-relaxed text-fg-muted">
+      <div className="relative z-10 flex flex-col gap-2.5 text-body leading-relaxed text-fg-muted">
         {children}
       </div>
     </div>
@@ -629,6 +630,7 @@ export function AboutHome({
    *  there, so this is a prop rather than a duplicated constant. */
   foundationCount: number
 }) {
+  const { t } = useI18n()
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
 
@@ -650,9 +652,9 @@ export function AboutHome({
           </motion.div>
           <motion.span
             variants={heroItem}
-            className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint mt-1"
+            className="text-caption font-semibold uppercase tracking-widest text-fg-faint mt-1"
           >
-            For Figma, code, and your AI agent
+            {t('For Figma, code, and your AI agent')}
           </motion.span>
           <motion.div variants={heroItem} className="flex flex-col gap-2 max-w-[520px]">
             <h1>
@@ -669,16 +671,14 @@ export function AboutHome({
                   of the old one — it plays on mount like the rest of the
                   hero's stagger, then settles and stays. */}
               <DiaTextReveal
-                text="Define your foundations before you prompt."
+                text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
                 className="text-[22px] font-semibold leading-snug"
               />
             </h1>
-            <p className="text-[13.5px] leading-relaxed text-fg-muted">
-              Escala is where you set your design tokens once, then hand them to Figma,
-              your code and any AI agent as one contract, so nothing invents its own
-              colors, spacing or radius.
+            <p className="text-ui leading-relaxed text-fg-muted">
+              {t('Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius.')}
             </p>
           </motion.div>
           {/* Same RainbowButton chrome as `AIContextButton`'s "Copy context to
@@ -688,9 +688,9 @@ export function AboutHome({
             <RainbowButton
               type="button"
               onClick={onStart}
-              className="h-10 px-5 rounded-[13px] gap-1.5 text-[13.5px] font-semibold"
+              className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
             >
-              Start building
+              {t('Start building')}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
@@ -715,7 +715,7 @@ export function AboutHome({
             muted
             loop
             playsInline
-            aria-label="Escala Tokens workspace demo"
+            aria-label={t('Escala Tokens workspace demo')}
           />
         </div>
 
@@ -726,26 +726,23 @@ export function AboutHome({
           variants={statsContainer}
           className="grid grid-cols-2 sm:grid-cols-4 gap-6 px-6 pb-14 border-b border-line"
         >
-          <Stat value={foundationCount} label="Foundations you configure" delay={0} />
-          <Stat value={COMPONENT_KEYS.length} label="Components in the catalogue" delay={0.08} />
-          <Stat value={ALL_ROLES.length} label="Semantic roles" delay={0.16} />
-          <Stat value={TOOL_SPECS.length} label="MCP tools your agent can call" delay={0.24} />
+          <Stat value={foundationCount} label={t('Foundations you configure')} delay={0} />
+          <Stat value={COMPONENT_KEYS.length} label={t('Components in the catalogue')} delay={0.08} />
+          <Stat value={ALL_ROLES.length} label={t('Semantic roles')} delay={0.16} />
+          <Stat value={TOOL_SPECS.length} label={t('MCP tools your agent can call')} delay={0.24} />
         </motion.div>
 
         {/* ── The differentiator — the point of this whole page ── */}
         <div className="flex flex-col gap-6 px-6 py-14 border-b border-line">
           <div className="flex flex-col gap-2 max-w-[560px]">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-accent-ui">
-              Built for the age of AI agents
+            <span className="text-caption font-semibold uppercase tracking-widest text-accent-ui">
+              {t('Built for the age of AI agents')}
             </span>
             <h2 className="text-[18px] font-semibold text-fg">
-              Your AI is guessing your colors right now.
+              {t('Your AI is guessing your colors right now.')}
             </h2>
-            <p className="text-[13.5px] leading-relaxed text-fg-muted">
-              Ask Cursor, Claude Code or Copilot to build a button and it invents a hex,
-              a spacing value, a radius, because it has never seen your system. Escala
-              publishes a live, queryable contract instead: a Model Context Protocol
-              (MCP) server your agent can call directly, plus a one-command install.
+            <p className="text-ui leading-relaxed text-fg-muted">
+              {t('Ask Cursor, Claude Code or Copilot to build a button and it invents a hex, a spacing value, a radius, because it has never seen your system. Escala publishes a live, queryable contract instead: a Model Context Protocol (MCP) server your agent can call directly, plus a one-command install.')}
             </p>
           </div>
 
@@ -776,11 +773,10 @@ export function AboutHome({
               `7rem` this replaced silently meant 126px anyway (see CLAUDE.md's
               root-font-size note) — same number, now stated honestly. */}
           <BentoGrid className="grid-cols-3 auto-rows-[minmax(126px,auto)] gap-4">
-            <FeatureCard title="AI agents" Icon={SparkleCircleIcon} span="col-span-2 row-span-2">
+            <FeatureCard title={t('AI agents')} Icon={SparkleCircleIcon} span="col-span-2 row-span-2">
               <p>
-                A live MCP server with <C>resolve_token</C>, <C>check_contrast</C>,{' '}
-                <C>list_components</C> and more. Pick your editor, then run the steps
-                or hand the whole setup to the agent:
+                {t('A live MCP server with')} <C>resolve_token</C>, <C>check_contrast</C>,{' '}
+                <C>list_components</C> {t('and more. Pick your editor, then run the steps or hand the whole setup to the agent:')}
               </p>
 
               {/* The real "Connect your agent" widget: client logos + an
@@ -793,21 +789,20 @@ export function AboutHome({
               <button
                 type="button"
                 onClick={onLearnAI}
-                className="self-start inline-flex items-center gap-1 rounded text-[12px] font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+                className="self-start inline-flex items-center gap-1 rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
               >
-                Full steps, CSS, other tools and a repo in Docs
+                {t('Full steps, CSS, other tools and a repo in Docs')}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
               </button>
             </FeatureCard>
             <FeatureCard title="Figma" Icon={FigmaGlyph}>
-              <p>Plugin + Live Sync. Variables land in the file you already design in.</p>
+              <p>{t('Plugin + Live Sync. Variables land in the file you already design in.')}</p>
             </FeatureCard>
-            <FeatureCard title="Code" Icon={CodeGlyph}>
+            <FeatureCard title={t('Code')} Icon={CodeGlyph}>
               <p>
-                <C>variables.css</C>, W3C JSON, or a GitHub push; code binds to roles,
-                never a hex on a button.
+                <C>variables.css</C>, W3C JSON, {t('or a GitHub push; code binds to roles, never a hex on a button.')}
               </p>
             </FeatureCard>
           </BentoGrid>
@@ -862,12 +857,12 @@ export function AboutScaffold({
         <BrandMark />
         <div className="flex flex-col gap-1.5 max-w-[420px]">
           <h1 className="text-[15px] font-semibold text-fg">{heading}</h1>
-          <p className="text-[13px] leading-relaxed text-fg-muted">{subheading}</p>
+          <p className="text-ui leading-relaxed text-fg-muted">{subheading}</p>
         </div>
         {ctaHref && (
           <a
             href={ctaHref}
-            className="inline-flex items-center gap-1.5 mt-1 text-[12.5px] font-semibold text-accent-ui hover:underline"
+            className="inline-flex items-center gap-1.5 mt-1 text-body font-semibold text-accent-ui hover:underline"
           >
             {ctaLabel ?? 'Open the configurator'}
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -879,10 +874,10 @@ export function AboutScaffold({
 
       <div className="border-t border-line">
         <div className="px-5 pt-5 pb-1">
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-faint">
+          <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
             About
           </span>
-          <p className="text-[11.5px] text-fg-faint mt-0.5">
+          <p className="text-caption text-fg-faint mt-0.5">
             Design token infrastructure · schema v{TOKEN_SCHEMA_VERSION}
           </p>
         </div>
@@ -893,7 +888,7 @@ export function AboutScaffold({
       </div>
 
       <footer className="mt-auto px-5 py-4 border-t border-line">
-        <p className="text-[11px] text-fg-faint">
+        <p className="text-caption text-fg-faint">
           {COPYRIGHT_LINE} · All rights reserved. Figma is a trademark of Figma, Inc.
         </p>
       </footer>
@@ -952,8 +947,8 @@ export default function AboutMenu({
             as an extension of the chrome rather than a floating sheet. */}
         <div className="flex items-center justify-between gap-3 px-5 h-[72px] flex-shrink-0 border-b border-line">
           <div className="min-w-0">
-            <div className="text-[14px] font-semibold text-fg leading-tight">Escala Tokens</div>
-            <div className="text-[11.5px] text-fg-faint leading-tight">
+            <div className="text-strong font-semibold text-fg leading-tight">Escala Tokens</div>
+            <div className="text-caption text-fg-faint leading-tight">
               Design token infrastructure · schema v{TOKEN_SCHEMA_VERSION}
             </div>
           </div>
@@ -974,7 +969,7 @@ export default function AboutMenu({
         </div>
 
         <div className="flex-shrink-0 px-5 py-3 border-t border-line flex items-center justify-between gap-3">
-          <p className="text-[11px] text-fg-faint truncate">
+          <p className="text-caption text-fg-faint truncate">
             {COPYRIGHT_LINE} · Figma is a trademark of Figma, Inc.
           </p>
           {/* The one shareable link to this content — the drawer itself has no
@@ -983,7 +978,7 @@ export default function AboutMenu({
             href="/about"
             target="_blank"
             rel="noreferrer"
-            className="flex-shrink-0 text-[11px] font-semibold text-accent-ui hover:underline"
+            className="flex-shrink-0 text-caption font-semibold text-accent-ui hover:underline"
           >
             Full page ↗
           </a>

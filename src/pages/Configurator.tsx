@@ -1,19 +1,26 @@
-import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
-import { useTheme, getTheme, setTheme } from '../lib/theme'
-import { chromeAccent, readableInk, solidInkPair } from '../lib/colorUtils'
+import { useTheme, setTheme } from '../lib/theme'
+import { BASE_TONE, chromeAccent, darkChromeWash, readableInk, solidInkPair } from '../lib/colorUtils'
 import { themeBrandRamp } from '../lib/themeSources'
-import { useAutoFigmaSync } from '../lib/figmaSync'
+import { isLiveEnvironment, publishTokens, useAutoFigmaSync, type FigmaPublishState } from '../lib/figmaSync'
+import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
-import { useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
+import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
+import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
+import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
+import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
+import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
+import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
+import type { ThemeAppearance } from '../lib/themeModes'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
 // ('about' — the landing surface for new visitors, see `hasOnboarded()`
@@ -31,16 +38,12 @@ import GitHubConnectView from '../components/configurator/GitHubConnectView'
 import IconLibrary from '../components/configurator/IconLibrary'
 import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
-import DocsView, { GET_STARTED_KEY, OVERVIEW_KEY, CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
-import DocsRail, { type DocsRailRow } from '../components/configurator/DocsRail'
-import { FOUNDATION_DOCS } from '../components/configurator/docs/foundationDocs'
-import { GUIDE_CODE_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
+import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
+import { GUIDE_MCP_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
-import HomeActions from '../components/configurator/HomeActions'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
-import TypeHub, { type TypeTab } from '../components/configurator/TypeHub'
-import { COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH } from '../components/configurator/colorControls'
+import TypeHub from '../components/configurator/TypeHub'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import { type TypeFocus } from '../components/configurator/TypeSemantics'
 import ExportWizard from '../components/configurator/ExportWizard'
@@ -54,10 +57,17 @@ import Step7_Shadow from '../components/configurator/Step7_Shadow'
 import Step8_Grid from '../components/configurator/Step8_Grid'
 import Step9_Sizes from '../components/configurator/Step9_Sizes'
 import StepStroke from '../components/configurator/StepStroke'
-import LayoutHub from '../components/configurator/LayoutHub'
+import LayoutHub, { LayoutTabHeading } from '../components/configurator/LayoutHub'
 import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
+import { useI18n } from '../lib/i18n'
+
+// macOS shows ⌘K, everything else Ctrl+K — read once at module load for the
+// token-search field's `aria-keyshortcuts`. `navigator.platform` is deprecated
+// but still the most reliable Mac signal; `userAgentData` isn't universal yet.
+const IS_MAC = typeof navigator !== 'undefined'
+  && /mac/i.test(navigator.platform || navigator.userAgent || '')
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -77,7 +87,9 @@ interface FoundationSection {
   /** Workbench column heading — names this family, not a generic “Groups”. */
   variablesLabel: string
   subtitle: string
-  Component: ComponentType
+  /** Every Variables section takes the shell's table heading; the ones with no
+   *  semantic layer (Icons, Color's own hub) just ignore it. */
+  Component: ComponentType<{ tabBar?: ReactNode; previewTheme?: string; query?: string }>
   Icon: ComponentType
 }
 
@@ -88,7 +100,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Color',
     hint: 'Brand, neutrals & state scales',
     title: 'Color',
-    variablesLabel: 'Color Variables',
+    variablesLabel: 'Color variables',
     subtitle: 'Map your semantic aliases and craft the gradients your system ships with.',
     Component: Step2_ColorPalette,
     // The same palette mark the token tables use for color rows — one official
@@ -101,18 +113,18 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Font',
     hint: 'Primitive scale + text roles',
     title: 'Typography',
-    variablesLabel: 'Text Variables',
+    variablesLabel: 'Text variables',
     subtitle: 'Primitives for the scale, then semantic text styles — labels, placeholders, headings — mapped for desktop and mobile.',
     Component: Step4_Typography,
     Icon: ic('M8 7H16M12 7V17M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z'),
   },
   {
     key: 'radius',
-    label: 'Border Radius',
+    label: 'Border radius',
     short: 'Radius',
     hint: 'Corner-radius personality',
-    title: 'Border Radius',
-    variablesLabel: 'Radius Variables',
+    title: 'Border radius',
+    variablesLabel: 'Radius variables',
     subtitle: 'Primitives for the scale, then semantic aliases — action, container, overlay — mapped onto that ramp.',
     Component: StepRadius,
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
@@ -123,7 +135,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Spacing',
     hint: 'Base spacing scale',
     title: 'Spacing',
-    variablesLabel: 'Spacing Variables',
+    variablesLabel: 'Spacing variables',
     subtitle: 'Primitives for the 4px grid, then semantic aliases — gaps and insets — mapped onto that scale.',
     Component: Step5_Spacing,
     Icon: ic('M21 21V3M3 21V3M9 8V16C9 16.9319 9 17.3978 9.15224 17.7654C9.35523 18.2554 9.74458 18.6448 10.2346 18.8478C10.6022 19 11.0681 19 12 19C12.9319 19 13.3978 19 13.7654 18.8478C14.2554 18.6448 14.6448 18.2554 14.8478 17.7654C15 17.3978 15 16.9319 15 16V8C15 7.06812 15 6.60218 14.8478 6.23463C14.6448 5.74458 14.2554 5.35523 13.7654 5.15224C13.3978 5 12.9319 5 12 5C11.0681 5 10.6022 5 10.2346 5.15224C9.74458 5.35523 9.35523 5.74458 9.15224 6.23463C9 6.60218 9 7.06812 9 8Z'),
@@ -134,7 +146,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Shadow',
     hint: 'Elevation levels',
     title: 'Shadow',
-    variablesLabel: 'Shadow Variables',
+    variablesLabel: 'Shadow variables',
     subtitle: 'Tune the elevation ramp — from subtle cards to floating dialogs.',
     Component: Step7_Shadow,
     Icon: ic('M8 4h10a2 2 0 0 1 2 2v10M4 10a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z', '1.8'),
@@ -145,7 +157,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Grid',
     hint: 'Columns, gutters & breakpoints',
     title: 'Grid',
-    variablesLabel: 'Grid Variables',
+    variablesLabel: 'Grid variables',
     subtitle: 'Breakpoint primitives, then desktop / mobile aliases — the cut Type and the layout grid share.',
     Component: Step8_Grid,
     Icon: ic('M7.5 12h.01m8.99 0h.01M12 12h.01M12 16.5h.01m-.01-9h.01M3 7.8v8.4c0 1.68 0 2.52.327 3.162a3 3 0 0 0 1.311 1.311C5.28 21 6.12 21 7.8 21h8.4c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C21 18.72 21 17.88 21 16.2V7.8c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C18.72 3 17.88 3 16.2 3H7.8c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C3 5.28 3 6.12 3 7.8Z'),
@@ -156,7 +168,7 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Sizes',
     hint: 'Component size scale',
     title: 'Sizes',
-    variablesLabel: 'Size Variables',
+    variablesLabel: 'Size variables',
     subtitle: 'Control heights, then semantic aliases — compact, control, touch — mapped onto that ramp.',
     Component: Step9_Sizes,
     Icon: ic('M4 20V4M20 20V4M8 12h8M8 12l2.5-2.5M8 12l2.5 2.5M16 12l-2.5-2.5M16 12l-2.5 2.5', '1.8'),
@@ -167,18 +179,18 @@ const FOUNDATIONS: FoundationSection[] = [
     short: 'Stroke',
     hint: 'Border width & focus ring',
     title: 'Stroke',
-    variablesLabel: 'Stroke Variables',
+    variablesLabel: 'Stroke variables',
     subtitle: 'Line weight primitives, then semantic aliases — divider, control, focus — not paint.',
     Component: StepStroke,
     Icon: ic('M3 3h.01M3 12h.01M3 21h.01M3 16.5h.01M3 7.5h.01M7.5 3h.01m-.01 9h.01m-.01 9h.01M16.5 3h.01m-.01 9h.01m-.01 9h.01M21 3h.01M21 12h.01M21 21h.01M21 16.5h.01m-.01-9h.01M12 21V3'),
   },
   {
     key: 'icons',
-    label: 'Icon Library',
+    label: 'Icon library',
     short: 'Icons',
     hint: 'Best icon libraries',
-    title: 'Icon Library',
-    variablesLabel: 'Icon Library',
+    title: 'Icon library',
+    variablesLabel: 'Icon library',
     subtitle: 'Pick the icon set your system standardizes on — referenced in your tokens and docs.',
     Component: IconLibrary,
     Icon: ic('M20.5 7.27783L12 12.0001M12 12.0001L3.49997 7.27783M12 12.0001L12 21.5001M21 16.0586V7.94153C21 7.59889 21 7.42757 20.9495 7.27477C20.9049 7.13959 20.8318 7.01551 20.7354 6.91082C20.6263 6.79248 20.4766 6.70928 20.177 6.54288L12.777 2.43177C12.4934 2.27421 12.3516 2.19543 12.2015 2.16454C12.0685 2.13721 11.9315 2.13721 11.7986 2.16454C11.6484 2.19543 11.5066 2.27421 11.223 2.43177L3.82297 6.54288C3.52345 6.70928 3.37369 6.79248 3.26463 6.91082C3.16816 7.01551 3.09515 7.13959 3.05048 7.27477C3 7.42757 3 7.59889 3 7.94153V16.0586C3 16.4013 3 16.5726 3.05048 16.7254C3.09515 16.8606 3.16816 16.9847 3.26463 17.0893C3.37369 17.2077 3.52345 17.2909 3.82297 17.4573L11.223 21.5684C11.5066 21.726 11.6484 21.8047 11.7986 21.8356C11.9315 21.863 12.0685 21.863 12.2015 21.8356C12.3516 21.8047 12.4934 21.726 12.777 21.5684L20.177 17.4573C20.4766 17.2909 20.6263 17.2077 20.7354 17.0893C20.8318 16.9847 20.9049 16.8606 20.9495 16.7254C21 16.5726 21 16.4013 21 16.0586Z'),
@@ -215,26 +227,51 @@ const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
   icons: ['icons'],
 }
 
+// The editor follows the Figma Variables hierarchy: foundation → collection
+// → group. Every foundation declares only the collections it actually owns,
+// so the navigation never offers a semantic or gradient surface that does not
+// exist for that data type.
+const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
+  color: [
+    { key: 'primitives', label: 'Color primitives' },
+    { key: 'semantics', label: 'Color semantics' },
+    { key: 'gradients', label: 'Gradients' },
+  ],
+  typography: [
+    { key: 'primitives', label: 'Type primitives' },
+    { key: 'semantics', label: 'Text semantics' },
+  ],
+  radius: [
+    { key: 'primitives', label: 'Radius primitives' },
+    { key: 'semantics', label: 'Radius semantics' },
+  ],
+  spacing: [
+    { key: 'primitives', label: 'Spacing primitives' },
+    { key: 'semantics', label: 'Spacing semantics' },
+  ],
+  grid: [
+    { key: 'primitives', label: 'Grid primitives' },
+    { key: 'semantics', label: 'Grid semantics' },
+  ],
+  sizes: [
+    { key: 'primitives', label: 'Size primitives' },
+    { key: 'semantics', label: 'Size semantics' },
+  ],
+  stroke: [
+    { key: 'primitives', label: 'Stroke primitives' },
+    { key: 'semantics', label: 'Stroke semantics' },
+  ],
+  shadow: [{ key: 'primitives', label: 'Shadow styles' }],
+  icons: [{ key: 'primitives', label: 'Icon library' }],
+}
+
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
 // Docs (the token reference) — a ruled page, distinct from DocIcon's plain
 // sheet (the README export).
 const RulesIcon = ic('M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z|M8 7h8|M8 12h8|M8 17h5', '1.8')
 const StartIcon = ic('M12 3l2.1 6.4H21l-5.4 3.9 2.1 6.4L12 16.8 6.3 19.7 8.4 13.3 3 9.4h6.9z', '1.8')
 const CodeIcon = ic('M16 18l6-6-6-6M8 6l-6 6 6 6')
-const ClockIcon: ComponentType = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3.5 2" />
-  </svg>
-)
 const DocIcon = ic('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6')
-const HelpIcon: ComponentType = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M9.2 9a2.8 2.8 0 0 1 5.5.8c0 1.9-2.7 2.5-2.7 4" />
-    <path d="M12 17h.01" />
-  </svg>
-)
 const SaveIcon: ComponentType = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
@@ -260,24 +297,73 @@ const GitHubIcon: ComponentType = () => (
   </svg>
 )
 
-/** Docs rail — Get started first, then the token sheet, then foundations. */
-const DOCS_RAIL_ROWS: DocsRailRow[] = [
-  { key: GET_STARTED_KEY, label: 'Get started', Icon: StartIcon, heading: 'Start' },
-  { key: GUIDE_FIGMA_KEY, label: 'Use in Figma', Icon: FigmaIcon },
-  // "Use with AI" was a fourth row here; it merged INTO this one — code and
-  // agents are one destination (the product repo), so they are one page. See
-  // `GUIDE_PAGES` for why.
-  { key: GUIDE_CODE_KEY, label: 'Use in code', Icon: CodeIcon },
-  { key: CHANGELOG_KEY, label: 'Changelog', Icon: ClockIcon },
-  { key: FAQ_KEY, label: 'FAQ', Icon: HelpIcon },
-  { key: OVERVIEW_KEY, label: 'System reference', Icon: RulesIcon, heading: 'Reference' },
-  ...FOUNDATION_DOCS.map((d) => {
-    const section = FOUNDATIONS.find((f) => f.key === d.key)
-    return { key: d.key, label: d.label, Icon: section?.Icon }
-  }),
-]
+const ExportIcon: ComponentType = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M8 10V2.5M5 5.5 8 2.5l3 3M3 9.5v3.25c0 .69.56 1.25 1.25 1.25h7.5c.69 0 1.25-.56 1.25-1.25V9.5" />
+  </svg>
+)
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
+type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
+
+/** Figma and GitHub are two DESTINATIONS, so they get one pill each — not two
+ *  squares welded into a segmented control under a static "Sync" caption.
+ *
+ *  What that caption-plus-two-squares shape cost: the word "Sync" ate ~45px to
+ *  say something neither button disagreed with; each destination was identified
+ *  by glyph alone (its name lived in a `title`, i.e. behind a hover); and the
+ *  status dot was stamped into the bottom-right corner of a 32px icon button,
+ *  overlapping the glyph it was trying to annotate. Splitting them gives the dot
+ *  its own slot at the head of the pill and lets the label say the name out loud
+ *  — the same "named, separately selectable destination" shape the workspace
+ *  tabs (Theme preview · Variables · Get code) already use one row up.
+ *
+ *  The dot reports the LIVE request too, not just "ever connected": these two
+ *  states (`githubPushState` / `figmaPublishState`) already existed at this call
+ *  site and had nowhere to show. Colour is never the only carrier — `aria-label`
+ *  and `title` both spell the status out in words. */
+type SyncStatus = 'ok' | 'idle' | 'busy' | 'error'
+
+const SYNC_DOT: Record<SyncStatus, string> = {
+  ok: 'bg-status-success-solid',
+  idle: 'bg-fg-faint',
+  busy: 'bg-status-warning-solid animate-pulse',
+  error: 'bg-status-danger-solid',
+}
+
+function SyncPill({
+  label, status, statusText, active, Icon, onClick,
+}: {
+  label: string
+  status: SyncStatus
+  /** Spelled-out status — the dot's meaning for anyone not reading colour. */
+  statusText: string
+  active: boolean
+  Icon: ComponentType
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`${label} — ${statusText}`}
+      title={`${label} — ${statusText}`}
+      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        active
+          ? 'border-line-strong bg-elevated text-fg shadow-sm'
+          : 'border-line bg-app text-fg-muted hover:border-line-strong hover:bg-elevated/60 hover:text-fg'
+      }`}
+    >
+      <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${SYNC_DOT[status]}`} />
+      <Icon />
+      {/* The name drops before the glyph does: below ~1320px this row also holds
+          three workspace tabs and the token search, and a pill that still shows
+          its mark and its dot is a smaller loss than a search field that wraps. */}
+      <span className="hidden min-[1320px]:inline text-caption font-medium">{label}</span>
+    </button>
+  )
+}
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -327,7 +413,7 @@ function PreviewThemeSwitch({
         aria-haspopup="listbox"
         aria-label={`Preview theme ${themeLabel(current)}`}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg border border-line bg-app text-[12px] font-medium hover:border-line-strong transition-colors"
+        className="flex items-center gap-1.5 h-8 pl-2.5 pr-2 rounded-lg border border-line bg-app text-body font-medium hover:border-line-strong transition-colors"
       >
         <span className="text-fg-faint font-normal">Theme</span>
         <span className="text-fg truncate max-w-[8rem]">{themeLabel(current)}</span>
@@ -355,10 +441,10 @@ function PreviewThemeSwitch({
                     on ? 'bg-accent-ui/[0.06]' : 'hover:bg-elevated/60'
                   }`}
                 >
-                  <span className={`text-[12px] font-medium truncate ${on ? 'text-accent-ui' : 'text-fg'}`}>
+                  <span className={`text-body font-medium truncate ${on ? 'text-accent-ui' : 'text-fg'}`}>
                     {themeLabel(t)}
                   </span>
-                  <span className="text-[11px] text-fg-faint capitalize flex-shrink-0">{kind}</span>
+                  <span className="text-caption text-fg-faint capitalize flex-shrink-0">{kind}</span>
                 </button>
               </li>
             )
@@ -369,16 +455,104 @@ function PreviewThemeSwitch({
   )
 }
 
+const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTab; label: string; icon: string }[] = [
+  { key: 'preview', label: 'Theme preview', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
+  { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
+  { key: 'code', label: 'Get code', icon: '/icons/theme-hub-icons/Icon/code.svg' },
+]
+
+function WorkspaceTabIcon({ source }: { source: string }) {
+  const mask = `url('${source}') center / contain no-repeat`
+  return <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
+}
+
+function ExportPill({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong bg-transparent px-2.5 text-caption font-medium text-fg transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:border-fg-faint active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <ExportIcon />
+      <span>{t('Export')}</span>
+    </button>
+  )
+}
+
+function ThemeWorkspaceTabs({
+  value,
+  onChange,
+  right,
+}: {
+  value: ThemeWorkspaceTab
+  onChange: (tab: ThemeWorkspaceTab) => void
+  right?: ReactNode
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line/60 bg-surface px-3">
+      <div
+        role="tablist"
+        aria-label={t('Theme workspace')}
+        className="theme-workspace-tab-strip flex min-w-0 items-center gap-1.5"
+        onKeyDown={(event) => {
+          const current = THEME_WORKSPACE_TABS.findIndex((item) => item.key === value)
+          let next = current
+          if (event.key === 'ArrowRight') next = (current + 1) % THEME_WORKSPACE_TABS.length
+          else if (event.key === 'ArrowLeft') next = (current + THEME_WORKSPACE_TABS.length - 1) % THEME_WORKSPACE_TABS.length
+          else if (event.key === 'Home') next = 0
+          else if (event.key === 'End') next = THEME_WORKSPACE_TABS.length - 1
+          else return
+          event.preventDefault()
+          onChange(THEME_WORKSPACE_TABS[next].key)
+          const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+          requestAnimationFrame(() => tabs[next]?.focus())
+        }}
+      >
+        {THEME_WORKSPACE_TABS.map((item) => {
+          const active = item.key === value
+          return (
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              tabIndex={active ? 0 : -1}
+              onClick={() => onChange(item.key)}
+              title={t(item.label)}
+              className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-2 rounded-xl border py-1 pl-1 pr-2 text-caption font-medium transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
+                ? 'border-line-strong bg-app text-fg shadow-sm'
+                : 'border-transparent bg-elevated/45 text-fg-muted hover:border-line hover:bg-elevated hover:text-fg'
+              }`}
+            >
+              <span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border transition-colors ${active
+                ? 'border-transparent bg-inverse-action text-inverse-action-ink'
+                : 'border-line bg-surface text-fg-faint group-hover:text-fg-muted'
+              }`}>
+                <WorkspaceTabIcon source={item.icon} />
+              </span>
+              <span className="truncate px-0.5">{t(item.label)}</span>
+            </button>
+          )
+        })}
+      </div>
+      {right && <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">{right}</div>}
+    </div>
+  )
+}
+
 // ── Center header (icon + colored title + | + subtitle [+ export]) ───────────
 function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: ComponentType; title: string; subtitle: string; accentColor?: string; right?: ReactNode }) {
+  const { t } = useI18n()
   return (
     <div className="flex items-center gap-2.5 px-6 lg:px-8 h-[52px] border-b border-line/60 flex-shrink-0">
       <span className="flex-shrink-0" style={{ color: accentColor }}>
         <Icon />
       </span>
-      <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{title}</h1>
+      <h1 className="text-sm font-semibold flex-shrink-0" style={{ color: accentColor }}>{t(title)}</h1>
       <span className="text-line-strong flex-shrink-0">|</span>
-      <p className="text-sm text-fg-faint truncate min-w-0 max-w-md">{subtitle}</p>
+      <p className="text-sm text-fg-faint truncate min-w-0 max-w-md">{t(subtitle)}</p>
       {right && <div className="flex-shrink-0 ml-auto">{right}</div>}
     </div>
   )
@@ -386,6 +560,7 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 
 export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
+  const { t } = useI18n()
   // `selectedComponents`/`toggleComponent` are no longer read here — the
   // include checkbox moved into ComponentsView along with the master list.
   const store = useDesignStore()
@@ -401,12 +576,31 @@ export default function Configurator() {
   // a foundation, so it can't be orphaned by which component the Color section
   // happens to render (see the hook's own note).
   useRegenerateScalesOnScaleSettings()
-  // Every session lands on Variables · Color — EXCEPT a first-time visitor
-  // (no persisted store in this browser yet, `hasOnboarded()` in
-  // `lib/onboarding.ts`), who lands on About instead. This is the one
-  // exception to "no separate landing screen": About is a real tab a
-  // returning user can still switch to any time, not a wizard step.
-  const [tab, setTab] = useState<Tab>(() => (hasOnboarded() ? 'foundations' : 'about'))
+  // Backfills the DERIVED colour ramps (`primaryScale`, `errorScale`, …) when
+  // they're empty — `makeDesignDefaults()` ships them `{}` and a persisted
+  // store can carry that shape. It used to be mounted only on the Color-editing
+  // surfaces (ColorPrimitives / Step3 / QuickFoundationsPanel), so landing on
+  // the Themes → Theme Preview hub FIRST left every `{accent.9}` / `{error.11}`
+  // ref in the Categorical projection resolving to `'transparent'` — the
+  // Component Variants specimens rendered invisible until you visited Primitives
+  // once. Hoisted to the shell for the same reason the regenerate hook is:
+  // it can't be orphaned by which surface you happen to open first.
+  useEnsureColorScales()
+  // This browser had never entered the workspace when the shell first rendered.
+  // Captured HERE, before anything below can write the persist key (something
+  // in the hook/state setup between here and where `stylePreview` initialises
+  // does — checked: the store key exists by that point even on a wiped
+  // browser), and read from this one value everywhere first-run behaviour
+  // branches. `markOnboarded()` flips `hasOnboarded()` the instant the user
+  // leaves About, so a second call is worthless; the affordances it gates
+  // (About as the landing tab, Core already tried on, the Themes Library
+  // collapsed to just "Create your theme") must hold for the whole session.
+  const [firstRun] = useState(() => !hasOnboarded())
+  // Every session lands on Variables · Color — EXCEPT a first-time visitor,
+  // who lands on About instead. This is the one exception to "no separate
+  // landing screen": About is a real tab a returning user can still switch to
+  // any time, not a wizard step.
+  const [tab, setTab] = useState<Tab>(() => (firstRun ? 'about' : 'foundations'))
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -416,21 +610,69 @@ export default function Configurator() {
     if (tab !== 'about') markOnboarded()
   }, [tab])
   const [activeFoundation, setActiveFoundation] = useState<string>('color')
+  // Themes is now the entry surface: exploration first, advanced token editing
+  // only after the user deliberately opens one of the other tabs.
+  const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>('preview')
+  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>('artefacts')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
   const [exportMode, setExportMode] = useState<ExportMode>(null)
+  // Manual Figma publishing is one interaction shared by the top bar and the
+  // detail screen. It is intentionally local — never restore a stale spinner
+  // or request failure after reload.
+  const [figmaPublishState, setFigmaPublishState] = useState<FigmaPublishState>('idle')
+  const figmaPublishResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [githubPushState, setGithubPushState] = useState<GitHubPushState>('idle')
+  const githubPushResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (figmaPublishResetTimer.current) clearTimeout(figmaPublishResetTimer.current)
+    if (githubPushResetTimer.current) clearTimeout(githubPushResetTimer.current)
+  }, [])
   // Which semantic GROUP the preview should specimen — reported by
   // Step3_SemanticTokens, normalized so it means the same thing whichever
   // architecture is active. The table owns its own nav selection; this is
   // report-only. (They were one shared value before, which is what kept the
   // non-flat architectures' preview stuck on the generic overview.)
   const [semanticFocus, setSemanticFocus] = useState<SemanticFocus | 'all'>('all')
-  // Sub-tab within the Color hub (Primitives ↔ Semantics ↔ Gradients). The
-  // preview mirrors the semantic category only while the semantics tab is
-  // active.
-  const [colorTab, setColorTab] = useState<ColorTab>('primary')
-  const [typeTab, setTypeTab] = useState<TypeTab>('primary')
+  // Collection is foundation-local, not a global workspace depth. This is the
+  // Figma Variables hierarchy: family → collection → group. Remembering the
+  // last collection per family prevents Color Semantics from forcing Radius
+  // to open on semantics too.
+  const [collectionByFoundation, setCollectionByFoundation] = useState<Record<string, VariableCollectionKey>>({})
+  const activeFoundationCollections = VARIABLE_COLLECTIONS[activeFoundation] ?? [{ key: 'primitives', label: 'Primitives' }]
+  const requestedCollection = collectionByFoundation[activeFoundation] ?? 'primitives'
+  const activeCollection = activeFoundationCollections.some(({ key }) => key === requestedCollection)
+    ? requestedCollection
+    : 'primitives'
+  const setFoundationCollection = (foundation: string, collection: VariableCollectionKey) => {
+    setCollectionByFoundation((current) => ({ ...current, [foundation]: collection }))
+  }
+  const colorTab: ColorTab = activeCollection === 'semantics' ? 'semantics' : activeCollection === 'gradients' ? 'gradients' : 'primary'
+  // One search field lives in the stable Foundation toolbar. Primitives and
+  // Semantics consume the same value, so changing depth does not make search
+  // jump to a second, redundant header row.
+  const [colorQuery, setColorQuery] = useState('')
+  const colorSearchRef = useRef<HTMLInputElement>(null)
+  // ⌘K / Ctrl+K focuses the token search — the field only renders in the Themes
+  // workspace, so the listener no-ops elsewhere (ref is null). Ignored while
+  // another text field / editable is focused so it can't steal a keystroke
+  // someone meant for what they were typing in.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey)) return
+      const el = document.activeElement as HTMLElement | null
+      const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+      if (typing && el !== colorSearchRef.current) return
+      const field = colorSearchRef.current
+      if (!field) return
+      e.preventDefault()
+      field.focus()
+      field.select()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const [typeFocus, setTypeFocus] = useState<TypeFocus>('all')
   const [typeReveal, setTypeReveal] = useState<{ key: string; seq: number } | null>(null)
   const [layoutReveal, setLayoutReveal] = useState<{ key: string; seq: number } | null>(null)
@@ -441,22 +683,16 @@ export default function Configurator() {
   // header (`brandWidth` below), so the shell has to know the width to keep
   // that one rule unbroken. Not persisted — a per-session working preference,
   // like `previewCollapsed`.
-  const [colorRailCollapsed, setColorRailCollapsed] = useState(false)
-  // Single preview theme shared across the whole workspace — Home's Quick edit
-  // Theme row, the Semantic table's column eye toggles, the Components/Docs
-  // playground and the right-hand Components Preview all read and write the
-  // same state, so switching to Dark anywhere previews Dark everywhere.
-  // Initialized from the PERSISTED chrome theme (`sd-theme`), not hardcoded to
-  // 'light': previewTheme itself isn't persisted, but the chrome class is, so a
-  // reload while dark chrome was active used to start every preview back on
-  // light — Alias/Semantics' theme selector, Picker Color's transparency ramp,
-  // and PreviewPanel would all read light tokens under dark chrome until the
-  // user re-clicked the toggle twice to resync.
-  const [previewThemeRaw, setPreviewTheme] = useState(() => {
-    if (getTheme() !== 'dark') return 'light'
-    if (themeKinds.dark === 'dark') return 'dark'
-    return Object.keys(themeKinds).find((k) => themeKinds[k] === 'dark') ?? 'light'
-  })
+  const [groupsRailCollapsed, setGroupsRailCollapsed] = useState(false)
+  // Theme selection and preview appearance are editor state. They deliberately
+  // do not read or write `sd-theme`: the latter is chrome-only and lives in
+  // lib/theme.ts. A dark-spectrum theme leads with Dark, while the user can
+  // inspect its Light appearance without repainting the Escala workspace.
+  const initialTheme = themeOrder[0] ?? 'light'
+  const [previewSelection, setPreviewSelection] = useState<{
+    theme: string
+    appearance: ThemeAppearance
+  }>(() => ({ theme: initialTheme, appearance: themeKinds[initialTheme] ?? 'light' }))
   // CLAMPED to a theme the current system actually has. `previewThemeRaw` can
   // point at a theme that no longer exists, and nothing used to notice:
   //
@@ -478,22 +714,36 @@ export default function Configurator() {
   // The RAW value is deliberately kept, so re-loading a system that has the
   // user's preferred theme again snaps back to it instead of stranding them on
   // whatever the narrow system happened to carry.
-  const previewTheme = themeOrder.includes(previewThemeRaw) ? previewThemeRaw : (themeOrder[0] ?? 'light')
-  // Picking a theme also flips the app chrome to that theme's kind, so a dark
-  // preview (built-in dark or any future dark-kind theme) reads on dark chrome.
+  const previewTheme = themeOrder.includes(previewSelection.theme) ? previewSelection.theme : (themeOrder[0] ?? 'light')
+  const previewAppearance = previewSelection.theme === previewTheme
+    ? previewSelection.appearance
+    : (themeKinds[previewTheme] ?? 'light')
+  // Ephemeral "try-on" of a System Style preset from the Themes Library. It
+  // never touches the store — the preview reads `resolveStylePreviewTokens`
+  // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
+  // any real theme change and whenever the preview surface isn't on screen.
+  //
+  // Seeding "Core, pre-tried-on" for a first-run browser is the LIBRARY's job,
+  // not the shell's: this state's only writer that survives is the rail (its
+  // unmount cleanup nulls it, and in dev StrictMode's mount/unmount/mount
+  // clobbered any value seeded here before the rail ever rendered). The rail
+  // re-seeds Core on every mount while `firstRun` holds — see `firstRun` there.
+  const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const changePreviewTheme = (key: string) => {
-    setPreviewTheme(key)
-    setTheme((themeKinds[key] ?? 'light') === 'dark' ? 'dark' : 'light')
+    setStylePreview(null)
+    // Read the LIVE store, never this render's `themeKinds`. A theme that
+    // `mintTheme` created microseconds ago — Create theme, or a Suggested
+    // Style's "Add to system" — does not exist in the closure yet, so the old
+    // `themeKinds[key] ?? 'light'` fell through and previewed EVERY new dark
+    // theme as light. It never self-corrected either: `previewSelection.theme`
+    // already equalled `previewTheme`, so the `themeKinds` fallback below is
+    // skipped and the stale 'light' stuck until the row was clicked again.
+    const kinds = useDesignStore.getState().themeKinds
+    setPreviewSelection({ theme: key, appearance: kinds[key] ?? 'light' })
   }
-  // Chrome follows the CLAMPED theme, not the raw one — otherwise the clamp
-  // above fixes the preview's tokens and leaves the app painted in the other
-  // appearance, which is the same "previewed theme and chrome flip together"
-  // contract broken one layer down. This is an effect because its target is
-  // the document's own class (`lib/theme.ts`), an external system — not React
-  // state, so it is not the cascading-render pattern the note above avoids.
-  useEffect(() => {
-    setTheme((themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light')
-  }, [previewTheme, themeKinds])
+  const changePreviewAppearance = (appearance: ThemeAppearance) => {
+    setPreviewSelection((current) => ({ ...current, theme: previewTheme, appearance }))
+  }
   // Right preview panel can be collapsed for more center width; re-expanded
   // via the slim strip that replaces it while collapsed. Starts EXPANDED: it's
   // a persistent, always-visible specimen of the category being edited, not an
@@ -506,6 +756,9 @@ export default function Configurator() {
   const [railCollapsed, setRailCollapsed] = useState(false)
   // Per-section export window (CSS · Tailwind · Tokens · MD) — opened from the header.
   const [sectionExportOpen, setSectionExportOpen] = useState(false)
+  // `null` means the normal whole-system entry point. The Theme Preview hub
+  // sets this to its selected theme, then opens the same ExportWizard.
+  const [themeExportScope, setThemeExportScope] = useState<string | null>(null)
   // Which primitive color families the NEXT export run starts scoped to.
   // `null` = whatever the collection default is (every family) — set only by
   // Primitives' per-family export icon, and cleared again whenever the generic
@@ -518,6 +771,12 @@ export default function Configurator() {
   // per open makes "opened again" mean "started again".
   const [exportRun, setExportRun] = useState(0)
   const openSectionExport = () => {
+    setThemeExportScope(null)
+    setExportRun((n) => n + 1)
+    setSectionExportOpen(true)
+  }
+  const openThemeExport = (themeKey: string) => {
+    setThemeExportScope(themeKey)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
@@ -530,10 +789,10 @@ export default function Configurator() {
   // the other. Rendered in CenterHeader's row, not inside the master list's
   // column — the box used to open that column with a gap under the header.
   const [componentSearch, setComponentSearch] = useState('')
-  // Docs' master-list selection — a Get started key, OVERVIEW_KEY for the
-  // whole-system sheet, or a foundation key. Lifted so leaving Docs and
-  // coming back resumes on the same place instead of resetting.
-  const [docFoundationKey, setDocFoundationKey] = useState<string>(GET_STARTED_KEY)
+  // Docs exposes only focused operating pages from the top-menu. The token
+  // reference stays in the preview's contextual documentation surface, so the
+  // global destination never duplicates it.
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(GUIDE_MCP_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
 
@@ -564,10 +823,28 @@ export default function Configurator() {
   // dot and this toolbar wash pinned to Theme 1's purple. Same fix as
   // `StepGradients`' `themeBrandRamp` call — one resolver, so a family
   // reference can't disagree about which ramp "the accent" means depending on
-  // which surface reads it. `themeBrandRamp` already picks the ramp matching
-  // `themeKinds[previewTheme]`, which tracks `theme` via the effect above, so
-  // a single resolved ramp serves both branches.
-  const uiAccentRamp = themeBrandRamp(previewTheme, themeSources, themeKinds, store)
+  // which surface reads it.
+  //
+  // FORCED to the chrome's own appearance (`theme`), not the previewed theme's.
+  // Preview appearance and chrome appearance are decoupled in the Themes
+  // workspace — inspecting a LIGHT theme's Light face while the workspace is in
+  // dark mode is normal — and every derivation below (`--accent-ui`,
+  // `--accent-solid`, the Layer 0 gradient, the toolbar wash) is chrome, read
+  // against the chrome page. Feeding it the light twin there bled a bright
+  // splash into the dark chrome and dropped the accent-fill contrast. The
+  // preview canvas keeps `previewAppearance`; only the chrome locks to `theme`.
+  //
+  // A live STYLE TRY-ON wins over the previewed theme, for the same reason the
+  // previewed theme wins over the global accent: the chrome has to be reading
+  // the same system the canvas is. `themeBrandRamp` resolves from the real
+  // store, which a try-on deliberately never touches — so selecting Core left
+  // the canvas blue and every chip, wash and accent-filled control on the
+  // traditional violet. Same appearance rule as below: the CHROME's, not the
+  // previewed one's.
+  const chromeAppearance = theme === 'dark' ? 'dark' : 'light'
+  const uiAccentRamp = stylePreview
+    ? stylePreviewBrandRamp(store, stylePreview.preset, chromeAppearance)
+    : themeBrandRamp(previewTheme, themeSources, themeKinds, store, chromeAppearance)
   const uiAccent =
     theme === 'dark'
       ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#0a0a0a', primaryColor)
@@ -606,67 +883,43 @@ export default function Configurator() {
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
   const s = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
-  // Dark reads the DARK end of the ramp. `s` used to be `primaryScale` (always
-  // the light ramp) where tone 12 IS that dark end — a deep near-black brand
-  // tone. Once `s` became theme-aware it's the DARK twin in dark chrome, whose
-  // tone 12 is the near-WHITE text end (Radix two-scale model), so `s[12]` here
-  // started painting a pale lavender splash instead of the deep wash it always
-  // was. Tone 6 of the dark ramp is the equivalent deep brand tone (default
-  // accent: `#49266c`, ~identical to the old `primaryScale[12]` `#472668`).
+  // Dark is SOLVED, not read off a ramp tone — see `darkChromeWash`. Picking a
+  // tone is a lightness-driven choice, so the stop's saturation was whatever
+  // that hue's ramp happened to leave there: the default accent's dark tone 6
+  // (`#49266c`) measured L 0.352 at 63 % of the chroma available at that
+  // lightness, i.e. mid-dark AND under-saturated — brown, not brand.
+  // `darkChromeWash` pins the depth and takes the full gamut wall at it, so
+  // every hue lands equally deep and equally vivid (`#2a0048` for the default
+  // violet). Light keeps its ramp tones: pale-tint → white has no such problem.
+  // Second stop stays `#0a0a0a` — that IS `--app` in dark, so the wash resolves
+  // into the page rather than onto a near-match of it.
   const gradient =
     theme === 'dark'
-      ? `linear-gradient(160deg, ${s[6] ?? s[12] ?? '#1c1c1c'} 0%, #0a0a0a 48%)`
+      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #0a0a0a 48%)`
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
-
-  // ── Foundation-switcher toolbar wash — same brand-derived language as Layer
-  // 0, scoped to just the Reset/Save row instead of the whole canvas. That row
-  // sits on the opaque `bg-app` surface two levels up (unlike SectionRail,
-  // which is deliberately transparent so Layer 0 shows through it), so without
-  // its own background it reads as flat white/black no matter what the accent
-  // is — reported as wanting the same accent-derived gradient feel there too,
-  // "para crear un lindo contraste" between the icon rail and the Reset/Save
-  // pills sitting at its trailing edge.
-  // Built from `--accent-ui`, not the raw ramp or `primaryColor`. `uiAccent` is
-  // already the "no-text graphical mark" token this file computes two blocks
-  // up — solved for contrast against the chrome PAGE, exactly the case
-  // CLAUDE.md's own accent-derivation note reserves it for ("small graphical
-  // marks that need to be visible on the chrome... the /[0.06]-[0.08] tints").
-  // A ramp tone (2 or 3) was tried first and was nearly invisible: those steps
-  // are Radix's near-white "background" band, meant to disappear, so fading
-  // one to transparent over a wide row read as plain white — no contrast at
-  // all, the opposite of what was asked for. `color-mix` at 10% sits just
-  // above that established 6-8% range (a gradient's peak has to read where a
-  // flat fill's average already does) and still stays a wash, not a swatch.
-  // LEFT-TO-RIGHT, not the page backdrop's 160deg diagonal: the row is 52px
-  // tall and full-width, so a wash has to travel horizontally to read as
-  // anything more than a flat tint. Tinted behind the icon rail, fading to
-  // transparent by ~45% width — roughly where that cluster ends — so the
-  // Reset/Save pills sit on a neutral patch and keep their own border as
-  // their contrast, rather than competing with more colour behind them.
-  //
-  // Dark chrome uses a DIFFERENT source: `uiAccent` is walked UP the ramp for
-  // page contrast, so in dark it's a near-WHITE tone (`#e1beff` for the default
-  // accent). Mixed over the near-black row that reads as a grey FILM, not a
-  // brand wash — the chrome stops looking dark. So dark reads the solid brand
-  // tone (`s[9]`, chromatic and dark) at a lighter 7%, which stays a whisper of
-  // colour over `#0a0a0a` instead of a wash of grey. Light is unchanged.
-  const washAccent = theme === 'dark' ? s[9] ?? uiAccent : uiAccent
-  const washMix = theme === 'dark' ? 7 : 10
-  const toolbarWash = `linear-gradient(90deg, color-mix(in srgb, ${washAccent} ${washMix}%, transparent) 0%, transparent 45%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
   // Marking happens on *leave*: a foundation counts as visited for the
   // progress checklist once the user navigates away from it.
-  const commitVisit = () => {
+  const commitVisit = useCallback(() => {
     if (!exportMode && tab === 'foundations') {
       markFoundationComplete(activeFoundation)
     }
-  }
+  }, [activeFoundation, exportMode, markFoundationComplete, tab])
   const selectFoundation = (key: string) => {
     commitVisit()
     setExportMode(null)
     setTab('foundations')
+    setThemeWorkspaceTab('primitives')
     setActiveFoundation(key)
+  }
+  const changeThemeWorkspaceTab = (next: ThemeWorkspaceTab) => {
+    setThemeWorkspaceTab(next)
+    // GitHub and Figma are detail surfaces inside Theme Preview, not a new
+    // workspace tab. Clicking the already-selected Theme preview tab must
+    // therefore behave like Home: restore the original artefacts canvas and
+    // its quick-edit rail instead of leaving the integration page in place.
+    if (next === 'preview') setThemeHubSurface('artefacts')
   }
   /** Docs destination, opened at a specific foundation — the reverse of
    *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
@@ -695,38 +948,115 @@ export default function Configurator() {
     commitVisit()
     setExportMode(mode)
   }
+  const openFigmaSyncDetails = useCallback(() => {
+    commitVisit()
+    setExportMode('figma-sync')
+  }, [commitVisit])
+  const handleFigmaPublishState = useCallback((next: FigmaPublishState) => {
+    if (figmaPublishResetTimer.current) {
+      clearTimeout(figmaPublishResetTimer.current)
+      figmaPublishResetTimer.current = null
+    }
+    setFigmaPublishState(next)
+    if (next === 'done') {
+      figmaPublishResetTimer.current = setTimeout(() => setFigmaPublishState('idle'), 1800)
+    }
+  }, [])
+  const publishFigmaNow = useCallback(() => {
+    commitVisit()
+    if (!isLiveEnvironment() || figmaPublishState === 'publishing') return
+    handleFigmaPublishState('publishing')
+    void publishTokens().then((ok) => handleFigmaPublishState(ok ? 'done' : 'error'))
+  }, [commitVisit, figmaPublishState, handleFigmaPublishState])
+  const syncFigmaNow = useCallback(() => {
+    setExportMode('figma-sync')
+    publishFigmaNow()
+  }, [publishFigmaNow])
+  const handleGithubPushState = useCallback((next: GitHubPushState) => {
+    if (githubPushResetTimer.current) {
+      clearTimeout(githubPushResetTimer.current)
+      githubPushResetTimer.current = null
+    }
+    setGithubPushState(next)
+    if (next === 'done') {
+      githubPushResetTimer.current = setTimeout(() => setGithubPushState('idle'), 1800)
+    }
+  }, [])
 
-  const foundationsToolbar = (
+  {/* Token search. Lived in the Themes-workspace tab strip for a while; moved
+      up to TopNav (beside Language + Appearance) at the user's call — the tab
+      strip was already carrying two Sync pills and three tabs. Still
+      `colorQuery` / `colorSearchRef`, so ⌘K focuses it wherever it renders.
+      `flex-1 min-w-0 max-w-[14rem]` so it grows to a comfortable width when
+      there's room and shrinks (rather than pushing the centered nav) when the
+      window narrows. Icons are the supplied assets: `search.svg` via mask +
+      currentColor, `search-comands.svg` as the ⌘K keycap. */}
+  const tokenSearchField = (
+    <label className="flex h-8 flex-1 min-w-0 max-w-[14rem] items-center gap-1.5 rounded-lg border border-line bg-app px-2.5 text-fg-muted transition-colors hover:border-line-strong focus-within:border-fg">
+      <span
+        aria-hidden
+        className="h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint"
+        style={{
+          WebkitMask: "url('/icons/settings/search.svg') center / contain no-repeat",
+          mask: "url('/icons/settings/search.svg') center / contain no-repeat",
+        }}
+      />
+      <input
+        ref={colorSearchRef}
+        value={colorQuery}
+        onChange={(event) => setColorQuery(event.target.value)}
+        placeholder={t('Search tokens')}
+        aria-label={t('Search tokens')}
+        aria-keyshortcuts={IS_MAC ? 'Meta+K' : 'Control+K'}
+        className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-faint"
+      />
+      {colorQuery ? (
+        <button type="button" onClick={() => setColorQuery('')} aria-label={t('Clear search')} className="grid h-5 w-5 flex-shrink-0 place-items-center rounded text-ui text-fg-faint hover:bg-elevated hover:text-fg">×</button>
+      ) : (
+        <img src="/icons/settings/search-comands.svg" alt="" aria-hidden className="hidden min-[1180px]:block h-3.5 flex-shrink-0 opacity-80" />
+      )}
+    </label>
+  )
+
+  const themeWorkspaceActions = (
     <>
-      {/* `min-w-0` + `overflow-x-auto` is load-bearing: the rail's 9 icon
-          buttons are all `flex-shrink-0` (see FoundationIconRail), so without
-          a shrinkable, scrollable wrapper the row refuses to compress and
-          bleeds out of `main` on any window narrow enough to still show the
-          400px preview aside — visually overlapping PreviewPanel's own tab
-          bar ("Artefacts") rather than being clipped by it. Scrolling here
-          keeps every foundation reachable; the alternative (letting it hide
-          under Reset/Systems) would silently make some foundations
-          unselectable at that width. */}
-      <div className="flex-1 min-w-0 overflow-x-auto scrollbar-thin">
-        <FoundationIconRail
-          active={activeFoundation}
-          onSelect={selectFoundation}
-          groups={[
-            { label: 'Variables', items: VARIABLE_FOUNDATIONS.map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-            { label: 'Styles', items: FOUNDATIONS.filter((f) => !VARIABLE_FOUNDATIONS.includes(f)).map((f) => ({ key: f.key, label: f.short, Icon: f.Icon })) },
-          ]}
-        />
-      </div>
-      <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-        <HomeActions
-          previewTheme={previewTheme}
-          onOpenEditor={() => selectFoundation('color')}
-          onReviewInDocs={() => openDocs(OVERVIEW_KEY)}
-          onConnectGithub={() => openExport('github')}
-          onOpenSaveHub={() => openExport('save')}
-          onPreviewTheme={changePreviewTheme}
-        />
-      </div>
+    {/* The Primitives tab used to carry `HomeActions` here — with `hideSystems`
+        that was ONLY the "Reset the whole system to defaults" pill. Removed:
+        it's a rarely-wanted, no-undo action given equal billing with GitHub,
+        Figma and Search, and the per-token / per-family resets (the tone-row
+        "reset to standard" icons, the quick-edit strip's per-family reset) are
+        the ones anyone actually reaches for. Matches CLAUDE.md's own line that
+        the whole-system reset was pulled from the UI. */}
+    {/* One pill per destination — see `SyncPill`. The "Sync" caption is gone: it
+        labelled a pair that no longer shares a container, and neither pill needs
+        a word to say it syncs. */}
+    <SyncPill
+      label="GitHub"
+      Icon={GitHubIcon}
+      status={githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle'}
+      statusText={
+        githubPushState === 'pushing' ? t('pushing…')
+          : githubPushState === 'error' ? t('push failed')
+          : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
+          : t('not connected')
+      }
+      active={themeWorkspaceTab === 'preview' && themeHubSurface === 'github'}
+      onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') }}
+    />
+    <SyncPill
+      label="Figma"
+      Icon={FigmaIcon}
+      status={figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle'}
+      statusText={
+        figmaPublishState === 'publishing' ? t('publishing…')
+          : figmaPublishState === 'error' ? t('publish failed')
+          : store.figmaLastPublishAt ? t('published')
+          : t('not published yet')
+      }
+      active={themeWorkspaceTab === 'preview' && themeHubSurface === 'figma'}
+      onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') }}
+    />
+    <ExportPill onClick={() => openThemeExport(previewTheme)} />
     </>
   )
 
@@ -739,7 +1069,7 @@ export default function Configurator() {
     header = { Icon: GitHubIcon, title: 'GitHub', subtitle: 'Version your design system in a repository.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <GitHubConnectView onClose={() => setExportMode(null)} />
+        <GitHubConnectView onClose={() => setExportMode(null)} onPushStateChange={handleGithubPushState} />
       </div>
     )
     centerKey = 'export-github'
@@ -752,6 +1082,8 @@ export default function Configurator() {
           onOpenDownload={() => setExportMode('figma-download')}
           onOpenGithub={() => openExport('github')}
           onOpenSave={() => openExport('save')}
+          publishState={figmaPublishState}
+          onRequestSync={syncFigmaNow}
         />
       </div>
     )
@@ -760,7 +1092,7 @@ export default function Configurator() {
     header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Get the plugin and install it in Figma.' }
     body = (
       <div className="h-full overflow-y-auto">
-        <FigmaDownloadView onClose={() => setExportMode(null)} onOpenSync={() => setExportMode('figma-sync')} />
+        <FigmaDownloadView onClose={() => setExportMode(null)} onOpenSync={openFigmaSyncDetails} />
       </div>
     )
     centerKey = 'export-figma-download'
@@ -781,13 +1113,7 @@ export default function Configurator() {
     )
     centerKey = 'export-code'
   } else if (exportMode === 'save') {
-    // Subtitle covers all THREE halves of this view — the systems grid, the
-    // file preview and the connections panel. It used to describe only the
-    // middle one ("Copy the README or the CSS into Stitch, Claude or Codex…"),
-    // which was fine while the sole way in was a Docs link about exporting
-    // CSS, and became a mismatch the moment the Systems popover started
-    // routing here promising "every system side by side" and the connections.
-    header = { Icon: SaveIcon, title: 'Save & Share', subtitle: 'Every saved system, the export files, and your Figma / GitHub connections.' }
+    header = { Icon: SaveIcon, title: 'System library', subtitle: 'Save, restore and manage your design systems.' }
     body = (
       <div className="h-full overflow-y-auto p-8">
         <SaveView onImport={() => setImportOpen(true)} onNewSystem={() => setNewSystemOpen(true)} />
@@ -802,37 +1128,45 @@ export default function Configurator() {
     body = (
       <AboutHome
         onStart={() => selectFoundation('color')}
-        onLearnAI={() => openDocs(GUIDE_CODE_KEY)}
+        onLearnAI={() => openDocs(GUIDE_MCP_KEY)}
         foundationCount={FOUNDATIONS.length}
       />
     )
     centerKey = 'about'
   } else if (tab === 'foundations') {
     header = { Icon: section.Icon, title: section.title, subtitle: section.subtitle }
-    // HomeActions (Reset/Save) lives in the Groups | icon-rail band
-    // (ColorHub / FoundationWorkbench), not in CenterHeader — Variables
-    // foundations no longer render that header. Export is transversal, so it
-    // stays in TopNav.
+    // Export is transversal and lives in TopNav; there's no per-foundation
+    // action pill in CenterHeader (Variables foundations don't render that
+    // header at all). The old whole-system Reset pill is gone entirely.
     const Active = section.Component
     // Inner body only — Groups | icon-rail is the STABLE shell
     // (FoundationWorkbench, mounted outside the keyed motion below) so
     // Color → Font doesn't remount the switcher.
     body = section.key === 'color' ? (
       <ColorHub
-        colorTab={colorTab}
-        onColorTabChange={setColorTab}
+        mode={colorTab}
         onFocusChange={setSemanticFocus}
         previewTheme={previewTheme}
+        previewAppearance={previewAppearance}
         onPreviewThemeChange={changePreviewTheme}
-        railCollapsed={colorRailCollapsed}
+        onPreviewAppearanceChange={changePreviewAppearance}
+        query={colorQuery}
+        onQueryChange={setColorQuery}
+        railCollapsed={groupsRailCollapsed}
         revealRole={colorReveal}
+        managedThemesExternally
+        onOpenGradients={() => setFoundationCollection('color', 'gradients')}
+        onBackToSystemColors={() => setFoundationCollection('color', 'primitives')}
       />
     ) : section.key === 'typography' ? (
       <TypeHub
-        typeTab={typeTab}
-        onTypeTabChange={setTypeTab}
+        mode={activeCollection === 'semantics' ? 'semantics' : 'primary'}
         onFocusChange={setTypeFocus}
         revealRole={typeReveal}
+        railCollapsed={groupsRailCollapsed}
+        previewTheme={previewTheme}
+        previewAppearance={previewAppearance}
+        query={colorQuery}
       />
     ) : section.key === 'icons' ? (
       <div className="h-full overflow-y-auto p-8">
@@ -841,16 +1175,31 @@ export default function Configurator() {
     ) : section.key === 'radius' || section.key === 'spacing' || section.key === 'sizes' || section.key === 'stroke' ? (
       <LayoutHub
         family={section.key === 'sizes' ? 'size' : section.key}
+        mode={activeCollection === 'semantics' ? 'semantics' : 'primary'}
         Primitives={Active}
         revealRole={layoutReveal}
+        railCollapsed={groupsRailCollapsed}
+        previewTheme={previewTheme}
+        previewAppearance={previewAppearance}
+        query={colorQuery}
       />
     ) : section.key === 'grid' ? (
       <LayoutHub
         family="breakpoint"
+        mode={activeCollection === 'semantics' ? 'semantics' : 'primary'}
         Primitives={Active}
         Semantics={GridSemantics}
         revealRole={layoutReveal}
+        railCollapsed={groupsRailCollapsed}
+        previewTheme={previewTheme}
+        previewAppearance={previewAppearance}
+        query={colorQuery}
       />
+    ) : section.key === 'shadow' ? (
+      // Shadow has no semantic layer, so it never goes through LayoutHub — but
+      // its table is still the primitive list and takes the same heading and
+      // the workspace's own search (so it drops its inner bar like the rest).
+      <Active tabBar={<LayoutTabHeading mode="primary" />} query={colorQuery} previewTheme={previewTheme} />
     ) : (
       <Active />
     )
@@ -874,7 +1223,7 @@ export default function Configurator() {
           <button
             type="button"
             onClick={() => selectFoundation('color')}
-            className="h-8 px-2 text-[12px] font-medium text-fg-muted hover:text-fg transition-colors flex-shrink-0"
+            className="h-8 px-2 text-body font-medium text-fg-muted hover:text-fg transition-colors flex-shrink-0"
           >
             Edit Color
           </button>
@@ -889,7 +1238,7 @@ export default function Configurator() {
               onChange={(e) => setComponentSearch(e.target.value)}
               placeholder="Search components"
               aria-label="Search components"
-              className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
+              className="flex-1 min-w-0 bg-transparent text-ui text-fg-muted placeholder:text-fg-faint outline-none"
             />
             {componentSearch && (
               <button onClick={() => setComponentSearch('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
@@ -912,18 +1261,16 @@ export default function Configurator() {
   } else {
     // tab === 'docs'
     header = {
-      // A ruled page, distinct from DocIcon's plain sheet (the README export)
-      // — Docs and the README were always two different concepts, now they're
-      // also two different destinations.
       Icon: RulesIcon,
       title: 'Docs',
-      subtitle: 'Where this system goes — Figma, or your product repo — then the token reference.',
+      subtitle: 'MCP, Figma, release notes and answers for working with Escala.',
     }
     body = (
       <DocsView
         activeFoundationKey={docFoundationKey}
         onSelectFoundationKey={setDocFoundationKey}
         onEditFoundation={selectFoundation}
+        allowReference={false}
         exits={{
           onOpenFigmaDownload: () => openExport('figma-download'),
           onOpenFigmaSync: () => openExport('figma-sync'),
@@ -942,30 +1289,29 @@ export default function Configurator() {
   // every export/connect view (Code · Docs · Figma · GitHub), which own the
   // full panel. Save keeps the aside: it hosts the Overview + Connections
   // panel.
-  const showPreview = (tab === 'foundations' && !exportMode) || exportMode === 'save'
+  // Theme exploration is now the central canvas, so the old 400px companion
+  // preview is retained only where it has a different job (Save connections).
+  const showPreview = exportMode === 'save'
 
   // The section rail shows in every editing view and in none of the export /
   // connect views — those own the full width, in every section alike.
   const railVisible = projectCreated && !exportMode
-  // Components and Docs share the outer left rail (gradient shows through;
-  // TopNav brand block tracks its width). Variables uses the horizontal
-  // FoundationIconRail instead — no outer column there.
-  const outerRailVisible = railVisible && (tab === 'components' || tab === 'docs')
+  // Components alone uses the outer left rail. Docs is a set of focused pages
+  // selected in its top-menu, so it intentionally uses the full reading width.
+  const outerRailVisible = railVisible && tab === 'components'
   // Every Variables foundation paints a 198px Groups column (Color owns it
   // inside ColorHub; the rest wrap with FoundationWorkbench). It's not an
   // outer SectionRail, so `outerRailVisible` above stays false — but the
   // brand block's divider still needs to continue unbroken into that column.
-  const groupsColumnVisible = tab === 'foundations' && !exportMode
+  const themesCanvas = tab === 'foundations' && !exportMode
+  const themeLibraryVisible = themesCanvas
+  const groupsColumnVisible = themesCanvas && themeWorkspaceTab !== 'preview'
   // Color's Groups column can COLLAPSE on Primitives AND Semantics (Gradients
   // keeps its full width — its rail is the gradient list, whose rows are named
   // swatches with nothing glyph-sized to collapse to). Other foundations stay
   // at 198px. Read from `colorControls`' own exported constants rather than
   // repeating the numbers, since a mismatch here is exactly a broken line.
-  const groupsColumnCollapsed =
-    groupsColumnVisible && activeFoundation === 'color' && colorTab !== 'gradients' && colorRailCollapsed
-  const groupsColumnWidth = groupsColumnCollapsed
-    ? COLOR_RAIL_COLLAPSED_WIDTH
-    : COLOR_RAIL_WIDTH
+  const groupsColumnCollapsed = groupsColumnVisible && groupsRailCollapsed && colorTab !== 'gradients'
 
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
@@ -976,14 +1322,20 @@ export default function Configurator() {
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   const handleNav = (key: TopNavKey) => {
-    if (key === 'variables') selectFoundation('color')
+    if (key === 'variables') {
+      commitVisit()
+      setExportMode(null)
+      setTab('foundations')
+      setThemeWorkspaceTab('preview')
+    }
     else changeTab(key)
   }
 
-  const foundationCanvas = tab === 'foundations' && !exportMode
+  const foundationCanvas = themesCanvas && themeWorkspaceTab === 'primitives'
+  const themeWorkspaceRailVisible = themesCanvas
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
-  const skipCenterHeader = foundationCanvas || tab === 'about'
+  const skipCenterHeader = themesCanvas || tab === 'about'
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
@@ -997,19 +1349,27 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
-        exportMode={exportMode}
-        onOpenSync={() => openExport('figma-sync')}
-        onOpenDownload={() => openExport('figma-download')}
-        onExport={openSectionExport}
-        exportOpen={sectionExportOpen}
-        brandWidth={outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : groupsColumnVisible ? groupsColumnWidth : null}
+        // Contextual: the token search only filters the Generator workspace's
+        // tables, so it's absent on About / Components / Docs.
+        search={themesCanvas ? tokenSearchField : undefined}
+        brandWidth={themeLibraryVisible ? THEME_LIBRARY_WIDTH : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
         // spill past the divider they're supposed to sit inside.
-        railCollapsed={(outerRailVisible && railCollapsed) || groupsColumnCollapsed}
-        previewTheme={previewTheme}
-        onThemeChange={changePreviewTheme}
+        railCollapsed={outerRailVisible && railCollapsed}
+        chromeAppearance={theme}
+        onChromeAppearanceChange={setTheme}
+        onOpenDocsPage={(page) => {
+          const docsPage = page === 'mcp'
+            ? GUIDE_MCP_KEY
+            : page === 'figma'
+              ? GUIDE_FIGMA_KEY
+              : page === 'changelog'
+                ? CHANGELOG_KEY
+                : FAQ_KEY
+          openDocs(docsPage)
+        }}
       />
 
       <div className="flex-1 min-h-0 flex">
@@ -1034,13 +1394,13 @@ export default function Configurator() {
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
           />
         )}
-        {railVisible && tab === 'docs' && (
-          <DocsRail
-            rows={DOCS_RAIL_ROWS}
-            activeKey={docFoundationKey}
-            onSelect={setDocFoundationKey}
-            collapsed={railCollapsed}
-            onToggleCollapse={() => setRailCollapsed((v) => !v)}
+        {themeLibraryVisible && (
+          <ThemeLibraryRail
+            previewTheme={previewTheme}
+            onPreviewThemeChange={changePreviewTheme}
+            onStylePreview={setStylePreview}
+            activeStylePreview={stylePreview}
+            firstRun={firstRun}
           />
         )}
 
@@ -1048,13 +1408,31 @@ export default function Configurator() {
             Variables' Groups column IS the outer rail (under the logo), so
             this wrapper stays transparent there. Components / Docs / export
             views paint `bg-app` and the hairline from the first column. */}
-        <div className={`flex-1 min-w-0 flex overflow-hidden ${foundationCanvas ? '' : 'bg-app border-l border-line'}`}>
+        <div className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themeLibraryVisible || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}>
+          {/* On the Themes workspace the tab strip is a FULL-WIDTH row above the
+              icon rail + editor, not the first thing inside <main>: its left
+              edge meets the Themes Library column's border and its underline
+              runs unbroken across the icon-rail column too. The rail then
+              begins below it — no header band of its own. */}
+          {themesCanvas && (
+            <ThemeWorkspaceTabs value={themeWorkspaceTab} onChange={changeThemeWorkspaceTab} right={themeWorkspaceActions} />
+          )}
+          <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
+          {themeWorkspaceRailVisible && (
+            <FoundationIconRail
+              orientation="vertical"
+              active={themeWorkspaceTab === 'primitives' ? activeFoundation : null}
+              onSelect={selectFoundation}
+              groups={[
+                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+              ]}
+            />
+          )}
           {/* Center editor */}
           <main className="flex-1 min-w-0 flex flex-col">
-            {/* Foundation switcher lives in Groups' own 52px band so Groups
-                sits under the logo. No CenterHeader — the icons ARE the
-                section title. The band is OUTSIDE the keyed motion so
-                switching Color → Font fades the table, not the chrome. */}
+            {/* No CenterHeader on the Themes canvas — the icons ARE the section
+                title, and the tab strip above owns the header row. */}
             {!skipCenterHeader && (
               <CenterHeader
                 Icon={header.Icon}
@@ -1074,18 +1452,67 @@ export default function Configurator() {
                   NEW header for the fade-out duration — a title/content mismatch.
                   Opacity only — a y-nudge on the whole canvas made Groups and
                   the icon rail jump even after they were the same layout. */}
-              {foundationCanvas ? (
+              {themesCanvas && themeWorkspaceTab === 'preview' ? (
+                <motion.div
+                  key="theme-preview"
+                  className="h-full"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <ThemePreviewHub
+                    surface={themeHubSurface}
+                    onSurfaceChange={setThemeHubSurface}
+                    previewTheme={previewTheme}
+                    previewAppearance={previewAppearance}
+                    stylePreview={stylePreview}
+                    onAdoptStyle={changePreviewTheme}
+                    onPreviewAppearanceChange={changePreviewAppearance}
+                    onOpenColor={() => { setActiveFoundation('color'); setFoundationCollection('color', 'semantics'); setThemeWorkspaceTab('primitives') }}
+                    onOpenTypography={() => { setActiveFoundation('typography'); setFoundationCollection('typography', 'semantics'); setThemeWorkspaceTab('primitives') }}
+                    onOpenRadius={() => { setActiveFoundation('radius'); setFoundationCollection('radius', 'semantics'); setThemeWorkspaceTab('primitives') }}
+                    onOpenSemanticFoundation={(foundation) => { setActiveFoundation(foundation); setFoundationCollection(foundation, 'semantics'); setThemeWorkspaceTab('primitives') }}
+                    onOpenComponent={selectComponent}
+                    onOpenComponents={() => changeTab('components')}
+                    onEditFoundation={selectFoundation}
+                    figmaPublishState={figmaPublishState}
+                    onRequestFigmaSync={publishFigmaNow}
+                    onOpenFigmaDownload={() => openExport('figma-download')}
+                    onOpenSave={() => openExport('save')}
+                    githubPushState={githubPushState}
+                    onGithubPushStateChange={handleGithubPushState}
+                    docsExits={{
+                      onOpenFigmaDownload: () => openExport('figma-download'),
+                      onOpenFigmaSync: () => setThemeHubSurface('figma'),
+                      onOpenExport: openSectionExport,
+                      onOpenSave: () => openExport('save'),
+                      onOpenGithub: () => setThemeHubSurface('github'),
+                    }}
+                  />
+                </motion.div>
+              ) : themesCanvas && themeWorkspaceTab === 'code' ? (
+                <motion.div
+                  key="theme-code-format"
+                  className="h-full"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <ThemeCodeFormat />
+                </motion.div>
+              ) : foundationCanvas ? (
                 <FoundationWorkbench
-                  toolbar={foundationsToolbar}
-                  toolbarWash={toolbarWash}
                   railCollapsed={groupsColumnCollapsed}
                   onToggleRail={
-                    activeFoundation === 'color' && colorTab !== 'gradients'
-                      ? () => setColorRailCollapsed((c) => !c)
+                    colorTab !== 'gradients'
+                      ? () => setGroupsRailCollapsed((collapsed) => !collapsed)
                       : undefined
                   }
                   label={section.variablesLabel}
                   gutter={activeFoundation === 'icons'}
+                  activeCollection={activeCollection}
+                  collections={activeFoundationCollections}
+                  onCollectionChange={(collection) => setFoundationCollection(activeFoundation, collection)}
                 >
                   <motion.div
                     key={centerKey}
@@ -1110,6 +1537,7 @@ export default function Configurator() {
               )}
             </div>
           </main>
+          </div>
 
           {/* Right live preview (hidden in components tab — full width for docs)
 
@@ -1151,27 +1579,28 @@ export default function Configurator() {
               ) : (
                 <PreviewPanel
                   focus={!exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab === 'semantics' ? semanticFocus : null}
-                  typeFocus={!exportMode && tab === 'foundations' && activeFoundation === 'typography' && typeTab === 'semantics' ? typeFocus : null}
+                  typeFocus={!exportMode && tab === 'foundations' && activeFoundation === 'typography' && activeCollection === 'semantics' ? typeFocus : null}
                   categoryKey={!exportMode && tab === 'foundations' ? activeFoundation : null}
                   mdWholeSystem={
                     !exportMode && tab === 'foundations' && activeFoundation === 'color' && colorTab !== 'semantics'
                   }
                   previewTheme={previewTheme}
+                  previewAppearance={previewAppearance}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}
                   onEditTypeRole={(key) => {
-                    setTypeTab('semantics')
+                    setFoundationCollection('typography', 'semantics')
                     setTypeReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
                   }}
                   onEditLayoutRole={(key) => {
                     setLayoutReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
                   }}
                   onEditColorToken={(key) => {
-                    setColorTab('semantics')
+                    setFoundationCollection('color', 'semantics')
                     setColorReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1, as: 'token' }))
                   }}
                   onEditColorGroup={(key) => {
-                    setColorTab('semantics')
+                    setFoundationCollection('color', 'semantics')
                     setColorReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1, as: 'group' }))
                   }}
                 />
@@ -1191,10 +1620,42 @@ export default function Configurator() {
           entry points here just competed for attention. One quiet line on a
           step-up surface (`bg-surface`, not `bg-app`) so the rule reads as a
           distinct strip instead of text floating on the page. */}
-      <footer className="flex-shrink-0 h-7 flex items-center px-4 lg:px-5 border-t border-line bg-surface">
-        <span className="text-[10.5px] text-fg-faint truncate">
+      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-surface">
+        <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
           {COPYRIGHT_LINE} · Built by Cesar Durango
         </span>
+        {/* The project's own source. It used to be an icon button in TopNav's
+            global cluster, next to Language and Appearance — but those change
+            the session and this leaves the app, and its GitHub mark collided
+            with the user's OWN repo-sync mark two rows down. Here it reads as
+            what it is: a colophon link, on the attribution line, in the
+            attribution's own type size. Text + mark rather than a bare glyph —
+            there's no 24px target pressure on a 28px rule, and the word is what
+            makes it unambiguous next to a copyright notice. */}
+        <a
+          href="https://github.com/Duscenko/escala-tokens"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open the Escala Tokens source on GitHub"
+          title="Open the Escala Tokens source on GitHub"
+          // `text-fg-muted`, not the `text-fg-faint` the copyright line uses:
+          // this is the one INTERACTIVE thing in the footer, and faint measured
+          // 4.39:1 at 10.5px — under AA for small text. The static line beside
+          // it can sit quieter; a link people have to find cannot.
+          // `h-full` claims the whole 28px strip as the hit area (WCAG 2.2
+          // target size) without the mark or the type growing.
+          className="flex h-full flex-shrink-0 items-center gap-1.5 rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        >
+          <span
+            aria-hidden
+            className="h-3 w-3 bg-current"
+            style={{
+              WebkitMask: "url('/ide-logos/github-outline.svg') center / contain no-repeat",
+              mask: "url('/ide-logos/github-outline.svg') center / contain no-repeat",
+            }}
+          />
+          <span className="hidden sm:inline">Source</span>
+        </a>
       </footer>
 
       {/* Guided export — Source → Format → Export. TRANSVERSAL now: reachable
@@ -1208,9 +1669,13 @@ export default function Configurator() {
         {sectionExportOpen && (
           <ExportWizard
             key={exportRun}
-            initialCollections={tab === 'foundations' ? (COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']) : undefined}
-            onClose={() => setSectionExportOpen(false)}
+            initialCollections={themeExportScope ? undefined : tab === 'foundations' ? (COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']) : undefined}
+            initialModes={themeExportScope ? [themeExportScope] : undefined}
+            themeScope={themeExportScope}
+            themeScopeLabel={themeExportScope ? (store.themeLabels[themeExportScope] || themeExportScope) : undefined}
+            onClose={() => { setSectionExportOpen(false); setThemeExportScope(null) }}
             onConnectGithub={() => { setSectionExportOpen(false); openExport('github') }}
+            onAddSyncOption={() => { setSectionExportOpen(false); setThemeExportScope(null); openFigmaSyncDetails() }}
           />
         )}
       </AnimatePresence>
@@ -1243,7 +1708,7 @@ export default function Configurator() {
               setExportMode(null)
               setTab('foundations')
               setActiveFoundation('color')
-              setColorTab('primary')
+              setFoundationCollection('color', 'primitives')
             }}
           />
         )}

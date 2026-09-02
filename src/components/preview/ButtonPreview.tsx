@@ -59,10 +59,15 @@ export interface PreviewTokens {
   // Component heights from Foundations · Sizes (xs–2xl) — Size axes resolve
   // control heights from here so previews track that foundation live.
   sizes?: Record<string, string>
+  // Square selector glyphs (checkbox / radio / switch / badge dot), xs–xl. A
+  // SEPARATE ramp from `sizes` because a checkbox is a glyph, not a control
+  // height — 24px is `size` xs but `selector` xl.
+  selector?: Record<string, string>
   stroke?: Record<string, string>
   radiusRoles?: Record<string, string>
   spacingRoles?: Record<string, string>
   sizeRoles?: Record<string, string>
+  selectorRoles?: Record<string, string>
   strokeRoles?: Record<string, string>
   breakpointRoles?: Record<string, string>
   gridFrame?: { desktop: { columns: string; gutter: string; margin: string; container: string }; mobile: { columns: string; gutter: string; margin: string; container: string } }

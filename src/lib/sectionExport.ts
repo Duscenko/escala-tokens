@@ -225,12 +225,29 @@ const sortedEntries = (o: Record<string, string>) =>
   Object.entries(o).sort(([a], [b]) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b))
 
 // Simple key→value sections share one code path.
-const SIMPLE: Partial<Record<SectionKey, { prefix: string; tailwind: string; get: (s: Store) => Record<string, string> }>> = {
+//
+// `extra` is a SECOND primitive ramp shipping under the same section. Sizes
+// carries two: control heights (`--size-*`) and the selector glyph square
+// (`--selector-*`). They're one foundation — "how big is a control" — but not
+// one ramp, since 24px is `size` xs and `selector` xl. Folding it in here
+// rather than minting a section key keeps `ALL_SECTIONS`, and therefore the
+// Export wizard's collection checkboxes, unchanged.
+interface SimpleSpec {
+  prefix: string
+  tailwind: string
+  get: (s: Store) => Record<string, string>
+  extra?: { prefix: string; family: LayoutFamily; label: string; get: (s: Store) => Record<string, string> }
+}
+
+const SIMPLE: Partial<Record<SectionKey, SimpleSpec>> = {
   spacing: { prefix: 'spacing', tailwind: 'spacing', get: (s) => s.spacing },
   radius: { prefix: 'radius', tailwind: 'borderRadius', get: (s) => s.radius },
   shadow: { prefix: 'shadow', tailwind: 'boxShadow', get: (s) => s.shadows },
   grid: { prefix: 'grid', tailwind: 'grid', get: (s) => s.grid },
-  sizes: { prefix: 'size', tailwind: 'height', get: (s) => s.sizes },
+  sizes: {
+    prefix: 'size', tailwind: 'height', get: (s) => s.sizes,
+    extra: { prefix: 'selector', family: 'selector', label: 'Selectors', get: (s) => s.selector ?? {} },
+  },
   stroke: { prefix: 'stroke', tailwind: 'borderWidth', get: (s) => s.stroke ?? {} },
 }
 
@@ -292,6 +309,10 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   if (family) {
     lines.push(...layoutRoleCssFor(family, store))
   }
+  if (simple.extra) {
+    Object.entries(simple.extra.get(store)).forEach(([k, v]) => lines.push(`--${simple.extra!.prefix}-${k}: ${v};`))
+    lines.push(...layoutRoleCssFor(simple.extra.family, store))
+  }
   if (section === 'spacing') {
     Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${v};`))
   }
@@ -310,6 +331,7 @@ function layoutRolesOf(family: LayoutFamily, store: Store): Record<string, strin
   if (family === 'radius') return store.radiusRoles
   if (family === 'spacing') return store.spacingRoles
   if (family === 'size') return store.sizeRoles
+  if (family === 'selector') return store.selectorRoles
   if (family === 'stroke') return store.strokeRoles
   return store.breakpointRoles
 }
@@ -381,6 +403,9 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     }
   }
   const simple = SIMPLE[section]!
+  // The extra ramp has no Tailwind theme key of its own — a checkbox square is
+  // a `size-*` utility, and merging it into `height` would collide on xs/sm/md.
+  // It ships in CSS, JSON and Markdown; Tailwind users read it as a var.
   return { [simple.tailwind]: simple.get(store) }
 }
 
@@ -408,7 +433,7 @@ function tokensFor(section: SectionKey): unknown {
     case 'radius': return { radius: full.radius, radiusRoles: full.radiusRoles }
     case 'shadow': return { shadows: full.shadows }
     case 'grid': return { grid: full.grid, gridFrame: full.gridFrame, breakpointRoles: full.breakpointRoles }
-    case 'sizes': return { sizes: full.sizes, sizeRoles: full.sizeRoles }
+    case 'sizes': return { sizes: full.sizes, sizeRoles: full.sizeRoles, selector: full.selector, selectorRoles: full.selectorRoles }
     case 'stroke': return { stroke: full.stroke, strokeRoles: full.strokeRoles }
     case 'icons': return { icons: full.icons }
   }
@@ -643,6 +668,20 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       table(
         ['Role', 'Aliases'],
         LAYOUT_ROLES[family].map((r) => [`\`--${family}-${r.key}\``, `\`var(--${family}-${roles[r.key]})\``]),
+      ),
+    )
+  }
+  if (simple.extra) {
+    const ex = simple.extra
+    const roles = mergeLayoutRoles(ex.family, layoutRolesOf(ex.family, store))
+    parts.push(
+      `\n### ${ex.label}\n`,
+      '_The square a checkbox, radio or switch knob is drawn in — a glyph, not a control height. Below 24px, pair it with a transparent hit area (`--size-hit`) for WCAG 2.2 target size._\n',
+      table(['Token', 'Value'], Object.entries(ex.get(store)).map(([k, v]) => [`\`--${ex.prefix}-${k}\``, `\`${v}\``])),
+      `\n#### ${ex.label} semantics\n`,
+      table(
+        ['Role', 'Aliases'],
+        LAYOUT_ROLES[ex.family].map((r) => [`\`--${ex.family}-${r.key}\``, `\`var(--${ex.family}-${roles[r.key]})\``]),
       ),
     )
   }

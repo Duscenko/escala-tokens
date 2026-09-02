@@ -104,7 +104,7 @@ export default function NewSystemModal({
             placeholder="e.g. Acme Design System"
             className="w-full px-3.5 py-2.5 rounded-xl border border-line bg-surface text-base font-semibold text-fg outline-none transition-colors placeholder:text-fg-faint placeholder:font-normal focus:border-line-strong"
           />
-          <p className="text-[11px] text-fg-faint">
+          <p className="text-caption text-fg-faint">
             Saves as <code className="font-mono text-fg-muted">{slug}</code> — names your files, the Figma collection and the sync endpoint.
           </p>
         </div>
@@ -151,13 +151,13 @@ export default function NewSystemModal({
               swatchClassName={isPreset ? '' : 'ring-2 ring-fg/40'}
             />
           </div>
-          <p className="text-[11px] text-fg-faint">
+          <p className="text-caption text-fg-faint">
             Every ramp, semantic token and gradient starts from this — you can refine it later in Foundations · Color.
           </p>
         </div>
 
         {!currentSaved && (
-          <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2">
+          <p className="text-caption leading-relaxed text-status-warning bg-status-warning/10 rounded-lg px-3 py-2">
             Your current system isn't saved — creating a new one replaces it. Save it first from the Save hub if you want to keep it.
           </p>
         )}

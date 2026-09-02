@@ -8,7 +8,7 @@
 // did more harm than the feature was worth. `NewTokenWizard.tsx` and
 // `ImportSystemModal.tsx` are NOT deleted — same precedent as
 // `WorkbenchLayout`/`PickerColor`/`HomeView` (see CLAUDE.md): kept for
-// reference, not wired up. Import is still reachable from Save & Share
+// reference, not wired up. Import is still reachable from the System library
 // (`SaveView`'s own `onImport`, a separate entry point this file never owned).
 // Kits is a self-contained "save current as + previous kits" popover over the
 // local savedSystems registry — untouched.
@@ -103,7 +103,7 @@ function kitFacts(snapshot: DesignSnapshot | undefined) {
  *  "Themes" or waste the width the values need in a 360px popover. */
 function KitFact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline gap-2 text-[11px] leading-relaxed">
+    <div className="flex items-baseline gap-2 text-caption leading-relaxed">
       <dt className="w-[46px] flex-shrink-0 text-fg-faint">{label}</dt>
       <dd className="flex-1 min-w-0 text-fg-muted truncate">{children}</dd>
     </div>
@@ -136,10 +136,10 @@ function KitsPopover({
   /** The Systems pill — measured so the popover's own height never exceeds
    *  the room actually below it. Without this, a short window (or, more
    *  reliably, JUST a handful of saved systems on an ordinary laptop window)
-   *  ran the popover's natural height — header + kits list + the "Save &
-   *  Share" door — straight past the bottom of the viewport, with no scroll
+   *  ran the popover's natural height — header + kits list + the System
+   *  library door — straight past the bottom of the viewport, with no scroll
    *  affordance for the door: it wasn't even clipped visibly, it was simply
-   *  gone below the fold. Reported as "Save & Share needs to stay reachable
+   *  gone below the fold. Reported as "System library needs to stay reachable
    *  once there are many kits" — measured first: with 15 kits the popover
    *  wants 682px, and a 650px-tall window put the door's bottom edge at 772,
    *  122px past the window. */
@@ -425,7 +425,7 @@ function KitsPopover({
           <button
             type="button"
             onClick={() => { onConnectGithub(); onClose() }}
-            className="flex items-center justify-center gap-1.5 h-8 rounded-lg text-[12px] font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
+            className="flex items-center justify-center gap-1.5 h-8 rounded-lg text-body font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
           >
             <GitHubGlyph />
             Connect GitHub to keep a restorable copy
@@ -436,7 +436,7 @@ function KitsPopover({
       {/* `flex-1 min-h-0` — not a fixed `max-h-64` — so this is the ONE region
           that gives up space when the popover's own `maxHeight` (from
           `usePopoverPlacement`) is tighter than the content wants. The header
-          above and the "Save & Share" footer below are both `flex-shrink-0`:
+          above and the System library footer below are both `flex-shrink-0`:
           neither can be pushed off screen by a long kit list, which is the
           bug this whole restructure exists to fix. */}
       <div className="flex-1 min-h-0 overflow-y-auto border-t border-line/70">
@@ -487,7 +487,7 @@ function KitsPopover({
                   />
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm font-medium text-fg truncate">{kit.name}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-fg-faint min-w-0">
+                    <span className="flex items-center gap-1 text-caption text-fg-faint min-w-0">
                       <span className="truncate">
                         saved {timeAgo(kit.savedAt)}
                         {/* Each system publishes to ITS OWN endpoint — see
@@ -508,7 +508,7 @@ function KitsPopover({
                       {kit.source === 'github' && (
                         <span
                           title={kit.repo ? `Restorable from ${kit.repo}` : 'Restorable from GitHub'}
-                          className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 h-[15px] rounded text-[10px] font-medium border border-line text-fg-muted bg-elevated/60"
+                          className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 h-[15px] rounded text-mini font-medium border border-line text-fg-muted bg-elevated/60"
                         >
                           <GitHubGlyph size={9} />
                           GitHub
@@ -530,9 +530,9 @@ function KitsPopover({
                   title={canSync
                     ? `Load ${kit.name} and publish it to its Figma sync URL`
                     : 'Sync runs on the deployed app — /api/tokens has no local dev route'}
-                  className={`flex-shrink-0 px-2 h-6 rounded-md text-[11px] font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                  className={`flex-shrink-0 px-2 h-6 rounded-md text-caption font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                     synced === kit.id
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      ? 'border-status-success/40 bg-status-success/10 text-status-success'
                       : 'border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated'
                   }`}
                 >
@@ -541,7 +541,7 @@ function KitsPopover({
                 <button
                   onClick={() => removeSavedSystem(kit.id)}
                   aria-label={`Remove ${kit.name}`}
-                  className="flex-shrink-0 p-1 rounded-md text-fg-faint opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-elevated transition-all"
+                  className="flex-shrink-0 p-1 rounded-md text-fg-faint opacity-0 group-hover:opacity-100 hover:text-status-danger hover:bg-elevated transition-all"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
@@ -607,13 +607,13 @@ function KitsPopover({
                           the same class of surprise as the row-click-loads
                           behaviour this panel was built to remove. */}
                       {facts.themes.length > 1 && (
-                        <label className="flex items-center gap-2 text-[11px] text-fg-faint">
+                        <label className="flex items-center gap-2 text-caption text-fg-faint">
                           <span className="flex-shrink-0">Open in</span>
                           <select
                             value={landTheme[kit.id] ?? facts.themes[0]}
                             onChange={(e) => setLandTheme((m) => ({ ...m, [kit.id]: e.target.value }))}
                             aria-label={`Theme to open ${kit.name} in`}
-                            className="flex-1 min-w-0 px-2 py-1 rounded-md border border-line bg-app text-[11px] text-fg outline-none transition-colors focus:border-line-strong"
+                            className="flex-1 min-w-0 px-2 py-1 rounded-md border border-line bg-app text-caption text-fg outline-none transition-colors focus:border-line-strong"
                           >
                             {facts.themes.map((t) => (
                               <option key={t} value={t}>{themeLabel(t)}</option>
@@ -634,14 +634,14 @@ function KitsPopover({
                         <button
                           onClick={() => handleLoad(kit.id, facts.themes, onOpenEditor)}
                           title={`Load ${kit.name} and open it in the Variables Generator`}
-                          className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
+                          className="flex-1 h-7 rounded-md text-caption font-medium border border-line-strong bg-surface text-fg hover:bg-elevated transition-colors"
                         >
                           Load & edit
                         </button>
                         <button
                           onClick={() => handleLoad(kit.id, facts.themes, onReviewInDocs)}
                           title={`Load ${kit.name} and read its foundations in Docs`}
-                          className="flex-1 h-7 rounded-md text-[11px] font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
+                          className="flex-1 h-7 rounded-md text-caption font-medium border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors"
                         >
                           Load & review
                         </button>
@@ -657,7 +657,7 @@ function KitsPopover({
         )}
       </div>
 
-      {/* The door to the full hub.
+      {/* The door to the full library.
           This slot used to read `Active: #9522e9`. That line is named in
           CLAUDE.md as one half of why this popover "looked like a palette
           manager" — the per-row colour dot was the other half, and only the
@@ -669,8 +669,8 @@ function KitsPopover({
           Named as a ROW (glyph · title · what's there) rather than a bare
           link, matching `SyncHubPopover` — the codebase's existing pattern for
           "this popover routes somewhere". The destination keeps its own proper
-          noun, "Save & Share", because Docs prose refers to it by that name in
-          eight places; the subtitle is what says why you'd go. */}
+          noun, "System library", because this is a saved-systems destination,
+          not a second exporter. */}
       <div className="flex-shrink-0 border-t border-line/70 bg-app/60 p-1.5">
         {onOpenSaveHub && (
           <button
@@ -681,15 +681,15 @@ function KitsPopover({
               <FolderIcon />
             </span>
             <span className="min-w-0">
-              <span className="block text-[12.5px] font-semibold text-fg">Save &amp; Share</span>
-              <span className="block text-[11px] text-fg-faint leading-relaxed">
-                Every system side by side, the export files, and your Figma / GitHub connections.
+              <span className="block text-body font-semibold text-fg">System library</span>
+              <span className="block text-caption text-fg-faint leading-relaxed">
+                Browse, restore, import or remove saved systems.
               </span>
             </span>
           </button>
         )}
         {kits.length > 0 && (
-          <span className="block px-2.5 pb-1 pt-0.5 text-[11px] text-fg-faint leading-relaxed">
+          <span className="block px-2.5 pb-1 pt-0.5 text-caption text-fg-faint leading-relaxed">
             {canSync
               ? 'Each system syncs to its own Figma URL, named after the system.'
               : 'Sync is available on the deployed app.'}
@@ -741,13 +741,13 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
       <div className="flex items-center gap-2 pt-0.5">
         <button
           onClick={onConfirm}
-          className="flex-1 h-8 rounded-lg text-[12px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+          className="flex-1 h-8 rounded-lg text-body font-medium bg-status-danger-solid text-white hover:bg-status-danger-solid/90 transition-colors"
         >
           Reset everything
         </button>
         <button
           onClick={onCancel}
-          className="flex-1 h-8 rounded-lg text-[12px] font-medium border border-line text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
+          className="flex-1 h-8 rounded-lg text-body font-medium border border-line text-fg-muted hover:text-fg hover:bg-elevated transition-colors"
         >
           Cancel
         </button>
@@ -758,7 +758,7 @@ function ResetConfirmPopover({ onCancel, onConfirm }: { onCancel: () => void; on
 
 // ── The pill row itself (header rightSlot on Home) — Reset · Systems ────────
 export default function HomeActions({
-  previewTheme = 'light', onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme,
+  previewTheme = 'light', onOpenEditor, onReviewInDocs, onConnectGithub, onOpenSaveHub, onPreviewTheme, hideSystems = false,
 }: {
   previewTheme?: string
   /** Forwarded to the Systems popover's per-row actions — see `KitsPopover`. */
@@ -770,6 +770,8 @@ export default function HomeActions({
   onOpenSaveHub?: () => void
   /** Sets the previewed theme (and the app chrome with it). */
   onPreviewTheme?: (themeKey: string) => void
+  /** System library is surfaced by Workspace settings, not the foundation bar. */
+  hideSystems?: boolean
 }) {
   const [kitsOpen, setKitsOpen] = useState(false)
   const kitsBtn = useRef<HTMLButtonElement>(null)
@@ -843,7 +845,7 @@ export default function HomeActions({
           )}
         </AnimatePresence>
       </div>
-      <div className="relative">
+      {!hideSystems && <div className="relative">
         <Pill
           Icon={FolderIcon}
           label="Systems"
@@ -867,7 +869,7 @@ export default function HomeActions({
             />
           )}
         </AnimatePresence>
-      </div>
+      </div>}
     </div>
   )
 }

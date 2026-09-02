@@ -10,6 +10,7 @@ import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMobileCss, breakpointMobileMax } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
+import { resolveThemeFoundations } from './themeFoundations'
 
 // Panel (background-secondary: cards, panels, sections) tokens — translucent
 // mode bakes alpha into the color and pairs it with --panel-blur for backdrop-
@@ -17,7 +18,7 @@ import { gradientToCss, gradientSlug } from './gradients'
 const PANEL_KEYS = ['background-secondary']
 
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
-  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
+  const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
   const semanticTokens = themes.light ?? {}
   const translucent = panelBackground === 'translucent'
   const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
@@ -109,7 +110,13 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
 
+  lines.push('\n  /* Selectors — checkbox / radio / switch glyph, a square not a height */')
+  Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${v};`))
+
   lines.push('\n  /* Stroke — border-width / ring spread, not paint */')
+  // A sub-pixel value is declared at its true weight and floored to 1px below
+  // 2dppx: on a 1x display the browser rounds a hairline into an artefact (or
+  // into nothing). The media query is emitted after `:root` closes, below.
   Object.entries(stroke ?? {}).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${v};`))
 
   lines.push('\n  /* Layout roles — alias the primitive scale. Never raw px. */')
@@ -117,6 +124,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     radius: mergeLayoutRoles('radius', radiusRoles),
     spacing: mergeLayoutRoles('spacing', spacingRoles),
     size: mergeLayoutRoles('size', sizeRoles),
+    selector: mergeLayoutRoles('selector', selectorRoles),
     stroke: mergeLayoutRoles('stroke', strokeRoles),
     breakpoint: mergeLayoutRoles('breakpoint', breakpointRoles),
   }).forEach((l) => lines.push(`  ${l}`))
@@ -141,6 +149,23 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('}')
 
+  // Hairline guard. A sub-pixel border is only a hairline at 2dppx or better;
+  // at 1x the browser rounds it to an artefact, so the standard-density case
+  // gets 1px. Written as an override on the low-density side rather than a
+  // min-resolution bump, so a UA that reports no resolution still gets a
+  // border that renders.
+  const hairlines = Object.entries(stroke ?? {}).filter(([, v]) => {
+    const px = parseFloat(v)
+    return Number.isFinite(px) && px > 0 && px < 1
+  })
+  if (hairlines.length) {
+    lines.push('\n@media (max-resolution: 1.99dppx) {')
+    lines.push('  :root {')
+    hairlines.forEach(([k]) => lines.push(`    --stroke-${k}: 1px;`))
+    lines.push('  }')
+    lines.push('}')
+  }
+
   const mobileMax = breakpointMobileMax(breakpointRoles, bps)
   lines.push(`\n@media (max-width: ${mobileMax}) {`)
   lines.push('  :root {')
@@ -148,11 +173,14 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('  }')
   lines.push('}')
 
-  // Non-default themes — semantic tokens only. Dark keeps the `.dark` class
-  // convention (applied on <html>); extra themes use [data-theme="…"].
-  themeOrder.filter((t) => t !== 'light').forEach((theme) => {
+  // Theme blocks contain semantics plus any complete foundation override.
+  // Dark keeps the `.dark` convention; extra themes use data-theme.
+  themeOrder.forEach((theme) => {
+    const hasFoundationOverride = Boolean(store.themeFoundations?.[theme])
+    if (theme === 'light' && !hasFoundationOverride) return
     const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
     const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
+    const foundations = resolveThemeFoundations(store, theme)
     // A dark-kind theme also re-points the gradients that carry a dark
     // appearance — same `--gradient-<slug>` name, overridden in the same block
     // the semantic tokens are, so consuming a gradient never needs a second
@@ -166,14 +194,51 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     // `none` is skipped because its derivation is a no-op, so the None preset
     // doesn't emit six dead declarations.
     const darkShadows = kind === 'dark'
-      ? Object.entries(shadows).filter(([, v]) => v && v !== 'none')
+      ? Object.entries(foundations.shadows).filter(([, v]) => v && v !== 'none')
       : []
-    if (!entries.length && !darkGradients.length && !darkShadows.length) return
-    const selector = theme === 'dark' ? '.dark, [data-theme="dark"]' : `[data-theme="${theme}"]`
-    lines.push(`\n${selector} {`)
+    if (!entries.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
+    const themeSelector = theme === 'light'
+      ? ':root, [data-theme="light"]'
+      : theme === 'dark'
+        ? '.dark, [data-theme="dark"]'
+        : `[data-theme="${theme}"]`
+    lines.push(`\n${themeSelector} {`)
     if (entries.length) {
       lines.push(`  /* Semantic tokens — ${theme} */`)
-      entries.forEach(([k, v]) => lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, kind)};`))
+      entries.forEach(([k, v]) => {
+        let next = v
+        if (PANEL_KEYS.includes(k)) {
+          if (foundations.panelBackground === 'translucent') next = withAlpha(v, 0.7)
+          else if (foundations.panelBackground === 'page' && kind === 'light') next = pageBackground
+        }
+        lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${next};`)
+      })
+    }
+    if (hasFoundationOverride) {
+      lines.push(`  /* Foundations — ${theme} */`)
+      lines.push(`  --font-family-heading: ${fontStack(foundations.typography.headingFontFamily ?? foundations.typography.fontFamily)};`)
+      lines.push(`  --font-family-body: ${fontStack(foundations.typography.fontFamily)};`)
+      Object.entries(foundations.typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
+      Object.entries(foundations.typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
+      Object.entries(foundations.typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
+      typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`))
+      Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
+      Object.entries(foundations.padding).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
+      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
+      Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
+      Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${v};`))
+      Object.entries(foundations.stroke).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${v};`))
+      allLayoutRoleCssVars({
+        radius: mergeLayoutRoles('radius', foundations.radiusRoles),
+        spacing: mergeLayoutRoles('spacing', foundations.spacingRoles),
+        size: mergeLayoutRoles('size', foundations.sizeRoles),
+        selector: mergeLayoutRoles('selector', foundations.selectorRoles),
+        stroke: mergeLayoutRoles('stroke', foundations.strokeRoles),
+        breakpoint: mergeLayoutRoles('breakpoint', foundations.breakpointRoles),
+      }).forEach((line) => lines.push(`  ${line}`))
+      if (kind !== 'dark') Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
+      gridFrameRootCss(foundations.gridFrame).forEach((line) => lines.push(`  ${line}`))
+      lines.push(`  --panel-blur: ${foundations.panelBackground === 'translucent' ? 'blur(16px)' : 'none'};`)
     }
     if (darkGradients.length) {
       lines.push(`  /* Gradients — ${theme} */`)
@@ -193,7 +258,7 @@ export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>)
   const {
     projectName, projectDescription, primaryColor, primaryScale, grayLightScale, errorScale, warningScale,
     successScale, infoScale, customColors, themes, themeOrder, typography, spacing, padding, radius,
-    shadows, grid, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles, gridFrame, selectedComponents, iconAiSource, customIcons, githubRepo, colorNaming, panelBackground,
+    shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, selectedComponents, iconAiSource, customIcons, githubRepo, colorNaming, panelBackground,
     gradients, gradientAssignments,
   } = store
   const gradientSlugById = (id: string | null) => {
@@ -379,6 +444,24 @@ ${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`var(--size-${mergeLayo
 
 ---
 
+## Selectors
+
+The square a checkbox, radio or switch knob is drawn in — a glyph, not a control
+height, so it has its own ramp. Below 24px, pair it with a transparent hit area
+(\`--size-hit\`) to meet WCAG 2.2 target size; don't grow the glyph instead.
+
+| Token | Value |
+|-------|-------|
+${Object.entries(selector ?? {}).map(([k,v])=>`| \`--selector-${k}\` | \`${v}\` |`).join('\n')}
+
+### Selector roles
+
+| Role | Aliases |
+|------|---------|
+${LAYOUT_ROLES.selector.map((r) => `| \`--selector-${r.key}\` | \`var(--selector-${mergeLayoutRoles('selector', selectorRoles)[r.key]})\` |`).join('\n')}
+
+---
+
 ## Stroke
 
 Line weight — not paint. Color stays on \`border.*\`.
@@ -448,4 +531,3 @@ Dark mode applies via the \`.dark\` class on \`<html>\`${themeCols.length > 2 ? 
 *Token namespace: \`${slug}\`*
 `
 }
-

@@ -31,7 +31,7 @@ function download(content: string, filename: string, mime: string) {
 function Pill({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
-      <span className="text-[10px] text-fg-faint uppercase tracking-wider">{label}</span>
+      <span className="text-mini text-fg-faint uppercase tracking-wider">{label}</span>
       <div className="flex items-center gap-1.5">
         {color && (
           <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
@@ -117,7 +117,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {/* Editable project name (used as the README title / token namespace) */}
         <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
-          <span className="text-[10px] text-fg-faint uppercase tracking-wider">Project</span>
+          <span className="text-mini text-fg-faint uppercase tracking-wider">Project</span>
           <input
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
@@ -146,7 +146,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
               >
                 {t.label}
                 {t.badge && (
-                  <span className="text-[9px] font-sans px-1.5 py-px rounded-full bg-elevated text-fg-faint border border-line whitespace-nowrap">
+                  <span className="text-micro font-sans px-1.5 py-px rounded-full bg-elevated text-fg-faint border border-line whitespace-nowrap">
                     {t.badge}
                   </span>
                 )}
@@ -159,7 +159,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
               className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-elevated text-fg-muted hover:bg-line-strong transition border border-line-strong"
             >
               {copiedTab === activeTab ? (
-                <><span className="text-emerald-400">✓</span> Copied</>
+                <><span className="text-status-success">✓</span> Copied</>
               ) : (
                 <>
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" stroke="currentColor" strokeWidth="1.2"/></svg>
@@ -172,7 +172,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
               className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-elevated text-fg-muted hover:bg-line-strong transition border border-line-strong"
             >
               {justDownloaded === activeTab ? (
-                <><span className="text-emerald-400">✓</span> Saved</>
+                <><span className="text-status-success">✓</span> Saved</>
               ) : (
                 <>
                   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v6M3 5l2.5 2.5L8 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 8.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -192,7 +192,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
             transition={{ duration: 0.15 }}
             className="bg-app border border-t-0 border-line rounded-b-xl overflow-auto max-h-72"
           >
-            <pre className="p-4 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
+            <pre className="p-4 text-caption font-mono leading-relaxed text-fg-muted whitespace-pre">
               {content[activeTab]}
             </pre>
           </motion.div>
@@ -262,11 +262,11 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
       {isDeployed && (
         <div className="rounded-xl border border-line bg-surface/50 p-5 flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-status-success-solid animate-pulse" />
             <p className="text-sm font-semibold text-fg">Live publish endpoint</p>
           </div>
           <p className="text-xs text-fg-faint">
-            POST to <code className="text-[#5AADFF] text-[11px] px-1 py-0.5 rounded bg-elevated">/api/tokens</code> to push your current token set. This system has its own scoped URL — paste it into your Figma plugin's live sync.
+            POST to <code className="text-[#5AADFF] text-caption px-1 py-0.5 rounded bg-elevated">/api/tokens</code> to push your current token set. This system has its own scoped URL — paste it into your Figma plugin's live sync.
           </p>
           <div className="flex items-center gap-2 bg-app border border-line rounded-lg px-3 py-2">
             <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">
@@ -274,7 +274,7 @@ export default function ExportView({ initialTab = 'tokens', onClose }: ExportVie
             </code>
             <button
               onClick={() => navigator.clipboard.writeText(buildSyncUrl())}
-              className="text-[10px] text-fg-faint hover:text-fg transition flex-shrink-0"
+              className="text-mini text-fg-faint hover:text-fg transition flex-shrink-0"
             >
               Copy
             </button>

@@ -56,7 +56,7 @@ function FontSelect({ value, onChange, ariaLabel }: { value: string; onChange: (
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="w-full flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg text-left text-[13px] text-fg hover:bg-elevated/60 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg text-left text-ui text-fg hover:bg-elevated/60 transition-colors"
       >
         <span className="truncate" style={{ fontFamily: fontStack(value) }}>{value}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -80,7 +80,7 @@ function FontSelect({ value, onChange, ariaLabel }: { value: string; onChange: (
                 role="option"
                 aria-selected={f === value}
                 onClick={() => { onChange(f); setOpen(false) }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
+                className={`w-full text-left px-2.5 py-1.5 rounded-md text-ui transition-colors ${
                   f === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
                 }`}
                 style={{ fontFamily: fontStack(f) }}
@@ -121,7 +121,7 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: Ico
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="AI icon source"
-        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors ${ROW_H}`}
+        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-ui text-fg hover:border-line-strong transition-colors ${ROW_H}`}
       >
         <span className="flex-1 truncate">{current.label}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-fg-faint flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
@@ -145,7 +145,7 @@ function IconLibSelect({ value, onChange }: { value: string; onChange: (key: Ico
                 role="option"
                 aria-selected={src.key === value}
                 onClick={() => { onChange(src.key); setOpen(false) }}
-                className={`w-full flex items-center gap-2 text-left px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
+                className={`w-full flex items-center gap-2 text-left px-2.5 py-1.5 rounded-md text-ui transition-colors ${
                   src.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
                 }`}
               >
@@ -187,7 +187,7 @@ function SegRow<T extends string>({ value, onChange, options, ariaLabel }: {
           title={o.title}
           onClick={() => onChange(o.key)}
           aria-pressed={o.key === value}
-          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 rounded-md text-[11px] leading-none transition-colors ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 rounded-md text-caption leading-none transition-colors ${
             o.key === value ? 'bg-elevated text-fg font-semibold shadow-sm' : 'text-fg-muted hover:text-fg'
           }`}
         >
@@ -309,7 +309,7 @@ function Combo<T extends string>({ value, options, onChange, ariaLabel, leading 
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-[13px] text-fg hover:border-line-strong transition-colors ${ROW_H}`}
+        className={`w-full flex items-center gap-2 px-2.5 rounded-lg border border-line bg-surface text-left text-ui text-fg hover:border-line-strong transition-colors ${ROW_H}`}
       >
         {leading}
         <span className="flex-1 truncate">{current?.label}</span>
@@ -334,7 +334,7 @@ function Combo<T extends string>({ value, options, onChange, ariaLabel, leading 
                 role="option"
                 aria-selected={o.key === value}
                 onClick={() => { onChange(o.key); setOpen(false) }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
+                className={`w-full text-left px-2.5 py-1.5 rounded-md text-ui transition-colors ${
                   o.key === value ? 'bg-elevated text-fg font-medium' : 'text-fg hover:bg-surface'
                 }`}
               >
@@ -417,7 +417,7 @@ function Group({
           className="flex items-center gap-2 flex-1 min-w-0 text-left group/acc"
         >
           {icon && <span className={`flex-shrink-0 ${open ? 'text-fg-muted' : 'text-fg-faint'}`}>{icon}</span>}
-          <span className={`text-[13px] flex-1 truncate ${open ? 'font-medium text-fg' : 'text-fg-muted group-hover/acc:text-fg'}`}>{title}</span>
+          <span className={`text-ui flex-1 truncate ${open ? 'font-medium text-fg' : 'text-fg-muted group-hover/acc:text-fg'}`}>{title}</span>
         </button>
         {action}
         <button
@@ -453,7 +453,7 @@ function Group({
 // The rail's group caption — 10px uppercase, same as VARIABLES / CATEGORIES.
 function RailCaption({ label }: { label: string }) {
   return (
-    <span className="px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+    <span className="px-2.5 pt-3 pb-1 text-mini font-semibold uppercase tracking-widest text-fg-faint">
       {label}
     </span>
   )
@@ -653,7 +653,7 @@ export function QuickEditSections({
           <button
             type="button"
             onClick={surprise}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] text-fg bg-elevated hover:bg-elevated/70 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-body text-fg bg-elevated hover:bg-elevated/70 transition-colors"
           >
             {SurpriseGlyph}
             Surprise
@@ -669,7 +669,7 @@ export function QuickEditSections({
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-faint">State Colors</span>
+          <span className="text-mini text-fg-faint">State Colors</span>
           <StateColorsSelect
             neutral={neutralBase}
             error={errorColor}
@@ -690,21 +690,21 @@ export function QuickEditSections({
           group visible in the stack instead of pushing them below the fold. */}
       <Group accordion={accordion} flat="card" defaultOpen={false} icon={TypeGlyph} title="Typography">
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-faint">Font-family-heading</span>
+          <span className="text-mini text-fg-faint">Font-family-heading</span>
           <div className={`flex items-center rounded-lg border border-line bg-surface px-1 ${ROW_H}`}>
             <FontSelect value={headingFont} onChange={(f) => setFont('heading', f)} ariaLabel="Heading font family" />
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-fg-faint">Body font</span>
+          <span className="text-mini text-fg-faint">Body font</span>
           <div className={`flex items-center rounded-lg border border-line bg-surface px-1 ${ROW_H}`}>
             <FontSelect value={typography.fontFamily} onChange={(f) => setFont('body', f)} ariaLabel="Body font family" />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] font-medium text-fg">Base size</span>
-            <span className="text-[12px] text-fg-faint">{baseSize}px</span>
+            <span className="text-body font-medium text-fg">Base size</span>
+            <span className="text-body text-fg-faint">{baseSize}px</span>
           </div>
           <input
             type="range"
@@ -718,7 +718,7 @@ export function QuickEditSections({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-fg">Type scale</span>
+          <span className="text-body font-medium text-fg">Type scale</span>
           <Combo
             value={typeScaleKey}
             options={TYPE_SCALES.map((s) => ({ key: s.key, label: s.label }))}
@@ -779,7 +779,7 @@ export function QuickEditSections({
             const value = parseInt(raw, 10)
             return (
               <label key={side.key} className="relative" title={`Padding ${side.name.toLowerCase()}`}>
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] uppercase text-fg-faint pointer-events-none" aria-hidden>{side.label}</span>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-micro uppercase text-fg-faint pointer-events-none" aria-hidden>{side.label}</span>
                 <input
                   type="number"
                   min={0}
@@ -832,7 +832,7 @@ function HeaderPresets({ previewTheme = 'light' }: { previewTheme?: string }) {
   const accentBase = resolveThemePalette(themeSources[previewTheme], (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light', store)?.brand?.[BASE_TONE] ?? primaryColor
   return (
     <div className="flex-1 min-w-0 flex items-center justify-between gap-2 h-9 pl-3 pr-1 rounded-[9px] bg-surface border border-line">
-      <span className="text-[10px] text-fg-faint flex-shrink-0">Presets</span>
+      <span className="text-mini text-fg-faint flex-shrink-0">Presets</span>
       <div className="flex items-center">
         {COLOR_FAMILY_PRESETS.map((p) => {
           const selected = p.hex.toLowerCase() === accentBase.toLowerCase()

@@ -240,7 +240,7 @@ export function ColorPickerPanel({
           adding a second prop that would always be set together with it. */}
       {suggestions && palette.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] text-fg-muted">Curated palette</span>
+          <span className="text-caption text-fg-muted">Curated palette</span>
           {/* `rounded-lg`, matching the hex field below it — this strip reads
               as one more control in the panel's stack, and a pill among
               rounded-rect inputs looked like a stray slider. The corner clip
@@ -316,14 +316,14 @@ export function ColorPickerPanel({
             edge — the slider and the % box visibly hung outside the panel. The
             input's own min-w-0 isn't enough; the whole chain needs it. */}
         <div className="flex-1 min-w-0 flex items-center gap-1 px-2 py-1.5 rounded-lg border border-line bg-surface">
-          <span className="text-[11px] font-mono text-fg-faint">#</span>
+          <span className="text-caption font-mono text-fg-faint">#</span>
           <input
             value={displayHex}
             onChange={(e) => handleHex(e.target.value)}
             onBlur={() => setHexDraft('')}
             spellCheck={false}
             aria-label="Hex value"
-            className="flex-1 min-w-0 bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none"
+            className="flex-1 min-w-0 bg-transparent text-body font-mono tabular-nums text-fg outline-none"
           />
         </div>
         <div className="w-16 flex-shrink-0 flex items-center gap-0.5 px-2 py-1.5 rounded-lg border border-line bg-surface">
@@ -334,9 +334,9 @@ export function ColorPickerPanel({
             value={Math.round(hsva.a * 100)}
             onChange={(e) => apply({ ...hsva, a: Math.max(0, Math.min(100, Number(e.target.value) || 0)) / 100 })}
             aria-label="Opacity percent"
-            className="flex-1 min-w-0 bg-transparent text-[12px] font-mono tabular-nums text-fg outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="flex-1 min-w-0 bg-transparent text-body font-mono tabular-nums text-fg outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <span className="text-[10px] text-fg-faint flex-shrink-0">%</span>
+          <span className="text-mini text-fg-faint flex-shrink-0">%</span>
         </div>
       </div>
 
@@ -346,13 +346,13 @@ export function ColorPickerPanel({
           and never said WHAT it added. */}
       <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-fg-muted">Saved</span>
+          <span className="text-caption text-fg-muted">Saved</span>
           <button
             type="button"
             onClick={() => addSavedColor(hex)}
             disabled={savedColors.includes(hex)}
             title={savedColors.includes(hex) ? `${hex} is already saved` : `Save ${hex} to your swatches`}
-            className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full border border-line text-[11px] text-fg-muted hover:text-fg hover:border-line-strong disabled:opacity-40 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
+            className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full border border-line text-caption text-fg-muted hover:text-fg hover:border-line-strong disabled:opacity-40 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
           >
             <span
               aria-hidden
@@ -364,7 +364,7 @@ export function ColorPickerPanel({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {savedColors.length === 0 && (
-            <span className="text-[11px] text-fg-faint leading-snug">
+            <span className="text-caption text-fg-faint leading-snug">
               Save a color to reuse it across families.
             </span>
           )}
@@ -384,7 +384,7 @@ export function ColorPickerPanel({
                 onClick={() => removeSavedColor(c)}
                 aria-label={`Remove ${c}`}
                 title={`Remove ${c}`}
-                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-fg text-app text-[9px] leading-none flex items-center justify-center opacity-0 group-hover/sw:opacity-100 focus:opacity-100 transition-opacity"
+                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-fg text-app text-micro leading-none flex items-center justify-center opacity-0 group-hover/sw:opacity-100 focus:opacity-100 transition-opacity"
               >
                 ✕
               </button>
@@ -401,7 +401,7 @@ export function ColorPickerPanel({
       {suggestions && (variants.length > 0 || hex.toLowerCase() !== initialHex.toLowerCase()) && (
         <div className="flex flex-col gap-1.5 pt-1 border-t border-line">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] text-fg-muted">Accessible options</span>
+            <span className="text-caption text-fg-muted">Accessible options</span>
             {/* Only appears once the field has actually moved away from what
                 this panel opened with — a Reset that's always visible reads as
                 "there's something to undo" even when there isn't. */}
@@ -410,7 +410,7 @@ export function ColorPickerPanel({
                 type="button"
                 onClick={() => apply(initialHsva)}
                 title={`Back to ${initialHex.toUpperCase()} — what you had before picking a suggestion`}
-                className="flex items-center gap-1 text-[11px] text-fg-faint hover:text-fg transition-colors"
+                className="flex items-center gap-1 text-caption text-fg-faint hover:text-fg transition-colors"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
@@ -434,13 +434,13 @@ export function ColorPickerPanel({
                     className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
                     style={{ background: v.hex }}
                   />
-                  <span className="min-w-0 truncate text-[10px] text-fg-muted">{v.label}</span>
+                  <span className="min-w-0 truncate text-mini text-fg-muted">{v.label}</span>
                 </button>
               ))}
             </div>
           )}
           {variants.length > 0 && (
-            <span className="text-[10px] text-fg-faint leading-snug">
+            <span className="text-mini text-fg-faint leading-snug">
               Same hue, tuned so white text passes on the solid.
             </span>
           )}

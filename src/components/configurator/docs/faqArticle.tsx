@@ -31,7 +31,7 @@ const BUG_TWEET = `https://x.com/intent/tweet?text=${encodeURIComponent(
 )}`
 
 function Para({ text }: { text: string }) {
-  return <Prose text={text} className="text-[13px] leading-relaxed" />
+  return <Prose text={text} className="text-ui leading-relaxed" />
 }
 
 /** Single source for both the accordion body and the "On this page" TOC —
@@ -99,7 +99,7 @@ const FAQ_ITEMS: { id: string; q: string; body: ReactNode }[] = [
             href={BUG_TWEET}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-accent-solid px-4 py-2 text-[13px] font-medium text-accent-ink hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent-solid px-4 py-2 text-ui font-medium text-accent-ink hover:opacity-90 transition-opacity"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
@@ -129,11 +129,11 @@ export function FaqArticle() {
       <Accordion type="single" collapsible defaultValue={FAQ_ITEMS[0].id} className="max-w-2xl -mx-3">
         {FAQ_ITEMS.map((item) => (
           <AccordionItem key={item.id} value={item.id} id={item.id} className="border-b border-line scroll-mt-4">
-            <AccordionTrigger className="px-3 hover:bg-elevated/40 text-[13.5px] text-fg">
+            <AccordionTrigger className="px-3 hover:bg-elevated/40 text-ui text-fg">
               {item.q}
             </AccordionTrigger>
             <AccordionContent className="px-3">
-              <div className="flex flex-col gap-2 text-[13px] text-fg-muted leading-relaxed">
+              <div className="flex flex-col gap-2 text-ui text-fg-muted leading-relaxed">
                 {item.body}
               </div>
             </AccordionContent>

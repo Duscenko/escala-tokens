@@ -1,12 +1,13 @@
 // ── Export wizard (Source → Where → Export) ────────────────────────────────
 // The guided whole-system export behind Variables' "Export" pill: pick WHAT
-// ships (collections + semantic modes), WHERE it goes (Figma / code / AI),
+// ships (collections + semantic modes), WHERE it goes (Figma / GitHub / code / AI),
 // then download/copy the result.
 //
-// Three destinations, not five file formats. Internally the keys are still
-// WizardFormat: Figma → `escala`, Code → `w3c`, AI → `agent-bundle` (Skill zip
-// is a nested "Figma Make only" toggle, not a peer radio). Markdown left the
-// wizard — it already lives in Save (`README.md`) and Copy context.
+// Four destinations, not a pile of file formats. Figma → `escala`, Code →
+// `w3c`, AI → `agent-bundle` (Skill zip is a nested "Figma Make only" toggle),
+// and GitHub reuses the repository exporter instead of creating a fourth file
+// generator. Markdown left the wizard — it already lives in Save (`README.md`)
+// and Copy context.
 // CSS / SCSS / Tailwind stay on Save (`variables.css`), not a fourth destination.
 // The old Categorical-AI JSON is folded into the Skill slice of the AI zip.
 //
@@ -32,6 +33,7 @@ export const ALL_WIZARD_COLLECTIONS: WizardCollection[] = [
 ]
 
 export type WizardFormat = 'w3c' | 'escala' | 'md' | 'skill' | 'agent-bundle'
+export type WizardDestination = Exclude<WizardFormat, 'md' | 'skill'> | 'github'
 export type WizardStructure = 'single' | 'per-collection'
 
 /** The `sectionExport` slice each collection maps onto — Tailwind and Markdown
@@ -87,16 +89,26 @@ export interface FormatOption {
   hint: string
 }
 
+export interface DestinationOption {
+  key: WizardDestination
+  label: string
+  hint: string
+}
+
 /** Wizard step 2 — where the system is going, not what the file is called. */
-export const WIZARD_DESTINATIONS: FormatOption[] = [
+export const WIZARD_DESTINATIONS: DestinationOption[] = [
   { key: 'escala', label: 'Figma', hint: 'Escala plugin — variables land in the file you design in' },
+  { key: 'github', label: 'GitHub repository', hint: 'Version tokens, CSS and documentation in your product repo' },
   { key: 'w3c', label: 'Code & other tools', hint: 'W3C JSON for Style Dictionary, Tokens Studio, Figma native import' },
   { key: 'agent-bundle', label: 'AI assistant', hint: 'Full context for Cursor & Claude so the agent stops inventing hex' },
 ]
 
-/** @deprecated Wizard radios live on `WIZARD_DESTINATIONS`. Kept as an alias so
- *  older imports keep compiling; do not add Markdown or Skill back here. */
-export const WIZARD_FORMATS = WIZARD_DESTINATIONS
+/** Generated-format subset of the destination list. GitHub is an outbound
+ * repository flow, not a format, so consumers that need a WizardFormat cannot
+ * accidentally treat it like a downloadable file. */
+export const WIZARD_FORMATS = WIZARD_DESTINATIONS.filter(
+  (destination) => destination.key !== 'github',
+)
 
 /** Per-column primitive export (ColorPrimitives). Markdown stays here — it is a
  *  paste into a prompt, not a competing wizard destination. Skill does not:
@@ -209,7 +221,7 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
     { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length + Object.keys(full.radiusRoles ?? {}).length },
     { key: 'shadow', label: 'Shadow', count: Object.keys(full.shadows).length },
     { key: 'grid', label: 'Grid', count: Object.keys(full.grid).length + Object.keys(full.breakpointRoles ?? {}).length + 8 },
-    { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length + Object.keys(full.sizeRoles ?? {}).length },
+    { key: 'sizes', label: 'Sizes', count: Object.keys(full.sizes).length + Object.keys(full.sizeRoles ?? {}).length + Object.keys(full.selector ?? {}).length + Object.keys(full.selectorRoles ?? {}).length },
     { key: 'stroke', label: 'Stroke', count: Object.keys(full.stroke ?? {}).length + Object.keys(full.strokeRoles ?? {}).length },
     { key: 'icons', label: 'Icons', count: 1 + (full.icons.custom?.length ?? 0) },
   ]
@@ -290,12 +302,16 @@ function dimWithRoles(
   family: LayoutFamily,
   primitives: Record<string, string>,
   roles: Record<string, string> | undefined,
+  /** Dotted path this group sits at, when it isn't the tree's own root — an
+   *  alias has to name the full path or no DTCG importer can follow it. Same
+   *  reason breakpoints alias `{grid.breakpoint.md}` rather than `{breakpoint.md}`. */
+  refRoot?: string,
 ): W3CNode {
   const dim = (o: Record<string, string>) =>
     Object.fromEntries(Object.entries(o).map(([k, v]) => [k, token(v, isPx(v) ? 'dimension' : 'number')])) as Record<string, W3CNode>
   const out = dim(primitives)
   const map = mergeLayoutRoles(family, roles)
-  const root = family === 'size' ? 'size' : family
+  const root = refRoot ?? (family === 'size' ? 'size' : family)
   for (const role of LAYOUT_ROLES[family]) {
     out[role.key] = token(`{${root}.${map[role.key]}}`, 'dimension')
   }
@@ -335,7 +351,12 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
     }
     case 'spacing': return dimWithRoles('spacing', full.spacing, full.spacingRoles)
     case 'radius': return dimWithRoles('radius', full.radius, full.radiusRoles)
-    case 'sizes': return dimWithRoles('size', full.sizes, full.sizeRoles)
+    // Selector nests under the `size` root as its own group — one collection,
+    // one W3C root, same shape breakpoints already take under `grid`.
+    case 'sizes': return {
+      ...dimWithRoles('size', full.sizes, full.sizeRoles),
+      selector: dimWithRoles('selector', full.selector ?? {}, full.selectorRoles, 'size.selector'),
+    } as W3CNode
     case 'stroke': return dimWithRoles('stroke', full.stroke ?? {}, full.strokeRoles)
     case 'grid': {
       const bps = extractBreakpoints(full.grid)

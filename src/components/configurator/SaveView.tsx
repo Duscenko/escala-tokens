@@ -1,8 +1,7 @@
-// The Save & Share hub — the center column IS the export surface: a tabbed
-// file preview (tokens.json · variables.css · README.md) with Copy / Download
-// and an Export-all action, over the saved-systems registry. Identity, the
-// Figma/GitHub connections and the summary chips live in the right panel
-// (SaveSidePanel — "Current Design System").
+// The System library — the center column manages saved systems only. Delivery
+// belongs to Export (Figma, GitHub, code and AI), so this surface no longer
+// mixes files, downloads and repository actions with local system management.
+// Identity, delivery status and the summary chips live in SaveSidePanel.
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -34,7 +33,7 @@ function timeAgo(iso: string): string {
 function StatusDot({ ok }: { ok: boolean }) {
   return (
     <span
-      className={`w-2 h-2 rounded-full flex-shrink-0 ${ok ? 'bg-emerald-500' : 'bg-line-strong'}`}
+      className={`w-2 h-2 rounded-full flex-shrink-0 ${ok ? 'bg-status-success-solid' : 'bg-line-strong'}`}
       aria-hidden
     />
   )
@@ -43,7 +42,7 @@ function StatusDot({ ok }: { ok: boolean }) {
 function SummaryChip({ label, value, swatch }: { label: string; value: string; swatch?: string }) {
   return (
     <div className="flex flex-col gap-0.5 px-4 py-3 rounded-xl bg-surface border border-line min-w-0">
-      <span className="text-[10px] text-fg-faint uppercase tracking-wider">{label}</span>
+      <span className="text-mini text-fg-faint uppercase tracking-wider">{label}</span>
       <div className="flex items-center gap-1.5">
         {swatch && <span className="w-3 h-3 rounded-full ring-1 ring-black/10 flex-shrink-0" style={{ backgroundColor: swatch }} />}
         <span className="text-sm font-medium text-fg truncate">{value}</span>
@@ -78,7 +77,7 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmingDelete(sys.id) }}
               aria-label={`Remove ${sys.name}`}
-              className="absolute top-3 right-3 p-1 rounded-md text-fg-faint hover:text-red-500 hover:bg-elevated transition-colors"
+              className="absolute top-3 right-3 p-1 rounded-md text-fg-faint hover:text-status-danger hover:bg-elevated transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
@@ -87,13 +86,13 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             <div className="flex items-center gap-2 pr-6 min-w-0">
               <p className="text-sm font-semibold text-fg truncate">{sys.name}</p>
               {sys.source === 'imported' && (
-                <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-elevated text-fg-faint">Imported</span>
+                <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-micro font-semibold uppercase tracking-wide bg-elevated text-fg-faint">Imported</span>
               )}
             </div>
             {sys.description && (
               <p className="text-xs text-fg-faint leading-relaxed line-clamp-2">{sys.description}</p>
             )}
-            <div className="flex items-center gap-1.5 text-[11px] text-fg-faint">
+            <div className="flex items-center gap-1.5 text-caption text-fg-faint">
               {sys.repo ? (
                 <>
                   <GitHubGlyph />
@@ -106,16 +105,16 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             </div>
             {confirmingDelete === sys.id && (
               <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                <span className="text-[11px] text-fg-faint flex-1">Remove from this browser? The repository is untouched.</span>
+                <span className="text-caption text-fg-faint flex-1">Remove from this browser? The repository is untouched.</span>
                 <button
                   onClick={() => { removeSavedSystem(sys.id); setConfirmingDelete(null) }}
-                  className="text-[11px] font-medium text-red-500 hover:text-red-600 transition-colors"
+                  className="text-caption font-medium text-status-danger hover:text-status-danger transition-colors"
                 >
                   Remove
                 </button>
                 <button
                   onClick={() => setConfirmingDelete(null)}
-                  className="text-[11px] text-fg-faint hover:text-fg transition-colors"
+                  className="text-caption text-fg-faint hover:text-fg transition-colors"
                 >
                   Cancel
                 </button>
@@ -166,9 +165,9 @@ function download(content: string, filename: string, mime: string) {
 
 type FileTab = 'tokens' | 'css' | 'markdown'
 
-// ── The portable-context card — tabbed file preview (tokens.json · variables.css
-// · README.md) with Copy / Download / Export-all and the live endpoint footer.
-// Shared by the Save & Share hub and the header Share modal. ──────────────────
+// Legacy portable-context card retained as an exported building block only.
+// It is deliberately not mounted in the System library: file delivery belongs
+// to Export, which owns the guided destination flow.
 export function FilePreviewCard() {
   const { projectName, primaryColor } = useDesignStore()
 
@@ -228,7 +227,7 @@ export function FilePreviewCard() {
               <button
                 key={f.id}
                 onClick={() => setActiveTab(f.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-[13px] font-mono whitespace-nowrap transition-all border-b-2 -mb-px ${
+                className={`flex items-center gap-1.5 px-4 py-3 text-ui font-mono whitespace-nowrap transition-all border-b-2 -mb-px ${
                   active ? 'text-fg font-semibold' : 'text-fg-faint border-transparent hover:text-fg-muted'
                 }`}
                 style={active ? { borderColor: primaryColor } : undefined}
@@ -236,7 +235,7 @@ export function FilePreviewCard() {
                 {f.label}
                 {f.badge && (
                   <span
-                    className={`text-[9px] font-sans px-1.5 py-px rounded-full whitespace-nowrap ${
+                    className={`text-micro font-sans px-1.5 py-px rounded-full whitespace-nowrap ${
                       active ? 'text-white' : 'bg-elevated text-fg-faint border border-line'
                     }`}
                     style={active ? { backgroundColor: primaryColor } : undefined}
@@ -250,7 +249,7 @@ export function FilePreviewCard() {
           {/* Export all — an action styled as the last tab, like the design */}
           <button
             onClick={downloadAll}
-            className="px-4 py-3 text-[13px] font-mono whitespace-nowrap text-fg-faint hover:text-fg-muted transition-colors border-b-2 border-transparent -mb-px"
+            className="px-4 py-3 text-ui font-mono whitespace-nowrap text-fg-faint hover:text-fg-muted transition-colors border-b-2 border-transparent -mb-px"
           >
             {justDownloaded === 'all' ? '✓ Downloaded' : 'Export all files'}
           </button>
@@ -294,7 +293,7 @@ export function FilePreviewCard() {
           transition={{ duration: 0.15 }}
           className="overflow-auto h-80 bg-surface"
         >
-          <pre className="p-5 text-[11px] font-mono leading-relaxed text-fg-muted whitespace-pre">
+          <pre className="p-5 text-caption font-mono leading-relaxed text-fg-muted whitespace-pre">
             {activeFile.content()}
           </pre>
         </motion.div>
@@ -308,7 +307,7 @@ export function FilePreviewCard() {
             <code className="text-xs text-[#5AADFF] flex-1 truncate font-mono">{syncUrl}</code>
             <button
               onClick={copyShareUrl}
-              className="text-[11px] font-medium text-fg-muted hover:text-fg transition flex-shrink-0"
+              className="text-caption font-medium text-fg-muted hover:text-fg transition flex-shrink-0"
             >
               {copiedUrl ? '✓ Copied' : 'Copy'}
             </button>
@@ -316,7 +315,7 @@ export function FilePreviewCard() {
         ) : (
           <p className="text-xs text-fg-faint leading-relaxed">
             Deploy to a live URL and any tool can read your tokens from{' '}
-            <code className="text-[11px] px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>.
+            <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">/api/tokens</code>.
           </p>
         )}
       </div>
@@ -330,19 +329,18 @@ export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="flex flex-col gap-9 max-w-6xl"
+      className="flex flex-col gap-7 max-w-4xl"
     >
-      {/* ── The portable context — tabbed file preview with Copy / Download ── */}
-      <FilePreviewCard />
-
-      {/* ── My design systems: open a saved one, create or import ── */}
+      <div>
+        <p className="text-ui text-fg-muted">Local snapshots and restored systems. Deliver the current system from Export.</p>
+      </div>
       <SavedSystemsList onAddNew={onNewSystem} onImport={onImport} />
     </motion.div>
   )
 }
 
-// ── Save's right panel — "Current Design System": identity, connections and
-// the summary chips, mounted in the shell's aside (same chrome/divider as
+// ── System library's right panel — identity, delivery status and the summary
+// chips, mounted in the shell's aside (same chrome/divider as
 // Components Preview and Quick edit). ────────────────────────────────────────
 export function SaveSidePanel({
   onOpenFigma,
@@ -376,7 +374,7 @@ export function SaveSidePanel({
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-app">
       <header className="flex items-center gap-2 px-5 h-[52px] border-b border-line/60 flex-shrink-0">
-        <h2 className="text-sm font-semibold text-fg">Current Design System</h2>
+        <h2 className="text-sm font-semibold text-fg">Current system</h2>
         {onCollapse && (
           <button
             onClick={onCollapse}
@@ -421,24 +419,26 @@ export function SaveSidePanel({
           <p className="text-xs text-fg-faint">Shown in your README.</p>
         </div>
 
-        {/* Connections — two solid pills, status underneath */}
+        {/* Delivery remains visible here as status, while Export remains the
+            primary home for sending files or pushing a repository. */}
         <div className="flex flex-col gap-2">
+          <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">Delivery status</span>
           <div className="flex gap-2">
             <button
               onClick={onOpenFigma}
-              className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold bg-fg text-app hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors whitespace-nowrap"
             >
-              Bring to Figma
+              Open Figma
             </button>
             <button
               onClick={onOpenGithub}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-fg text-app hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated transition-colors whitespace-nowrap"
             >
               <GitHubGlyph size={11} />
-              {githubRepo ? 'Push to GitHub' : 'Connect with GitHub'}
+              Open GitHub
             </button>
           </div>
-          <div className="flex flex-col gap-1 text-[11px] text-fg-faint">
+          <div className="flex flex-col gap-1 text-caption text-fg-faint">
             <span className="flex items-center gap-1.5 min-w-0">
               <StatusDot ok={!!figmaLastPublishAt} />
               <span className="truncate">

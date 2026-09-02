@@ -47,7 +47,7 @@ function ContrastFlag({ fg, bg }: { fg: string; bg: string }) {
   return (
     <span
       title={`${ratio.toFixed(2)}:1 — under the WCAG AA minimum of ${WCAG_AA}:1 for this text on this fill. Re-point either token in the table to fix it.`}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[9.5px] font-semibold tabular-nums flex-shrink-0 text-amber-700 dark:text-amber-400 bg-amber-500/15"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-micro font-semibold tabular-nums flex-shrink-0 text-status-warning bg-status-warning/15"
     >
       {ratio.toFixed(1)}:1
     </span>
@@ -820,7 +820,7 @@ export const SEMANTIC_GROUP_INDEX: { key: SemanticFocusKey; label: string }[] = 
 export function SemanticGroupIndex({ onEditGroup }: { onEditGroup: (key: SemanticFocusKey) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Semantics</span>
+      <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Semantics</span>
       <div className="flex flex-wrap gap-1">
         {SEMANTIC_GROUP_INDEX.map((g) => (
           <button
@@ -829,7 +829,7 @@ export function SemanticGroupIndex({ onEditGroup }: { onEditGroup: (key: Semanti
             onClick={() => onEditGroup(g.key)}
             title={`Edit ${g.label} tokens in the table`}
             aria-label={`Edit ${g.label} tokens in the table`}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-[11px] text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-caption text-fg-muted hover:text-fg hover:border-line-strong hover:bg-elevated/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
           >
             {g.label}
             <span className="text-fg-faint" aria-hidden>

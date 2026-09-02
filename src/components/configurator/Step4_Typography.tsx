@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import ScrubInput from '../ui/ScrubInput'
-import { useDesignStore } from '../../store/useDesignStore'
+import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
+import VariableCollectionRail from './VariableCollectionRail'
+import {
+  TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
+  tableHeaderClass, tableRowClass,
+} from './tableChrome'
 import {
   TYPE_SCALE_KEYS,
   FONT_SIZE_STANDARD,
@@ -116,14 +121,14 @@ function FontPickerPopover({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search Google Fonts…"
-          className="flex-1 min-w-0 bg-transparent text-[13px] text-fg placeholder:text-fg-faint outline-none"
+          className="flex-1 min-w-0 bg-transparent text-ui text-fg placeholder:text-fg-faint outline-none"
         />
       </div>
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1">
         {q && !exact && (
           <button
             onClick={() => onSelect(query.trim())}
-            className="w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] text-fg-muted hover:bg-elevated/60 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-left text-ui text-fg-muted hover:bg-elevated/60 transition-colors"
           >
             <span className="text-fg-faint">Use</span>
             <span className="font-medium text-fg" style={{ fontFamily: fontStack(query.trim()) }}>“{query.trim()}”</span>
@@ -151,7 +156,7 @@ function FontPickerPopover({
           )
         })}
         {matches.length === 0 && !q && (
-          <p className="px-3 py-6 text-center text-[13px] text-fg-faint">No fonts</p>
+          <p className="px-3 py-6 text-center text-ui text-fg-faint">No fonts</p>
         )}
       </div>
     </div>
@@ -160,15 +165,20 @@ function FontPickerPopover({
 
 // ── Column header ───────────────────────────────────────────────────────────
 
+// This file used to carry its OWN copy of `TableHeader`, `GroupLabel` and
+// `rowClass` — byte-identical to `VariablesTable`'s, which is exactly how the
+// two drifted apart. Both read from `tableChrome` now; see the audit note at
+// the top of that file.
+//
 // `stacked` (the "All" view) drops the column header below the sticky group
 // label so both can pin without overlapping; otherwise it pins at the top.
 function TableHeader({ valueLabel, stacked = false }: { valueLabel: string; stacked?: boolean }) {
   return (
-    <div className={`${GRID} items-center border-b border-line bg-app text-[10px] font-semibold uppercase tracking-widest text-fg-faint sticky z-10 ${stacked ? 'top-[34px]' : 'top-0'}`}>
-      <span className="pl-4 py-3 border-r border-line">Token name</span>
-      <span className="px-3 py-3 border-r border-line">{valueLabel}</span>
-      <span className="px-3 py-3 border-r border-line">Preview</span>
-      <span className="py-3" aria-hidden />
+    <div className={tableHeaderClass(GRID, { stacked })}>
+      <span className={`${TABLE_HEAD_CELL} pl-4`}>Token name</span>
+      <span className={`${TABLE_HEAD_CELL} px-3`}>{valueLabel}</span>
+      <span className={`${TABLE_HEAD_CELL} px-3`}>Preview</span>
+      <span aria-hidden />
     </div>
   )
 }
@@ -177,34 +187,39 @@ function TableHeader({ valueLabel, stacked = false }: { valueLabel: string; stac
 
 function GroupLabel({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-app border-b border-line sticky top-0 z-20">
-      <span className="text-[11px] font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
-      <span className="text-[11px] font-mono tabular-nums text-fg-faint">{count}</span>
+    <div className={TABLE_GROUP_LABEL}>
+      <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{label}</span>
+      <span className="text-caption font-mono tabular-nums text-fg-faint">{count}</span>
     </div>
   )
 }
 
 // ── Row wrapper (zebra + hover, matches Semantic) ───────────────────────────
 
-function rowClass(index: number) {
-  const isEven = index % 2 === 1
-  return `${GRID} items-stretch border-t border-line/40 group transition-colors hover:bg-black/[0.025] dark:hover:bg-white/[0.04] ${
-    isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''
-  }`
-}
+const rowClass = (index: number) => tableRowClass(index, GRID)
 
-const nameCell = 'flex items-center py-3 pl-4 pr-3 min-w-0 border-r border-line'
-const valueCell = 'flex items-center px-3 py-2 border-r border-line'
-const previewCell = 'flex items-center px-3 py-2 border-r border-line overflow-hidden'
+const nameCell = `flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
+const valueCell = `flex items-center px-3 py-2 ${TABLE_CELL_DIVIDER}`
+const previewCell = `flex items-center px-3 py-2 overflow-hidden ${TABLE_CELL_DIVIDER}`
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
-  const { typography, setTypography } = useDesignStore()
+export default function Step4_Typography({
+  tabBar,
+  query: externalQuery,
+  previewTheme,
+}: {
+  tabBar?: ReactNode
+  query?: string
+  previewTheme?: string
+}) {
+  const { foundations, patch } = useThemeFoundations(previewTheme)
+  const typography = foundations.typography
+  const setTypography = (value: typeof typography) => patch({ typography: value })
 
   const [activeCategory, setActiveCategory] = useState<TypoCategory>('all')
-  const [query, setQuery] = useState('')
   const [pickerRole, setPickerRole] = useState<'display' | 'body' | null>(null)
+  const query = externalQuery ?? ''
 
   const bodyFont = typography.fontFamily
   const displayFont = typography.headingFontFamily ?? typography.fontFamily
@@ -243,13 +258,13 @@ export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
           return (
             <div key={r.key} className={rowClass(i)}>
               <div className={nameCell}>
-                <code className="font-mono text-[12px] text-fg-muted truncate">{r.label}</code>
+                <code className="font-mono text-body text-fg-muted truncate">{r.label}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={`${valueCell} relative`}>
                 <button
                   onClick={() => setPickerRole(pickerRole === r.role ? null : r.role)}
-                  className="flex items-center gap-1.5 w-full text-left text-[13px] text-fg hover:text-fg transition-colors"
+                  className="flex items-center gap-1.5 w-full text-left text-ui text-fg hover:text-fg transition-colors"
                 >
                   <span className="truncate" style={{ fontFamily: fontStack(family) }}>{family}</span>
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-fg-faint flex-shrink-0">
@@ -288,12 +303,12 @@ export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
           return (
             <div key={r.name} className={rowClass(i)}>
               <div className={nameCell}>
-                <code className="font-mono text-[12px] text-fg-muted truncate">{r.name}</code>
+                <code className="font-mono text-body text-fg-muted truncate">{r.name}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
                 {r.italic ? (
-                  <span className="text-[13px] font-mono text-fg-faint px-2">{n} · italic</span>
+                  <span className="text-ui font-mono text-fg-faint px-2">{n} · italic</span>
                 ) : (
                   <ValueInput value={String(n)} onChange={(v) => { const p = parseInt(v, 10); if (!Number.isNaN(p)) setWeight(r.base, p) }} />
                 )}
@@ -328,7 +343,7 @@ export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
           return (
             <div key={key} className={rowClass(i)}>
               <div className={nameCell}>
-                <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
+                <code className="font-mono text-body text-fg-muted truncate">{key}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
@@ -358,7 +373,7 @@ export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
           return (
             <div key={key} className={rowClass(i)}>
               <div className={nameCell}>
-                <code className="font-mono text-[12px] text-fg-muted truncate">{key}</code>
+                <code className="font-mono text-body text-fg-muted truncate">{key}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </div>
               <div className={valueCell}>
@@ -395,48 +410,37 @@ export default function Step4_Typography({ tabBar }: { tabBar?: ReactNode }) {
     // under its Groups band.
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
-        {/* Same rail metrics as ColorPrimitives' family nav — py-1.5 px-2, not
-            a uniform p-2 — so the two sections' first row starts at the same y. */}
-        <nav aria-label="Typography categories" className="w-[198px] flex-shrink-0 h-full border-r border-line py-1.5 px-2 flex flex-col gap-0.5 bg-app overflow-y-auto">
-          {TYPO_CATEGORIES.map((c) => {
-            const isActive = activeCategory === c.key
-            return (
-              <button
-                key={c.key}
-                onClick={() => setActiveCategory(c.key)}
-                aria-current={isActive}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                  isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                }`}
-              >
-                <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
-                <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{c.count}</span>
-              </button>
-            )
-          })}
-        </nav>
+        <VariableCollectionRail ariaLabel="Typography collections and groups">
+          <div role="navigation" aria-label="Typography groups" className="flex flex-col gap-0.5">
+            {TYPO_CATEGORIES.map((c) => {
+              const isActive = activeCategory === c.key
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setActiveCategory(c.key)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors ${
+                    isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+                  }`}
+                >
+                  <span className="text-ui flex-1 min-w-0 truncate">{c.label}</span>
+                  <span className={`text-caption font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{c.count}</span>
+                </button>
+              )
+            })}
+          </div>
+        </VariableCollectionRail>
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          <div className="foundation-layer-bar flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-            <div className="flex-1 min-w-0">{tabBar}</div>
-            <div className="self-center flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-app border border-line-strong w-48 max-w-[45%] focus-within:border-fg transition-colors flex-shrink-0">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-fg-faint flex-shrink-0">
-                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search…"
-                className="flex-1 min-w-0 bg-transparent text-[13px] text-fg-muted placeholder:text-fg-faint outline-none"
-                aria-label="Filter typography tokens"
-              />
-              {query && (
-                <button onClick={() => setQuery('')} aria-label="Clear filter" className="text-fg-faint hover:text-fg-muted transition-colors w-4 h-4 flex items-center justify-center flex-shrink-0 text-xs">✕</button>
-              )}
+          {/* Dropped in the workspace — `ThemeWorkspaceTabs` already carries the
+              "Primitives" tab and "Search tokens", and the rail's Collections
+              section names the collection. Same rule as `VariablesTable` /
+              `LayoutSemantics`: no inner bar whenever a `query` is passed in. */}
+          {externalQuery === undefined && (
+            <div className="foundation-layer-bar flex h-[52px] flex-shrink-0 items-center">
+              <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
             </div>
-          </div>
+          )}
           <div className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[30rem]">
               {!anyVisible ? (

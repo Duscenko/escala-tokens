@@ -21,6 +21,50 @@ export const LINE_HEIGHT_STANDARD: Record<string, string> = {
   'display-lg': '60px', 'display-xl': '72px', 'display-2xl': '90px',
 }
 
+// ── Type-scale modes (rail quick setting) ──────────────────────────────────
+// Five curated density steps. `default` is FONT_SIZE_STANDARD verbatim (factor
+// 1 × an integer scale is a no-op), so an existing system infers as 'default'
+// and nothing regenerates. The others scale every step by one factor and carry
+// the line-heights along at the SAME factor, so the standard's size→leading
+// ratio — the vertical rhythm — survives the resize. This is the type analogue
+// of Sizes' base-unit slider: one control, the whole scale moves together.
+// Factors are eighths (0.875 … 1.125): they round cleanly against the standard's
+// integer steps, so no two adjacent sizes collapse to a 1px gap the way a
+// coarser factor does on the small end.
+export const TYPE_SCALE_MODES = [
+  { key: 'compact', label: 'Compact', factor: 0.875 },
+  { key: 'cozy', label: 'Cozy', factor: 0.9375 },
+  { key: 'default', label: 'Default', factor: 1 },
+  { key: 'comfortable', label: 'Comfortable', factor: 1.0625 },
+  { key: 'spacious', label: 'Spacious', factor: 1.125 },
+] as const
+export type TypeScaleMode = (typeof TYPE_SCALE_MODES)[number]['key']
+
+export function buildTypeScale(factor: number): {
+  sizes: Record<string, string>
+  lineHeights: Record<string, string>
+} {
+  const sizes: Record<string, string> = {}
+  const lineHeights: Record<string, string> = {}
+  for (const key of TYPE_SCALE_KEYS) {
+    const size = parseFloat(FONT_SIZE_STANDARD[key]) || 0
+    const lh = parseFloat(LINE_HEIGHT_STANDARD[key]) || 0
+    sizes[key] = `${Math.round(size * factor)}px`
+    lineHeights[key] = `${Math.round(lh * factor)}px`
+  }
+  return { sizes, lineHeights }
+}
+
+/** Which mode a stored size map matches, or null → the UI reads "Custom". */
+export function inferTypeScaleMode(sizes?: Record<string, string>): TypeScaleMode | null {
+  if (!sizes) return null
+  for (const mode of TYPE_SCALE_MODES) {
+    const built = buildTypeScale(mode.factor).sizes
+    if (TYPE_SCALE_KEYS.every((key) => (sizes[key] ?? '') === built[key])) return mode.key
+  }
+  return null
+}
+
 // ── Font weight ─────────────────────────────────────────────────────────────
 // 4 numeric bases are the editable values; the Figma group shows 8 rows (each
 // base × normal/italic). Italic rows mirror their base weight.

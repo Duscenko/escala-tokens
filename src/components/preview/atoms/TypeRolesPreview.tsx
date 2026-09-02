@@ -36,7 +36,7 @@ export function TypeRolesPreview({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Text roles</span>
+        <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Text roles</span>
         <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
           {(['desktop', 'mobile'] as const).map((v) => (
             <button
@@ -44,7 +44,7 @@ export function TypeRolesPreview({
               type="button"
               onClick={() => setViewport(v)}
               aria-pressed={viewport === v}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium capitalize transition-colors ${
+              className={`px-2 py-0.5 rounded text-caption font-medium capitalize transition-colors ${
                 viewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
               }`}
             >
@@ -56,7 +56,7 @@ export function TypeRolesPreview({
       {groups.map((g) => (
         <div key={g.id} className="flex flex-col gap-1.5">
           {focus === 'all' && (
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
+            <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
           )}
           {typeRolesInGroup(g.id).map((role) => {
             const style = resolveTypeStyle(roles[role.key][viewport], ty)
@@ -79,7 +79,7 @@ export function TypeRolesPreview({
                     : ''
                 }`}
               >
-                <span className="block text-[10px] font-mono text-fg-faint truncate pr-6">text-{role.key}</span>
+                <span className="block text-mini font-mono text-fg-faint truncate pr-6">text-{role.key}</span>
                 <span
                   className="block text-fg truncate"
                   style={{

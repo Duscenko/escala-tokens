@@ -1,6 +1,9 @@
-// The 198px rail cell's dropdown — the control every foundation's left cell
-// holds (Gradients' type · Radius' preset · Spacing's base unit), so the four
-// railed sections share one silhouette instead of each hand-rolling a trigger.
+// The rail's dropdown — the control a foundation puts in its Groups section
+// (Gradients' type · Radius' preset · Shadow's preset · Spacing's base unit),
+// so the railed sections share one silhouette instead of each hand-rolling a
+// trigger. Wrap it in `RailControl` (VariableCollectionRail) rather than
+// hand-inserting a caption: that is what lands it on the group rows' own
+// footprint.
 //
 // It exists because that shape was written three times in a row: same h-9
 // `rounded-[13px] border-line-strong bg-surface` trigger, same chevron, same
@@ -62,7 +65,7 @@ export default function RailSelect<T extends string | number>({
         className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-2 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
       >
         {icon && <span className="flex-shrink-0 text-fg-muted">{icon}</span>}
-        <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-fg">
+        <span className="flex-1 min-w-0 truncate text-ui font-medium text-fg">
           {selected?.label ?? fallbackLabel}
         </span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
@@ -79,7 +82,7 @@ export default function RailSelect<T extends string | number>({
               aria-selected={o.value === value}
               title={o.description}
               onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`px-2.5 py-1.5 rounded-lg text-left text-[13px] transition-colors ${
+              className={`px-2.5 py-1.5 rounded-lg text-left text-ui transition-colors ${
                 o.value === value ? 'bg-elevated text-fg font-semibold' : 'text-fg-muted hover:text-fg hover:bg-elevated/60'
               }`}
             >

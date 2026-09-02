@@ -79,16 +79,38 @@ export function useApplyAccentColor() {
       if (refs && refs.brand !== 'accent') {
         // Retint the family this theme reads. No token resync needed here: the
         // theme resolves through the family, so it follows automatically.
-        const scale = generateColorScale(hex, colorAlgorithm, contrastShift, pageBackground)
-        const dark = generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, darkBackground)
+        // When Neutral follows Accent, it also owns this theme's page. Build
+        // the brand ramp against that page in the same transaction; otherwise
+        // the neutral moved correctly but brand tone 1 kept the old global
+        // purple anchor.
+        const neutral = linked && refs.gray !== 'neutral'
+          ? neutralFromBrand(hex, neutralTint)
+          : null
+        const themeLightPage = neutral
+          ? backgroundFromBase(neutral, 'light', neutralTint)
+          : pageBackground
+        const themeDarkPage = neutral
+          ? backgroundFromBase(neutral, 'dark', neutralTint)
+          : darkBackground
+        const scale = generateColorScale(hex, colorAlgorithm, contrastShift, themeLightPage)
+        const dark = generateFamilyDarkScale(hex, colorAlgorithm, contrastShift, themeDarkPage)
         updateCustomColor(refs.brand, { base: hex, scale, darkScale: dark })
-        if (linked && refs.gray !== 'neutral') {
-          const kind = themeKinds[themeKey] ?? 'light'
-          const neutral = neutralFromBrand(hex, neutralTint)
-          const gScale = kind === 'dark'
-            ? generateDarkColorScale(neutral, colorAlgorithm, contrastShift, darkBackground)
-            : generateColorScale(neutral, colorAlgorithm, contrastShift, pageBackground)
-          updateCustomColor(refs.gray, { base: neutral, scale: gScale, darkScale: gScale })
+        if (neutral) {
+          // Anchored to THIS neutral's own page, exactly like `useApplyGrayColor`'s
+          // scoped branch — otherwise moving the accent and moving the tint would
+          // leave the same theme with two different tone 1s.
+          // BOTH ramps, each from its OWN generator. This used to pick one
+          // generator off `themeKinds` and write that single ramp to `scale`
+          // AND `darkScale` — so a dark theme stored its dark ramp as the light
+          // one, and a light theme stored its light ramp as the dark twin. The
+          // neutral is also the one family whose dark twin needs
+          // `generateDarkColorScale` + the tint (see NEUTRAL_TINTS), which the
+          // `kind === 'dark'` branch only ever reached by accident.
+          updateCustomColor(refs.gray, {
+            base: neutral,
+            scale: generateColorScale(neutral, colorAlgorithm, contrastShift, themeLightPage, 'light', neutralTint),
+            darkScale: generateDarkColorScale(neutral, colorAlgorithm, contrastShift, themeDarkPage, neutralTint),
+          })
         }
         return
       }
@@ -346,11 +368,32 @@ export function useApplyGrayColor() {
       if (!fromLink && s.linkNeutralToAccent) s.setLinkNeutralToAccent(false)
       const refs = s.themeSources[themeKey]
       if (refs && refs.gray !== 'neutral') {
-        const kind = s.themeKinds[themeKey] ?? 'light'
-        const own = kind === 'dark'
-          ? generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
-          : generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
-        s.updateCustomColor(refs.gray, { base: hex, scale: own })
+        // A scoped theme's page is TONE 1 of its own neutral ramp — so the ramp
+        // has to be anchored to a page derived from THIS neutral, not to the
+        // system's global `pageBackground`. Anchoring to the global was why
+        // `neutralTint` looked inert on every minted theme: measured on a theme
+        // with an orange accent, dragging Pure → Vivid moved the family's base
+        // to #967a54 (correctly, the accent's own hue) while its tone 1 stayed
+        // #ffffff and tone 2 barely moved — the tint's entire visible payoff,
+        // the page picking up the accent hue, never happened.
+        //
+        // This still writes NO globals: the documented rule is that only the
+        // system's own Base moves the SYSTEM's page. Deriving this family's own
+        // anchor is not the same thing — it's what makes the family's tone 1
+        // mean "this theme's page", exactly as it does in the global branch.
+        const bg = backgroundFromBase(hex, 'light', s.neutralTint)
+        const darkBg = backgroundFromBase(hex, 'dark', s.neutralTint)
+        // BOTH ramps, always — `scale` is the light one, `darkScale` the dark
+        // one, whichever appearance this theme ships. Writing only `scale` (the
+        // old behaviour, and keyed off `themeKinds` at that) is the exact export
+        // defect `mintTheme`'s doc comment exists to prevent: `tokenGenerator`
+        // gates `<key>-dark-*` on `darkScale` being non-empty, so a scoped
+        // neutral edit shipped that family's whole dark ramp missing.
+        s.updateCustomColor(refs.gray, {
+          base: hex,
+          scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, bg, 'light', s.neutralTint),
+          darkScale: generateDarkColorScale(hex, s.colorAlgorithm, s.contrastShift, darkBg, s.neutralTint),
+        })
         return
       }
 

@@ -35,10 +35,12 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 | 4 | Per-family dark primitives (`accent-dark-*`, `error-dark-*`, …) | Additive |
 | 5 | `opacity` **removed** (alpha lives in `colors.primitiveAlpha`) | Older plugin already guards `if (tokens.opacity)` |
 | 6 | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame`. Configurator also emits `borders.width` as a copy of `stroke` so a v5 plugin still creates the Border collection. Plugin v6 imports the role maps as `role/*` aliases (and one text style per type role). | Plugin v5 warns, imports colors/primitives, ignores role maps |
+| 7 | Semantic architecture colors may contain 8-digit alpha hex. Additive `foundationsByTheme` resolves the existing foundation collections for every library theme; root foundation fields remain the compatibility fallback. | Plugin v6 warns, imports its supported fields, ignores theme foundations |
 
 Rules:
 
 - **Additive fields do not require a bump** if an older plugin ignoring them is the correct outcome (`shadowsDark`, `gradientsDark` shipped this way).
+- `foundationsByTheme` is additive and must reuse the root collection shapes; it must never introduce a parallel token vocabulary.
 - **Bump** when a missing field would be misread as a gap (`opacity` in v5) or when names change.
 - Never rename an existing key. Add the new key, keep the old one until a major bump.
 - Canonical component list field is **`atoms`**, not `components`. The plugin reads `atoms`.
@@ -99,7 +101,7 @@ Always emit when present in the store:
 - `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection
 - `icons` (library + `aiSource` + `custom`)
-- `atoms`
+- `atoms` (component selection/spec payload; the plugin's default Overview is fixed at 9 types, while its explicit Full catalogue mode renders all 58 catalogue types)
 
 Plugin also *reads* optional `copy` that the configurator does not emit yet. Do not reuse that name for something else.
 

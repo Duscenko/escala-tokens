@@ -1,8 +1,10 @@
 // Icon library standard.
 //
-// Escala embeds ONE set: Untitled UI Icons (pre-built from `@untitledui/icons`).
-// The other GitHub repos are AI-context recommendations — they are not bundled
-// and do not drive the live browser. See `ICON_AI_SOURCES`.
+// Escala embeds ONE set: Phosphor Icons (glyphs pre-built from
+// `@phosphor-icons/core`, committed under `src/generated/` — Phosphor is MIT,
+// so redistributing them is fine, unlike the Untitled set this replaced). The
+// other GitHub repos are AI-context recommendations — not bundled, they don't
+// drive the live browser. See `ICON_AI_SOURCES`.
 
 export interface IconLibraryDef {
   key: string
@@ -16,35 +18,37 @@ export interface IconLibraryDef {
   license: string
 }
 
-export const UNTITLED_LIBRARY: IconLibraryDef = {
-  key: 'untitled',
-  label: 'Untitled UI Icons',
-  description: 'Clean, consistent line icons for modern UI. The set this system ships and previews.',
-  npm: '@untitledui/icons',
-  site: 'https://www.untitledui.com/icons',
-  repo: 'https://github.com/untitleduico/icons',
-  count: '1,100+',
-  style: 'Stroke · 24px',
-  license: 'Untitled UI (use in products; do not redistribute the set)',
+export const PHOSPHOR_LIBRARY: IconLibraryDef = {
+  key: 'phosphor',
+  label: 'Phosphor Icons',
+  description: 'A flexible icon family with six weights. The set this system ships and previews.',
+  npm: '@phosphor-icons/react',
+  site: 'https://phosphoricons.com',
+  repo: 'https://github.com/phosphor-icons/react',
+  count: '1,500+',
+  style: '6 weights · 24px',
+  license: 'MIT',
 }
 
 /** The only bundled library. `ICON_LIBRARIES` stays as an array so existing callers keep working. */
-export const ICON_LIBRARIES: IconLibraryDef[] = [UNTITLED_LIBRARY]
+export const ICON_LIBRARIES: IconLibraryDef[] = [PHOSPHOR_LIBRARY]
 
 export const ICON_LIBRARY_KEYS = ICON_LIBRARIES.map((l) => l.key)
 
-const LEGACY_ICONIFY_KEYS = new Set(['lucide', 'heroicons', 'phosphor', 'radix', 'material'])
+// Old persisted `iconLibrary` values — every one of these resolves to the
+// bundled set now. `phosphor` is NOT here: it IS the bundled set.
+const LEGACY_ICONIFY_KEYS = new Set(['untitled', 'lucide', 'heroicons', 'radix', 'material'])
 
-/** Any persisted Iconify key resolves to Untitled — the catalog no longer switches. */
+/** Any persisted icon-library key resolves to Phosphor — the catalog no longer switches. */
 export function getIconLibrary(_key?: string): IconLibraryDef {
-  return UNTITLED_LIBRARY
+  return PHOSPHOR_LIBRARY
 }
 
 export function isLegacyIconLibrary(key: string): boolean {
   return LEGACY_ICONIFY_KEYS.has(key)
 }
 
-export type IconAiSourceKey = 'untitled' | 'mage' | 'tabler' | 'heroicons'
+export type IconAiSourceKey = 'phosphor' | 'untitled' | 'mage' | 'tabler' | 'heroicons'
 
 export interface IconAiSource {
   key: IconAiSourceKey
@@ -52,18 +56,29 @@ export interface IconAiSource {
   description: string
   npm: string
   repo: string
+  /** Extra usage note for generated code (e.g. the props an icon component
+   *  takes). Appended to the Skill / README instruction. */
+  usage?: string
   default?: boolean
 }
 
 /** Repos the Skill / README tell an AI to use when generating UI. Not live catalogs. */
 export const ICON_AI_SOURCES: IconAiSource[] = [
   {
+    key: 'phosphor',
+    label: 'Phosphor Icons',
+    description: 'Flexible icon family with six weights. The default for generated UI.',
+    npm: '@phosphor-icons/react',
+    repo: 'https://github.com/phosphor-icons/react',
+    usage: 'Import per-icon (e.g. `import { User } from \'@phosphor-icons/react\'`). Each icon takes `size`, `color`, and `weight` ("thin" | "light" | "regular" | "bold" | "fill" | "duotone") props.',
+    default: true,
+  },
+  {
     key: 'untitled',
     label: 'Untitled UI Icons',
-    description: 'Same set Escala embeds — best default for generated UI.',
+    description: 'The set Escala embeds and previews. Pick this to keep generated UI on the same family.',
     npm: '@untitledui/icons',
     repo: 'https://github.com/untitleduico/icons',
-    default: true,
   },
   {
     key: 'mage',
@@ -88,7 +103,7 @@ export const ICON_AI_SOURCES: IconAiSource[] = [
   },
 ]
 
-export const DEFAULT_ICON_AI_SOURCE: IconAiSourceKey = 'untitled'
+export const DEFAULT_ICON_AI_SOURCE: IconAiSourceKey = 'phosphor'
 
 export function getIconAiSource(key: string | undefined): IconAiSource {
   return ICON_AI_SOURCES.find((s) => s.key === key) ?? ICON_AI_SOURCES[0]
@@ -108,6 +123,7 @@ export function iconAiContext(aiSourceKey?: string): {
   const source = getIconAiSource(aiSourceKey)
   const instruction =
     `When generating UI for this product, use icons from ${source.repo} (${source.label}, \`${source.npm}\`). Do not mix another icon family.`
+      + (source.usage ? ` ${source.usage}` : '')
   const markdown = [
     '## Icons',
     '',
@@ -116,42 +132,76 @@ export function iconAiContext(aiSourceKey?: string): {
     `- **Set:** ${source.label}`,
     `- **Repo:** ${source.repo}`,
     `- **Package:** \`${source.npm}\``,
-    '- Import per-icon from that package. Do not invent glyphs from Lucide, Phosphor, Material, or any set that is not this repo.',
+    '- Import per-icon from that package. Do not pull glyphs from any other icon set.',
+    ...(source.usage ? [`- ${source.usage}`] : []),
   ].join('\n')
   return { source, instruction, markdown }
 }
 
-/** Canonical UI concepts → Untitled UI export names (specimens, Figma core set). */
-export const UNTITLED_CORE: Record<string, string> = {
-  star: 'Star01',
-  arrow: 'ArrowRight',
-  search: 'SearchLg',
-  eye: 'Eye',
-  plus: 'Plus',
-  upload: 'Upload01',
-  info: 'InfoCircle',
-  success: 'CheckCircle',
-  warning: 'AlertTriangle',
-  error: 'XCircle',
-  home: 'Home01',
-  box: 'Cube01',
-  grid: 'Grid01',
-  image: 'Image01',
-  text: 'Type01',
-  settings: 'Settings01',
-  palette: 'Palette',
-  bookmark: 'Bookmark',
-  heart: 'Heart',
-  share: 'Share01',
-  user: 'User01',
-  users: 'Users01',
-  zap: 'Zap',
-  check: 'Check',
-  chevron: 'ChevronDown',
-  close: 'XClose',
+/** Canonical UI concepts → Phosphor **slug** (specimens resolve the regular-weight
+ *  glyph body via `phosphorCoreBody`). Must stay in sync with `CORE_SLUGS` in
+ *  `scripts/fetch-phosphor-icons.mjs` — a test asserts every value resolves. */
+export const PHOSPHOR_CORE: Record<string, string> = {
+  star: 'star',
+  arrow: 'arrow-right',
+  search: 'magnifying-glass',
+  eye: 'eye',
+  plus: 'plus',
+  upload: 'upload-simple',
+  info: 'info',
+  success: 'check-circle',
+  warning: 'warning',
+  error: 'x-circle',
+  home: 'house',
+  box: 'cube',
+  grid: 'grid-four',
+  image: 'image',
+  text: 'text-t',
+  settings: 'gear',
+  palette: 'palette',
+  bookmark: 'bookmark-simple',
+  heart: 'heart',
+  share: 'share-network',
+  user: 'user',
+  users: 'users',
+  zap: 'lightning',
+  check: 'check',
+  chevron: 'caret-down',
+  close: 'x',
 }
 
-// Generic line glyphs shown as decorative previews — not the Untitled set.
+/** Canonical UI concepts → Phosphor React component name, for copy snippets
+ *  (`import { MagnifyingGlass } from '@phosphor-icons/react'`). */
+export const PHOSPHOR_CORE_COMPONENT: Record<string, string> = {
+  star: 'Star',
+  arrow: 'ArrowRight',
+  search: 'MagnifyingGlass',
+  eye: 'Eye',
+  plus: 'Plus',
+  upload: 'UploadSimple',
+  info: 'Info',
+  success: 'CheckCircle',
+  warning: 'Warning',
+  error: 'XCircle',
+  home: 'House',
+  box: 'Cube',
+  grid: 'GridFour',
+  image: 'Image',
+  text: 'TextT',
+  settings: 'Gear',
+  palette: 'Palette',
+  bookmark: 'BookmarkSimple',
+  heart: 'Heart',
+  share: 'ShareNetwork',
+  user: 'User',
+  users: 'Users',
+  zap: 'Lightning',
+  check: 'Check',
+  chevron: 'CaretDown',
+  close: 'X',
+}
+
+// Generic line glyphs shown as decorative previews — not the Phosphor set.
 export const SAMPLE_GLYPHS: { name: string; path: string }[] = [
   { name: 'home', path: 'M3 10.5 12 3l9 7.5M5 9.5V20h4.5v-5.5h5V20H19V9.5' },
   { name: 'search', path: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.35-4.35' },

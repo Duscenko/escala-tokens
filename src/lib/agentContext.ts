@@ -22,11 +22,13 @@ export interface AgentFoundationTokens extends Partial<Record<PreviewColorField,
   radius: Record<string, string>
   spacing: Record<string, string>
   sizes?: Record<string, string>
+  selector?: Record<string, string>
   padding?: Record<string, string>
   stroke?: Record<string, string>
   radiusRoles?: Record<string, string>
   spacingRoles?: Record<string, string>
   sizeRoles?: Record<string, string>
+  selectorRoles?: Record<string, string>
   strokeRoles?: Record<string, string>
   typography?: {
     fontFamily: string
@@ -72,6 +74,7 @@ function primitivesOf(t: AgentFoundationTokens, family: LayoutFamily): Record<st
   if (family === 'radius') return t.radius
   if (family === 'spacing') return t.spacing
   if (family === 'size') return t.sizes ?? {}
+  if (family === 'selector') return t.selector ?? {}
   return t.stroke ?? STROKE_STANDARD
 }
 
@@ -79,6 +82,7 @@ function rolesOf(t: AgentFoundationTokens, family: LayoutFamily): Record<string,
   const stored = family === 'radius' ? t.radiusRoles
     : family === 'spacing' ? t.spacingRoles
     : family === 'size' ? t.sizeRoles
+    : family === 'selector' ? t.selectorRoles
     : t.strokeRoles
   return mergeLayoutRoles(family, stored ?? defaultLayoutRoles(family))
 }
@@ -225,6 +229,24 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
       lines.push(`| \`${k}\` | \`--size-${k}\` | \`${k}\` | \`${v}\` |`),
     )
     lines.push('', ...semanticTable(t, 'size', 'Size roles'))
+  }
+
+  if (t.selector && Object.keys(t.selector).length) {
+    lines.push(
+      '',
+      '### Selector glyph (`Size` collection)',
+      '',
+      'The square a checkbox, radio or switch knob is drawn in — a glyph, not a',
+      'control height. Below 24px pair it with a transparent hit area',
+      '(`--size-hit`) for WCAG 2.2 target size; do not grow the glyph instead.',
+      '',
+      '| Step | CSS | Figma | Value |',
+      '|---|---|---|---|',
+    )
+    ordered(t.selector, ['xs', 'sm', 'md', 'lg', 'xl']).forEach(([k, v]) =>
+      lines.push(`| \`${k}\` | \`--selector-${k}\` | \`${k}\` | \`${v}\` |`),
+    )
+    lines.push('', ...semanticTable(t, 'selector', 'Selector roles'))
   }
 
   lines.push(

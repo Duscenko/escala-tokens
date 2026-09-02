@@ -24,7 +24,7 @@ export function HarmonyFollows({
 
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint flex-shrink-0">Follows</span>
+      <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint flex-shrink-0">Follows</span>
       <div
         className="flex items-center gap-px flex-shrink-0"
         title={`Neutral page — light ${h.pageLight.toUpperCase()} · dark ${h.pageDark.toUpperCase()}`}

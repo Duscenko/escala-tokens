@@ -161,7 +161,7 @@ export default function ScrubInput({
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         aria-label={ariaLabel}
-        className={`w-full min-w-0 bg-app text-[13px] ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors`}
+        className={`w-full min-w-0 bg-app text-ui ${mono ? 'font-mono' : ''} text-fg rounded-md border border-transparent hover:border-line focus:border-fg px-2 py-1 outline-none transition-colors`}
       />
     </div>
   )

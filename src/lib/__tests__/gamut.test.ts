@@ -3,7 +3,9 @@ import chroma from 'chroma-js'
 import {
   hexToOklch, oklchToHex, oklchToHexClipped, gamutMapSrgb,
   inSrgbGamut, oklabToOklch, oklchToOklab, deltaEOK, hexToLinearRgb,
+  maxChromaSrgb, srgbCusp,
 } from '../color/gamut'
+import { readHuePosition, colorAtHue } from '../colorUtils'
 
 // A translucent hex used to have its alpha channel silently dropped — the
 // colour would be decoded as if it were opaque, with no error. That was
@@ -129,5 +131,81 @@ describe('the defect this module fixes, demonstrated', () => {
 
     expect(worstMapped).toBeLessThan(1.5)
     expect(worstClipped).toBeGreaterThan(worstMapped)
+  })
+})
+
+// ── The hue axis ────────────────────────────────────────────────────────────
+// Moving a colour along hue while holding L and C ABSOLUTE ratchets chroma
+// down: sRGB's ceiling is hue-dependent, so the first pass through a narrow
+// hue clamps the chroma and every later hue inherits the clamp. Measured on
+// the shipped accent, a 304 -> 200 -> 120 -> 60 -> 304 sweep left C at 0.094
+// where that hue allows 0.258. These tests pin the fix.
+describe('hue axis (readHuePosition / colorAtHue)', () => {
+  const ACCENT = '#9522e9'
+
+  it('the sRGB chroma ceiling really is hue-dependent — the reason absolute C fails', () => {
+    const at = (h: number) => maxChromaSrgb(0.48, h)
+    // Measured: 0.082 at cyan, 0.256 at magenta — a 3.1x swing at ONE lightness.
+    expect(at(200)).toBeLessThan(0.1)
+    expect(at(300)).toBeGreaterThan(0.25)
+    expect(at(300) / at(200)).toBeGreaterThan(3)
+  })
+
+  it('every hue peaks at a different lightness — the reason a fixed-L track is mud', () => {
+    expect(srgbCusp(120).l).toBeGreaterThan(0.85) // yellow-green is a light colour
+    expect(srgbCusp(260).l).toBeLessThan(0.60)    // blue is a dark one
+  })
+
+  it('a hue round trip is lossless', () => {
+    const { hue, position } = readHuePosition(ACCENT)
+    expect(colorAtHue(position, hue)).toBe(ACCENT)
+  })
+
+  it('does not ratchet chroma when the value is re-read after every hop', () => {
+    const before = hexToOklch(ACCENT)
+    let current = ACCENT
+    // The exact path that used to destroy the colour, re-reading each time —
+    // which is what the component does between renders.
+    for (const h of [200, 120, 60, 305, 304]) {
+      current = colorAtHue(readHuePosition(current).position, h)
+    }
+    const after = hexToOklch(current)
+    expect(after.c).toBeGreaterThan(before.c * 0.98)
+    expect(after.h).toBeCloseTo(before.h, 0)
+  })
+
+  it('stays near the gamut wall at every hue, so the track reads as a spectrum', () => {
+    const { position } = readHuePosition(ACCENT)
+    for (let h = 0; h < 360; h += 15) {
+      const ok = hexToOklch(colorAtHue(position, h))
+      const ratio = ok.c / maxChromaSrgb(ok.l, h)
+      expect(ratio, `${h}deg sat ratio`).toBeGreaterThan(0.85)
+    }
+  })
+
+  it('a deep blue and a pale lime both sit AT their cusp — lightness is RELATIVE', () => {
+    // Both are "the vividest version of their own hue", so both read ~0.48 even
+    // though their absolute L is 0.45 vs 0.90. That is the model working: what
+    // travels across hues is the position relative to the cusp, not raw L.
+    expect(readHuePosition('#2c1fe6').position.lightness).toBeCloseTo(0.48, 2)
+    expect(readHuePosition('#cdef37').position.lightness).toBeCloseTo(0.48, 2)
+    expect(hexToOklch('#2c1fe6').l).toBeLessThan(0.5)
+    expect(hexToOklch('#cdef37').l).toBeGreaterThan(0.85)
+  })
+
+  it('keeps a dark colour dark and a light colour light across hues', () => {
+    const dark = readHuePosition('#1a0533').position   // deep plum
+    const light = readHuePosition('#f5d0ff').position  // pale lilac
+    expect(dark.lightness).toBeLessThan(light.lightness)
+    for (let h = 0; h < 360; h += 60) {
+      expect(hexToOklch(colorAtHue(dark, h)).l).toBeLessThan(hexToOklch(colorAtHue(light, h)).l)
+    }
+  })
+
+  it('every emitted colour is representable in sRGB', () => {
+    const { position } = readHuePosition(ACCENT)
+    for (let h = 0; h < 360; h += 5) {
+      expect(inSrgbGamut(hexToOklch(colorAtHue(position, h))), `${h}deg`).toBe(true)
+    }
   })
 })

@@ -196,22 +196,30 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > - **Escala JSON is single-file by contract** (it's the plugin payload), so the structure
 >   choice is locked there.
 > - Tailwind and Markdown delegate to `sectionExport`'s builders — one renderer per format,
->   not two. `SectionExportModal` and the old `ShareModal` were retired into this flow
->   (`FilePreviewCard` lives on in `SaveView`).
-> - **Step 3 also carries a "Save this design system" card** — a name field bound straight
->   to `projectName`/`setProjectName`, a Save button calling the SAME `saveCurrentSystem()`
->   the Save & Share hub uses (button reads "Save changes" once `savedSystems` already has
->   an entry for the current id, exactly like `SaveSidePanel`), and a GitHub status row
->   (`StatusDot` + `owner/repo · pushed <time>` or "Not synced"). This exists because the
->   payoff step is also the only natural place to give a first-time system its identity —
->   before it, a user exporting from Variables had NO path to naming/saving/connecting
->   without already knowing Save & Share existed. The GitHub button (`onConnectGithub` prop,
->   wired from `Configurator.tsx`'s one `ExportWizard` call site) closes the wizard and opens
->   the existing `GitHubConnectView` rather than re-implementing PAT auth + repo push inline
->   — there is still only ONE GitHub-connect flow. "Save" always saves the WHOLE current
->   system regardless of which collections this export run scoped to (same as Save & Share's
->   own Save button) — the card says so explicitly so exporting from, say, Typography
->   doesn't read as "only Typography got saved."
+>   not two. `SectionExportModal` and the old `ShareModal` were retired into this flow.
+> - **Step 3 is delivery-only** for the DOWNLOAD — it summarizes the destination and either
+>   downloads the artifact or continues to the GitHub connection screen. It ALSO carries the
+>   optional "Save a reusable snapshot" card (the local-registry save), because exporting
+>   never saves automatically and this is the moment the user is thinking about persistence;
+>   the System library still owns save/restore, this is just a second door to
+>   `saveCurrentSystem`. The GitHub handoff (`onConnectGithub`) closes the wizard and opens
+>   `GitHubConnectView`; it never reimplements PAT/OAuth or pushes automatically.
+> - **The snapshot names itself after the THEME when the wizard was opened for one.**
+>   `openThemeExport(previewTheme)` (Theme Preview → "Export theme") passes `themeScope` +
+>   `themeScopeLabel`. Step 3's name field then holds the theme's label in LOCAL state
+>   (never `setProjectName` — a pre-fill must not rename the project), and Save routes to
+>   `saveCurrentSystemAsTheme(themeScope, name)` so the kit files as `local:<theme>`,
+>   separate from the whole-system `local:<project>`. The generic entry points (TopNav
+>   Export, a foundation's Export) leave `themeScope` null and the field stays bound
+>   straight to `projectName` / `saveCurrentSystem`, exactly as before. A one-line hint
+>   under the field states the scope so "Neo-Brutalism" in the box isn't mistaken for a
+>   typo'd project name.
+> - **Step 2's DESTINATION header carries an "Add sync option" link** (`onAddSyncOption`,
+>   only rendered when the prop is passed). It's a link-OUT, same pattern as
+>   `onConnectGithub`: closes the wizard and opens `FigmaSyncView` (the live-sync URL +
+>   auto-publish setup). It is NOT a fifth destination row and NOT a second sync UI — the
+>   wizard's four destinations are one-shot exports, live sync is a standing connection, so
+>   it belongs in its own flow.
 
 > **UPDATE: `AgentInstallPanel` now leads with the MCP connection; the `npx @escala/cli`
 > package is the offline fallback, not the default.** It used to be the reverse — the
@@ -301,7 +309,9 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   `handleNav`): **About** (first, `tab 'about'`) — **Variables Generator** — EDIT the system
   (`tab 'foundations'`, entering at Color) — **Components** — browse the catalogue
   (`tab 'components'`, `ComponentsView`) — and **Docs** — read the token reference
-  (`tab 'docs'`, `DocsView`). Export/connect views (Figma · GitHub · Export · Save) unlight
+  (`tab 'docs'`, `DocsView`). The visible label is shortened to **Variables** in the
+  header; the product surface remains the Variables Generator. Export/connect views
+  (Figma · GitHub · Export · Save) unlight
   all four.
   > **About is a tab, not a wizard step — and it's the ONE exception to "no separate
   > landing screen" above, deliberately narrow.** It used to be a hidden burger-icon
@@ -389,10 +399,22 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     link is what makes Docs documentation OF the Variables Generator rather than a parallel
     description of it. Keep `FoundationDoc.key` equal to the `FOUNDATIONS` key or it breaks
     silently.
-  - **`System reference` (`OVERVIEW_KEY = '__overview'`) is the whole-system sheet**,
-    rendering every foundation's sections in one column for hand-off/print. It is NOT a
-    foundation and is no longer the first rail row. Its TOC is one entry per FOUNDATION,
-    not per section: eight foundations × their sections is a crowded rail nobody can scan.
+  - **`OVERVIEW_KEY = '__overview'` is the whole-system sheet**, rendering every
+    foundation's sections in one column for hand-off/print. It is NOT a foundation and is
+    no longer the first rail row. Its TOC is one entry per FOUNDATION, not per section:
+    eight foundations × their sections is a crowded rail nobody can scan.
+    - **The top-nav Docs destination never renders it** (`allowReference={false}` there),
+      so its title is effectively Theme-Preview-only. The Theme Preview hub therefore
+      passes `overviewTitle` = the previewed theme's display name
+      (`DocsView` → `OverviewArticle`'s optional `title`), so the sheet reads as
+      **that theme's** spec — H2, `DocHeader` crumb and the lead ("…of this theme…")
+      all follow it — and the hub's rail row is **"Theme reference"** under a **"Theme
+      doc"** header, not "System reference" / "System doc". Omit `overviewTitle` (or pass
+      blank) and it falls back to "System reference" / "this system" verbatim.
+    - **Known gap, not addressed here:** the sheet's BODY still comes from
+      `useSystemDoc()` (the global store), so the ramps/values shown are the system's,
+      not the previewed theme's — only the title is theme-scoped. Theme-scoping the body
+      needs `useSystemDoc` to take a theme, which also touches the top-nav DocsView.
   - **`Prose` renders `inline code` from backticks.** The foundation copy names tokens
     constantly; a `<p>` printing its own backticks reads as an unrendered markdown file.
     One rule only — don't grow it into a markdown parser.
@@ -425,10 +447,17 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   Typography · Shadow · Radius · Icons · Padding · Panel background) survive as a
   **secondary popover**, not a view: the sliders icon in `CenterHeader`'s rightSlot
   (`QuickEditTrigger` in `Configurator.tsx`) opens `QuickFoundationsPanel` — the same
-  popover the Components tab already used. Variables' `CenterHeader` also carries
-  `HomeActions` (— **Kits only now**; New/Import JSON were removed, see below — and
-  no Reset; the "reset the whole system to defaults" action was removed from the UI
-  entirely. Per-token "reset to standard" icons in the token tables are unrelated and stay).
+  popover the Components tab already used.
+- **`HomeActions.tsx` is now RETIRED — nothing imports it.** It was down to one live
+  render: `Configurator`'s `themeWorkspaceActions`, on the Primitives tab, with
+  `hideSystems` — i.e. ONLY the whole-system "Reset to defaults" pill (Kits/Systems had
+  already moved to Workspace settings; New/Import JSON were retired earlier). That Reset
+  pill is gone: a rare, no-undo action given equal billing with GitHub · Figma · Search,
+  when the resets anyone actually reaches for are the per-token "reset to standard" icons
+  in the tables and the quick-edit strip's per-family reset (all unrelated, all stay).
+  `useDesignStore.resetToDefaults` is untouched — just unreachable from the UI, which is
+  what this line always claimed. The file is kept for reference, same as
+  `WorkbenchLayout`/`PickerColor`/`NewTokenWizard`; don't wire it back.
 - **"New" (guided token creation) and this row's "Import JSON" are RETIRED, not just
   hidden.** Both used to sit in `HomeActions` next to Kits: New opened `NewTokenMenu` → a
   category popover → `NewTokenWizard.tsx` (a 2–4 step Name/Target → Value/Scale →
@@ -875,11 +904,19 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   already opens on its own (the same "in use by theme X" rule every other
 >   family-deletion path follows) — that's the existing, discoverable
 >   cleanup path, not a reason to add a second, silent one here.
-> - **`saveCurrentSystemAsTheme(themeKey)` shares `buildSavedSystemEntry()`
+> - **`saveCurrentSystemAsTheme(themeKey, name?)` shares `buildSavedSystemEntry()`
 >   with `saveCurrentSystem()`** — same id rule (repo id when GitHub-
 >   connected, else a slug of the project name), so the popover's existing
 >   "reusing a name updates that kit" copy stays true for a scoped save too;
->   this doesn't invent a second naming convention to learn.
+>   this doesn't invent a second naming convention to learn. **`name` is the ONE
+>   exception**: when passed, it overrides the entry's `name` AND the local id
+>   slug (`local:<slug(name)>`), so the kit is filed under that name instead of
+>   the project's. The Kits popover omits it (a scoped save there updates the
+>   project's own kit). The Export wizard opened for one theme passes the theme
+>   label — see the "snapshot names itself after the theme" note under the
+>   ExportWizard section — so that snapshot registers as its own kit
+>   (`local:apollo`) rather than overwriting `local:<project>`. A connected repo
+>   still pins the id, so `name` only ever moves the local slug.
 >   Verified: saving "just Dark" from a 3-theme system produced a snapshot
 >   with `themeOrder: ['dark']`, `themes`/`themeKinds` holding only `dark`,
 >   every stale `architectureOverrides` entry for the dropped themes gone,
@@ -892,18 +929,18 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > - **The popover CAPS its own height to the room below the trigger, via
 >   `usePopoverPlacement(anchorRef, …)`** — the same hook `ThemePanel`'s slot pickers use for their
 >   header/scrolling-body/pinned-footer shape. Before this, the outer `motion.div` had no
->   height limit at all: its natural height (header + kits list + the "Save & Share" door)
+>   height limit at all: its natural height (header + kits list + the System library door)
 >   just grew with however much content there was, and nothing capped it to the viewport.
->   Reported as "Save & Share needs to stay reachable once there are many kits" — measured
+>   Reported as "System library needs to stay reachable once there are many kits" — measured
 >   first, and the real trigger turned out to be viewport height more than kit COUNT: with
 >   15 kits the popover wanted 682px, and on an ordinary 650px-tall window the door's
 >   bottom edge landed at 772px — 122px past the bottom of the screen, with no scrollbar
 >   anywhere to reach it. It wasn't clipped, it was simply gone.
 >   - **Only the kits list gives up space.** The header form (name input · scope toggle ·
->     durability paragraph · Connect GitHub) and the "Save & Share" footer are both
+>     durability paragraph · Connect GitHub) and the System library footer are both
 >     `flex-shrink-0`; the kits list is `flex-1 min-h-0 overflow-y-auto` (replacing a fixed
 >     `max-h-64`) — the ONE region allowed to shrink when the popover's capped `maxHeight` is
->     tighter than everything wants. That's what makes "Save & Share fixed at the bottom"
+>     tighter than everything wants. That's what makes "System library fixed at the bottom"
 >     literally true regardless of kit count: it can never be pushed off by a long list, only
 >     the list itself scrolls.
 >   - **`flex-1` here does NOT stretch the list to fill idle space on a tall screen — verify
@@ -918,19 +955,12 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   - **Anchored to the TRIGGER pill (`kitsBtn`, threaded in as `anchorRef`), not the
 >     popover's own ref** (`ref`, used only for outside-click detection) — measuring the
 >     popover against itself would be measuring the very box being sized.
-- **Save is the "Save & Share" hub** (`SaveView` → `exportMode 'save'`; no nav entry
-  since the rail was removed — Kits in Variables' header and the Export wizard's own
-  "Save this design system" card (see above) cover PART of the same ground — naming,
-  local-saving, GitHub status — but neither replaces the hub's saved-systems GRID (browse/
-  load/delete past systems) or the Figma connect pill, so re-add an entry point before
-  relying on either as a substitute):
-  the center IS the export surface — a tabbed file-preview card (tokens.json with a
-  "Figma plugin" badge · variables.css · README.md, accent-colored active tab, plus an
-  "Export all files" action tab) with Copy / Download per file and the live-endpoint
-  footer, over the "My design systems" saved-systems grid (+ create/import tile). The
-  right aside is `SaveSidePanel` ("Current Design System"): identity (name/description),
-  Bring to Figma / Connect-with-GitHub pills with status dots, summary chips and "Save
-  design system" (local registry via `saveCurrentSystem`).
+- **System library manages saved systems** (`SaveView` → `exportMode 'save'`; no nav entry
+  since the rail was removed). Its center is intentionally only the saved-systems grid
+  (browse/load/delete, plus create/import); it does not preview, copy or download export
+  files. The right aside is `SaveSidePanel` ("Current system"): identity, quiet delivery
+  status, summary chips and the local `saveCurrentSystem` action. Figma and GitHub links
+  are contextual handoffs, while every outward artifact is owned by Export.
 - **Multi design system**: `savedSystems` (persisted registry) — two ways in. `saveCurrentSystem()`
   (the store action `SaveSidePanel`'s Save button AND the Export wizard's "Save this design
   system" card both call) upserts a LOCAL entry keyed `` `local:${slugify(projectName)}` ``
@@ -945,39 +975,88 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   200px, transparent over the brand gradient, uppercase group caption + `icon · label` rows
   (active = raised white row in the UI accent). It's fed ONE group — **Categories** (icons
   from `CATEGORY_ICONS` in `Configurator`), straight from `CATEGORIES` — and no global nav
-  and no action block; those live in `TopNav`: **Sync** (outline pill, Figma glyph → a
-  2-row hub, see below) and **Export** (the filled black pill — opens `ExportWizard`,
-  transversal, see above). **There is no standalone "Connect" GitHub button any more** —
-  it used to sit here too (black pill, rightmost), competing with Export for the same
-  "ship this system" slot. GitHub connect is reachable from INSIDE the export wizard
-  instead: step 3's "Save this design system" card carries its own "Connect GitHub" /
-  "Push to GitHub" button (`onConnectGithub` prop, still opens the same `GitHubConnectView`
-  — PAT connect → pick/create repo → push tokens.json/variables.css/README.md), which reads
-  as the right home for it: pushing to a repo is something you do as part of getting your
-  tokens out, not a parallel top-level destination. `SaveSidePanel` keeps its own GitHub
-  entry point too (`onOpenGithub`) — still the SAME `GitHubConnectView`, still only one
-  GitHub-connect flow in the app, just two doors into it now instead of three. Beside the
+  and no action block; those live in `TopNav`: **Export** is the ONE filled payoff action,
+  while the hamburger-shaped **Workspace settings** control contains connection state and
+  appearance. Its GitHub row opens the same `GitHubConnectView` used everywhere else —
+  PAT/OAuth connect → pick/create repo → explicit push of
+  tokens.json/variables.css/README.md and `.escala/system.json`; it never pushes on
+  menu open or row click. The Export wizard's step 2 also lists **GitHub repository** alongside
+  Figma, Code and AI and hands off to that same view. `SaveSidePanel` retains its
+  contextual entry point, so there is still only one GitHub pipeline. At widths below
+  860px the four section links move into this same panel instead of overlapping Export;
+  none are removed. Beside the
   rail, `ComponentsView` owns the 208px master list of that category's components (with the
   catalogue's include checkboxes). Don't fork the rail per section either — pass a
   different `groups` array.
 
-> **The Sync pill opens a hub, not a screen — `download` and `check status` were split
-> apart because they're different intents at different frequencies.** Used to be one
+> **The workspace tab bar's sync controls are TWO pills — one per destination —
+> not a segmented group under a "Sync" caption.** `SyncPill` (`Configurator.tsx`).
+> The old shape was `[ Sync | ⌾ | ⌘ ]`: a static caption spending ~45px to say
+> something neither button disagreed with, two 32px icon-only squares whose names
+> lived in a `title` (i.e. behind a hover), and a status dot stamped into each
+> square's bottom-right CORNER, overlapping the very glyph it annotated. Reported
+> as the row being too loaded. Splitting them gives the dot its own slot at the
+> head of the pill and lets the label say the name out loud — the same "named,
+> separately selectable destination" shape the workspace tabs (`Theme preview ·
+> Variables · Code format`) already use one row up.
+> - **The dot reports the LIVE request, not just "ever connected"** — `busy`
+>   (amber, pulsing) and `error` (red) join `ok` (emerald) and `idle` (faint).
+>   `githubPushState` / `figmaPublishState` already existed at this call site and
+>   had nowhere to show; the corner dot could only ever say connected/not.
+> - **Colour is never the only carrier.** `aria-label` and `title` both read
+>   `"<name> — <status>"` in words ("GitHub — connected (owner/repo)",
+>   "Figma — publishing…"), and those status words are in the es/fr dictionaries.
+> - **The LABEL drops before the glyph does** (`hidden min-[1320px]:inline`) —
+>   this row also holds three workspace tabs, so a pill still showing its mark and
+>   its dot is a smaller loss than a wrapped label.
+>
+> **The token search field lives in TopNav's right cluster (before Language +
+> Appearance), NOT in the workspace tab strip.** It sat in the tab strip for a
+> while — the argument being "per-workspace tool, not global chrome" — and moved
+> up at the user's call: it's the workspace's primary way to FIND a token, and
+> the tab strip was already carrying two Sync pills plus three tabs (one row, four
+> jobs). It is still CONTEXTUAL, not global — `Configurator` passes `search` to
+> `TopNav` only on the Generator tab (`themesCanvas`), so About / Components /
+> Docs don't render it. `colorQuery` / `colorSearchRef` / the ⌘K handler are
+> unchanged (the handler already no-ops when the ref is null, which is every tab
+> but Generator). Layout: the field is `flex-1 min-w-0 max-w-[14rem]` and the
+> grid's right track is `minmax(min-content,1fr)` (was `minmax(0,1fr)`) — so when
+> the window narrows the empty LEFT track yields first and the field SHRINKS
+> rather than the right cluster overrunning the centred nav. Verified 1024→1440,
+> no overlap. The ⌘K keycap `<img>` is `hidden min-[1180px]:block` — decorative,
+> and 1180 is already this app's "things get tight" breakpoint.
+>
+> **The "Escala Tokens on GitHub" repo link lives in the FOOTER, not TopNav's
+> global cluster.** It used to lead that cluster and was the odd one out on two
+> counts: Language and Appearance change THIS session while that link leaves the
+> app for the project's source (colophon material, not workspace chrome), and it
+> put a GitHub mark in the header while a DIFFERENT GitHub mark — the user's own
+> repo sync — sat two rows below, so one glyph meant two things on one screen.
+> TopNav's right cluster is two controls now. In the footer it's mark + the word
+> "Source" on the attribution line, at the attribution's own 10.5px.
+> - **It uses `text-fg-muted`, NOT the `text-fg-faint` of the copyright line
+>   beside it.** Faint measured **4.39:1** at 10.5px — under AA for small text.
+>   The static line can sit that quiet; the one interactive thing in the footer
+>   cannot. Now 7.16:1 light / 6.63:1 dark.
+> - **`h-full` claims the whole 28px strip as the hit area** (WCAG 2.2 target
+>   size — measured 61×31) without growing the mark or the type.
+
+> **The Figma row inside `WorkspaceMenu` separates `sync`, `details`, and `download` because they are
+> different intents at different frequencies.** Used to be one
 > pill (`Plugin`) → one screen (`FigmaConnectView`, retired), three numbered steps
 > stacked top to bottom every time: download the plugin, import it into Figma, sync your
 > tokens. It also auto-published tokens the instant it mounted, on EVERY open — including
 > opens where you only wanted to glance at the sync URL or flip the auto-sync toggle.
 > Reported as wanting the flow split so checking status doesn't mean re-scrolling past
 > install steps you finished once already.
-> - **`SyncHubPopover`** (`TopNav.tsx`) is the same anchor/dismiss contract
->   `HomeActions.tsx`'s `KitsPopover` already uses — outside-click + Escape,
->   framer-motion fade+slide. Two rows, routes only, does no work itself: **Sync**
->   (connection status + live sync URL) and **Download plugin** (the .zip + import
->   instructions). The trigger pill is labelled "Sync", not "Plugin" — checking status
->   is the higher-frequency of the two, so that's what the label advertises.
-> - **`FigmaSyncView.tsx`** is the one that kept the `useEffect` auto-publish-on-mount —
->   opening THIS screen is what "check my sync status" means, so publishing the instant
->   it opens is still the right default. Its hero leads with connection status
+> - **Sync now is the explicit publish action.** It displays the parent-owned spinner
+>   inside the open settings panel, while the hamburger also becomes a spinner so progress
+>   remains visible if the panel closes. **Details** opens the connection URL/status without
+>   publishing; **Plugin v…** opens the .zip and install instructions. The panel dismisses
+>   on outside click or Escape and respects reduced motion.
+> - **`FigmaSyncView.tsx`** is read-only until **Sync now** is clicked. Parent-owned
+>   request state keeps its button and the TopNav spinner coherent. Its hero leads with
+>   connection status
 >   (`figmaLastPublishAt` — Figma sync has no login/session identity the way GitHub does,
 >   so "has ever published" IS the connection signal) rather than the install pitch.
 > - **`FigmaDownloadView.tsx`** is Steps 1–2 unchanged, verbatim. **No auto-publish** —
@@ -992,9 +1071,8 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   any real change without anyone having to bump the semver. The store carries
 >   `pluginBuildSeen: string | null` (top-level global pref, NOT in `DesignSnapshot`, store
 >   v58) — the build the user last downloaded, written by `FigmaDownloadView`'s download
->   `<a onClick>`. `SyncHubPopover` and `FigmaDownloadView` both show an "Update" badge when
->   `pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD`, and `TopNav`'s Sync pill
->   gets an accent dot (bottom-right, distinct from the green auto-sync dot top-right).
+>   `<a onClick>`. `WorkspaceMenu` and `FigmaDownloadView` both show an "Update" badge when
+>   `pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD`.
 >   **`null` shows NOTHING** — a first-time user has no baseline to update from, and the v58
 >   migration deliberately leaves existing sessions at `null` rather than guessing (guessing
 >   `PLUGIN_BUILD` would suppress a real update; it self-populates on their next download).
@@ -1025,6 +1103,27 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     unchanged on Components. Freed width goes to whichever foundation is
     active; only Color has its own sub-nav to spend it on (see below), the other 7 foundations
     just render wider.
+  - **`orientation="vertical"` is the Themes-workspace variant** — a 64px column, and it
+    now sits BELOW a full-width `ThemeWorkspaceTabs` strip, not beside one. Its groups
+    start at the top (`pt-2` on the `<nav>`, `pt-3` on the first group, `border-t`/`mt-3`
+    on the Styles group). No header band of its own — see the note below. Glyphs are
+    `h-[21px]` (bumped from 17 — too small against a 42px button).
+    > **`ThemeWorkspaceTabs` (`Theme preview · Variables · Code format` + search + Sync) is
+    > a FULL-WIDTH row on the Themes canvas — its left edge meets the Themes Library
+    > column's border and its underline runs unbroken across the icon-rail column too.** It
+    > used to be the first child of `<main>`, so it only spanned the editor column and the
+    > icon rail carried its own 52px header band to fill the gap beside it. That band went
+    > through two lives — a `theme-preview` button (retired: a second door to the screen
+    > the tab strip already names, and the two lit up together, claiming "you are here"
+    > twice side by side — same call as `ThemePreviewHub`'s retired `Code` icon) and then
+    > an empty 52px spacer "for divider alignment", which was just reserved space the icons
+    > could use. The fix for both: on `themesCanvas` the Layer-1 wrapper is `flex-col`, the
+    > tab strip is its first child at full width, and `[FoundationIconRail | <main>]` sit
+    > in an inner `flex` row under it (non-themes views keep the plain row via a
+    > `display: contents` passthrough — `showPreview` is `exportMode === 'save'`, never true
+    > here, so nothing else follows `<main>` on this canvas). The tab strip owns the header
+    > row and workspace switching; the rail owns foundations and begins right below.
+    > `ThemePreviewRailIcon` was deleted with the button.
 - **Center**: a `CenterHeader` (section icon + colored title + subtitle) over the active
   body — a foundation section (`Step2_ColorPalette`…`Step9_Sizes` or
   `IconLibrary` with its live Iconify browser + custom-SVG upload, wrapped in `p-8` —
@@ -1032,15 +1131,51 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   `Configurator.tsx`: typography · radius · spacing · sizes · shadow · grid,
   plus Color's own hub). Each carries a 198px left column, and `p-8` framed them as
   floating cards whose column no longer lined up with the icon toolbar or `CenterHeader`
-  above. Icons keeps its padding — it's an Iconify browser, not a token table. The shape
-  is `VariablesTable`'s own — **row 1** = a `w-[198px] … border-r`
-  labelled control cell (`Preset` · `Base unit`) beside a right cell showing *what
-  that control produces* (the roundness slider + chip · the spacing scale · the
-  elevation ramp), `pr-3` clearance on the right edge; **row 2** = a `h-[52px]`
-  labelled cell (`Collections`) beside the active collection + search; **row 3** =
-  the nav (`py-1.5 px-2`) against the flush table. **Row 1 exists only where the
-  section HAS a global control** — Radius, Spacing and Shadow do; Typography, Sizes
-  and Grid start at the Collections row instead of inventing one.
+  above. Icons keeps its padding — it's an Iconify browser, not a token table.
+
+  > **THREE SLOTS, and every Variables section uses the same three. There is no
+  > control band above the table.** A section's chrome is: the **rail's Groups
+  > section** (the global control — `Preset` · `Base unit` · `Roundness` — plus the
+  > collections nav), the table's **Preview column** (one token, one swatch) and the
+  > table's **`footer`** (the whole ramp at once, when a ramp is only judgeable by
+  > comparing steps). Nothing else.
+  > Radius and Shadow used to hand-roll a full-width band above the table instead —
+  > a `w-[198px] border-r` label cell beside a specimen cell — and it was wrong on
+  > every axis, measured: the 198px cell missed the 240px rail below it by **42px**,
+  > the band pushed those two foundations' rails **108px and 125px** lower than the
+  > other four's, their own two bands didn't even agree with each other (108 vs 125,
+  > because the elevation strip is taller than a slider), and the `Groups` heading
+  > they left behind had nothing under it. Six sections, five different answers.
+  > - **A global control goes in `RailControl`** (`VariableCollectionRail.tsx`), never
+  >   in a band. That is what puts it on the group rows' own footprint —
+  >   13.5 → 225.5, caption at 22.5, readout right-edge at 216.5 — instead of a
+  >   per-section inset. The rail had **four** different left edges inside one 240px
+  >   column before this.
+  > - **A group row is `RailGroupNav`**, one component. `SemanticGroupRail` is a thin
+  >   wrapper over it, and Spacing/Sizes render it directly; they used to hand-roll
+  >   `px-3 py-2.5` rows against the shared `px-2 py-2` ones.
+  > - **No groups → `RailNoGroups`**, not a heading over nothing. Stroke and Grid
+  >   genuinely have none.
+  > - **`railed` is not optional.** Grid was the one section that skipped it, so it
+  >   had no collections column at all — its table started 240px left of everyone
+  >   else's and its own `Grid semantics` collection was unreachable.
+  > - **Shadow's heading comes from `LayoutTabHeading`** even though Shadow is not a
+  >   `LayoutFamily` and never passes through `LayoutHub`. Its table is still the
+  >   primitive list; reading "Shadow tokens" while its six neighbours read
+  >   "Primitive tokens" was the only place that vocabulary broke.
+  > - **There is NO per-table header bar. The workspace owns search + heading.**
+  >   `ThemeWorkspaceTabs` (the `Theme Preview · Primitives · Code Format` strip) is
+  >   the ONLY `foundation-layer-bar` on screen — it carries the "Primitives" tab and
+  >   a single "Search tokens" field (`colorQuery` in `Configurator`), and the rail's
+  >   Collections section names the active collection (`RADIUS SEMANTICS` etc.). The
+  >   old `VariablesTable` `topBar` + `LayoutSemantics`/`GridSemantics` header bars
+  >   restated all three a second time, one row lower. They're suppressed whenever a
+  >   `query` string is passed (Color and Type primitives/semantics already worked
+  >   this way — `ColorPrimitives`/`Step3` render no bar at all): `VariablesTable`,
+  >   `LayoutSemantics` and `GridSemantics` all take `query?: string`, threaded
+  >   `Configurator → LayoutHub → the Step component / Sem`, and drop their bar +
+  >   filter by it when it's set (even `''`). Leave `query` undefined to get the
+  >   self-contained bar back — the non-workspace path, currently unused.
   **`ColorHub`'s own three tabs (Primitives/Semantics/Gradients) DIVERGE from this
   row order — deliberately, and only there.** They used to match it exactly
   (control-row first, `Groups`/`Collections`-row second), then got flipped: `Groups`
@@ -1064,30 +1199,35 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     `border-line/60`. Do not swap only one of the three, and do not swap
     `VariablesTable` to "match" — that would just move the mismatch onto six
     foundations instead of removing it from three.
-  **`VariablesTable` opts in via `railed`** (plus optional `railTop`/`railBody`/`footer`),
-  so the gutter's CONTENT is per-section: Sizes · Shadow · Radius leave it empty
-  (the column exists purely so their table's left edge lands on the same line as everyone
-  else's), while Spacing and Grid fill it with a real collections nav — Spacing scale ·
-  Surface paddings and Layout · Breakpoints, both of which used to stack in one scroll
-  behind sticky sub-headers.
+  **`VariablesTable` opts in via `railed`** (plus optional `railBody`/`footer` — there is
+  no `railTop`, and a section must NOT hand-roll one as a sibling `<div>`: that is the
+  band the note above exists to keep deleted).
+  So the gutter's CONTENT is per-section: Stroke and Grid leave it empty (`RailNoGroups`
+  — the column still exists so their table's left edge lands on the same line as everyone
+  else's), Radius and Shadow fill it with their preset, Spacing with its base unit ABOVE a
+  `RailDivider` and a collections nav, Sizes with a nav alone.
   - **`footer` renders the section's visual specimen INSIDE the table's scroll column**
-    (Sizes' component heights, Grid's column overlay). It
-    can't be a sibling any more: once a section is railed the table owns its column, so a
+    (Sizes' component heights, Shadow's elevation ramp, Grid's column overlay). It
+    can't be a sibling: once a section is railed the table owns its column, so a
     block outside would sit beside the rail rather than under the rows it illustrates.
     Grid's overlay renders only for the Layout collection — a breakpoint ramp has nothing
     to draw, and rendering it there would be dead chrome.
-  - Shadow's elevation specimen moved INTO row 1's right cell (a single 6-step strip)
-    rather than staying a 3×2 grid of `h-20` cards below the table: it belongs next to the
-    preset that changes it, and keeping both would have been the same ramp twice.
-  - **The rail cell's dropdown is `ui/RailSelect`, one component.** Gradients' type,
-    Radius' preset and Spacing's base unit are the same control, and it was hand-rolled
-    three times (identical `h-9 rounded-[13px] border-line-strong` trigger, chevron and
-    outside-click listbox) before being extracted. It takes `fallbackLabel` — Radius shows
-    **"Custom"** when the ramp matches no preset, where the old Sharp/Soft/Rounded/Pill
-    pill row just showed nothing selected, which read as "no preset applied yet".
+  - **Shadow's elevation ramp earns a `footer` where Radius' does not**, and the test is
+    whether the Preview column can already carry it. Radius' 28px corner square shows a
+    radius fine; Shadow runs `wideValues`, which leaves the Preview column 90px — too
+    little for a 24px-blur `2xl` — and elevation is only judgeable by COMPARING steps.
+    Its footer swatches carry **no border**, same rule as `ShadowPreview`: the shadow has
+    to be the only separator or you're judging the border.
+  - **The rail's dropdown is `ui/RailSelect`, one component, wrapped in `RailControl`.**
+    Gradients' type, Radius' and Shadow's presets and Spacing's base unit are the same
+    control, and it was hand-rolled three times (identical `h-9 rounded-[13px]
+    border-line-strong` trigger, chevron and outside-click listbox) before being
+    extracted. It takes `fallbackLabel` — Radius shows **"Custom"** when the ramp matches
+    no preset, where the old Sharp/Soft/Rounded/Pill pill row just showed nothing
+    selected, which read as "no preset applied yet".
   - Radius' presets, Spacing's base units and Shadow's presets all moved OUT of
-    `VariablesTable`'s `toolbar` into that cell; on a narrow window those pill rows pushed
-    search off the row),
+    `VariablesTable`'s `toolbar` on the way here; on a narrow window those pill rows
+    pushed search off the row,
   the **Docs destination** (`DocsView` — master list of Overview + the eight foundations,
   no outer rail; a foundation page is lead · Why · Usage · its live token sections · Ships
   as · prev/next), the **Components destination** (`ComponentsView` — outer category rail
@@ -1098,16 +1238,16 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   `COMPONENTS` + `SPECIMENS`/`snippetFor`, hides the right preview since it carries its own
   live specimen), `ExportView`
   (opened by Code / MD via an `initialTab`; has a "Back to editor" affordance + editable
-  project name), `FigmaSyncView`/`FigmaDownloadView` (opened by TopNav's Sync pill's
-  2-row hub — connection status/live-sync guide, or the plugin zip + install steps,
-  see the Navigation model's Sync-hub note), or `GitHubConnectView` (opened by the Export wizard's "Connect
-  GitHub" card or `SaveSidePanel`'s own button — no standalone TopNav entry point any more,
-  see the Navigation model note; a successful push also upserts the system into
+  project name), `FigmaSyncView`/`FigmaDownloadView` (opened by Workspace settings' Figma
+  row — connection status/live-sync guide, or the plugin zip + install steps,
+  see the Navigation model's Figma-control note), or `GitHubConnectView` (opened by
+  Workspace settings' repository row, Export wizard's GitHub repository destination, or
+  `SaveSidePanel`'s contextual button; a successful push also upserts the system into
   `savedSystems`).
-- **Theme = one control**: the top bar's single icon button (`ThemeToggle`) shows the
-  theme you'd switch TO — a **moon while light**, a **sun while dark**. It calls
-  `changePreviewTheme`, so the previewed theme and the app chrome flip together. There is
-  no segmented sun|moon pill any more. `previewTheme`'s `useState` in `Configurator.tsx` is
+- **Theme lives in Workspace settings**: an explicit Light/Dark segmented control calls
+  `changePreviewTheme`, so the previewed theme and app chrome flip together. The old
+  standalone `ThemeToggle` is no longer mounted in the header. `previewTheme`'s
+  `useState` in `Configurator.tsx` is
   **initialized from the persisted chrome theme** (`getTheme()`, `sd-theme`), not hardcoded
   to `'light'` — `previewTheme` itself still isn't persisted, but the chrome class is, so a
   reload while dark chrome was active used to start every previewTheme-driven surface
@@ -1633,6 +1773,385 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   has no theming scope at all (it drops semantics' dark modes too), so adding one for
 >   shadows alone would be inconsistent rather than complete. Fix it when SCSS grows themes.
 
+> **`ThemePreviewHub`'s views are Artefacts · Components · Documentation — THREE, and
+> the header they switch from carries nothing else.**
+> - **`Code` was removed** (the `HubView` member, its `HUB_VIEWS`/`HUB_ICON_SOURCES`
+>   entries, the `ThemeCodeFormat` render branch and its import). The workspace's own tab
+>   strip already carries **Code Format** one row up, so the icon was a second door to the
+>   same screen — and the two doors weren't even equivalent, which is the part worth
+>   knowing: the tab renders the WHOLE system, the icon rendered `scopeToTheme`. That
+>   narrowing is now unreachable from the UI. `ThemeCodeFormat`'s `previewTheme` /
+>   `scopeToTheme` / `showBreadcrumb` props are KEPT — optional, defaulted to the
+>   whole-system behaviour, and the only implementation of per-theme CSS/Markdown there
+>   is (same "keep the reusable optional prop whose one caller went away" call as
+>   `ColorPrimitives.focusFamilyKey`). Don't re-add the icon; if theme-scoped code is
+>   wanted back, it belongs on the **Code Format tab** as a scope control, not as a
+>   fourth view.
+> - **The theme's identity (name + Export) and the Light/Dark preview toggle are NOT in
+>   `ThemeContextBar` any more** — it holds only the view switcher, right-aligned. Both
+>   moved into `ThemeQuickSettingsRail` (see its own note below).
+> - **`ViewIcon` paints the glyph as a CSS MASK with `currentColor`, never an `<img>`
+>   under an `invert` filter.** The filter only worked while all four source files shipped
+>   the same near-white fill: `components.svg` ships `fill="white"` and `theme.svg`/
+>   `doc.svg` ship `#EDEEF0`, so a new icon dropped into that folder inverted to a
+>   different ink than its neighbours, and NEITHER state could follow the button's own
+>   colour. Masking makes active (`text-black` on the white pill) and inactive
+>   (`text-fg opacity-55`) derive from one place — measured in both chromes: active
+>   `rgb(0,0,0)` on `rgb(255,255,255)`, inactive `rgb(24,24,27)` light / `rgb(243,243,243)`
+>   dark. Same fix, same reason, as `FoundationIconRail`'s active glyph. **A new icon in
+>   `public/icons/theme-hub-icons/Icon/` therefore needs no particular fill** — the mask
+>   uses only its alpha.
+>
+> **The "Variables" view was DELETED, not hidden.** It rendered the semantic / type /
+> layout role previews (`SEMANTIC_SPECIMENS`, `TypeRolesPreview`, `LayoutRolesPreview`,
+> `GridPreview`, `ShadowPreview`, `IconSpecimenPreview`) behind a 9-row foundation rail —
+> the same tokens the **Primitives** workspace tab already edits at full width with its own
+> collections rail, table and Token Details modal, one tab away. Two surfaces, one job.
+> `VariablesView` and `SemanticPreviewTokenModal` went with it (~140 lines), along with
+> `ThemePreviewHub`'s `onEditTypeRole` / `onEditLayoutRole` / `onEditColorToken` props —
+> that last one was already dead (typed, never destructured).
+> - **Nothing was lost**: `TokenDetailsModal`'s alpha-family picker still has its other,
+>   fully reachable caller (`Step3_SemanticTokens`'s `ArchModeEditor`), which is the note
+>   under "THE ALPHA LAYER" saying *both* call sites use `[...PICKABLE_FAMILIES,
+>   ...ALPHA_FAMILIES]` — one of the two is now the only one.
+> - **`ComponentVariantsView` took the slot, because a theme hub was missing what the
+>   tokens BUILD.** It is a TASTER and must stay one — the Components destination has the
+>   rail, the search, the per-component article, the API reference and the width. Three
+>   rules keep it from becoming a second browser:
+>   - **Variants are READ from `COMPONENTS`, never listed here** — the same rule `Live`
+>     follows for its State axis, so a plugin change can't leave a row advertising a
+>     variant the system doesn't ship. `SHOWCASE` declares only `{ key, axis }` (+ a `base`
+>     of axis values held fixed) and the values come from the catalogue.
+>   - **Capped at `SHOWCASE_LIMIT` (4) per row, and the row SAYS so** ("+2 more"). A row
+>     that truncated quietly would misreport the system's size.
+>   - **Every row title opens that component's article; the header CTA opens the
+>     destination** (`onOpenComponent` → `selectComponent`, `onOpenComponents` →
+>     `changeTab('components')`). Verified: the Badge row lands on the Badge article with
+>     the rail on Indicators — `selectComponent` alone is enough, `ComponentsView` reads
+>     `active ?? COMPONENTS[0]` and the rail derives its category from it.
+> - **ONE column, not a two-column grid.** A specimen owns its own width (Input 260px,
+>   InlineAlert 320) so four of them never fit a half-column: they stacked into a ~550px
+>   tower and, on the grid's default `stretch`, dragged the short section beside it to the
+>   same height — measured, Button was 548px tall for ~120px of content. Full width lays
+>   the same four out on one line.
+> - **`ComponentShowcaseRail` is a SIBLING of `ThemeContextBar`, not a child of the
+>   view** — that is the whole reason its header band lands on the Theme / Export row
+>   instead of one row below it (verified: both 124 → 178). Every other view renders no
+>   rail there, so their context bar still spans the full width, unchanged. It reuses
+>   `COLOR_RAIL_WIDTH` / `COLOR_RAIL_COLLAPSED_WIDTH` (240 / 56) and collapses to
+>   `SemanticGroupRail`'s two-letter marks with the full name in `title`.
+>   **Its rows are derived** — `'All'` plus one per `SHOWCASE` entry, labelled from
+>   `COMPONENTS`, so a renamed component renames its own filter.
+>   **RENAMED to `HubRail` and now shared with System doc** — see the note below.
+> - **`RailToggle` took a `noun`/`expandedHint`** (defaulting to the Variables wording
+>   every prior call site relies on) because "Collapse the variable list" is a lie next to
+>   a component filter.
+> - **The tab needed a glyph that didn't exist** — `public/icons/theme-hub-icons/Icon/`
+>   held only theme/variables/doc/code. `components.svg` was authored to match them
+>   (16×16, `fill="none"`, literal black strokes) so it behaves identically under
+>   `ViewIcon`'s `invert` classes. `variables.svg` is now unreferenced but kept.
+>   **SUPERSEDED — `ViewIcon` no longer uses `invert`.** A designer supplied a new
+>   `components.svg` that ships `fill="white"` (not `#EDEEF0` like its neighbours), and
+>   under an `invert` filter a differently-filled source inverts to a different ink —
+>   plus the filter can't make either state follow the button's own colour. `ViewIcon`
+>   paints the glyph as a CSS mask with `currentColor` now (active `text-black` on the
+>   white pill, inactive `text-fg opacity-55`), so a new icon dropped into that folder
+>   needs no particular fill — only its alpha is read. Same fix, same reason, as
+>   `FoundationIconRail`'s active glyph.
+
+> **ONE left column across the whole Themes workspace: `COLOR_RAIL_WIDTH` (240 / 56
+> collapsed), one component (`HubRail`), one collapse preference.** It's the same slot in
+> every view, one click apart, and it had three widths and three structures:
+> `ThemeQuickSettingsRail` 296 with no collapse, `ComponentShowcaseRail` 240 with a
+> `h-[54px]` band + `RailToggle`, `HubNavigationRail` (System doc) 198 with a `py-4`
+> caption and no collapse at all. Switching views made the column visibly jump.
+> - **240 is the one that had a REASON to be its size** — the shell derives TopNav's brand
+>   block from `COLOR_RAIL_WIDTH` so the divider runs unbroken from the very top (see its
+>   note in `colorControls`). So the other two adopt it rather than a fourth number being
+>   invented; `QUICK_SETTINGS_WIDTH` is now literally `= COLOR_RAIL_WIDTH`, not a copy.
+> - **`HubNavigationRail` was DELETED and merged into `HubRail`**, which both the component
+>   showcase and the System doc list render. Same reason `RailGroupNav` and `RailSelect`
+>   were extracted: two copies of one control drift, and this pair already had. Its
+>   `title` / `ariaLabel` / `noun` are props; `noun` feeds `RailToggle`'s label.
+> - **The collapse preference is ONE piece of state for the hub** (`railCollapsed`), not
+>   one per view — collapsing on Components and finding it expanded on System doc reads as
+>   two different columns, which is the confusion the merge exists to remove. Verified:
+>   collapse on Docs → 56, switch to Components → still 56, expand → 240, back to Docs →
+>   240.
+> - **The System doc's open page is LIFTED** (`docPage` in the hub) rather than local to
+>   `DocumentationView`, which unmounted on every view switch and reset to Overview. Same
+>   rule `docFoundationKey` already follows for the Docs destination. Verified: Docs →
+>   Shadow → Components → Docs → still Shadow.
+> - **The quick-settings rail's identity band lost its "Theme" caption** when it narrowed.
+>   At 240 the band is 203px wide and the word cost ~39px of it — taking the space from the
+>   NAME, which clipped to "Ligt" (measured: input 31px, needed 40). The pencil beside an
+>   editable field already says "rename"; `title`/`aria-label` carry the word for hover and
+>   screen readers. Labels are identifiers, not tutorials (`.impeccable.md`). After: 77px,
+>   unclipped.
+
+> **CASING: a navigable row prints its label VERBATIM; `uppercase` belongs to the eyebrow
+> CAPTION over a group, never to a name.** Reported as "veo muchas inconsistencias entre
+> todo uppercase". Audited all 151 `uppercase` usages; the rule that came out of it:
+> - **Eyebrow / caption / step label → uppercase, and that's the house device.** The
+>   `text-[9–11px] font-semibold uppercase tracking-widest text-fg-faint` pattern is a
+>   deliberate typographic treatment for something that LABELS A SET — a data-table column
+>   head (`PRIMITIVE COLLECTION`), a step readout (`XS SM MD LG XL`,
+>   `PURE SUBTLE TINTED VIVID`), the "GROUPS"/"COLLECTIONS" section captions, a badge
+>   (`Code`). All correct, all left alone.
+> - **A row you can click, that names a thing → verbatim.** Violations found, all the same
+>   copied `uppercase tracking-widest` treatment on a NAVIGABLE row:
+>   - `ComponentShowcaseRail`'s rows and `VariableCollectionRail`'s collections
+>     (`text-[10.5px] font-semibold uppercase tracking-[0.12em]`). The catalogue says
+>     "Status Badge" and the rail said "STATUS BADGE"; the collections are named "Color
+>     primitives" and the rail said "COLOR PRIMITIVES". Both now `text-[12px]`, no
+>     transform, matching what the System doc list always did.
+>   - **`ColorPrimitives`' Primitives nav — the theme-folder header AND the
+>     Accents/Neutrals/States group headers** (`text-[10px] font-semibold uppercase
+>     tracking-widest`). These are collapsible, clickable, theme-previewing rows that NAME
+>     a folder — "ACCENTS" is a folder called "Accents", not a caption. Folder header now
+>     `text-[12px]`, group headers `text-[11px]`, both `font-semibold`, no transform. (The
+>     56px collapsed rail iterates families, not folder labels — untouched. Its 2-letter
+>     compact marks keep uppercase; an abbreviation is not the name.)
+> - **The "System colors" wrapper folder is GONE from the Themes-workspace Primitives
+>   nav.** When `managedThemesExternally`, `visibleNavFolders` returned a single
+>   `fixedFolder` whose header was already non-interactive — `onClick` undefined,
+>   `tabIndex={-1}`, no chevron, only ever one of them — i.e. a nesting level with no
+>   information, the exact `hideHeader` case the Custom group already handled. Its
+>   Accents / Neutrals / States groups now render directly under the section's own "Groups"
+>   heading (and lose the `pl-2` indent that only made sense under a parent row). The
+>   non-managed path (real theme folders "Theme 1" / "Sky" / "Custom", which ARE
+>   interactive) is unchanged apart from the casing.
+> - **The DATA was already right, once more.** Every folder/group label is sentence case in
+>   the constants (`FAMILY_GROUPS = ['Accents', 'Neutrals', …]`, `label: 'System colors'`)
+>   — the CSS was the only thing shouting.
+> - **ONE folder glyph for the Color rail: `FolderIcon`, exported from
+>   `VariableCollectionRail`, sourced from `public/icons/settings/folder.svg`.** The
+>   Collections rows and `ColorPrimitives`' theme-folder + group headers each hand-rolled
+>   their own `<path>` before (three different ones). It renders as a **CSS mask painted
+>   with `currentColor`**, not an `<img>` — the asset ships a hardcoded `stroke="white"`,
+>   so a bare `<img>` is invisible in light chrome and can't track the row's
+>   active/hover/previewed ink. The mask reads only the file's alpha (a stroked path → a
+>   thin outline), so one asset covers every state and both themes. Same technique as
+>   `ViewIcon` / `EditThemeIcon`. `size` prop, default 12 (group headers pass 11). If the
+>   asset is ever re-drawn with a `fill`, the mask still works — it's alpha-only.
+> - **The DATA was already right.** Every nav label in the store/constants is sentence case
+>   ("Color primitives", "Shadow styles", "System reference") — only the CSS was mangling
+>   them, which is why the fix is two class strings and not a data migration.
+> - **Sentence case, not Title Case, for nav labels.** Four Title-Case holdouts were the
+>   only ones out of step and are now sentence case: `Border Radius` → `Border radius`,
+>   `Icon Library` → `Icon library` (both in `FOUNDATIONS` + `FOUNDATION_DOCS` + their
+>   `title`/`variablesLabel`), and `THEME_WORKSPACE_TABS`' `Theme Preview` → `Theme
+>   preview` / `Code Format` → `Code format`. That last pair also settles a disagreement
+>   the UI had with itself: `HubBreadcrumb` has always printed "Theme preview". The eight
+>   `variablesLabel`s went `'X Variables'` → `'X variables'` with them. **Component names
+>   are NOT touched** — "Status Badge", "Inline Alert" are catalogue display names mirrored
+>   from the plugin (the source of truth), not prose.
+
+> **The Component Variants specimens rendered `transparent` for every accent- and
+> status-backed role when you landed on the Theme Preview hub before ever opening the
+> Color editor — `useEnsureColorScales()` is now mounted at the `Configurator` shell.**
+> `makeDesignDefaults()` ships `primaryScale`/`errorScale`/`warningScale`/`successScale`/
+> `infoScale` as `{}` — the ramps are DERIVED, and a persisted store carries that empty
+> shape too. `useEnsureColorScales()` (a `[]`-deps effect that backfills any empty ramp
+> from its base hex) was mounted ONLY on the Color-editing surfaces — `ColorPrimitives`,
+> `Step3_SemanticTokens`, `QuickFoundationsPanel`. The Themes → **Theme Preview** hub
+> mounts none of those, so on a store with empty ramps every `{accent.9}` / `{error.11}`
+> ref in the Categorical projection resolved through `scaleLookup` → `refToView`'s
+> `?? 'transparent'` fallback, and `ComponentVariantsView`'s Button/Badge/StatusBadge/
+> InlineAlert/Toast specimens painted invisible (Solid button = near-white ink on a
+> transparent fill on a near-white card). Only the neutral-backed roles (`surface.page`,
+> `content.primary`) survived, because `grayLightScale`/`grayDarkScale` are the one pair
+> that ships populated. **Hoisted to the shell**, next to `useRegenerateScalesOnScaleSettings()`,
+> for the exact reason that hook's own note gives — it can't be orphaned by which surface
+> the user opens first. The three local call sites are left in place (identical, `[]`-deps,
+> each guards on `!Object.keys(x).length`, so once the shell backfills they're no-ops).
+> Verified in dark chrome + light-theme preview: Solid button `rgb(149,34,233)`, Badge
+> Success `rgb(0,137,46)/11%`, Warning `rgb(237,110,0)/11%` — all live.
+
+> **Theme Preview's left rail is QUICK SETTINGS, not an artefact filter — and the bottom
+> quick-edit dock is retired.** That column used to hold Overview/Forms/Cards/Others (a
+> filter narrowing five cards) while the actual controls sat in a 4-column dock pinned
+> under the canvas. Both are gone: `ThemeQuickSettingsRail.tsx` puts the controls beside
+> the artefacts they repaint, and the grid always shows every screen.
+> `ThemeQuickEditDock.tsx` was DELETED, not kept for reference — every one of its four
+> controls has an equivalent row in the rail — but two things were ported verbatim and
+> must not be lost:
+> - **`commit()` snapshots before every write**, so each edit carries a 9s Undo. The
+>   `<aside>` is `flex flex-col`: one `flex-1 min-h-0 overflow-y-auto` scroll region holds
+>   the rows, and the Undo bar is a `flex-shrink-0` footer pinned at the bottom (same
+>   scroll-body + fixed-footer shape as `KitsPopover`). It was `sticky bottom-0 mt-4`
+>   inside the scroll div, which only sticks once the content overflows — on a short rail
+>   it just sat after the rows with a `mt-4` gap under it.
+> - **`applyAccentScoped` FORKS a shared family.** When more than one theme reads the same
+>   accent family, quick edit mints a per-theme `customColors` entry and re-points
+>   `themeSources` instead of mutating the shared source — otherwise editing the theme
+>   you're previewing silently repaints every other theme pointing at that primitive. (Only
+>   Accent needs this now — Base is a tint dial, not a colour edit.)
+>
+> **The rail also owns the theme's IDENTITY and the preview APPEARANCE — both moved out
+> of `ThemeContextBar`.** The header was a row of three unrelated things (which theme this
+> is · which appearance you're looking at · which view you're on); the first two describe
+> the same thing the rail's sliders edit, so they sit with them.
+> - **`ThemeIdentityBand` (name input + Export) is a PINNED `h-[54px]` band**, not the
+>   first row of the scroll region — renaming the theme on screen shouldn't mean scrolling
+>   a column of sliders back up. 54px because it lands on the view-switcher's own row:
+>   verified both at `top: 124, height: 54`.
+> - **That alignment only holds because the rail is a SIBLING of `ThemeContextBar`, not a
+>   child of `ArtefactsView`** — exactly the reason `ComponentShowcaseRail` is a sibling
+>   too. `ThemePreviewHub` renders it on `view === 'artefacts'`; `ArtefactsView` itself is
+>   now just the grid. **`key={previewTheme}` is load-bearing**: the name input holds a
+>   draft in local state, so switching theme has to remount it or the draft outlives the
+>   theme it was typed for (the old `ThemeContextBar` carried the same key for the same
+>   reason).
+> - **The Light/Dark control sits UNDER the two colour rows, and carries no label.** It
+>   re-reads each family's light ramp or its dark twin, which is what those two rows
+>   define — in the header it read as a claim about the whole workspace. "Light | Dark"
+>   names itself; an "Appearance" caption over it is the identifier-vs-tutorial mistake
+>   this file's design principles already warn off.
+> - **Consequence, accepted deliberately: appearance and rename exist on ARTEFACTS ONLY.**
+>   Components has its showcase rail and Documentation has its docs rail, so there's no
+>   column for quick settings there — switch back to Artefacts to flip the appearance. If
+>   that becomes a real friction, the fix is a rail on those views, not a second copy of
+>   the toggle in the header.
+>
+> **The ACCENT row is an OKLCH hue slider; the BASE row is a TINT slider — different axes,
+> on purpose.** Accent picks the brand hue. Base does NOT pick the neutral's hue — the
+> system already derives that (from the accent when `linkNeutralToAccent`, else the
+> default) — what the designer chooses here is how much of that hue survives, from a
+> near-pure grey to a clearly coloured neutral. That axis IS `neutralTint`
+> (Pure · Subtle · Tinted · Vivid), so `TintSlider` (`ThemeQuickSettingsRail.tsx`) is a
+> **snapping 4-stop `<input type=range>`** — the range feel without a free 0–1 value the
+> ramp math could land on a tint nobody chose (see "Discrete levels, not a slider" under
+> the Base-drives-the-page note). On change it mirrors `ColorPrimitives`' scale-settings
+> `onTint`: `setNeutralTint(t)` then `applyGrayColor(linked ? neutralFromBrand(primary, t)
+> : grayBaseColor, previewTheme, /*fromLink*/ true)` — linked, the hue tracks the accent
+> and only its saturation moves; unlinked, the user's own base hex is re-derived so the
+> page and the ramp's chroma-continuity pick up the new level. Verified end to end: VIVID
+> unlinked took page `#fcfefd → #f0f8f3` and `grayLight[2] #fafbfa → #eef6f1` with
+> `grayBaseColor` untouched; TINTED linked snapped `grayBaseColor #d1dcd5 → #887563`
+> (accent hue, `tinted` brandSat) and kept the link. The track paints the four levels via
+> `neutralFromBrand(neutral, level)` so the grey→tinted range is visible, and the trailing
+> swatch is `neutralFromBrand(neutral, currentLevel)` — a LIVE sample of the track at the
+> thumb, not the raw base hex (whose lightness the track normalises away). Both read from
+> the resolved `neutral`, never the accent: painting the track from `primaryColor` when
+> linked left the swatch green while the track went pink after an accent move — the two
+> must never disagree.
+>
+> **The RADIUS row is a scrub card too, not a dropdown** (`RadiusCard`). The named presets
+> (Sharp/Soft/Rounded/Pill) are just points on ONE axis — `scaleRadiusFromLg` grades the
+> whole ramp from `lg` (xs=lg/6 … xl=4lg/3), and Rounded's ramp is exactly `lg=24`. So it
+> matches Sizes' `BaseUnitCard` shape: five `h-6 w-6` roundness-preview squares
+> (`flex-shrink-0`, radius capped at 12 so the squares stay square), the live `lg` px, the
+> matched preset name or "Custom" (`flex-shrink-0`, `tracking-wide` not `tracking-widest`
+> — "Rounded" clipped the card edge at the wider tracking with 28px squares), the xs–xl
+> readout, and a `0–40` slider driving
+> `scaleRadiusFromLg(lg, radius)` — same ceiling and same grader `StepRadius`'s own
+> roundness slider already uses. Rounded and Soft land exactly on their presets; Sharp and
+> Pill (hand-tuned ramps that don't fit the grading formula) read "Custom", identical to
+> the Advanced screen. `none`/`full` stay pinned at 0/9999.
+>
+> **The TEXT SIZE row is the same idea for type** (`TypeScaleCard`, between Font family and
+> Radius). `TYPE_SCALE_MODES` (`typographyStandard.ts`) — five density steps Compact ·
+> Cozy · Default · Comfortable · Spacious, factors 0.875/0.9375/1/1.0625/1.125 (eighths,
+> so they round cleanly against the standard's integer steps and no two adjacent `text-*`
+> sizes collapse to a 1px gap). Dragging calls `buildTypeScale(factor)` → regenerates
+> EVERY `text-*`/`display-*` size AND its line-height at the same factor, so the
+> standard's size→leading ratio (the vertical rhythm) survives the resize;
+> `setTypography({ …, sizes, lineHeights })` in one write. `Default` (factor 1 × an
+> integer scale) is `FONT_SIZE_STANDARD`/`LINE_HEIGHT_STANDARD` verbatim — a no-op, so
+> existing systems infer as `default` and nothing regenerates. `inferTypeScaleMode(sizes)`
+> is the `matchRadiusPreset` analogue: matches a mode or returns null → the card reads
+> "Custom" (a size hand-edited in Advanced type), and the slider still snaps back onto a
+> curated scale. Covered by `typeRoles.test.ts`.
+>
+> **The Accent row and the SpectrumSlider hold RELATIVE position, never absolute L and C.**
+> Holding L+C absolute is the obvious implementation and it is wrong twice over. Both
+> failures were measured on the shipped accent (`#9522e9`, L .547 C .265 H 304), and the
+> first one shipped before it was caught:
+> - **It RATCHETS.** sRGB's chroma ceiling is hue-dependent, so the first sweep through a
+>   narrow hue clamps the chroma and every later hue inherits the clamp. A
+>   304° → 200° → 120° → 60° → 304° sweep left the accent at **C .094 where that hue allows
+>   .249** — `#87639a`, a dull mauve, with no way to drag back out of it. Reported as "los
+>   colores son muy opacos"; it was a one-way slide into mud, not a taste question.
+> - **It reads as MUD.** At a fixed L = .48 the ceiling swings **.082 (cyan) to .256
+>   (magenta), 3.1×**. A hue strip drawn at one lightness is only as vivid as its dullest
+>   hue, which is why the track looked nothing like a spectrum.
+>
+> `readHuePosition` / `colorAtHue` (`colorUtils.ts`) carry what the colour MEANS relative
+> to its own hue instead: `saturation` (fraction of the gamut wall) and `lightness`
+> (position relative to the hue's CUSP, 0.5 = exactly on it). Both are hue-independent, so
+> the round trip is lossless and a vivid colour stays vivid at every angle. Verified with
+> real pointer gestures: 200° → 120° → 60° → 0° → 260° → 304° yields
+> `#39e4ed · #cced37 · #ea8926 · #e8257f · #1568e7` and lands back on `#9422e8`.
+> - **`maxChromaSrgb` is a STRICT bisection on `inSrgbGamut`, not `gamutMapSrgb`.** That
+>   one may overshoot by up to a JND (it optimises perceptual closeness to an out-of-gamut
+>   input), which is right for MAPPING a colour and wrong as a denominator. Using it gave
+>   ceilings ~4% high and made two tests assert numbers the shipped function can't return.
+> - **`srgbCusp` is cached per whole degree** — ~190 bisections per hue, asked once per
+>   gradient stop per render.
+> - **The TRACK is a hue AXIS, drawn at a fixed high saturation; the THUMB and the emitted
+>   value use the colour's OWN.** An early build floored both, and a near-grey seed
+>   rendered its thumb as a saturated slate — the control overstating what you had. The
+>   track has to stay vivid regardless (a track at a near-grey's 4% saturation is a smear
+>   you cannot aim with); the thumb has to stay honest. (This applied to the Base row when
+>   it was a hue slider — it's a `TintSlider` now, but the rule stands for any future
+>   near-grey seed on `SpectrumSlider`.)
+> - **The position is FROZEN at pointerdown** and rides in state beside the hue. Re-reading
+>   it from `value` mid-drag is what made the ratchet compound within a single gesture.
+>
+> Ramp generation is untouched: this only picks the ANCHOR hex that `generateColorScale`
+> writes to tone 9, and the Radix model is unchanged.
+>
+> **On `oklch()` in the EXPORT — deliberately NOT adopted.** The maths is already OKLCH end
+> to end (`buildScale` works in OKLCH; every emitted hex goes through `oklchToHex`'s CSS
+> Color 4 gamut mapping, not per-channel clipping; steps 11–12 are contrast-SEARCHED in
+> OKLCH lightness). `oklchToCss` exists in `color/gamut.ts` and is called by nothing — the
+> only dead end is the OUTPUT format, and it should stay dead: emitting `oklch()` breaks the
+> Figma plugin (`primitiveRefHex`/`hexToRgba` parse hex; Figma variables are RGB), forces a
+> `TOKEN_SCHEMA_VERSION` bump, and buys consumers nothing, since the values are already
+> gamut-mapped and 8-bit exact. The OKLCH win is on the INPUT surface, which is free.
+
+> **Sizes scale from a BASE UNIT, and the multipliers were verified against the shipped
+> ramp before anything was built.** `SIZE_STANDARD` (24/32/40/48/56/64) IS `4 ×
+> 6/8/10/12/14/16`, so `buildSizesFromBase(SIZE_DEFAULT_BASE)` reproduces it byte for byte
+> — that identity is what makes the slider safe to add to an existing system, and
+> `layoutTokens.test.ts` asserts it. Same generator shape as Spacing's own
+> `buildSpacingFromBase`. Rules:
+> - **The base is INFERRED, never stored** (`inferSizeBase` / `inferSelectorBase`). A stored
+>   base can silently disagree with the ramp beside it; an inferred one cannot. A
+>   hand-edited ramp infers `null`, which the UI shows as "Custom" — the same call
+>   `matchRadiusPreset` → `RailSelect`'s `fallbackLabel` already makes. This is also why
+>   store v62 adds only `selector`/`selectorRoles`, not two base fields.
+> - **`selector` defaults to base 3 (12/15/18/21/24), NOT the 4 the sizing spec proposed.**
+>   15 and 18 are exactly what `CheckboxSpecimen`/`RadioSpecimen` hardcoded before the ramp
+>   existed, so the migration is a visual no-op; base 4 would have silently grown every
+>   checkbox in every saved system from 18 → 24px. Same discipline as v46's `subtle` tint.
+> - **WCAG 2.2 target size is met by a transparent HIT AREA, never by growing the glyph.**
+>   `HitArea` in `specimens.tsx` wraps the box at `sizeRoleOf(t, 'hit')` (24px) and `hitGap`
+>   pulls the label back by the overhang, so the target grows without the optical gap
+>   changing. Reuses the existing `hit` role rather than inventing a constant.
+> - **Border width drives `stroke.sm` and ONLY `stroke.sm`.** That's the step both
+>   `stroke-divider` and `stroke-control` alias, which is what "all components" means.
+>   `stroke.md` backs `stroke-focus` and WCAG 2.4.13 puts a 2px floor under a focus
+>   indicator — a global multiplier would drag the ring under it at the low end. Verified
+>   live: setting the slider to 2px moved `stroke.sm` 1→2 and left `stroke.md` at 2.
+> - **Sub-pixel hairlines are floored to 1px below 2dppx, in BOTH renderers.**
+>   `hairlineSafe(value, dpr)` (pure — `dpr` is passed in) is applied by
+>   `resolvePreviewTokens` for the preview and mirrored by a `@media (max-resolution:
+>   1.99dppx)` override in `buildCSS`. On a 1x display a 0.5px border rounds into an
+>   artefact; keep the two paths in step or the preview lies about the export.
+> - **`selector` is a full `LayoutFamily`** (roles, `--selector-*` vars, W3C, Markdown,
+>   tokens.json, agent context all come free through the generic machinery) but it surfaces
+>   as a second COLLECTION of the Sizes foundation, not a ninth rail icon — the pattern
+>   Spacing already proves. In `sectionExport` it rides on the `sizes` section via
+>   `SimpleSpec.extra`, so `ALL_SECTIONS` and the Export wizard's checkboxes are unchanged.
+>   In the W3C tree it nests under the `size` root as `size.selector.*`, the same shape
+>   breakpoints already take under `grid`.
+> - **Deliberately deferred**, and each needs its own token model first: a "Theme recipe"
+>   preset, a "Radius Form" axis, and Depth/Noise effect toggles. A control that edits
+>   nothing is worse than a missing one. `selector` roles also have no editor yet
+>   (`LayoutSemantics` is only ever handed `'size'`) — they ship with their defaults.
+
 > **Token value fields scrub like Figma's — `ui/ScrubInput.tsx`, one component, every
 > table.** Drag the double-chevron handle left/right and the number follows; Shift ×10,
 > Alt ×0.1, and ArrowUp/Down on the input do the same thing from the keyboard. Used by
@@ -1686,11 +2205,11 @@ header or a stepper.
 ```
 src/
 ├── components/
-│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), HomeActions (Kits popover only — New/Import JSON retired), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ThemePanel (THE one create/edit-theme surface, docked flush against the Color Variables column — see its note), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaSyncView + FigmaDownloadView (figmaShared.tsx), GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor and NewTokenWizard are retired (kept for reference only, see Navigation model)
+│   ├── configurator/       ← TopNav (global nav), SectionRail (Components' left category rail), FoundationIconRail (Variables' horizontal foundation switcher, replaces SectionRail there), QuickFoundationsPanel (Quick edit popover), ColorHub + ColorPrimitives (Color's three tabs — Primitives now owns the family nav + quick-edit strip too), ThemePanel (THE one create/edit-theme surface, docked flush against the Color Variables column — see its note), ComponentsView (the component catalogue: rail + master list + article) and DocsView (the token reference: master list + article, no outer rail) — two separate top-nav destinations sharing docs/'s articles and blocks, IconLibrary, ExportView, FigmaSyncView + FigmaDownloadView (figmaShared.tsx), GitHubConnectView, VariablesTable (generic filterable token table) + Step2…Step9 + StepGradients (foundation sections). WorkbenchLayout, PickerColor, NewTokenWizard and HomeActions are retired (kept for reference only, see Navigation model)
 │   ├── ui/                 ← Shared primitives (Button, Input, Badge, ColorField — the rich HSV+opacity+hex+saved picker…)
 │   └── preview/            ← PreviewPanel (sticky, category-aware), ButtonPreview + atoms/ (InputPreview, BadgePreview, TogglePreview, SignUpCardPreview, FontFamilyPreview — the Typography category's family modal + SemanticSpecimens — the five Alias/Semantics per-group specimens, architecture-aware)
 ├── store/
-│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 49)
+│   └── useDesignStore.ts   ← Single Zustand store with persist middleware (version 62)
 ├── lib/
 │   ├── colorUtils.ts          ← generateColorScale, buildScale, accessibleSolidTone, solidInkPair (chroma-js). Owns RAMP CONSTRUCTION only — the contrast formulas live in color/ and checkContrast delegates there (see Colour layer under Conventions)
 │   ├── color/                 ← the metrics layer, ZERO runtime deps and DOM-free
@@ -1777,6 +2296,7 @@ Key fields — always use the store, never local state for cross-view data:
 | `shadows` | Record<string, string> (xs–2xl CSS box-shadows) — the LIGHT ramp. The dark twin is DERIVED (`darkShadowMap`), not stored: see "Shadows ship a DARK TWIN" | Foundations · Shadow |
 | `grid` | Record<string, string> (columns/gutter/margin/container + breakpoints) | Foundations · Grid |
 | `sizes` | Record<string, string> (component heights xs–2xl) | Foundations · Sizes |
+| `selector` / `selectorRoles` | Record<string, string> — the SQUARE a checkbox/radio/switch knob is drawn in (xs–xl), + its intent aliases. A separate ramp from `sizes` because a glyph isn't a control height: 24px is `size` xs and `selector` xl | Sizes · Selectors collection, or the Theme Preview rail |
 | `selectedComponents` | string[] (defaults to **all** `COMPONENT_KEYS`) | Components |
 | `completedFoundations` | string[] (`color`/`semantic`/`typography`/`spacing`; gamified progress) | Rail ✓ |
 
@@ -1788,7 +2308,7 @@ repo, savedAt, snapshot: DesignSnapshot }`; written only by a successful GitHub 
 `makeDesignDefaults()` is the single source for initial + reset design state;
 `captureSnapshot()` deep-clones the design fields. Both exported from the store.
 
-Store uses `persist` middleware with `version: 49`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
+Store uses `persist` middleware with `version: 62`. If you add fields, bump the version and add a migrate function (append-only — never reorder existing migration blocks; to reverse an earlier block, neutralize it in place and add a NEW one, as v42 did to v38's naming force). New design fields also go into `DesignSnapshot`/`makeDesignDefaults()`; global preferences (like `autoSyncFigma`) stay top-level, out of the snapshot.
 
 > **"Linked to accent" means a gradient stop REFERENCES a primitive — not that it's frozen.**
 > `GradientStop.tone` is the accent-ramp step the stop reads; `color` is only a cache of
@@ -1861,6 +2381,62 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > existing per-family trash already unlocks. No colour data is destroyed — only the theme
 > and the semantic values mapped to it.
 
+> **The chrome accent ramp is resolved in the CHROME's appearance, never the previewed
+> theme's.** `uiAccentRamp = themeBrandRamp(previewTheme, …, theme === 'dark' ? 'dark' :
+> 'light')` — the previewed theme's brand FAMILY (`themeSources`), but its light-or-dark
+> twin picked by the workspace's own `sd-theme`, not `themeKinds[previewTheme]`. Preview
+> appearance and chrome appearance are decoupled in the Themes workspace (inspecting a
+> LIGHT theme's Light face in dark mode is normal), and every chrome derivation below
+> (`--accent-ui`, `--accent-solid`, the Layer 0 gradient, the toolbar wash) is read
+> against the CHROME page — so feeding it the light twin bled a bright splash across the
+> dark chrome and dropped the accent-fill contrast (reported: "el gradient de un theme
+> light dentro del global dark tiene fallos… genera un problema de accesibilidad al
+> leer"). `themeBrandRamp`'s `kindOverride` param does this; the preview canvas
+> (`PreviewPanel`, artefacts, specimens) still resolves in `previewAppearance`.
+>
+> **A live STYLE TRY-ON outranks the previewed theme for that ramp — the chrome has to be
+> reading the same system the canvas is.** `themeBrandRamp` resolves from the REAL store,
+> which a try-on deliberately never touches (`stylePreviewOverlay` is an overlay, nothing
+> persists), so selecting a System Style repainted the canvas and left every chip, wash and
+> accent-filled control in the workspace on the open system's accent — the traditional
+> violet beside a blue Core. Two accents on screen from one selection, the same defect
+> class the `slotOf` candidate-list note describes for specimens. `stylePreviewBrandRamp`
+> (exported from `stylePreviewOverlay`, sharing the overlay's OWN derivation — same
+> `previewHarmony` pages, same algorithm, same contrast shift, never a second simpler one)
+> supplies it while `stylePreview` is set. Same appearance rule: the CHROME's, not the
+> preview's.
+>
+> **Artefact gradients follow it too, and that needed a separate fix one level down.**
+> `previewTokens`' `gradientCssFor` passed `pal?.brand` — the theme's resolved brand ramp —
+> and `pal` is `undefined` for any theme with no `themeSources` entry, which is BOTH the
+> built-ins and every try-on (the overlay drops that entry on purpose). Falling through to
+> the stops' cached hexes there is what kept the Login artefact's Acme mark and the card
+> cover violet on a blue screen: a linked stop is a REFERENCE (`tone`), so it must resolve
+> against whichever accent ramp is actually in play. It now falls back to the STORE's own
+> brand ramp for the appearance — which, in a try-on's overlay store, IS the preset's ramp.
+> **Provably inert for the ordinary case**: `linkedStopsFor` caches exactly
+> `primaryScale[tone]` / `primaryDarkScale[tone]` into the stops, so the fallback resolves
+> to the same hexes it replaces (verified live on the built-in Light theme —
+> `#9522e9 → #472668`, byte-identical), and an UNLINKED stop has no `tone` to resolve, so a
+> hand-picked colour is never re-derived.
+>
+> **With no theme of their own, the workspace LANDS on Core / Minimalist tried on — gated
+> on `hasOwnTheme`, NOT on `firstRun`.** `ThemeLibraryRail`'s mount effect seeds that
+> try-on so the default state is a real, opinionated system with its row expanded and "Add
+> to system" one click away, rather than the bare violet default. Nothing is committed —
+> a try-on is an overlay, so Core is SHOWN, never silently added to My themes. It was
+> gated on the first-visit flag, which meant the default appeared exactly once: a reload
+> landed the same theme-less user back on the bare default, i.e. the state the seed exists
+> to avoid. Mount-only, so closing the try-on stays closed for the session; it re-seeds on
+> a rail remount (a tab round-trip) and stops for good once a theme is committed.
+>
+> **The active `FoundationIconRail` glyph tracks `--accent-ink`, via a CSS mask.** It was
+> hardcoded `brightness-0 invert` (always white), which vanished on a pale `--accent-solid`
+> (a pale accent keeps the fill pale and flips the ink to near-black — `solidInkPair`).
+> The active button now renders the icon as a `<span>` with `mask-image: url(<svg>)` +
+> `background-color: var(--accent-ink)`, so it follows whatever ink was actually solved.
+> Inactive stays a plain `<img>` (`opacity-90 dark:invert`).
+>
 > **The chrome's accent is DERIVED for contrast, exactly like the tokens it sits next to —
 > and INK and FILL are two different derivations.** Three CSS vars, all written by
 > `Configurator.tsx` and nothing else:
@@ -1926,6 +2502,76 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 >   Anything else needing "the chrome accent" reads the var or that variable, never
 >   `primaryScale[9]`.
 
+> **DARK IS THE DEFAULT, and the dark chrome was retuned around one idea: the FILL
+> separates a control, the EDGE stops shouting.** Three changes, one theme.
+>
+> **1. `getTheme()` defaults to `'dark'`.** Only an explicit stored `sd-theme: 'light'`
+> opts out, so a first visit AND a storage failure both land dark. `index.html`'s
+> pre-paint script must stay the exact inverse (`!== 'light'` → add `.dark`) or the class
+> and the app's own read disagree for a frame. Deliberately NOT `prefers-color-scheme` —
+> the app ships one default and lets the user switch, rather than letting the OS decide
+> what an editing surface looks like. Note `previewTheme` is seeded from `getTheme()`, so
+> a first load previews the dark theme too, which is the point. This REVERSED the
+> long-standing light default; `.impeccable.md` was updated with it.
+>
+> **2. The `.dark` palette was re-measured, not re-eyeballed.** Reported as "too loaded":
+> with ~227 hand-rolled `border border-line` controls, every button and input drew a
+> rectangle in a colour BRIGHTER than its own fill, on top of the column dividers that
+> already structure the screen. Measured in **OKLab ΔL** — WCAG is useless this close to
+> black, every pair lands 1.1–1.3:1 either way (the same near-black compression the shadow
+> note documents):
+>
+> | | surface/app | edge/app (divider) | edge on its own surface |
+> |---|---|---|---|
+> | before | 0.060 | 0.124 | **0.064** |
+> | after | 0.083 | 0.113 | **0.030** |
+>
+> The control outline drops to **less than half** its weight, dividers keep ~91 % of
+> theirs (they read against `--app`, not against a surface), and a control is *easier* to
+> find than before because its fill now separates more strongly than the outline used to.
+> - **No accessibility was lost, and this was CHECKED rather than assumed.** The old
+>   borders already failed WCAG 1.4.11 badly — **1.18:1** against their own surface,
+>   **1.31:1** against the page, against a 3.0 requirement. They were carrying visual
+>   weight, never boundary duty. The accessible boundary is the focus ring, which is
+>   `--accent-ui`-derived and does pass. **Don't "restore" these borders on an
+>   accessibility argument** — they never satisfied one.
+> - **Two control patterns exist and only ONE was softened.** `bg-surface border-line` (the
+>   fill separates → the edge can recede) vs `bg-app border-line-strong` (no fill
+>   difference → the edge IS the only boundary, e.g. the Search field). `--line-strong`
+>   moved only #404040 → #3a3a3f for that reason. A blanket softening would have made the
+>   second pattern invisible.
+> - `--fg-faint` #6b6b6b → **#7b7b83**: on the raised surface it measured **2.68:1**, under
+>   the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on `--surface`.
+> - Neutrals carry a slight cool tint (`#1c1c1f`, `#232326`, `#3a3a3f`) instead of pure
+>   grey. Pure `#171717`/`#262626` is the flat "default dark" look; a trace of chroma is
+>   what reads as a deliberate theme.
+>
+> **3. The Layer-0 wash is SOLVED, not read off a ramp tone — `darkChromeWash`
+> (`colorUtils.ts`).** It was `primaryDarkScale[6]`, and picking a *tone* is a
+> LIGHTNESS-driven choice, so the stop's saturation was whatever that hue's ramp happened
+> to leave there. Measured, the default accent's tone 6 (`#49266c`) sits at L 0.352
+> carrying only **63 % of the chroma available at that lightness** — mid-dark AND
+> under-saturated is brown, not brand. The reference target supplied for this
+> (`#3B0600`) sits at L 0.229 at **100 %** of the wall.
+> - The rule is **constant depth, maximum chroma at that depth**: pin L to
+>   `CHROME_WASH_L` (0.229, measured off that reference) and take `maxChromaSrgb` at that
+>   L for the accent's hue.
+> - **Hue-adaptive by construction** — the hue is the only input that varies, so every
+>   brand lands equally deep and equally vivid. Verified across 10 seeds; reproduces the
+>   reference EXACTLY for a red seed (`#3b0600`) and gives the default violet `#2a0048`.
+> - **Cannot leave sRGB**: `maxChromaSrgb` IS the gamut wall, so there's no mapping step to
+>   overshoot — it satisfies the "never emit a colour by clipping" rule by construction.
+> - The second stop stays `#0a0a0a` because that IS `--app` in dark: the wash has to
+>   resolve into the page, not onto a near-match of it.
+> - **Light chrome is deliberately NOT routed through this.** Its gradient runs
+>   pale-tint → white and has no depth problem to solve; `darkChromeWash` would be
+>   meaningless there.
+>
+> **Not changed, because it was already right:** the default radius ramp. `RADIUS_STANDARD`
+> is `RADIUS_PRESETS[2]` ("Rounded") = `xs 4 · sm 8 · md 16 · lg 24 · xl 32`, which is
+> exactly the ramp requested — verified through `makeDesignDefaults()`, not just the
+> constant.
+
 > **There is ONE "open a token, edit its value" surface in the Color hub:
 > `TokenDetailsModal` (`colorControls.tsx`).** Semantics' role rows and Primitives' tone
 > rows both open it — same shell (Token Details header + Reset · Name · copyable CSS-var
@@ -1978,6 +2624,26 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 >   `neutral-dark` are family labels; only genuine code identifiers (the Name row, the
 >   CSS-var chip, table token names) stay mono. `SystemRampGrid`'s row labels and 1–12 axis
 >   were mono and made the dialog read as two unrelated typefaces stacked.
+> - **The architecture picker in "Values" lists all 15 primitives: 7 solids THEN 8 alpha
+>   twins.** `accent-a` … `info-a` + `black-a` / `white-a` after `accent` … `info`. Shown
+>   unconditionally for every Categorical arch token — an override is a free-form ref, so
+>   any role can be pointed at a translucent primitive (16 already are: `action.ghost.*`,
+>   `surface.overlay`, `border.ring.*`, the `status.*.surface` tints) and a solid role must
+>   be switchable to alpha too. An earlier build gated the alpha rows on "is the CURRENT
+>   ref alpha", which both hid them from solid roles and left the ringed value with no row
+>   to land on. Both call sites — `Step3_SemanticTokens`'s `ArchModeEditor` and
+>   `ThemePreviewHub`'s `SemanticPreviewTokenModal` — use the same `[...PICKABLE_FAMILIES,
+>   ...ALPHA_FAMILIES]` list now. The flat `TonePicker` keeps 7 solids (flat roles are
+>   materialized per theme and don't take alpha).
+> - **`rampsOf` MUST pass `pageBackground`/`darkBackground` to `scaleLookup`** or the alpha
+>   rows render empty: `{<fam>-a.N}` is composited on demand against the page and resolves
+>   `undefined` without them (`black-a`/`white-a` are constants and always resolve). This
+>   was the actual bug — the family list alone wouldn't have helped.
+> - **`SystemRampGrid` paints alpha rows (`/-a$/`) over the shared `CHECKER` pattern** — a
+>   translucent swatch on the near-black dialog card is otherwise an empty-looking cell.
+>   Same "checker behind it → translucent" language as `AlphaHexCell` / the Accent-Alpha
+>   strip. The cell is `overflow-hidden` with the real hex on an inner `<span>` over the
+>   checker.
 
 > **The picker offers curated accessible alternatives — opt-in, family bases only.**
 > `ColorPickerPanel`'s `suggestions` prop renders an "Accessible options" block under the
@@ -2067,7 +2733,7 @@ Store uses `persist` middleware with `version: 49`. If you add fields, bump the 
 > target differs from the current `previewTheme`, so collapsing the folder you're viewing
 > just collapses. The previewed folder swaps its folder glyph for an `EyeIcon` in
 > `text-accent-ui` — display-only, the header's own click is the toggle. Because
-> `onPreviewThemeChange` is the same handler `ThemeToggle` and Semantics use, picking a
+> `onPreviewThemeChange` is the same handler Workspace settings and Semantics use, picking a
 > `dark`-kind theme here flips the app chrome too. Collapsed-rail (56px) mode is untouched
 > — it iterates GROUPS for family selection, has no folder headers.
 
@@ -2927,7 +3593,7 @@ interface ComponentDef {
 
 **Publishing flow** (`src/lib/figmaSync.ts` — the single source for POSTing tokens):
 - `syncProjectId()` = `slugify(projectName)`; `syncPath()`/`syncUrl()` build the scoped `/api/tokens?project=<id>` endpoint shown in FigmaSyncView / ExportView / HomeView.
-- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by **`FigmaSyncView`** (auto-publishes on open — reachable from TopNav's **Sync** pill → the "Sync" row of its 2-row hub, see the Navigation model note) and the auto-sync subscription. There used to be a separate manual-publish "Sync" pill here too, live-environment-only, merged into one "Plugin" pill years ago to stop two Figma glyphs rendering in the bar at once — the pill has since split back into a hub (Sync/Download), but publishing is still tied to OPENING the sync screen, never a standalone click-to-push action, and the download screen has no publish call at all.
+- `publishTokens()` POSTs `generateTokenJSON()` to the scoped endpoint and records `figmaLastPublishAt`. Used by the explicit manual request owned by **`Configurator`** (Workspace settings' **Sync now** or `FigmaSyncView`'s **Sync now** button) and the auto-sync subscription. Opening details alone never publishes; the download screen has no publish call at all.
 - `useAutoFigmaSync()` (mounted in `Configurator.tsx`): while `autoSyncFigma` is on, debounce-republishes ~1.5s after edits stop. The change signal is the JSON of `generateTokenJSON()`, so the `figmaLastPublishAt` write can't loop. Toggle lives in `FigmaSyncView`.
 
 ---
@@ -2954,7 +3620,12 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 2. **Tokens first** — all visual choices (colors, radius, spacing) come from the store. Never hardcode design values in components. Live previews resolve tokens via `usePreviewTokens()`.
 3. **Workspace, not wizard** — the shell (top nav · controls · canvas) has no linear step counter, progress bar, or Continue/Back nav between sections (see Navigation model).
 4. **Accessibility** — all interactive elements need keyboard support and ARIA. The component docs we generate should model this.
-5. **Light & dark** — both themes are supported; **light is the default**. Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the **preview panel header**, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills; the user's token colors/previews are theme-independent (atoms render on `tokens.surface`).
+5. **Light & dark** — both themes are supported; **dark is the default** (see the dark-chrome note below — this REVERSED an earlier light default). Use the semantic color utilities (`bg-app`/`bg-surface`/`bg-elevated`, `text-fg`/`text-fg-muted`/`text-fg-faint`, `border-line`/`border-line-strong`) defined in `src/index.css` — NOT raw `neutral-*`. Dark mode = the `.dark` class on `<html>` (toggled in the **preview panel header**, persisted as `localStorage['sd-theme']`, applied pre-paint by the inline script in `index.html`). Keep `text-white` only on colored/accent fills; the user's token colors/previews are theme-independent (atoms render on `tokens.surface`).
+
+   > **The chrome has its OWN status + type tokens now — use them, don't reach for raw Tailwind palette classes or `text-[Npx]` literals.**
+   > - **Status:** `--status-{danger,success,warning,info}` (the INK — text/icon on the page, at any opacity for soft tints) and `--status-{…}-solid` (the FILL — buttons, dots, paired with `text-white`). Both flip with `.dark` / `.light` (registered via `@property`, values = the Tailwind shades the code used before — `-600`/`-400` for ink, `-500` for solid). So `text-status-danger` replaces `text-red-600 dark:text-red-400`, `bg-status-success-solid` replaces `bg-emerald-500`, `bg-status-warning/10` replaces `bg-amber-500/10`. A `dark:` variant on a status class is a smell — the token already switches. The one gap: an **inverted** surface (`bg-fg` toast, `background-overlay` chip) wants the opposite chrome's status value and there's no token for that — decorative status glyphs there are close enough, don't invent one.
+   > - **Type scale:** `text-nano`(8) · `text-micro`(9) · `text-mini`(10) · `text-caption`(11) · `text-body`(12) · `text-ui`(13) · `text-strong`(14) · `text-title`(17) · `text-heading`(20) · `text-display`(26) — `@theme` in `index.css`, fixed px (they don't scale with the root media query, matching the `text-[Npx]` behaviour they replaced), font-size only (leading is inherited). Roles, not a t-shirt ramp, so no collision with Tailwind's `text-xs/sm/base…` (still ~220 uses in older code, un-migrated — leave them unless you're already reworking that file, since changing them IS a visual change: `text-xs` = 13.5px at this 18px root). **Type SPECIMENS** (a `style={{fontFamily}}` element rendering a chosen px) keep their `text-[Npx]` — that px is the spec, not chrome.
+   > - Retired files (`NewTokenWizard`, `WorkbenchLayout`, `PickerColor`, `HomeView`) still carry the old raw classes — that's fine, they're unwired.
 
 ---
 
@@ -2964,7 +3635,7 @@ Build with `npm run build` (esbuild). Load in Figma via manifest.json.
 - Step files: `StepN_Name.tsx` where N is the step number (foundation sections, rendered as-is in the center pane)
 - Preview atoms: `components/preview/atoms/*Preview.tsx`, each takes `tokens: PreviewTokens` and styles inline from tokens
 - Store actions: `set` prefix (`setProjectName`, `setTypography`, `setIconLibrary`)
-- CSS: Tailwind utility classes for chrome (use the semantic theme utilities — `bg-app`, `bg-surface`, `text-fg`, `border-line`… — never raw `neutral-*`). Preview atoms are the deliberate exception: they use inline `style` from resolved tokens.
+- CSS: Tailwind utility classes for chrome (use the semantic theme utilities — `bg-app`, `bg-surface`, `text-fg`, `border-line`, `text-status-danger`, `bg-status-success-solid`… — never raw `neutral-*` / `red-*` / `emerald-*`; type via the `text-caption`/`text-body`/`text-ui`… roles, not `text-[Npx]`). Preview atoms + type specimens are the deliberate exceptions: they use inline `style` / literal px from resolved tokens.
 - Animations: Framer Motion (`motion.div`, `AnimatePresence`) for transitions between states
 - No `console.log` in production code
 - TypeScript strict mode — no `any` unless absolutely necessary
@@ -3073,7 +3744,7 @@ npm run bundle:plugin  # → public/escala-figma-plugin.zip + src/lib/pluginVers
 ## What's next (backlog)
 
 - [x] Components: live component previews rendered with user tokens (starter set: buttons, input, badge, toggle, sign-up card — extend `preview/atoms/` with more)
-- [x] Export: "Bring to Figma" — downloadable plugin zip + guided install (`FigmaDownloadView`) + auto-publish to `/api/tokens` on open (`FigmaSyncView`), split via TopNav's Sync hub
+- [x] Export: "Bring to Figma" — downloadable plugin zip + guided install (`FigmaDownloadView`) + explicit publish to `/api/tokens` with persistent in-flight feedback (`FigmaSyncView`), surfaced through Workspace settings' Figma row
 - [x] Export: "Save to GitHub" — PAT connect, repo pick/create, push tokens+css+README (`GitHubConnectView` + `lib/github.ts`)
 - [x] Foundations: Opacity / Shadow / Grid / Sizes token tables (`TokenTable` + Step6–9)
 - [x] Color: custom named color families with auto 1–12 scales (`customColors`)

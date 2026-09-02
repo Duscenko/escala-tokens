@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { useDesignStore } from '../../store/useDesignStore'
+import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import VariablesTable from './VariablesTable'
 import RailSelect from '../ui/RailSelect'
+import { RailControl, RailDivider, RailGroupNav } from './VariableCollectionRail'
 import {
   PADDING_SIDES,
   PADDING_STANDARD,
@@ -47,8 +48,12 @@ function PaddingPreview({ side, value }: { side: typeof PADDING_SIDES[number]; v
   )
 }
 
-export default function Step5_Spacing({ tabBar }: { tabBar?: ReactNode } = {}) {
-  const { spacing, setSpacing, padding, setPadding, primaryColor, themes } = useDesignStore()
+export default function Step5_Spacing({ tabBar, query, previewTheme }: { tabBar?: ReactNode; query?: string; previewTheme?: string } = {}) {
+  const { store, foundations, patch } = useThemeFoundations(previewTheme)
+  const { primaryColor, themes } = store
+  const { spacing, padding } = foundations
+  const setSpacing = (value: Record<string, string>) => patch({ spacing: value })
+  const setPadding = (value: Record<string, string>) => patch({ padding: value })
 
   const [baseUnit, setBaseUnit] = useState(() => pxToNum(spacing['1'] ?? '4px') || SPACING_DEFAULT_BASE)
   const [collection, setCollection] = useState<SpacingCollection>('scale')
@@ -110,10 +115,10 @@ export default function Step5_Spacing({ tabBar }: { tabBar?: ReactNode } = {}) {
         searchLabel="Filter spacing tokens"
         railed
         tabBar={tabBar}
+        query={query}
         railBody={
           <>
-            <div className="flex flex-col gap-1 px-4 pt-3 pb-2.5">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Base unit</span>
+            <RailControl label="Base unit">
               <RailSelect
                 value={baseUnit}
                 options={BASE_PRESETS.map((p) => ({ value: p.value, label: p.label.replace(/\s+/g, ' ') }))}
@@ -121,25 +126,14 @@ export default function Step5_Spacing({ tabBar }: { tabBar?: ReactNode } = {}) {
                 ariaLabel="Spacing base unit"
                 icon={<RulerIcon />}
               />
-            </div>
-            <nav aria-label="Spacing collections" className="py-1.5 px-2 flex flex-col gap-0.5 border-t border-line/60">
-              {SPACING_COLLECTIONS.map((c) => {
-                const isActive = c.key === collection
-                return (
-                  <button
-                    key={c.key}
-                    onClick={() => setCollection(c.key)}
-                    aria-current={isActive}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                      isActive ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                    }`}
-                  >
-                    <span className="text-[13px] flex-1 min-w-0 truncate">{c.label}</span>
-                    <span className={`text-[11px] font-mono tabular-nums ${isActive ? 'text-fg-muted' : 'text-fg-faint'}`}>{counts[c.key]}</span>
-                  </button>
-                )
-              })}
-            </nav>
+            </RailControl>
+            <RailDivider />
+            <RailGroupNav
+              ariaLabel="Spacing collections"
+              items={SPACING_COLLECTIONS.map((c) => ({ key: c.key, label: c.label, count: counts[c.key] }))}
+              active={collection}
+              onChange={setCollection}
+            />
           </>
         }
         groups={[{ valueLabel: 'Value', rows: collection === 'scale' ? scaleRows : paddingRows }]}

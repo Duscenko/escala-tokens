@@ -20,8 +20,8 @@ function Entry({ date, children }: { date: string; children: ReactNode }) {
     <div className="flex gap-3 py-1.5 border-b border-line/60 last:border-b-0">
       {/* nowrap + room for all 10 chars: at this root font-size an ISO date
           wrapped to "2026-07-" / "29" in a narrower column. */}
-      <span className="flex-shrink-0 w-[78px] text-[11px] font-mono tabular-nums whitespace-nowrap text-fg-faint pt-[2px]">{date}</span>
-      <span className="min-w-0 text-[12.5px] leading-relaxed text-fg-muted">{children}</span>
+      <span className="flex-shrink-0 w-[78px] text-caption font-mono tabular-nums whitespace-nowrap text-fg-faint pt-[2px]">{date}</span>
+      <span className="min-w-0 text-body leading-relaxed text-fg-muted">{children}</span>
     </div>
   )
 }

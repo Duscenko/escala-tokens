@@ -106,7 +106,7 @@ export function ColorControls({
           accent hue a linked neutral even carries. */}
       {linkNeutral !== undefined && onLinkNeutral && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Harmony</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Harmony</span>
           <button
             type="button"
             onClick={() => onLinkNeutral(!linkNeutral)}
@@ -126,8 +126,8 @@ export function ColorControls({
               />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[12px] text-fg">Neutral follows the accent</span>
-              <span className="block text-[11px] text-fg-faint leading-snug">
+              <span className="block text-body text-fg">Neutral follows the accent</span>
+              <span className="block text-caption text-fg-faint leading-snug">
                 {linkNeutral
                   ? 'Light and dark pages re-derived on every accent change. Edit by hand to unlink.'
                   : 'The neutral is set by hand and keeps its own colour.'}
@@ -153,8 +153,8 @@ export function ColorControls({
                 ))}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[12px] text-fg">States follow the accent</span>
-                <span className="block text-[11px] text-fg-faint leading-snug">
+                <span className="block text-body text-fg">States follow the accent</span>
+                <span className="block text-caption text-fg-faint leading-snug">
                   {linkStates
                     ? 'Error · Warning · Success · Info pick up the accent chroma. Hue stays put in light and dark.'
                     : 'Error · Warning · Success · Info are set by hand and keep their own colour.'}
@@ -173,7 +173,7 @@ export function ColorControls({
           value in the modal is then computed against. */}
       {neutralTint && onTint && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Neutral tint</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Neutral tint</span>
           <div className="grid grid-cols-2 gap-1.5">
             {NEUTRAL_TINTS.map((t) => {
               const active = t.key === neutralTint
@@ -193,12 +193,12 @@ export function ColorControls({
                     className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10"
                     style={{ background: tintPreview?.(t.key) ?? 'transparent' }}
                   />
-                  <span className="min-w-0 truncate text-[11px]">{t.label}</span>
+                  <span className="min-w-0 truncate text-caption">{t.label}</span>
                 </button>
               )
             })}
           </div>
-          <span className="text-[10px] text-fg-faint leading-snug">
+          <span className="text-mini text-fg-faint leading-snug">
             How much of the Neutral's colour reaches the page. Every ramp grows out of it.
           </span>
         </div>
@@ -207,12 +207,12 @@ export function ColorControls({
       {/* Contrast shift */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Contrast shift</span>
+          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Contrast shift</span>
           <button
             type="button"
             onClick={() => onShift(0)}
             disabled={contrastShift === 0}
-            className="flex items-center gap-1 text-[11px] text-fg-faint hover:text-fg disabled:opacity-40 disabled:hover:text-fg-faint transition-colors"
+            className="flex items-center gap-1 text-caption text-fg-faint hover:text-fg disabled:opacity-40 disabled:hover:text-fg-faint transition-colors"
           >
             Reset
             <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" /></svg>
@@ -311,7 +311,7 @@ function ScaleGuide({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-fg-faint">Industry</span>
+        <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Industry</span>
         {canLink && !bothLinked && (
           <button
             type="button"
@@ -319,7 +319,7 @@ function ScaleGuide({
               if (!linkNeutral) onLinkNeutral?.(true)
               if (!linkStates) onLinkStates?.(true)
             }}
-            className="text-[11px] text-accent-ui hover:text-fg underline underline-offset-2 transition-colors"
+            className="text-caption text-accent-ui hover:text-fg underline underline-offset-2 transition-colors"
           >
             Link Neutral & States
           </button>
@@ -360,13 +360,13 @@ function ScaleGuide({
                 >
                   <path d="m9 18 6-6-6-6" />
                 </svg>
-                <span className="flex-1 min-w-0 text-[10px] font-semibold uppercase tracking-widest text-fg-faint">
+                <span className="flex-1 min-w-0 text-mini font-semibold uppercase tracking-widest text-fg-faint">
                   {INDUSTRY_GROUP_LABEL[group]}
                 </span>
                 {!open && activeInGroup && (
                   <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" aria-hidden />
                 )}
-                <span className="text-[10px] tabular-nums text-fg-faint">{rows.length}</span>
+                <span className="text-mini tabular-nums text-fg-faint">{rows.length}</span>
               </button>
               {open && (
                 <div className="flex flex-col gap-0.5 px-1 pb-1.5">
@@ -392,13 +392,13 @@ function ScaleGuide({
                               setBrowse(p.id)
                             }
                           }}
-                          className={`flex-1 min-w-0 text-left text-[12px] truncate ${
+                          className={`flex-1 min-w-0 text-left text-body truncate ${
                             active ? 'text-fg' : 'text-fg-muted'
                           }`}
                         >
                           {p.label}
                           {picked && (
-                            <span className="ml-1.5 text-[10px] text-fg-faint">{picked.label}</span>
+                            <span className="ml-1.5 text-mini text-fg-faint">{picked.label}</span>
                           )}
                         </button>
                         <div className="flex items-center gap-1 flex-shrink-0" role="group" aria-label={`${p.label} accents`}>
@@ -442,7 +442,7 @@ function ScaleGuide({
           tint={tint ?? DEFAULT_NEUTRAL_TINT}
           appearance={appearance}
         />
-        <p className="text-[11px] text-fg-faint leading-snug">{pack.theory}</p>
+        <p className="text-caption text-fg-faint leading-snug">{pack.theory}</p>
       </div>
     </div>
   )
@@ -545,7 +545,7 @@ export function ScaleSettingsModal({
           <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3 flex-shrink-0 border-b border-line/60">
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-fg">Color Agent</h3>
-              <p className="text-[11px] text-fg-faint mt-0.5 truncate">Industry packs, harmony, tint</p>
+              <p className="text-caption text-fg-faint mt-0.5 truncate">Industry packs, harmony, tint</p>
             </div>
             <button
               type="button"

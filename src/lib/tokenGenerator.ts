@@ -1,5 +1,5 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
-import { getIconAiSource, UNTITLED_LIBRARY } from './iconLibraries'
+import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveThemePalette, themeBrandRamp } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -7,6 +7,8 @@ import { projectArchitecture, projectCategorical } from './semanticArchitectures
 import { mergeTypeRoles } from './typeRoles'
 import { mergeLayoutRoles, mergeGridFrame } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
+import { semanticModesFor, type ThemeAppearance } from './themeModes'
+import { resolveThemeFoundations } from './themeFoundations'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
@@ -63,9 +65,7 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   // sourceScaleFor). Without them the plugin has nothing to alias a dark brand
   // tint to and would fall back to a loose hex.
   const grayDarkScale = store.grayDarkScale ?? DEFAULT_GRAY_DARK_SCALE
-  const hasDarkTheme = Object.entries(store.themeKinds ?? {}).some(
-    ([t, kind]) => kind === 'dark' && store.themes[t],
-  ) || Boolean(store.themes.dark)
+  const hasDarkTheme = store.themeOrder.some((theme) => Boolean(store.themes[theme]))
 
   // Themes in the user's column order (themeOrder), with any stragglers appended.
   // The plugin maps each theme to one variable-collection mode (column), so this
@@ -104,9 +104,10 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
     if (p) resolvedPalettes[name] = p
   }
   const orderedThemes: Record<string, Record<string, string>> = {}
+  const orderedThemeModes: Record<string, Record<ThemeAppearance, Record<string, string>>> = {}
   for (const name of themeNames) {
-    const kind = store.themeKinds[name] ?? 'light'
-    const palette = resolveThemePalette(store.themeSources[name], kind, store)
+    const preferred = store.themeKinds[name] ?? 'light'
+    const storedModes = semanticModesFor(store.themeSemantics, store.themes, name, preferred)
     // Build from scratch (not a spread of the stored map) so only current
     // catalogue roles ship — stale keys from a prior architecture never leak.
     // The stored map is still READ, per role, as `normalizeThemeValue`'s
@@ -125,18 +126,23 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
     // normalizeThemeValue keeps `current` only when it's a real tone of THIS
     // theme's resolved scale — a value left over from another palette fails
     // that check and falls back to the recommendation.
-    const stored = store.themes[name] ?? {}
-    const normalized: Record<string, string> = {}
-    for (const role of ALL_ROLES) {
-      const scale = sourceScaleFor(role, kind, globalScales, palette)
-      if (!scale || Object.keys(scale).length === 0) continue
-      const hex = normalizeThemeValue(role, kind, scale, stored[role.key])
-      if (hex) normalized[role.key] = hex
+    const normalizedModes = { light: {}, dark: {} } as Record<ThemeAppearance, Record<string, string>>
+    for (const appearance of ['light', 'dark'] as const) {
+      const palette = resolveThemePalette(store.themeSources[name], appearance, store)
+      const normalized: Record<string, string> = {}
+      for (const role of ALL_ROLES) {
+        const scale = sourceScaleFor(role, appearance, globalScales, palette)
+        if (!scale || Object.keys(scale).length === 0) continue
+        const hex = normalizeThemeValue(role, appearance, scale, storedModes[appearance]?.[role.key])
+        if (hex) normalized[role.key] = hex
+      }
+      normalizedModes[appearance] = normalized
     }
-    orderedThemes[name] = normalized
+    orderedThemeModes[name] = normalizedModes
+    orderedThemes[name] = normalizedModes[preferred]
   }
 
-  return { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes }
+  return { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes }
 }
 
 /** Shared theme/scale resolution for exports, docs and the preview overlay. */
@@ -170,7 +176,31 @@ export function buildCategoricalSymbolicTokens(): {
 export function generateTokenJSON() {
   const store = useDesignStore.getState()
   const { typography, colorNaming } = store
-  const { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes } = buildThemeContext(store)
+  const { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store)
+  const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {
+    const resolved = resolveThemeFoundations(store, theme)
+    return [theme, {
+      typography: {
+        ...resolved.typography,
+        roles: mergeTypeRoles(resolved.typography.roles),
+      },
+      spacing: resolved.spacing,
+      padding: resolved.padding,
+      radius: resolved.radius,
+      radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
+      shadows: resolved.shadows,
+      grid: resolved.grid,
+      gridFrame: mergeGridFrame(resolved.gridFrame),
+      breakpointRoles: mergeLayoutRoles('breakpoint', resolved.breakpointRoles),
+      sizes: resolved.sizes,
+      sizeRoles: mergeLayoutRoles('size', resolved.sizeRoles),
+      selector: resolved.selector,
+      selectorRoles: mergeLayoutRoles('selector', resolved.selectorRoles),
+      stroke: resolved.stroke,
+      strokeRoles: mergeLayoutRoles('stroke', resolved.strokeRoles),
+      panelBackground: resolved.panelBackground,
+    }]
+  }))
 
   // Merge all color scales into a single primitive map with prefixed keys.
   // Only include secondary scales if they've been populated (non-empty objects).
@@ -289,9 +319,12 @@ export function generateTokenJSON() {
       // 'semantic'/'semanticDark' stay for Figma-plugin compatibility; 'themes'
       // carries the full multi-theme map (incl. user-added themes), and
       // 'themeOrder' is the column order the plugin creates modes in.
-      semantic: orderedThemes.light ?? store.themes.light ?? {},
-      semanticDark: orderedThemes.dark ?? store.themes.dark ?? {},
+      semantic: orderedThemeModes[themeNames[0]]?.light ?? orderedThemes.light ?? store.themes.light ?? {},
+      semanticDark: orderedThemeModes[themeNames[0]]?.dark ?? orderedThemes.dark ?? store.themes.dark ?? {},
       themes: orderedThemes,
+      // Additive canonical shape: a library theme owns both appearances.
+      // `themes` above remains the preferred-appearance compatibility slice.
+      themeModes: orderedThemeModes,
       themeOrder: themeNames,
       // Radix-style panel treatment for surface-1 (cards, panels, sections).
       panelBackground: store.panelBackground,
@@ -300,6 +333,10 @@ export function generateTokenJSON() {
       semanticArchitecture: store.semanticArchitecture,
       ...(architecture ? { architecture } : {}),
     },
+    // Complete, resolved foundation collections per library theme. Additive:
+    // existing consumers keep reading the global fields below, while clients
+    // that understand style themes can switch every foundation with one key.
+    foundationsByTheme,
     typography: {
       fontFamily: typography.fontFamily,
       headingFontFamily: typography.headingFontFamily ?? typography.fontFamily,
@@ -366,6 +403,10 @@ export function generateTokenJSON() {
     breakpointRoles: mergeLayoutRoles('breakpoint', store.breakpointRoles),
     sizes: store.sizes,
     sizeRoles: mergeLayoutRoles('size', store.sizeRoles),
+    // Additive, so no schemaVersion bump — same call as `shadowsDark` /
+    // `gradientsDark`: a plugin that predates this key ignores it.
+    selector: store.selector,
+    selectorRoles: mergeLayoutRoles('selector', store.selectorRoles),
     stroke: store.stroke,
     strokeRoles: mergeLayoutRoles('stroke', store.strokeRoles),
     // Plugin v5 looked for `borders.width` and skipped the Border collection
@@ -373,11 +414,11 @@ export function generateTokenJSON() {
     // plugin already reads — v6 prefers `stroke` and treats this as a copy.
     borders: { width: store.stroke },
     icons: {
-      library: UNTITLED_LIBRARY.key,
-      name: UNTITLED_LIBRARY.label,
-      package: UNTITLED_LIBRARY.npm,
-      repo: UNTITLED_LIBRARY.repo,
-      prefix: UNTITLED_LIBRARY.key,
+      library: PHOSPHOR_LIBRARY.key,
+      name: PHOSPHOR_LIBRARY.label,
+      package: PHOSPHOR_LIBRARY.npm,
+      repo: PHOSPHOR_LIBRARY.repo,
+      prefix: PHOSPHOR_LIBRARY.key,
       aiSource: (() => {
         const src = getIconAiSource(store.iconAiSource)
         return { key: src.key, label: src.label, repo: src.repo, npm: src.npm }
