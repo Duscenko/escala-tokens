@@ -21,7 +21,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Checkbox": ['surface', 'brandSolid', 'onBrand', 'neutralText', 'disabledBg', 'disabledText', 'border'],
   "CheckboxGroup": ['surface', 'brandSolid', 'onBrand', 'neutralText', 'border', 'fgMuted'],
   "Chip": ['surface', 'brandSolid', 'brandText', 'neutralText', 'border'],
-  "CloseButton": ['brandSolid', 'neutralFill', 'fgMuted'],
+  "CloseButton": ['brandSolid', 'neutralText', 'fgMuted'],
   "Combobox": ['surface', 'brandSolid', 'brandText', 'neutralText', 'border', 'borderDefault', 'fgMuted', 'placeholderText'],
   "Command": ['surface', 'neutralFill', 'neutralText', 'borderDefault', 'fgMuted', 'placeholderText'],
   "ContextMenu": ['surface', 'neutralFill', 'neutralText', 'errorColor', 'borderDefault', 'placeholderText'],

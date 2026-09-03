@@ -3691,11 +3691,23 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > - Both are **opt-in and inert**: every pre-existing call site omits `Variant` and gets
 >   the initials avatar byte for byte, so `Avatar`'s `componentColorFields` entry is
 >   unchanged (`brandSolid` · `brandText` · `neutralText`).
-> - **`AVATAR_STACK_HUES = [0, 42, 96, 168, 214]`** is the cool→warm sequence the collage
->   team stack walks, alternating `Gradient` (even index, hue-rotated) with the initials
->   default (odd index) so the row shows both kinds and the gradient's range at once. Not
->   a catalogue axis — the plugin's `Avatar` set is still `Size`-only; `Variant`/`Hue`
->   ride in `v` the same opt-in way `w`/`children` do.
+> - **`AVATAR_STACK_HUES = [0, 42, 96, 168, 214]`** is the cool→warm hue sequence; the
+>   collage team stack takes the first FOUR — three `Gradient` avatars (hue-rotated) in a
+>   run so the family reads as a set, THEN one initials default to break the rhythm, then
+>   the count. Not a catalogue axis — the plugin's `Avatar` set is still `Size`-only;
+>   `Variant`/`Hue` ride in `v` the same opt-in way `w`/`children` do.
+
+> **UPDATE: `BadgeSpecimen` has a dotless COUNT form (`Dot: 'False'`) and `CloseButtonSpecimen`
+> has a resting fill.** Both reported from the collage.
+> - A "+5 more" overflow tag is a COUNT, not a status, so it should not carry the status
+>   dot. `Dot: 'False'` drops the dot, symmetrises the padding and switches to
+>   tabular-nums / medium. Opt-in and inert — every other Badge call keeps the dot, so the
+>   `componentColorFields` entry is unchanged.
+> - A bare `×` on a card "se ve como perdida" — it was `background: transparent` at rest.
+>   Now `soft(t.neutralText)`, a ~10% wash of the page ink: a faint LIGHT circle on a dark
+>   theme, a faint GREY one on a light theme, always a step off the surface behind it.
+>   Hover deepens the same wash (`tintOf(neutralText, '20', 0.16)`). `CloseButton`'s field
+>   map swaps `neutralFill` → `neutralText` — regenerate.
 
 > **UPDATE: Retro's input stroke is 1px.** It carried a 2px stroke copied from Neo, but
 > the two are not doing the same job — measured, Neo's field is FLAT (ΔL 0.000 between

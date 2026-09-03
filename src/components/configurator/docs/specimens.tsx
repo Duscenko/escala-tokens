@@ -629,6 +629,10 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
   const style = v.Style ?? 'Soft'
   const isNeutral = (v.Color ?? 'Brand') === 'Neutral'
   const sz = BADGE_SIZE_SPECS[v.Size ?? 'MD'] ?? BADGE_SIZE_SPECS.MD
+  // `Dot: 'False'` is the COUNT form — no leading dot, symmetric padding,
+  // tabular figures. Opt-in and inert: every existing call omits it and keeps
+  // the status dot. A "+5 more" overflow tag is a count, not a status.
+  const showDot = v.Dot !== 'False'
   let bg = 'transparent'; let fg = c; let line = 'transparent'
   if (style === 'Solid') { bg = c; fg = t.onBrand }
   else if (style === 'Soft') { bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c); fg = isNeutral ? (t.fgMuted ?? c) : c }
@@ -637,12 +641,14 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
     <span
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: sz.gap, padding: sz.pad,
+        display: 'inline-flex', alignItems: 'center', gap: showDot ? sz.gap : 0,
+        padding: showDot ? sz.pad : `${sz.pad.split(' ')[0]} ${sz.dot + 6}px`,
         borderRadius: radiusRoleOf(t, 'pill'), background: bg, color: fg, border: `${strokeControl(t)} solid ${line}`,
         ...typeOf(t, 'caption'),
+        ...(showDot ? {} : { fontVariantNumeric: 'tabular-nums', fontWeight: weightOf(t, 'medium', 500) }),
       }}
     >
-      <span style={{ width: sz.dot, height: sz.dot, borderRadius: 999, background: style === 'Solid' ? t.onBrand : c }} />
+      {showDot && <span style={{ width: sz.dot, height: sz.dot, borderRadius: 999, background: style === 'Solid' ? t.onBrand : c }} />}
       {children ?? (v.Color ?? 'Brand')}
     </span>
   )
@@ -899,7 +905,12 @@ function CloseButtonSpecimen({ t, v }: SpecimenProps) {
       aria-label="Close"
       style={{
         width: d, height: d, borderRadius: radiusRoleOf(t, 'action'), border: 'none', cursor: 'pointer',
-        background: state === 'Hover' ? t.neutralFill : 'transparent',
+        // A resting fill, not `transparent`. A bare X floating on a card reads
+        // as a stray glyph rather than a target — reported. `soft(neutralText)`
+        // is a ~10% wash of the page ink, so it is a faint LIGHT circle on a
+        // dark theme and a faint GREY one on a light theme, both a step off the
+        // surface behind it. Hover deepens the same wash.
+        background: state === 'Hover' ? tintOf(t, t.neutralText, '20', 0.16) : soft(t, t.neutralText),
         color: t.fgMuted, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
       }}

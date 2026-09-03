@@ -211,21 +211,22 @@ export function SystemCollage({
       </ScaledModule>
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {/* The team stack shows BOTH avatar kinds side by side: gradient (no
-            letter, hue-rotated per position — see AVATAR_STACK_HUES) alternating
-            with the accent-tint + initials default. */}
-        {AVATAR_STACK_HUES.map((hue, i) => (
+        {/* Three hue-rotated gradient avatars, then ONE accent-tint + initials
+            default, then the count. Both avatar kinds are shown; the run of
+            three keeps the gradient family (see AVATAR_STACK_HUES) readable as
+            a set before the default breaks the rhythm. */}
+        {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
           <span key={hue} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: 6 - i, position: 'relative' }}>
             <Avatar
               t={t}
-              v={i % 2 === 0
+              v={i < 3
                 ? { Size: 'SM', Variant: 'Gradient', Hue: String(hue) }
                 : { Size: 'SM' }}
             />
           </span>
         ))}
         <span style={{ marginLeft: 8 }}>
-          <Badge t={t} v={{ Style: 'Soft', Color: 'Neutral' }}>+5</Badge>
+          <Badge t={t} v={{ Style: 'Soft', Color: 'Neutral', Dot: 'False' }}>+5</Badge>
         </span>
       </ScaledModule>
 
