@@ -1,5 +1,6 @@
 import { BRAND_SPECTRUM } from './brandPalette'
 import { previewHarmony, type NeutralTint } from './colorUtils'
+import type { PhosphorWeight } from './phosphorIcons'
 import {
   GRID_FRAME_STANDARD,
   RADIUS_STANDARD,
@@ -69,6 +70,18 @@ export type ThemeStyleSemantics = Record<string, { light?: string; dark?: string
  * style axis rather than a global default.
  */
 export type StatusAction = 'soft' | 'solid'
+
+/**
+ * The Phosphor WEIGHT a style renders its glyphs at.
+ *
+ * The icon SET never changes — always the bundled Phosphor library, which is
+ * what the system recommends and ships. Only the stroke weight is a style
+ * decision, and it is one of the cheapest ways to give a set real character:
+ * a brutalist system reads bold, a glass one reads light, Material reads
+ * filled. `regular` is the neutral baseline every pre-`iconWeight` system
+ * keeps.
+ */
+export type StyleIconWeight = PhosphorWeight
 
 /** Seed hexes for the four severity families. */
 export interface ThemeStyleStates {
@@ -413,6 +426,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[2].values },
       panelBackground: 'solid',
       statusAction: 'solid',
+      iconWeight: 'regular',
     },
     // A filled field + hairline edge — the quiet end of the border spectrum.
     // See `ThemeStyleSemantics` for why a fill has to come first.
@@ -441,6 +455,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: hardShadows,
       panelBackground: 'solid',
       statusAction: 'solid',
+      iconWeight: 'bold',
     },
     // THE deliberate exception to the soften-the-border rule: brutalism's
     // border IS the design, so it goes the other way — the ramp's text tone,
@@ -487,6 +502,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: glassShadows,
       panelBackground: 'translucent',
       statusAction: 'soft',
+      iconWeight: 'light',
     },
     semantics: glassBorders,
     accessibilityNote: 'Translucent surfaces still use semantic foreground roles; verify contrast over real content.',
@@ -527,6 +543,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
       statusAction: 'solid',
+      iconWeight: 'fill',
     },
     // M3's filled text field: the fill carries the control so the edge can be a
     // whisper. It is the one style whose input sits TWO steps off the page.
@@ -572,6 +589,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: retroShadows,
       panelBackground: 'page',
       statusAction: 'soft',
+      iconWeight: 'bold',
     },
     // Warm ink, not grey: the border belongs to the same sepia the page and the
     // offset shadow are tinted with, which is what stops Retro reading as
@@ -612,6 +630,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       shadows: warmShadows,
       panelBackground: 'solid',
       statusAction: 'soft',
+      iconWeight: 'duotone',
     },
     semantics: softBorders,
   },

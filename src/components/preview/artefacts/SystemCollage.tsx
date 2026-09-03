@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { AVATAR_STACK_HUES, Live, SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
+import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -184,6 +184,7 @@ export function SystemCollage({
   const wellSm = sizeRoleOf(t, 'compact', '32px')
 
   return (
+    <PhosphorWeightProvider weight={t.iconWeight}>
     <div
       className="w-full"
       style={{
@@ -377,5 +378,6 @@ export function SystemCollage({
         </div>
       </ScaledModule>
     </div>
+    </PhosphorWeightProvider>
   )
 }

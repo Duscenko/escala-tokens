@@ -28,6 +28,7 @@ import {
   LEGACY_RADIUS_LG_FACTOR,
   type GridFrameModes,
 } from '../lib/layoutTokens'
+import type { PhosphorWeight } from '../lib/phosphorIcons'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
 import { accessibleSolidTone, generateColorScale, generateFamilyDarkScale, generateDarkColorScale } from '../lib/colorUtils'
 import {
@@ -401,6 +402,13 @@ export interface DesignSnapshot {
    * the choice is a STYLE decision — see `StatusAction` in themePresets.
    */
   statusAction: 'soft' | 'solid'
+  /**
+   * Phosphor icon WEIGHT the previewed system renders glyphs at — `thin`,
+   * `light`, `regular`, `bold`, `fill`, `duotone`. A style axis, not a token:
+   * the icon set is always the recommended Phosphor library, only the stroke
+   * weight varies. See `themePresets`.
+   */
+  iconWeight: PhosphorWeight
   // Which semantic token architecture the export projects the 89-role catalogue
   // into (Alias/Semantics picker). 'flat' = the classic shape; the others are
   // additive projections (see lib/semanticArchitectures.ts).
@@ -528,6 +536,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     panelBackground: 'solid',
     statusAction: 'solid',
+    iconWeight: 'regular',
     semanticArchitecture: 'categorical',
     architectureOverrides: {},
     gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
@@ -830,6 +839,8 @@ interface DesignStore {
   panelBackground: 'solid' | 'translucent' | 'page'
   statusAction: 'soft' | 'solid'
   setStatusAction: (v: 'soft' | 'solid') => void
+  iconWeight: PhosphorWeight
+  setIconWeight: (v: PhosphorWeight) => void
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
 
   // Semantic token architecture — which shape the export projects the flat
@@ -1256,6 +1267,7 @@ export const useDesignStore = create<DesignStore>()(
 
       setPanelBackground: (v) => set({ panelBackground: v }),
       setStatusAction: (v) => set({ statusAction: v }),
+      setIconWeight: (v) => set({ iconWeight: v }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
       // `ref === null` clears the edit, so the token falls back to the
       // projection's own value — the schema stays the source of truth.
@@ -1498,7 +1510,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 67,
+      version: 68,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -1664,6 +1676,9 @@ export const useDesignStore = create<DesignStore>()(
           // existing session until they opt into translucent.
           if (!persisted.panelBackground) persisted.panelBackground = 'solid'
           if (!persisted.statusAction) persisted.statusAction = 'solid'
+          // v67→v68: Phosphor icon weight per system. Absent → `regular`, the
+          // weight every specimen rendered before this field existed.
+          if (!persisted.iconWeight) persisted.iconWeight = 'regular'
           // v25→v26: page background primitive (Radix custom-palette input) —
           // anchors tone 1 of every ramp + derives the alpha ramps. White is
           // the previous implicit background, so existing output is unchanged.

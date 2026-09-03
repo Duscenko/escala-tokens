@@ -9,6 +9,7 @@
 // renderer was retired in favor of SPECIMENS.Button.
 
 import type { SemanticArchitecture } from '../../lib/semanticArchitectures'
+import type { PhosphorWeight } from '../../lib/phosphorIcons'
 
 export interface PreviewTokens {
   surface: string // light canvas the buttons sit on (bg-primary ‖ #fff)
@@ -56,6 +57,9 @@ export interface PreviewTokens {
   // How a destructive / confirming action is painted — a STYLE decision, not a
   // token: `solid` fills with the severity, `soft` washes it. See `StatusAction`.
   statusAction?: 'soft' | 'solid'
+  // Phosphor icon weight the previewed system renders glyphs at (thin…duotone).
+  // The icon SET is always the recommended Phosphor library; only weight varies.
+  iconWeight?: PhosphorWeight
   // Primitives page background — the fill panels use in 'page' mode. Only set
   // for light-kind themes (a light page anchor makes no sense on dark panels).
   pageBackground?: string

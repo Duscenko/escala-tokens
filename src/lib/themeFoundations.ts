@@ -1,5 +1,6 @@
 import type { TypeRoleModes } from './typeRoles'
 import { completeRadiusScale, type GridFrameModes } from './layoutTokens'
+import type { PhosphorWeight } from './phosphorIcons'
 
 export interface ThemeTypographyTokens {
   fontFamily: string
@@ -36,6 +37,8 @@ export interface ThemeFoundationOverride {
   panelBackground?: 'solid' | 'translucent' | 'page'
   /** How a style paints a DESTRUCTIVE or CONFIRMING action — see `StatusAction`. */
   statusAction?: 'soft' | 'solid'
+  /** Phosphor icon weight this style renders glyphs at — thin…duotone. */
+  iconWeight?: PhosphorWeight
 }
 
 export interface FoundationSource extends ThemeFoundationOverride {
@@ -58,6 +61,7 @@ export interface FoundationSource extends ThemeFoundationOverride {
   gridFrame: GridFrameModes
   panelBackground: 'solid' | 'translucent' | 'page'
   statusAction: 'soft' | 'solid'
+  iconWeight: PhosphorWeight
   themeFoundations?: Record<string, ThemeFoundationOverride>
 }
 
@@ -101,6 +105,7 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     gridFrame: override.gridFrame ?? source.gridFrame,
     panelBackground: override.panelBackground ?? source.panelBackground,
     statusAction: override.statusAction ?? source.statusAction,
+    iconWeight: override.iconWeight ?? source.iconWeight,
   }
 }
 

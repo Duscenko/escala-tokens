@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { type PreviewTokens } from './ButtonPreview'
-import { SPECIMENS, Live } from '../configurator/docs/specimens'
+import { SPECIMENS, Live, PhosphorWeightProvider } from '../configurator/docs/specimens'
 import { CopyButton } from '../configurator/docs/blocks'
 import { ARTEFACTS, type Artefact } from './artefacts'
 import { CompactCarousel } from './artefacts/CompactCarousel'
@@ -297,6 +297,7 @@ function MarkdownPane({ section, file }: { section: SectionKey | 'all'; file: st
 function ArtefactsPane({ tokens }: { tokens: PreviewTokens }) {
   const [expanded, setExpanded] = useState<Artefact | null>(null)
 
+  const inner = (() => {
   if (expanded) {
     return (
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-4 flex flex-col gap-3">
@@ -327,6 +328,8 @@ function ArtefactsPane({ tokens }: { tokens: PreviewTokens }) {
   }
 
   return <CompactCarousel tokens={tokens} onExpand={setExpanded} />
+  })()
+  return <PhosphorWeightProvider weight={tokens.iconWeight}>{inner}</PhosphorWeightProvider>
 }
 
 // ── Panel ─────────────────────────────────────────────────────────────────
