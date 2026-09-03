@@ -60,7 +60,10 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'label', type: 'string', description: 'Verb-led text content' },
       { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies muted styles' },
       { name: 'loading', type: 'boolean', description: 'Replaces label with spinner, blocks clicks' },
-      { name: 'leadingIcon', type: 'ReactNode', description: 'Icon before the label' },
+      { name: 'showLeadingIcon', type: 'boolean', description: 'Figma: Show leading icon — toggles visibility of the circle-dashed instance' },
+      { name: 'showTrailingIcon', type: 'boolean', description: 'Figma: Show trailing icon — toggles visibility of the square-dashed instance' },
+      { name: 'leadingIcon', type: 'ReactNode', description: 'Icon before the label (swap the leading instance in Figma)' },
+      { name: 'trailingIcon', type: 'ReactNode', description: 'Icon after the label (swap the trailing instance in Figma)' },
     ],
     accessibility: 'Uses native <button>. Requires accessible label. Disabled state uses aria-disabled.',
   },
@@ -167,7 +170,7 @@ export const COMPONENTS: ComponentDef[] = [
     axes: [
       { name: 'Size', values: ['MD', 'SM', 'XS'] },
       { name: 'State', values: ['Default', 'Hover', 'Focused', 'Filled', 'Error', 'Loading', 'Disabled'] },
-      { name: 'Type', values: ['Default', 'E-Mail', 'Password', 'Search', 'Phone Number', 'Website'] },
+      { name: 'Type', values: ['Default', 'Icon Leading', 'Icon Trailing', 'E-Mail', 'Password', 'Search', 'Phone Number', 'Website'] },
     ],
     figmaSets: ['Input'],
     props: [

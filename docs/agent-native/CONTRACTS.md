@@ -35,7 +35,7 @@ Slug must stay aligned with the configurator (`slugify(projectName)`).
 | 4 | Per-family dark primitives (`accent-dark-*`, `error-dark-*`, …) | Additive |
 | 5 | `opacity` **removed** (alpha lives in `colors.primitiveAlpha`) | Older plugin already guards `if (tokens.opacity)` |
 | 6 | Additive: `typography.roles`, `spacingRoles`, `radiusRoles`, `sizeRoles`, `stroke`, `strokeRoles`, `breakpointRoles`, `gridFrame`. Configurator also emits `borders.width` as a copy of `stroke` so a v5 plugin still creates the Border collection. Plugin v6 imports the role maps as `role/*` aliases (and one text style per type role). | Plugin v5 warns, imports colors/primitives, ignores role maps |
-| 7 | Semantic architecture colors may contain 8-digit alpha hex. Additive `foundationsByTheme` resolves the existing foundation collections for every library theme; root foundation fields remain the compatibility fallback. | Plugin v6 warns, imports its supported fields, ignores theme foundations |
+| 7 | Semantic architecture colors may contain 8-digit alpha hex. Additive `foundationsByTheme` resolves the existing foundation collections for every library theme; root foundation fields remain the compatibility fallback. | Plugin imports `foundationsByTheme` as modes on Typography / Spacing / Radius / Size / Selector / Border / Grid whenever a theme's resolved map **differs from the root** (or themes differ from each other). A Theme Preview typeface edit that only patches `themeFoundations` must still reach Figma — comparing themes only to each other silently dropped same-override / single-theme kits. |
 
 Rules:
 
@@ -82,9 +82,9 @@ Skill script `/.claude/skills/color-science-core/scripts/contrast.mjs` must stay
 | Catalogue / JSON architecture | `action.primary.default` | Dots |
 | CSS | `var(--color-action-primary-default)` | Hyphens, `var()` wrapper required for Figma Dev Mode |
 | Figma variable | `Action/primary/default` | Slashes. A dot in a Figma name throws and aborts import |
-| Collections | `Color Primitives`, `Color Semantics`, `Typography`, `Spacing`, `Radius`, `Size`, `Grid` | Exact strings. Semantics groups: Content · Action · Surface · Status · Border |
+| Collections | `Color Primitives`, `Color Semantics`, `Typography`, `Spacing`, `Radius`, `Size`, `Selector`, `Grid` | Exact strings. Semantics groups: Content · Action · Surface · Status · Border. `Border` is the stroke-width collection. |
 
-Primitives: `scopes = []` (hidden). Semantics: targeted scopes, never `ALL_SCOPES`.
+Primitives: `scopes = []` (hidden from property pickers). Semantics: `ALL_SCOPES` (“Show in all supported properties”) so mapped roles appear wherever designers paint.
 
 Spacing steps in Figma nest under `step/` because a variable name cannot start with a digit.
 
@@ -98,10 +98,12 @@ Always emit when present in the store:
 
 - `colors.primitive`, `colors.primitiveAlpha`, `colors.themes`, `colors.themeOrder`
 - `colors.semantic`, `colors.semanticDark` (compat)
-- `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
+- `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `selector`, `selectorRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
+- `foundationsByTheme` — per-library-theme copies of the foundation maps above; the plugin materializes differing themes as modes on those collections
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection
 - `icons` (library + `aiSource` + `custom`)
 - `atoms` (component selection/spec payload; the plugin's default Overview is fixed at 9 types, while its explicit Full catalogue mode renders all 58 catalogue types)
+- `descriptions` — `{ [collectionName]: { [variableName]: string } }` from role catalogues (`ALL_ROLES`, `CATEGORICAL_ROLE_COMMENTS`, layout/type roles). Plugin sets `Variable.description` on sync. Additive.
 
 Plugin also *reads* optional `copy` that the configurator does not emit yet. Do not reuse that name for something else.
 

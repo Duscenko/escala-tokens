@@ -204,6 +204,14 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "Canonical selected-component keys. Never 'components'."
+    },
+    "descriptions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "description": "Additive. Figma collection name → variable name → description. Plugin sets Variable.description on sync."
     }
   },
   "$defs": {

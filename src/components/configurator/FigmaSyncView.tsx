@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore, type SavedSystem } from '../../store/useDesignStore'
 import { isLiveEnvironment, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
+import { applyFigmaEditsPatch, isFigmaEditsPatch } from '../../lib/figmaEdits'
 import { slugify } from '../../lib/utils'
 import { FigmaLogo, BackToEditor, relativeTime, PluginInstallPromo } from './figmaShared'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
@@ -117,6 +118,8 @@ export default function FigmaSyncView({
   const syncUrl = buildSyncUrl()
 
   const [copied, setCopied] = useState(false)
+  const [figmaPatchText, setFigmaPatchText] = useState('')
+  const [figmaPatchMsg, setFigmaPatchMsg] = useState<string | null>(null)
 
   // ── "Your design systems" — see SystemRow above. Only one row is ever
   // renaming/confirming a delete at a time, so this lives here rather than
@@ -125,6 +128,30 @@ export default function FigmaSyncView({
   const [renameValue, setRenameValue] = useState('')
   const [renameError, setRenameError] = useState<string | null>(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+
+  function applyFigmaPatch() {
+    setFigmaPatchMsg(null)
+    try {
+      const parsed = JSON.parse(figmaPatchText) as unknown
+      if (!isFigmaEditsPatch(parsed)) {
+        setFigmaPatchMsg('Not an Escala Figma edits patch (expected kind: escala-figma-edits/v1).')
+        return
+      }
+      const { applied, skipped } = applyFigmaEditsPatch(parsed)
+      if (applied === 0) {
+        setFigmaPatchMsg(skipped[0] ?? 'Nothing to apply.')
+        return
+      }
+      setFigmaPatchMsg(
+        `Applied ${applied} value edit${applied === 1 ? '' : 's'}`
+        + (skipped.length ? ` · ${skipped.join(' · ')}` : '')
+        + '. Publish again so Live Sync stays aligned.',
+      )
+      setFigmaPatchText('')
+    } catch {
+      setFigmaPatchMsg('Invalid JSON — paste the patch downloaded from the plugin.')
+    }
+  }
 
   // Same expression SaveSidePanel already uses to know which saved entry the
   // live editor state corresponds to (SaveView.tsx) — one rule for "which
@@ -389,6 +416,36 @@ export default function FigmaSyncView({
           </p>
         </div>
       )}
+
+      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface/50 p-5">
+        <div>
+          <p className="text-sm font-semibold text-fg">Apply edits from Figma</p>
+          <p className="text-xs text-fg-faint leading-relaxed mt-1">
+            In the plugin Overview, use <span className="text-fg-muted">Check local edits</span> → download the patch.
+            Only value changes that map to system settings are applied. New variables, renames, and new components are rejected — those aren&apos;t part of the system settings.
+          </p>
+        </div>
+        <textarea
+          value={figmaPatchText}
+          onChange={(e) => setFigmaPatchText(e.target.value)}
+          rows={4}
+          spellCheck={false}
+          aria-label="Paste Figma edits patch JSON"
+          placeholder='{"kind":"escala-figma-edits/v1",…}'
+          className="w-full rounded-lg border border-line bg-app px-3 py-2 font-mono text-caption text-fg placeholder:text-fg-faint focus:outline-none focus:ring-1 focus:ring-accent-ui"
+        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={applyFigmaPatch}
+            disabled={!figmaPatchText.trim()}
+            className="rounded-lg bg-fg px-3 py-1.5 text-xs font-semibold text-app disabled:opacity-40"
+          >
+            Apply patch
+          </button>
+          {figmaPatchMsg && <p className="text-caption text-fg-muted leading-relaxed">{figmaPatchMsg}</p>}
+        </div>
+      </div>
 
       {/* Managing several systems across several Figma files means the
           question "which one am I about to paste into THIS file" needs an

@@ -9,6 +9,7 @@ import { mergeLayoutRoles, mergeGridFrame } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
+import { buildVariableDescriptions } from './tokenDescriptions'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
@@ -428,6 +429,10 @@ export function generateTokenJSON() {
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.
     atoms: store.selectedComponents,
+    // Figma Variable.description copy — collection → var name → text.
+    // Additive: older plugins ignore. Built from ALL_ROLES, CATEGORICAL_ROLE_COMMENTS,
+    // LAYOUT_ROLES, TYPE_ROLES (same catalogues as the Semantics table / Skill).
+    descriptions: buildVariableDescriptions(),
   }
 }
 

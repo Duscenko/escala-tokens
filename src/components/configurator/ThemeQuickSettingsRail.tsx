@@ -29,11 +29,16 @@ import {
   SELECTOR_DEFAULT_BASE,
   SIZE_DEFAULT_BASE,
   SIZE_STEPS,
+  SPACING_STEPS,
   STROKE_SM_STOPS,
   buildSelectorsFromBase,
   buildSizesFromBase,
   inferSelectorBase,
   inferSizeBase,
+  INSET_SURFACE_ROLE,
+  PADDING_DEFAULT_STEP,
+  insetSurfaceStepIndex,
+  insetSurfacePadding,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
   radiusGroupStep,
@@ -635,6 +640,67 @@ function BaseUnitCard({
   )
 }
 
+/**
+ * Container inset — the one dial for how much room every boxed surface (Card,
+ * panel, alert, the artefact collage) leaves inside its edge. It moves the
+ * `inset-surface` spacing role (which is what `paddingOf` actually reads), so
+ * the slider snaps across `SPACING_STEPS` rather than being free px — same
+ * stepped model as the Stroke control in this panel. The readout shows the
+ * resolved px so the number is the number that ships.
+ */
+function ContainerInsetCard({
+  stepIndex, spacing, onChange, onScrubStart, onScrubEnd,
+}: {
+  stepIndex: number
+  spacing: Record<string, string>
+  onChange: (index: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+}) {
+  // `|| fallback` would swallow a legitimate 0 (step 0 = 0px), so guard on
+  // NaN explicitly.
+  const parsed = parseFloat(spacing[SPACING_STEPS[stepIndex]] ?? '')
+  const resolvedPx = Math.round(Number.isFinite(parsed) ? parsed : 20)
+  // A 46×34 box, its inner block inset by the padding scaled into a 0–11px
+  // visual range — reads the step difference without the inner block getting
+  // too thin at the top of the ramp.
+  const maxStepPx = 64
+  const visualInset = Math.round((resolvedPx / maxStepPx) * 11)
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-3">
+        <div role="img" aria-label="Container inset preview" className="flex h-9 items-center">
+          <span
+            className="grid place-items-stretch rounded-[4px] border border-fg/45 bg-fg/[0.06]"
+            style={{ width: 46, height: 34, padding: visualInset }}
+          >
+            <span className="rounded-[2px] bg-fg/25" />
+          </span>
+        </div>
+        <div className="text-right leading-none">
+          <span className="block text-heading font-semibold tabular-nums text-fg">{resolvedPx}</span>
+          <span className="mt-1 block text-micro uppercase tracking-widest text-fg-faint">Pixels</span>
+        </div>
+      </div>
+      <RangeInput
+        min={0}
+        max={SPACING_STEPS.length - 1}
+        step={1}
+        value={stepIndex}
+        onChange={onChange}
+        onScrubStart={onScrubStart}
+        onScrubEnd={onScrubEnd}
+        ariaLabel="Container padding in pixels"
+        className="mt-3"
+      />
+      <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
+        <span>0</span>
+        <span>{maxStepPx}</span>
+      </div>
+    </div>
+  )
+}
+
 // The five text steps the readout shows — `TYPE_SCALE_KEYS[0..4]`, i.e. the
 // `text-*` band (the display steps scale with them and are the same decision).
 const TYPE_READOUT_KEYS = TYPE_SCALE_KEYS.slice(0, 5)
@@ -925,6 +991,8 @@ export default function ThemeQuickSettingsRail({
   onAdoptStyle,
   onQuickEditOpenChange,
   containedDrawerRootRef,
+  onOpenPrimitiveFamily,
+  onOpenInVariables,
 }: {
   /** Which foundation's quick panel to render — driven by the workspace's icon
    *  rail, so the lit icon and the column on screen are the same decision. The
@@ -955,6 +1023,12 @@ export default function ThemeQuickSettingsRail({
   onQuickEditOpenChange?: (open: boolean) => void
   /** Portal target for the contained token drawer — `ThemePreviewHub`'s root. */
   containedDrawerRootRef?: RefObject<HTMLElement | null>
+  /** A ramp-grid family label in the Semantics quick-edit drawer → open that
+   *  family's ramp in the Color · Primitives table. */
+  onOpenPrimitiveFamily?: (family: string) => void
+  /** Leave the Semantics quick-edit drawer for that token's row in the full
+   *  Color · Semantics table. */
+  onOpenInVariables?: (tokenId: string) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -982,12 +1056,28 @@ export default function ThemeQuickSettingsRail({
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
-  const { typography, radius, shadows, sizes, selector, stroke } = foundations
+  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles } = foundations
   // Every write takes an explicit theme KEY rather than closing over
   // `previewTheme`, because during a try-on the first edit adopts the style and
   // the write has to land on the NEWLY minted theme — a key that does not exist
   // yet at render time. `commit`/`applyScrub` resolve it and pass it in.
-  const setTypography = (key: string, value: typeof typography) => patchThemeFoundations(key, { typography: value })
+  const setTypography = (key: string, value: typeof typography) => {
+    patchThemeFoundations(key, { typography: value })
+    // A single-theme kit has nowhere else for the typeface to live — keep the
+    // root `typography` (Variables · Type + tokens.json root) in lockstep so
+    // Live Sync's root write and the Theme Preview edit can't disagree.
+    const themes = useDesignStore.getState().themes
+    if (Object.keys(themes).length === 1) {
+      useDesignStore.getState().setTypography({
+        ...useDesignStore.getState().typography,
+        fontFamily: value.fontFamily,
+        headingFontFamily: value.headingFontFamily ?? value.fontFamily,
+        sizes: value.sizes ?? useDesignStore.getState().typography.sizes,
+        lineHeights: value.lineHeights ?? useDesignStore.getState().typography.lineHeights,
+        weights: value.weights ?? useDesignStore.getState().typography.weights,
+      })
+    }
+  }
   // Axis picks write the ROLES only — the primitive ramp is untouched, which is
   // the whole point of the split: Boxes cannot move Fields.
   const setRadiusRoles = (key: string, value: Record<string, string>) =>
@@ -996,6 +1086,18 @@ export default function ThemeQuickSettingsRail({
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
   const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
   const setStroke = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { stroke: value })
+  // Container inset writes BOTH: the `inset-surface` spacing role (the token the
+  // preview actually reads) and the four-sided `padding` mirror (the export's
+  // resolved-px copy), so `--spacing-inset-surface` and `--padding-*` can't
+  // drift after a quick edit.
+  const setContainerInset = (key: string, stepIndex: number) => {
+    const step = SPACING_STEPS[Math.max(0, Math.min(SPACING_STEPS.length - 1, stepIndex))]
+    const px = spacing[step] ?? `${Number(step) * 4}px`
+    patchThemeFoundations(key, {
+      spacingRoles: { ...spacingRoles, [INSET_SURFACE_ROLE]: step },
+      padding: insetSurfacePadding(px),
+    })
+  }
   const brandFamily = themeSources[previewTheme]?.brand ?? 'accent'
   const grayFamily = themeSources[previewTheme]?.gray ?? 'neutral'
   const themeAccent = brandFamily === 'accent' ? primaryColor : customColors.find((family) => family.key === brandFamily)?.base ?? primaryColor
@@ -1381,6 +1483,8 @@ export default function ThemeQuickSettingsRail({
             onEditingChange={setSemanticDrawerOpen}
             colorPickerOpen={colorPickerOpen}
             containedRootRef={containedDrawerRootRef}
+            onOpenPrimitiveFamily={onOpenPrimitiveFamily}
+            onOpenInVariables={onOpenInVariables}
           />
         )}
 
@@ -1468,6 +1572,16 @@ export default function ThemeQuickSettingsRail({
               onChange={(base) => applyScrub('Selector sizes updated', (themeKey) => setSelector(themeKey, buildSelectorsFromBase(base)))}
             />
           </SettingItem>
+
+          <SettingItem label="Containers" hint="Inner padding of cards, panels, alerts, and other boxed surfaces.">
+            <ContainerInsetCard
+              stepIndex={insetSurfaceStepIndex(spacingRoles)}
+              spacing={spacing}
+              onScrubStart={() => beginScrub('Container padding updated')}
+              onScrubEnd={endScrub}
+              onChange={(index) => applyScrub('Container padding updated', (themeKey) => setContainerInset(themeKey, index))}
+            />
+          </SettingItem>
         </EditionCard>
         )}
 
@@ -1501,14 +1615,20 @@ export default function ThemeQuickSettingsRail({
         </EditionCard>
         )}
 
-        {/* Scoped to the Sizes panel — it resets `sizes` + `selector`, the two
-            ramps that panel owns, so it has no business under Color or Stroke. */}
-        {foundation === 'sizes' && (inferSizeBase(sizes) !== SIZE_DEFAULT_BASE || inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE) && (
+        {/* Scoped to the Sizes panel — it resets the three dials that panel
+            owns (Fields · Selectors · Containers), so it has no business under
+            Color or Stroke. */}
+        {foundation === 'sizes' && (
+          inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
+          inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
+          (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP
+        ) && (
           <button
             type="button"
             onClick={() => commit('Sizes reset', (themeKey) => {
               setSizes(themeKey, buildSizesFromBase(SIZE_DEFAULT_BASE))
               setSelector(themeKey, buildSelectorsFromBase(SELECTOR_DEFAULT_BASE))
+              setContainerInset(themeKey, SPACING_STEPS.indexOf(PADDING_DEFAULT_STEP))
             })}
             className="self-start rounded-md px-1 py-0.5 text-mini text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
