@@ -47,6 +47,9 @@ import {
   type LayoutFamily,
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
+  RADIUS_GROUPS,
+  radiusGroupStep,
+  applyRadiusGroup,
 } from '../layoutTokens'
 
 const EVERY_BASE = (() => {
@@ -116,14 +119,32 @@ describe('layout primitives', () => {
     })
   })
 
-  // The whole point of moving the rungs was that nothing may LOOK different.
-  it('the default system resolves the same four radii as before the re-level', () => {
+  // The three axes resolve to a strictly increasing 4 · 8 · 16 ladder, and every
+  // default sits ON `RADIUS_GROUP_STEPS` so each picker opens with its own value
+  // selected rather than reading "Custom". `overlay` shares `container` because
+  // the reference has ONE box radius for card and modal alike.
+  it('the default system resolves the three-axis ladder', () => {
     const roles = defaultLayoutRoles('radius')
     const px = (role: string) => resolveLayoutRole('radius', roles, RADIUS_STANDARD, role)
     expect(px('control')).toBe('4px')
-    expect(px('action')).toBe('16px')
-    expect(px('container')).toBe('24px')
-    expect(px('overlay')).toBe('32px')
+    expect(px('action')).toBe('8px')
+    expect(px('container')).toBe('16px')
+    expect(px('overlay')).toBe('16px')
+    for (const group of RADIUS_GROUPS) {
+      expect(radiusGroupStep(group, roles), group.key).not.toBeNull()
+    }
+  })
+
+  // Each axis moves ONLY its own roles — the coupling this split exists to
+  // remove. Picking a stadium selector must leave the card alone.
+  it('an axis pick never moves another axis', () => {
+    const boxes = RADIUS_GROUPS.find((g) => g.key === 'boxes')!
+    const selectors = RADIUS_GROUPS.find((g) => g.key === 'selectors')!
+    const base = defaultLayoutRoles('radius')
+    const next = applyRadiusGroup(selectors, base, '2xl')
+    expect(radiusGroupStep(selectors, next)).toBe('2xl')
+    expect(radiusGroupStep(boxes, next)).toBe(radiusGroupStep(boxes, base))
+    expect(next.action).toBe(base.action)
   })
 
   // The migration's correctness in one assertion: the new rungs are exactly
@@ -134,9 +155,13 @@ describe('layout primitives', () => {
       const lg = parseFloat(preset.values.lg)
       const before = scaleRadiusFromLg(lg)
       const after = scaleRadiusFromLg(lg * LEGACY_RADIUS_LG_FACTOR)
+      // Compared against the v67 rungs LITERALLY, not against the current
+      // defaults: the axis split moved them again afterwards, and what this
+      // test exists to protect is the ramp arithmetic the migration relies on.
+      const V67_RUNGS: Record<string, string> = { control: 'xs', action: 'lg', container: 'xl', overlay: '2xl' }
       for (const role of ['control', 'action', 'container', 'overlay'] as const) {
         const legacy = before[LEGACY_RADIUS_ROLE_RUNGS[role]]
-        const next = after[defaultLayoutRoles('radius')[role]]
+        const next = after[V67_RUNGS[role]]
         expect(next, `${preset.label} ${role}`).toBe(legacy)
       }
     }
@@ -193,10 +218,10 @@ describe('layout primitives', () => {
 describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
-    expect(radius.action).toBe('lg')
+    expect(radius.action).toBe('sm')
     expect(radius.control).toBe('xs')
-    expect(radius.container).toBe('xl')
-    expect(radius.overlay).toBe('2xl')
+    expect(radius.container).toBe('lg')
+    expect(radius.overlay).toBe('lg')
     expect(radius.pill).toBe('full')
     expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
     expect(defaultLayoutRoles('size').control).toBe('md')
@@ -234,7 +259,7 @@ describe('layout semantics', () => {
   it('resolves through the primitive map, never inventing px', () => {
     const roles = mergeLayoutRoles('spacing', { 'inset-surface': '6' })
     expect(resolveLayoutRole('spacing', roles, SPACING_STANDARD, 'inset-surface')).toBe('24px')
-    expect(resolveLayoutRole('radius', defaultLayoutRoles('radius'), RADIUS_STANDARD, 'action')).toBe('16px')
+    expect(resolveLayoutRole('radius', defaultLayoutRoles('radius'), RADIUS_STANDARD, 'action')).toBe('8px')
     expect(resolveLayoutRole('stroke', defaultLayoutRoles('stroke'), STROKE_STANDARD, 'focus')).toBe('2px')
   })
 
@@ -248,7 +273,7 @@ describe('layout semantics', () => {
       stroke: defaultLayoutRoles('stroke'),
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
-    expect(css).toContain('--radius-action: var(--radius-lg);')
+    expect(css).toContain('--radius-action: var(--radius-sm);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')
@@ -327,14 +352,17 @@ describe('concentric radius nesting', () => {
     expect(concentricRadiusStep(RADIUS_STANDARD, 'sm', 40)).toBe('none')
   })
 
-  // The measured defect: the shipped default is concentric, and every OTHER
-  // preset breaks it. This asserts the rule now holds across the whole slider.
-  it('keeps control concentric across every preset', () => {
+  // `concentricRadiusRoles` steers `control` only while it is still ON the
+  // concentric answer — its remaining job, used when the advanced editor
+  // regrades the ramp. The three-axis model does NOT derive Selectors from
+  // Fields (that would re-couple two axes; see `styleRadiusRoles`), so this is
+  // opt-in by having picked the tracking value, not a default guarantee.
+  it('re-derives control across a regrade only while it was tracking', () => {
+    const insetPx = parseFloat(resolveLayoutRole('spacing', spacingRoles, spacing, 'inset-control'))
     for (const preset of RADIUS_PRESETS) {
-      const next = concentricRadiusRoles(RADIUS_STANDARD, preset.values, roles, spacing, spacingRoles)
-      const report = radiusNestingReport(preset.values, next, spacing, spacingRoles)
-      const control = report.find((r) => r.inner === 'control')!
-      expect(control.broken, `${preset.label}: control ${control.innerPx} > limit ${control.limitPx}`).toBe(false)
+      const tracking = { ...roles, control: concentricRadiusStep(RADIUS_STANDARD, roles.action, insetPx) }
+      const next = concentricRadiusRoles(RADIUS_STANDARD, preset.values, tracking, spacing, spacingRoles)
+      expect(next.control, preset.label).toBe(concentricRadiusStep(preset.values, roles.action, insetPx))
     }
   })
 
@@ -349,10 +377,18 @@ describe('concentric radius nesting', () => {
     // `radius.container` is every card's radius system-wide, so constraining it
     // to a modal's padding would flatten cards nowhere near a modal. It stays a
     // report — but it must BE reported, because it fails at the default.
+    // The pair is still only ever REPORTED, never silently repaired — that is
+    // what this test guards. It no longer FAILS at the default, because Boxes is
+    // one axis: `container` and `overlay` resolve to the same step, so a card
+    // filling a modal can at worst equal it, never exceed it.
     const report = radiusNestingReport(RADIUS_STANDARD, roles, spacing, spacingRoles)
     const pair = report.find((r) => r.inner === 'container')!
-    expect(pair.innerPx).toBe(24)
-    expect(pair.limitPx).toBe(12) // overlay 32 − inset-surface 20
+    // Boxes is ONE axis, so container and overlay resolve to the same 16px —
+    // and the pair still reports broken, because 20px of padding sits between
+    // them and r_inner must clear r_outer − p. That is geometry, not a bug: a
+    // card FILLING a modal body wants a square corner. It stays a report.
+    expect(pair.innerPx).toBe(16)
+    expect(pair.limitPx).toBe(0) // overlay 16 − inset-surface 20, floored
     expect(pair.broken).toBe(true)
     const after = concentricRadiusRoles(RADIUS_STANDARD, RADIUS_PRESETS[2].values, roles, spacing, spacingRoles)
     expect(after.container).toBe(roles.container)

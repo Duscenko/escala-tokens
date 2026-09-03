@@ -34,12 +34,10 @@ import {
   buildSizesFromBase,
   inferSelectorBase,
   inferSizeBase,
-  matchRadiusPreset,
-  scaleRadiusFromLg,
-  concentricRadiusRoles,
-  RADIUS_STEPS,
-  RADIUS_PRESETS,
-  RADIUS_DEFAULT_LG,
+  RADIUS_GROUPS,
+  RADIUS_GROUP_STEPS,
+  radiusGroupStep,
+  applyRadiusGroup,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -707,79 +705,78 @@ function TypeScaleCard({
 // on that formula (Sharp=8, Soft=12, Rounded=16, Pill=24), so the gallery,
 // the slider and Variables' Preset dropdown can never disagree. 40 is the
 // ceiling StepRadius already uses.
-const RADIUS_LG_MAX = 40
 const RADIUS_TILE = 36
 
+/**
+ * Radius as THREE independent axes — Boxes / Fields / Selectors — instead of
+ * one roundness dial.
+ *
+ * The dial graded the whole ramp from a single `lg`, so every role moved
+ * together: choosing Pill turned the CARD into a stadium along with the
+ * checkbox, which is unreadable and was the reported defect. Rounding a
+ * checkbox and rounding a modal are not the same decision. This is DaisyUI's
+ * split (`--radius-box` / `--radius-field` / `--radius-selector`) expressed
+ * over the roles this system already ships, so the token contract is unchanged
+ * and only WHICH step each role aliases is now picked per axis.
+ *
+ * The ramp itself is no longer edited here. It is a primitive scale — five
+ * ladder steps that mean the same pixels on every axis is exactly what makes
+ * the three comparable — and regrading it belongs in the advanced editor.
+ */
 function RadiusCard({
-  radius, onScrub, onScrubStart, onScrubEnd,
+  radius, radiusRoles, onRoles,
 }: {
   radius: Record<string, string>
-  onScrub: (lg: number) => void
-  onScrubStart?: () => void
-  onScrubEnd?: () => void
+  radiusRoles: Record<string, string> | undefined
+  onRoles: (next: Record<string, string>) => void
 }) {
-  const lg = Math.min(parseFloat(radius.lg ?? String(RADIUS_DEFAULT_LG)) || 0, RADIUS_LG_MAX)
-  const preset = matchRadiusPreset(radius)
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="Radius preset">
-        {RADIUS_PRESETS.map((item) => {
-          const selected = preset === item.label
-          const itemLg = Math.round(parseFloat(item.values.lg) || 0)
-          return (
-            <button
-              key={item.label}
-              type="button"
-              aria-pressed={selected}
-              title={item.description}
-              onClick={() => onScrub(itemLg)}
-              className={`flex min-w-0 items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-[border-color,background-color,color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-line-strong bg-elevated text-fg' : 'border-line bg-app text-fg-faint hover:border-line-strong hover:text-fg'}`}
-            >
-              <span
-                className="h-5 w-5 flex-shrink-0 border border-fg/40 bg-fg/10"
-                style={{ borderRadius: Math.min(itemLg, 10) }}
-                aria-hidden
-              />
-              <span className="min-w-0 flex flex-col leading-tight">
-                <span className="text-micro font-medium">{item.label}</span>
-                <span className="text-nano tabular-nums text-fg-faint">{item.values.lg}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      <div className="mt-3 grid grid-cols-5 gap-x-1 gap-y-2" aria-label="Radius scale">
-        {RADIUS_STEPS.map((step) => {
-          const value = radius[step] ?? '0px'
-          const px = parseFloat(value) || 0
-          return (
-            <div key={step} className="flex min-w-0 flex-col items-center gap-1">
-              <span
-                className="border border-fg/35 bg-fg/10"
-                style={{
-                  width: RADIUS_TILE,
-                  height: RADIUS_TILE,
-                  borderRadius: step === 'full' ? 9999 : Math.min(px, RADIUS_TILE / 2),
-                }}
-                aria-hidden
-              />
-              <span className="text-micro font-medium text-fg">{step}</span>
-              <span className="text-nano tabular-nums text-fg-faint">{value}</span>
+    <div className="flex flex-col gap-3">
+      {RADIUS_GROUPS.map((group) => {
+        const current = radiusGroupStep(group, radiusRoles)
+        return (
+          <div key={group.key} className="min-w-0">
+            <div className="mb-1.5 flex min-w-0 items-baseline gap-1.5">
+              <span className="min-w-0 truncate text-micro font-medium text-fg">{group.label}</span>
+              <span className="min-w-0 flex-1 truncate text-nano text-fg-faint">{group.hint}</span>
+              {current === null && <span className="flex-shrink-0 text-nano text-fg-faint">Custom</span>}
             </div>
-          )
-        })}
-      </div>
-      <RangeInput
-        min={0}
-        max={RADIUS_LG_MAX}
-        step={1}
-        value={Math.round(lg)}
-        onChange={onScrub}
-        onScrubStart={onScrubStart}
-        onScrubEnd={onScrubEnd}
-        ariaLabel="Base radius"
-        className="mt-3"
-      />
+            <div className="grid grid-cols-5 gap-1" role="group" aria-label={`${group.label} radius`}>
+              {RADIUS_GROUP_STEPS.map((step) => {
+                const value = radius[step] ?? '0px'
+                const px = parseFloat(value) || 0
+                const selected = current === step
+                return (
+                  <button
+                    key={step}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={`${group.label} radius ${step} (${value})`}
+                    title={`${step} — ${value}`}
+                    onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
+                    className={`grid aspect-square place-items-center rounded-lg border transition-[border-color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-accent-ui bg-elevated' : 'border-line bg-app hover:border-line-strong'}`}
+                  >
+                    {/* Only the top-left corner is drawn: the arc IS the value,
+                        and a full rounded square reads as a swatch instead. */}
+                    <span
+                      aria-hidden
+                      className={selected ? 'border-accent-ui' : 'border-fg/45'}
+                      style={{
+                        width: RADIUS_TILE,
+                        height: RADIUS_TILE,
+                        borderTopWidth: 1.5,
+                        borderLeftWidth: 1.5,
+                        borderTopLeftRadius: Math.min(px, RADIUS_TILE),
+                        borderStyle: 'solid',
+                      }}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -938,13 +935,10 @@ export default function ThemeQuickSettingsRail({
   // the write has to land on the NEWLY minted theme — a key that does not exist
   // yet at render time. `commit`/`applyScrub` resolve it and pass it in.
   const setTypography = (key: string, value: typeof typography) => patchThemeFoundations(key, { typography: value })
-  // Keeps the nested corners concentric when the roundness scrub regrades the
-  // ramp — same rule and same call as the Radius foundation's own editor, so
-  // the two entry points cannot disagree about the geometry.
-  const setRadius = (key: string, value: Record<string, string>) => patchThemeFoundations(key, {
-    radius: value,
-    radiusRoles: concentricRadiusRoles(radius, value, foundations.radiusRoles, foundations.spacing, foundations.spacingRoles),
-  })
+  // Axis picks write the ROLES only — the primitive ramp is untouched, which is
+  // the whole point of the split: Boxes cannot move Fields.
+  const setRadiusRoles = (key: string, value: Record<string, string>) =>
+    patchThemeFoundations(key, { radiusRoles: value })
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
   const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
@@ -1373,12 +1367,11 @@ export default function ThemeQuickSettingsRail({
 
         {foundation === 'radius' && (
         <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
-          <SettingItem label="Radius" hint="One base grades the Tailwind scale. Presets and Variables share the same formula.">
+          <SettingItem label="Radius" hint="Boxes, fields and selectors round independently. Regrade the underlying scale in Variables.">
             <RadiusCard
               radius={radius}
-              onScrubStart={() => beginScrub('Radius updated')}
-              onScrubEnd={endScrub}
-              onScrub={(lg) => applyScrub('Radius updated', (themeKey) => setRadius(themeKey, scaleRadiusFromLg(lg, radius)))}
+              radiusRoles={foundations.radiusRoles}
+              onRoles={(next) => applyScrub('Radius updated', (themeKey) => setRadiusRoles(themeKey, next))}
             />
           </SettingItem>
         </EditionCard>

@@ -2,7 +2,9 @@ import { BRAND_SPECTRUM } from './brandPalette'
 import { previewHarmony, type NeutralTint } from './colorUtils'
 import {
   GRID_FRAME_STANDARD,
-  RADIUS_PRESETS,
+  RADIUS_STANDARD,
+  radiusRolesFromGroups,
+  type RadiusGroupStep,
   STROKE_STANDARD,
   buildSelectorsFromBase,
   buildSizesFromBase,
@@ -233,6 +235,7 @@ function typography(body: string, heading: string, mode: (typeof TYPE_SCALE_MODE
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function paddingOf(spacing: Record<string, string>, step: string) {
   const value = spacing[step] ?? '20px'
   return { top: value, right: value, bottom: value, left: value }
@@ -253,31 +256,35 @@ function paddingOf(spacing: Record<string, string>, step: string) {
  * roundness slider now keeps.
  */
 /**
- * The radius role map for a style, with `control` derived concentrically from
- * that style's own `action` and `inset-control`.
+ * A style's radius as THREE independent axis picks, then the concentric guard.
  *
- * This exists because `styleLayout` below — which has carried the concentric
- * derivation, and which CLAUDE.md describes as guaranteeing "a Pill style
- * cannot ship a chip that collides with its field" — **has no caller.** Not one
- * preset spreads it, so no preset has ever shipped a `radiusRoles` map and the
- * guarantee was documentation only. Verified by grep, and by the nesting report
- * disagreeing with what the derivation would have produced.
+ * Styles used to differ by picking a whole graded RAMP (Sharp/Soft/Rounded/
+ * Pill), which is the coupling DaisyUI's split exists to remove: one dial moved
+ * cards, buttons and checkboxes together, so a "Pill" style shipped stadium
+ * cards you cannot read. Every style now sits on the SAME standard ramp — which
+ * is what makes the five ladder steps mean the same pixels everywhere — and
+ * expresses its personality as boxes / fields / selectors, exactly the three
+ * variables the reference exposes.
  *
- * A chip sits flush against the inside edge of a field, so its corner cannot
- * exceed `action − inset-control` (Steve Ruiz's concentric identity, r = R − p,
- * which `nestedRadius` already implements). Where that leaves no room the
- * honest answer is a square corner, and `concentricRadiusStep` returns `none`.
+ * `control` is NOT re-derived from `action` here, and that is the point of the
+ * split rather than an omission. An earlier version did exactly that — the
+ * concentric r = R − p — which re-couples two of the three axes: picking a
+ * tighter Field would silently square every checkbox, which is the coupling
+ * this model exists to remove. `control` is also not always nested (a standalone
+ * checkbox sits on the page, not inside an input), so deriving it from the field
+ * is wrong for the common case as well.
+ *
+ * A genuine collision is still surfaced — `radiusNestingReport` reports
+ * `control ⊂ action` like it reports `container ⊂ overlay` — on the same
+ * report-don't-steer policy this file already applies to the other pair.
  */
 function styleRadiusRoles(
-  radius: Record<string, string>,
-  spacing: Record<string, string>,
+  picks: { boxes?: RadiusGroupStep; fields?: RadiusGroupStep; selectors?: RadiusGroupStep },
 ): Record<string, string> {
-  const roles = { ...defaultLayoutRoles('radius') }
-  const insetPx = parseFloat(resolveLayoutRole('spacing', undefined, spacing, 'inset-control', '12px')) || 12
-  roles.control = concentricRadiusStep(radius, roles.action, insetPx)
-  return roles
+  return radiusRolesFromGroups(picks)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function styleLayout(opts: {
   radius: Record<string, string>
   spacing: Record<string, string>
@@ -373,8 +380,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Inter', 'Inter', 'default'),
       spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_PRESETS[1].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[1].values, buildSpacingFromBase(4)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'xs' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -407,8 +414,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
       spacing: buildSpacingFromBase(5),
-      radius: { ...RADIUS_PRESETS[0].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[0].values, buildSpacingFromBase(5)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD, sm: '2px' },
@@ -452,8 +459,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Inter', 'Inter', 'comfortable'),
       spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_PRESETS[3].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[3].values, buildSpacingFromBase(4)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'sm' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },
@@ -491,8 +498,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // `container` to 36px, rounder than anything in the spec it is named
       // after. Glass and Nature keep Pill — "generous" and "organic" are their
       // briefs, and at the corrected role rungs that is 36px, not 72px.
-      radius: { ...RADIUS_PRESETS[2].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[2].values, buildSpacingFromBase(4)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: '2xl', selectors: 'xs' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -527,8 +534,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Courier Prime', 'Courier Prime', 'compact'),
       spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_PRESETS[0].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[0].values, buildSpacingFromBase(4)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: 'xs', fields: 'xs', selectors: 'none' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD, sm: '2px' },
@@ -566,8 +573,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('DM Sans', 'Fraunces', 'comfortable'),
       spacing: buildSpacingFromBase(5),
-      radius: { ...RADIUS_PRESETS[3].values },
-      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[3].values, buildSpacingFromBase(5)),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },

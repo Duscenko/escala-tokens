@@ -2161,6 +2161,55 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   — "generous" and "organic" are their briefs, and at the corrected rungs that is 36px,
 >   not 72px.
 
+> **UPDATE (supersedes the ramp-picking half of the note above): radius is THREE
+> INDEPENDENT AXES — Boxes · Fields · Selectors — the way DaisyUI splits it.** Moving the
+> roles down bounded the numbers but left the real defect in place: one roundness dial
+> graded the whole ramp, so every role moved together and picking Pill turned the CARD
+> into a stadium along with the checkbox. Reported as "si decido tomar radius pill el
+> sistema coloca el main box de esa manera haciendo imposible la lectura… es un caos".
+> Rounding a checkbox and rounding a modal are not the same decision and must not share
+> a control.
+> - **`RADIUS_GROUPS` (`layoutTokens.ts`) is DaisyUI's `--radius-box` / `--radius-field` /
+>   `--radius-selector`, expressed over the roles this system already ships** — boxes
+>   drives `container` + `overlay`, fields drives `action`, selectors drives `control`.
+>   The token contract is unchanged; only WHICH step each role aliases is now picked per
+>   axis instead of derived from a single `lg`. `RADIUS_GROUP_STEPS` is the reference's
+>   own ladder — at the standard ramp `none · xs · sm · lg · 2xl` = **0 / 4 / 8 / 16 /
+>   32px**, i.e. 0, 0.25rem, 0.5rem, 1rem, 2rem exactly.
+> - **`pill` is deliberately NOT an axis.** It means "this is a circle" (avatar, progress,
+>   switch track), not "somewhat rounded", so it stays `full`; folding it into Selectors
+>   would square off every avatar the moment someone picked a tighter checkbox. That is
+>   the one place these groups diverge from DaisyUI, whose selector axis also covers the
+>   badge.
+> - **No axis is derived from another, and that cost a feature on purpose.**
+>   `styleRadiusRoles` used to re-derive `control` concentrically from `action`
+>   (r = R − p). That re-couples two of the three axes — a tighter Field would silently
+>   square every checkbox — and it is wrong for the common case anyway, since a
+>   standalone checkbox sits on the page, not flush inside an input. Collisions are
+>   REPORTED (`radiusNestingReport`), never steered: the same report-don't-steer policy
+>   already applied to `container ⊂ overlay`. `concentricRadiusRoles` survives for the
+>   advanced editor's regrade, where it only moves a role that was still tracking.
+> - **The quick rail no longer edits the RAMP.** Five ladder steps meaning the same
+>   pixels on every axis is what makes the three comparable, so regrading belongs in the
+>   Variables editor. The preset grid + roundness slider are gone from `RadiusCard`;
+>   `setRadius` went with them.
+> - **Every style sits on `RADIUS_STANDARD` now and differs only by its three picks** —
+>   which is the personality, and is bounded by construction. Resolved card / button /
+>   checkbox: Core 16·8·4 · Neo 0·0·0 · Glass 32·32·8 · Material 16·32·4 (M3's pill
+>   button over a moderate card) · Retro 4·4·0 · Nature 32·16·8. The old model could not
+>   express Material at all — one dial cannot give you a pill button AND a 16px card.
+> - **Defaults are a deliberate recalibration, not a no-op** (unlike v67 directly above).
+>   `action` sm, `container`/`overlay` lg, so the resolved ladder is **selectors 4 ·
+>   fields 8 · boxes 16** — strictly increasing, every default ON the ladder so each
+>   picker opens with its own value selected rather than reading "Custom", and the box no
+>   longer the roundest thing on screen. `overlay` collapses onto `container` because the
+>   reference has ONE box radius for card and modal alike; the role is kept so the export
+>   does not change.
+> - Verified live: setting Selectors to the roundest step took the checkbox 4px → 32px
+>   while the card stayed 24px and the button 16px. A test asserts that independence
+>   directly, so a future change that re-couples the axes fails rather than just looking
+>   wrong.
+
 > **Sizes scale from a BASE UNIT, and the multipliers were verified against the shipped
 > ramp before anything was built.** `SIZE_STANDARD` (24/32/40/48/56/64) IS `4 ×
 > 6/8/10/12/14/16`, so `buildSizesFromBase(SIZE_DEFAULT_BASE)` reproduces it byte for byte

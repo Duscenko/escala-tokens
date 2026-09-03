@@ -565,23 +565,105 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * reported. The ladder was also lopsided: control→action jumped 4×, then 1.5×,
  * then 1.33×.
  *
- * On the natural rungs the ladder is even (0.25 / 1 / 1.5 / 2) and bounded:
- * Sharp 2/8/12/16 … Pill 6/24/36/48. `RADIUS_STANDARD` moves to Rounded (lg 16)
- * in the same change so the DEFAULT system resolves 4/16/24/32 — byte-identical
- * to what it rendered before. The look is carried by the RAMP, which is what
- * the roundness slider edits, instead of by an offset nobody can see.
+ * On the natural rungs the ladder is even and bounded, and `RADIUS_STANDARD`
+ * moved to Rounded (lg 16) in the same change. Store v67 re-grades any existing
+ * GRADED ramp `lg → 2×lg`, which is value-identical for all four roles at every
+ * preset (see the test), and pins the old rungs on a hand-edited ramp rather
+ * than reflowing it.
  *
- * Store v63 re-grades any existing GRADED ramp `lg → 2×lg`, which is provably
- * value-identical for all four roles at every preset (see the test), and pins
- * the old rungs on a hand-edited ramp rather than reflowing it.
+ * The rungs BELOW then moved once more, and that second move is a deliberate
+ * visual recalibration rather than a no-op: `action` sm, `container` /
+ * `overlay` lg. Two reasons. The steps now sit on `RADIUS_GROUP_STEPS`, so each
+ * axis default is reachable from its own picker instead of reading "Custom" out
+ * of the box. And the resolved ladder becomes **selectors 4 · fields 8 ·
+ * boxes 16** — strictly increasing, with the box no longer the roundest thing
+ * on screen by a factor of four. `overlay` collapses onto `container` because
+ * DaisyUI has ONE `--radius-box` for card and modal alike; the role is kept so
+ * the export contract does not change.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
   { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'xs' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: 'lg' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: 'xl' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: '2xl' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: 'sm' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: 'lg' },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: 'lg' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'surface', primitive: 'full' },
 ]
+
+/**
+ * ── The three independent radius axes (DaisyUI's model) ─────────────────────
+ *
+ * One roundness control that graded the whole ramp coupled every surface to
+ * every control: picking "Pill" made the CARD a stadium too, which is unreadable
+ * and was the reported defect. Rounding a checkbox and rounding a modal are not
+ * the same decision and must not share a dial.
+ *
+ * DaisyUI 5 splits it into `--radius-box` (card, modal, alert),
+ * `--radius-field` (button, input, select, tab) and `--radius-selector`
+ * (checkbox, toggle, badge), each set independently per theme. These groups are
+ * that split, expressed over the roles this system already has — so the token
+ * contract is unchanged and only WHICH step each role aliases is now chosen per
+ * axis instead of derived from a single `lg`.
+ *
+ * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder: at the standard ramp these are
+ * 0 / 4 / 8 / 16 / 32px, i.e. 0, 0.25rem, 0.5rem, 1rem, 2rem exactly.
+ *
+ * `pill` is deliberately NOT an axis. It means "this is a circle" (avatar,
+ * progress, switch track) rather than "this is somewhat rounded", so it stays
+ * `full`; putting it under Selectors would square off avatars the moment
+ * someone picked a tighter checkbox. That is the one place these groups diverge
+ * from DaisyUI, whose selector axis also covers the badge.
+ */
+export const RADIUS_GROUP_STEPS = ['none', 'xs', 'sm', 'lg', '2xl'] as const
+export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number]
+
+export interface RadiusGroup {
+  key: string
+  label: string
+  hint: string
+  /** Every role this axis drives. All of them take the same step. */
+  roles: string[]
+}
+
+export const RADIUS_GROUPS: RadiusGroup[] = [
+  { key: 'boxes', label: 'Boxes', hint: 'card, modal, alert', roles: ['container', 'overlay'] },
+  { key: 'fields', label: 'Fields', hint: 'button, input, select, tab', roles: ['action'] },
+  { key: 'selectors', label: 'Selectors', hint: 'checkbox, radio, toggle, menu', roles: ['control'] },
+]
+
+/** The step an axis is currently on, or `null` when its roles disagree or sit
+ *  on a step outside the ladder — a hand-picked alias, shown as Custom. */
+export function radiusGroupStep(
+  group: RadiusGroup,
+  roles: Record<string, string> | undefined,
+): RadiusGroupStep | null {
+  const merged = mergeLayoutRoles('radius', roles)
+  const first = merged[group.roles[0]]
+  if (!group.roles.every((role) => merged[role] === first)) return null
+  return (RADIUS_GROUP_STEPS as readonly string[]).includes(first) ? (first as RadiusGroupStep) : null
+}
+
+/** Set every role on one axis to `step`, leaving the other axes alone. */
+export function applyRadiusGroup(
+  group: RadiusGroup,
+  roles: Record<string, string> | undefined,
+  step: RadiusGroupStep,
+): Record<string, string> {
+  const next = mergeLayoutRoles('radius', roles)
+  for (const role of group.roles) next[role] = step
+  return next
+}
+
+/** Role map for a set of axis choices — what a System Style declares. */
+export function radiusRolesFromGroups(
+  picks: Partial<Record<string, RadiusGroupStep>>,
+): Record<string, string> {
+  let roles = defaultLayoutRoles('radius')
+  for (const group of RADIUS_GROUPS) {
+    const step = picks[group.key]
+    if (step) roles = applyRadiusGroup(group, roles, step)
+  }
+  return roles
+}
 
 /** The rungs the roles occupied before v63, and the factor between the two
  *  ladders. The migration needs both; nothing else should. */
