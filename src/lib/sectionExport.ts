@@ -4,6 +4,7 @@
 
 import chroma from 'chroma-js'
 import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { resolveFamilyPages } from './colorActions'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
@@ -200,13 +201,21 @@ function colorFamilies(store: Store, opts: SectionExportOptions = {}): [string, 
   // from the solid `-dark` suffix above in this shared flat namespace; no
   // other exporter reads these composite names as a contract, they're just
   // the CSS-var/Tailwind-key/MD-row labels this file already mints for every
-  // other family here.
+  // other family here. Custom families use their theme's paper — same page
+  // tokenGenerator uses — so a Glass accent-a-1 stays transparent.
+  const GLOBAL_ALPHA = new Set(['accent', 'neutral', 'error', 'warning', 'success', 'info'])
   fams.filter((f) => filled(f.light)).forEach((f) => {
-    out.push([`${f.family}-a`, generateAlphaScale(f.light!, store.pageBackground, 'light')])
+    const page = GLOBAL_ALPHA.has(f.family)
+      ? store.pageBackground
+      : resolveFamilyPages(store, f.family).light
+    out.push([`${f.family}-a`, generateAlphaScale(f.light!, page, 'light')])
   })
   if (hasDark) {
     fams.filter((f) => filled(f.dark)).forEach((f) => {
-      out.push([`${f.family}-a-dark`, generateAlphaScale(f.dark!, store.darkBackground, 'dark')])
+      const page = GLOBAL_ALPHA.has(f.family)
+        ? store.darkBackground
+        : resolveFamilyPages(store, f.family).dark
+      out.push([`${f.family}-a-dark`, generateAlphaScale(f.dark!, page, 'dark')])
     })
   }
 

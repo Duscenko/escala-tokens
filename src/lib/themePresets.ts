@@ -217,13 +217,15 @@ const softBorders: ThemeStyleSemantics = {
 }
 
 /** Same boundary (it has to be), but the subtlest decorative tier in the set
- *  plus a lifted rim — which is what a translucent panel is actually read by. */
+ *  plus a lifted rim — which is what a translucent panel is actually read by.
+ *  `border.subtle` no longer needs an override — the default schema ships
+ *  `{black-a.1}`/`{white-a.1}` there since audit F4 moved the whole neutral
+ *  ladder onto the alpha primitives. Only the rim is style-specific now. */
 const glassBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
   'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
-  'border.subtle': { light: '{black-a.1}', dark: '{white-a.1}' },
   'border.rim-highlight': { light: '{white-a.9}', dark: '{white-a.4}' },
 }
 
@@ -236,7 +238,8 @@ const filledBorders: ThemeStyleSemantics = {
   'surface.input': { light: '{neutral.3}', dark: '{neutral-dark.4}' },
   'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
-  'border.subtle': { light: '{black-a.1}', dark: '{white-a.1}' },
+  // `border.subtle` override dropped — identical to the default schema now
+  // (audit F4 moved the neutral ladder onto {black-a}/{white-a}).
 }
 
 /** Vintage ink: a firm, WARM edge from the accent's own ramp rather than a grey
@@ -433,48 +436,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: softBorders,
   },
   {
-    id: 'neo-brutalism',
-    label: 'Neo-Brutalism',
-    shortLabel: 'Neo',
-    description: 'Saturated, graphic, and direct.',
-    detail: 'Heavy boundaries and hard elevation create a deliberately raw system.',
-    accent: accent('Yellow'),
-    preferredAppearance: 'light',
-    neutralTint: 'pure',
-    // Near-primary and maximally saturated, matching the pure neutral and the
-    // hard black offset. Brutalism does not do muted.
-    states: { error: '#e5252c', warning: '#ffb302', success: '#00c853', info: '#2962ff' },
-    foundations: {
-      typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
-      spacing: buildSpacingFromBase(5),
-      radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD, sm: '2px' },
-      shadows: hardShadows,
-      panelBackground: 'solid',
-      statusAction: 'solid',
-      iconWeight: 'bold',
-    },
-    // THE deliberate exception to the soften-the-border rule: brutalism's
-    // border IS the design, so it goes the other way — the ramp's text tone,
-    // full strength, matching the hard offset it sits under. No fill step
-    // either: a flat field inside a heavy outline is the whole look.
-    semantics: {
-      ...DARK_DEPTH,
-      // Neo is the ONE style that overrides both halves of the split. Every
-      // other style softens the control boundary and leaves the decorative
-      // ladder on the schema; here the decorative ladder is the point, so all
-      // five rungs go to the ramp's text tone.
-      'border.control': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
-      'border.control-hover': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
-      'border.default': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
-      'border.strong': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
-      'border.subtle': { light: '{neutral.11}', dark: '{neutral-dark.11}' },
-    },
-  },
-  {
     id: 'cupertino-glass',
     label: 'Cupertino / Glass',
     shortLabel: 'Glass',
@@ -550,6 +511,44 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: filledBorders,
   },
   {
+    id: 'nature-organic',
+    label: 'Nature / Organic',
+    shortLabel: 'Nature',
+    description: 'Grounded, calm, and approachable.',
+    detail: 'Earth-led color, soft geometry, warm elevation, and an editorial heading voice.',
+    // Green, not Moss — chroma 0.167 against 0.158 and, more usefully, hue 154
+    // against 132, which widens the gap to both Neo's yellow (81) and Glass's
+    // ice (212). Still a living green rather than a Lime, because this style's
+    // brief is "grounded, calm" and its paper is already vividly tinted.
+    accent: accent('Green'),
+    preferredAppearance: 'dark',
+    // Earth pigments: clay, honey, leaf, river. Warmer than Core and cleaner
+    // than Retro, so the two earthy styles stay tellable apart.
+    states: { error: '#bf4342', warning: '#e08e0b', success: '#2f9e44', info: '#3b7ea1' },
+    // Same call as Retro: "earth-led" has to reach the paper, not just the
+    // accent. `#edfcdf` light / `#0d1f00` dark, measured 5.58 / 10.97:1 for
+    // tone 11 in the two appearances.
+    //
+    // Together the six now span all four tint levels — pure (Neo) · subtle
+    // (Core) · tinted (Glass, Material) · vivid (Retro, Nature) — so the set
+    // demonstrates the Neutral tint control instead of merely declaring it.
+    neutralTint: 'vivid',
+    foundations: {
+      typography: typography('DM Sans', 'Fraunces', 'comfortable'),
+      spacing: buildSpacingFromBase(5),
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
+      sizes: buildSizesFromBase(4.5),
+      selector: buildSelectorsFromBase(3.5),
+      stroke: { ...STROKE_STANDARD },
+      shadows: warmShadows,
+      panelBackground: 'solid',
+      statusAction: 'soft',
+      iconWeight: 'duotone',
+    },
+    semantics: softBorders,
+  },
+  {
     id: 'retro-vintage',
     label: 'Retro / Vintage',
     shortLabel: 'Retro',
@@ -597,43 +596,48 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: inkBorders,
   },
   {
-    id: 'nature-organic',
-    label: 'Nature / Organic',
-    shortLabel: 'Nature',
-    description: 'Grounded, calm, and approachable.',
-    detail: 'Earth-led color, soft geometry, warm elevation, and an editorial heading voice.',
-    // Green, not Moss — chroma 0.167 against 0.158 and, more usefully, hue 154
-    // against 132, which widens the gap to both Neo's yellow (81) and Glass's
-    // ice (212). Still a living green rather than a Lime, because this style's
-    // brief is "grounded, calm" and its paper is already vividly tinted.
-    accent: accent('Green'),
-    preferredAppearance: 'dark',
-    // Earth pigments: clay, honey, leaf, river. Warmer than Core and cleaner
-    // than Retro, so the two earthy styles stay tellable apart.
-    states: { error: '#bf4342', warning: '#e08e0b', success: '#2f9e44', info: '#3b7ea1' },
-    // Same call as Retro: "earth-led" has to reach the paper, not just the
-    // accent. `#edfcdf` light / `#0d1f00` dark, measured 5.58 / 10.97:1 for
-    // tone 11 in the two appearances.
-    //
-    // Together the six now span all four tint levels — pure (Neo) · subtle
-    // (Core) · tinted (Glass, Material) · vivid (Retro, Nature) — so the set
-    // demonstrates the Neutral tint control instead of merely declaring it.
-    neutralTint: 'vivid',
+    id: 'neo-brutalism',
+    label: 'Neo-Brutalism',
+    shortLabel: 'Neo',
+    description: 'Saturated, graphic, and direct.',
+    detail: 'Heavy boundaries and hard elevation create a deliberately raw system.',
+    accent: accent('Yellow'),
+    preferredAppearance: 'light',
+    neutralTint: 'pure',
+    // Near-primary and maximally saturated, matching the pure neutral and the
+    // hard black offset. Brutalism does not do muted.
+    states: { error: '#e5252c', warning: '#ffb302', success: '#00c853', info: '#2962ff' },
     foundations: {
-      typography: typography('DM Sans', 'Fraunces', 'comfortable'),
+      typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
+      radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD },
-      shadows: warmShadows,
+      stroke: { ...STROKE_STANDARD, sm: '2px' },
+      shadows: hardShadows,
       panelBackground: 'solid',
-      statusAction: 'soft',
-      iconWeight: 'duotone',
+      statusAction: 'solid',
+      iconWeight: 'bold',
     },
-    semantics: softBorders,
+    // THE deliberate exception to the soften-the-border rule: brutalism's
+    // border IS the design, so it goes the other way — the ramp's text tone,
+    // full strength, matching the hard offset it sits under. No fill step
+    // either: a flat field inside a heavy outline is the whole look.
+    semantics: {
+      ...DARK_DEPTH,
+      // Neo is the ONE style that overrides both halves of the split. Every
+      // other style softens the control boundary and leaves the decorative
+      // ladder on the schema; here the decorative ladder is the point, so all
+      // five rungs go to the ramp's text tone.
+      'border.control': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+      'border.control-hover': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+      'border.default': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+      'border.strong': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
+      'border.subtle': { light: '{neutral.11}', dark: '{neutral-dark.11}' },
+    },
   },
+
 ]
 
 export function themeStylePreset(id: string): ThemeStylePreset | undefined {

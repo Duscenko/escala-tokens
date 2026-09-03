@@ -1,6 +1,7 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
+import { resolveFamilyPages } from './colorActions'
 import { resolveThemePalette, themeBrandRamp } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
@@ -252,13 +253,13 @@ export function generateTokenJSON() {
   // ramp layers black over the light page, a dark ramp layers white over the
   // dark one. Hence both `*-a*` and `*-dark-a*`.
   const primitiveAlpha: Record<string, string> = {}
-  const alphaOf = (name: string, scale: Record<number, string>) => {
+  const alphaOf = (name: string, scale: Record<number, string>, page = store.pageBackground) => {
     if (!Object.keys(scale).length) return
-    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, store.pageBackground, 'light'), colorNaming))
+    Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, page, 'light'), colorNaming))
   }
-  const alphaDarkOf = (name: string, scale?: Record<number, string>) => {
+  const alphaDarkOf = (name: string, scale?: Record<number, string>, page = store.darkBackground) => {
     if (!hasDarkTheme || !scale || !Object.keys(scale).length) return
-    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, store.darkBackground, 'dark'), colorNaming))
+    Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, page, 'dark'), colorNaming))
   }
   alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
   alphaOf('neutral', store.grayLightScale); alphaDarkOf('neutral', grayDarkScale)
@@ -266,7 +267,14 @@ export function generateTokenJSON() {
   alphaOf('warning', store.warningScale);  alphaDarkOf('warning', store.warningDarkScale)
   alphaOf('success', store.successScale);  alphaDarkOf('success', store.successDarkScale)
   alphaOf('info', store.infoScale);        alphaDarkOf('info', store.infoDarkScale)
-  store.customColors.forEach((c) => { alphaOf(c.key, c.scale); alphaDarkOf(c.key, c.darkScale) })
+  // Custom families grow against their theme's paper — same page the solid
+  // ramp used. Solving against the open system's globals made tone 1 of a
+  // Glass accent-alpha land near-opaque (`#f0fdffe3`) instead of transparent.
+  store.customColors.forEach((c) => {
+    const pages = resolveFamilyPages(store, c.key)
+    alphaOf(c.key, c.scale, pages.light)
+    alphaDarkOf(c.key, c.darkScale, pages.dark)
+  })
 
   // Neutral alpha primitives — a fixed opacity ladder (Radix blackA/whiteA),
   // not derived from any family's solid. Unlike the twins above, these don't

@@ -3,15 +3,20 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
-const SEARCH_W = 224 // 14rem — wide enough for placeholder + clear, matches prior max-w
+/** Field width as rem — must match the animated overflow mask AND the label
+ *  `w-[14rem]`. A px constant (224) assumed a 16px root; this app's root is
+ *  18px, so 14rem = 252px and the mask clipped ~28px off the chip. */
+const SEARCH_W = '14rem'
+/** Collapsed icon is `h-8 w-8` = 2rem (36px at this root). */
+const ICON_W = '2rem'
 const WIDE_BP = '(min-width: 1280px)'
 
 const IS_MAC = typeof navigator !== 'undefined'
   && /mac/i.test(navigator.platform || navigator.userAgent || '')
 
-const ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-colors ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
+const ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
-const FIELD_SHELL = `${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} ${CHROME_CONTROL_FOCUS}`
+const FIELD_SHELL = `bg-input-bg ${CHROME_CONTROL_HOVER} ${CHROME_CONTROL_FOCUS}`
 
 function SearchGlyph({ className = 'h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint' }: { className?: string }) {
   return (
@@ -153,7 +158,7 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
         <motion.div
           className="overflow-hidden"
           initial={false}
-          animate={{ width: open ? SEARCH_W : 32 }}
+          animate={{ width: open ? SEARCH_W : ICON_W }}
           transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}
         >
           {!open ? (

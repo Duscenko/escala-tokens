@@ -988,6 +988,7 @@ function readableInkOn(hex: string): string {
 export function ScaleRow({
   scale, baseIndex = BASE_TONE, showNumbers = true, labels, size = 'default',
   numbersInside = false, joined = false, ariaLabel, selectedIndex, recommendedIndex, onSelect, checkerboard = false,
+  checkerAppearance,
 }: {
   scale: Record<number, string>
   baseIndex?: number
@@ -1035,6 +1036,21 @@ export function ScaleRow({
    *  near-white on the app's own near-white background, nowhere near what it
    *  actually renders as once placed over real content. */
   checkerboard?: boolean
+  /** Which PAGE the checkerboard behind a translucent cell stands in for.
+   *  `CHECKER` is drawn from `--elevated`/`--surface`, and those are CHROME
+   *  tokens — so with no override the damero follows the app's own light/dark
+   *  instead of the appearance the alpha was solved against. Both ends of the
+   *  fixed black/white ladder vanish that way: `white-a` over the light chrome's
+   *  near-white squares (`#f6f6f7`/`#e8e8ea`), `black-a` over the dark chrome's
+   *  (`#18181b`/`#2a2a2f`) — measured, and the reason a dark-theme preview in
+   *  light chrome showed no White Alpha ramp at all. Passing the column's own
+   *  appearance re-scopes those two vars ON the checker span itself (same
+   *  `.light`/`.dark` trick `TokenDetailsModal`'s per-mode cards use), so the
+   *  light column always gets a light page and the dark column a dark one, and
+   *  the damero can't disagree with the value painted on top of it.
+   *  The class goes on the checker span ALONE — it carries no text, so
+   *  re-scoping the palette there can't drag the cell's ink to the wrong theme. */
+  checkerAppearance?: 'light' | 'dark'
 }) {
   const entries = Object.entries(scale).sort(([a], [b]) => Number(a) - Number(b))
   if (entries.length === 0) return null
@@ -1105,7 +1121,7 @@ export function ScaleRow({
                       same ratio the other two callers scale their own swatch
                       by (~cell-height ÷ 4). */}
                   <span
-                    className="absolute inset-0"
+                    className={`absolute inset-0 ${checkerAppearance ?? ''}`}
                     style={{ ...CHECKER, backgroundSize: numbersInside ? '10px 10px' : thin ? '4px 4px' : '7px 7px' }}
                     aria-hidden
                   />

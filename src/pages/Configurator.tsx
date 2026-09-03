@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp } from '../lib/themeSources'
-import { isLiveEnvironment, publishTokens, useAutoFigmaSync, type FigmaPublishState } from '../lib/figmaSync'
+import { isLiveEnvironment, publishTokens, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
@@ -13,7 +13,7 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
-import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST } from '../components/configurator/themeWorkspaceLayout'
+import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import { adoptPreset } from '../lib/adoptPreset'
 import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
@@ -278,17 +278,8 @@ const ExportIcon: ComponentType = () => (
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
 
-/** Figma and GitHub are two DESTINATIONS, so they get one pill each — not two
- *  squares welded into a segmented control under a static "Sync" caption.
- *
- *  What that caption-plus-two-squares shape cost: the word "Sync" ate ~45px to
- *  say something neither button disagreed with; each destination was identified
- *  by glyph alone (its name lived in a `title`, i.e. behind a hover); and the
- *  status dot was stamped into the bottom-right corner of a 32px icon button,
- *  overlapping the glyph it was trying to annotate. Splitting them gives the dot
- *  its own slot at the head of the pill. The name is icon-only on screen —
- *  `aria-label` and `title` carry "GitHub — connected" / "Figma — publishing…"
- *  for hover and screen readers. */
+/** Themes-library sync footer destinations — Figma Sync · GitHub Push.
+ *  Rendered as a segmented track (node 1:3664), not icon-only squares. */
 type SyncStatus = 'ok' | 'idle' | 'busy' | 'error'
 
 const SYNC_DOT: Record<SyncStatus, string> = {
@@ -298,56 +289,62 @@ const SYNC_DOT: Record<SyncStatus, string> = {
   error: 'bg-status-danger-solid',
 }
 
-function SyncPill({
-  label, status, statusText, active, Icon, onClick, rail = false,
+/**
+ * Themes-library sync footer — Figma node 1:3664.
+ * Segmented track: Sync (Figma) · Push (GitHub). Active segment fills; status
+ * dots sit on the trailing edge of each segment (colour is never the only cue —
+ * `aria-label` / `title` still spell the status out).
+ */
+function SyncTrack({
+  items,
 }: {
-  label: string
-  status: SyncStatus
-  /** Spelled-out status — the dot's meaning for anyone not reading colour. */
-  statusText: string
-  active: boolean
-  Icon: ComponentType
-  onClick: () => void
-  /** Match `FoundationIconRail` icon buttons when docked in the vertical rail. */
-  rail?: boolean
+  items: Array<{
+    key: string
+    label: string
+    status: SyncStatus
+    statusText: string
+    active: boolean
+    Icon: ComponentType
+    onClick: () => void
+  }>
 }) {
-  const shared = {
-    type: 'button' as const,
-    onClick,
-    'aria-pressed': active,
-    'aria-label': `${label} — ${statusText}`,
-    title: `${label} — ${statusText}`,
-  }
-  const activeCls = active
-    ? `${WORKSPACE_CHIP_ACTIVE} text-fg`
-    : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
-
-  if (rail) {
-    return (
-      <button
-        {...shared}
-        className={`relative flex flex-shrink-0 items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-          active
-            ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-            : `text-fg-muted ${WORKSPACE_CHIP_HOVER} hover:text-fg`
-        }`}
-      >
-        <span aria-hidden className={`absolute top-2 left-2 h-1.5 w-1.5 rounded-full ${SYNC_DOT[status]}`} />
-        <span className={`grid h-5 w-5 place-items-center ${active ? 'drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]' : 'opacity-90'}`}>
-          <Icon />
-        </span>
-      </button>
-    )
-  }
-
   return (
-    <button
-      {...shared}
-      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${activeCls}`}
+    <div
+      role="tablist"
+      aria-label="Sync destinations"
+      className="flex h-9 w-full items-center gap-0.5 rounded-xl bg-chip-rest p-1 dark:bg-tab-bar"
     >
-      <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${SYNC_DOT[status]}`} />
-      <Icon />
-    </button>
+      {items.map((item) => {
+        const { key, label, status, statusText, active, Icon, onClick } = item
+        return (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-label={`${label} — ${statusText}`}
+            title={`${label} — ${statusText}`}
+            onClick={onClick}
+            className={`relative flex h-[31.5px] min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-caption tracking-[0.18px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              active
+                ? 'bg-white text-fg-muted dark:bg-black dark:text-fg-muted'
+                : 'text-fg-faint hover:text-fg-muted'
+            }`}
+          >
+            <span className={`grid h-3.5 w-3.5 flex-shrink-0 place-items-center ${active ? 'opacity-90' : 'opacity-70'}`}>
+              <Icon />
+            </span>
+            <span className="truncate">{label}</span>
+            {status !== 'idle' && (
+              <span
+                aria-hidden
+                className={`absolute right-2.5 top-1/2 h-[5px] w-[5px] -translate-y-1/2 rounded-full ${SYNC_DOT[status]}`}
+              />
+            )}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -449,7 +446,7 @@ const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTab; label: string; icon: strin
 
 function WorkspaceTabIcon({ source }: { source: string }) {
   const mask = `url('${source}') center / contain no-repeat`
-  return <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
+  return <span aria-hidden className="size-[15.75px] bg-current" style={{ WebkitMask: mask, mask }} />
 }
 
 function ThemeWorkspaceTabs({
@@ -463,11 +460,11 @@ function ThemeWorkspaceTabs({
 }) {
   const { t } = useI18n()
   return (
-    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line bg-surface pl-[8px] pr-3 xl:pr-4">
+    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line bg-tab-bar pl-[8px] pr-3 xl:pr-4">
       <div
         role="tablist"
         aria-label={t('Theme workspace')}
-        className="theme-workspace-tab-strip flex min-w-0 flex-1 items-center gap-1.5"
+        className={`theme-workspace-tab-strip ${WORKSPACE_TAB_TRACK}`}
         onKeyDown={(event) => {
           const current = THEME_WORKSPACE_TABS.findIndex((item) => item.key === value)
           let next = current
@@ -482,30 +479,34 @@ function ThemeWorkspaceTabs({
           requestAnimationFrame(() => tabs[next]?.focus())
         }}
       >
-        {THEME_WORKSPACE_TABS.map((item) => {
+        {THEME_WORKSPACE_TABS.map((item, index) => {
           const active = item.key === value
           return (
-            <button
-              key={item.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              tabIndex={active ? 0 : -1}
-              onClick={() => onChange(item.key)}
-              title={t(item.label)}
-              className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-2 rounded-xl py-1 pl-1 pr-2 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
-                ? `${WORKSPACE_CHIP_ACTIVE} text-fg shadow-sm`
-                : `text-fg-muted ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} hover:text-fg`
-              }`}
-            >
-              <span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg transition-colors ${active
-                ? 'bg-inverse-action text-inverse-action-ink'
-                : 'bg-white/45 dark:bg-white/[0.06] text-fg-faint group-hover:text-fg-muted'
-              }`}>
-                <WorkspaceTabIcon source={item.icon} />
-              </span>
-              <span className="truncate px-0.5">{t(item.label)}</span>
-            </button>
+            <Fragment key={item.key}>
+              {index > 0 && (
+                <span aria-hidden className="h-[26.5px] w-px flex-shrink-0 bg-line" />
+              )}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={active}
+                tabIndex={active ? 0 : -1}
+                onClick={() => onChange(item.key)}
+                title={t(item.label)}
+                className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-[9px] rounded-[9px] py-[4.5px] pl-[4.5px] pr-[9px] text-caption tracking-[0.18px] transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
+                  ? `${WORKSPACE_CHIP_ACTIVE} font-bold`
+                  : `font-normal ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER}`
+                }`}
+              >
+                <span className={`grid size-[27px] flex-shrink-0 place-items-center rounded-[6.75px] transition-colors ${active
+                  ? 'bg-inverse-action text-inverse-action-ink'
+                  : 'bg-black/[0.04] text-fg-faint dark:bg-white/[0.06] group-hover:text-fg-muted'
+                }`}>
+                  <WorkspaceTabIcon source={item.icon} />
+                </span>
+                <span className="truncate px-[2.25px]">{t(item.label)}</span>
+              </button>
+            </Fragment>
           )
         })}
       </div>
@@ -524,7 +525,7 @@ function ExportPill({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-line-strong px-2.5 text-caption font-medium text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+      className="flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 text-caption font-medium text-black transition-[color,background-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       <ExportIcon />
       <span>{t('Export')}</span>
@@ -556,8 +557,6 @@ export default function Configurator() {
   const store = useDesignStore()
   const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, themeSources, projectCreated } = store
   const theme = useTheme()
-  // Re-publish to /api/tokens after edits while auto-sync is on (no-op otherwise).
-  useAutoFigmaSync()
   // Fetches the configured typeface's webfont — mounted here (not inside the
   // Typography foundation) so every foundation's PreviewPanel actually
   // renders in it from first paint, not just after a visit to Font.
@@ -612,6 +611,11 @@ export default function Configurator() {
   // detail screen. It is intentionally local — never restore a stale spinner
   // or request failure after reload.
   const [figmaPublishState, setFigmaPublishState] = useState<FigmaPublishState>('idle')
+  // Set alongside an 'error' state, read by FigmaSyncView's status line — a
+  // lost claim (someone else owns this project name) needs a rename or a
+  // reconnect, not just "retry", so the generic "publish failed" copy isn't
+  // enough on its own. Cleared on the next non-error transition.
+  const [figmaPublishError, setFigmaPublishError] = useState<string | null>(null)
   const figmaPublishResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [githubPushState, setGithubPushState] = useState<GitHubPushState>('idle')
   const githubPushResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -844,8 +848,8 @@ export default function Configurator() {
     : themeBrandRamp(previewTheme, themeSources, themeKinds, store, chromeAppearance)
   const uiAccent =
     theme === 'dark'
-      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#0a0a0a', primaryColor)
-      : chromeAccent(uiAccentRamp ?? primaryScale, '#ffffff', primaryColor)
+      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#151516', primaryColor)
+      : chromeAccent(uiAccentRamp ?? primaryScale, '#f5f5f5', primaryColor)
   // ── …and the chrome accent as a FILL, which is a different question ──
   // `chromeAccent` walks UP the ramp until the tone clears 4.5:1 against the
   // chrome PAGE. That is the right rule for INK, and the wrong one for a solid
@@ -890,11 +894,11 @@ export default function Configurator() {
   // `darkChromeWash` pins the depth and takes the full gamut wall at it, so
   // every hue lands equally deep and equally vivid (`#2a0048` for the default
   // violet). Light keeps its ramp tones: pale-tint → white has no such problem.
-  // Second stop stays `#0a0a0a` — that IS `--app` in dark, so the wash resolves
+  // Second stop stays `#151516` — that IS `--app` in dark, so the wash resolves
   // into the page rather than onto a near-match of it.
   const gradient =
     theme === 'dark'
-      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #0a0a0a 48%)`
+      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #151516 48%)`
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
@@ -971,21 +975,26 @@ export default function Configurator() {
     commitVisit()
     setExportMode('figma-sync')
   }, [commitVisit])
-  const handleFigmaPublishState = useCallback((next: FigmaPublishState) => {
+  const handleFigmaPublishState = useCallback((next: FigmaPublishState, reason?: PublishFailureReason) => {
     if (figmaPublishResetTimer.current) {
       clearTimeout(figmaPublishResetTimer.current)
       figmaPublishResetTimer.current = null
     }
     setFigmaPublishState(next)
+    setFigmaPublishError(next === 'error' ? describePublishFailure(reason) : null)
     if (next === 'done') {
       figmaPublishResetTimer.current = setTimeout(() => setFigmaPublishState('idle'), 1800)
     }
   }, [])
+  // Re-publish to /api/tokens after edits while auto-sync is on (no-op
+  // otherwise) — shares handleFigmaPublishState with the manual button below
+  // so a background failure lights the same red dot instead of failing silently.
+  useAutoFigmaSync(handleFigmaPublishState)
   const publishFigmaNow = useCallback(() => {
     commitVisit()
     if (!isLiveEnvironment() || figmaPublishState === 'publishing') return
     handleFigmaPublishState('publishing')
-    void publishTokens().then((ok) => handleFigmaPublishState(ok ? 'done' : 'error'))
+    void publishTokens().then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
   }, [commitVisit, figmaPublishState, handleFigmaPublishState])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
@@ -1007,36 +1016,36 @@ export default function Configurator() {
   )
 
   const themeWorkspaceSyncFooter = (
-    <div className="flex items-center gap-1">
-      <SyncPill
-        rail
-        label="GitHub"
-        Icon={GitHubRailIcon}
-        status={githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle'}
-        statusText={
-          githubPushState === 'pushing' ? t('pushing…')
-            : githubPushState === 'error' ? t('push failed')
-            : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
-            : t('not connected')
-        }
-        active={themeWorkspaceTab === 'preview' && themeHubSurface === 'github'}
-        onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') }}
-      />
-      <SyncPill
-        rail
-        label="Figma"
-        Icon={FigmaRailIcon}
-        status={figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle'}
-        statusText={
-          figmaPublishState === 'publishing' ? t('publishing…')
-            : figmaPublishState === 'error' ? t('publish failed')
-            : store.figmaLastPublishAt ? t('published')
-            : t('not published yet')
-        }
-        active={themeWorkspaceTab === 'preview' && themeHubSurface === 'figma'}
-        onClick={() => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') }}
-      />
-    </div>
+    <SyncTrack
+      items={[
+        {
+          key: 'figma',
+          label: t('Sync'),
+          Icon: FigmaRailIcon,
+          status: figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle',
+          statusText:
+            figmaPublishState === 'publishing' ? t('publishing…')
+              : figmaPublishState === 'error' ? (figmaPublishError ?? t('publish failed'))
+              : store.figmaLastPublishAt ? t('published')
+              : t('not published yet'),
+          active: themeWorkspaceTab === 'preview' && themeHubSurface === 'figma',
+          onClick: () => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') },
+        },
+        {
+          key: 'github',
+          label: t('Push'),
+          Icon: GitHubRailIcon,
+          status: githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle',
+          statusText:
+            githubPushState === 'pushing' ? t('pushing…')
+              : githubPushState === 'error' ? t('push failed')
+              : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
+              : t('not connected'),
+          active: themeWorkspaceTab === 'preview' && themeHubSurface === 'github',
+          onClick: () => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') },
+        },
+      ]}
+    />
   )
 
   // ── Resolve center header + body for the current mode ──
@@ -1062,6 +1071,7 @@ export default function Configurator() {
           onOpenGithub={() => openExport('github')}
           onOpenSave={() => openExport('save')}
           publishState={figmaPublishState}
+          publishError={figmaPublishError}
           onRequestSync={syncFigmaNow}
         />
       </div>
@@ -1641,7 +1651,7 @@ export default function Configurator() {
           entry points here just competed for attention. One quiet line on a
           step-up surface (`bg-surface`, not `bg-app`) so the rule reads as a
           distinct strip instead of text floating on the page. */}
-      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-surface">
+      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-panel dark:bg-tab-bar">
         <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
           {COPYRIGHT_LINE} · Built by Cesar Durango
         </span>

@@ -152,16 +152,16 @@ export const DEFAULT_GRAY_DARK_SCALE: ColorScale = generateDarkColorScale('#6c73
 // module is deliberately dependency-free, and importing the generator there
 // created an init-order cycle (makeDesignDefaults() runs at import time and
 // found generateColorScale still undefined).
-/** The platform's default accent. Exported so "reset to defaults" and the
- *  new-system dialog derive their purple from the SAME constant
- *  `makeDesignDefaults` seeds, instead of each repeating the literal. */
-export const DEFAULT_ACCENT = '#9522e9'
+/** The platform's default accent — Core blue, matching the Core / Minimalist
+ *  preset. Exported so "reset to defaults" and the new-system dialog derive
+ *  their blue from the SAME constant `makeDesignDefaults` seeds. */
+export const DEFAULT_ACCENT = '#2970ff'
 export const DEFAULT_ACCENT_SCALE: ColorScale = generateColorScale(DEFAULT_ACCENT, 'radix', 0, '#ffffff')
 // The same ramp's DARK twin, for the same reason: a linked gradient stop is one
 // `tone` reference resolved into BOTH appearances, so a brand-new system's
 // gradients carry a dark version from the first render rather than rendering
 // their light hexes on the dark page until the first accent edit.
-export const DEFAULT_ACCENT_DARK_SCALE: ColorScale = generateFamilyDarkScale('#9522e9', 'radix', 0, '#0c0e12')
+export const DEFAULT_ACCENT_DARK_SCALE: ColorScale = generateFamilyDarkScale('#2970ff', 'radix', 0, '#0c0e12')
 // ──────────────────────────────────────────────────────────────────────────
 
 // Semantic role keys, seeded empty. Shared by the light (semanticTokens) and
@@ -960,7 +960,14 @@ export const useDesignStore = create<DesignStore>()(
       projectCreated: true,
       setProjectCreated: (v) => set({ projectCreated: v }),
 
-      setFigmaLastPublishAt: (iso) => set({ figmaLastPublishAt: iso }),
+      // A successful publish is the moment the user has declared "keep Figma in
+      // sync" — turning auto-sync on here (rather than leaving it behind a
+      // buried toggle) is what makes the FIRST publish also the LAST manual one.
+      // Never turns it back off: only setAutoSyncFigma does that.
+      setFigmaLastPublishAt: (iso) => set((s) => ({
+        figmaLastPublishAt: iso,
+        autoSyncFigma: iso ? true : s.autoSyncFigma,
+      })),
       setGithubRepo: (repo) => set({ githubRepo: repo }),
       setGithubLastPushAt: (iso) => set({ githubLastPushAt: iso }),
       autoSyncFigma: false,
@@ -1142,9 +1149,9 @@ export const useDesignStore = create<DesignStore>()(
       removeTheme: (key) =>
         set((state) => {
           if (!state.themes[key]) return state
-          // Keep at least one column — an empty matrix has nothing to edit or
-          // export. Any single theme (including light/dark) may be removed.
-          if (Object.keys(state.themes).length <= 1) return state
+          // Empty My themes is allowed — the library falls back to System
+          // styles / "Create your theme". Guarding the last theme hid the
+          // trash and made a one-theme system undeletable.
           const { [key]: _, ...themes } = state.themes
           const { [key]: __, ...themeSemantics } = state.themeSemantics
           const { [key]: ___, ...themeKinds } = state.themeKinds
@@ -1152,14 +1159,44 @@ export const useDesignStore = create<DesignStore>()(
           const { [key]: _____, ...themeSources } = state.themeSources
           const { [key]: ______, ...themeFoundations } = state.themeFoundations
           const { [key]: _______, ...themeOrigin } = state.themeOrigin ?? {}
-          // `architectureOverrides` is keyed `arch → token → THEME MODE KEY`,
-          // so a deleted theme leaves `"gone::light"` / `"gone::dark"` entries
-          // behind — ref data pointing at a theme that no longer exists. The
-          // same pruning `scopeSnapshotToTheme` already does when a kit is
-          // saved scoped to one theme; it just never ran on delete. It matters
-          // more now that a System Style writes overrides on adopt, so trying
-          // styles on and deleting them used to accumulate orphans forever.
-          const prefixes = [themeModeKey(key, 'light'), themeModeKey(key, 'dark')]
+          // Sweep the families THIS theme minted for itself (Add-to-system /
+          // "+Theme" both mint one per slot it doesn't share with a global —
+          // see familySlotFor) once nothing references them any more. Deleting
+          // the theme used to only "free" them into the Custom folder
+          // (removeCustomColor's own in-use lock would then let a person
+          // delete them by hand) — reported as primitive clutter piling up
+          // across repeated style try-ons ("Blue-marin", "Core--minimalist", …)
+          // that nobody was ever going to click through six delete
+          // confirmations for. A family a person is still actually using
+          // elsewhere is untouched: `stillUsed` re-checks the SAME "any theme's
+          // themeSources references it" condition `removeCustomColor` already
+          // enforces, against the POST-removal `themeSources` — a family two
+          // themes shared survives losing one of them.
+          const deletedSlots = new Set(Object.values(state.themeSources[key] ?? {}).filter(Boolean))
+          const stillUsed = (famKey: string) =>
+            Object.values(themeSources).some((refs) =>
+              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey),
+            )
+          const customColors = deletedSlots.size
+            ? state.customColors.filter((c) => !deletedSlots.has(c.key) || stillUsed(c.key))
+            : state.customColors
+          // `architectureOverrides` is keyed `arch → token → THEME KEY` (a
+          // PLAIN theme key — verified against `scopeSnapshotToTheme` right
+          // above in this file, which the "saving a kit scoped to one theme"
+          // flow already exercises and which this comment used to describe
+          // incorrectly). So a deleted theme leaves a `"gone"`-keyed entry
+          // behind — ref data pointing at a theme that no longer exists. This
+          // used to filter for `themeModeKey(key, 'light'|'dark')` — a
+          // `"gone::light"`-shaped key that `setArchitectureOverride` never
+          // actually writes — so the filter below matched nothing and this
+          // pruning was silently a no-op since it was added: every Style
+          // try-on adopted and then deleted left its overrides in storage
+          // forever (`applyArchTokenOverrides`'s own `hasOwnProperty` guard,
+          // added alongside this fix, keeps a stale entry like this out of
+          // the EXPORT regardless — but it should not go on accumulating in
+          // the store either). It matters more now that a System Style
+          // writes overrides on adopt, so trying styles on and deleting them
+          // used to accumulate orphans forever.
           const architectureOverrides = Object.fromEntries(
             Object.entries(state.architectureOverrides).map(([arch, tokens]) => [
               arch,
@@ -1167,7 +1204,7 @@ export const useDesignStore = create<DesignStore>()(
                 Object.entries(tokens)
                   .map(([token, modes]) => [
                     token,
-                    Object.fromEntries(Object.entries(modes).filter(([mode]) => !prefixes.includes(mode))),
+                    Object.fromEntries(Object.entries(modes).filter(([mode]) => mode !== key)),
                   ] as const)
                   .filter(([, modes]) => Object.keys(modes).length > 0),
               ),
@@ -1183,6 +1220,7 @@ export const useDesignStore = create<DesignStore>()(
             themeOrigin,
             architectureOverrides,
             themeOrder: state.themeOrder.filter((t) => t !== key),
+            customColors,
           }
         }),
       setThemeOrder: (order) =>
@@ -1232,9 +1270,25 @@ export const useDesignStore = create<DesignStore>()(
         set((state) => {
           if (!state.themes[key]) return state
           const modes = state.themeSemantics[key]
+          const nextSources = { ...state.themeSources, [key]: sources }
+          // Drop custom families this theme just abandoned — the same sweep
+          // removeTheme already does. Without it, every Accent fork / style
+          // retint left the previous primitive in the registry forever
+          // ("creating new primitives instead of discarding").
+          const prevFam = new Set(Object.values(state.themeSources[key] ?? {}).filter(Boolean))
+          const nextFam = new Set(Object.values(sources).filter(Boolean))
+          const dropped = [...prevFam].filter((fam) => !nextFam.has(fam))
+          const stillUsed = (famKey: string) =>
+            Object.values(nextSources).some((refs) =>
+              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey),
+            )
+          const customColors = dropped.length
+            ? state.customColors.filter((c) => !dropped.includes(c.key) || stillUsed(c.key))
+            : state.customColors
           return {
             themeKinds: { ...state.themeKinds, [key]: kind },
-            themeSources: { ...state.themeSources, [key]: sources },
+            themeSources: nextSources,
+            customColors,
             ...(modes ? { themes: { ...state.themes, [key]: modes[kind] } } : {}),
           }
         }),
@@ -1510,7 +1564,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 68,
+      version: 69,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2610,6 +2664,16 @@ export const useDesignStore = create<DesignStore>()(
         relevelRadius(persisted)
         if (Array.isArray(persisted.savedSystems)) {
           for (const sys of persisted.savedSystems) relevelRadius(sys?.snapshot)
+        }
+        // v68→v69: auto-sync now turns itself on the moment a system publishes
+        // (see setFigmaLastPublishAt) — it used to sit behind a buried toggle
+        // that most connected users never found, so every later edit (a color,
+        // a font) silently never reached the Figma plugin. Anyone who has
+        // ALREADY connected gets the same treatment retroactively: if they've
+        // published before but haven't touched the toggle since, turn it on
+        // rather than waiting for their next publish to do it.
+        if (persisted.figmaLastPublishAt && persisted.autoSyncFigma === false) {
+          persisted.autoSyncFigma = true
         }
         return persisted
       },

@@ -154,10 +154,11 @@ function DeleteMyThemesConfirmation({ count, onCancel, onConfirm }: { count: num
 }
 
 function DeleteThemeConfirmation({
-  name, isPreviewed, onCancel, onConfirm,
+  name, isPreviewed, isLast, onCancel, onConfirm,
 }: {
   name: string
   isPreviewed: boolean
+  isLast?: boolean
   onCancel: () => void
   onConfirm: () => void
 }) {
@@ -180,7 +181,11 @@ function DeleteThemeConfirmation({
       <h2 className="text-caption font-semibold text-fg">{t('Delete {name}?', { name })}</h2>
       <p className="mt-1 text-mini leading-relaxed text-fg-muted">
         {t('Every semantic value mapped to this theme will be deleted too. This cannot be undone.')}
-        {isPreviewed && ` ${t('The preview will switch to another theme.')}`}
+        {isLast
+          ? ` ${t('My themes will be empty until you create one or add a System style.')}`
+          : isPreviewed
+            ? ` ${t('The preview will switch to another theme.')}`
+            : ''}
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
         <button ref={cancelRef} type="button" onClick={onCancel} className="h-7 w-full rounded-md border border-line bg-app px-2.5 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">{t('Cancel')}</button>
@@ -396,9 +401,12 @@ export default function ThemeLibraryRail({
 
   const deleteTheme = (key: string) => {
     clearStylePreview()
+    const next = availableThemes.find((theme) => theme !== key)
     if (previewTheme === key) {
-      const next = availableThemes.find((theme) => theme !== key)
       if (next) onPreviewThemeChange(next)
+      else if (corePreset) previewPreset(corePreset, chromeTheme)
+    } else if (!next && corePreset) {
+      previewPreset(corePreset, chromeTheme)
     }
     removeTheme(key)
     setDeleteKey(null)
@@ -416,15 +424,12 @@ export default function ThemeLibraryRail({
 
   return (
     <aside
-      className="flex-shrink-0 flex flex-col min-h-0"
+      className="flex-shrink-0 flex flex-col min-h-0 bg-panel"
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
       <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3.5 border-b border-line">
-        <div className="min-w-0">
-          <h2 className="text-ui font-semibold text-fg truncate">{t('Themes library')}</h2>
-          <p className="text-mini text-fg-muted tabular-nums">{t('{count} in this system', { count: availableThemes.length })}</p>
-        </div>
+        <h2 className="min-w-0 text-ui font-semibold text-fg truncate">{t('Themes library')}</h2>
         <div className="flex-shrink-0">
           <button
             type="button"
@@ -457,17 +462,12 @@ export default function ThemeLibraryRail({
       <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
         <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
           <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
-          {hasOwnTheme && (
-            <button
-              type="button"
-              onClick={() => { clearStylePreview(); setEditor('new') }}
-              aria-label={t('Create theme')}
-              title={t('Create theme')}
-              className={THEME_RAIL_ICON_BTN}
-            >
-              <PlusIcon />
-            </button>
-          )}
+          <span
+            className={THEME_RAIL_COUNT_BADGE}
+            title={t('{count} in this system', { count: availableThemes.length })}
+          >
+            {availableThemes.length}
+          </span>
         </div>
         <AnimatePresence initial={false}>
           {confirmDeleteOwnThemes && (
@@ -514,7 +514,7 @@ export default function ThemeLibraryRail({
                   // trash is only claimed WHEN the trash is actually shown
                   // (active, or hover), so a resting inactive row is symmetric.
                   className={`flex-1 min-w-0 flex items-center text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-                    availableThemes.length > 1 ? (active ? 'pr-6' : 'group-hover:pr-6 group-focus-within:pr-6') : ''
+                    active ? 'pr-6' : 'group-hover:pr-6 group-focus-within:pr-6'
                   }`}
                 >
                   {/* No "{kind} appearance" subline: the name IS "Light" / "Dark",
@@ -524,25 +524,24 @@ export default function ThemeLibraryRail({
                     {labelForTheme(key, themeLabels)}
                   </span>
                 </button>
-                {availableThemes.length > 1 && (
-                  <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteKey(key)}
-                      aria-label={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                      title={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                      className={`${THEME_RAIL_ICON_BTN} hover:text-status-danger focus-visible:ring-status-danger/50`}
-                    >
-                      <TrashIcon />
-                    </button>
-                  </div>
-                )}
+                <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteKey(key)}
+                    aria-label={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
+                    title={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
+                    className={`${THEME_RAIL_ICON_BTN} hover:text-status-danger focus-visible:ring-status-danger/50`}
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
               </div>
               <AnimatePresence initial={false}>
                 {deleteKey === key && (
                   <DeleteThemeConfirmation
                     name={labelForTheme(key, themeLabels)}
                     isPreviewed={previewTheme === key}
+                    isLast={availableThemes.length <= 1}
                     onCancel={() => setDeleteKey(null)}
                     onConfirm={() => deleteTheme(key)}
                   />
@@ -551,19 +550,10 @@ export default function ThemeLibraryRail({
               </div>
             )
           })}
-          {/* The door OUT of the two built-ins.
-              `themeOrder` can't actually start empty — the store keeps at least
-              one theme because an empty matrix has nothing to edit or export
-              (`removeTheme`) — so instead of faking an empty list, the invitation
-              sits AS a row, in the row's own shape, at the end of the list. It's
-              the same target size and rhythm as a theme, so it reads as "the
-              next one", not as chrome; the dashed border and the accent tint are
-              what say it isn't a theme yet.
-              It disappears once the user HAS their own theme (more than the two
-              built-ins): the header's `+` is the durable entry point, and a
-              permanent CTA in a list you've already used is nagging. */}
-          {!hasOwnTheme && (
-            <motion.button
+          {/* Always at the end of My themes — under any existing rows — so
+              creating another theme stays one click away. The dashed border
+              and accent tint say it isn't a theme yet. */}
+          <motion.button
               type="button"
               onClick={() => { clearStylePreview(); setEditor('new') }}
               initial={reduceMotion ? false : { opacity: 0, y: -4 }}
@@ -571,7 +561,7 @@ export default function ThemeLibraryRail({
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
               whileHover={reduceMotion ? undefined : { scale: 1.015 }}
               whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-              className={`group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong p-1.5 text-left transition-colors ${THEME_RAIL_GLASS_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+              className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-white/45 p-1.5 text-left transition-colors dark:bg-white/[0.06] hover:bg-white/60 dark:hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               <span
                 aria-hidden
@@ -583,7 +573,6 @@ export default function ThemeLibraryRail({
                 {t('Create your theme')}
               </span>
             </motion.button>
-          )}
         </div>
 
         <div className="mt-4 border-t border-line pt-3">
@@ -677,11 +666,8 @@ export default function ThemeLibraryRail({
       </nav>
 
       {syncFooter && (
-        <div className="flex-shrink-0 border-t border-line px-2 py-2.5">
-          <div className="flex items-center gap-1 pl-0.5">
-            {syncFooter}
-            <span className="text-caption font-medium text-fg-muted">{t('Sync')}</span>
-          </div>
+        <div className="flex-shrink-0 border-t border-line px-[9px] pb-[11px] pt-[9px]">
+          {syncFooter}
         </div>
       )}
 

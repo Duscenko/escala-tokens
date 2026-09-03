@@ -116,7 +116,7 @@ export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
       <label
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-app pl-3 pr-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent-ui/15 ${nameError ? 'border-status-danger/70' : 'border-line-strong'}`}
+        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-white pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:bg-input-bg dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${nameError ? 'border-status-danger/70' : 'border-line'}`}
         title={t('Rename theme')}
       >
           <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
@@ -296,7 +296,7 @@ function InfoHint({ children }: { children: string }) {
 function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-surface">
+    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-rail-section">
       {children}
     </section>
   )
@@ -386,7 +386,7 @@ function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children 
 }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-surface">
+    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-rail-section">
       <div className="flex min-h-9 items-center justify-between gap-2 px-3 pt-2.5">
         <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
         {trailing}
@@ -1335,7 +1335,7 @@ export default function ThemeQuickSettingsRail({
     <aside
       aria-label={t('Quick settings')}
       aria-disabled={previewingStyle || undefined}
-      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3"
+      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 bg-nav"
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       <div className={`flex-shrink-0 ${disabledShell}`}>

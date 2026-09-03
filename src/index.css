@@ -34,15 +34,30 @@
   inherits: true;
   initial-value: #737373;
 }
+/* Unified border / separator token — theme-aware.
+   Light: rgba(0,0,0, 7%). Dark: rgba(255,255,255, 5.1%).
+   One value for all structural dividers AND control outlines. */
+/* Top navigation bar background — distinct from --app so the workspace body
+   and the nav can sit at different depths without coupling. */
+@property --nav {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --line-alpha {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.051);
+}
 @property --line {
   syntax: "<color>";
   inherits: true;
-  initial-value: #e5e5e5;
+  initial-value: rgba(255, 255, 255, 0.051);
 }
 @property --line-strong {
   syntax: "<color>";
   inherits: true;
-  initial-value: #d4d4d4;
+  initial-value: rgba(255, 255, 255, 0.051);
 }
 
 /* ── Status roles ──────────────────────────────────────────────────────────
@@ -78,6 +93,13 @@
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-faint: var(--fg-faint);
+  --color-nav: var(--nav);
+  --color-tab-bar: var(--tab-bar);
+  --color-panel: var(--panel);
+  --color-rail-section: var(--rail-section);
+  --color-chip-rest: var(--chip-rest);
+  --color-input-bg: var(--input-bg);
+  --color-line-alpha: var(--line-alpha);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   /* Chrome accent as INK — tracks the system's primary color, walked up its own
@@ -171,7 +193,13 @@
   --dur-theme: 280ms;
 
   /* ── Light theme (default) ── */
-  --app: #ffffff;
+  --nav: #f5f5f5;
+  --tab-bar: #ffffff;
+  --panel: rgba(255, 255, 255, 0.07);
+  --rail-section: #ffffff;
+  --chip-rest: #e7e7e7;
+  --input-bg: #f2f2f2;
+  --app: #f5f5f5;
   --surface: #f6f6f7;
   --elevated: #e8e8ea;
   --fg: #18181b;
@@ -188,8 +216,9 @@
        --line-strong  control outline, only when fill is NOT the separator
                       (`bg-app` inputs, dashed add-rows). Hover of a
                       `border-line` control. */
-  --line: #e5e5e5;
-  --line-strong: #d4d4d4;
+  --line-alpha: rgba(0, 0, 0, 0.07);
+  --line: var(--line-alpha);
+  --line-strong: var(--line-alpha);
   /* Fallback until the shell derives it from the primary scale. */
   --accent-ui: #7f56d9;
   --accent-solid: #7f56d9;
@@ -239,14 +268,21 @@
    own appearance (a dark theme's ramps have to be judged on a dark surface),
    so its light card must stay light even while the app chrome is dark. */
 .light {
-  --app: #ffffff;
+  --nav: #f5f5f5;
+  --tab-bar: #ffffff;
+  --panel: rgba(255, 255, 255, 0.07);
+  --rail-section: #ffffff;
+  --chip-rest: #e7e7e7;
+  --input-bg: #f2f2f2;
+  --app: #f5f5f5;
   --surface: #f6f6f7;
   --elevated: #e8e8ea;
   --fg: #18181b;
   --fg-muted: #52525b;
   --fg-faint: #737373;
-  --line: #e5e5e5;
-  --line-strong: #d4d4d4;
+  --line-alpha: rgba(0, 0, 0, 0.07);
+  --line: var(--line-alpha);
+  --line-strong: var(--line-alpha);
   --inverse-action: #18181b;
   --inverse-action-hover: #27272a;
   --inverse-action-ink: #fafafa;
@@ -360,14 +396,21 @@
      `--fg-faint` moved #6b6b6b → #7b7b83: on the raised surface it measured
      2.68:1, under the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on
      `--surface`. */
-  --app: #0a0a0a;
+  --nav: #151516;
+  --tab-bar: #222223;
+  --panel: #151516;
+  --rail-section: #222223;
+  --chip-rest: #1b1b1c;
+  --input-bg: #100f12;
+  --app: #151516;
   --surface: #18181b;
   --elevated: #2a2a2f;
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
   --fg-faint: #7b7b83;
-  --line: #232326;
-  --line-strong: #3a3a3f;
+  --line-alpha: rgba(255, 255, 255, 0.051);
+  --line: var(--line-alpha);
+  --line-strong: var(--line-alpha);
   /* Active workspace-tab icon chip — dark fill, light glyph (same inversion
      as light chrome; was missing here so `.dark` inherited the light values). */
   --inverse-action: #0a0a0a;
@@ -389,7 +432,7 @@
   --rainbow-fill-a: #ffffff;
   --rainbow-fill-b: rgba(255, 255, 255, 0.6);
   --rainbow-fill-c: rgba(0, 0, 0, 0);
-  --rainbow-outline-fill-a: #0a0a0a;
+  --rainbow-outline-fill-a: #151516;
   --rainbow-outline-fill-b: rgba(255, 255, 255, 0.6);
   --rainbow-outline-fill-c: rgba(0, 0, 0, 0);
   --color-1: oklch(66.2% 0.225 25.9);

@@ -245,9 +245,27 @@ function buildScale(
     // page toward the solid, keeping the hue and letting chroma climb from a
     // whisper (1–2 must read as the page, tinted) to nearly the solid at 8.
     if (i < BASE_TONE) {
-      // Step 1 IS the app background — the page hex verbatim, so a brand
-      // background like #111522 round-trips into --neutral-1 exactly.
-      if (i === 1) { out.push(page); continue }
+      // Step 1 is the app background. For the Neutral (chromaLink > 0) and for
+      // any family whose hue already matches the page, that means the page hex
+      // VERBATIM — a brand background like #111522 round-trips into
+      // --neutral-1 exactly. Status families keep their own hue (error stays
+      // red), so on a chromatic paper of a different hue the verbatim emit
+      // imported that foreign tint as tone 1 of every ramp — measured on
+      // Glass (`tinted` cyan page #071719 H206 under a warning solid H63):
+      // tone 1 teal, tone 2 brown, 143° jump. Keep the page's L+C (same paper
+      // weight) and take the family's hue. Near-achromatic pages (C < 0.01)
+      // stay verbatim: the foreign hue is invisible there and golden/default
+      // systems must not move.
+      if (i === 1) {
+        if (chromaLink > 0 || pageC < 0.01) { out.push(page); continue }
+        const rawPageH = chroma(page).oklch()[2]
+        const pH = Number.isNaN(rawPageH) ? baseH : rawPageH
+        let dH = Math.abs(pH - baseH)
+        if (dH > 180) dH = 360 - dH
+        if (dH <= 30) { out.push(page); continue }
+        out.push(oklchToHex(pageL, pageC, baseH))
+        continue
+      }
       // Chroma and hue read the SHIFTED position too, not the raw weight — a
       // step that moved closer to the solid in lightness should carry more of
       // its colour, or the ramp desaturates as contrast climbs.

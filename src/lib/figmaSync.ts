@@ -61,36 +61,79 @@ export function setStoredClaim(slug: string, claim: string): void {
 }
 
 /**
+ * Why a publish failed, so the UI can say something more useful than "retry":
+ *  - `claim-lost`: this browser's saved claim for the slug is missing or the
+ *    server rejected it (401) — another browser/machine owns the slug now, or
+ *    site data was cleared. Retrying with the same claim will fail again.
+ *  - `network`: the request itself didn't complete (offline, timeout, CORS).
+ *  - `server`: the endpoint responded but rejected the payload for some other
+ *    reason (400/403/5xx) — surfaced with its status so it's not a total guess.
+ */
+export type PublishFailureReason = 'claim-lost' | 'network' | 'server'
+export interface PublishResult {
+  ok: boolean
+  reason?: PublishFailureReason
+  status?: number
+}
+
+/**
  * POST the current token set to this system's scoped endpoint so an installed
  * plugin picks it up on its next sync. Records the publish time on success.
- * Resolves to whether the publish succeeded (never throws).
+ * Never throws — a failure comes back as `{ ok: false, reason, status }` so a
+ * caller can tell a lost claim (this slug needs re-claiming) apart from a
+ * network hiccup (just retry) instead of a single flat "publish failed".
  *
  * First successful publish to a slug returns a claim; later writes send it as
  * `Authorization: Bearer`. The claim also lands in `.escala/system.json` when
  * the system is pushed to GitHub, so another machine can recover it.
  */
-export async function publishTokens(): Promise<boolean> {
-  try {
-    const slug = syncProjectId()
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    const claim = getStoredClaim(slug)
-    if (claim) headers.Authorization = `Bearer ${claim}`
+export async function publishTokens(): Promise<PublishResult> {
+  const slug = syncProjectId()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const claim = getStoredClaim(slug)
+  if (claim) headers.Authorization = `Bearer ${claim}`
 
-    const res = await fetch(syncPath(), {
+  let res: Response
+  try {
+    res = await fetch(syncPath(), {
       method: 'POST',
       headers,
       body: JSON.stringify(generateTokenJSON()),
     })
-    if (res.ok) {
-      const body = (await res.json().catch(() => null)) as { claim?: unknown } | null
-      if (typeof body?.claim === 'string' && body.claim) {
-        setStoredClaim(slug, body.claim)
-      }
-      useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
-    }
-    return res.ok
   } catch {
-    return false
+    return { ok: false, reason: 'network' }
+  }
+
+  if (res.ok) {
+    const body = (await res.json().catch(() => null)) as { claim?: unknown } | null
+    if (typeof body?.claim === 'string' && body.claim) {
+      setStoredClaim(slug, body.claim)
+    }
+    useDesignStore.getState().setFigmaLastPublishAt(new Date().toISOString())
+    return { ok: true }
+  }
+
+  return {
+    ok: false,
+    status: res.status,
+    // 401 is `api/tokens.ts`'s exact response for "this slug is claimed by a
+    // claim you didn't present" — the one failure mode a plain retry can't fix.
+    reason: res.status === 401 ? 'claim-lost' : 'server',
+  }
+}
+
+/** Human copy for a `PublishResult.reason` — shared by the Sync pill's tooltip
+ * and FigmaSyncView's status line so the two never phrase the same failure
+ * differently. A missing reason (the success case) has no caller. */
+export function describePublishFailure(reason: PublishFailureReason | undefined): string {
+  switch (reason) {
+    case 'claim-lost':
+      return `This project name ("${syncProjectId()}") is already published from another browser or device. Rename the project to publish under a new URL, or reconnect from the browser that published it first.`
+    case 'network':
+      return 'Could not reach the server — check your connection and try again.'
+    case 'server':
+    default:
+      return "Couldn't publish your tokens. Retry sync, or use the plugin's Import tab to paste them manually."
   }
 }
 
@@ -103,8 +146,17 @@ export async function publishTokens(): Promise<boolean> {
  * triggers can't feed back into another publish. Re-importing unchanged payloads
  * is also cheap on the plugin side (it hashes before importing), but debouncing
  * + signature dedupe keeps the endpoint quiet during rapid edits.
+ *
+ * `onStateChange` shares the SAME `FigmaPublishState` the manual "Sync now"
+ * button drives (plus the failure `reason`, when there is one), so a failed
+ * background publish lights the same red dot instead of failing in total
+ * silence — before this, `void publishTokens()` discarded the result and an
+ * expired claim (or any other error) behind a live-editing session had no
+ * visible symptom at all.
  */
-export function useAutoFigmaSync(): void {
+export function useAutoFigmaSync(
+  onStateChange?: (state: FigmaPublishState, reason?: PublishFailureReason) => void,
+): void {
   const auto = useDesignStore((s) => s.autoSyncFigma)
 
   useEffect(() => {
@@ -119,7 +171,8 @@ export function useAutoFigmaSync(): void {
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         lastSig = sig
-        void publishTokens()
+        onStateChange?.('publishing')
+        void publishTokens().then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
       }, 1500)
     }
 
@@ -130,5 +183,5 @@ export function useAutoFigmaSync(): void {
       unsubscribe()
       if (timer) clearTimeout(timer)
     }
-  }, [auto])
+  }, [auto, onStateChange])
 }

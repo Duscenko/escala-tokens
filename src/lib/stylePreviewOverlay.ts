@@ -101,11 +101,11 @@ export function stylePreviewBrandRamp(
     : generateColorScale(preset.accent, alg, shift, h.pageLight)
 }
 
-export function resolveStylePreviewTokens(
+export function stylePreviewStore(
   store: StoreState,
   { preset, appearance }: StylePreview,
   themeKey: string,
-): PreviewTokens {
+): StoreState {
   const tint = preset.neutralTint
   const h = previewHarmony(preset.accent, tint)
   const alg = store.colorAlgorithm
@@ -136,7 +136,7 @@ export function resolveStylePreviewTokens(
   // The preset IS the reading of the primitives — drop this theme's own family
   // references, semantic overrides and materialised map so the projection can't
   // be pinned to them, exactly like a freshly minted theme wouldn't have any.
-  const overlay: StoreState = {
+  return {
     ...store,
     neutralTint: tint,
     pageBackground: light,
@@ -159,6 +159,10 @@ export function resolveStylePreviewTokens(
     successDarkScale: generateFamilyDarkScale(st.success, alg, shift, dark),
     infoScale: generateColorScale(st.info, alg, shift, light),
     infoDarkScale: generateFamilyDarkScale(st.info, alg, shift, dark),
+    // Try-on must not inherit the open system's custom families — those are
+    // leftover Core/Material/… ramps that made Theme-doc "Primitives" claim
+    // Cupertino while still listing violet Accent + orphan status families.
+    customColors: [],
     themeSources: omitKey(store.themeSources, themeKey),
     themeSemantics: omitKey(store.themeSemantics, themeKey),
     themes: omitKey(store.themes, themeKey),
@@ -178,6 +182,12 @@ export function resolveStylePreviewTokens(
     // the style, not the style wearing another theme's leftovers.
     themeFoundations: { ...store.themeFoundations, [themeKey]: preset.foundations },
   }
+}
 
-  return resolvePreviewTokens(overlay, themeKey, appearance)
+export function resolveStylePreviewTokens(
+  store: StoreState,
+  preview: StylePreview,
+  themeKey: string,
+): PreviewTokens {
+  return resolvePreviewTokens(stylePreviewStore(store, preview, themeKey), themeKey, preview.appearance)
 }

@@ -346,9 +346,22 @@ export function useEnsureColorScales() {
       if (empty(s.successDarkScale)) s.setSuccessDarkScale(genDark(s.successColor))
       if (empty(s.infoDarkScale))    s.setInfoDarkScale(genDark(s.infoColor))
       s.customColors.forEach((c) => {
-        if (!empty(c.darkScale)) return
         const pages = resolveFamilyPages(s, c.key)
-        s.updateCustomColor(c.key, { darkScale: customScalePair(c.base, s, pages, pages.isGray).darkScale })
+        const next = customScalePair(c.base, s, pages, pages.isGray)
+        if (empty(c.darkScale)) {
+          s.updateCustomColor(c.key, { darkScale: next.darkScale })
+          return
+        }
+        // Heal persisted ramps that still carry a chromatic page hex as tone 1
+        // of a differently-hued family (Glass warning dark `#071719` → teal on
+        // an amber ramp). Signature: stored tone 1 IS the page, but regenerating
+        // would rematch the family's hue. Only then rewrite — hand-edits that
+        // already left the page alone stay put.
+        const darkLeaked = (c.darkScale?.[1]?.toLowerCase() === pages.dark.toLowerCase())
+          && (next.darkScale[1].toLowerCase() !== pages.dark.toLowerCase())
+        const lightLeaked = (c.scale?.[1]?.toLowerCase() === pages.light.toLowerCase())
+          && (next.scale[1].toLowerCase() !== pages.light.toLowerCase())
+        if (darkLeaked || lightLeaked) s.updateCustomColor(c.key, next)
       })
     } catch {
       /* invalid hex — ignore */

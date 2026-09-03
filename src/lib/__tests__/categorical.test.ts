@@ -42,23 +42,20 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 63 roles across five groups', () => {
-    // 39 + status.info.surface + status.info.content (Info had a full ramp
-    // and zero roles referencing it) + the alpha-backed set (see
-    // design-plans/alpha-primitives.md): six action.ghost.* split by intent
-    // (neutral/brand/danger × hover/pressed), three border.ring.* focus
-    // halos, and border.rim-highlight. = 51.
+  it('ships 64 roles across five groups', () => {
+    // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
+    // semantic-border audit re-homed the severity strokes:
     //
-    // +10 from design-plans/foundations-geometry-and-strokes.md phase 0: four
-    // status.*.border (the stroke of a status surface, which both renderers
-    // were painting from a magic alpha and disagreeing about) and the solid
-    // pair for the three severities that lacked one — warning/success/info ×
-    // surface-solid + on-solid. Critical already had its pair.
-    // +2 from phase 1: the neutral strokes split by JOB, so the control
-    // boundary keeps its solver under `border.control` / `border.control-hover`
-    // while `default` / `strong` become the two decorative rungs the ramp
-    // already generated and no role referenced.
-    expect(roleIds).toHaveLength(63)
+    //  F2/F3 pass 1 — border group: -3 (`border.<sev>` → `status.<sev>.border-strong`),
+    //  -2 (`border.ring.critical`/`.success` deleted as byte-identical to
+    //  `status.<sev>.border`), +4 (`status.<sev>.border-strong`, info included). Net -1 → 62.
+    //
+    //  F2/F3 pass 2 — action group: -2 (`action.ghost.danger.hover` was
+    //  byte-identical to `status.critical.surface`; `.pressed` had no twin),
+    //  +4 (`status.<sev>.surface-pressed`, absorbing the pressed wash for all
+    //  four severities). Net +2 → 64. `action.ghost` is now neutral+brand only,
+    //  which is the correct scope: intents of a BUTTON, not severities of a MESSAGE.
+    expect(roleIds).toHaveLength(64)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -69,7 +66,7 @@ describe('the categorical catalogue is complete', () => {
   // `status.info.surface-solid` alone would have made Info the second-best
   // equipped severity while warning and success still had none.
   it('gives every severity the identical role shape', () => {
-    const SHAPE = ['surface', 'content', 'surface-solid', 'on-solid', 'border']
+    const SHAPE = ['surface', 'surface-pressed', 'content', 'surface-solid', 'on-solid', 'border', 'border-strong']
     for (const sev of ['critical', 'warning', 'success', 'info']) {
       const own = roleIds.filter((id) => id.startsWith(`status.${sev}.`))
         .map((id) => id.slice(`status.${sev}.`.length)).sort()
@@ -100,6 +97,73 @@ describe('the categorical catalogue is complete', () => {
     expect(extra, `stale comments for ${extra.join(', ')}`).toEqual([])
   })
 
+  // Audit F5: a guidance line that quotes ANY `{ref}` must quote the role's
+  // OWN shipped ref — the exact `{family.tone}` for a plain role, or the
+  // marker keyword (`{ui-a:`, `{step:`, `{fam.solid}`, …) for a solved one.
+  // A description quoting only some OTHER tone is how 13 lines drifted to
+  // naming a value the table stopped shipping (e.g. `status.*.surface-solid`
+  // still said "dark uses {error.12}" after it moved to `{error.solid}`). A
+  // pure-prose line that names no ref at all is fine — many roles describe
+  // the job without pinning a number, which is better usage guidance.
+  it('no guidance line quotes a ref without also naming the role\'s own', () => {
+    const MARKERS = ['{ui-a:', '{ui+a:', '{ui:', '{ui+:', '{step:', '{on:', '{ink:', '.solid}']
+    const PLAIN = /^\{[a-z-]+\.\d+\}$/
+    const REF = /\{[a-z-]+(?:\.(?:\d+|solid)|\+\d+|-a\.\d+)?[^}]*\}/g
+    const stale: string[] = []
+    for (const cat of view.categories) {
+      for (const tok of cat.tokens) {
+        const id = `${cat.key}.${tok.key}`
+        const c = CATEGORICAL_ROLE_COMMENTS[id]
+        if (!c) continue
+        const refs: string[] = c.match(REF) ?? []
+        if (refs.length === 0) continue
+        const own = tok.modes.light.label ? `{${tok.modes.light.label}}` : ''
+        const shipped = MARKERS.some((m) => c.includes(m)) // a solved role names its mechanism
+          || (PLAIN.test(own) && c.includes(own))
+          || refs.includes(own)
+        if (!shipped) stale.push(`${id}: quotes [${refs.join(', ')}], resolves to ${own}`)
+      }
+    }
+    expect(stale, stale.join('\n')).toEqual([])
+  })
+
+  // Audit D2: two BACKGROUND FILLS that resolve to the same primitive are
+  // indistinguishable on screen — `action.secondary.default` used to be pixel-
+  // identical to a `surface.layer-2` popover, and `action.disabled` to a
+  // `surface.layer-1` card. This scopes to opaque-fill / tint roles only: inks
+  // (`content.*`, `*.on-solid`) coinciding is normal (there are only two ink
+  // ends), and strokes (`border.*`) sharing a tint with a fill is fine — you
+  // never confuse a 1px line with a filled rectangle. `surface.page` /
+  // `surface.input` share a tone by explicit design (a form field's own token).
+  it('no two background fills collapse onto one primitive', () => {
+    const isFill = (id: string) =>
+      /^surface\.(page|input|layer-1|layer-2|accent|selected)$/.test(id) ||
+      /^action\.(primary\.default|secondary\.default|secondary\.accent|disabled)$/.test(id) ||
+      /^action\.ghost\.\w+\.(hover|pressed)$/.test(id) ||
+      /^status\.\w+\.surface(-pressed)?$/.test(id)
+    const ALLOWED = new Set(['surface.input|surface.page'])
+    const bySig = new Map<string, string[]>()
+    for (const cat of view.categories) {
+      for (const tok of cat.tokens) {
+        const id = `${cat.key}.${tok.key}`
+        if (!isFill(id)) continue
+        const sig = `${tok.modes.light.label}|${tok.modes.dark.label}`
+        if (!bySig.has(sig)) bySig.set(sig, [])
+        bySig.get(sig)!.push(id)
+      }
+    }
+    const bad: string[] = []
+    for (const ids of bySig.values()) {
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const [a, z] = [ids[i], ids[j]].sort()
+          if (!ALLOWED.has(`${a}|${z}`)) bad.push(`${a} === ${z}`)
+        }
+      }
+    }
+    expect(bad, bad.join('\n')).toEqual([])
+  })
+
   it('nests dotted keys under their group segments', () => {
     expect(categoricalNestedPath('content', 'link.default')).toEqual(['content', 'link', 'default'])
     expect(categoricalNestedPath('status', 'critical.surface')).toEqual(['status', 'critical', 'surface'])
@@ -111,7 +175,10 @@ describe('the categorical catalogue is complete', () => {
     const label = (group: string, key: string) =>
       view.categories.find((c) => c.key === group)?.tokens.find((t) => t.key === key)?.modes.dark.label
     expect(label('surface', 'inverse')).toBe('neutral.4')
-    expect(label('border', 'subtle')).toBe('neutral-dark.4')
+    // border.subtle is on the fixed alpha ladder now (audit F4) — white-a in
+    // dark, black-a in light. The dark-step assertions for it live in the
+    // "decorative ladder" test above.
+    expect(label('border', 'subtle')).toBe('white-a.1')
     // All three severities share step 11 in dark. Critical read 10 until it was
     // measured at |Lc| ~42.7 against its own tone-3 tint, ~17 short of the
     // large-text floor — see the note in semanticArchitectures.ts.
@@ -134,34 +201,35 @@ describe('the categorical catalogue is complete', () => {
   // deleted IBM Carbon projection once proved for a sibling architecture's own
   // border-strong), so the walk lands on 11 for the default seed, not 8/9
   // mirrored from light.
-  // Phase 1 renamed these two — `border.default`/`border.strong` became
-  // `border.control`/`border.control-hover` — and the point of the rename is
-  // that NOTHING moved. These are the same four labels the old test asserted.
-  it('border.control is the accessible boundary, border.control-hover one step past it', () => {
+  // Audit F4: the WHOLE neutral border ladder moved onto the FIXED alpha
+  // primitive — `black-a` in light, `white-a` in dark. The control boundary is
+  // still SOLVED (`{ui-a:…}` composites each translucent step over the page
+  // before measuring WCAG 1.4.11 + APCA Lc 45), it just walks the alpha ladder
+  // now: light clears at step 7, dark at 8. `control-hover` is one step past.
+  it('border.control/-hover are solved on the alpha ladder', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('control')?.light.label).toBe('neutral.8')
-    expect(label('control')?.dark.label).toBe('neutral-dark.11')
-    expect(label('control-hover')?.light.label).toBe('neutral.9')
-    expect(label('control-hover')?.dark.label).toBe('neutral-dark.12')
+    expect(label('control')?.light.label).toBe('black-a.7')
+    expect(label('control')?.dark.label).toBe('white-a.8')
+    expect(label('control-hover')?.light.label).toBe('black-a.8')
+    expect(label('control-hover')?.dark.label).toBe('white-a.9')
   })
 
-  // The reason the split exists: the neutral ramp generates six rungs in the
-  // near-page band and the border roles used TWO of them, so there was nothing
-  // between a hairline and the boundary. Asserting the rungs are DISTINCT and
-  // ORDERED is what stops a later edit from collapsing the ladder back.
+  // The decorative ladder is `black-a`/`white-a` steps 1, 2, 4 — spanning the
+  // near-page band the solid neutral ramp used to skip. Asserting the rungs are
+  // DISTINCT and ASCENDING stops a later edit from collapsing the ladder back.
   it('gives the decorative ladder three distinct, ascending rungs', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('subtle')?.light.label).toBe('neutral.3')
-    expect(label('default')?.light.label).toBe('neutral.4')
-    expect(label('strong')?.light.label).toBe('neutral.5')
-    expect(label('subtle')?.dark.label).toBe('neutral-dark.4')
-    expect(label('default')?.dark.label).toBe('neutral-dark.5')
-    expect(label('strong')?.dark.label).toBe('neutral-dark.6')
-    // And every decorative rung stays LIGHTER than the control boundary — a
-    // decorative stroke that outweighs the boundary is the bug this split was
-    // made to remove, just pointing the other way.
+    expect(label('subtle')?.light.label).toBe('black-a.1')
+    expect(label('default')?.light.label).toBe('black-a.2')
+    expect(label('strong')?.light.label).toBe('black-a.4')
+    expect(label('subtle')?.dark.label).toBe('white-a.1')
+    expect(label('default')?.dark.label).toBe('white-a.2')
+    expect(label('strong')?.dark.label).toBe('white-a.4')
+    // And every decorative rung stays lighter (lower alpha step) than the
+    // control boundary — a decorative stroke that outweighs the boundary is
+    // the bug this split was made to remove, just pointing the other way.
     for (const mode of ['light', 'dark'] as const) {
       const tone = (key: string) => Number(label(key)?.[mode].label.split('.')[1])
       expect(tone('strong'), mode).toBeLessThan(tone('control'))
@@ -182,14 +250,49 @@ describe('the categorical catalogue is complete', () => {
     expect(label('focus')?.dark.label).toBe('accent.11')
   })
 
-  // border.success has one step of headroom border.warning does not — see the
-  // dual-metric table in the design plan (`warning` has no tone below 11 that
-  // clears WCAG in light; `success` does at tone 10).
-  it('border.success sits one tone lighter than border.warning', () => {
+  // status.<sev>.border-strong is the CONTROL BOUNDARY (invalid input outline),
+  // moved verbatim from the old `border.<sev>` roles. success has one step of
+  // headroom warning does not — `warning` has no tone below 11 that clears WCAG
+  // in light; `success` does at tone 10. `info` is the new fourth severity.
+  it('status.<sev>.border-strong keeps the measured per-severity tones', () => {
     const label = (key: string) =>
-      view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('success')?.light.label).toBe('success.10')
-    expect(label('warning')?.light.label).toBe('warning.11')
+      view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === key)?.modes
+    expect(label('critical.border-strong')?.light.label).toBe('error.9')
+    expect(label('critical.border-strong')?.dark.label).toBe('error.11')
+    expect(label('warning.border-strong')?.light.label).toBe('warning.11')
+    expect(label('success.border-strong')?.light.label).toBe('success.10')
+    expect(label('info.border-strong')?.light.label).toBe('info.9')
+    expect(label('info.border-strong')?.dark.label).toBe('info.10')
+  })
+
+  // The two per-severity focus halos were byte-identical to status.<sev>.border
+  // and are gone; only the accent halo `border.ring.default` remains.
+  it('border group carries no per-severity roles after the audit', () => {
+    const border = view.categories.find((c) => c.key === 'border')!
+    for (const k of ['critical', 'warning', 'success', 'ring.critical', 'ring.success']) {
+      expect(border.tokens.find((t) => t.key === k), k).toBeUndefined()
+    }
+    expect(border.tokens.find((t) => t.key === 'ring.default')).toBeDefined()
+  })
+
+  // The danger ghost wash was byte-identical to status.critical.surface; it's
+  // gone, and the pressed wash it needed is now a status role for every severity.
+  it('action.ghost is neutral+brand only; the danger wash moved to status.<sev>.surface-pressed', () => {
+    const action = view.categories.find((c) => c.key === 'action')!
+    const ghostKeys = action.tokens.map((t) => t.key).filter((k) => k.startsWith('ghost.'))
+    expect(ghostKeys.sort()).toEqual(
+      ['ghost.brand.hover', 'ghost.brand.pressed', 'ghost.neutral.hover', 'ghost.neutral.pressed'],
+    )
+    const label = (key: string) =>
+      view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === key)?.modes
+    for (const sev of ['critical', 'warning', 'success', 'info']) {
+      expect(label(`${sev}.surface-pressed`)?.light.label, sev).toBe(`${sev === 'critical' ? 'error' : sev}-a.5`)
+    }
+    // The retuned brand-ghost hover no longer collides with surface.selected.
+    const ghostBrandHover = action.tokens.find((t) => t.key === 'ghost.brand.hover')?.modes.light.label
+    const selected = view.categories.find((c) => c.key === 'surface')?.tokens.find((t) => t.key === 'selected')?.modes.light.label
+    expect(ghostBrandHover).toBe('accent-a.2')
+    expect(selected).toBe('accent-a.3')
   })
 })
 

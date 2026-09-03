@@ -21,7 +21,7 @@
 // belongs instead.
 import chroma from 'chroma-js'
 import type { GlobalScales } from './semanticRoles'
-import { accessibleSolidTone, solidInkPair, brandSolidPair, ACTION_LABEL_TARGET, BASE_TONE, checkContrast, WCAG_AA, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, generateAlphaScale } from './colorUtils'
+import { accessibleSolidTone, solidInkPair, brandSolidPair, ACTION_LABEL_TARGET, BASE_TONE, checkContrast, WCAG_AA, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, generateAlphaScale, compositeOver } from './colorUtils'
 import { apcaLc, INTENT_THRESHOLDS } from './color/apca'
 
 /** APCA body-text floor — the same constant the audit and the ramp use. */
@@ -268,6 +268,43 @@ function uiBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look
 }
 
 /**
+ * `uiBoundaryRef` for the FIXED alpha ladder (`black-a` / `white-a`). Same
+ * job — walk up until WCAG 1.4.11 + APCA Lc 45 both clear against the page —
+ * but the ladder's steps are translucent, so each is COMPOSITED over the page
+ * before it's measured. The page is `surface.page` (`neutral.1` / dark twin).
+ *
+ * This is what lets the neutral control boundary be an alpha stroke rather
+ * than a solid tone: a 1px hairline composites over whatever surface it's
+ * drawn on, and the ladder is background-agnostic by construction (see
+ * design-plans/alpha-primitives.md), so the boundary reads the same on the
+ * page, on a card or on a filled field. `black-a`/`white-a` are NOT tinted by
+ * the accent, so unlike `{ui:neutral.N}` this lands on the same step for
+ * essentially every system — measured, light clears at step 7, dark at 8.
+ */
+function uiAlphaBoundaryRef(fam: string, start: number, kind: 'light' | 'dark', look: Look): string {
+  const page = look(kind === 'dark' ? 'neutral-dark' : 'neutral', 1)
+  if (!page) return `{${fam}.${start}}`
+  const ramp = rampOf(look, fam) // raw #rrggbbaa steps of black-a / white-a
+  let fallback = start
+  let bestScore = -Infinity
+  for (let t = start; t <= 12; t++) {
+    const raw = ramp[t]
+    if (!raw) continue
+    const hex = compositeOver(raw, page) // opaque, over the page it sits on
+    const w = checkContrast(hex, page)
+    const lc = Math.abs(apcaLc(hex, page))
+    if (w >= WCAG_UI && lc >= APCA_UI) return `{${fam}.${t}}`
+    const score = Math.min(w / WCAG_UI, lc / APCA_UI)
+    if (score > bestScore) { bestScore = score; fallback = t }
+  }
+  return `{${fam}.${fallback}}`
+}
+
+function uiAlphaBoundaryTone(fam: string, start: number, kind: 'light' | 'dark', look: Look): number {
+  return Number(REF_RE.exec(uiAlphaBoundaryRef(fam, start, kind, look))?.[2] ?? start)
+}
+
+/**
  * A hover/pressed tone `offset` steps past the RESOLVED solid, re-verified
  * through `solidInkPair` rather than assumed — pinning hover/pressed to fixed
  * tones (the old `{accent.10}`/`{accent.11}`) silently breaks the moment the
@@ -402,6 +439,15 @@ function curatedRefs(
         inkRefFor(look(fam, Number(tone)), look))
       .replace(/\{ink:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, tone: string) =>
         tintInkRef(fam, Number(tone), look))
+      // `{ui-a:<fam>.<start>}` / `{ui+a:…}` — the ALPHA-ladder twins of the two
+      // below, resolved by `uiAlphaBoundaryRef` (composites each translucent
+      // step over the page before measuring). Must run BEFORE `{ui:…}` — the
+      // colon after `ui` in that regex would not match `ui-a:` / `ui+a:`, but
+      // ordering it first keeps the intent obvious.
+      .replace(/\{ui\+a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        uiAlphaBoundaryRef(fam, Math.min(uiAlphaBoundaryTone(fam, Number(start), kind, look) + 1, 12), kind, look))
+      .replace(/\{ui-a:([a-z-]+)\.(\d+)\}/g, (_m, fam: string, start: string) =>
+        uiAlphaBoundaryRef(fam, Number(start), kind, look))
       // `{ui:<fam>.<start>}` — the control boundary / focus ring, solved from
       // `start`. `{ui+:…}` is the EMPHASIS step: one past whatever the
       // boundary actually resolved to, so it can never collapse onto it when
@@ -488,9 +534,20 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'content', key: 'link.hover',   light: '{accent.12}', dark: '{accent.12}' },
   // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
   { group: 'action', key: 'primary.default', light: '{accent.solid}', dark: '{accent.solid}' },
-  { group: 'action', key: 'secondary.default', light: '{neutral.3}',    dark: '{neutral-dark.3}' },
+  // `{neutral.4}`, not `{neutral.3}` (audit D2). Tone 3 IS `surface.layer-2` —
+  // a resting secondary button was pixel-identical to a floating popover. A
+  // control you click reads one step heavier than a passive surface; tone 4 is
+  // otherwise unreferenced by any neutral role, so this introduces no new
+  // collision. Label stays `content.primary` and its contrast only improves.
+  { group: 'action', key: 'secondary.default', light: '{neutral.4}',    dark: '{neutral-dark.4}' },
   { group: 'action', key: 'secondary.accent', light: '{accent.3}',     dark: '{accent.3}' },
-  { group: 'action', key: 'disabled',  light: '{neutral.2}',    dark: '{neutral-dark.2}' },
+  // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
+  // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
+  // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
+  // and it composites over whatever's behind (page OR card) so it reads as
+  // "muted, wherever it sits". Flips black/white per appearance like the ghost
+  // washes. No contrast floor — it communicates inactivity, not legibility.
+  { group: 'action', key: 'disabled',  light: '{black-a.3}',    dark: '{white-a.3}' },
   // Hover/pressed on the primary fill — SOLVED `n` steps past the RESOLVED
   // solid (`{step:accent+n}`), not pinned. This used to be fixed one/two steps
   // past tone 9, on the stated assumption that the solid always lands there —
@@ -530,12 +587,22 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // light page, white over a dark one, which is precisely the job
   // `black-a`/`white-a` exist for (nothing else in the system can wash a
   // surface DOWN in light and UP in dark using one role).
+  //
+  // Only NEUTRAL and BRAND live here now. The DANGER ghost wash was byte-
+  // identical to `status.critical.surface` / `status.critical.surface-pressed`
+  // (audit F2/F3) — a destructive borderless action shares the exact colour of
+  // an error banner tint, and that IS the right relationship, so it points at
+  // the `status` role instead of duplicating it under `action`. This also
+  // restores the group's own scope: `ghost` is the intents of a BUTTON, not
+  // the severities of a MESSAGE.
   { group: 'action', key: 'ghost.neutral.hover',   light: '{black-a.1}', dark: '{white-a.1}' },
   { group: 'action', key: 'ghost.neutral.pressed', light: '{black-a.2}', dark: '{white-a.2}' },
-  { group: 'action', key: 'ghost.brand.hover',     light: '{accent-a.3}', dark: '{accent-a.3}' },
+  // hover was `{accent-a.3}` — byte-identical to `surface.selected` (audit F1,
+  // decision D2). A transient hover should sit UNDER a persistent selection, so
+  // it drops one step to `{accent-a.2}`; pressed stays at 5 (a decisive step,
+  // and nothing else reads that tone).
+  { group: 'action', key: 'ghost.brand.hover',     light: '{accent-a.2}', dark: '{accent-a.2}' },
   { group: 'action', key: 'ghost.brand.pressed',   light: '{accent-a.5}', dark: '{accent-a.5}' },
-  { group: 'action', key: 'ghost.danger.hover',    light: '{error-a.3}',  dark: '{error-a.3}' },
-  { group: 'action', key: 'ghost.danger.pressed',  light: '{error-a.5}',  dark: '{error-a.5}' },
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
@@ -612,6 +679,20 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // residual is Lc ~42, short of the 60 floor, and was kept anyway).
   { group: 'status', key: 'info.surface',     light: '{info-a.3}',    dark: '{info-a.3}' },
   { group: 'status', key: 'info.content',     light: '{info.11}',       dark: '{info.11}' },
+  // ── The PRESSED wash of a status-tinted interactive surface — a destructive
+  // row-menu item held down, a "dismiss all" on an error banner. `{fam-a.5}`,
+  // two steps deeper than `*.surface` (`{fam-a.3}`), exactly the relationship
+  // `action.primary.default → .pressed` and the neutral ghost wash keep.
+  //
+  // Absorbed from `action.ghost.danger.pressed` (audit F2/F3), which had no
+  // twin anywhere and only ever meant "the pressed state of an error tint".
+  // Added for all four severities in one go — the rule this file re-decides by
+  // hand every time: a severity gets a slot because ALL FOUR do, never because
+  // one component reached for it (see `status.info.*` above).
+  { group: 'status', key: 'critical.surface-pressed', light: '{error-a.5}',   dark: '{error-a.5}' },
+  { group: 'status', key: 'warning.surface-pressed',  light: '{warning-a.5}', dark: '{warning-a.5}' },
+  { group: 'status', key: 'success.surface-pressed',  light: '{success-a.5}', dark: '{success-a.5}' },
+  { group: 'status', key: 'info.surface-pressed',     light: '{info-a.5}',    dark: '{info-a.5}' },
   // ── The STROKE of a status surface, one role per severity.
   //
   // Added because both renderers were painting it from a magic number and
@@ -638,6 +719,28 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'status', key: 'warning.border',  light: '{warning-a.6}', dark: '{warning-a.6}' },
   { group: 'status', key: 'success.border',  light: '{success-a.6}', dark: '{success-a.6}' },
   { group: 'status', key: 'info.border',     light: '{info-a.6}',    dark: '{info-a.6}' },
+  // ── The CONTROL BOUNDARY of a status surface — an invalid input's outline,
+  // not the edge of a banner. Carries WCAG 1.4.11 (>=3:1) AND APCA Lc >=45 as a
+  // `ui-component`, which `*.border` above deliberately does not: that one is
+  // alpha and decorative, this one is a solved solid tone.
+  //
+  // Moved here verbatim from `border.critical` / `border.warning` / `border.success`
+  // (audit F2/F3 — a "severity border" concept was split across the `border`
+  // group and `status`, and `border.ring.critical` / `border.ring.success` were
+  // byte-identical to `*.border`). Every value below is the SAME tone those
+  // three roles already shipped — the minimum clearing both metrics against the
+  // page, re-measured, not retuned:
+  //   • error  : light 9 (3.76 / Lc 64), dark 11 (dark 9/10 fail APCA — 38 / 44)
+  //   • warning: light 11 (9 and 10 fail WCAG — 2.35 / 2.74), dark 11
+  //   • success: light 10 (3.32 / Lc 60 — one step of headroom warning lacks), dark 10
+  //   • info   : light 9 (3.24 / Lc 59), dark 10 (dark 9 fails APCA — Lc 42)
+  // `info` is NEW — the severity every other status slot already covers "one
+  // decision across all four" — and lands on the same light-9 / dark-10 shape as
+  // error, one step earlier than error in dark because its ramp clears sooner.
+  { group: 'status', key: 'critical.border-strong', light: '{error.9}',    dark: '{error.11}' },
+  { group: 'status', key: 'warning.border-strong',  light: '{warning.11}', dark: '{warning.11}' },
+  { group: 'status', key: 'success.border-strong',  light: '{success.10}', dark: '{success.10}' },
+  { group: 'status', key: 'info.border-strong',     light: '{info.9}',     dark: '{info.10}' },
   // ── Solid fills (badges, destructive buttons, status dots).
   //
   // Light solves the fill (`{fam.solid}`). Dark uses the ramp's light end so a
@@ -704,35 +807,36 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // guarantee to chase a look. It is to stop making one name do two jobs.
   // DECORATION (separates regions, carries no state, no contrast floor) is
   // `subtle` / `default` / `strong`; the CONTROL BOUNDARY (the stroke IS the
-  // control, so WCAG 1.4.11 + APCA Lc 45 apply) is `control` / `control-hover`,
-  // which inherit the `{ui:…}` / `{ui+:…}` solvers verbatim from the roles that
-  // used to be called `default` / `strong`. Not a single measured value moved;
-  // two names appeared and two changed meaning.
-  { group: 'border', key: 'default',  light: '{neutral.4}', dark: '{neutral-dark.5}' },
-  // Emphasis — one step past whatever `default` RESOLVED to (`{ui+:…}`),
-  // never a fixed tone: pinning it to 9 would collapse onto the boundary on
-  // exactly the tinted-neutral systems where the boundary itself walks to 9.
-  // Reserve for grouping strokes that need to outrank a plain control
-  // boundary (e.g. a selected card's own edge); it is NOT where a resting
-  // input should point — that's `default`, immediately above.
-  { group: 'border', key: 'strong',   light: '{neutral.5}', dark: '{neutral-dark.6}' },
-  // ── The control boundary, moved here intact from `default`/`strong` above.
+  // control, so WCAG 1.4.11 + APCA Lc 45 apply) is `control` / `control-hover`.
   //
-  // `control` is what a resting input, select, checkbox or unfilled button
-  // binds to — anywhere the stroke is the only sign that a control is there.
-  // `control-hover` is its hover/emphasis step, and it has to be SOLVED one
-  // past whatever `control` actually resolved to (`{ui+:…}`) rather than
-  // pinned: on a neutral ramp tinted by certain accents the boundary itself
-  // walks to 9, and a pinned 9 would collapse hover onto rest — no state at
-  // all, the same defect `action.primary.pressed` had.
+  // ── The whole neutral ladder is now the FIXED ALPHA primitive (`black-a` in
+  // light, `white-a` in dark), not a solid `{neutral.N}` tone (audit F4).
+  // A 1px hairline composites over whatever surface it's drawn on, and a solid
+  // tone only looks right on the ONE surface it was solved against — the same
+  // argument `action.ghost.neutral.*` already won. Every one of the six System
+  // Styles was ALSO overriding these three with alpha for exactly this reason;
+  // the default now agrees with them, so those overrides get deleted.
   //
-  // `control-hover` is not a nicety: the Figma plugin already drew every
-  // control's hover stroke from `border.strong` (20+ call sites), on the old
-  // reading where `strong` WAS the emphasis boundary. Leaving those pointing
-  // at the new decorative `strong` would make hover LIGHTER than rest — the
-  // stroke receding on hover. The concept keeps a name; only the name changed.
-  { group: 'border', key: 'control',       light: '{ui:neutral.8}',  dark: '{ui:neutral-dark.8}' },
-  { group: 'border', key: 'control-hover', light: '{ui+:neutral.8}', dark: '{ui+:neutral-dark.8}' },
+  // The decorative rungs are `black-a` / `white-a` steps 2 and 4 (subtle is 1),
+  // spanning the near-page band the solid ramp used to skip. No contrast floor.
+  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.2}' },
+  // Emphasis rung — the heaviest stroke that is still DECORATION. Reserve for a
+  // grouping that needs to outrank a plain control boundary (a selected card's
+  // own edge). NOT where a resting input points — that's `control`, below.
+  { group: 'border', key: 'strong',   light: '{black-a.4}', dark: '{white-a.4}' },
+  // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
+  // each step over the page before measuring), not pinned. Measured: `black-a`
+  // clears WCAG 1.4.11 + APCA Lc 45 against a light page at step 7, `white-a`
+  // against a dark page at step 8. The ladder is not accent-tinted, so unlike
+  // the old `{ui:neutral.8}` this lands on the same step for essentially every
+  // system rather than drifting on a teal/green neutral.
+  //
+  // `control-hover` is `{ui+a:…}` — one step past whatever `control` resolved
+  // to, so it can't collapse onto rest. It's not a nicety: the Figma plugin
+  // draws every control's hover stroke from this concept (20+ call sites), so a
+  // hover that resolved lighter than rest would be the stroke RECEDING on hover.
+  { group: 'border', key: 'control',       light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
+  { group: 'border', key: 'control-hover', light: '{ui+a:black-a.5}', dark: '{ui+a:white-a.5}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
   // focused / active" conveys information and falls under WCAG 1.4.11, so it
@@ -741,7 +845,8 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // at {accent.8} reads 1.97:1 in dark, which is correct for emphasis and
   // wrong for state.
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
-  { group: 'border', key: 'subtle',   light: '{neutral.3}', dark: '{neutral-dark.4}' },
+  // Lightest decorative rung — a hairline divider, a quiet grouping edge.
+  { group: 'border', key: 'subtle',   light: '{black-a.1}', dark: '{white-a.1}' },
   // Focus ring — SOLVED, not pinned. `{ui:accent.9}` (resolved in
   // `curatedRefs` via `uiBoundaryRef`, below) walks the accent ramp up from
   // tone 9 until a tone clears WCAG ≥3:1 AND APCA Lc ≥45 against the page,
@@ -756,9 +861,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // The solver lands on 9 for a cool/saturated accent (unchanged output for
   // the common case) and walks up to 10 or 11 for anything warmer or paler.
   //
-  // Dark stays pinned at `{accent.11}` — its own six-seed search already
-  // showed dark ramps have no equivalent blind spot worth walking around
-  // (tone 11 clears both for every seed tried: WCAG 11.83–11.90, Lc 75.0–75.3).
+  // Dark also runs `{ui:accent.9}` (solved from 9, same as light) — its own
+  // six-seed search showed dark ramps have no blind spot worth walking around,
+  // so the walk simply lands on 11 for every seed tried (WCAG 11.83–11.90,
+  // Lc 75.0–75.3). Both columns are the solver, not a pin.
   { group: 'border', key: 'focus',   light: '{ui:accent.9}',  dark: '{ui:accent.9}' },
   // ── Focus RING (the translucent halo), distinct from `border.focus` (the
   // solid boundary). Two roles, not one, because they do different jobs: the
@@ -774,9 +880,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // decision: that one is about the solid BOUNDARY staying accent-coloured
   // for every severity, which it still does. A halo matching the field's own
   // error/success border is a separate, additive affordance.
+  // Accent focus halo only. The per-severity halos (`ring.critical` / `ring.success`)
+  // were byte-identical to `status.<sev>.border` — deleted, not moved (audit F2).
+  // A field showing an error border already has its coloured edge; the halo for
+  // that state IS that same `status.critical.border` token.
   { group: 'border', key: 'ring.default',  light: '{accent-a.6}',  dark: '{accent-a.6}' },
-  { group: 'border', key: 'ring.critical', light: '{error-a.6}',   dark: '{error-a.6}' },
-  { group: 'border', key: 'ring.success',  light: '{success-a.6}', dark: '{success-a.6}' },
   // The 1px light rim `darkShadow()` paints on every dark-mode elevation —
   // until now a bare `rgba(255,255,255,…)` computed inside that function with
   // no token anywhere. This does NOT change what `darkShadow` emits (its alpha
@@ -785,19 +893,11 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // consumer building elevation by hand has the same rim available, and so
   // `white-a` stops being a family the export ships that no role references.
   { group: 'border', key: 'rim-highlight', light: '{white-a.1}', dark: '{white-a.1}' },
-  // Already the minimum tone clearing both metrics — verified, not changed.
-  // Light error.9 = 3.76/64 (passes). Dark error.9 = 5.14 WCAG but Lc 37.6
-  // (fails APCA — the same blind spot `default` above hits); error.10 is
-  // 44.2, still short of the Lc 45 floor; error.11 is the first to clear both
-  // (11.94/75.0).
-  { group: 'border', key: 'critical', light: '{error.9}',   dark: '{error.11}' },
-  // Also already minimal: warning has NO tone below 11 that clears WCAG in
-  // light (tone 9 = 2.35, tone 10 = 2.75 — both fail; tone 11 = 5.14 passes).
-  { group: 'border', key: 'warning',  light: '{warning.11}', dark: '{warning.11}' },
-  // Success has one step of headroom warning doesn't: tone 10 clears BOTH
-  // metrics in both themes (light 3.31/60.0, dark 8.22/55.7), one step
-  // lighter than the previous tone-11 pin.
-  { group: 'border', key: 'success',  light: '{success.10}', dark: '{success.10}' },
+  // `border.critical` / `border.warning` / `border.success` moved to
+  // `status.<sev>.border-strong` (audit F3 — a severity-family stroke belongs in
+  // the `status` group, beside `status.<sev>.border`), and `info` joined them so
+  // all four severities carry the same slots. Values unchanged; see the block
+  // above `status.critical.border-strong`.
 ]
 
 /**
@@ -842,51 +942,52 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'content.link.default': '[ROLE: Interactive Text Default] Actionable link text. Must contrast with the background (4.5:1) and remain distinguishable from adjacent content.primary (~3:1). Uses the ramp text step, not a fill-hover step.',
   'content.link.hover': '[ROLE: Interactive Text Hover] Hover/focus variation of content.link.default — one ramp step for visible feedback while staying accessible.',
   'action.primary.default': "[ROLE: Primary CTA Default] Primary call-to-action fill. Inner text must always be content.on-action. Solved per theme — not pinned to a fixed accent step.",
-  'action.primary.hover': '[ROLE: Primary CTA Hover] Interactive hover state. SOLVED one tone past the RESOLVED action.primary.default, re-verified for label contrast — not a fixed accent step. A pinned {accent.10} measured under WCAG AA (as low as 1.78:1) for any hue whose solid resolves above tone 9.',
-  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Active/pressed state. SOLVED two tones past the RESOLVED default, same reasoning as hover. Replaces a fixed dark {accent.6} that measured APCA Lc 0-24 (illegible) once the solid resolves above tone 9, which it does for most hues.',
-  'action.secondary.default': '[ROLE: Secondary CTA Default] Neutral subtle button fill. Label text must be content.primary, not content.on-action.',
-  'action.secondary.accent': '[ROLE: Secondary Accent Fill] Accent-tinted secondary button background. Pair with content.primary for the label.',
-  'action.disabled': '[ROLE: Disabled Action Fill] Disabled button/control background. No contrast floor — communicates inactive state visually.',
+  'action.primary.hover': '[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) — one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)',
+  'action.primary.pressed': '[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) — two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)',
+  'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.primary, not content.on-action.',
+  'action.secondary.accent': '[ROLE: Secondary Accent Fill] Affects the resting fill of accent-tinted secondary buttons. {accent.3}. Pair with content.primary for the label.',
+  'action.disabled': '[ROLE: Disabled Action Fill] Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.3} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
   'action.ghost.neutral.hover': '[ROLE: Ghost Neutral Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
   'action.ghost.neutral.pressed': '[ROLE: Ghost Neutral Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',
-  'action.ghost.brand.hover': '[ROLE: Ghost Brand Hover] Hover wash for a borderless button carrying brand intent (tertiary CTA). An ALPHA primitive, not a solid tint — a ghost button has no fill of its own, so its hover has to composite over whatever surface it sits on.',
-  'action.ghost.brand.pressed': '[ROLE: Ghost Brand Pressed] Pressed wash for a brand ghost button. One step deeper than action.ghost.brand.hover on the same alpha ramp.',
-  'action.ghost.danger.hover': '[ROLE: Ghost Danger Hover] Hover wash for a borderless destructive action (a Delete in a row menu). Error family so the intent reads before the click, not after.',
-  'action.ghost.danger.pressed': '[ROLE: Ghost Danger Pressed] Pressed wash for a destructive borderless action.',
-  'status.critical.surface': "[ROLE: Feedback Background Subtle] Tinted background for error alerts and banners. Pair with status.critical.content — never a fixed ink on the bg alone.",
-  'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for destructive badges and buttons. Pair with status.critical.on-solid. Light solves {error.solid}; dark uses {error.12} so the fill still reads as coloured on a dark page.",
-  'status.critical.content': '[ROLE: Feedback Text] Error message ink on status.critical.surface. Both themes {error.11} — chromatic severity, not the near-white {error.12} in dark.',
+  'action.ghost.brand.hover': '[ROLE: Ghost Brand Hover] Affects tertiary / borderless buttons carrying brand intent. Hover wash. An ALPHA primitive, not a solid tint — a ghost button has no fill of its own, so its hover has to composite over whatever surface it sits on. {accent-a.2}, one step below surface.selected so a transient hover reads as lighter than a persistent selection.',
+  'action.ghost.brand.pressed': '[ROLE: Ghost Brand Pressed] Affects tertiary / borderless brand buttons. Pressed wash — {accent-a.5}, deeper than the hover on the same alpha ramp.',
+  'status.critical.surface': "[ROLE: Feedback Background Subtle] Affects error alerts, banners, toasts, destructive row-menu items. Tinted background. Pair with status.critical.content — never a fixed ink on the bg alone.",
+  'status.critical.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.5} — two steps deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
+  'status.warning.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.5}.',
+  'status.success.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed success-tinted interactive surface. {success-a.5}.',
+  'status.info.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed info-tinted interactive surface. {info-a.5}.',
+  'status.critical.surface-solid': "[ROLE: Feedback Background Solid] Affects destructive badges, pills and buttons. Solid fill. Pair with status.critical.on-solid. {error.solid} in BOTH themes — solved per appearance so it lands near the anchor; the old dark {error.12} rendered a pale pink #ffddd5 because tone 12 is the near-white end of a dark ramp.",
+  'status.critical.content': '[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix\'s chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
   'status.warning.surface': '[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.',
-  'status.warning.content': '[ROLE: Feedback Text] Warning message ink on status.warning.surface. Light and dark both {warning.11} — chromatic severity, not the near-white {warning.12} in dark.',
+  'status.warning.content': '[ROLE: Feedback Text] Affects the text and glyph inside a warning alert, banner or toast. Ink on status.warning.surface. {warning.11} in both themes — the chromatic-text step, not tone 12.',
   'status.success.surface': '[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.',
-  'status.success.content': '[ROLE: Feedback Text] Success message ink on status.success.surface. Light and dark both {success.11} — chromatic severity, not the near-white {success.12} in dark.',
+  'status.success.content': '[ROLE: Feedback Text] Affects the text and glyph inside a success alert, banner or toast. Ink on status.success.surface. {success.11} in both themes — the chromatic-text step, not tone 12.',
   'status.info.surface': '[ROLE: Feedback Background Subtle] Tinted background for informational alerts and banners. Pair with status.info.content — never a fixed ink on the bg alone.',
-  'status.info.content': '[ROLE: Feedback Text] Info message ink on status.info.surface. Both themes {info.11} — same chromatic-severity rule as critical/warning/success, not the near-white {info.12}.',
-  'status.warning.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for warning badges and pills. Pair with status.warning.on-solid. Light solves {warning.solid}; dark uses {warning.12} so the fill still reads as coloured on a dark page.",
+  'status.info.content': '[ROLE: Feedback Text] Affects the text and glyph inside an informational alert, banner or toast. Ink on status.info.surface. {info.11} in both themes — the chromatic-text step, not tone 12.',
+  'status.warning.surface-solid': "[ROLE: Feedback Background Solid] Affects warning badges, pills and buttons. Solid fill. Pair with status.warning.on-solid. {warning.solid} in both themes — solved per appearance.",
   'status.warning.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.warning.surface-solid. Solved per theme against that fill, never assumed white — a warning solid is usually light enough to need dark ink.',
-  'status.success.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for success badges and pills. Pair with status.success.on-solid. Light solves {success.solid}; dark uses {success.12}.",
+  'status.success.surface-solid': "[ROLE: Feedback Background Solid] Affects success badges, pills and buttons. Solid fill. Pair with status.success.on-solid. {success.solid} in both themes — solved per appearance.",
   'status.success.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.success.surface-solid. Solved per theme against that fill.',
-  'status.info.surface-solid': "[ROLE: Feedback Background Solid] Solid fill for info badges and pills. Pair with status.info.on-solid. Light solves {info.solid}; dark uses {info.12}.",
+  'status.info.surface-solid': "[ROLE: Feedback Background Solid] Affects info badges, pills and buttons. Solid fill. Pair with status.info.on-solid. {info.solid} in both themes — solved per appearance.",
   'status.info.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.info.surface-solid. Solved per theme against that fill.',
-  'status.critical.border': '[ROLE: Feedback Border] The stroke around a critical alert or banner — the edge of a MESSAGE, not a control boundary, so it is not measured for WCAG 1.4.11 (the severity is carried by status.critical.content and the glyph). An alpha primitive, {error-a.6}, because the tint it sits on is alpha too: a solid stroke over a translucent fill composites against a different backdrop than the fill and the two drift apart on any non-page surface. For a stroke that DOES bear a boundary obligation — an invalid input — use border.critical.',
-  'status.warning.border': '[ROLE: Feedback Border] The stroke around a warning alert or banner. {warning-a.6}. See status.critical.border for why it is alpha and why it carries no contrast floor.',
-  'status.success.border': '[ROLE: Feedback Border] The stroke around a success alert or banner. {success-a.6}. See status.critical.border.',
-  'status.info.border': '[ROLE: Feedback Border] The stroke around an informational alert or banner. {info-a.6}. See status.critical.border.',
-  'border.subtle': '[ROLE: Decorative Border 1/3] The lightest neutral stroke — hairline dividers, table rules, the edge of a quiet grouping. Light {neutral.3} (ΔL 0.072 from the page), dark {neutral-dark.4}. DECORATION: it separates regions and carries no state, so it has no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control, not this.',
-  'border.default': '[ROLE: Decorative Border 2/3] The default neutral outline — a card edge, a panel boundary, a grouping box. Light {neutral.4} (ΔL 0.112), dark {neutral-dark.5}. DECORATION, no contrast floor. NOTE: this role changed meaning — it used to BE the control boundary. That job is border.control now; the neutral ramp generates six rungs in this band and the old split used two of them, so a designer reaching for a visible-but-quiet outline had nothing between 0.072 and 0.352.',
-  'border.strong': '[ROLE: Decorative Border 3/3] The heaviest neutral outline that is still decoration — a grouping that needs to read before its neighbours. Light {neutral.5} (ΔL 0.156), dark {neutral-dark.6}. Anything that says "this control is selected / focused / active" conveys state and falls under WCAG 1.4.11: use border.focus or border.control-hover, not this.',
-  'border.control': '[ROLE: Control Boundary] The resting border for inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED from tone 8, not pinned there: a fixed tone 8 measured 2.96-2.98:1 on a neutral ramp tinted by certain accents. Light lands on {neutral.8} = 3.26:1/Lc60 for the default seed. Dark starts the same walk at 8 and lands on {neutral-dark.11} = 11.99:1/Lc75 — not tone-for-tone with light; this ramp\'s dark tones 9-10 pass WCAG but fail APCA (Lc 21-27). Carries the guarantee border.default used to.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] The hover and emphasis step of border.control — one step past whatever that role RESOLVED to ({ui+:...}), never a fixed tone: pinning it to 9 would collapse it onto the boundary on exactly the tinted-neutral systems where the boundary itself walks to 9, leaving no hover state at all. Light {neutral.9} = 4.78:1, dark {neutral-dark.12} = 15.19:1 for the default seed. This is what border.strong used to mean.',
-  'border.focus': '[ROLE: A11y Focus Ring] Keyboard focus-visible ring. SOLVED per theme, not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Light walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 clear (lands on 9-11 depending on hue). Dark stays {accent.11}. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, matching Material/Carbon (WCAG does not require an error-coloured ring) and keeping one ring token instead of one per severity. That scope covers the solid BOUNDARY only — the translucent halo around it is border.ring.*, which does vary by severity.',
-  'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens.',
-  'border.ring.critical': '[ROLE: Focus Halo Critical] Focus halo on a field already showing border.critical, so the glow matches the field rather than fighting it. The solid focus boundary stays accent — see border.focus.',
-  'border.ring.success': '[ROLE: Focus Halo Success] Focus halo on a field showing a success/validated border.',
+  'status.critical.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a critical message — the edge of a MESSAGE, not a control boundary, so it is not measured for WCAG 1.4.11 (the severity is carried by status.critical.content and the glyph). An alpha primitive, {error-a.6}, because the tint it sits on is alpha too: a solid stroke over a translucent fill composites against a different backdrop than the fill and the two drift apart on any non-page surface. For a stroke that DOES bear a boundary obligation — an invalid input — use status.critical.border-strong.',
+  'status.warning.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a warning message. {warning-a.6}. See status.critical.border for why it is alpha and why it carries no contrast floor.',
+  'status.success.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a success message. {success-a.6}. See status.critical.border.',
+  'status.info.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around an informational message. {info-a.6}. See status.critical.border.',
+  'status.critical.border-strong': '[ROLE: Critical Control Boundary] Affects invalid form fields, error-state inputs and selects. The stroke IS the control, so WCAG 1.4.11 + APCA Lc 45 apply — unlike status.critical.border (the edge of a banner). Light {error.9} = 3.76:1/Lc64. Dark {error.11} = 11.94:1 — error.9/10 fail APCA in dark (Lc 37.6/44.2), the border.control blind spot.',
+  'status.warning.border-strong': '[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} — the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail).',
+  'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
+  'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
+  'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface). DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
+  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2}. DECORATION, no contrast floor. The alpha ladder spans the near-page band the solid neutral ramp used to skip between a hairline and the boundary.',
+  'border.strong': '[ROLE: Decorative Border 3/3] Affects a grouping that needs to read before its neighbours (a selected card\'s own edge). Heaviest stroke that is still decoration — {black-a.4} / {white-a.4}. Anything that says "this control is selected / focused / active" conveys state and falls under WCAG 1.4.11: use border.focus or border.control-hover.',
+  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED on the alpha ladder ({ui-a:…} composites each step over the page before measuring): {black-a.7} in light (4.00:1/Lc67), {white-a.8} in dark (7.29:1/Lc50). The ladder is not accent-tinted, so this lands on the same step for essentially every system.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover / emphasis state of a control\'s resting border. One step past whatever border.control RESOLVED to ({ui+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.9} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
+  'border.focus': '[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only — the translucent halo is border.ring.*.',
+  'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
   'border.accent': '[ROLE: Decorative Brand Border] Brand-tinted grouping stroke. NOT a state indicator — use border.focus for focus/selected/active.',
-  'border.critical': '[ROLE: Critical Border] Validation stroke for inputs in an error state. Light {error.9} = 3.76:1. Dark {error.11} = 11.94:1 — error.9/10 fail APCA in dark (Lc 37.6/44.2), same blind spot as border.default.',
-  'border.warning': '[ROLE: Warning Border] Validation stroke for inputs in a warning state. {warning.11} — the minimum tone that clears WCAG in light (tone 9 = 2.35, tone 10 = 2.75, both fail).',
-  'border.success': '[ROLE: Success Border] Validation stroke for inputs in a success/valid state. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.31:1/Lc60 light, 8.22:1/Lc56 dark).',
 }
 
 /** Flat role id → nested export path segments. `content.link.default` → ['content','link','default']. */
@@ -1248,7 +1349,21 @@ function applyArchTokenOverrides(
     const slot = tokens[parts.group]?.[parts.key]
     if (!slot) continue
     for (const [mode, ref] of Object.entries(ov)) {
-      if (ref) slot[mode] = ref
+      // Only ever REPOINT a mode `projectCategorical` already put here (one
+      // entry per theme in `themeOrder`, written just above this call) — never
+      // manufacture a new one. `architectureOverrides`' own mode keys have
+      // carried more than one shape across this file's history (a bare theme
+      // key; elsewhere, a `theme::appearance` composite — see themeModes.ts's
+      // `themeModeKey` and the comment on it in Step3_SemanticTokens.tsx) —
+      // a STALE entry in either shape (an old bug's leftover, a renamed or
+      // deleted theme's orphaned key) used to write straight through as a
+      // brand-new key on `slot`, which the Figma plugin then faithfully turns
+      // into an EXTRA, phantom mode column ("Core--minimalist::dark" showing
+      // up alongside the real "Core--minimalist"). Reported as duplicate
+      // primitive collections in the exported file. `hasOwnProperty` is the
+      // guard: every legitimate mode this function is allowed to touch is
+      // already a real key on `slot` by the time this runs.
+      if (ref && Object.prototype.hasOwnProperty.call(slot, mode)) slot[mode] = ref
     }
   }
 }

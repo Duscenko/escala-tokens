@@ -2,10 +2,29 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mintTheme, slotsFromAccent } from '../../components/configurator/ThemePanel'
 import { DEFAULT_THEME_SOURCES, makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import { applyScopedAccentColor } from '../colorActions'
+import { hexToOklch } from '../color/gamut'
 import { generateColorScale, generateFamilyDarkScale, previewHarmony } from '../colorUtils'
 
 const LEFTOVER_LIGHT = '#fef7ff'
 const LEFTOVER_DARK = '#190f20'
+
+function hueDist(a: number, b: number) {
+  let d = Math.abs(a - b)
+  if (d > 180) d = 360 - d
+  return d
+}
+
+/** Tone 1 sits on the page's lightness; hex equals the page only when hues agree. */
+function expectTone1AnchoredTo(tone1: string | undefined, page: string, familyBase: string) {
+  expect(tone1).toBeTruthy()
+  if (!tone1) return
+  const t = hexToOklch(tone1)
+  const p = hexToOklch(page)
+  expect(Math.abs(t.l - p.l)).toBeLessThan(0.01)
+  if (tone1.toLowerCase() !== page.toLowerCase()) {
+    expect(hueDist(t.h, hexToOklch(familyBase).h)).toBeLessThan(30)
+  }
+}
 
 describe('theme page anchors', () => {
   beforeEach(() => {
@@ -27,14 +46,17 @@ describe('theme page anchors', () => {
     })
     s.addTheme('sky', 'dark', { ...DEFAULT_THEME_SOURCES, brand: 'sky-brand' })
 
-    expect(useDesignStore.getState().customColors.find((c) => c.key === 'sky-brand')?.darkScale?.[1].toLowerCase())
-      .toBe(LEFTOVER_DARK)
+    // Before: still sitting on the leftover paper's LIGHTNESS (wrong page),
+    // even though tone 1 no longer copies a foreign purple hue verbatim.
+    const before = useDesignStore.getState().customColors.find((c) => c.key === 'sky-brand')?.darkScale?.[1]
+    expectTone1AnchoredTo(before, LEFTOVER_DARK, '#2970ff')
 
     const next = '#15b79e'
     expect(applyScopedAccentColor(next, true, 'sky')).toBe(true)
 
     const harmony = previewHarmony(next, useDesignStore.getState().neutralTint)
     const brand = useDesignStore.getState().customColors.find((c) => c.key === 'sky-brand')
+    // Linked retint: brand and page share a hue, so tone 1 IS the new page.
     expect(brand?.darkScale?.[1].toLowerCase()).toBe(harmony.pageDark.toLowerCase())
     expect(brand?.scale[1].toLowerCase()).toBe(harmony.pageLight.toLowerCase())
     expect(brand?.darkScale?.[1].toLowerCase()).not.toBe(LEFTOVER_DARK)
@@ -63,7 +85,10 @@ describe('theme page anchors', () => {
       const refs = useDesignStore.getState().themeSources[minted.key]
       return c.key === refs?.brand
     })
-    expect(brand?.darkScale?.[1].toLowerCase()).toBe(harmony.pageDark.toLowerCase())
+    // Unlinked: page stays the theme's green paper; brand hue moves to blue,
+    // so tone 1 keeps the page's L but takes the brand's hue — never the
+    // leftover global purple.
+    expectTone1AnchoredTo(brand?.darkScale?.[1], harmony.pageDark, next)
     expect(brand?.darkScale?.[1].toLowerCase()).not.toBe(LEFTOVER_DARK)
     expect(brand?.base.toLowerCase()).toBe(next)
   })

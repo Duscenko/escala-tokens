@@ -388,7 +388,9 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   // matters here, and six near-identical washes would read as noise.
   const ghostNeutral = s('action-ghost-neutral', ['action.ghost.neutral.hover'], t.neutralFill)
   const ghostBrand = s('action-ghost-brand', ['action.ghost.brand.hover'], t.neutralFill)
-  const ghostDanger = s('action-ghost-danger', ['action.ghost.danger.hover'], t.neutralFill)
+  // The danger ghost wash IS the error banner tint — no separate `action` role
+  // any more (audit F2/F3). Falls back to the old key for a pre-migration payload.
+  const ghostDanger = s('action-ghost-danger', ['status.critical.surface', 'action.ghost.danger.hover'], t.neutralFill)
   const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
@@ -735,13 +737,15 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const strong = s('border-secondary', ['border.strong'], t.border || '#d0d5dd')
   const accent = s('border-brand', ['border.accent', 'border.ring'], t.brandSolid)
   const active = s('border-brand', ['border.focus', 'border.active', 'border.ring'], t.brandSolid)
-  const critical = s('border-error', ['border.critical', 'destructive.fill'], t.errorColor)
+  const critical = s('border-error', ['status.critical.border-strong', 'border.critical', 'destructive.fill'], t.errorColor)
   // The focus HALO — a real token now, where this used to append a raw `33`
   // (20%) to whatever the border resolved to. Same class of hack as
   // ButtonSpecimen's old `color + '33'`: it only works if the border happens
   // to be a clean 6-digit hex, and it went through no named step at all.
   const ring = s('border-focus-ring', ['border.ring.default'], t.brandSolid)
-  const ringCritical = s('border-focus-ring-critical', ['border.ring.critical'], t.errorColor)
+  // No per-severity halo role any more (audit F2 — it was byte-identical to
+  // `status.critical.border`). The invalid field's halo IS its own alpha edge.
+  const ringCritical = s('border-focus-ring-critical', ['status.critical.border', 'border.ring.critical'], t.errorColor)
   const r = radiusOf(t, 'md', '8px')
 
   const Field = ({ slot, text, ringSlot }: { slot: Slot; text: string; ringSlot?: Slot }) => (

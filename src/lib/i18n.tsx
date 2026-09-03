@@ -48,6 +48,7 @@ const es: Record<string, string> = {
   'Delete theme': 'Eliminar tema',
   'Every semantic value mapped to this theme will be deleted too. This cannot be undone.': 'También se eliminarán todos los valores semánticos asignados a este tema. Esta acción no se puede deshacer.',
   'The preview will switch to another theme.': 'La vista previa cambiará a otro tema.',
+  'My themes will be empty until you create one or add a System style.': 'La lista de temas quedará vacía hasta que cree uno o añada un estilo del sistema.',
   'Edit {name} theme': 'Editar el tema {name}',
   'Preview {name} in {appearance}': 'Previsualizar {name} en modo {appearance}',
   'Theme preview': 'Previsualización',
@@ -68,6 +69,8 @@ const es: Record<string, string> = {
   // Sync pill status — the spelled-out meaning of each status dot.
   'connected': 'conectado',
   'not connected': 'sin conectar',
+  'Sync': 'Sync',
+  'Push': 'Push',
   'pushing…': 'subiendo…',
   'push failed': 'error al subir',
   'published': 'publicado',
@@ -299,6 +302,7 @@ const fr: Record<string, string> = {
   'Delete theme': 'Supprimer le thème',
   'Every semantic value mapped to this theme will be deleted too. This cannot be undone.': 'Toutes les valeurs sémantiques associées à ce thème seront également supprimées. Cette action est irréversible.',
   'The preview will switch to another theme.': 'L’aperçu basculera vers un autre thème.',
+  'My themes will be empty until you create one or add a System style.': 'La liste Mes thèmes sera vide jusqu’à ce que vous en créiez un ou ajoutiez un style système.',
   'Edit {name} theme': 'Modifier le thème {name}',
   'Preview {name} in {appearance}': 'Prévisualiser {name} en mode {appearance}',
   'Theme preview': 'Aperçu du thème',
@@ -319,6 +323,8 @@ const fr: Record<string, string> = {
   // Sync pill status — the spelled-out meaning of each status dot.
   'connected': 'connecté',
   'not connected': 'non connecté',
+  'Sync': 'Sync',
+  'Push': 'Push',
   'pushing…': 'envoi…',
   'push failed': 'échec de l’envoi',
   'published': 'publié',

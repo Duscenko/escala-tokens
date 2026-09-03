@@ -13,6 +13,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
 import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
+import { nestedRadius } from '../../../lib/layoutTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -373,22 +374,17 @@ export interface SpecimenProps {
   t: PreviewTokens; v: AxisValues; icons?: IconOpts; w?: number | string; children?: ReactNode
   /**
    * Which step of the SHADOW ramp this specimen sits on. Honoured by `Card`
-   * only, and opt-in exactly like `w` and `children` — every pre-existing call
-   * site omits it and keeps rendering `sm`, byte for byte.
+   * (and floating menus). Opt-in like `w` / `children` — omit → `sm`.
    *
-   * It exists because a Card is the only page-level SURFACE in the catalogue,
-   * and the artefacts are the only place a page-level surface appears. `sm` is
-   * right for a 280px demo card in the Components playground and far too quiet
-   * for a full-width sheet on a phone screen — which is why the System Styles
-   * differed by elevation on paper and looked identical in the preview.
-   * Measured before this landed: across all five artefacts, THREE screens
-   * (Login, Verify code, Profile) rendered zero box-shadows at all, so
-   * switching Core (Subtle ramp) to Material (Strong ramp) repainted nothing.
+   * Pass `false` to omit the specimen's own shadow when a parent paints
+   * elevation at true size (SystemCollage's scaled modules — an inner
+   * `boxShadow` is clipped by the photograph frame and shrunk by
+   * `transform: scale`).
    *
    * It is a token REFERENCE, never a value — `shadowOf` resolves it against the
    * system's own ramp, so an artefact still cannot invent an elevation.
    */
-  elev?: string
+  elev?: string | false
 }
 
 // ── Button (Color × Style × State) ────────────────────────────────────────────
@@ -800,7 +796,7 @@ function CardSpecimen({ t, w, children, elev }: SpecimenProps) {
         borderRadius: radiusRoleOf(t, 'container'),
         ...cardSurfaceStyle(t),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
-        boxShadow: shadowOf(t, elev ?? 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
+        boxShadow: elev === false ? undefined : shadowOf(t, elev || 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
         display: 'flex', flexDirection: 'column', gap: 8,
       }}
     >
@@ -1787,10 +1783,16 @@ function MenuPanel({
   items: { label: string; danger?: boolean; hover?: boolean; sep?: boolean }[]
   shortcuts?: Record<string, string>
   w?: number | string
-  elev?: string
+  elev?: string | false
 }) {
+  // Concentric corners: item radius = overlay − panel padding (Steve Ruiz).
+  // `control` is independent and often too square inside a large overlay, so the
+  // hover fill read as floating off the panel curve.
+  const pad = 4
+  const outerRadius = radiusRoleOf(t, 'overlay')
+  const itemRadius = `${nestedRadius(parseFloat(String(outerRadius)) || 0, pad)}px`
   return (
-    <div role="menu" style={{ ...baseFont(t), width: w, maxWidth: '100%', borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, elev, '0 12px 32px rgba(10,13,18,0.14)'), padding: 4 }}>
+    <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad }}>
       {items.map((item, i) =>
         item.sep ? (
           <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: '4px 6px' }} aria-hidden />
@@ -1800,7 +1802,7 @@ function MenuPanel({
             role="menuitem"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-              padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), cursor: 'pointer',
+              padding: '7px 10px', borderRadius: itemRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
               background: item.hover ? t.neutralFill : 'transparent',
               color: item.danger ? errorInkOf(t) : t.neutralText,
             }}

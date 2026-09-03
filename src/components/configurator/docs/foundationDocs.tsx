@@ -52,6 +52,9 @@ import {
 import { SHADOW_STEPS } from '../Step7_Shadow'
 import { fontStack } from '../../../lib/fonts'
 import { PHOSPHOR_LIBRARY } from '../../../lib/iconLibraries'
+import { GLOBAL_FAMILY, scaleForFamily, type FamilySlot } from '../../../lib/themeSources'
+import { resolveThemeFoundations } from '../../../lib/themeFoundations'
+import { stylePreviewStore, type StylePreview } from '../../../lib/stylePreviewOverlay'
 
 /** The Overview page — the whole-system reference sheet the old Design Rules
  *  view was. Not a foundation key, so it can never collide with one. Get
@@ -118,13 +121,66 @@ function categoricalRoleLabel(comment: string): string {
   return comment.match(/^\[ROLE: ([^\]]+)\]/)?.[1] ?? ''
 }
 
+/** Slot → doc labels. Theme hub docs name the ROLE, never the minted family
+ *  key (`cupertino-glass-brand`), so Cupertino's Ice ramp reads as Accent. */
+const THEME_PRIMITIVE_SLOTS: { slot: FamilySlot; light: string; dark: string }[] = [
+  { slot: 'brand', light: 'Accent', dark: 'Accent Dark' },
+  { slot: 'gray', light: 'Neutral', dark: 'Neutral Dark' },
+  { slot: 'error', light: 'State/Error', dark: 'State/Error Dark' },
+  { slot: 'warning', light: 'State/Warning', dark: 'State/Warning Dark' },
+  { slot: 'success', light: 'State/Success', dark: 'State/Success Dark' },
+  { slot: 'info', light: 'State/Info', dark: 'State/Info Dark' },
+]
+
+function globalPrimitiveFamilies(store: ReturnType<typeof useDesignStore.getState>) {
+  const out: { label: string; scale: Record<number, string> }[] = [
+    { label: 'Accent', scale: store.primaryScale },
+    { label: 'Neutral', scale: store.grayLightScale },
+    { label: 'State/Error', scale: store.errorScale },
+    { label: 'State/Warning', scale: store.warningScale },
+    { label: 'State/Success', scale: store.successScale },
+    { label: 'State/Info', scale: store.infoScale },
+    { label: 'Neutral Dark', scale: store.grayDarkScale ?? DEFAULT_GRAY_DARK_SCALE },
+    { label: 'Accent Dark', scale: store.primaryDarkScale },
+    { label: 'State/Error Dark', scale: store.errorDarkScale },
+    { label: 'State/Warning Dark', scale: store.warningDarkScale },
+    { label: 'State/Success Dark', scale: store.successDarkScale },
+    { label: 'State/Info Dark', scale: store.infoDarkScale },
+  ]
+  store.customColors.forEach((c) => {
+    out.push({ label: c.label, scale: c.scale })
+    if (c.darkScale && Object.keys(c.darkScale).length) out.push({ label: `${c.label} Dark`, scale: c.darkScale })
+  })
+  return out.filter((f) => f.scale && Object.keys(f.scale).length)
+}
+
+/** Only the six slots THIS theme reads — no leftover Core/Material customs. */
+function themeScopedPrimitiveFamilies(
+  store: ReturnType<typeof useDesignStore.getState>,
+  themeKey: string,
+) {
+  const sources = store.themeSources[themeKey]
+  const out: { label: string; scale: Record<number, string> }[] = []
+  for (const { slot, light, dark } of THEME_PRIMITIVE_SLOTS) {
+    const famKey = sources?.[slot] ?? GLOBAL_FAMILY[slot]
+    const lightScale = scaleForFamily(famKey, 'light', store)
+    const darkScale = scaleForFamily(famKey, 'dark', store)
+    if (lightScale && Object.keys(lightScale).length) out.push({ label: light, scale: lightScale })
+    if (darkScale && Object.keys(darkScale).length) out.push({ label: dark, scale: darkScale })
+  }
+  return out
+}
+
 function resolveCategoricalCategories(
   store: ReturnType<typeof useDesignStore.getState>,
+  themeKey?: string,
 ): CategoricalCategoryDoc[] | undefined {
   if (store.semanticArchitecture !== 'categorical') return undefined
 
   const { themeNames, globalScales, resolvedPalettes } = themeContextFromStore(store)
-  const modeKeys = store.themeOrder.filter((t) => store.themes[t])
+  const modeKeys = themeKey
+    ? [themeKey].filter((t) => store.themes[t] || store.themeKinds[t])
+    : store.themeOrder.filter((t) => store.themes[t])
   const modes = modeKeys.length ? modeKeys : themeNames.filter((t) => store.themes[t])
   if (!modes.length) return undefined
 
@@ -168,20 +224,72 @@ function resolveCategoricalCategories(
   }))
 }
 
-export function useSystemDoc(): SystemDoc {
-  const store = useDesignStore()
+export type SystemDocScope = {
+  /** Theme Preview hub: show THAT theme's primitives, not the whole registry. */
+  themeKey?: string
+  /** Live System Style try-on — same overlay the artefacts canvas uses. */
+  stylePreview?: StylePreview | null
+}
+
+export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
+  const liveStore = useDesignStore()
+  const { themeKey, stylePreview } = scope
+  const store = useMemo(() => {
+    if (stylePreview && themeKey) return stylePreviewStore(liveStore, stylePreview, themeKey)
+    return liveStore
+  }, [liveStore, stylePreview, themeKey])
+
   const {
     primaryScale, primaryDarkScale, grayLightScale, grayDarkScale,
     errorScale, errorDarkScale, warningScale, warningDarkScale,
     successScale, successDarkScale, infoScale, infoDarkScale,
-    customColors, colorNaming, typography, spacing, padding, radius,
-    shadows, grid, gridFrame, sizes, stroke, radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
-    iconLibrary, customIcons, themeOrder, pageBackground,
+    customColors, colorNaming,
+    iconLibrary, customIcons, themeOrder,
   } = store
 
+  // Theme-scoped foundations (type · radius · shadow…) so Cupertino's Inter /
+  // glass shadows don't silently show Core's leftovers under a Cupertino title.
+  const foundations = useMemo(() => {
+    if (!themeKey) {
+      return {
+        typography: store.typography,
+        spacing: store.spacing,
+        padding: store.padding,
+        radius: store.radius,
+        shadows: store.shadows,
+        grid: store.grid,
+        gridFrame: store.gridFrame,
+        sizes: store.sizes,
+        stroke: store.stroke,
+        radiusRoles: store.radiusRoles,
+        spacingRoles: store.spacingRoles,
+        sizeRoles: store.sizeRoles,
+        strokeRoles: store.strokeRoles,
+        breakpointRoles: store.breakpointRoles,
+      }
+    }
+    const resolved = resolveThemeFoundations(store, themeKey)
+    return {
+      typography: resolved.typography,
+      spacing: resolved.spacing,
+      padding: resolved.padding,
+      radius: resolved.radius,
+      shadows: resolved.shadows,
+      grid: resolved.grid,
+      gridFrame: resolved.gridFrame,
+      sizes: resolved.sizes,
+      stroke: resolved.stroke,
+      radiusRoles: resolved.radiusRoles,
+      spacingRoles: resolved.spacingRoles,
+      sizeRoles: resolved.sizeRoles,
+      strokeRoles: resolved.strokeRoles,
+      breakpointRoles: resolved.breakpointRoles,
+    }
+  }, [store, themeKey])
+
   const categoricalCategories = useMemo(
-    () => resolveCategoricalCategories(store),
-    [store],
+    () => resolveCategoricalCategories(store, themeKey),
+    [store, themeKey],
   )
 
   const scales: GlobalScales = useMemo(() => ({
@@ -206,20 +314,14 @@ export function useSystemDoc(): SystemDoc {
     successScale, successDarkScale, infoScale, infoDarkScale,
   ])
 
-  // Resolve every role once, through the SAME functions the export uses.
   const roles: ResolvedRole[] = useMemo(
     () => ROLE_GROUPS.flatMap((g) => g.roles).map((role) => {
       const ref = (kind: 'light' | 'dark') => {
         const scale = sourceScaleFor(role, kind, scales)
         const tone = recToneFor(role, kind, scale)
         const eff = kind === 'dark' && role.darkScale ? role.darkScale : role.scale
-        // `base` is the theme-independent white/black pair — it has no numbered
-        // ramp, so it names the colour instead of a tone.
         const name = eff === 'base'
           ? `base-${baseLabelForTone(tone)}`
-          // `-dark` matches tokenGenerator's dark prefixes exactly
-          // (`neutral-dark-*`, `accent-dark-*`…), so a ref printed here is
-          // greppable in the exported file.
           : `${SCALE_META[eff].label}${kind === 'dark' ? '-dark' : ''}-${toneLabel(colorNaming, tone)}`
         return { name, hex: scale[tone] ?? '' }
       }
@@ -230,57 +332,53 @@ export function useSystemDoc(): SystemDoc {
     [scales, colorNaming],
   )
 
-  // Primitives — every family that carries values, light ramp then dark twin,
-  // named exactly as tokenGenerator's flattenScale prefixes them.
+  // Primitives — whole-system dump OR this theme's six slots only.
+  // Theme Preview used to list every customColors orphan from prior style
+  // adopts under a Cupertino title (violet Accent beside Ice, Core Error
+  // beside systemRed). Scoped view names the SLOT and resolves the family
+  // that theme actually reads.
   const primitiveFamilies = useMemo(() => {
-    const out: { label: string; scale: Record<number, string> }[] = [
-      { label: 'Accent', scale: primaryScale },
-      { label: 'Neutral', scale: grayLightScale },
-      { label: 'State/Error', scale: errorScale },
-      { label: 'State/Warning', scale: warningScale },
-      { label: 'State/Success', scale: successScale },
-      { label: 'State/Info', scale: infoScale },
-      { label: 'Neutral Dark', scale: grayDarkScale ?? DEFAULT_GRAY_DARK_SCALE },
-      { label: 'Accent Dark', scale: primaryDarkScale },
-      { label: 'State/Error Dark', scale: errorDarkScale },
-      { label: 'State/Warning Dark', scale: warningDarkScale },
-      { label: 'State/Success Dark', scale: successDarkScale },
-      { label: 'State/Info Dark', scale: infoDarkScale },
-    ]
-    customColors.forEach((c) => {
-      out.push({ label: c.label, scale: c.scale })
-      if (c.darkScale && Object.keys(c.darkScale).length) out.push({ label: `${c.label} Dark`, scale: c.darkScale })
-    })
-    return out.filter((f) => f.scale && Object.keys(f.scale).length)
-  }, [primaryScale, primaryDarkScale, grayLightScale, grayDarkScale, errorScale, errorDarkScale,
-      warningScale, warningDarkScale, successScale, successDarkScale, infoScale, infoDarkScale, customColors])
+    if (themeKey || stylePreview) return themeScopedPrimitiveFamilies(store, themeKey ?? 'light')
+    return globalPrimitiveFamilies(store)
+  }, [store, themeKey, stylePreview, primaryScale, primaryDarkScale, grayLightScale, grayDarkScale,
+      errorScale, errorDarkScale, warningScale, warningDarkScale, successScale, successDarkScale,
+      infoScale, infoDarkScale, customColors])
 
-  // Alpha primitives — the OTHER half of the colour layer, and the one that
-  // had no documentation at all while sixteen semantic roles resolved through
-  // it. Two contracts, kept visually apart because they are not the same kind
-  // of thing: a family's twin is SOLVED against its page, black/white is a
-  // FIXED ladder. Built here (not in `primitiveFamilies`) so the doc can say
-  // that out loud instead of listing eight more ramps that look identical.
   const alphaFamilies = useMemo(() => {
-    const twin = (label: string, scale: Record<number, string>, bg: string, appearance: 'light' | 'dark') =>
-      ({ label, scale: generateAlphaScale(scale, bg, appearance) })
-    const out = [
-      twin('Accent', primaryScale, pageBackground, 'light'),
-      twin('Neutral', grayLightScale, pageBackground, 'light'),
-      twin('State/Error', errorScale, pageBackground, 'light'),
-      twin('State/Warning', warningScale, pageBackground, 'light'),
-      twin('State/Success', successScale, pageBackground, 'light'),
-      twin('State/Info', infoScale, pageBackground, 'light'),
-    ]
-    return out.filter((f) => Object.keys(f.scale).length)
-  }, [primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, pageBackground])
+    const twin = (label: string, scale: Record<number, string>, bg: string) =>
+      ({ label, scale: generateAlphaScale(scale, bg, 'light') })
+    // Alpha twins are solved against the page the solid grew out of. In a
+    // theme-scoped Overview that is Neutral tone 1 of THIS theme's ramps —
+    // not the open system's leftover `pageBackground`. Glass Accent on
+    // `#f1fdff` against global `#fdfefb` produced accent-a-1 at ~89% opaque
+    // pale cyan ("pegado" on the checkerboard) instead of transparent.
+    const neutral = primitiveFamilies.find((f) => f.label === 'Neutral')
+    const page = neutral?.scale?.[1] ?? store.pageBackground
+    const wanted = new Set(['Accent', 'Neutral', 'State/Error', 'State/Warning', 'State/Success', 'State/Info'])
+    return primitiveFamilies
+      .filter((f) => wanted.has(f.label))
+      .map((f) => twin(f.label, f.scale, page))
+      .filter((f) => Object.keys(f.scale).length)
+  }, [primitiveFamilies, store.pageBackground])
 
   return {
-    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming, typography, spacing, padding,
-    radius, shadows, grid, gridFrame, sizes, stroke,
-    radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
+    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming,
+    typography: foundations.typography,
+    spacing: foundations.spacing,
+    padding: foundations.padding,
+    radius: foundations.radius,
+    shadows: foundations.shadows,
+    grid: foundations.grid,
+    gridFrame: mergeGridFrame(foundations.gridFrame),
+    sizes: foundations.sizes,
+    stroke: foundations.stroke,
+    radiusRoles: foundations.radiusRoles,
+    spacingRoles: foundations.spacingRoles,
+    sizeRoles: foundations.sizeRoles,
+    strokeRoles: foundations.strokeRoles,
+    breakpointRoles: foundations.breakpointRoles,
     iconLibrary, customIcons,
-    themeCount: themeOrder.length,
+    themeCount: themeKey ? 1 : themeOrder.length,
   }
 }
 

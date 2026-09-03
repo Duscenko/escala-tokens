@@ -147,7 +147,7 @@ function HelpIcon() {
 }
 
 // Global icon actions — same gray shell as `ThemeViewSwitcher`.
-const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-colors ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
+const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
 // Appearance is one action, not a two-choice segment. The glyph shows the
 // destination: sun while dark is active, moon while light is active.
@@ -262,7 +262,7 @@ export default function TopNav({
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
-    <header className="relative z-30 flex items-stretch flex-shrink-0 bg-app border-b border-line" style={{ height: TOP_NAV_H }}>
+    <header className="relative z-30 flex items-stretch flex-shrink-0 bg-nav border-b border-line" style={{ height: TOP_NAV_H }}>
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
           the mark (no wordmark) in step with the rail below it. One line, never

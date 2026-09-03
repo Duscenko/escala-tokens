@@ -300,9 +300,9 @@ function KitsPopover({
     setSyncing(id)
     // One frame, so the store's new state is what generateTokenJSON reads.
     await new Promise((r) => setTimeout(r, 0))
-    const ok = await publishTokens()
+    const result = await publishTokens()
     setSyncing(null)
-    if (ok) {
+    if (result.ok) {
       setSynced(id)
       setTimeout(() => setSynced((cur) => (cur === id ? null : cur)), 2000)
     }

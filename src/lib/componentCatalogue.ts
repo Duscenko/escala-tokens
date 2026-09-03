@@ -46,12 +46,19 @@ export const COMPONENTS: ComponentDef[] = [
     description:
       'The core action component of the system. It covers primary, destructive and success intents across four visual styles and the full interaction lifecycle, so a generic button never has to be rebuilt.',
     usage: 'Use for the single most important action on a surface. Limit to 1–2 per section.',
+    // NO 'Icon' axis. The Figma plugin used to ship it as a discrete
+    // None|Leading|Trailing VARIANT (three separate components), which is
+    // also why it could never represent both icons on one button. It's real,
+    // independent leading/trailing BOOLEAN + INSTANCE_SWAP properties on
+    // every variant now — a toggle per slot, not a value to pick from a
+    // dropdown — see `leadingIcon`/`trailingIcon` below. Removing this entry
+    // also just catches this file up to what `ButtonSpecimen` already does:
+    // it reads `icons.leading`/`icons.trailing` directly, never `v.Icon`.
     axes: [
       { name: 'Color', values: ['Brand', 'Danger', 'Success'] },
       { name: 'Style', values: ['Solid', 'Outline', 'Soft', 'Ghost'] },
       { name: 'Size', values: ['MD', 'SM', 'LG', 'XL'] },
       { name: 'State', values: ['Default', 'Hover', 'Pressed', 'Focused', 'Loading', 'Disabled'] },
-      { name: 'Icon', values: ['None', 'Leading', 'Trailing'] },
     ],
     figmaSets: ['Button'],
     props: [
@@ -61,7 +68,8 @@ export const COMPONENTS: ComponentDef[] = [
       { name: 'label', type: 'string', description: 'Verb-led text content' },
       { name: 'disabled', type: 'boolean', description: 'Prevents interaction and applies muted styles' },
       { name: 'loading', type: 'boolean', description: 'Replaces label with spinner, blocks clicks' },
-      { name: 'leadingIcon', type: 'ReactNode', description: 'Icon before the label' },
+      { name: 'leadingIcon', type: 'ReactNode', description: 'Icon before the label — independent of trailingIcon, both may show at once' },
+      { name: 'trailingIcon', type: 'ReactNode', description: 'Icon after the label — independent of leadingIcon, both may show at once' },
     ],
     accessibility: 'Uses native <button>. Requires accessible label. Disabled state uses aria-disabled.',
   },

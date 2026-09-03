@@ -57,10 +57,42 @@ describe('structural invariants', () => {
     expect(STEP_ROLES).toHaveLength(12)
   })
 
-  it('step 1 IS the page — the documented contract in buildScale', () => {
+  it('step 1 matches the page for same-hue / near-achromatic paper', () => {
+    // Colored families on a chromatic page of a DIFFERENT hue rematch tone 1
+    // onto the family's hue (see buildScale) — those are covered by the
+    // Glass regression below, not this suite (every seed here builds its
+    // page from its own linked neutral, so hue stays within ~20°).
     for (const r of ramps) {
       expect(r.scale[1].toLowerCase(), label(r)).toBe(r.page.toLowerCase())
     }
+  })
+
+  it('Glass tinted page does not leak its cyan into a warning dark ramp', () => {
+    // Regression: Cupertino/Glass's dark paper is #071719 (H≈206). Warning's
+    // solid sits at H≈63. Emitting the page hex as tone 1 of every family put
+    // a teal swatch at the head of the brown/amber ramp.
+    const accent = '#22d3ee'
+    const tint = 'tinted' as const
+    const h = previewHarmony(accent, tint)
+    const warning = '#ff9500'
+    const scale = generateFamilyDarkScale(warning, 'radix', 0, h.pageDark)
+    expect(h.pageDark.toLowerCase()).toBe('#071719')
+    expect(scale[1].toLowerCase()).not.toBe(h.pageDark.toLowerCase())
+    const pageL = hexToOklch(h.pageDark).l
+    const tone1 = hexToOklch(scale[1])
+    const warnH = hexToOklch(warning).h
+    const tone2H = hexToOklch(scale[2]).h
+    // Same paper weight…
+    expect(Math.abs(tone1.l - pageL)).toBeLessThan(0.005)
+    // …but the family's hue, continuous with tone 2 — not the page's cyan.
+    const hueDist = (a: number, b: number) => {
+      let d = Math.abs(a - b)
+      if (d > 180) d = 360 - d
+      return d
+    }
+    expect(hueDist(tone1.h, warnH)).toBeLessThan(30)
+    expect(hueDist(tone1.h, tone2H)).toBeLessThan(20)
+    expect(hueDist(tone1.h, hexToOklch(h.pageDark).h)).toBeGreaterThan(90)
   })
 
   it('step 9 is the seed verbatim in light appearance (BASE_TONE contract)', () => {

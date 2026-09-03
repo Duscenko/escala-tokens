@@ -10,14 +10,15 @@ const SPECIMEN_ARCH_IDS = [
   'content.on-action', 'content.link.default', 'content.link.hover',
   'action.primary.default', 'action.primary.hover', 'action.primary.pressed',
   'action.secondary.default', 'action.secondary.accent', 'action.disabled',
-  'action.ghost.neutral.hover', 'action.ghost.brand.hover', 'action.ghost.danger.hover',
-  'border.ring.default', 'border.ring.critical',
+  'action.ghost.neutral.hover', 'action.ghost.brand.hover',
+  'border.ring.default',
   'surface.page', 'surface.layer-1', 'surface.layer-2', 'surface.input', 'surface.selected',
   'surface.accent', 'surface.inverse', 'surface.overlay',
   'status.critical.surface', 'status.critical.content', 'status.critical.surface-solid', 'status.critical.on-solid',
+  'status.critical.border', 'status.critical.border-strong',
   'status.warning.surface', 'status.warning.content', 'status.success.surface', 'status.success.content',
   'border.control', 'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
-  'border.focus', 'border.accent', 'border.critical',
+  'border.focus', 'border.accent',
   'icon.primary', 'icon.secondary', 'icon.disabled', 'icon.accent',
 ]
 

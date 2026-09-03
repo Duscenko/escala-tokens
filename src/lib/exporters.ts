@@ -5,6 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { toneLabel, withAlpha, darkShadow, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
+import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
@@ -68,7 +69,14 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   alphaFamily('warning', warningScale)
   alphaFamily('success', successScale)
   alphaFamily('info', infoScale)
-  customColors.forEach((c) => alphaFamily(c.key, c.scale))
+  customColors.forEach((c) => {
+    const page = resolveFamilyPages(store, c.key).light
+    if (!Object.keys(c.scale).length) return
+    const alpha = generateAlphaScale(c.scale, page, 'light')
+    Object.entries(alpha)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .forEach(([k, v]) => { if (v) lines.push(`  --color-${c.key}-a-${toneLabel(colorNaming, Number(k))}: ${v};`) })
+  })
 
   // Neutral alpha primitives — a fixed opacity ladder, not derived from any
   // family (see colorUtils' BLACK_ALPHA_SCALE/WHITE_ALPHA_SCALE). For scrims,

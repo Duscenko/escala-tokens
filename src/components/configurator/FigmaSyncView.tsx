@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useDesignStore, type SavedSystem } from '../../store/useDesignStore'
 import { isLiveEnvironment, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
 import { applyFigmaEditsPatch, isFigmaEditsPatch } from '../../lib/figmaEdits'
+import { useApplyAccentColor, useApplyStateColor } from '../../lib/colorActions'
 import { slugify } from '../../lib/utils'
 import { FigmaLogo, BackToEditor, relativeTime, PluginInstallPromo } from './figmaShared'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
@@ -20,6 +21,9 @@ interface FigmaSyncViewProps {
   /** Shared manual-publish feedback from Configurator, so this screen and the
    *  persistent header always report the same request. */
   publishState: FigmaPublishState
+  /** Specific reason for the current 'error' state (a lost claim vs. a network
+   *  hiccup) — same string the Sync pill's tooltip shows. Null outside 'error'. */
+  publishError?: string | null
   onRequestSync: () => void
 }
 
@@ -105,7 +109,7 @@ function SystemRow({
 // /api/tokens.
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload, onOpenGithub, onOpenSave,
-  publishState, onRequestSync,
+  publishState, publishError, onRequestSync,
 }: FigmaSyncViewProps) {
   const {
     projectName, autoSyncFigma, setAutoSyncFigma, figmaLastPublishAt,
@@ -120,6 +124,13 @@ export default function FigmaSyncView({
   const [copied, setCopied] = useState(false)
   const [figmaPatchText, setFigmaPatchText] = useState('')
   const [figmaPatchMsg, setFigmaPatchMsg] = useState<string | null>(null)
+  // A primitive-colour edit in the patch has to go through the SAME
+  // re-derivation a hand-typed hex in the picker gets (ramp regen, linked
+  // neutral/states cascade, page re-anchor) — see figmaEdits.ts. Both are
+  // hooks, so they're obtained here and handed down, not called inside the
+  // plain `applyFigmaEditsPatch` function.
+  const applyAccentColor = useApplyAccentColor()
+  const applyStateColor = useApplyStateColor()
 
   // ── "Your design systems" — see SystemRow above. Only one row is ever
   // renaming/confirming a delete at a time, so this lives here rather than
@@ -137,7 +148,7 @@ export default function FigmaSyncView({
         setFigmaPatchMsg('Not an Escala Figma edits patch (expected kind: escala-figma-edits/v1).')
         return
       }
-      const { applied, skipped } = applyFigmaEditsPatch(parsed)
+      const { applied, skipped } = applyFigmaEditsPatch(parsed, { applyAccentColor, applyStateColor })
       if (applied === 0) {
         setFigmaPatchMsg(skipped[0] ?? 'Nothing to apply.')
         return
@@ -199,15 +210,25 @@ export default function FigmaSyncView({
     setNameError(null)
   }, [projectName])
 
+  // The sync URL is `/api/tokens?project=<slugify(projectName)>` — renaming
+  // the project silently moves it to a NEW url. The plugin has no way to know
+  // that; it keeps polling the old blob forever, reporting "Up to date" (it
+  // genuinely is — nothing is publishing there any more) while every edit
+  // here goes unpublished. Reported as "el plugin no se actualiza" with no
+  // other symptom. `renameChangedUrl` flags exactly that so the banner below
+  // only shows up when the URL actually moved, not on every rename.
+  const [renameChangedUrl, setRenameChangedUrl] = useState(false)
   function commitName(next: string) {
     if (next.trim() === projectName) {
       setNameDraft(projectName)
       setNameError(null)
       return true
     }
+    const oldSlug = slugify(projectName)
     const result = renameActiveSystem(next)
     if (result.ok) {
       setNameError(null)
+      if (slugify(next.trim()) !== oldSlug) setRenameChangedUrl(true)
       return true
     }
     setNameError(result.error ?? 'Could not rename')
@@ -370,6 +391,25 @@ export default function FigmaSyncView({
                 {copied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
+            {/* Renaming the project just moved the URL above — the plugin's
+                saved connection still points at the OLD one and will keep
+                reporting "up to date" (true, in the sense that nothing new is
+                landing there) forever unless re-pasted. This is the one
+                moment that's cheap to catch it — surface it here instead of
+                leaving it to be found as "my changes aren't syncing" later. */}
+            {renameChangedUrl && (
+              <div className="flex items-start justify-between gap-3 rounded-lg border border-status-warning/30 bg-status-warning/10 px-3 py-2 mt-1">
+                <p className="text-caption text-status-warning leading-relaxed">
+                  This renamed the project, so the URL above changed too. Paste the new one into the plugin&apos;s <span className="font-medium">Live Sync</span> tab — the old URL will stop receiving updates.
+                </p>
+                <button
+                  onClick={() => setRenameChangedUrl(false)}
+                  className="text-caption text-status-warning/80 hover:text-status-warning transition flex-shrink-0"
+                >
+                  Got it
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               {publishState === 'publishing' && (
                 <><span className="w-1.5 h-1.5 rounded-full bg-status-warning-solid animate-pulse" /><span className="text-fg-faint">Publishing your tokens…</span></>
@@ -378,7 +418,7 @@ export default function FigmaSyncView({
                 <><span className="text-status-success">✓</span><span className="text-fg-muted">Tokens published — the plugin picks them up on its next sync.</span></>
               )}
               {publishState === 'error' && (
-                <><span className="w-1.5 h-1.5 rounded-full bg-status-danger-solid" /><span className="text-fg-faint">Couldn&apos;t publish your tokens. Retry sync, or use the plugin&apos;s Import tab to paste them manually.</span></>
+                <><span className="w-1.5 h-1.5 rounded-full bg-status-danger-solid" /><span className="text-fg-faint">{publishError || "Couldn't publish your tokens. Retry sync, or use the plugin's Import tab to paste them manually."}</span></>
               )}
             </div>
           </div>
@@ -422,7 +462,10 @@ export default function FigmaSyncView({
           <p className="text-sm font-semibold text-fg">Apply edits from Figma</p>
           <p className="text-xs text-fg-faint leading-relaxed mt-1">
             In the plugin Overview, use <span className="text-fg-muted">Check local edits</span> → download the patch.
-            Only value changes that map to system settings are applied. New variables, renames, and new components are rejected — those aren&apos;t part of the system settings.
+            Font family, and a family&apos;s anchor colour (tone 9 — Accent, or any status
+            family), round-trip. New variables, renames, new components, and any other ramp
+            tone (those are derived, not stored on their own) are rejected — those aren&apos;t
+            part of the system settings.
           </p>
         </div>
         <textarea

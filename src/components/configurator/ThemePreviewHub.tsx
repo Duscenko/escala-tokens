@@ -50,7 +50,7 @@ const DOC_ROWS: DocsRailRow[] = [
 // the Export wizard all name a theme the same way.
 
 const HUB_ICON_SOURCES: Record<HubView, string> = {
-  artefacts: '/icons/theme-hub-icons/Icon/theme.svg',
+  artefacts: '/icons/settings/artefacts.svg',
   components: '/icons/theme-hub-icons/Icon/components.svg',
   documentation: '/icons/theme-hub-icons/Icon/doc.svg',
 }
@@ -80,7 +80,7 @@ function ThemeViewSwitcher({ view, onChange }: {
         const current = Math.max(0, HUB_VIEWS.findIndex((item) => item.key === view))
         const next = (current + (event.key === 'ArrowRight' ? 1 : HUB_VIEWS.length - 1)) % HUB_VIEWS.length
         onChange(HUB_VIEWS[next].key)
-      }} className={`flex h-8 items-center gap-0.5 rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}>
+      }} className="flex h-8 items-center gap-0.5 rounded-lg p-0.5 border border-line bg-tab-bar">
         {HUB_VIEWS.map((item) => {
           const active = item.key === view
           return <button key={item.key} type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} aria-label={t(item.label)} title={t(item.label)} onClick={() => onChange(item.key)} className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-inverse-action text-inverse-action-ink shadow-sm' : 'text-fg-faint hover:bg-surface hover:text-fg'}`}><ViewIcon view={item.key} /></button>
@@ -600,7 +600,7 @@ function ComponentVariantsView({
 // The doc list is a SIBLING of the context bar now (see the hub's return), like
 // the showcase rail — that's what lands its header band on the view-switcher's
 // row instead of one row below it, and what lets both columns share `HubRail`.
-function DocumentationView({ onEditFoundation, exits, active, onChange, overviewTitle }: {
+function DocumentationView({ onEditFoundation, exits, active, onChange, overviewTitle, previewTheme, stylePreview }: {
   onEditFoundation: (key: string) => void
   exits: Parameters<typeof DocsView>[0]['exits']
   active: string
@@ -608,8 +608,22 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
   /** The previewed theme's name — the whole-system sheet's title, so it reads
    *  as THIS theme's spec rather than a generic "System reference". */
   overviewTitle: string
+  previewTheme: string
+  stylePreview: StylePreview | null
 }) {
-  return <div className="flex-1 min-w-0 min-h-0"><DocsView activeFoundationKey={active} onSelectFoundationKey={onChange} onEditFoundation={onEditFoundation} exits={exits} overviewTitle={overviewTitle} hubMode /></div>
+  return (
+    <div className="flex-1 min-w-0 min-h-0">
+      <DocsView
+        activeFoundationKey={active}
+        onSelectFoundationKey={onChange}
+        onEditFoundation={onEditFoundation}
+        exits={exits}
+        overviewTitle={overviewTitle}
+        hubMode
+        docScope={{ themeKey: previewTheme, stylePreview }}
+      />
+    </div>
+  )
 }
 
 export default function ThemePreviewHub({
@@ -763,7 +777,7 @@ export default function ThemePreviewHub({
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {hubSurface ? (
-          <div className="min-h-0 flex-1 bg-app p-3">
+          <div className="min-h-0 flex-1 bg-nav p-3">
             <section
               aria-label={`${themeName} preview canvas`}
               className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${previewAppearance === 'dark' ? 'dark' : 'light'}`}
@@ -781,7 +795,7 @@ export default function ThemePreviewHub({
               <div className="flex min-h-0 flex-1 flex-col">
                 {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} drawerOpen={quickEditOpen} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={stylePreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
-                {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
+                {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={stylePreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
               </ThemeHubHeaderActionsProvider>
             </section>

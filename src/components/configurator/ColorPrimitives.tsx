@@ -23,6 +23,7 @@ import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
   neutralFromBrand, recommendStateColors, checkContrast, accessibleSolidTone, readableInk,
+  BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
@@ -151,8 +152,10 @@ function WcagPairChip({ label, fg, bg }: { label: string; fg: string; bg: string
   )
 }
 
-const OVERVIEW_FAMILY_KEYS = ['accent', 'accent-alpha', 'neutral'] as const
-const OVERVIEW_STATE_KEYS = ['error', 'warning', 'success', 'info'] as const
+/** Which groups render as full-height rows; the rest go `compact`. Accents and
+ *  Neutrals are the two a designer actually reads tone by tone, and that split
+ *  is what the board already did when it hardcoded `core` vs `states`. */
+const OVERVIEW_FULL_GROUPS: readonly FamilyGroup[] = ['Accents', 'Neutrals']
 
 /** Neutral-family picker — global neutral OR any custom family slotted as gray. */
 function familyUsesNeutralPicker(
@@ -215,8 +218,10 @@ function OverviewSwatch({ family }: { family: Family }) {
   if (family.isAlpha) {
     const value = family.light[ALPHA_NAV_TONE] ?? family.base
     return (
+      // `light` — this chip reads the LIGHT ramp, so its damero has to stand in
+      // for the light page or the two disagree (see ScaleRow's checkerAppearance).
       <span
-        className={`${SWATCH} relative overflow-hidden flex-shrink-0`}
+        className={`${SWATCH} relative overflow-hidden flex-shrink-0 light`}
         style={{ ...CHECKER, backgroundSize: '5px 5px' }}
         aria-hidden
       >
@@ -299,10 +304,10 @@ function RampPreviewBlock({
         </div>
       </div>
       <div className={rampCell}>
-        <ScaleRow scale={light} ariaLabel={`${family.label} light scale`} {...rowProps} />
+        <ScaleRow scale={light} ariaLabel={`${family.label} light scale`} {...rowProps} checkerAppearance="light" />
       </div>
       <div className={rampCell}>
-        <ScaleRow scale={dark} ariaLabel={`${family.label} dark scale`} {...rowProps} />
+        <ScaleRow scale={dark} ariaLabel={`${family.label} dark scale`} {...rowProps} checkerAppearance="dark" />
       </div>
       <span className="flex items-center justify-center text-fg-faint/40" aria-hidden>
         <SlidersIcon />
@@ -313,19 +318,30 @@ function RampPreviewBlock({
 
 /** Scroll tail — scale roles, full system ramp board, WCAG pairs for accent. */
 function FamilyRampOverview({
-  families,
+  groups,
   activeKey,
   namingLabels,
 }: {
-  families: Family[]
+  /** The SAME `{ label, items }` groups the family nav renders — not a second
+   *  enumeration of family keys. The board used to hardcode
+   *  `['accent','accent-alpha','neutral']` + the four solid states, which broke
+   *  twice over: every alpha twin but Accent's was missing (`neutral-a`,
+   *  `black-a`/`white-a`, all four `*-a` statuses), and in the Themes workspace
+   *  the hardcoded GLOBAL keys resolve to nothing at all for a theme whose
+   *  slots point at custom families (`core-copy-error`, …) — so the board went
+   *  nearly empty exactly where the theme's own ramps live. Deriving it from
+   *  the nav's groups means the board and the rail can't disagree about which
+   *  ramps this system has. */
+  groups: { label: FamilyGroup; items: Family[] }[]
   activeKey: string
   namingLabels: string[]
 }) {
-  const byKey = (key: string) => families.find((f) => f.key === key)
-  const accent = byKey('accent')
-  const neutral = byKey('neutral')
-  const core = OVERVIEW_FAMILY_KEYS.map((k) => byKey(k)).filter(Boolean) as Family[]
-  const states = OVERVIEW_STATE_KEYS.map((k) => byKey(k)).filter(Boolean) as Family[]
+  const inGroup = (label: FamilyGroup) => groups.find((g) => g.label === label)?.items ?? []
+  // The WCAG pairs need A representative accent and neutral, whatever they're
+  // called — `byKey('accent')` found nothing once a theme's brand was a custom
+  // family. First solid of each group is that theme's own.
+  const accent = inGroup('Accents').find((f) => !f.isAlpha)
+  const neutral = inGroup('Neutrals').find((f) => !f.isAlpha)
 
   const accentLight = accent ? overviewScale(accent, 'light') : null
   const accentDark = accent ? overviewScale(accent, 'dark') : null
@@ -359,38 +375,35 @@ function FamilyRampOverview({
       <div className="border-t border-line">
         <div className="px-4 pt-6 pb-3">
           <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
-          <p className="text-caption text-fg-faint mt-1">Accent, its alpha twin, neutral and the four states — light and dark twins.</p>
+          <p className="text-caption text-fg-faint mt-1">Every ramp — each solid beside its alpha twin, plus the fixed black/white ladders. Light and dark.</p>
         </div>
         <div className={`border-t border-line ${overviewDivide}`}>
-          {core.map((f) => (
-            <RampPreviewBlock
-              key={f.key}
-              embedded
-              family={f}
-              namingLabels={namingLabels}
-              active={f.key === activeKey}
-            />
-          ))}
-          {states.length > 0 ? (
-            <>
-              <div className="grid items-center bg-elevated/20" style={PRIMITIVE_TABLE_GRID}>
-                <div className="col-span-4 px-4 py-2.5">
-                  <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">States</span>
-                  <p className="text-mini text-fg-faint mt-0.5">Error · Warning · Success · Info</p>
+          {groups.map((group) => {
+            const alphaCount = group.items.filter((f) => f.isAlpha).length
+            return (
+              <div key={group.label} className={overviewDivide}>
+                <div className="grid items-center bg-elevated/20" style={PRIMITIVE_TABLE_GRID}>
+                  <div className="col-span-4 px-4 py-2.5">
+                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{group.label}</span>
+                    <p className="text-mini text-fg-faint mt-0.5">
+                      {group.items.filter((f) => !f.isAlpha).map((f) => f.label).join(' · ') || '—'}
+                      {alphaCount > 0 && ` · ${alphaCount} alpha ${alphaCount === 1 ? 'ramp' : 'ramps'}`}
+                    </p>
+                  </div>
                 </div>
+                {group.items.map((f) => (
+                  <RampPreviewBlock
+                    key={f.key}
+                    embedded
+                    compact={!OVERVIEW_FULL_GROUPS.includes(group.label)}
+                    family={f}
+                    namingLabels={namingLabels}
+                    active={f.key === activeKey}
+                  />
+                ))}
               </div>
-              {states.map((f) => (
-                <RampPreviewBlock
-                  key={f.key}
-                  embedded
-                  compact
-                  family={f}
-                  namingLabels={namingLabels}
-                  active={f.key === activeKey}
-                />
-              ))}
-            </>
-          ) : null}
+            )
+          })}
         </div>
       </div>
 
@@ -448,8 +461,11 @@ function FamilySwatch({ family, dark, onClick }: {
   }
   const value = (dark ? family.dark : family.light)[ALPHA_NAV_TONE] ?? family.base
   return (
+    // The damero follows the ramp this chip is reading, not the chrome — see
+    // ScaleRow's `checkerAppearance`. Without it White Alpha's nav chip is a
+    // white wash on a near-white checker whenever the app is in light chrome.
     <span
-      className={`${SWATCH} relative overflow-hidden`}
+      className={`${SWATCH} relative overflow-hidden ${dark ? 'dark' : 'light'}`}
       style={{ ...CHECKER, backgroundSize: '5px 5px' }}
       title={`${family.label} — a translucent ramp (${value})`}
     >
@@ -809,7 +825,16 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compa
 // so this has no input, just the swatch (over a checkerboard, so the
 // translucency itself stays legible instead of reading as a flat, wrong-
 // looking color) and the hex as static text. ──
-function AlphaHexCell({ value, solid, solidName, compact }: { value: string; solid?: string; solidName?: string; compact?: boolean }) {
+function AlphaHexCell({ value, solid, solidName, compact, appearance }: {
+  value: string
+  solid?: string
+  solidName?: string
+  compact?: boolean
+  /** The page this alpha was solved against — re-scopes the checkerboard's own
+   *  `--surface`/`--elevated` so it stands in for THAT page, not the chrome's.
+   *  See `ScaleRow`'s `checkerAppearance` for the measurements. */
+  appearance?: 'light' | 'dark'
+}) {
   // Split swatch when the solid twin is known: the LEFT half is the raw alpha
   // over the checkerboard (so the translucency is unmistakable), the RIGHT half
   // is the solid tone it composites to. Side by side they read as one fact —
@@ -821,7 +846,7 @@ function AlphaHexCell({ value, solid, solidName, compact }: { value: string; sol
   return (
     <div className={`flex items-center min-w-0 ${compact ? 'gap-1.5' : 'gap-2'}`}>
       <span
-        className={`${compact ? 'w-4 h-4 rounded-[3px] ring-1 ring-black/10' : SWATCH} relative overflow-hidden flex-shrink-0`}
+        className={`${compact ? 'w-4 h-4 rounded-[3px] ring-1 ring-black/10' : SWATCH} relative overflow-hidden flex-shrink-0 ${appearance ?? ''}`}
         style={{ ...CHECKER, backgroundSize: compact ? '5px 5px' : '6px 6px' }}
         title={title}
       >
@@ -1016,13 +1041,6 @@ export default function ColorPrimitives({
     if (focusFamilyKey) setActiveFamily(focusFamilyKey)
   }, [focusFamilyKey])
 
-  /** Families some theme reads as its brand — those get an alpha twin. */
-  const brandFamilyKeys = useMemo(() => {
-    const s = new Set<string>()
-    Object.values(themeSources).forEach((refs) => { if (refs?.brand) s.add(refs.brand) })
-    return s
-  }, [themeSources])
-
   // A no-op setter for derived families (Accent-Alpha) — never actually
   // invoked since every edit affordance (pencil, per-row expand) is guarded
   // off for `isAlpha` families below; it exists only to satisfy `Family`'s
@@ -1050,6 +1068,34 @@ export default function ColorPrimitives({
       dark: generateAlphaScale(grayDarkScale, darkBackground, 'dark'),
       setLight: noopSet, setDark: noopSet, isAlpha: true,
       solidLight: grayLightScale, solidDark: grayDarkScale,
+    },
+    // Black/White Alpha — a DIFFERENT kind of alpha from every entry above.
+    // Neutral-Alpha (and Accent-/Error-/etc.-Alpha) are SOLVED: tone N
+    // reproduces that family's own solid N when composited over ITS page, so
+    // they're page- and appearance-dependent by construction. Black/White
+    // Alpha are the other half of "THE ALPHA LAYER" — a FIXED opacity ladder
+    // (the published Radix blackA/whiteA scale, verbatim), agnostic to any
+    // background, for washes/scrims/rims that have to work over a surface
+    // the token itself doesn't know about. They already exported correctly
+    // (`colors.primitiveAlpha['black-a-*']`/`['white-a-*']`, tokenGenerator.ts)
+    // — this only gives them somewhere to be SEEN and browsed, which they
+    // previously had nowhere: a plugin import surfaced them as real Figma
+    // variables with no equivalent row in this nav, reading as unexplained
+    // clutter. Filed under Neutrals (see homeOf) because they're the
+    // universal, brand-agnostic ladder — the same reason `black-a`/`white-a`
+    // sit beside `neutral`/`neutral-a` in the export's own primitive keys.
+    // No `solidLight`/`solidDark`: there's no single solid these reproduce
+    // (that's the whole point — they work over an unknown backdrop), so
+    // `overviewScale`'s `?? family.light` fallback shows the ladder itself.
+    {
+      key: 'black-alpha', label: 'Black Alpha', tokenPrefix: 'black-a', base: '#000000',
+      light: BLACK_ALPHA_SCALE, dark: BLACK_ALPHA_SCALE,
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
+    },
+    {
+      key: 'white-alpha', label: 'White Alpha', tokenPrefix: 'white-a', base: '#ffffff',
+      light: WHITE_ALPHA_SCALE, dark: WHITE_ALPHA_SCALE,
+      setLight: noopSet, setDark: noopSet, isAlpha: true,
     },
     { key: 'error',   label: 'Error',   tokenPrefix: 'error',   base: errorColor,    light: errorScale,     dark: errorDarkScale,   setLight: setErrorScale,     setDark: setErrorDarkScale },
     {
@@ -1083,12 +1129,25 @@ export default function ColorPrimitives({
       setLight: noopSet, setDark: noopSet, isAlpha: true,
       solidLight: infoScale, solidDark: infoDarkScale,
     },
-    // A custom family that some theme reads as its BRAND gets an alpha twin
-    // right after it, exactly like the global Accent does — a theme's accent
-    // needs its overlay ramp as much as the default one. Built adjacent so the
-    // pair stays together in the Accents group. These are real exported tokens
-    // (`tokenGenerator` already emits `<key>-a*` for every custom family), not
-    // a display-only row.
+    // EVERY custom family gets an alpha twin right after it, exactly like the
+    // globals do — built adjacent so the pair stays together in whatever group
+    // the solid lands in. These are real exported tokens, not display-only
+    // rows: `tokenGenerator` (see its `store.customColors.forEach` → `alphaOf`)
+    // emits `<key>-a*` for every custom family, unconditionally.
+    //
+    // This used to be gated on `brandFamilyKeys` — only a family some theme
+    // read as its BRAND got a twin here. That gate disagreed with the export,
+    // and the gap was the whole "alpha state ramps aren't showing" report: a
+    // theme minted from a System Style points its error/warning/success/info
+    // slots at custom families (`core-copy-error`, …), so in the Themes
+    // workspace `activeThemeFamilies` drops the GLOBAL `error-alpha` (its
+    // source `error` isn't one of that theme's slots) while the custom
+    // statuses never got a twin to replace it — every status alpha ramp
+    // vanished from the nav, the table and the overview, while
+    // `core-copy-error-a-1…12` shipped to tokens.json and imported into Figma
+    // as variables with no row anywhere in the UI. That is exactly the
+    // unexplained-clutter failure the Black/White Alpha entry above exists to
+    // close, so the gate is gone rather than extended slot by slot.
     ...customColors.flatMap((c): Family[] => {
       const solid: Family = {
         key: `custom-${c.key}`,
@@ -1101,23 +1160,27 @@ export default function ColorPrimitives({
         setDark: (s: ColorScale) => updateCustomColor(c.key, { darkScale: s }),
         customKey: c.key,
       }
-      if (!brandFamilyKeys.has(c.key)) return [solid]
+      // Same page the solid custom ramp was grown against (theme paper), not
+      // the open system's globals — otherwise tone 1 lands near-opaque.
+      const pages = resolveFamilyPages(
+        { pageBackground, darkBackground, neutralTint, themeSources, customColors },
+        c.key,
+      )
       return [solid, {
         key: `custom-${c.key}-alpha`,
         label: `${c.label}-Alpha`,
         tokenPrefix: `${c.key}-a`,
         base: c.base,
-        light: generateAlphaScale(c.scale, pageBackground, 'light'),
-        dark: generateAlphaScale(c.darkScale ?? c.scale, darkBackground, 'dark'),
+        light: generateAlphaScale(c.scale, pages.light, 'light'),
+        dark: generateAlphaScale(c.darkScale ?? c.scale, pages.dark, 'dark'),
         setLight: noopSet, setDark: noopSet, isAlpha: true, alphaOf: c.key,
         solidLight: c.scale, solidDark: c.darkScale ?? c.scale,
       }]
     }),
   ], [
-    brandFamilyKeys,
     primaryColor, primaryScale, setPrimaryScale,
     primaryDarkScale, setPrimaryDarkScale,
-    pageBackground, darkBackground, noopSet,
+    pageBackground, darkBackground, neutralTint, themeSources, noopSet,
     grayBaseColor, grayLightScale, grayDarkScale, setGrayLightScale, setGrayDarkScale,
     primaryDarkScale, setPrimaryDarkScale,
     errorColor, errorScale, errorDarkScale, setErrorScale, setErrorDarkScale,
@@ -1145,6 +1208,12 @@ export default function ColorPrimitives({
     const refs = themeSources[previewTheme]
     const sources = new Set(FAMILY_SLOTS.map((slot) => refs?.[slot] || GLOBAL_FAMILY[slot]))
     return families.filter((item) => {
+      // Black/White Alpha aren't referenced by any theme slot — no theme's
+      // brand/gray/status ever points at them, because they're the universal
+      // ladder, not a per-theme family (see their own entry above). The
+      // slot-membership filter this function otherwise applies would drop
+      // them from every theme, so they're kept unconditionally instead.
+      if (item.key === 'black-alpha' || item.key === 'white-alpha') return true
       const sourceKey = item.customKey ?? item.alphaOf ?? item.key.replace(/-alpha$/, '')
       return sources.has(sourceKey)
     })
@@ -1168,7 +1237,9 @@ export default function ColorPrimitives({
     (f: Family): { folder: string; group: FamilyGroup } => {
       // Globals — one palette, read by both built-in modes.
       if (f.key === 'accent' || f.key === 'accent-alpha') return { folder: BASE_FOLDER, group: 'Accents' }
-      if (f.key === 'neutral' || f.key === 'neutral-alpha') return { folder: BASE_FOLDER, group: 'Neutrals' }
+      if (f.key === 'neutral' || f.key === 'neutral-alpha' || f.key === 'black-alpha' || f.key === 'white-alpha') {
+        return { folder: BASE_FOLDER, group: 'Neutrals' }
+      }
       const custKey = f.customKey ?? f.alphaOf
       if (!custKey) return { folder: BASE_FOLDER, group: 'States' }
       // Custom family — homed to the first theme that references it, under the
@@ -1225,6 +1296,17 @@ export default function ColorPrimitives({
         .filter((group) => group.items.length > 0),
     }]
   }, [activeThemeFamilies, homeOf, managedThemesExternally, navFolders])
+
+  /** Groups for the scroll-tail ramp board — the SAME partition the nav uses
+   *  (`homeOf`), over whatever families this workspace is showing, so the board
+   *  and the rail can't list different ramps. Folder-agnostic on purpose: the
+   *  board is one "System ramps" section, not one per theme folder. */
+  const overviewGroups = useMemo(
+    () => FAMILY_GROUPS
+      .map((label) => ({ label, items: activeThemeFamilies.filter((f) => homeOf(f).group === label) }))
+      .filter((g) => g.items.length > 0),
+    [activeThemeFamilies, homeOf],
+  )
 
   // Collapsed nav sections. Keys are a whole folder's own key, or
   // `<folder>/<group>` for one of its Accents/Neutrals/States groups, so the
@@ -1794,7 +1876,7 @@ export default function ColorPrimitives({
               <span className="flex-1 text-left truncate">{folder.label}</span>
             </button>
             <div className="absolute right-2.5 top-0 bottom-0 flex items-center gap-1.5 pointer-events-none">
-              {!managedThemesExternally && folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && themeOrder.length > 1 && (
+              {!managedThemesExternally && folder.key !== BASE_FOLDER && folder.key !== CUSTOM_FOLDER && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -2045,6 +2127,7 @@ export default function ColorPrimitives({
                   value={(darkPreview ? family.dark[BASE_TONE] : family.light[BASE_TONE]) ?? '#000000'}
                   solid={(darkPreview ? family.solidDark : family.solidLight)?.[BASE_TONE]}
                   solidName={solidRowName(BASE_TONE)}
+                  appearance={darkPreview ? 'dark' : 'light'}
                 />
               </div>
             ) : (
@@ -2095,6 +2178,7 @@ export default function ColorPrimitives({
               numbersInside
               size="md"
               checkerboard={family.isAlpha}
+              checkerAppearance={darkPreview ? 'dark' : 'light'}
             />
           </div>
           <div ref={settingsAnchorRef} className="relative flex-shrink-0">
@@ -2178,6 +2262,7 @@ export default function ColorPrimitives({
                                   value={scale[tone] ?? '#00000000'}
                                   solid={solid?.[tone]}
                                   solidName={solidRowName(tone)}
+                                  appearance={appearance}
                                 />
                               ) : (
                                 <HexCell
@@ -2229,7 +2314,7 @@ export default function ColorPrimitives({
                 })
               )}
 
-              <FamilyRampOverview families={activeThemeFamilies} activeKey={family.key} namingLabels={namingLabels} />
+              <FamilyRampOverview groups={overviewGroups} activeKey={family.key} namingLabels={namingLabels} />
             </div>
         </div>
       </div>

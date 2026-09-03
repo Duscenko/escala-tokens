@@ -8,7 +8,7 @@ import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
 import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
 import { GUIDE_MCP_KEY, isGuideKey, type DocsExits } from './docs/getStarted'
-import { useSystemDoc, OVERVIEW_KEY, foundationDoc } from './docs/foundationDocs'
+import { useSystemDoc, OVERVIEW_KEY, foundationDoc, type SystemDocScope } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
 import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
 import { useI18n } from '../../lib/i18n'
@@ -20,7 +20,7 @@ export { FAQ_KEY } from './docs/faqArticle'
 
 export default function DocsView({
   activeFoundationKey, onSelectFoundationKey, onEditFoundation, exits, allowReference = true,
-  overviewTitle, hubMode,
+  overviewTitle, hubMode, docScope,
 }: {
   /** Which row of the master list is open — a Get started key, OVERVIEW_KEY
    *  (the whole-system sheet), or a foundation key. */
@@ -40,9 +40,13 @@ export default function DocsView({
   overviewTitle?: string
   /** Theme Preview hub — page actions render in the fixed header band. */
   hubMode?: boolean
+  /** Theme Preview hub: scope ramps/foundations to the previewed theme (and
+   *  optional System Style try-on), so Cupertino docs don't inherit Core's
+   *  leftover primitives. */
+  docScope?: SystemDocScope
 }) {
   const { t } = useI18n()
-  const system = useSystemDoc()
+  const system = useSystemDoc(docScope ?? {})
   const articleRef = useRef<HTMLDivElement>(null)
 
   const pageKey = !allowReference && !isGuideKey(activeFoundationKey) && activeFoundationKey !== CHANGELOG_KEY && activeFoundationKey !== FAQ_KEY

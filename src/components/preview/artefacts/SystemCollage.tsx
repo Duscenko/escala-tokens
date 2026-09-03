@@ -54,7 +54,8 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
         ...cardSurfaceStyle(t),
         border: `${strokeRoleOf(t, 'control', '1px')} solid ${t.borderDefault || t.border || '#eaecf0'}`,
         borderRadius: radiusRoleOf(t, 'container', '16px'),
-        boxShadow: shadowOf(t, 'sm', '0 1px 2px rgba(10,13,18,0.05)'),
+        // Elevation lives on `ScaledModule`'s OUTER frame — an inner
+        // box-shadow is clipped by the photograph and shrunk by scale().
         padding: spacingRoleOf(t, 'inset-surface', '20px'),
         display: 'flex',
         flexDirection: 'column',
@@ -73,13 +74,21 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * The inner is taken out of flow so its 260px min-content cannot inflate the
  * masonry column. Pointer events stay on the specimens so `Live` still drives
  * Hover/Pressed.
+ *
+ * Elevation is painted on THIS frame (display size), never on the scaled
+ * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, children, chrome = true, style, sourceWidth = MODULE_SOURCE,
+  t, children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE,
 }: {
   t: PreviewTokens
   children: ReactNode
   chrome?: boolean
+  /** When false the photograph can spill past the frame — floating menus
+   *  (ContextMenu) have no card of their own and break when squeezed into one. */
+  clip?: boolean
+  /** Shadow ramp step on the unscaled frame. Defaults to `sm` when chrome. */
+  elev?: string | false
   style?: CSSProperties
   sourceWidth?: number
 }) {
@@ -90,6 +99,10 @@ function ScaledModule({
   const displayHeight = naturalHeight != null ? naturalHeight * scale : 0
   const gutter = px(gap(t, 'gap-control', '8px')) || 8
   const span = Math.max(1, Math.ceil((displayHeight + gutter) / (MASONRY_ROW + gutter)))
+  const elevation = elev === false ? undefined : elev ?? (chrome ? 'sm' : undefined)
+  const frameShadow = elevation
+    ? shadowOf(t, elevation, '0 1px 2px rgba(10,13,18,0.05)')
+    : undefined
 
   useLayoutEffect(() => {
     const el = innerRef.current
@@ -106,7 +119,7 @@ function ScaledModule({
 
   return (
     <div
-      className="relative overflow-hidden"
+      className="relative overflow-visible"
       style={{
         width: MODULE_DISPLAY,
         minWidth: MODULE_DISPLAY,
@@ -114,13 +127,22 @@ function ScaledModule({
         height: displayHeight || undefined,
         gridRowEnd: `span ${span}`,
         opacity: naturalHeight != null ? 1 : 0,
-        borderRadius: chrome ? frameRadius : undefined,
+        borderRadius: chrome || frameShadow ? frameRadius : undefined,
+        boxShadow: frameShadow,
+        // Floating menus sit above neighbours; elevated chrome does too so a
+        // Strong shadow isn't buried under the next tile.
+        zIndex: !clip || frameShadow ? 1 : undefined,
       }}
     >
       <div
         ref={innerRef}
-        className="absolute left-0 top-0"
-        style={{ width: sourceWidth, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+        className={clip ? 'absolute left-0 top-0 overflow-hidden' : 'absolute left-0 top-0'}
+        style={{
+          width: sourceWidth,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
+        }}
       >
         {body}
       </div>
@@ -147,9 +169,13 @@ function Well({
   t: PreviewTokens
   size: string
   icon: 'user' | 'users' | 'zap' | 'box'
-  iconSize: number
+  /** Override glyph px. Default ~58% of the well — fills the chip without
+   *  growing the container (14–16 in a 32–40 well read as lost). */
+  iconSize?: number
   pill?: boolean
 }) {
+  const wellPx = parseFloat(size) || 32
+  const glyph = iconSize ?? Math.round(wellPx * 0.58)
   return (
     <span
       aria-hidden
@@ -160,7 +186,7 @@ function Well({
         background: t.neutralFill,
       }}
     >
-      <TokenIcon t={t} concept={icon} size={iconSize} color={t.neutralText} />
+      <TokenIcon t={t} concept={icon} size={glyph} color={t.neutralText} />
     </span>
   )
 }
@@ -188,6 +214,10 @@ export function SystemCollage({
     <div
       className="w-full"
       style={{
+        // Room for unscaled elevation to paint into the scrollport padding —
+        // without it Strong's blur reads clipped against the canvas edge.
+        padding: 10,
+        margin: -10,
         display: 'grid',
         gridTemplateColumns: `repeat(auto-fill, ${MODULE_DISPLAY}px)`,
         gridAutoRows: MASONRY_ROW,
@@ -326,10 +356,10 @@ export function SystemCollage({
         { title: translate('Indie Hackers'), count: '148', by: 'John', icon: 'users' as const },
         { title: translate('AI Builders'), count: '362', by: 'Martha', icon: 'zap' as const },
       ]).map((community) => (
-        <ScaledModule key={community.title} t={t} chrome={false}>
-          <Card t={t} v={{}} w="100%" elev="sm">
+        <ScaledModule key={community.title} t={t} chrome={false} elev="sm">
+          <Card t={t} v={{}} w="100%" elev={false}>
             <div className="flex flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-              <Well t={t} size={wellSm} icon={community.icon} iconSize={16} />
+              <Well t={t} size={wellSm} icon={community.icon} />
               <div>
                 <p style={{ margin: 0, ...typeStyleOf(t, 'label'), color: t.neutralText }}>{community.title}</p>
                 <p style={{ margin: 0, ...typeStyleOf(t, 'helper'), color: muted }}>{community.count}</p>
@@ -343,13 +373,10 @@ export function SystemCollage({
         </ScaledModule>
       ))}
 
-      <ScaledModule t={t}>
-        <div
-          className="overflow-hidden"
-          style={{ borderRadius: radiusRoleOf(t, 'overlay') }}
-        >
-          <ContextMenu t={t} v={{}} w="100%" elev="sm" />
-        </div>
+      {/* Floating menu — same column width as every other module (`w=100%`
+          → MODULE_SOURCE). Elevation on the unscaled frame; specimen shadow off. */}
+      <ScaledModule t={t} chrome={false} clip={false} elev="sm">
+        <ContextMenu t={t} v={{}} w="100%" elev={false} />
       </ScaledModule>
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -363,7 +390,7 @@ export function SystemCollage({
 
       <ScaledModule t={t}>
         <div className="flex items-start justify-between" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Well t={t} size={wellSm} icon="box" iconSize={14} />
+          <Well t={t} size={wellSm} icon="box" />
           <Live c="CloseButton" t={t} v={{ Size: 'SM' }} />
         </div>
         <div>

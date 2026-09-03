@@ -42,11 +42,11 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('var(--stroke-control)')
     expect(md).toContain('var(--stroke-focus)')
     expect(md).toContain('Border/focus')
-    expect(md).toContain('Border/critical')
+    expect(md).toContain('Status/critical/border-strong')
     expect(md).toContain('Surface/input')
     expect(md).toContain('border.focus')
     expect(md).toContain('map onto `Size/sm`')
-    expect(md).toContain('var(--color-border-critical)')
+    expect(md).toContain('var(--color-status-critical-border-strong)')
     expect(md).not.toContain('1.5px')
   })
 

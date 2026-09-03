@@ -151,7 +151,14 @@ export const ALGORITHMS: ColorAlgorithm[] = ['radix', 'tailwind', 'ant', 'defaul
 // `surface.page` (a status banner or selected row sits on the page unless
 // stated otherwise); name a different role for one that lives inside a card.
 // Ignored when `bg` is opaque, so every pre-alpha pairing is untouched.
-type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string }
+//
+// `fgBackdrop` is the same idea for a translucent FOREGROUND — which is only
+// ever legitimate for a BORDER (a 1px stroke is neither ink nor fill; it
+// composites over the surface it's drawn on). A translucent `fg` with no
+// `fgBackdrop` still throws, so a genuine ink-as-wash modelling error stays
+// loud. Defaults to `bg` — a border is measured for the contrast it creates
+// against the surface it sits on.
+type Pairing = { fg: string; bg: string; intent: IntentClass; backdrop?: string; fgBackdrop?: string }
 
 const OPAQUE_HEX = /^#[0-9a-f]{6}$/i
 const TRANSLUCENT_HEX = /^#[0-9a-f]{8}$/i
@@ -179,15 +186,13 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'content.inverse',   bg: 'surface.inverse', intent: 'body-text' },
     { fg: 'status.critical-on-solid', bg: 'status.critical.surface-solid', intent: 'action-label' },
     // `ui-component`, and it MUST pass — this is the control boundary, the one
-    // stroke that identifies a control (WCAG 1.4.11 + APCA Lc 45). It carried
-    // the name `border.default` until phase 1 of
-    // design-plans/foundations-geometry-and-strokes.md split the neutral
-    // strokes by JOB; the values are unchanged — light {neutral.8} = 3.26/Lc60,
-    // dark {neutral-dark.11} = 11.99/Lc75. Auditing it under the NEW name is
-    // what keeps the guarantee attached to the role that actually bears it: had
-    // this entry been left on `border.default`, the matrix would have started
-    // demanding 3:1 from a decorative hairline and gone green the day someone
-    // repinned the real boundary.
+    // stroke that identifies a control (WCAG 1.4.11 + APCA Lc 45). Now a
+    // TRANSLUCENT stroke on the fixed alpha ladder ({black-a}/{white-a}) — the
+    // loop composites it over `surface.page` (its `fgBackdrop`, defaulting to
+    // `bg`) before measuring, i.e. it's audited for the contrast it CREATES on
+    // the surface it's drawn on. Resolves to {black-a.7} = 4.00/Lc67 light,
+    // {white-a.8} = 7.29/Lc50 dark for the default system. The ladder is not
+    // accent-tinted, so this holds across every seed rather than drifting.
     { fg: 'border.control',       bg: 'surface.page', intent: 'ui-component' },
     // Hover/emphasis, one step past the boundary — audited as `ui-component`
     // too, since anything heavier than a passing boundary passes by
@@ -206,9 +211,10 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     { fg: 'border.subtle',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.strong',     bg: 'surface.page',    intent: 'decorative' },
-    { fg: 'border.critical',   bg: 'surface.input',   intent: 'ui-component' },
-    { fg: 'border.warning',    bg: 'surface.input',   intent: 'ui-component' },
-    { fg: 'border.success',    bg: 'surface.input',   intent: 'ui-component' },
+    { fg: 'status.critical.border-strong', bg: 'surface.input', intent: 'ui-component' },
+    { fg: 'status.warning.border-strong',  bg: 'surface.input', intent: 'ui-component' },
+    { fg: 'status.success.border-strong',  bg: 'surface.input', intent: 'ui-component' },
+    { fg: 'status.info.border-strong',     bg: 'surface.input', intent: 'ui-component' },
     { fg: 'status.critical.content', bg: 'status.critical.surface', intent: 'large-text' },
     { fg: 'status.warning.content',  bg: 'status.warning.surface',  intent: 'large-text' },
     { fg: 'status.success.content',  bg: 'status.success.surface',  intent: 'large-text' },
@@ -269,20 +275,35 @@ export function auditCurated(sys: System, arch: SemanticArchitecture): CuratedFi
         }
         bg = compositeOver(rawBg, backdrop)
       }
-      // A translucent FOREGROUND is always a modelling error: ink is never a
-      // wash. Loud, because the alternative is a contrast number scored
-      // against a colour nothing will ever render.
+      // A translucent FOREGROUND is only legitimate for a BORDER — a 1px stroke
+      // composites over the surface it's drawn on, so it's measured for the
+      // contrast it CREATES against that surface (`fgBackdrop`, default `bg`).
+      // Any other translucent fg (an ink) is still a modelling error and still
+      // throws — the alternative is a number scored against a colour nothing
+      // will ever render.
+      let measuredFg = fg
       if (!OPAQUE_HEX.test(fg)) {
         if (TRANSLUCENT_HEX.test(fg)) {
-          throw new Error(`audit: ${p.fg} resolved translucent (${fg}) in ${theme} — a foreground must be opaque.`)
+          if (!p.fg.startsWith('border.')) {
+            throw new Error(`audit: ${p.fg} resolved translucent (${fg}) in ${theme} — a non-border foreground must be opaque.`)
+          }
+          const fgBackdropRole = p.fgBackdrop ?? p.bg
+          const fgBackdrop = resolved.get(fgBackdropRole)?.[theme]
+          if (!fgBackdrop || !OPAQUE_HEX.test(fgBackdrop)) {
+            throw new Error(
+              `audit: ${p.fg} is a translucent border in ${theme} and its backdrop "${fgBackdropRole}" did not resolve to an opaque colour.`,
+            )
+          }
+          measuredFg = compositeOver(fg, fgBackdrop)
+        } else {
+          continue
         }
-        continue
       }
       if (!OPAQUE_HEX.test(bg)) continue
-      const v = evaluate(fg, bg, p.intent)
+      const v = evaluate(measuredFg, bg, p.intent)
       out.push({
         architecture: arch, system: sys.name, theme, role: p.fg, against: p.bg,
-        intent: p.intent, fg, bg, tone: -1,
+        intent: p.intent, fg: measuredFg, bg, tone: -1,
         wcag: Number(v.wcag.toFixed(2)), apcaLc: Number(v.apcaLc.toFixed(1)),
         passesWcag: v.passesWcag, passesApca: v.passesApca,
       })

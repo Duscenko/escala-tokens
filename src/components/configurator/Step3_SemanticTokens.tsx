@@ -3,7 +3,7 @@ import { tableRowClass } from './tableChrome'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
-  architectureLabel, buildArchitectureView, scaleLookup,
+  architectureLabel, buildArchitectureView, scaleLookup, CATEGORICAL_ROLE_COMMENTS,
   type ArchTokenValue, type SemanticArchitecture,
 } from '../../lib/semanticArchitectures'
 import {
@@ -320,6 +320,16 @@ function TokenCell({
 /** Strip the trailing "(neutral-900)"-style tone hint — shown via the alias badge now. */
 function cleanDescription(description: string): string {
   return description.replace(/\s*\([^)]*\)\s*$/, '').trim()
+}
+
+/** Per-ROLE guidance for a Categorical token, from `CATEGORICAL_ROLE_COMMENTS`
+ *  (keyed `group.key`), falling back to the category blurb when a role somehow
+ *  has none. The `[ROLE: Xyz]` prefix is an AI-bundle convention — drop it for
+ *  the human-facing Token Details dialog, keeping the "Affects … / …" sentence. */
+function archRoleDescription(id: string, categoryFallback: string): string {
+  const raw = CATEGORICAL_ROLE_COMMENTS[id]
+  if (!raw) return categoryFallback
+  return raw.replace(/^\[ROLE:[^\]]*\]\s*/, '').trim()
 }
 
 
@@ -877,7 +887,6 @@ export default function Step3_SemanticTokens({
 
   // Delete a column, re-pointing the live preview if it was the one shown.
   const deleteTheme = (t: string) => {
-    if (Object.keys(themes).length <= 1) return
     if (previewTheme === t) {
       const next = themeCols.find((c) => c !== t)
       if (next) onPreviewThemeChange?.(next)
@@ -1124,12 +1133,12 @@ export default function Step3_SemanticTokens({
   const archTokens = !isFlat && archView
     ? (archCategory === 'all'
         ? archView.categories.flatMap((c) =>
-            c.tokens.map((t) => ({ ...t, id: `${c.key}.${t.key}`, name: `${c.key}.${t.key}`, description: c.description })),
+            c.tokens.map((t) => ({ ...t, id: `${c.key}.${t.key}`, name: `${c.key}.${t.key}`, description: archRoleDescription(`${c.key}.${t.key}`, c.description) })),
           )
         : (() => {
             const cat = archView.categories.find((c) => c.key === archCategory)
             return (cat?.tokens ?? []).map((t) => ({
-              ...t, id: `${archCategory}.${t.key}`, name: t.key, description: cat?.description ?? '',
+              ...t, id: `${archCategory}.${t.key}`, name: t.key, description: archRoleDescription(`${archCategory}.${t.key}`, cat?.description ?? ''),
             }))
           })()
       ).filter((t) => !q || t.name.toLowerCase().includes(q))
@@ -1507,7 +1516,7 @@ export default function Step3_SemanticTokens({
               {themeCols.map((t, i) => {
                 const isPreviewed = activeAppearance === kindOf(t)
                 const displayName = themeDisplayName(t)
-                const canDelete = themeCols.length > 1
+                const canDelete = !managedThemesExternally
                 return (
                   <span
                     key={t}
