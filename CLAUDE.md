@@ -2209,6 +2209,20 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   while the card stayed 24px and the button 16px. A test asserts that independence
 >   directly, so a future change that re-couples the axes fails rather than just looking
 >   wrong.
+> - **Variables speaks the same three words.** `LAYOUT_ROLE_GROUPS.radius` was still
+>   `Control / Surface` — the two surfaces already wrote ONE `radiusRoles` map (the rail's
+>   axis picks and the Variables role editor are the same data), but described those five
+>   roles two different ways. It is `Boxes / Fields / Selectors` there too now. `pill`
+>   sits under Selectors: it is that family (badge, avatar, switch) even though it is not
+>   an AXIS, so the rail never drives it and it stays editable in Variables only.
+> - **The PRESENTATION is deliberately not DaisyUI's** — the model is theirs, the control
+>   is not. Each option is a bare quarter arc drawn as an SVG path: no tile, no border
+>   box, no fill. A square around the swatch draws a second, louder corner right next to
+>   the one being chosen, which is the opposite of what the control is for. Selection is
+>   carried by the arc's own stroke going `--accent-ui` and thickening 1.25 → 2, and each
+>   row reports its resolved pixels on the right (or "Custom" when its roles disagree), so
+>   the control states its value and not only its shape. Verified in the DOM: every option
+>   renders `border: 0px` on a transparent background.
 
 > **Sizes scale from a BASE UNIT, and the multipliers were verified against the shipped
 > ramp before anything was built.** `SIZE_STANDARD` (24/32/40/48/56/64) IS `4 ×

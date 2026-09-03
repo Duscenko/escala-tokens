@@ -708,21 +708,42 @@ function TypeScaleCard({
 const RADIUS_TILE = 36
 
 /**
- * Radius as THREE independent axes — Boxes / Fields / Selectors — instead of
- * one roundness dial.
+ * Radius as THREE independent axes — Boxes / Fields / Selectors.
  *
- * The dial graded the whole ramp from a single `lg`, so every role moved
- * together: choosing Pill turned the CARD into a stadium along with the
- * checkbox, which is unreadable and was the reported defect. Rounding a
- * checkbox and rounding a modal are not the same decision. This is DaisyUI's
- * split (`--radius-box` / `--radius-field` / `--radius-selector`) expressed
- * over the roles this system already ships, so the token contract is unchanged
- * and only WHICH step each role aliases is now picked per axis.
+ * The dial this replaced graded the whole ramp from a single `lg`, so every
+ * role moved together: choosing Pill turned the CARD into a stadium along with
+ * the checkbox, which is unreadable and was the reported defect. Rounding a
+ * checkbox and rounding a modal are not the same decision. The three-axis MODEL
+ * is DaisyUI's (`--radius-box` / `--radius-field` / `--radius-selector`),
+ * mapped onto the roles this system already ships, so the token contract is
+ * unchanged and only WHICH step each role aliases is picked per axis.
  *
- * The ramp itself is no longer edited here. It is a primitive scale — five
- * ladder steps that mean the same pixels on every axis is exactly what makes
- * the three comparable — and regrading it belongs in the advanced editor.
+ * The PRESENTATION is deliberately not theirs. Each option is a bare quarter
+ * arc — no tile, no border box, no fill — because the arc IS the value and a
+ * square around it just draws a second, louder corner next to the one being
+ * chosen. Selection is carried by the arc's own stroke going accent and
+ * thickening; every row then reports its resolved pixels on the right, so the
+ * control states its value instead of only its shape.
+ *
+ * The ramp is not edited here. Five steps meaning the same pixels on every axis
+ * is what makes the axes comparable; regrading belongs in the advanced editor.
  */
+function RadiusArc({ px, active }: { px: number; active: boolean }) {
+  const S = RADIUS_TILE
+  // Clamp so `full` (9999) draws a true quarter circle rather than overflowing.
+  const r = Math.min(px, S)
+  return (
+    <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} fill="none" aria-hidden>
+      <path
+        d={`M 0 ${S} L 0 ${r} A ${r} ${r} 0 0 1 ${r} 0 L ${S} 0`}
+        stroke="currentColor"
+        strokeWidth={active ? 2 : 1.25}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 function RadiusCard({
   radius, radiusRoles, onRoles,
 }: {
@@ -731,17 +752,20 @@ function RadiusCard({
   onRoles: (next: Record<string, string>) => void
 }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       {RADIUS_GROUPS.map((group) => {
         const current = radiusGroupStep(group, radiusRoles)
+        const currentPx = current ? (radius[current] ?? '0px') : null
         return (
           <div key={group.key} className="min-w-0">
-            <div className="mb-1.5 flex min-w-0 items-baseline gap-1.5">
-              <span className="min-w-0 truncate text-micro font-medium text-fg">{group.label}</span>
+            <div className="mb-1 flex min-w-0 items-baseline gap-1.5">
+              <span className="min-w-0 flex-shrink-0 text-micro font-medium text-fg">{group.label}</span>
               <span className="min-w-0 flex-1 truncate text-nano text-fg-faint">{group.hint}</span>
-              {current === null && <span className="flex-shrink-0 text-nano text-fg-faint">Custom</span>}
+              <span className="flex-shrink-0 text-nano tabular-nums text-fg-muted">
+                {currentPx ?? 'Custom'}
+              </span>
             </div>
-            <div className="grid grid-cols-5 gap-1" role="group" aria-label={`${group.label} radius`}>
+            <div className="flex items-end gap-1" role="group" aria-label={`${group.label} radius`}>
               {RADIUS_GROUP_STEPS.map((step) => {
                 const value = radius[step] ?? '0px'
                 const px = parseFloat(value) || 0
@@ -754,22 +778,11 @@ function RadiusCard({
                     aria-label={`${group.label} radius ${step} (${value})`}
                     title={`${step} — ${value}`}
                     onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
-                    className={`grid aspect-square place-items-center rounded-lg border transition-[border-color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? 'border-accent-ui bg-elevated' : 'border-line bg-app hover:border-line-strong'}`}
+                    className={`grid flex-1 place-items-center rounded-md py-1 transition-[color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                      selected ? 'text-accent-ui' : 'text-fg/35 hover:text-fg/70'
+                    }`}
                   >
-                    {/* Only the top-left corner is drawn: the arc IS the value,
-                        and a full rounded square reads as a swatch instead. */}
-                    <span
-                      aria-hidden
-                      className={selected ? 'border-accent-ui' : 'border-fg/45'}
-                      style={{
-                        width: RADIUS_TILE,
-                        height: RADIUS_TILE,
-                        borderTopWidth: 1.5,
-                        borderLeftWidth: 1.5,
-                        borderTopLeftRadius: Math.min(px, RADIUS_TILE),
-                        borderStyle: 'solid',
-                      }}
-                    />
+                    <RadiusArc px={px} active={selected} />
                   </button>
                 )
               })}

@@ -518,9 +518,16 @@ export interface LayoutRole {
 }
 
 export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: string; hint: string }[]> = {
+  // The SAME three axes the quick rail exposes, so the two surfaces speak one
+  // vocabulary — they already wrote one `radiusRoles` map, but the Variables
+  // rail still said Control / Surface, which is a second way to describe the
+  // same five roles. `pill` lives under Selectors: it is that family (badge,
+  // avatar, switch) even though it is not an AXIS — it means "a circle", so the
+  // rail never drives it and it stays editable here only.
   radius: [
-    { id: 'control', label: 'Control', hint: 'Interactive chrome and nested corners.' },
-    { id: 'surface', label: 'Surface', hint: 'Cards, overlays, pills.' },
+    { id: 'boxes', label: 'Boxes', hint: 'Card, modal, alert.' },
+    { id: 'fields', label: 'Fields', hint: 'Button, input, select, tab.' },
+    { id: 'selectors', label: 'Selectors', hint: 'Checkbox, radio, toggle, menu, badge.' },
   ],
   spacing: [
     { id: 'gap', label: 'Gap', hint: 'Space between siblings.' },
@@ -582,11 +589,11 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * the export contract does not change.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'xs' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: 'sm' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: 'lg' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: 'lg' },
-  { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'surface', primitive: 'full' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'xs' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'sm' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: 'lg' },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: 'lg' },
+  { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'selectors', primitive: 'full' },
 ]
 
 /**
