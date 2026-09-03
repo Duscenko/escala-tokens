@@ -705,42 +705,86 @@ function TypeScaleCard({
 // on that formula (Sharp=8, Soft=12, Rounded=16, Pill=24), so the gallery,
 // the slider and Variables' Preset dropdown can never disagree. 40 is the
 // ceiling StepRadius already uses.
-const RADIUS_TILE = 36
+const RADIUS_TILE = 33 // Figma node 4185:21283
 
 /**
  * Radius as THREE independent axes — Boxes / Fields / Selectors.
  *
  * The dial this replaced graded the whole ramp from a single `lg`, so every
  * role moved together: choosing Pill turned the CARD into a stadium along with
- * the checkbox, which is unreadable and was the reported defect. Rounding a
- * checkbox and rounding a modal are not the same decision. The three-axis MODEL
- * is DaisyUI's (`--radius-box` / `--radius-field` / `--radius-selector`),
+ * the checkbox, which is unreadable and was the reported defect. The three-axis
+ * MODEL is DaisyUI's (`--radius-box` / `--radius-field` / `--radius-selector`),
  * mapped onto the roles this system already ships, so the token contract is
  * unchanged and only WHICH step each role aliases is picked per axis.
  *
- * The PRESENTATION is deliberately not theirs. Each option is a bare quarter
- * arc — no tile, no border box, no fill — because the arc IS the value and a
- * square around it just draws a second, louder corner next to the one being
- * chosen. Selection is carried by the arc's own stroke going accent and
- * thickening; every row then reports its resolved pixels on the right, so the
- * control states its value instead of only its shape.
- *
- * The ramp is not edited here. Five steps meaning the same pixels on every axis
- * is what makes the axes comparable; regrading belongs in the advanced editor.
+ * The PRESENTATION is Figma node 4185:21283, adapted: each option is a 33px
+ * well whose TOP-LEFT corner is drawn at that step's radius (an L of
+ * left + top border, other corners square, so the arc IS the sample). The
+ * selected well fills, its L goes accent and doubles in weight, gets an inset
+ * press shadow, and carries a small round badge with the resolved px. The
+ * design's hardcoded hexes map to chrome tokens: `#737375` L → `--fg` at 22%,
+ * `#285cc3` selected L → `--accent-ui`, `#2a2a2d` fill → `--elevated`,
+ * `rgba(40,92,195,0.24)` badge → `--accent-ui` at 22%. The ramp is not edited
+ * here — five steps meaning the same pixels on every axis is what makes the
+ * axes comparable; regrading belongs in the advanced editor.
  */
-function RadiusArc({ px, active }: { px: number; active: boolean }) {
-  const S = RADIUS_TILE
-  // Clamp so `full` (9999) draws a true quarter circle rather than overflowing.
-  const r = Math.min(px, S)
+function RadiusTile({
+  px, step, value, groupLabel, selected, onClick,
+}: {
+  px: number
+  step: string
+  value: string
+  groupLabel: string
+  selected: boolean
+  onClick: () => void
+}) {
+  // Cap so `full` (9999) draws a quarter circle rather than overflowing.
+  const r = Math.min(px, RADIUS_TILE)
   return (
-    <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} fill="none" aria-hidden>
-      <path
-        d={`M 0 ${S} L 0 ${r} A ${r} ${r} 0 0 1 ${r} 0 L ${S} 0`}
-        stroke="currentColor"
-        strokeWidth={active ? 2 : 1.25}
-        strokeLinecap="round"
-      />
-    </svg>
+    <button
+      type="button"
+      aria-pressed={selected}
+      aria-label={`${groupLabel} radius ${step} (${value})`}
+      title={`${step} — ${value}`}
+      onClick={onClick}
+      className="relative shrink-0 transition-[border-color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      style={{
+        width: RADIUS_TILE,
+        height: RADIUS_TILE,
+        borderStyle: 'solid',
+        borderRightWidth: 0,
+        borderBottomWidth: 0,
+        borderLeftWidth: selected ? 2 : 1,
+        borderTopWidth: selected ? 2 : 1,
+        borderTopLeftRadius: r,
+        // Figma's selected L is a saturated accent stroke (#285cc3), which is
+        // `--accent-solid` (the brand), not `--accent-ui` (which walks toward
+        // the page for text contrast and reads pastel here).
+        borderColor: selected
+          ? 'var(--accent-solid)'
+          : 'color-mix(in srgb, var(--fg) 22%, transparent)',
+        background: selected
+          ? 'var(--elevated)'
+          : 'color-mix(in srgb, var(--elevated) 55%, transparent)',
+        // A pressed-well cue — dark in both themes, so the hardcode is correct.
+        boxShadow: selected ? 'inset 0 4px 4px rgba(0,0,0,0.25)' : undefined,
+      }}
+    >
+      {selected && (
+        <span
+          aria-hidden
+          className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[8px] font-medium leading-none tabular-nums"
+          style={{
+            width: 16,
+            height: 16,
+            background: 'color-mix(in srgb, var(--accent-solid) 20%, transparent)',
+            color: 'var(--accent-ui)',
+          }}
+        >
+          {Math.round(px)}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -752,38 +796,34 @@ function RadiusCard({
   onRoles: (next: Record<string, string>) => void
 }) {
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-[15px]">
       {RADIUS_GROUPS.map((group) => {
         const current = radiusGroupStep(group, radiusRoles)
-        const currentPx = current ? (radius[current] ?? '0px') : null
         return (
           <div key={group.key} className="min-w-0">
-            <div className="mb-1 flex min-w-0 items-baseline gap-1.5">
+            <div className="mb-1 flex min-w-0 items-center gap-1.5">
               <span className="min-w-0 flex-shrink-0 text-micro font-medium text-fg">{group.label}</span>
               <span className="min-w-0 flex-1 truncate text-nano text-fg-faint">{group.hint}</span>
-              <span className="flex-shrink-0 text-nano tabular-nums text-fg-muted">
-                {currentPx ?? 'Custom'}
-              </span>
+              {/* The Figma has no header readout — the badge on the selected
+                  well carries the value. `Custom` is the one case it does not
+                  cover (roles off the ladder), so it stays here. */}
+              {current === null && (
+                <span className="flex-shrink-0 text-nano text-fg-faint">Custom</span>
+              )}
             </div>
-            <div className="flex items-end gap-1" role="group" aria-label={`${group.label} radius`}>
+            <div className="flex items-center justify-between" role="group" aria-label={`${group.label} radius`}>
               {RADIUS_GROUP_STEPS.map((step) => {
                 const value = radius[step] ?? '0px'
-                const px = parseFloat(value) || 0
-                const selected = current === step
                 return (
-                  <button
+                  <RadiusTile
                     key={step}
-                    type="button"
-                    aria-pressed={selected}
-                    aria-label={`${group.label} radius ${step} (${value})`}
-                    title={`${step} — ${value}`}
+                    px={parseFloat(value) || 0}
+                    step={step}
+                    value={value}
+                    groupLabel={group.label}
+                    selected={current === step}
                     onClick={() => onRoles(applyRadiusGroup(group, radiusRoles, step))}
-                    className={`grid flex-1 place-items-center rounded-md py-1 transition-[color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                      selected ? 'text-accent-ui' : 'text-fg/35 hover:text-fg/70'
-                    }`}
-                  >
-                    <RadiusArc px={px} active={selected} />
-                  </button>
+                  />
                 )
               })}
             </div>

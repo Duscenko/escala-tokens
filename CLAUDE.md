@@ -2215,14 +2215,20 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   roles two different ways. It is `Boxes / Fields / Selectors` there too now. `pill`
 >   sits under Selectors: it is that family (badge, avatar, switch) even though it is not
 >   an AXIS, so the rail never drives it and it stays editable in Variables only.
-> - **The PRESENTATION is deliberately not DaisyUI's** — the model is theirs, the control
->   is not. Each option is a bare quarter arc drawn as an SVG path: no tile, no border
->   box, no fill. A square around the swatch draws a second, louder corner right next to
->   the one being chosen, which is the opposite of what the control is for. Selection is
->   carried by the arc's own stroke going `--accent-ui` and thickening 1.25 → 2, and each
->   row reports its resolved pixels on the right (or "Custom" when its roles disagree), so
->   the control states its value and not only its shape. Verified in the DOM: every option
->   renders `border: 0px` on a transparent background.
+> - **The PRESENTATION is Figma node 4185:21283** (`portfolio` file), adapted. A brief
+>   bare-arc version came first — no tile, just an SVG quarter arc, selection = stroke
+>   going accent — then the designer supplied this. Each option is a **33px well** whose
+>   TOP-LEFT corner alone is drawn at that step's radius: an L of `border-left` +
+>   `border-top`, other corners square, so the corner IS the sample and nothing draws a
+>   competing second corner. The **selected** well fills, its L goes to 2px accent, it
+>   takes an inset press shadow, and a **small round badge** in its centre shows the
+>   resolved px. The Figma's hardcoded hexes map to chrome tokens: the grey L (`#737375`)
+>   → `--fg` at 22%; the selected L and the badge fill (`#285cc3` / `rgba(40,92,195,0.24)`)
+>   → `--accent-solid` (the saturated brand, NOT `--accent-ui`, which walks toward the
+>   page and reads pastel as a stroke); the selected fill (`#2a2a2d`) → `--elevated`; the
+>   badge number (`#abceff`) → `--accent-ui`. The header keeps NO px readout — the badge
+>   carries the value — except "Custom" on the right when the axis roles sit off the
+>   ladder, the one state the Figma does not cover.
 
 > **Sizes scale from a BASE UNIT, and the multipliers were verified against the shipped
 > ramp before anything was built.** `SIZE_STANDARD` (24/32/40/48/56/64) IS `4 ×
