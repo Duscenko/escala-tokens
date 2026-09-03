@@ -709,7 +709,7 @@ export default function ThemeLibraryRail({
           setEditor(newKey)
         }}
         dockLeftOverride={THEME_LIBRARY_WIDTH}
-        dockTopOverride={72}
+        dockToSelector={'aside[aria-label="Themes library"]'}
       />
 
     </aside>

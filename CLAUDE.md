@@ -2994,14 +2994,26 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   both tables' column pencils, Primitives' "+ New theme") used to open it in five places —
 >   two of them floating over the very table they were about to change, and moving with
 >   horizontal scroll. It's `fixed` at the left edge of the canvas now, flush against the
->   Color Variables column, top-aligned with it, full height. No anchor to measure, no
->   flip-up/flip-down, no viewport clamping, and it reads as a drawer sliding out of the
->   column that lists the very families it mints. `DOCK_LEFT` comes from
+>   column beside it, matching its FULL BOX. No anchor to measure, no flip-up/flip-down, no
+>   viewport clamping, and it reads as a drawer sliding out of the column that lists the
+>   very families it mints. `DOCK_LEFT` comes from
 >   `COLOR_RAIL_WIDTH`/`COLOR_RAIL_COLLAPSED_WIDTH` (imported, never repeated) so a
->   collapsed rail can't leave it floating over the strip; `DOCK_TOP` is measured off
->   `nav[aria-label="Color families"]` when it's on screen and falls back to the shell's own
->   two-row height (72 + 52) when it isn't — the panel opens from Semantics too, where that
->   `<nav>` isn't rendered. Triggers therefore pass **no anchor element**.
+>   collapsed rail can't leave it floating over the strip.
+> - **Vertical bounds are MEASURED off a reference column, top AND bottom — `dockToSelector`.**
+>   Defaults to `nav[aria-label="Color families"]`; the Themes Library passes its own
+>   `aside[aria-label="Themes library"]`. The panel sets `top` and `bottom` from that
+>   element's rect (with a `ResizeObserver` so a growing theme list / sync footer keeps the
+>   drawer in step), so it is EXACTLY the rail's height. It fell back to a hardcoded
+>   `dockTopOverride={72}` + a fixed 36px bottom inset before — 20px too low at the top and
+>   not tracking the rail's real bottom at all (reported: "no se está ajustando a la altura
+>   del riel"). Falls back to `SHELL_ROWS` / `DOCK_BOTTOM` when the column isn't mounted
+>   (the panel opens from Semantics/Gradients too). Triggers pass **no anchor element**.
+> - **The accent picker is the Primitives family-edit drawer's, verbatim** —
+>   `<ColorPickerPanel dynamicAccentPalette palette={[]} suggestions followAccent>`, so the
+>   curated palette is the hue-scoped strip with the selection box and the
+>   Muted / Vivid / High contrast options, not a static swatch list. It carried
+>   `palette={curatedPaletteFor('accent')}` (a fixed set) before; the two accent pickers in
+>   the app now show the identical control.
 > - **`seedFrom` (a "duplicate theme" flow with no caller) was deleted**, not kept.
 
 > **Base drives the page (HeroUI model).** There is still no background PICKER.

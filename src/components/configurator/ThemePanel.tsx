@@ -495,11 +495,17 @@ function ThemeForm({
           <p className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-2.5">
             {dark ? 'Dark theme' : 'Light theme'} · accent
           </p>
+          {/* The SAME accent picker the Primitives family-edit drawer shows
+              for the Accent family: the curated palette is DYNAMIC — a strip
+              tuned to the current hue with the selection box and the
+              Muted / Vivid / High contrast options — not a static swatch list.
+              `dynamicAccentPalette` + `palette={[]}` is exactly that call. */}
           <ColorPickerPanel
             value={slots.brand}
             onChange={setAccent}
             suggestions
-            palette={curatedPaletteFor('accent')}
+            palette={[]}
+            dynamicAccentPalette
             followAccent
             linkOnPick={false}
             appearance={kind}
@@ -621,7 +627,7 @@ export default function ThemePanel({
   appearance = 'light',
   railCollapsed = false,
   dockLeftOverride,
-  dockTopOverride,
+  dockToSelector,
 }: {
   open: boolean
   onClose: () => void
@@ -634,24 +640,45 @@ export default function ThemePanel({
   railCollapsed?: boolean
   /** Alternate rail boundary for callers outside Color (Themes Library). */
   dockLeftOverride?: number
-  /** Alternate shell row boundary for callers outside Color. */
-  dockTopOverride?: number
+  /**
+   * Element to vertically align the drawer to. The panel matches its `top` and
+   * `bottom` so it is exactly as tall as that column. Defaults to Color's
+   * `nav[aria-label="Color families"]`; the Themes Library passes its own
+   * `<aside>` so the drawer tracks the rail's real height instead of a
+   * hardcoded row offset.
+   */
+  dockToSelector?: string
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [dockTop, setDockTop] = useState(SHELL_ROWS)
+  const [dockBottom, setDockBottom] = useState<number>(DOCK_BOTTOM)
 
   useLayoutEffect(() => {
     if (!open) return
-    if (dockTopOverride != null) return
+    const sel = dockToSelector ?? 'nav[aria-label="Color families"]'
     const measure = () => {
-      const nav = document.querySelector('nav[aria-label="Color families"]')
-      const t = nav?.getBoundingClientRect().top
-      setDockTop(typeof t === 'number' && t > 0 ? t : SHELL_ROWS)
+      const el = document.querySelector(sel)
+      const r = el?.getBoundingClientRect()
+      // Match the reference column's box: same top, same bottom, so the drawer
+      // is exactly its height. Fall back to the shell rows / footer inset when
+      // the column isn't mounted (the panel opens from Semantics/Gradients too).
+      setDockTop(r && r.top > 0 ? r.top : SHELL_ROWS)
+      setDockBottom(
+        r && r.bottom > 0 ? Math.max(0, window.innerHeight - r.bottom) : DOCK_BOTTOM,
+      )
     }
     measure()
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [open, dockTopOverride])
+    // The rail can grow/shrink (theme list length, sync footer) without a
+    // resize — observe it so the drawer keeps pace.
+    const el = document.querySelector(sel)
+    const ro = el ? new ResizeObserver(measure) : null
+    if (el && ro) ro.observe(el)
+    return () => {
+      window.removeEventListener('resize', measure)
+      ro?.disconnect()
+    }
+  }, [open, dockToSelector])
 
   useEffect(() => {
     if (!open) return
@@ -678,7 +705,7 @@ export default function ThemePanel({
   if (typeof document === 'undefined') return null
 
   const dockLeft = dockLeftOverride ?? (railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH)
-  const effectiveDockTop = dockTopOverride ?? dockTop
+  const effectiveDockTop = dockTop
   const width = typeof window === 'undefined'
     ? PANEL_W
     : Math.min(PANEL_W, Math.max(280, window.innerWidth - dockLeft - 16))
@@ -699,7 +726,7 @@ export default function ThemePanel({
             position: 'fixed',
             left: dockLeft,
             top: effectiveDockTop,
-            bottom: DOCK_BOTTOM,
+            bottom: dockBottom,
             width,
           }}
           className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
