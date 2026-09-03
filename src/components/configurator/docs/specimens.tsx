@@ -40,6 +40,26 @@ const softer = (t: PreviewTokens, hex: string) => tintOf(t, hex, '5', 0.05)
  *  ONE mechanism instead of two. */
 const pressed = (t: PreviewTokens, hex: string) => tintOf(t, hex, '20', 0.2)
 
+/** A soft 3-stop gradient at the accent's hue rotated `deg` degrees, holding one
+ *  lightness/chroma envelope so a rotated stack reads as a family (the attached
+ *  reference: periwinkle → mint → lavender → amber → coral, same "weight"). */
+function avatarHueGradient(t: PreviewTokens, deg: number): string {
+  let h = 250
+  try { h = (chroma(t.brandSolid).get('hsl.h') || 0) + deg } catch { /* keep default */ }
+  const at = (l: number, sat: number) => chroma.hsl(((h % 360) + 360) % 360, sat, l).hex()
+  return `linear-gradient(140deg, ${at(0.80, 0.52)} 0%, ${at(0.62, 0.62)} 52%, ${at(0.44, 0.55)} 100%)`
+}
+
+/** The default gradient fill: the system's ASSIGNED avatar gradient when it has
+ *  one, otherwise the accent at hue 0 through the same envelope. */
+function avatarFillOf(t: PreviewTokens): string {
+  return t.avatarGradient || t.coverGradient || avatarHueGradient(t, 0)
+}
+
+/** Hue offsets for a 5-up avatar stack — cool to warm, so the row shows the
+ *  gradient variant's range at a glance without repeating a colour. */
+export const AVATAR_STACK_HUES = [0, 42, 96, 168, 214]
+
 function statusColor(t: PreviewTokens, name: string): string {
   switch (name) {
     case 'Brand': return t.brandSolid
@@ -634,19 +654,36 @@ const AVATAR_SIZES: Record<string, { d: number; f: number }> = {
   XS: { d: 24, f: 10 }, SM: { d: 32, f: 12 }, MD: { d: 40, f: 14 }, LG: { d: 48, f: 16 }, XL: { d: 56, f: 18 },
 }
 
+/**
+ * Two kinds of avatar, chosen by `v.Variant` — both opt-in and inert (every
+ * pre-existing call site omits `Variant` and gets the initials look, byte for
+ * byte):
+ *
+ *  · default / `Initial` — accent-secondary tint + initials. The system's
+ *    long-standing avatar; reverted here after a brief detour through a solid
+ *    gradient fill that read as decoration rather than identity.
+ *  · `Gradient` — a soft gradient, no letter. `v.Hue` (degrees) rotates it off
+ *    the accent so a stack can show a range (see `AVATAR_STACK_HUES`); omit
+ *    `Hue` and it uses the system's assigned avatar gradient.
+ */
 function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const s = AVATAR_SIZES[v.Size ?? 'MD'] ?? AVATAR_SIZES.MD
+  const gradient = v.Variant === 'Gradient'
+  const hue = Number(v.Hue)
+  const background = gradient
+    ? (Number.isFinite(hue) ? avatarHueGradient(t, hue) : avatarFillOf(t))
+    : soft(t, t.brandSolid)
   return (
     <span
       style={{
         ...baseFont(t),
         width: s.d, height: s.d, borderRadius: radiusRoleOf(t, 'pill'),
-        background: soft(t, t.brandSolid), color: t.brandText,
+        background, color: t.brandText,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         ...typeOf(t, 'caption'),
       }}
     >
-      MD
+      {gradient ? null : 'MD'}
     </span>
   )
 }

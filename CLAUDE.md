@@ -3649,6 +3649,87 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   byte-identical to before: the refactor changed which ROLE each site reads, not which
 >   tokens any component touches.
 
+> **UPDATE: destructive and confirming are ONE control painted ONE way, and which way
+> is a style axis (`statusAction`).** Reported as the green success button getting a very
+> different treatment from the destructive one. It did, and it was the collage's own
+> fault: `SystemCollage` hardcoded `Style: 'Solid', Color: 'Danger'` beside
+> `Style: 'Soft', Color: 'Success'` — two different STYLES, so the two severities read as
+> unrelated components and could not be compared at all.
+> - Unifying them raised the real question: unified as WHICH? Both answers are right for
+>   different systems, so it is a style axis rather than a global default —
+>   **`solid`** fills with the severity and puts the solved `on-solid` ink on top (near-
+>   white on every seed here), **`soft`** washes it and uses the severity's OWN
+>   `status.<sev>.content` text. Core · Neo · Material ship `solid`; Glass · Retro ·
+>   Nature ship `soft`, so the set demonstrates both. It threads exactly like
+>   `panelBackground` (foundation field → `PreviewTokens`), which is the same shape of
+>   decision.
+> - Verified live, both severities identical per style: Core `rgb(217,45,32)` /
+>   `rgb(31,131,79)` solid; Glass `rgba(184,56,45,0.1)` / `rgba(112,210,128,0.1)` soft.
+
+> **UPDATE: a button label is `text-sm`, not `text-md`.** It was a full step above
+> `label` and above body copy, which made the button the LARGEST text on screen —
+> measured **17px against 15px body** on the three styles using the `comfortable` type
+> scale (×1.0625), because the scale multiplies every step and `text-md` IS the body
+> size. A button label and a field label are the same TIER; the button is just heavier.
+> Now 12–15px across the six, under the 16px ceiling a control label should respect, and
+> desktop finally agrees with mobile, which already used `text-sm`.
+> **Capping the resolved px was considered and rejected**: the CSS export emits
+> `var(--font-size-text-md)` for this role, so a numeric clamp would preview 16px and
+> ship 17px — the exact preview/export drift the alias model exists to prevent. Moving
+> the ALIAS keeps one value in both.
+
+> **UPDATE: `AvatarSpecimen` has TWO kinds, selected by `v.Variant` — the solid-gradient
+> detour is reverted.** A first pass replaced the accent-tint + initials avatar with a
+> solid `avatarFillOf()` gradient everywhere; it read as decoration, not identity, so the
+> initials look is the default again (`soft(brandSolid)` + `brandText` + "MD").
+> - **`Variant: 'Gradient'`** drops the letter and fills with a soft 3-stop. `v.Hue`
+>   (degrees) rotates it off the accent through ONE lightness/chroma envelope
+>   (`avatarHueGradient`), so a rotated set reads as a family — periwinkle → mint →
+>   lavender → amber → coral, matching the reference the request attached. Omit `Hue` and
+>   it uses the system's assigned avatar gradient (`avatarFillOf`, → `coverGradient` →
+>   hue-0 fallback).
+> - Both are **opt-in and inert**: every pre-existing call site omits `Variant` and gets
+>   the initials avatar byte for byte, so `Avatar`'s `componentColorFields` entry is
+>   unchanged (`brandSolid` · `brandText` · `neutralText`).
+> - **`AVATAR_STACK_HUES = [0, 42, 96, 168, 214]`** is the cool→warm sequence the collage
+>   team stack walks, alternating `Gradient` (even index, hue-rotated) with the initials
+>   default (odd index) so the row shows both kinds and the gradient's range at once. Not
+>   a catalogue axis — the plugin's `Avatar` set is still `Size`-only; `Variant`/`Hue`
+>   ride in `v` the same opt-in way `w`/`children` do.
+
+> **UPDATE: Retro's input stroke is 1px.** It carried a 2px stroke copied from Neo, but
+> the two are not doing the same job — measured, Neo's field is FLAT (ΔL 0.000 between
+> fill and page, so the outline is the only thing identifying the control, which is the
+> whole brutalist point) while Retro's field has a real fill at ΔL 0.032, the same
+> separation Core gets with 1px. A vintage press rules fine lines; Retro's character is
+> the warm ink COLOUR (`inkBorders`), which is untouched. Only the weight drops, so
+> `border.control` still clears its 3:1 floor.
+> - **Material's border was left alone deliberately, and it is the one that looks like it
+>   should move.** Its fill is by far the strongest — ΔL 0.072–0.078 against the page,
+>   ~2.5× every other style, exactly as M3's filled text field intends — but neither the
+>   fill (1.24:1) nor a lighter border would clear WCAG 1.4.11's 3:1 on its own, and the
+>   current alpha was solved to be the first ladder step that does. Lightening it is the
+>   measured mistake the `ThemeStyleSemantics` note already warns about. The honest way
+>   to give Material its M3 look is an underline FIELD SHAPE, which is a second axis and
+>   its own change.
+
+> **NOT DONE, and why — light and dark status solids resolving to the same hex.**
+> Reported as dark picking the most muted colours for accessibility while light receives
+> the same values. Measured: **11 of 30** status/action solids are byte-identical across
+> the two appearances. The cause is structural — `brandSolidPair` prefers the tone
+> nearest the anchor, and tone 9 IS the seed hex verbatim in BOTH ramps (the Radix
+> two-scale model), so whenever the seed carries its own label in both, both resolve to
+> it. Two principled ways to break it were built and measured, and BOTH are worse:
+> - **A 3:1 floor against the page** (WCAG 1.4.11 — a button must be visible as a button)
+>   takes identical from 11 → 1, but pushes dark solids back to the near-white end
+>   (`#ffbcae`, `#ffbe92`, `#a7cfff`) and drags Neo's light gold `#eebd62` back to brown
+>   `#8e6300`. It reintroduces both defects `brandSolidPair` was written to fix.
+> - **Lifting the dark anchor one step** (ordering by `|t − 10|`) reaches tone 11 before
+>   tone 8, so **24 of 30** dark solids become pastels — worse than the status quo.
+> An identical hex at the anchor is the brand-faithful answer, so the variety comes from
+> the seeds and from `statusAction` instead. Do not "fix" this without re-running those
+> two measurements.
+
 > **UPDATE: each System Style declares its OWN four severity seeds (`ThemeStylePreset.states`,
 > resolved through `presetStates`).** Reported alongside the above: "veo esto repetitivo por
 > todos los temas, no estás variando de colores para success, warning, error, info."

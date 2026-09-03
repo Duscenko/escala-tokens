@@ -394,6 +394,13 @@ export interface DesignSnapshot {
   // panels, sections) render solid, with alpha + backdrop blur, or reuse the
   // primitives page background (`pageBackground`).
   panelBackground: 'solid' | 'translucent' | 'page'
+  /**
+   * How a destructive or confirming action is painted. `solid` fills it with
+   * the severity and puts the solved ink on top; `soft` gives it a translucent
+   * wash of the severity with the severity's own text. Both are legitimate and
+   * the choice is a STYLE decision — see `StatusAction` in themePresets.
+   */
+  statusAction: 'soft' | 'solid'
   // Which semantic token architecture the export projects the 89-role catalogue
   // into (Alias/Semantics picker). 'flat' = the classic shape; the others are
   // additive projections (see lib/semanticArchitectures.ts).
@@ -520,6 +527,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     breakpointRoles: defaultLayoutRoles('breakpoint'),
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
     panelBackground: 'solid',
+    statusAction: 'solid',
     semanticArchitecture: 'categorical',
     architectureOverrides: {},
     gradients: makeDefaultGradients(DEFAULT_ACCENT, DEFAULT_ACCENT_SCALE, DEFAULT_ACCENT_DARK_SCALE),
@@ -820,6 +828,8 @@ interface DesignStore {
   // Panel background — Radix-style treatment for raised surfaces (surface-1:
   // cards, panels, sections): solid, translucent, or the page background.
   panelBackground: 'solid' | 'translucent' | 'page'
+  statusAction: 'soft' | 'solid'
+  setStatusAction: (v: 'soft' | 'solid') => void
   setPanelBackground: (v: 'solid' | 'translucent' | 'page') => void
 
   // Semantic token architecture — which shape the export projects the flat
@@ -1245,6 +1255,7 @@ export const useDesignStore = create<DesignStore>()(
       }),
 
       setPanelBackground: (v) => set({ panelBackground: v }),
+      setStatusAction: (v) => set({ statusAction: v }),
       setSemanticArchitecture: (v) => set({ semanticArchitecture: v }),
       // `ref === null` clears the edit, so the token falls back to the
       // projection's own value — the schema stays the source of truth.
@@ -1652,6 +1663,7 @@ export const useDesignStore = create<DesignStore>()(
           // surfaces. Default 'solid' preserves the current look for every
           // existing session until they opt into translucent.
           if (!persisted.panelBackground) persisted.panelBackground = 'solid'
+          if (!persisted.statusAction) persisted.statusAction = 'solid'
           // v25→v26: page background primitive (Radix custom-palette input) —
           // anchors tone 1 of every ramp + derives the alpha ramps. White is
           // the previous implicit background, so existing output is unchanged.

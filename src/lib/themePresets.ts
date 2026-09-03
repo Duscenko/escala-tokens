@@ -52,6 +52,24 @@ import {
  */
 export type ThemeStyleSemantics = Record<string, { light?: string; dark?: string }>
 
+/**
+ * How a style paints a DESTRUCTIVE or CONFIRMING action.
+ *
+ *  · `solid` — filled with the severity, label in the solved `on-solid` ink
+ *    (near-white on every seed here). Reads as a commitment; what Material and
+ *    most product systems ship.
+ *  · `soft`  — a translucent wash of the severity with the severity's OWN text
+ *    (`status.<sev>.content`). Quieter, and what Apple and print-led systems do.
+ *
+ * It exists because destructive and confirming are the SAME control at two
+ * severities and must be painted the SAME way — the collage used to show Solid
+ * Danger beside Soft Success, which reads as two unrelated components and makes
+ * the severities impossible to compare. Unifying them raised the real question:
+ * unified as WHICH? Both answers are right for different systems, so it is a
+ * style axis rather than a global default.
+ */
+export type StatusAction = 'soft' | 'solid'
+
 /** Seed hexes for the four severity families. */
 export interface ThemeStyleStates {
   error: string
@@ -394,6 +412,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // set by. Subtle and None are still one click away in Shadow.
       shadows: { ...SHADOW_PRESETS[2].values },
       panelBackground: 'solid',
+      statusAction: 'solid',
     },
     // A filled field + hairline edge — the quiet end of the border spectrum.
     // See `ThemeStyleSemantics` for why a fill has to come first.
@@ -421,6 +440,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD, sm: '2px' },
       shadows: hardShadows,
       panelBackground: 'solid',
+      statusAction: 'solid',
     },
     // THE deliberate exception to the soften-the-border rule: brutalism's
     // border IS the design, so it goes the other way — the ramp's text tone,
@@ -466,6 +486,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: glassShadows,
       panelBackground: 'translucent',
+      statusAction: 'soft',
     },
     semantics: glassBorders,
     accessibilityNote: 'Translucent surfaces still use semantic foreground roles; verify contrast over real content.',
@@ -505,6 +526,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: { ...SHADOW_PRESETS[3].values },
       panelBackground: 'solid',
+      statusAction: 'solid',
     },
     // M3's filled text field: the fill carries the control so the edge can be a
     // whisper. It is the one style whose input sits TWO steps off the page.
@@ -538,9 +560,18 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       radiusRoles: styleRadiusRoles({ boxes: 'xs', fields: 'xs', selectors: 'none' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
-      stroke: { ...STROKE_STANDARD, sm: '2px' },
+      stroke: { ...STROKE_STANDARD },
+      // 1px, not 2. Retro kept a 2px stroke copied from Neo, but the two are
+      // not doing the same job: Neo's border IS the design and sits on a FLAT
+      // field (measured ΔL 0.000 between fill and page — the outline is the
+      // only thing identifying the control). Retro's field has a real fill,
+      // ΔL 0.032, the same separation Core gets with a 1px stroke. A vintage
+      // press rules fine lines; the character here is the WARM ink colour
+      // (`inkBorders`), which is untouched, not the weight. Only the thickness
+      // drops, so `border.control` still clears its 3:1 floor.
       shadows: retroShadows,
       panelBackground: 'page',
+      statusAction: 'soft',
     },
     // Warm ink, not grey: the border belongs to the same sepia the page and the
     // offset shadow are tinted with, which is what stops Retro reading as
@@ -580,6 +611,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       stroke: { ...STROKE_STANDARD },
       shadows: warmShadows,
       panelBackground: 'solid',
+      statusAction: 'soft',
     },
     semantics: softBorders,
   },

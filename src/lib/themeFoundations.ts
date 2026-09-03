@@ -34,6 +34,8 @@ export interface ThemeFoundationOverride {
   breakpointRoles?: Record<string, string>
   gridFrame?: GridFrameModes
   panelBackground?: 'solid' | 'translucent' | 'page'
+  /** How a style paints a DESTRUCTIVE or CONFIRMING action — see `StatusAction`. */
+  statusAction?: 'soft' | 'solid'
 }
 
 export interface FoundationSource extends ThemeFoundationOverride {
@@ -55,6 +57,7 @@ export interface FoundationSource extends ThemeFoundationOverride {
   breakpointRoles: Record<string, string>
   gridFrame: GridFrameModes
   panelBackground: 'solid' | 'translucent' | 'page'
+  statusAction: 'soft' | 'solid'
   themeFoundations?: Record<string, ThemeFoundationOverride>
 }
 
@@ -97,6 +100,7 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     breakpointRoles: mergeMap(source.breakpointRoles, override.breakpointRoles),
     gridFrame: override.gridFrame ?? source.gridFrame,
     panelBackground: override.panelBackground ?? source.panelBackground,
+    statusAction: override.statusAction ?? source.statusAction,
   }
 }
 

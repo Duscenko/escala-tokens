@@ -152,7 +152,21 @@ export const TYPE_ROLES: TypeRole[] = [
     label: 'Button',
     description: 'Control labels — buttons, tabs, chips.',
     group: 'control',
-    desktop: a('body', 'text-md', 'semibold'),
+    // `text-sm`, matching `label` — a button label and a field label are the
+    // same TIER of text; the button is just heavier. It was `text-md`, a full
+    // step above `label` and above body copy, which made the button the
+    // LARGEST text on screen: measured 17px against 15px body on the three
+    // styles that use the `comfortable` type scale (×1.0625), because the scale
+    // multiplies every step and `text-md` is the body size. Now 12–15px across
+    // the six styles, under the 16px ceiling a control label should respect.
+    //
+    // Capping the resolved px instead was considered and rejected: the CSS
+    // export emits `var(--font-size-text-md)` for this role, so a numeric clamp
+    // would show 16px in the preview and ship 17px, which is exactly the kind
+    // of preview/export drift this file's aliases exist to prevent. Moving the
+    // ALIAS keeps one value in both. Desktop now also agrees with mobile, which
+    // already used `text-sm`.
+    desktop: a('body', 'text-sm', 'semibold'),
     mobile: a('body', 'text-sm', 'semibold'),
   },
   {

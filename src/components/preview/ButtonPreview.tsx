@@ -53,6 +53,9 @@ export interface PreviewTokens {
   // Radix-style panel treatment for raised surfaces (surface-1: cards, panels).
   // 'page' reuses the primitives page background as the panel fill.
   panelBackground?: 'solid' | 'translucent' | 'page'
+  // How a destructive / confirming action is painted — a STYLE decision, not a
+  // token: `solid` fills with the severity, `soft` washes it. See `StatusAction`.
+  statusAction?: 'soft' | 'solid'
   // Primitives page background — the fill panels use in 'page' mode. Only set
   // for light-kind themes (a light page anchor makes no sense on dark panels).
   pageBackground?: string

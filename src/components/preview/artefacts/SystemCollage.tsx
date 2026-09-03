@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { Live, SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
+import { AVATAR_STACK_HUES, Live, SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -179,6 +179,7 @@ export function SystemCollage({
   const muted = t.fgMuted || '#717680'
   const handle = `@${projectName.replace(/\s+/g, '_').toLowerCase()}`
   const gutter = gap(t, 'gap-control', '8px')
+  const statusStyle = t.statusAction === 'soft' ? 'Soft' : 'Solid'
   const wellLg = sizeRoleOf(t, 'control', '40px')
   const wellSm = sizeRoleOf(t, 'compact', '32px')
 
@@ -210,9 +211,17 @@ export function SystemCollage({
       </ScaledModule>
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {([1, 2, 3, 4, 5] as const).map((i) => (
-          <span key={i} style={{ marginLeft: i === 1 ? 0 : -10, zIndex: 6 - i, position: 'relative' }}>
-            <Avatar t={t} v={{ Size: 'SM' }} />
+        {/* The team stack shows BOTH avatar kinds side by side: gradient (no
+            letter, hue-rotated per position — see AVATAR_STACK_HUES) alternating
+            with the accent-tint + initials default. */}
+        {AVATAR_STACK_HUES.map((hue, i) => (
+          <span key={hue} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: 6 - i, position: 'relative' }}>
+            <Avatar
+              t={t}
+              v={i % 2 === 0
+                ? { Size: 'SM', Variant: 'Gradient', Hue: String(hue) }
+                : { Size: 'SM' }}
+            />
           </span>
         ))}
         <span style={{ marginLeft: 8 }}>
@@ -235,8 +244,14 @@ export function SystemCollage({
           <Live c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
           <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
           <Live c="Button" t={t} v={{ Style: 'Ghost', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Soft', Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+          {/* Destructive and confirming are the SAME control with a different
+              severity, so they must be painted the same way — this pair used to
+              be Solid Danger beside Soft Success, which reads as two unrelated
+              components and makes the two severities impossible to compare.
+              WHICH treatment is the style's call (`statusAction`), not this
+              file's. */}
+          <Live c="Button" t={t} v={{ Style: statusStyle, Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+          <Live c="Button" t={t} v={{ Style: statusStyle, Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
         </div>
       </ScaledModule>
 
