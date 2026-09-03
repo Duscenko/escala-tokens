@@ -3702,7 +3702,12 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > - A "+5 more" overflow tag is a COUNT, not a status, so it should not carry the status
 >   dot. `Dot: 'False'` drops the dot, symmetrises the padding and switches to
 >   tabular-nums / medium. Opt-in and inert — every other Badge call keeps the dot, so the
->   `componentColorFields` entry is unchanged.
+>   `componentColorFields` entry is unchanged. **Its fill is `soft(neutralText)`, not
+>   `neutralFill`**: the Soft-Neutral fill is `surface.layer-1`, the exact token a Card
+>   resolves to, so a neutral count badge on a card was invisible (`rgb(250,250,250)` on
+>   `rgb(250,250,250)`). The dot normally carried the badge; with no dot it needs a fill
+>   that is a step off any surface, which the ~10% ink wash is in both themes. This is the
+>   same `surface.layer-1 == card` collision the CloseButton fix hit.
 > - A bare `×` on a card "se ve como perdida" — it was `background: transparent` at rest.
 >   Now `soft(t.neutralText)`, a ~10% wash of the page ink: a faint LIGHT circle on a dark
 >   theme, a faint GREY one on a light theme, always a step off the surface behind it.

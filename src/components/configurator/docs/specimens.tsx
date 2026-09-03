@@ -637,6 +637,12 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
   if (style === 'Solid') { bg = c; fg = t.onBrand }
   else if (style === 'Soft') { bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c); fg = isNeutral ? (t.fgMuted ?? c) : c }
   else { line = c + '99' }
+  // The Soft NEUTRAL fill is `surface.layer-1` — the same token a Card resolves
+  // to, so a neutral badge sitting on a card is invisible. The status dot
+  // normally carries it, but the dotless COUNT form has nothing else, so it
+  // takes a ~10% wash of the page ink instead: always a step off whatever
+  // surface it lands on, in both themes.
+  if (!showDot && isNeutral && style === 'Soft') { bg = soft(t, t.neutralText); fg = t.neutralText }
   return (
     <span
       style={{
