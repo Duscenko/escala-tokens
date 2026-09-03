@@ -212,7 +212,7 @@ export function parseRef(label: string): [string, number] | null {
 // section header now (see TokenDetailsModal's `sections`), so this renders the
 // grid alone rather than printing a second label inside its own card.
 export function ArchModeEditor({
-  label, value, scales, palette, kind, pageBackground, darkBackground, onPick,
+  label, value, scales, palette, kind, pageBackground, darkBackground, onPick, onOpenFamily,
 }: {
   /** That mode's own palette + polarity — the grid MUST resolve through these
    *  (see `rampsOf`), or a dark mode offers light swatches. */
@@ -228,11 +228,28 @@ export function ArchModeEditor({
   value: ArchTokenValue
   scales: GlobalScales
   onPick: (ref: string) => void
+  /** Jump to a family's ramp in Color · Primitives — you pick a tone here,
+   *  but the ramp itself is edited there. Takes the family vocabulary name
+   *  (`accent`, `neutral`, `error`…); the table resolves it against the
+   *  previewed theme's own families. */
+  onOpenFamily?: (family: string) => void
 }) {
   const parsed = parseRef(value.label)
   const ramps = rampsOf(scales, palette, kind, pageBackground, darkBackground)
   const family = parsed?.[0] ?? 'accent'
   const tone = parsed?.[1] ?? null
+
+  // `neutral` and `neutral-dark` are the only two families that mean the same
+  // ROLE at opposite polarities — a role's light ref is `{neutral.N}`, its dark
+  // ref `{neutral-dark.N}`. When a theme PALETTE is in play `scaleLookup`
+  // resolves both to that palette's single gray ramp, so the grid showed two
+  // byte-identical rows. Each mode card only ever writes its own polarity, so
+  // drop the other neutral here (kept only if it's somehow the current ref, so
+  // an existing selection still rings).
+  const pickableFamilies = ARCH_PICKABLE_FAMILIES.filter((key) => {
+    const drop = kind === 'dark' ? 'neutral' : 'neutral-dark'
+    return key !== drop || key === family
+  })
 
   return (
     <div className="flex flex-col gap-2">
@@ -243,10 +260,11 @@ export function ArchModeEditor({
           chip, so you couldn't compare candidates while choosing. Same widget
           the colour picker used to carry as its "Palette" block. */}
       <SystemRampGrid
-        ramps={ARCH_PICKABLE_FAMILIES.map((key) => ({ key, scale: ramps[key] }))}
+        ramps={pickableFamilies.map((key) => ({ key, scale: ramps[key] }))}
         selected={tone != null ? { family, tone } : null}
         onPick={(fam, t) => onPick(`{${fam}.${t}}`)}
         ariaLabel={`Pick a token for ${label}`}
+        onOpenFamily={onOpenFamily}
       />
     </div>
   )
@@ -682,6 +700,7 @@ export default function Step3_SemanticTokens({
   railCollapsed = false,
   revealRole,
   managedThemesExternally = false,
+  onOpenPrimitiveFamily,
 }: {
   /** Shared with the Foundation toolbar so search occupies one consistent
    *  position across Primitives and Semantics. */
@@ -707,9 +726,14 @@ export default function Step3_SemanticTokens({
    *  it expanded on Semantics would read as two different columns. */
   railCollapsed?: boolean
   /** Preview specimen asked to open this token / group (`key` + `seq` so repeats work). */
-  revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
+  /** `token` opens the editor on arrival, `group` selects the category,
+   *  `row` scrolls + flashes the row and leaves the editor closed. */
+  revealRole?: { key: string; seq: number; as?: 'token' | 'group' | 'row' } | null
   /** Theme lifecycle belongs to the shared Themes Library rail. */
   managedThemesExternally?: boolean
+  /** Jump from a ramp-grid family label to that family in Color · Primitives.
+   *  Receives the family vocabulary name (`accent`, `neutral`, `error`…). */
+  onOpenPrimitiveFamily?: (family: string) => void
 }) {
   const store = useDesignStore()
   const {
@@ -1134,16 +1158,22 @@ export default function Step3_SemanticTokens({
     }
 
     const id = revealRole.key
+    // `'row'` reveals WITHOUT opening the editor. The caller is a Token Details
+    // drawer whose whole request was "show me the full table" — re-opening an
+    // identical drawer on arrival would dock 360px straight over the token-name
+    // column, i.e. hide the thing that was asked for. The row still scrolls in
+    // and flashes, and its own tune icon opens the editor if you want it.
+    const openEditor = revealRole.as !== 'row'
     if (isFlat) {
       const cat = flatCategoryForRole(id)
       if (cat) selectCategory(cat)
-      setExpandedRole(id)
+      if (openEditor) setExpandedRole(id)
     } else {
       const nav = archView ? archNavForToken(id, archView.categories) : null
       if (nav) {
         setArchCategory(nav)
         onFocusChange?.(focusForNavKey(nav) ?? 'all')
-        setArchEditing(id)
+        if (openEditor) setArchEditing(id)
       }
     }
     setFlashKey(id)
@@ -1689,8 +1719,14 @@ export default function Step3_SemanticTokens({
           return (
             <TokenDetailsModal
               key="arch-token-details"
-              name={t.name}
-              cssVarName={t.name.replace(/\./g, '-')}
+              // `t.id`, never `t.name`: rows are bare inside a category because
+              // the nav names it (see `archTokens`), but this dialog carries no
+              // category context — and its CSS chip is COPY-PASTEABLE, so a
+              // bare name emitted `var(--control)` for `border.control`, a
+              // variable that does not exist. The quick-edit drawer already
+              // uses the qualified id; both now name a token the same way.
+              name={t.id}
+              cssVarName={t.id.replace(/\./g, '-')}
               description={t.description}
               onReset={() => {
                 for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, t.id, mode, null)
@@ -1725,6 +1761,7 @@ export default function Step3_SemanticTokens({
                       darkBackground={darkBackground}
                       label={archModeLabel(mode)}
                       onPick={(refStr) => setArchitectureOverride(semanticArchitecture, t.id, mode, refStr)}
+                      onOpenFamily={onOpenPrimitiveFamily}
                     />
                   ),
                 }))}

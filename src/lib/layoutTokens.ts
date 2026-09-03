@@ -259,6 +259,30 @@ export const PADDING_STANDARD: Record<PaddingSide, string> = {
   left: SPACING_STANDARD[PADDING_DEFAULT_STEP],
 }
 
+/**
+ * The semantic spacing role every boxed surface (Card, panel, alert, the
+ * artefact collage) reads for its inner inset — `--spacing-inset-surface`.
+ * `paddingOf` / `spacingRoleOf(t, 'inset-surface')` resolve THROUGH this, so
+ * it, not the four-sided `padding` mirror, is what actually moves a container's
+ * padding in the preview. The `padding` field trails it as a resolved-px copy
+ * (see `insetSurfacePadding`).
+ */
+export const INSET_SURFACE_ROLE = 'inset-surface'
+
+/** Slider index into `SPACING_STEPS` for the current surface inset (default
+ *  step 5). Out-of-range / hand-edited role values fall back to step 5. */
+export function insetSurfaceStepIndex(spacingRoles: Record<string, string> | undefined): number {
+  const step = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
+  const i = SPACING_STEPS.indexOf(step as SpacingStep)
+  return i === -1 ? SPACING_STEPS.indexOf(PADDING_DEFAULT_STEP) : i
+}
+
+/** The four-sided `padding` mirror for a given inset px — so the export's
+ *  `--padding-*` vars stay in lockstep with `--spacing-inset-surface`. */
+export function insetSurfacePadding(px: string): Record<PaddingSide, string> {
+  return { top: px, right: px, bottom: px, left: px }
+}
+
 // ── Size primitives ─────────────────────────────────────────────────────────
 // 8px control-height ramp. 44px (iOS HIG) is NOT a step — touch uses `lg` (48).
 

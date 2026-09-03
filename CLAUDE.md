@@ -74,16 +74,17 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > Exporting isn't scoped like that: it's something you reach for from anywhere, so it moved
 > to `TopNav`, next to Plugin/Connect — the same cluster of "get your system out of here"
 > actions. `ExportWizard` was already a `fixed inset-0` modal with its own backdrop, so
-> opening it doesn't care what's rendered behind it; the only thing that changes by call
-> site is `initialCollections` — pre-scoped to the active foundation
-> (`COLLECTIONS_OF[activeFoundation]`) when opened from Variables, `ALL_WIZARD_COLLECTIONS`
-> (every foundation, the default parameter) from anywhere else, incl. Components and Docs.
-> **This was `['primitives', 'semantics']` — a deliberate partial default — until it wasn't:
-> a whole-system export turned out to be the more common ask than a partial one, and
-> starting partial silently under-shipped anyone who hit Next without first reading the
-> checklist.** This is the "whole-system-by-default earns its place back" path the retired
-> Share pill note (right below) already anticipated: it landed as the wizard's own default
-> parameter, not a second entry point.
+> opening it doesn't care what's rendered behind it. **It ALWAYS opens with every
+> foundation checked** — `initialCollections` defaults to `ALL_WIZARD_COLLECTIONS` and the
+> shell no longer overrides it. It used to pre-scope to the section on screen
+> (`COLLECTIONS_OF[activeFoundation]` when opened from Variables — since deleted), and
+> before that the partial default was a hardcoded `['primitives', 'semantics']`. Both were
+> retired for the same reason: a whole-system export is the more common ask, and starting
+> partial silently under-shipped anyone who hit Next without first reading the checklist.
+> The `initialCollections` prop stays on `ExportWizard` for a future scoped entry point, but
+> nothing passes it today. The one narrowing that DOES survive is **`initialModes`**: Theme
+> Preview's "Export theme" ships just that theme. And `activeTheme` (the previewed theme)
+> is what the wizard checks by default in "My themes" — see the Step-1 note below.
 > A separate **Share** pill used to open the same wizard pre-checked to whole-system
 > (`ALL_WIZARD_COLLECTIONS`) instead of the active section — it was retired (`HomeActions`,
 > `Configurator.tsx`'s `shareOpen` state and second `ExportWizard` instance all removed)
@@ -92,8 +93,17 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > click away, just not a dedicated button for it. Don't re-add a Share pill that does what
 > Export already does.
 > Step 1 picks **collections** (primitives · semantics · typography · spacing · radius ·
-> shadow · grid · sizes · icons) and, for semantics, which **theme modes** ship
-> and, for primitives, which **families** ship (Accent · Neutral · Error … + customs —
+> shadow · grid · sizes · icons — all checked on open) and, for semantics, which **themes**
+> ship. That picker is labelled **"My themes"** — the Themes Library's own heading, which is
+> also the scope (a System style ships only once it's been added there). Each chip
+> identifies its theme the way the rail does: the accent it's built on (`themeBrandRamp`), its
+> real `themeDisplayName` (never a `themeOrder` slug), and its light/dark polarity
+> (`AppearanceGlyph` — the SAME sun/moon asset + `currentColor` treatment the rail uses;
+> `KindIcon`'s amber/indigo tint is only for the Token Details section headers). **Only the
+> previewed `activeTheme` is checked by default** — not every theme in the system — so the
+> wizard opens saying "this one" and a `text-fg-faint` line ("Shipping this theme only. Tap
+> another to include it, or add all N.") says the rest exist; All / None toggle every chip.
+> And, for primitives, which **families** ship (Accent · Neutral · Error … + customs —
 > `primitiveFamilyMeta()`, derived from the real `colors.primitive` keys so a family can't
 > be offered that the payload doesn't contain; picking one ships BOTH its ramps, since
 > `accent` and `accent-dark` are one family two ways, exactly like the Primitives table's
@@ -1658,9 +1668,11 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   covers, and shipping both read as two conflicting answers to "what's the transparency
   token" — a real user complaint, not a hypothetical one. Unwired everywhere a foundation
   is reachable or exported, same treatment as `WorkbenchLayout`/`HomeView`/`PickerColor`:
-  - **Nav/UI**: gone from `FOUNDATIONS`/`RAILED_FOUNDATIONS`/`VARIABLE_FOUNDATIONS`/
-    `COLLECTIONS_OF` (`Configurator.tsx`) — no icon in the rail, unreachable. `Step6_Opacity.tsx`
-    itself is NOT deleted (kept for reference only, don't wire it back up).
+  - **Nav/UI**: gone from `FOUNDATIONS`/`RAILED_FOUNDATIONS`/`VARIABLE_FOUNDATIONS`
+    (`Configurator.tsx`) — no icon in the rail, unreachable. (`COLLECTIONS_OF` also carried an
+    `opacity` entry; that whole map has since been deleted — the Export wizard no longer
+    pre-scopes to the active foundation.) `Step6_Opacity.tsx` itself is NOT deleted (kept for
+    reference only, don't wire it back up).
   - **Docs**: the `FoundationDoc` entry is gone from `FOUNDATION_DOCS`
     (`foundationDocs.tsx`) — eight foundations now, not nine.
   - **Export**: gone from `tokenGenerator.ts` (no `opacity` key in tokens.json — bumped
@@ -2270,6 +2282,19 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   preset, a "Radius Form" axis, and Depth/Noise effect toggles. A control that edits
 >   nothing is worse than a missing one. `selector` roles also have no editor yet
 >   (`LayoutSemantics` is only ever handed `'size'`) — they ship with their defaults.
+> - **Theme Preview's Size-edition quick panel is THREE dials — Fields · Selectors ·
+>   Containers** (`ThemeQuickSettingsRail.tsx`). Fields/Selectors are the base-unit
+>   scrubbers above; **Containers** is `ContainerInsetCard` — the one dial for how much
+>   room every boxed surface leaves inside its edge. It is NOT a `size` token: it moves the
+>   **`inset-surface` SPACING role** (`spacingRoles['inset-surface']`, default step 5), the
+>   thing `paddingOf` / `SystemCollage` actually read, so the slider snaps across
+>   `SPACING_STEPS` (0…16, resolving 0–64px on a 4px base) — the same stepped model as the
+>   Stroke control, not free px. `setContainerInset` writes BOTH the role AND the four-sided
+>   `padding` mirror (`insetSurfacePadding`), so `--spacing-inset-surface` and `--padding-*`
+>   can't drift after a quick edit (the `padding` field is documented in `tokenGenerator`
+>   as "resolved px of spacing-inset-surface"). "Reset sizes to the standard ramp" resets
+>   all three; its visibility condition checks the inset role too. The readout guards on
+>   `Number.isFinite`, not `|| 20` — step 0 is a legitimate `0px`.
 
 > **Token value fields scrub like Figma's — `ui/ScrubInput.tsx`, one component, every
 > table.** Drag the double-chevron handle left/right and the number follows; Shift ×10,

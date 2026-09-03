@@ -52,7 +52,6 @@ import TypeHub from '../components/configurator/TypeHub'
 import { type SemanticFocus } from '../components/configurator/Step3_SemanticTokens'
 import { type TypeFocus } from '../components/configurator/TypeSemantics'
 import ExportWizard from '../components/configurator/ExportWizard'
-import { type WizardCollection } from '../lib/exportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
 import Step4_Typography from '../components/configurator/Step4_Typography'
@@ -210,20 +209,6 @@ const CATEGORY_ICONS: Record<string, ComponentType> = {
   'Content & Surfaces':  ic('M4 5h16v14H4z|M4 10h16', '1.8'),
   'Feedback':            ic('M21 14a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z', '1.8'),
   'Navigation':          ic('M4 6h16|M4 12h9|M4 18h16', '1.8'),
-}
-
-// Which export-wizard collections a foundation opens pre-checked, so "Export"
-// starts scoped to the section you're looking at (still fully re-selectable).
-const COLLECTIONS_OF: Record<string, WizardCollection[]> = {
-  color: ['primitives', 'semantics'],
-  typography: ['typography'],
-  spacing: ['spacing'],
-  radius: ['radius'],
-  shadow: ['shadow'],
-  grid: ['grid'],
-  sizes: ['sizes'],
-  stroke: ['stroke'],
-  icons: ['icons'],
 }
 
 // The editor follows the Figma Variables hierarchy: foundation → collection
@@ -661,7 +646,34 @@ export default function Configurator() {
   const [typeFocus, setTypeFocus] = useState<TypeFocus>('all')
   const [typeReveal, setTypeReveal] = useState<{ key: string; seq: number } | null>(null)
   const [layoutReveal, setLayoutReveal] = useState<{ key: string; seq: number } | null>(null)
-  const [colorReveal, setColorReveal] = useState<{ key: string; seq: number; as?: 'token' | 'group' } | null>(null)
+  const [colorReveal, setColorReveal] = useState<{ key: string; seq: number; as?: 'token' | 'group' | 'row' } | null>(null)
+  // A ramp-grid family label in a Semantics Token Details drawer → jump to that
+  // family's ramp in Color · Primitives. `seq` so clicking the same family
+  // twice still re-selects it. `key` is the family VOCABULARY name (`accent`,
+  // `neutral`, …); `ColorPrimitives` resolves it against the previewed theme.
+  const [colorFamilyReveal, setColorFamilyReveal] = useState<{ key: string; seq: number } | null>(null)
+  /** Land on the Variables tab, Color, in one collection. Both "leave this
+   *  drawer for the real table" doors below share it so they can't drift into
+   *  two different ideas of where the table is. */
+  const openColorCollection = (collection: VariableCollectionKey) => {
+    setActiveFoundation('color')
+    setFoundationCollection('color', collection)
+    setThemeWorkspaceTab('primitives')
+    setExportMode(null)
+    setTab('foundations')
+  }
+  const openPrimitiveFamily = (family: string) => {
+    openColorCollection('primitives')
+    setColorFamilyReveal((prev) => ({ key: family, seq: (prev?.seq ?? 0) + 1 }))
+  }
+  /** Theme Preview's Token Details → this token's row in the full Semantics
+   *  table, revealed and flashed. Reuses the same `revealRole` channel the
+   *  preview specimens already use, so there is one "show me this token"
+   *  mechanism rather than a second one for the drawer. */
+  const openTokenInVariables = (tokenId: string) => {
+    openColorCollection('semantics')
+    setColorReveal((prev) => ({ key: tokenId, seq: (prev?.seq ?? 0) + 1, as: 'row' }))
+  }
   // Primitives' own 198px left column (accent-color cell · Groups · family
   // nav), collapsed to a swatch strip. Lifted for the same reason `colorTab`
   // is: TopNav's brand block continues this column's divider up through the
@@ -1121,9 +1133,11 @@ export default function Configurator() {
         onQueryChange={setColorQuery}
         railCollapsed={groupsRailCollapsed}
         revealRole={colorReveal}
+        revealFamily={colorFamilyReveal}
         managedThemesExternally
         onOpenGradients={() => setFoundationCollection('color', 'gradients')}
         onBackToSystemColors={() => setFoundationCollection('color', 'primitives')}
+        onOpenPrimitiveFamily={openPrimitiveFamily}
       />
     ) : section.key === 'typography' ? (
       <TypeHub
@@ -1480,6 +1494,8 @@ export default function Configurator() {
                     onOpenComponent={selectComponent}
                     onOpenComponents={() => changeTab('components')}
                     onEditFoundation={selectFoundation}
+                    onOpenPrimitiveFamily={openPrimitiveFamily}
+                    onOpenInVariables={openTokenInVariables}
                     figmaPublishState={figmaPublishState}
                     onRequestFigmaSync={publishFigmaNow}
                     onOpenFigmaDownload={() => openExport('figma-download')}
@@ -1676,19 +1692,20 @@ export default function Configurator() {
         </div>
       </footer>
 
-      {/* Guided export — Source → Format → Export. TRANSVERSAL now: reachable
-          from TopNav regardless of `tab`/`exportMode`, so this modal overlay
-          (its own fixed backdrop) isn't gated to Variables any more. Only
-          while actively editing a foundation does it still start pre-scoped
-          to what's on screen (`COLLECTIONS_OF`) — from Documentation, or from
-          inside another connect view, it falls back to the wizard's own
-          whole-system-leaning default. */}
+      {/* Guided export — Source → Format → Export. TRANSVERSAL: reachable from
+          TopNav regardless of `tab`/`exportMode`, so this modal overlay (its
+          own fixed backdrop) isn't gated to Variables. It ALWAYS opens with
+          every foundation checked — pre-scoping it to the section on screen
+          silently under-shipped anyone who hit Next without reading the
+          checklist (the same reason the `['primitives','semantics']` partial
+          default was retired). The one narrowing that stays is `initialModes`:
+          "Export theme" from Theme Preview ships just that theme. */}
       <AnimatePresence>
         {sectionExportOpen && (
           <ExportWizard
             key={exportRun}
-            initialCollections={themeExportScope ? undefined : tab === 'foundations' ? (COLLECTIONS_OF[activeFoundation] ?? ['primitives', 'semantics']) : undefined}
             initialModes={themeExportScope ? [themeExportScope] : undefined}
+            activeTheme={previewTheme}
             themeScope={themeExportScope}
             themeScopeLabel={themeExportScope ? (store.themeLabels[themeExportScope] || themeExportScope) : undefined}
             onClose={() => { setSectionExportOpen(false); setThemeExportScope(null) }}

@@ -35,7 +35,7 @@ import {
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
-import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor } from '../../lib/themeSources'
+import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor, type FamilySlot } from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import ThemePanel from './ThemePanel'
 import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
@@ -715,11 +715,11 @@ function HexCell({ value, onChange, ariaLabel, onSwatchClick, swatchLabel, compa
   value: string
   onChange: (hex: string) => void
   ariaLabel: string
-  /** When set, the swatch becomes a button opening the same picker the trailing
-   *  chevron does. A colour chip that looks clickable and isn't reads as broken,
-   *  and the swatch is the part users aim at first; the hex text stays directly
-   *  editable either way. Omitted in the table cells, which have no picker to
-   *  open — there the swatch is a readout of the value beside it. */
+  /** When set, the swatch becomes a button opening a picker/dialog for this
+   *  value. A colour chip that looks clickable and isn't reads as broken, and
+   *  the swatch is the part users aim at first; the hex text stays directly
+   *  editable either way. The quick-edit strip opens the family picker; the
+   *  table cells open that tone's Token Details on the clicked appearance. */
   onSwatchClick?: () => void
   swatchLabel?: string
   /** Tighter strip variant — no copy affordance (reset lives beside it). */
@@ -890,6 +890,7 @@ export default function ColorPrimitives({
   onPreviewThemeChange,
   onPreviewAppearanceChange,
   focusFamilyKey,
+  revealFamily,
   query: externalQuery,
   railCollapsed = false,
   managedThemesExternally = false,
@@ -902,6 +903,12 @@ export default function ColorPrimitives({
    *  created it) — a family key (`custom-<slug>`), re-applied whenever it
    *  changes to a new value. */
   focusFamilyKey?: string | null
+  /** A Semantics ramp-grid label ("open this ramp in the table") asked to
+   *  select a family. `key` is the VOCABULARY name (`accent`, `neutral`,
+   *  `error`…) — resolved here against the previewed theme's own families
+   *  (a theme's `neutral` slot may point at a custom `<key>-gray` family).
+   *  `seq` bumps on every click so re-selecting the same family re-fires. */
+  revealFamily?: { key: string; seq: number } | null
   /** Shared with the Foundation toolbar so search occupies one consistent
    *  position across Primitives and Semantics. */
   query?: string
@@ -1338,6 +1345,37 @@ export default function ColorPrimitives({
       setExpandedTone(null)
     }
   }, [managedThemesExternally, previewTheme, themeAccentFamilyKey])
+
+  // A Semantics ramp-grid label ("edit this ramp in the table") asked to select
+  // a family. Runs AFTER the theme→accent effect above so an explicit request
+  // wins on the same mount that a tab-switch triggers that reset. The grid
+  // speaks VOCABULARY (`accent`, `neutral`, `neutral-dark`, `error`…); resolve
+  // to a real family key — a direct `tokenPrefix` match (built-in families),
+  // else via the previewed theme's slot ref (its `neutral` slot may point at a
+  // custom `<key>-gray` family). Keyed on `seq` so a repeat click re-fires.
+  useEffect(() => {
+    if (!revealFamily) return
+    const vocab = revealFamily.key
+    const slot: FamilySlot | null =
+      vocab === 'accent' ? 'brand'
+      : vocab === 'neutral' || vocab === 'neutral-dark' ? 'gray'
+      : (['error', 'warning', 'success', 'info'] as const).includes(vocab as never) ? (vocab as FamilySlot)
+      : null
+    let target = activeThemeFamilies.find((f) => !f.isAlpha && f.tokenPrefix === vocab)
+    if (!target && slot) {
+      const custKey = themeSources[previewTheme]?.[slot]
+      const wanted = custKey ? [`custom-${custKey}`, custKey] : [GLOBAL_FAMILY[slot], `custom-${GLOBAL_FAMILY[slot]}`]
+      target = activeThemeFamilies.find((f) => !f.isAlpha && wanted.includes(f.key))
+    }
+    // Set state in response to an explicit external command — the same shape as
+    // the `focusFamilyKey` and theme→accent effects above.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (target) {
+      setActiveFamily(target.key)
+      setExpandedTone(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealFamily?.seq])
 
   const q = query.trim().toLowerCase()
   const tones = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -2146,6 +2184,19 @@ export default function ColorPrimitives({
                                   value={scale[tone] ?? (appearance === 'light' ? '#ffffff' : '#000000')}
                                   onChange={(hex) => setTone(scale, setScale, tone, hex)}
                                   ariaLabel={`${name} ${appearance} value`}
+                                  // The swatch opens the SAME Token Details
+                                  // dialog the trailing sliders icon does, on
+                                  // THIS appearance — a colour chip that looks
+                                  // clickable and isn't reads as broken (the
+                                  // hex text stays directly editable either
+                                  // way). Matches the quick-edit strip's
+                                  // swatch, which already opens the family
+                                  // picker on click.
+                                  onSwatchClick={() => {
+                                    setDetailMode(appearance)
+                                    setExpandedTone(tone)
+                                  }}
+                                  swatchLabel={`Open token details for ${name} (${appearance})`}
                                 />
                               )}
                             </div>

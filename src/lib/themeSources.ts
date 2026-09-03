@@ -141,3 +141,19 @@ export function themesUsingFamily(
     .filter(([, refs]) => FAMILY_SLOTS.some((s) => refs[s] === familyKey))
     .map(([theme]) => theme)
 }
+
+/**
+ * A theme's display name — its user-set label, else a prettified key.
+ *
+ * ONE implementation. `ThemePreviewHub` and `ThemeLibraryRail` each carried
+ * their own, and they had already drifted: one normalised `[-_]+`, the other
+ * only `-`, so a `my_theme` key rendered "My Theme" in the hub and "My_theme"
+ * in the rail. The Export wizard needed a third copy, which is the point at
+ * which it moves here instead.
+ */
+export function themeDisplayName(key: string, labels: Record<string, string> = {}): string {
+  if (labels[key]?.trim()) return labels[key].trim()
+  if (key === 'light') return 'Light'
+  if (key === 'dark') return 'Dark'
+  return key.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}

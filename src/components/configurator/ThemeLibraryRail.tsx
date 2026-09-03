@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
-import { themeBrandRamp } from '../../lib/themeSources'
+import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { generateColorScale } from '../../lib/colorUtils'
 import type { ColorScale } from '../../types/tokens'
 import ThemePanel from './ThemePanel'
@@ -11,16 +11,13 @@ import { adoptPreset } from '../../lib/adoptPreset'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { AppearanceGlyph } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 
 export { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 
-function labelForTheme(key: string, labels: Record<string, string>): string {
-  if (labels[key]?.trim()) return labels[key]
-  if (key === 'light') return 'Light'
-  if (key === 'dark') return 'Dark'
-  return key.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
-}
+/** Shared with the hub and the Export wizard — see `themeDisplayName`. */
+const labelForTheme = themeDisplayName
 
 function PlusIcon() {
   return (
@@ -209,19 +206,9 @@ const PRESET_AVATAR_RAMPS: Record<string, ColorScale> = Object.fromEntries(
   ),
 )
 
-// Sun / moon. The assets ship a hardcoded `stroke="white"`, so they're painted
-// as a CSS mask with `currentColor` (the `ViewIcon` / `FolderIcon` pattern) —
-// the glyph then follows the button's own ink in both chromes, and the
-// unselected side dims with OPACITY, never colour.
-const APPEARANCE_ICON: Record<'light' | 'dark', string> = {
-  light: '/icons/settings/light-mode.svg',
-  dark: '/icons/settings/dark-mode.svg',
-}
-
-function AppearanceGlyph({ kind }: { kind: 'light' | 'dark' }) {
-  const mask = `url('${APPEARANCE_ICON[kind]}') center / contain no-repeat`
-  return <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
-}
+// Sun / moon — the shared `AppearanceGlyph` (mask + `currentColor`, so it
+// follows the button's own ink in both chromes; the unselected side dims with
+// OPACITY, never colour). Same renderer as the Export wizard's theme chips.
 
 /**
  * Sun / moon appearance toggle for a System Style row.

@@ -71,6 +71,12 @@ export default function SemanticTokenGroups({
   /** `ThemePreviewHub`'s `relative` root — the drawer portals here so it
    *  slides from the hub's left edge, not from inside the rail scroll area. */
   containedRootRef,
+  /** Jump from a ramp-grid family label to that family in Color · Primitives
+   *  (family vocabulary name — `accent`, `neutral`, `error`…). */
+  onOpenPrimitiveFamily,
+  /** Leave the drawer for this token's row in the full Color · Semantics
+   *  table (`category.token` id). */
+  onOpenInVariables,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -78,6 +84,8 @@ export default function SemanticTokenGroups({
   colorPickerOpen?: boolean
   stackGap?: string
   containedRootRef?: RefObject<HTMLElement | null>
+  onOpenPrimitiveFamily?: (family: string) => void
+  onOpenInVariables?: (tokenId: string) => void
 }) {
   const reduce = useReducedMotion() ?? false
   const setArchitectureOverride = useDesignStore((s) => s.setArchitectureOverride)
@@ -163,22 +171,29 @@ export default function SemanticTokenGroups({
                       {category.tokens.map((t) => {
                         const value = t.modes[previewedMode]
                         const ref = parseRef(value?.label ?? '')
+                        // The row whose Token Details drawer is open reads as a
+                        // raised pill — same "you are editing THIS one" cue the
+                        // Semantics table's arch rows already carry (`isOpen`).
+                        const isEditing = editing === `${category.key}.${t.key}`
                         return (
                           <li key={t.key}>
                             <button
                               type="button"
                               onClick={() => setEditing(`${category.key}.${t.key}`)}
+                              aria-current={isEditing}
                               title={`${category.key}.${t.key} — ${value?.label ?? ''}`}
-                              className="flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+                              className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+                                isEditing ? 'bg-elevated text-fg shadow-sm' : 'hover:bg-elevated'
+                              }`}
                             >
-                              <span className="flex-shrink-0 text-fg-faint"><PaletteIcon size={13} /></span>
+                              <span className={`flex-shrink-0 ${isEditing ? 'text-accent-ui' : 'text-fg-faint'}`}><PaletteIcon size={13} /></span>
                               {/* FULLY QUALIFIED (`surface.page`), not the bare
                                   `page`: these are the names you grep for and
                                   the names the export ships, and half the
                                   groups repeat a key (`content.primary` vs
                                   `action.primary`). The group header above is
                                   context, not a namespace you can strip. */}
-                              <span className="min-w-0 flex-1 truncate font-mono text-mini text-fg-muted">{category.key}.{t.key}</span>
+                              <span className={`min-w-0 flex-1 truncate font-mono text-mini ${isEditing ? 'text-fg' : 'text-fg-muted'}`}>{category.key}.{t.key}</span>
                               <TokenSwatch css={value?.css ?? 'transparent'} alpha={!!ref?.[0].endsWith('-a')} />
                             </button>
                           </li>
@@ -206,6 +221,10 @@ export default function SemanticTokenGroups({
             description={token.description}
             contained
             containedRootRef={containedRootRef}
+            // This column is a QUICK edit — the full row (every theme column,
+            // search, the architecture nav) lives one tab away, so the drawer
+            // carries the door to it.
+            onOpenInTable={onOpenInVariables ? () => onOpenInVariables(token.id) : undefined}
             onReset={() => {
               for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, token.id, mode, null)
             }}
@@ -229,6 +248,7 @@ export default function SemanticTokenGroups({
                     darkBackground={darkBackground}
                     label={modeLabel(mode)}
                     onPick={(refStr) => setArchitectureOverride(semanticArchitecture, token.id, mode, refStr)}
+                    onOpenFamily={onOpenPrimitiveFamily}
                   />
                 ),
               }))}

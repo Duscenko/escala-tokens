@@ -21,9 +21,11 @@ export default function ColorHub({
   focusFamilyKey,
   railCollapsed,
   revealRole,
+  revealFamily,
   managedThemesExternally = false,
   onOpenGradients,
   onBackToSystemColors,
+  onOpenPrimitiveFamily,
 }: {
   mode: ColorTab
   onFocusChange?: (f: SemanticFocus | 'all') => void
@@ -45,12 +47,17 @@ export default function ColorHub({
    *  block sizes its divider from the same value; see `colorControls`' note. */
   railCollapsed?: boolean
   /** Preview specimen asked to open this token's row (`key` + `seq` so repeats work). */
-  revealRole?: { key: string; seq: number; as?: 'token' | 'group' } | null
+  revealRole?: { key: string; seq: number; as?: 'token' | 'group' | 'row' } | null
+  /** A Semantics ramp-grid label asked to select this family in the Primitives
+   *  table (`key` = family vocabulary name; `seq` so repeats re-fire). */
+  revealFamily?: { key: string; seq: number } | null
   /** The Themes Library is the sole owner of theme selection and lifecycle. */
   managedThemesExternally?: boolean
   /** Gradients is a System colors collection, reached from its family rail. */
   onOpenGradients?: () => void
   onBackToSystemColors?: () => void
+  /** Semantics ramp-grid → jump to a family in Color · Primitives. */
+  onOpenPrimitiveFamily?: (family: string) => void
 }) {
   return (
     <div className="h-full flex flex-col min-h-0">
@@ -63,6 +70,7 @@ export default function ColorHub({
             onPreviewThemeChange={onPreviewThemeChange}
             onPreviewAppearanceChange={onPreviewAppearanceChange}
             focusFamilyKey={focusFamilyKey}
+            revealFamily={revealFamily}
             railCollapsed={railCollapsed}
             managedThemesExternally={managedThemesExternally}
             onOpenGradients={onOpenGradients}
@@ -81,6 +89,7 @@ export default function ColorHub({
             railCollapsed={railCollapsed}
             revealRole={revealRole}
             managedThemesExternally={managedThemesExternally}
+            onOpenPrimitiveFamily={onOpenPrimitiveFamily}
           />
         </div>
       ) : (

@@ -3,6 +3,7 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
+import { themeDisplayName } from '../../lib/themeSources'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { Live, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
@@ -45,14 +46,8 @@ const DOC_ROWS: DocsRailRow[] = [
   ...FOUNDATION_DOCS.map((doc) => ({ key: doc.key, label: doc.label })),
 ]
 
-/** The previewed theme's display name — its user-set label, else a prettified
- *  key. Same fallback shape `ThemeLibraryRail`'s `labelForTheme` uses. */
-function themeDisplayName(key: string, labels: Record<string, string>): string {
-  if (labels[key]?.trim()) return labels[key]
-  if (key === 'light') return 'Light'
-  if (key === 'dark') return 'Dark'
-  return key.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
+// `themeDisplayName` is shared from `lib/themeSources` — the rail, this hub and
+// the Export wizard all name a theme the same way.
 
 const HUB_ICON_SOURCES: Record<HubView, string> = {
   artefacts: '/icons/theme-hub-icons/Icon/theme.svg',
@@ -621,7 +616,7 @@ export default function ThemePreviewHub({
   surface, onSurfaceChange,
   previewTheme, previewAppearance, stylePreview, onAdoptStyle, onPreviewAppearanceChange, onOpenColor, onOpenTypography, onOpenRadius,
   onOpenSemanticFoundation, onOpenComponent, onOpenComponents,
-  onEditFoundation, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
+  onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
   onOpenSave, githubPushState, onGithubPushStateChange, docsExits,
   quickFoundation,
 }: {
@@ -648,6 +643,11 @@ export default function ThemePreviewHub({
   /** Open the Components destination itself — the showcase's whole payoff. */
   onOpenComponents: () => void
   onEditFoundation: (key: string) => void
+  /** Jump to a family's ramp in Color · Primitives from the Semantics
+   *  quick-edit ramp grid (family vocabulary name). */
+  onOpenPrimitiveFamily: (family: string) => void
+  /** Open a semantic token's row in the full Color · Semantics table. */
+  onOpenInVariables: (tokenId: string) => void
   figmaPublishState: FigmaPublishState
   onRequestFigmaSync: () => void
   onOpenFigmaDownload: () => void
@@ -748,6 +748,8 @@ export default function ThemePreviewHub({
           onAdoptStyle={onAdoptStyle}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
+          onOpenPrimitiveFamily={onOpenPrimitiveFamily}
+          onOpenInVariables={onOpenInVariables}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (

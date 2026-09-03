@@ -9,6 +9,9 @@ import {
 import { type ColorFormat } from '../../lib/sectionExport'
 import { slugify, FIGMA_PLUGIN_ZIP } from '../../lib/utils'
 import { COMPONENTS, CATEGORIES, COMPONENT_KEYS, isInFigmaSample } from '../../lib/componentCatalogue'
+import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
+import { BASE_TONE } from '../../lib/colorUtils'
+import { AppearanceGlyph } from './colorControls'
 import AgentInstallPanel from './AgentInstallPanel'
 import { GitHubGlyph } from '../ui/icons'
 
@@ -117,6 +120,7 @@ export default function ExportWizard({
   onAddSyncOption,
   initialCollections = ALL_WIZARD_COLLECTIONS,
   initialModes,
+  activeTheme,
   themeScope = null,
   themeScopeLabel,
 }: {
@@ -129,16 +133,21 @@ export default function ExportWizard({
    *  link-out pattern as `onConnectGithub`: Step 2's "Add sync option" is a
    *  door to that one flow, not a second sync UI. Omit ⇒ the link isn't shown. */
   onAddSyncOption?: () => void
-  /** Pre-checked collections — the shell passes the section you opened it from,
-   *  so "Export" from Typography starts scoped to Typography. Opened with no
-   *  scoping (Components, Docs, the bare TopNav pill), it defaults to EVERY
-   *  foundation — a whole-system export is the more common ask than a partial
-   *  one, and starting partial silently under-shipped anyone who hit Next
-   *  without first reading the checklist. */
+  /** Pre-checked collections. Defaults to EVERY foundation and the shell no
+   *  longer overrides it — a whole-system export is the more common ask than a
+   *  partial one, and starting partial silently under-shipped anyone who hit
+   *  Next without reading the checklist. Kept as a prop for a future scoped
+   *  entry point, but nothing passes it today. */
   initialCollections?: WizardCollection[]
-  /** Optional appearance preselection. Theme Preview uses this to open the
-   * existing wizard for the selected theme; no second exporter is involved. */
+  /** Force the theme selection (Theme Preview → "Export theme" passes the one
+   *  theme). When absent, `activeTheme` decides the default instead. */
   initialModes?: string[]
+  /** The theme the workspace is currently previewing. It — and only it — is
+   *  checked in "My themes" by default, so the very first thing the user sees
+   *  is "I'm downloading THIS theme" rather than a silent all-selected list of
+   *  every theme in the system (including built-ins they didn't make). The
+   *  others are one tap, or "All", away. Ignored when `initialModes` is set. */
+  activeTheme?: string
   /** Set when the wizard was opened for ONE theme (Theme Preview → Export). The
    *  Step 3 snapshot then names itself after that theme and saves theme-scoped
    *  (`saveCurrentSystemAsTheme`), instead of the whole-project `saveCurrentSystem`. */
@@ -168,6 +177,22 @@ export default function ExportWizard({
     [selectedComponents],
   )
   const allModes = meta.find((m) => m.key === 'semantics')?.modes ?? ['light']
+  // A theme key is not a name: `themeOrder` carries slugs (`core-copy`,
+  // `theme`), so the picker was asking "which of these ship?" while showing
+  // strings nobody had typed. Each chip now identifies its theme the way the
+  // Themes Library does — the accent it's built on, its real label, and its
+  // light/dark polarity — so you can SEE what you're about to download.
+  const themeChips = useMemo(
+    () => allModes.map((key) => ({
+      key,
+      label: themeDisplayName(key, store.themeLabels),
+      kind: (store.themeKinds[key] ?? 'light') as 'light' | 'dark',
+      accent: themeBrandRamp(key, store.themeSources, store.themeKinds, store)?.[BASE_TONE],
+    })),
+    // `store` is the subscription; the fields it reads are all on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allModes, store],
+  )
   // Primitive families (Accent · Neutral · Error … + customs) — the second
   // level of "what do you want to export?" for the primitives collection,
   // mirroring how `modes` narrows semantics.
@@ -175,7 +200,16 @@ export default function ExportWizard({
 
   const [step, setStep] = useState<Step>(1)
   const [collections, setCollections] = useState<WizardCollection[]>(initialCollections)
-  const [modes, setModes] = useState<string[]>(() => initialModes?.filter((mode) => allModes.includes(mode)).length ? initialModes.filter((mode) => allModes.includes(mode)) : allModes)
+  // Default theme selection, in priority order: an explicit `initialModes`
+  // (Theme Preview's "Export theme"), else just the previewed `activeTheme`
+  // (so the wizard opens saying "this one" instead of silently pre-checking
+  // every theme in the system), else — no previewed theme to lean on — all.
+  const [modes, setModes] = useState<string[]>(() => {
+    const forced = initialModes?.filter((m) => allModes.includes(m)) ?? []
+    if (forced.length) return forced
+    if (activeTheme && allModes.includes(activeTheme)) return [activeTheme]
+    return allModes
+  })
   const [families, setFamilies] = useState<string[]>(famMeta.map((f) => f.key))
   const [format, setFormat] = useState<WizardFormat>('escala')
   // GitHub is a destination but not a generated file format: its existing
@@ -499,28 +533,72 @@ export default function ExportWizard({
 
                   {collections.includes('semantics') && (
                     <div className="mt-4 rounded-xl border border-line bg-surface/50 p-3">
-                      <span className="block px-1 pb-2 text-caption font-semibold uppercase tracking-widest text-fg-faint">Modes</span>
+                      {/* "My themes" — the Themes Library's own heading, which
+                          is also the scope: a System style ships only once it's
+                          been added there, so naming the section after it
+                          answers "where's Core?" without a sentence about it.
+                          All / None is the "bundle every theme" shortcut. */}
+                      <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                        <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">My themes</span>
+                        {allModes.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setModes(allModes)}
+                              className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                            >
+                              All
+                            </button>
+                            <button
+                              onClick={() => setModes([])}
+                              className="px-2 py-1 rounded-lg text-caption font-medium text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
+                            >
+                              None
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <span className="block px-1 pb-2 text-body text-fg-muted">Color · Semantics</span>
                       <div className="flex flex-wrap gap-2 px-1">
-                        {allModes.map((m) => {
-                          const on = modes.includes(m)
+                        {themeChips.map((th) => {
+                          const on = modes.includes(th.key)
                           return (
                             <button
-                              key={m}
-                              onClick={() => toggleMode(m)}
+                              key={th.key}
+                              onClick={() => toggleMode(th.key)}
                               aria-pressed={on}
-                              className={`px-3.5 py-1.5 rounded-full text-ui font-medium border transition-colors ${
+                              title={`${th.label} — ${th.kind} theme`}
+                              className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full text-ui font-medium border transition-colors ${
                                 on ? 'border-accent-ui text-accent-ui bg-accent-ui/[0.07]' : 'border-line text-fg-muted hover:text-fg hover:border-line-strong'
                               }`}
                             >
-                              {m}
+                              {/* The theme's own accent, ringed rather than
+                                  bordered so the swatch reads as the colour and
+                                  not as a second chip inside the chip. */}
+                              <span
+                                aria-hidden
+                                className="w-4 h-4 rounded-full flex-shrink-0 ring-1 ring-black/10 dark:ring-white/15"
+                                style={{ background: th.accent ?? 'transparent' }}
+                              />
+                              <span className="truncate">{th.label}</span>
+                              {/* Sun / moon — same asset, same size (14px) and
+                                  same `currentColor` treatment as the Themes
+                                  Library rail, so a theme's polarity reads the
+                                  same wherever it's listed. */}
+                              <AppearanceGlyph kind={th.kind} />
                             </button>
                           )
                         })}
                       </div>
-                      {modes.length === 0 && (
-                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one mode to ship the semantic layer.</p>
-                      )}
+                      {modes.length === 0 ? (
+                        <p className="px-1 pt-2.5 text-body text-status-danger">Pick at least one theme to ship the semantic layer.</p>
+                      ) : modes.length < allModes.length ? (
+                        // Only the previewed theme is on by default. Say the
+                        // others exist and how to add them — otherwise a full
+                        // multi-theme export looks unavailable.
+                        <p className="px-1 pt-2.5 text-body text-fg-faint">
+                          Shipping {modes.length === 1 ? 'this theme only' : `${modes.length} of ${allModes.length} themes`}. Tap another to include it, or <button type="button" onClick={() => setModes(allModes)} className="font-medium text-fg-muted underline decoration-line-strong underline-offset-2 hover:text-accent-ui transition-colors">add all {allModes.length}</button>.
+                        </p>
+                      ) : null}
                     </div>
                   )}
                 </>
@@ -859,7 +937,15 @@ export default function ExportWizard({
                 )}
                 {!isWholeDocument && <SummaryRow label="Variables" value={String(varCount)} />}
                 {(collections.includes('semantics') || ai || isGitHubDestination) && (
-                  <SummaryRow label="Modes" value={isGitHubDestination ? 'All' : modes.join(', ')} />
+                  <SummaryRow
+                    label="Themes"
+                    // Display names, not `themeOrder` slugs — the summary is the
+                    // last thing read before a download, so it has to name what
+                    // the picker named.
+                    value={isGitHubDestination
+                      ? 'All'
+                      : themeChips.filter((th) => modes.includes(th.key)).map((th) => th.label).join(', ')}
+                  />
                 )}
                 <SummaryRow label="Going to" value={isGitHubDestination ? 'GitHub repository' : wizardFormatLabel(format)} />
                 <SummaryRow label="Structure" value={isGitHubDestination ? 'Repository bundle · 4 files' : files.length > 1 ? `${files.length} files` : 'Single file'} />

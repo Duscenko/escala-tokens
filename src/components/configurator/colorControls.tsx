@@ -1244,6 +1244,7 @@ export function SystemRampGrid({
   selected = null,
   onPick,
   ariaLabel,
+  onOpenFamily,
 }: {
   /** Families in display order; empty ramps are skipped. */
   ramps: { key: string; scale: Record<number, string> | undefined }[]
@@ -1251,6 +1252,11 @@ export function SystemRampGrid({
   selected?: { family: string; tone: number } | null
   onPick: (family: string, tone: number, hex: string) => void
   ariaLabel?: string
+  /** When set, each solid family's label becomes a link that jumps to that
+   *  family's ramp in the Color · Primitives table — you're picking a tone
+   *  here, but editing the ramp itself lives there. Omitted for alpha rows
+   *  (`accent-a`, …): those ramps are derived, not editable. */
+  onOpenFamily?: (family: string) => void
 }) {
   const rows = ramps.filter((r) => r.scale && Object.keys(r.scale).length > 0)
   if (!rows.length) return null
@@ -1265,15 +1271,32 @@ export function SystemRampGrid({
       role="group"
       aria-label={ariaLabel}
       className="grid items-center"
-      style={{ gridTemplateColumns: '4.25rem repeat(12, minmax(0, 1fr))', columnGap: 3, rowGap: 4 }}
+      style={{ gridTemplateColumns: `${onOpenFamily ? '5rem' : '4.25rem'} repeat(12, minmax(0, 1fr))`, columnGap: 3, rowGap: 4 }}
     >
       {rows.map((row) => (
         <Fragment key={row.key}>
           {/* Platform UI font, not mono: these are family LABELS ("accent",
               "neutral-dark"), not code identifiers the way the dialog's Name
               row and CSS-var chip are. Mono here made the dialog read as two
-              unrelated typefaces stacked. */}
-          <span className="text-micro font-medium text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
+              unrelated typefaces stacked. When `onOpenFamily` is set the
+              label becomes the "open this ramp in the Primitives table" link
+              (alpha rows stay plain text — their ramps are derived). */}
+          {onOpenFamily && !isAlphaRow(row.key) ? (
+            <button
+              type="button"
+              onClick={() => onOpenFamily(row.key)}
+              title={`Edit the ${row.key} ramp in Color · Primitives`}
+              aria-label={`Edit the ${row.key} ramp in the Primitives table`}
+              className="group/fam flex items-center gap-0.5 min-w-0 pr-1 text-micro font-medium text-fg-faint hover:text-accent-ui transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 rounded"
+            >
+              <span className="truncate">{row.key}</span>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 opacity-0 group-hover/fam:opacity-100 transition-opacity">
+                <path d="M7 17 17 7M8 7h9v9" />
+              </svg>
+            </button>
+          ) : (
+            <span className="text-micro font-medium text-fg-faint truncate pr-1" title={row.key}>{row.key}</span>
+          )}
           {Array.from({ length: 12 }, (_, i) => i + 1).map((tone) => {
             const hex = row.scale?.[tone]
             if (!hex) return <span key={tone} style={{ gridColumn: tone + 1 }} />
@@ -1329,13 +1352,37 @@ export function SystemRampGrid({
 // Primitives' light/dark ColorPickerPanel) and only WHERE they render is
 // shared.
 
-/** Light/dark polarity glyph for a mode's header — the shared `light-mode.svg`
- *  / `dark-mode.svg` assets (hard-#white strokes) painted with `currentColor`
- *  via a CSS mask, so one file serves the tint (amber for the sun, indigo for
- *  the moon — the colour is still what tells the two apart at a glance). */
+/** The shipped sun / moon assets. White-stroke SVGs, so every renderer paints
+ *  them as a CSS mask with `currentColor` — a bare `<img>` can't follow the
+ *  surrounding ink. One source, one look everywhere it appears. */
+export const APPEARANCE_ICON_SRC: Record<'light' | 'dark', string> = {
+  light: '/icons/settings/light-mode.svg',
+  dark: '/icons/settings/dark-mode.svg',
+}
+
+/** Sun / moon glyph that FOLLOWS its container's ink — the form used by the
+ *  Themes Library rail, the quick-settings appearance toggle and the Export
+ *  wizard's theme chips, so the same asset reads identically in all three.
+ *  `KindIcon` below is the tinted variant, only for the Token Details section
+ *  headers where the amber/indigo colour does real parsing work. */
+export function AppearanceGlyph({ kind, size = 14 }: { kind: 'light' | 'dark'; size?: number }) {
+  const mask = `url('${APPEARANCE_ICON_SRC[kind]}') center / contain no-repeat`
+  return (
+    <span
+      aria-hidden
+      className="flex-shrink-0 bg-current"
+      style={{ width: size, height: size, WebkitMask: mask, mask }}
+    />
+  )
+}
+
+/** Light/dark polarity glyph for a mode's header — the shared sun/moon assets
+ *  (see `AppearanceGlyph`) but tinted (amber for the sun, indigo for the moon),
+ *  because at 11px in a stack of section headers the colour is what tells the
+ *  two apart at a glance. Everywhere the glyph sits beside its own label, use
+ *  `AppearanceGlyph` instead. */
 export function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
-  const src = kind === 'light' ? '/icons/settings/light-mode.svg' : '/icons/settings/dark-mode.svg'
-  const mask = `url('${src}') center / contain no-repeat`
+  const mask = `url('${APPEARANCE_ICON_SRC[kind]}') center / contain no-repeat`
   return (
     <span
       aria-hidden
@@ -1399,6 +1446,7 @@ export function CssVarChip({ name }: { name: string }) {
 
 export function TokenDetailsModal({
   name, cssVarName, description, onReset, resetDisabled, onClose, reduce, sections, initialOpenKey,
+  onOpenInTable,
   dockLeft = THEME_DRAWER_LEFT,
   contained = false,
   containedRootRef,
@@ -1421,6 +1469,11 @@ export function TokenDetailsModal({
    *  mode currently being PREVIEWED, so the dialog opens on the value the
    *  user can actually see change. */
   initialOpenKey?: string
+  /** Leave this drawer for this token's row in the full variables table.
+   *  Only passed where the drawer is opened from OUTSIDE that table — the
+   *  Theme Preview quick column. Omitted from the Semantics table's own
+   *  rows, where it would point at the page you are already on. */
+  onOpenInTable?: () => void
   /** Kept for call-site compatibility. Token details now always use the
    *  shared Themes Library drawer position rather than a table-local popover. */
   anchorRef?: RefObject<HTMLElement | null>
@@ -1522,17 +1575,41 @@ export function TokenDetailsModal({
           style={{ height: THEME_BAND_H }}
         >
           <h2 className="text-body font-semibold text-fg truncate">Token Details</h2>
-          <button
-            onClick={onReset}
-            disabled={resetDisabled}
-            className="flex-shrink-0 flex items-center gap-1.5 px-2.5 h-7 rounded-lg border border-line text-mini text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
-          >
-            Reset
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M3 12a9 9 0 1 1 2.6 6.36" />
-              <path d="M3 21v-6h6" />
-            </svg>
-          </button>
+          <div className="flex-shrink-0 flex items-center gap-1.5">
+            {/* "Open in the variables table" — the way OUT of this drawer to
+                the full row for this token. Only rendered where the drawer
+                ISN'T already sitting on that table (the Theme Preview quick
+                column); from the Semantics table itself it would point at the
+                page you're on. Sized to Reset's own pill — same height, radius
+                and border — so the header reads as one pair of controls. */}
+            {onOpenInTable && (
+              <button
+                onClick={onOpenInTable}
+                aria-label="Open this token in the variables table"
+                title="Open in the variables table"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-fg-muted hover:text-accent-ui hover:border-line-strong transition-colors"
+              >
+                {/* A table, not a generic arrow: it names the destination, and
+                    the ramp-grid labels below already use the arrow for their
+                    own (different) jump into Primitives. */}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3" y="4" width="18" height="16" rx="2" />
+                  <path d="M3 9.5h18M9 9.5V20" />
+                </svg>
+              </button>
+            )}
+            <button
+              onClick={onReset}
+              disabled={resetDisabled}
+              className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg border border-line text-mini text-fg-muted hover:text-accent-ui hover:border-line-strong disabled:opacity-30 disabled:hover:text-fg-muted disabled:hover:border-line transition-colors"
+            >
+              Reset
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 12a9 9 0 1 1 2.6 6.36" />
+                <path d="M3 21v-6h6" />
+              </svg>
+            </button>
+          </div>
         </div>
         <button
           onClick={onClose}
