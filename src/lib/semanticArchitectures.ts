@@ -652,14 +652,25 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // had nothing to bind to, so InlineAlert Info shipped its hardcoded fallback
   // `#1570ef` on a `#131c2a` fill — both literals verified byte-for-byte
   // against `code.ts`, not inferred.
-  { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.12}' },
-  { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.12}' },
-  { group: 'status', key: 'warning.surface-solid',  light: '{warning.solid}',     dark: '{warning.12}' },
-  { group: 'status', key: 'warning.on-solid',        light: '{on:warning.solid}', dark: '{on:warning.12}' },
-  { group: 'status', key: 'success.surface-solid',  light: '{success.solid}',     dark: '{success.12}' },
-  { group: 'status', key: 'success.on-solid',        light: '{on:success.solid}', dark: '{on:success.12}' },
-  { group: 'status', key: 'info.surface-solid',     light: '{info.solid}',        dark: '{info.12}' },
-  { group: 'status', key: 'info.on-solid',           light: '{on:info.solid}',    dark: '{on:info.12}' },
+  //
+  // DARK IS `{fam.solid}` TOO, not `{fam.12}`. The pin was written when
+  // `{fam.solid}` still walked the ramp upward, and it carried the reasoning
+  // "so the fill still reads as coloured on a dark page" — which is exactly
+  // backwards: on a DARK ramp tone 12 is the near-WHITE end, so a destructive
+  // button rendered `#ffddd5`, a pale pink, in every theme. Measured across the
+  // six styles before the change: critical dark resolved #ffddd5 / #ffddd5 /
+  // #ffded6 / #ffded6 / #ffdfd7 / #ffe0d8 — six systems, one washed-out Delete
+  // button, the same defect `brandSolidPair` was written to fix for the accent.
+  // `{fam.solid}` now solves per appearance and lands near the anchor, so the
+  // fill is actually the severity's colour in both. `{on:fam.solid}` follows it.
+  { group: 'status', key: 'critical.surface-solid', light: '{error.solid}',     dark: '{error.solid}' },
+  { group: 'status', key: 'critical.on-solid',       light: '{on:error.solid}', dark: '{on:error.solid}' },
+  { group: 'status', key: 'warning.surface-solid',  light: '{warning.solid}',     dark: '{warning.solid}' },
+  { group: 'status', key: 'warning.on-solid',        light: '{on:warning.solid}', dark: '{on:warning.solid}' },
+  { group: 'status', key: 'success.surface-solid',  light: '{success.solid}',     dark: '{success.solid}' },
+  { group: 'status', key: 'success.on-solid',        light: '{on:success.solid}', dark: '{on:success.solid}' },
+  { group: 'status', key: 'info.surface-solid',     light: '{info.solid}',        dark: '{info.solid}' },
+  { group: 'status', key: 'info.on-solid',           light: '{on:info.solid}',    dark: '{on:info.solid}' },
   // Border — strokes, split by JOB rather than by weight: decoration (no
   // floor) vs. the control boundary (WCAG 1.4.11 ≥3:1 AND APCA Lc ≥45, the
   // `ui-component` intent, via `{ui:…}` — see `uiBoundaryRef`). `default` used

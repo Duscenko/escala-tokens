@@ -69,9 +69,14 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   expect(tokens.brandSolid).toBe(arch['action.primary.default'])
   expect(tokens.onBrand).toBe(arch['content.on-action'])
   expect(tokens.neutralText).toBe(arch['content.primary'])
-  expect(tokens.errorColor).toBe(arch['status.critical.content'])
-  expect(tokens.warningColor).toBe(arch['status.warning.content'])
-  expect(tokens.successColor).toBe(arch['status.success.content'])
+  // These four are FILLS — `errorColor` is "destructive accent", painted as the
+  // Solid Danger button's background and the Delete pill. They used to be
+  // wired to `status.<sev>.content`, the INK role, so a destructive button took
+  // its own label colour as its fill. Invisible in light (both roles resolve to
+  // the same hex there) and reported from dark, where they diverge.
+  expect(tokens.errorColor).toBe(arch['status.critical.surface-solid'])
+  expect(tokens.warningColor).toBe(arch['status.warning.surface-solid'])
+  expect(tokens.successColor).toBe(arch['status.success.surface-solid'])
   expect(tokens.surface).toBe(arch['surface.page'])
   expect(tokens.neutralFill).toBe(arch['surface.layer-1'])
   // `PreviewTokens.border` is the component stroke (inputs, selects), so it

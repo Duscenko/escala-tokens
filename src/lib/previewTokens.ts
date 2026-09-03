@@ -283,10 +283,28 @@ export function resolvePreviewTokens(
         // the control boundary, not to redecorate — the new rungs are added
         // vocabulary, and moving a consumer onto one is its own decision.
         put('borderDefault', 'border.subtle')
-        put('errorColor', 'status.critical.content')
-        put('warningColor', 'status.warning.content')
-        put('successColor', 'status.success.content')
-        put('infoColor', 'status.info.content')
+        // These four are FILLS, and they were being fed the INK role.
+        //
+        // `PreviewTokens.errorColor` is documented as "destructive accent" and
+        // its flat definition is `pal.error[9]` — a solid. Specimens paint it
+        // as one: the Solid Danger button's background, the ContextMenu's
+        // Delete pill, the Avatar presence dots. Pointing it at
+        // `status.critical.content` — the tone SOLVED TO READ AS TEXT on a
+        // pale tint — meant a destructive button took its ink as its fill, and
+        // then drew `content.on-action` on top of it.
+        //
+        // It hid because in LIGHT the two roles resolve to the same hex
+        // (measured across all six styles: content == surface-solid == #b94136
+        // on Core). They only diverge in DARK, which is where it was reported.
+        //
+        // `status.*.surface-solid` is the role whose own description reads
+        // "Solid fill for destructive badges and buttons", and it is paired
+        // with `status.*.on-solid`. Using it restores agreement with the flat
+        // definition instead of contradicting it.
+        put('errorColor', 'status.critical.surface-solid')
+        put('warningColor', 'status.warning.surface-solid')
+        put('successColor', 'status.success.surface-solid')
+        put('infoColor', 'status.info.surface-solid')
       }
     }
   }

@@ -18,7 +18,7 @@ import {
   previewHarmony,
 } from './colorUtils'
 import { resolvePreviewTokens } from './previewTokens'
-import type { ThemeStylePreset, ThemeStyleSemantics } from './themePresets'
+import { presetStates, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
 import { themeModeKey, type ThemeAppearance } from './themeModes'
 import type { useDesignStore } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
@@ -128,6 +128,10 @@ export function resolveStylePreviewTokens(
   // will actually sit on.
   const light = h.pageLight
   const dark = h.pageDark
+  // The style's OWN severity seeds when it declares them. Same call
+  // `adoptPreset` makes, so the try-on and the theme it mints seed identical
+  // status families — the `MintPages` rule applied to the severity slots.
+  const st = presetStates(preset)
 
   // The preset IS the reading of the primitives — drop this theme's own family
   // references, semantic overrides and materialised map so the projection can't
@@ -139,22 +143,22 @@ export function resolveStylePreviewTokens(
     darkBackground: dark,
     primaryColor: preset.accent,
     grayBaseColor: h.neutral,
-    errorColor: h.states.error,
-    warningColor: h.states.warning,
-    successColor: h.states.success,
-    infoColor: h.states.info,
+    errorColor: st.error,
+    warningColor: st.warning,
+    successColor: st.success,
+    infoColor: st.info,
     primaryScale: generateColorScale(preset.accent, alg, shift, light),
     primaryDarkScale: generateFamilyDarkScale(preset.accent, alg, shift, dark),
     grayLightScale: generateColorScale(h.neutral, alg, shift, light, 'light', tint),
     grayDarkScale: generateDarkColorScale(h.neutral, alg, shift, dark, tint),
-    errorScale: generateColorScale(h.states.error, alg, shift, light),
-    errorDarkScale: generateFamilyDarkScale(h.states.error, alg, shift, dark),
-    warningScale: generateColorScale(h.states.warning, alg, shift, light),
-    warningDarkScale: generateFamilyDarkScale(h.states.warning, alg, shift, dark),
-    successScale: generateColorScale(h.states.success, alg, shift, light),
-    successDarkScale: generateFamilyDarkScale(h.states.success, alg, shift, dark),
-    infoScale: generateColorScale(h.states.info, alg, shift, light),
-    infoDarkScale: generateFamilyDarkScale(h.states.info, alg, shift, dark),
+    errorScale: generateColorScale(st.error, alg, shift, light),
+    errorDarkScale: generateFamilyDarkScale(st.error, alg, shift, dark),
+    warningScale: generateColorScale(st.warning, alg, shift, light),
+    warningDarkScale: generateFamilyDarkScale(st.warning, alg, shift, dark),
+    successScale: generateColorScale(st.success, alg, shift, light),
+    successDarkScale: generateFamilyDarkScale(st.success, alg, shift, dark),
+    infoScale: generateColorScale(st.info, alg, shift, light),
+    infoDarkScale: generateFamilyDarkScale(st.info, alg, shift, dark),
     themeSources: omitKey(store.themeSources, themeKey),
     themeSemantics: omitKey(store.themeSemantics, themeKey),
     themes: omitKey(store.themes, themeKey),

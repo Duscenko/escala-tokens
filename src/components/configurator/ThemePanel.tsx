@@ -111,15 +111,22 @@ function labelForAccent(hex: string): string {
  *  whole theme" implies. Same `previewHarmony` the accent↔neutral/states links
  *  use, so a theme minted from an accent lands on the colours the rest of the
  *  system would have picked for it. */
-export function slotsFromAccent(hex: string, tint: NeutralTint): Record<FamilySlot, string> {
+export function slotsFromAccent(
+  hex: string,
+  tint: NeutralTint,
+  /** Severity seeds to use instead of the accent-derived recommendation — a
+   *  System Style's own `states`. See `presetStates`. */
+  states?: { error: string; warning: string; success: string; info: string },
+): Record<FamilySlot, string> {
   const h = previewHarmony(hex, tint)
+  const st = states ?? h.states
   return {
     brand: hex,
     gray: h.neutral,
-    error: h.states.error,
-    warning: h.states.warning,
-    success: h.states.success,
-    info: h.states.info,
+    error: st.error,
+    warning: st.warning,
+    success: st.success,
+    info: st.info,
   }
 }
 

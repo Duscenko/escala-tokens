@@ -118,7 +118,11 @@ describe('the categorical catalogue is complete', () => {
     expect(label('status', 'critical.content')).toBe('error.11')
     expect(label('status', 'warning.content')).toBe('warning.11')
     expect(label('status', 'success.content')).toBe('success.11')
-    expect(label('status', 'critical.surface-solid')).toBe('error.12')
+    // `surface-solid` is SOLVED in dark now, not pinned to 12. The pin put a
+    // destructive button at the near-white end of the dark ramp (#ffddd5
+    // measured), which is the pastel defect `brandSolidPair` exists to stop —
+    // tone 12 of a DARK ramp is not "still coloured", it is almost white.
+    expect(label('status', 'critical.surface-solid')).toBe('error.8')
   })
 
   // `border.default`/`border.strong` split by JOB (control boundary vs.

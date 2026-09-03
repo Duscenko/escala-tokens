@@ -51,31 +51,104 @@ function statusColor(t: PreviewTokens, name: string): string {
   }
 }
 
+/** The INK role paired with each `statusColor` FILL. */
+const STATUS_INK_SLOT: Record<string, string> = {
+  Brand: 'content.accent',
+  Success: 'status.success.content',
+  Warning: 'status.warning.content',
+  Error: 'status.critical.content',
+  Danger: 'status.critical.content',
+  Info: 'status.info.content',
+}
+
 /**
  * The same intent as INK rather than as a FILL.
  *
- * `statusColor` returns a fill, and a fill is not readable as text on the page
- * — that is the whole reason the role catalogue ships `content.accent`
- * (`{accent.11}`, audited `body-text`, worst measured 5.21:1 / Lc 75) beside
- * `action.primary`. An Outline / Ghost / Soft button paints no brand fill, so
- * its LABEL sits on the page and must use the ink role.
+ * `statusColor` returns a fill, and a fill is not readable as text — that is
+ * the whole reason the role catalogue ships `content.accent` beside
+ * `action.primary`, and `status.<sev>.content` beside
+ * `status.<sev>.surface-solid`. Anything that paints no fill (an Outline /
+ * Ghost / Soft button, helper text, a required asterisk) puts its glyphs
+ * straight on the page and must read the ink role.
  *
- * They used to be the same value here, and it looked fine only by accident: the
- * old solid solver walked a light ramp until white was legible ON it, which
- * dragged the fill down to tone 11 — where it happens to double as text. Once
- * `brandSolidPair` stopped over-darkening the fill (Neo's light solid went from
- * #8e6300, a brown, to #eebd62, the actual gold), every ghost button inherited
- * a fill-weight colour as ink: measured #eebd62 on Neo's near-white page at
- * **1.9:1**. The fill fix is right; sharing one token for two jobs was not.
+ * Both halves of this were one token until they measurably could not be:
+ *  · BRAND. The old solid solver walked a light ramp until white was legible ON
+ *    the fill, dragging it to tone 11 — where it happens to double as text. Once
+ *    `brandSolidPair` stopped over-darkening it (Neo light #8e6300 brown →
+ *    #eebd62 gold), every ghost button inherited fill-weight ink: **1.9:1**.
+ *  · STATUS. `PreviewTokens.errorColor` was being fed `status.critical.content`
+ *    — the ink — so a Solid Danger button used its ink as its FILL. Repointing
+ *    it at `status.critical.surface-solid` fixed the button and moved the
+ *    breakage here instead: measured, the fill as dark-mode ink runs
+ *    **2.85–3.52:1** where the ink role runs 10.72–11.93.
  *
- * ONLY Brand is redirected. The four status intents resolve to their family's
- * tone 9 and have no ink field, deliberately — see the `StatusSpecimen` note in
- * CLAUDE.md for why `errorInk`/`warningInk`/`successInk` were deleted rather
- * than reintroduced (a preview that repairs a colour disagrees with every other
- * preview about what that token is). Their behaviour is unchanged here.
+ * So the pair is split at the point of use, reading the roles that already
+ * ship. This is NOT the deleted `errorInk`/`warningInk`/`successInk` — those
+ * SUBSTITUTED a repaired colour when a token failed on its own tint, which made
+ * one specimen disagree with every other preview about a token's value (see
+ * CLAUDE.md's `StatusSpecimen` note). Nothing is repaired here; each call site
+ * is simply pointed at the role for the job it is doing, and a flat system
+ * (no `archTokens`) falls back to today's value unchanged.
  */
 function statusInk(t: PreviewTokens, name: string): string {
-  return name === 'Brand' ? (t.brandText || t.brandSolid) : statusColor(t, name)
+  const slot = STATUS_INK_SLOT[name]
+  return (slot && t.archTokens?.[slot]) || (name === 'Brand' ? (t.brandText || t.brandSolid) : statusColor(t, name))
+}
+
+// Per-severity ink, for the call sites that only ever mean ONE severity.
+//
+// These deliberately do NOT delegate to `statusInk`, and both halves of that
+// matter to `gen-component-color-fields`, which resolves each specimen's field
+// list as the transitive closure over this file's call graph:
+//   · They are `function` DECLARATIONS. The generator only walks declarations,
+//     so an arrow const truncates the closure — measured, Label / Field /
+//     ContextMenu / DropdownMenu all dropped `errorColor` from their agent
+//     context when this was `const errorInkOf = (t) => …`.
+//   · They read one severity's fields, not the generic switch's. Routing a
+//     Label through `statusInk` gave it `successColor` / `warningColor` /
+//     `infoColor` / `brandSolid` / `brandText` as well — every field the
+//     dispatcher touches — which is a Color section listing roles the
+//     component provably never paints.
+// `statusInk` itself stays generic for `ButtonSpecimen`, where the intent is a
+// real axis and listing all of them IS correct.
+function errorInkOf(t: PreviewTokens): string {
+  return t.archTokens?.['status.critical.content'] || t.errorColor
+}
+function warningInkOf(t: PreviewTokens): string {
+  return t.archTokens?.['status.warning.content'] || t.warningColor || '#f79009'
+}
+function successInkOf(t: PreviewTokens): string {
+  return t.archTokens?.['status.success.content'] || t.successColor || '#17b26a'
+}
+
+/** The label ink solved for each `statusColor` fill. */
+const STATUS_ON_SLOT: Record<string, string> = {
+  Brand: 'content.on-action',
+  Success: 'status.success.on-solid',
+  Warning: 'status.warning.on-solid',
+  Error: 'status.critical.on-solid',
+  Danger: 'status.critical.on-solid',
+  Info: 'status.info.on-solid',
+}
+
+/**
+ * The ink for a SOLID fill of this intent.
+ *
+ * `t.onBrand` is `content.on-action` — the ink solved against the BRAND fill,
+ * and only that one. Using it on a Danger button asks a label chosen for a gold
+ * or cyan fill to sit on a red one; measured on the collage's Solid Danger
+ * button before this existed: Neo **1.90:1**, Glass **2.16:1** (Core and Retro
+ * passed by luck, their brand ink happening to be near-white).
+ *
+ * `status.<sev>.on-solid` is solved per severity against that severity's own
+ * fill — it is `{on:<fam>.solid}`, the same marker `content.on-action` uses for
+ * the accent — so each intent carries the ink its fill was verified with.
+ * Falls back to `t.onBrand` where no architecture is resolved, which is exactly
+ * today's behaviour for a flat system.
+ */
+function statusOn(t: PreviewTokens, name: string): string {
+  const slot = STATUS_ON_SLOT[name]
+  return (slot && t.archTokens?.[slot]) || t.onBrand
 }
 
 /** The stroke of a status surface — `status.<severity>.border`, an alpha token.
@@ -296,7 +369,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   // top of them reads from the ink. That split is what the paired
   // `soft(t, t.brandSolid)` + `color: t.brandText` call sites elsewhere in this
   // file have always done; the Button was the one that collapsed them.
-  if (style === 'Solid') { bg = color; fg = t.onBrand }
+  if (style === 'Solid') { bg = color; fg = statusOn(t, intent) }
   else if (style === 'Outline') { border = ink + '99' }
   else if (style === 'Soft') { bg = soft(t, color) }
 
@@ -393,7 +466,7 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
         {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={16} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
       </div>
-      <span style={{ ...typeOf(t, 'helper'), color: error ? t.errorColor : t.fgMuted }}>
+      <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
         {translate(error ? 'This field is required.' : 'This is a hint text.')}
       </span>
     </div>
@@ -949,7 +1022,7 @@ function TextareaSpecimen({ t, v }: SpecimenProps) {
       >
         Tell us about your design system…
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'helper'), color: error ? t.errorColor : t.fgMuted }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
         <span>{error ? 'Description is required.' : 'Max 200 characters.'}</span>
         <span>0/200</span>
       </div>
@@ -1333,13 +1406,13 @@ function DropzoneSpecimen({ t, v }: SpecimenProps) {
         transition: STATE_TRANSITION,
       }}
     >
-      <span style={{ width: 40, height: 40, borderRadius: 999, background: error ? soft(t, t.errorColor) : soft(t, t.brandSolid), color: error ? t.errorColor : t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 40, height: 40, borderRadius: 999, background: error ? soft(t, t.errorColor) : soft(t, t.brandSolid), color: error ? errorInkOf(t) : t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
         <PreviewIcon concept="upload" size={17} color="currentColor" />
       </span>
       <span style={{ ...typeOf(t, 'body-sm') }}>
         <span style={{ fontWeight: weightOf(t, 'semibold', 600), color: t.brandText }}>Click to upload</span> or drag and drop
       </span>
-      <span style={{ ...typeOf(t, 'helper'), color: error ? t.errorColor : t.fgMuted }}>
+      <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
         {error ? 'File exceeds the 10MB limit.' : 'SVG, PNG or PDF (max. 10MB)'}
       </span>
     </div>
@@ -1350,7 +1423,7 @@ function FieldSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-control', '8px'), width: 260 }}>
       <span style={{ ...typeOf(t, 'label') }}>
-        Workspace name <span style={{ color: t.errorColor }}>*</span>
+        Workspace name <span style={{ color: errorInkOf(t) }}>*</span>
       </span>
       <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>
         Acme Inc.
@@ -1364,7 +1437,7 @@ function LabelSpecimen({ t, v }: SpecimenProps) {
   const required = (v.Required ?? 'False') === 'True'
   return (
     <span style={{ ...baseFont(t), ...typeOf(t, 'label') }}>
-      Email address {required && <span style={{ color: t.errorColor }}>*</span>}
+      Email address {required && <span style={{ color: errorInkOf(t) }}>*</span>}
     </span>
   )
 }
@@ -1377,7 +1450,7 @@ const STRENGTH_META: Record<string, { level: number; caption: string }> = {
 
 function PasswordStrengthSpecimen({ t, v }: SpecimenProps) {
   const meta = STRENGTH_META[v.Strength ?? 'Fair'] ?? STRENGTH_META.Fair
-  const color = meta.level <= 1 ? t.errorColor : meta.level <= 2 ? (t.warningColor ?? '#f79009') : (t.successColor ?? '#17b26a')
+  const color = meta.level <= 1 ? errorInkOf(t) : meta.level <= 2 ? warningInkOf(t) : successInkOf(t)
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 8, width: 260 }}>
       <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: inputSurfaceOf(t), ...typeOf(t, 'placeholder'), letterSpacing: 2, color: t.neutralText }}>
@@ -1642,7 +1715,7 @@ function MenuPanel({
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
               padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), cursor: 'pointer',
               background: item.hover ? t.neutralFill : 'transparent',
-              color: item.danger ? t.errorColor : t.neutralText,
+              color: item.danger ? errorInkOf(t) : t.neutralText,
             }}
           >
             {item.label}

@@ -1,5 +1,5 @@
 import { BRAND_SPECTRUM } from './brandPalette'
-import { type NeutralTint } from './colorUtils'
+import { previewHarmony, type NeutralTint } from './colorUtils'
 import {
   GRID_FRAME_STANDARD,
   RADIUS_PRESETS,
@@ -50,6 +50,14 @@ import {
  */
 export type ThemeStyleSemantics = Record<string, { light?: string; dark?: string }>
 
+/** Seed hexes for the four severity families. */
+export interface ThemeStyleStates {
+  error: string
+  warning: string
+  success: string
+  info: string
+}
+
 export interface ThemeStylePreset {
   id: string
   label: string
@@ -62,7 +70,40 @@ export interface ThemeStylePreset {
   foundations: ThemeFoundationOverride
   /** Categorical role overrides — see `ThemeStyleSemantics`. */
   semantics?: ThemeStyleSemantics
+  /**
+   * The style's OWN severity seeds. Omit and the four are derived from the
+   * accent by `recommendStateColors`, which is right for a system whose accent
+   * the user picked and wrong for a curated set — see `presetStates`.
+   */
+  states?: ThemeStyleStates
   accessibilityNote?: string
+}
+
+/**
+ * A style's four severity seeds: its own when it declares them, otherwise the
+ * accent-derived recommendation.
+ *
+ * The derivation exists so a user's hand-picked accent pulls error/warning/
+ * success/info into the same family — it blends CHROMA only, keeping each
+ * severity's canonical hue and lightness, because a red drifting toward a green
+ * accent stops reading as an error. That is the correct behaviour for a system
+ * someone is building. It is the wrong behaviour for a curated SET, and
+ * measurably so: because the blend is chroma-only, six very different accents
+ * collapsed onto near-identical severities. Measured before this existed —
+ *
+ *   warning  #ff8a00 · #f5911c · #f09434 · #ff8a00 · #ff8a00 · #f69011
+ *   success  #00b75f · #17b26a · #31b06e · #00b75f · #00b75f · #08b369
+ *
+ * — Core, Material and Retro shipping BYTE-IDENTICAL warning and success. A
+ * vintage press and a Material dashboard have no business sharing an alert
+ * colour, and the styles are the one place in the app where an opinion about
+ * that is wanted, exactly like `semantics` and `foundations`.
+ *
+ * Shared by the try-on and by `adoptPreset`, so a previewed style and the theme
+ * it mints seed the same families — the `MintPages` rule.
+ */
+export function presetStates(preset: ThemeStylePreset): ThemeStyleStates {
+  return preset.states ?? previewHarmony(preset.accent, preset.neutralTint).states
 }
 
 function accent(label: string): string {
@@ -292,6 +333,10 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     accent: accent('Blue Dark'),
     preferredAppearance: 'light',
     neutralTint: 'subtle',
+    // Crisp, conventional product severities — the register a dashboard reads
+    // as "correct" rather than expressive. Deliberately the least opinionated
+    // set here: Core is the baseline the other five are variations from.
+    states: { error: '#d92d20', warning: '#dc6803', success: '#079455', info: '#1570ef' },
     foundations: {
       typography: typography('Inter', 'Inter', 'default'),
       spacing: buildSpacingFromBase(4),
@@ -322,6 +367,9 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     accent: accent('Yellow'),
     preferredAppearance: 'light',
     neutralTint: 'pure',
+    // Near-primary and maximally saturated, matching the pure neutral and the
+    // hard black offset. Brutalism does not do muted.
+    states: { error: '#e5252c', warning: '#ffb302', success: '#00c853', info: '#2962ff' },
     foundations: {
       typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
       spacing: buildSpacingFromBase(5),
@@ -362,6 +410,10 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     accent: accent('Ice'),
     preferredAppearance: 'light',
     neutralTint: 'tinted',
+    // Apple's own system colours (systemRed / systemOrange / systemGreen /
+    // systemBlue), verbatim. A Cupertino style borrowing Cupertino's severities
+    // is the same kind of faithfulness as the translucent panel treatment.
+    states: { error: '#ff3b30', warning: '#ff9500', success: '#34c759', info: '#007aff' },
     foundations: {
       typography: typography('Inter', 'Inter', 'comfortable'),
       spacing: buildSpacingFromBase(4),
@@ -386,6 +438,10 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // is also the closest thing here to Material 3's own purple baseline seed.
     accent: accent('Grape'),
     preferredAppearance: 'light',
+    // M3's baseline error (#b3261e) with Material palette 800s for the rest —
+    // deeper and less neon than Glass, which is what Material's own elevation
+    // model expects to sit under.
+    states: { error: '#b3261e', warning: '#f9a825', success: '#2e7d32', info: '#1565c0' },
     // `tinted`, not `subtle`. Material 3's whole surface model is seed-tinted
     // paper, so this is the faithful reading — and at `subtle` its page
     // resolved to `#fdfdff` / `#0f0f13`, within a hair of Core's `#fdfdff` /
@@ -416,6 +472,10 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // survives them.
     accent: accent('Flame'),
     preferredAppearance: 'light',
+    // Muted press inks on aged stock: brick, mustard, moss, faded slate. The
+    // hues still read as their severity — that constraint is not negotiable —
+    // but none of them are the saturated screen colours the other styles use.
+    states: { error: '#b03a2e', warning: '#cc8b1f', success: '#5f8d4e', info: '#4a7a96' },
     // Aged paper is the whole point of this style, and `tinted` only reached
     // `#fff8f3` — an off-white nobody would call vintage. `vivid` lands on
     // `#ffefdf` light and `#300d00` (deep sepia) dark, and still clears AA
@@ -449,6 +509,9 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // brief is "grounded, calm" and its paper is already vividly tinted.
     accent: accent('Green'),
     preferredAppearance: 'dark',
+    // Earth pigments: clay, honey, leaf, river. Warmer than Core and cleaner
+    // than Retro, so the two earthy styles stay tellable apart.
+    states: { error: '#bf4342', warning: '#e08e0b', success: '#2f9e44', info: '#3b7ea1' },
     // Same call as Retro: "earth-led" has to reach the paper, not just the
     // accent. `#edfcdf` light / `#0d1f00` dark, measured 5.58 / 10.97:1 for
     // tone 11 in the two appearances.

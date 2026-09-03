@@ -19,7 +19,7 @@ import { previewHarmony } from './colorUtils'
 import { loadGoogleFont } from './fonts'
 import { withStyleSemantics } from './stylePreviewOverlay'
 import { slugify } from './utils'
-import type { ThemeStylePreset } from './themePresets'
+import { presetStates, type ThemeStylePreset } from './themePresets'
 import type { ThemeAppearance } from './themeModes'
 
 /**
@@ -65,7 +65,7 @@ export function adoptPreset(
   // one and the tint was invisible (see MintPages).
   const h = previewHarmony(preset.accent, preset.neutralTint)
   const result = mintTheme(
-    slotsFromAccent(preset.accent, preset.neutralTint),
+    slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset)),
     appearance,
     label,
     null,

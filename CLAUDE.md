@@ -3490,6 +3490,76 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   documented above, not a regression — it is up from 1.9:1, and fixing it means
 >   moving `content.accent` to tone 12, which that note explicitly leaves alone.
 
+> **UPDATE: the four `PreviewTokens` severity fields were wired to the INK role while
+> being painted as FILLS, and `status.*.surface-solid` was pinned to the near-white end
+> of the dark ramp.** Reported from the artefact view: "el botón critical background está
+> recibiendo `status.critical.content` cuando debe recibir el de surface."
+> - **`put('errorColor', 'status.critical.content')`** (and the other three) pointed a
+>   FILL field at the role solved to read as TEXT on a pale tint. `errorColor` is
+>   documented "destructive accent", its flat definition is `pal.error[9]` — a solid —
+>   and specimens paint it as one (Solid Danger's background, the ContextMenu Delete
+>   pill, the Avatar presence dots). So a destructive button took its own label colour
+>   as its fill. **It hid because in LIGHT the two roles resolve to the same hex** —
+>   measured across all six styles, `content == surface-solid == #b94136` on Core. They
+>   only diverge in dark, which is where it was seen. Now `status.*.surface-solid`,
+>   whose own `[ROLE:]` comment reads "Solid fill for destructive badges and buttons".
+> - **The dark pin went with it.** `surface-solid` was `{fam.solid}` light / `{fam.12}`
+>   dark, carrying the reasoning "so the fill still reads as coloured on a dark page" —
+>   exactly backwards, since tone 12 of a DARK ramp is the near-WHITE end. Measured
+>   before: critical dark resolved `#ffddd5 · #ffddd5 · #ffded6 · #ffded6 · #ffdfd7 ·
+>   #ffe0d8` across the six styles — one washed-out Delete button everywhere, the same
+>   defect `brandSolidPair` exists to stop. Both appearances are `{fam.solid}` now, so
+>   the fill is solved per appearance and lands near the anchor.
+> - **Moving the fill broke the INK sites, so the pair is split at the point of use.**
+>   Measured after the repoint: the fill used as dark-mode ink runs **2.85–3.52:1** where
+>   the ink role runs 10.72–11.93. `statusInk`/`errorInkOf`/`warningInkOf`/`successInkOf`
+>   (`specimens.tsx`) read `status.<sev>.content` for helper text, required asterisks,
+>   the Dropzone error glyph and destructive menu rows; borders keep the fill (they are
+>   `ui-component`, 3:1, and a severity stroke should be vivid). **This is NOT the
+>   deleted `errorInk`/`warningInk`/`successInk`** — those SUBSTITUTED a repaired colour
+>   when a token failed on its own tint, making one specimen disagree with every other
+>   preview. Nothing is repaired here; each call site is pointed at the role for the job
+>   it does, and a flat system falls back to today's value unchanged.
+> - **`ButtonSpecimen`'s Solid branch used `t.onBrand` for every intent** — the ink
+>   solved against the BRAND fill — so a red Danger button wore the label chosen for a
+>   gold or cyan one. Measured in the collage: Neo **1.90:1**, Glass **2.16:1** (Core and
+>   Retro passed by luck, their brand ink happening to be near-white). `statusOn()` reads
+>   `status.<sev>.on-solid`, solved per severity against its own fill. After: all twelve
+>   style×appearance Danger buttons clear AA, worst **4.76:1**.
+> - **Two things `gen-component-color-fields` forces, learned the hard way.** It resolves
+>   each specimen's field list as the transitive closure over this file's call graph, so
+>   (a) a helper must be a `function` DECLARATION — an arrow const truncates the closure
+>   and Label/Field/ContextMenu/DropdownMenu silently lost `errorColor` from their agent
+>   context — and (b) a single-severity call site must NOT route through the generic
+>   `statusInk` switch, or it inherits every field the dispatcher touches and a Label
+>   starts advertising `successColor`. With both observed, the generated file is
+>   byte-identical to before: the refactor changed which ROLE each site reads, not which
+>   tokens any component touches.
+
+> **UPDATE: each System Style declares its OWN four severity seeds (`ThemeStylePreset.states`,
+> resolved through `presetStates`).** Reported alongside the above: "veo esto repetitivo por
+> todos los temas, no estás variando de colores para success, warning, error, info."
+> - **Confirmed by measurement, and it was worse than "similar".** `previewHarmony` derives
+>   the four from the accent via `recommendStateColors`, which blends CHROMA only — keeping
+>   each severity's canonical hue and lightness, because a red drifting toward a green accent
+>   stops reading as an error. That is right for a system whose accent the user picked, and
+>   wrong for a curated set: six very different accents collapsed onto
+>   `warning #ff8a00 · #f5911c · #f09434 · #ff8a00 · #ff8a00 · #f69011` and
+>   `success #00b75f · #17b26a · #31b06e · #00b75f · #00b75f · #08b369` — Core, Material and
+>   Retro shipping **byte-identical** warning and success.
+> - **Each set is anchored to a real reference, not invented**: Core takes conventional
+>   product severities, Neo near-primary saturated ones, Glass Apple's own systemRed/Orange/
+>   Green/Blue verbatim, Material M3's baseline error `#b3261e` plus palette 800s, Retro muted
+>   press inks (brick · mustard · moss · slate) and Nature earth pigments (clay · honey · leaf
+>   · river). The hues still read as their severity — that constraint is not negotiable.
+> - **`presetStates` is shared by the try-on and `adoptPreset`**, so a previewed style and the
+>   theme it mints seed identical families — the `MintPages` rule applied to the severity
+>   slots. `slotsFromAccent` takes the override as an optional third argument; omit `states`
+>   and a preset falls back to the accent-derived recommendation exactly as before.
+> - Verified after: **6/6 distinct** for all four severities (zero duplicates), worst
+>   `on-solid` pair **4.57:1**, worst `content`-on-page **5.22:1**, and the full contrast
+>   matrix still 0 failures across 1120 pairs.
+
 > **UPDATE: `status.info.*` was missing entirely — the Info primitive (full generated ramp,
 > exported to tokens.json) had zero Categorical roles referencing it.** A designer retinting
 > Info saw nothing move anywhere in Semantics. Added `status.info.surface` (`{info.3}`) and
