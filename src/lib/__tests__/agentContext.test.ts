@@ -34,7 +34,7 @@ describe('agentContextMarkdown', () => {
     expect(md).toContain('figma_sets: Input OTP')
     expect(md).toContain('Component set name: `Input OTP`')
     expect(md).toContain('`--radius-md`')
-    expect(md).toContain('`--radius-2xl`')
+    expect(md).toContain('`--radius-lg`')
     expect(md).toContain('`16px`')
     expect(md).toContain('`--padding-top`')
     expect(md).toContain('`var(--size-md)`')

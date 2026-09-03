@@ -2111,6 +2111,56 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > `TOKEN_SCHEMA_VERSION` bump, and buys consumers nothing, since the values are already
 > gamut-mapped and 8-bit exact. The OKLCH win is on the INPUT surface, which is free.
 
+> **RADIUS: the roles sit on their natural rungs (xs · lg · xl · 2xl), and the ramp
+> carries the look.** Reported as containers with "corners extremadamente bordeadas"
+> that were not homogeneous between elements. Two causes, both measured.
+> - **A one-time visual compensation was encoded as a permanent offset on a
+>   MULTIPLICATIVE ladder.** `RADIUS_STANDARD`'s own comment said it: *"Roles pick
+>   2xl/3xl/4xl so the look matches the previous Rounded ramp."* The standard ramp had
+>   moved down to Sharp (lg 8) and the roles were pushed up two rungs to keep the old
+>   pixels. `scaleRadiusFromLg` grades every step as a RATIO of `lg` (3xl = 3×, 4xl = 4×),
+>   so that is exact at lg 8 and amplifies everywhere else — measured across the presets:
+>   Sharp 4/16/24/32 · Soft 6/24/36/48 · Rounded 8/32/48/64 · **Pill 12/48/72/96**. Three
+>   of the six styles use Pill, so their cards shipped a **72px** radius — 46% of a 156px
+>   collage module's own width, a stadium rather than a corner. The ladder was lopsided
+>   too: control→action jumped 4×, then 1.5×, then 1.33×.
+> - **The fix is to move the roles down and the standard ramp up, together.** Roles are
+>   `control xs · action lg · container xl · overlay 2xl` (even 0.25/1/1.5/2 spacing) and
+>   `RADIUS_STANDARD` is **Rounded (lg 16)**, so the default system resolves 4/16/24/32 —
+>   byte-identical to before. Every preset is now bounded: Sharp 2/8/12/16 … Pill
+>   6/24/36/48. The look is carried by the ramp, which is what the roundness slider
+>   edits, instead of by an offset nobody can see.
+> - **Store v67 is provably a no-op for existing systems.** The new rungs are exactly
+>   HALF the old ones, so re-grading a graded ramp `lg → 2×lg` reproduces every role's
+>   pixels at every preset — asserted in `layoutTokens.test.ts`, which is the test that
+>   stops v67 silently restyling anyone. `isGradedRadiusRamp` checks the ramp is
+>   something `scaleRadiusFromLg` produced (a preset, the slider, the seed) before
+>   touching it; a HAND-EDITED ramp keeps its values and gets the OLD rungs pinned
+>   explicitly instead, and `radiusRolesAreLegacyDefault` skips any role someone picked —
+>   the same detect-don't-assume rule v47/v49 use.
+> - **`styleLayout` HAS NO CALLER, and never had one.** The concentric `control ⊂ action`
+>   guarantee this file describes for the presets ("a Pill style cannot ship a chip that
+>   collides with its field") was documentation only — not one preset spread it, so no
+>   preset ever shipped a `radiusRoles` map. `styleRadiusRoles` is the live replacement
+>   and every preset now uses it: `control = concentricRadiusStep(action, inset-control)`,
+>   i.e. Steve Ruiz's r = R − p, which `nestedRadius` already implemented. Where the
+>   padding leaves no room it returns `none`, which is the geometrically honest answer,
+>   not a failure. After: `control ⊂ action` clears on all six styles (it was broken on
+>   Neo before, and on Core/Neo/Retro at the corrected rungs without this).
+> - **`container ⊂ overlay` is still reported broken on four styles, deliberately.** That
+>   pair is the documented designer tension — `radius.container` is every card's radius
+>   system-wide, so constraining it to a modal's padding would flatten cards nowhere near
+>   a modal. `radiusNestingReport` surfaces it; nothing silently fixes it.
+> - **A button inside a card is NOT a nesting pair.** It floats with padding on all sides,
+>   so it carries no concentric constraint — only flush pairs (a chip against a field's
+>   inner edge, a card filling a modal body) are in `RADIUS_NESTING`. Worth restating
+>   because it is the first "violation" any audit of this invents.
+> - **Material moved from the Pill preset to Rounded.** M3's own shape scale puts a card
+>   at 12px and its largest container at 28px; Pill resolves this style's `container` to
+>   36px, rounder than anything in the spec it is named after. Glass and Nature keep Pill
+>   — "generous" and "organic" are their briefs, and at the corrected rungs that is 36px,
+>   not 72px.
+
 > **Sizes scale from a BASE UNIT, and the multipliers were verified against the shipped
 > ramp before anything was built.** `SIZE_STANDARD` (24/32/40/48/56/64) IS `4 ×
 > 6/8/10/12/14/16`, so `buildSizesFromBase(SIZE_DEFAULT_BASE)` reproduces it byte for byte

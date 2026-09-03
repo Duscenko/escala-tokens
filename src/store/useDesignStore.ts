@@ -22,6 +22,10 @@ import {
   BREAKPOINT_STEPS,
   breakpointKey,
   completeRadiusScale,
+  isGradedRadiusRamp,
+  radiusRolesAreLegacyDefault,
+  LEGACY_RADIUS_ROLE_RUNGS,
+  LEGACY_RADIUS_LG_FACTOR,
   type GridFrameModes,
 } from '../lib/layoutTokens'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
@@ -1483,7 +1487,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 66,
+      version: 67,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2538,6 +2542,47 @@ export const useDesignStore = create<DesignStore>()(
         completeRadius(persisted)
         if (Array.isArray(persisted.savedSystems)) {
           for (const sys of persisted.savedSystems) completeRadius(sys?.snapshot)
+        }
+        // v66→v67: the radius ROLES moved off the compensation rungs
+        // (sm/2xl/3xl/4xl) onto their natural ones (xs/lg/xl/2xl) — see the note
+        // on `RADIUS_ROLES`. Nothing here may change how an existing system
+        // LOOKS, so each ramp takes one of two paths:
+        //
+        //  · A GRADED ramp (anything `scaleRadiusFromLg` produced — the presets,
+        //    the roundness slider, the seeded default) is re-graded `lg → 2×lg`.
+        //    That is provably value-identical for all four roles at every
+        //    preset, because the new rungs are exactly half the old ones
+        //    (xs 0.25 vs sm 0.5, lg 1 vs 2xl 2, xl 1.5 vs 3xl 3, 2xl 2 vs 4xl 4).
+        //    `radiusRolesAreLegacyDefault` verifies the roles are still the ones
+        //    the old ladder shipped before touching anything — a hand-picked
+        //    role stays picked, the same detect-don't-assume rule v47/v49 use.
+        //
+        //  · A HAND-EDITED ramp has no `lg` to re-grade from without reflowing
+        //    values someone typed, so it keeps its ramp and gets the OLD rungs
+        //    pinned explicitly instead. Same pixels, now stated rather than
+        //    inherited from a default that has moved.
+        const relevelRadius = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          const fix = (host: any) => {
+            if (!host?.radius || typeof host.radius !== 'object') return
+            if (!radiusRolesAreLegacyDefault(host.radiusRoles)) return
+            const lg = parseFloat(host.radius.lg)
+            if (isGradedRadiusRamp(host.radius)) {
+              host.radius = scaleRadiusFromLg(lg * LEGACY_RADIUS_LG_FACTOR, host.radius)
+              delete host.radiusRoles
+            } else {
+              host.radiusRoles = { ...(host.radiusRoles ?? {}), ...LEGACY_RADIUS_ROLE_RUNGS }
+            }
+          }
+          fix(state)
+          const foundations = state.themeFoundations
+          if (foundations && typeof foundations === 'object') {
+            for (const key of Object.keys(foundations)) fix(foundations[key])
+          }
+        }
+        relevelRadius(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) relevelRadius(sys?.snapshot)
         }
         return persisted
       },

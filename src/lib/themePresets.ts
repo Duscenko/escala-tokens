@@ -239,12 +239,45 @@ function paddingOf(spacing: Record<string, string>, step: string) {
 }
 
 /**
+ * UNWIRED — kept for reference, do not assume it runs. No preset spreads it, so
+ * everything it claims below has only ever been true of the code, not of the
+ * shipped styles. The one part that mattered — the concentric `control ⊂ action`
+ * derivation — is live as `styleRadiusRoles` above, which every preset does use.
+ * Wiring the rest would also pin spacing/size/selector/stroke/grid roles to
+ * defaults the styles have never declared; that is a separate decision.
+ *
  * Style-scoped layout aliases. The primitive ramps are the personality;
  * the roles are what specimens actually read. Nested `control ⊂ action`
  * is derived from the current ramp + inset so a Pill style cannot ship a
  * chip that collides with its field — the same concentric rule the
  * roundness slider now keeps.
  */
+/**
+ * The radius role map for a style, with `control` derived concentrically from
+ * that style's own `action` and `inset-control`.
+ *
+ * This exists because `styleLayout` below — which has carried the concentric
+ * derivation, and which CLAUDE.md describes as guaranteeing "a Pill style
+ * cannot ship a chip that collides with its field" — **has no caller.** Not one
+ * preset spreads it, so no preset has ever shipped a `radiusRoles` map and the
+ * guarantee was documentation only. Verified by grep, and by the nesting report
+ * disagreeing with what the derivation would have produced.
+ *
+ * A chip sits flush against the inside edge of a field, so its corner cannot
+ * exceed `action − inset-control` (Steve Ruiz's concentric identity, r = R − p,
+ * which `nestedRadius` already implements). Where that leaves no room the
+ * honest answer is a square corner, and `concentricRadiusStep` returns `none`.
+ */
+function styleRadiusRoles(
+  radius: Record<string, string>,
+  spacing: Record<string, string>,
+): Record<string, string> {
+  const roles = { ...defaultLayoutRoles('radius') }
+  const insetPx = parseFloat(resolveLayoutRole('spacing', undefined, spacing, 'inset-control', '12px')) || 12
+  roles.control = concentricRadiusStep(radius, roles.action, insetPx)
+  return roles
+}
+
 function styleLayout(opts: {
   radius: Record<string, string>
   spacing: Record<string, string>
@@ -341,6 +374,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Inter', 'Inter', 'default'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_PRESETS[1].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[1].values, buildSpacingFromBase(4)),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -374,6 +408,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_PRESETS[0].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[0].values, buildSpacingFromBase(5)),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD, sm: '2px' },
@@ -418,6 +453,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Inter', 'Inter', 'comfortable'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_PRESETS[3].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[3].values, buildSpacingFromBase(4)),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },
@@ -450,7 +486,13 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Roboto', 'Roboto', 'default'),
       spacing: buildSpacingFromBase(4),
-      radius: { ...RADIUS_PRESETS[3].values },
+      // Rounded (lg 16), not Pill (lg 24). M3's own shape scale puts a card at
+      // 12px and its largest container at 28px; Pill resolves this style's
+      // `container` to 36px, rounder than anything in the spec it is named
+      // after. Glass and Nature keep Pill — "generous" and "organic" are their
+      // briefs, and at the corrected role rungs that is 36px, not 72px.
+      radius: { ...RADIUS_PRESETS[2].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[2].values, buildSpacingFromBase(4)),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -486,6 +528,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Courier Prime', 'Courier Prime', 'compact'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_PRESETS[0].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[0].values, buildSpacingFromBase(4)),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD, sm: '2px' },
@@ -524,6 +567,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('DM Sans', 'Fraunces', 'comfortable'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_PRESETS[3].values },
+      radiusRoles: styleRadiusRoles(RADIUS_PRESETS[3].values, buildSpacingFromBase(5)),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },

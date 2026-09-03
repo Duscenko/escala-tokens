@@ -45,6 +45,8 @@ import {
   inferSelectorBase,
   inferSizeBase,
   type LayoutFamily,
+  LEGACY_RADIUS_ROLE_RUNGS,
+  LEGACY_RADIUS_LG_FACTOR,
 } from '../layoutTokens'
 
 const EVERY_BASE = (() => {
@@ -103,12 +105,41 @@ describe('base-unit scaling', () => {
 })
 
 describe('layout primitives', () => {
-  it('Sharp radius is the Tailwind / HeroUI 10-step ramp', () => {
+  it('the standard radius ramp is Rounded, graded from lg 16', () => {
     expect(RADIUS_STEPS).toEqual(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'])
+    // Rounded, not Sharp — see the note on `RADIUS_ROLES`. The roles moved down
+    // two rungs in the same change, so the RESOLVED default is unchanged; the
+    // next test pins that, which is the property that actually matters.
     expect(RADIUS_STANDARD).toEqual({
-      none: '0px', xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px',
-      '2xl': '16px', '3xl': '24px', '4xl': '32px', full: '9999px',
+      none: '0px', xs: '4px', sm: '8px', md: '12px', lg: '16px', xl: '24px',
+      '2xl': '32px', '3xl': '48px', '4xl': '64px', full: '9999px',
     })
+  })
+
+  // The whole point of moving the rungs was that nothing may LOOK different.
+  it('the default system resolves the same four radii as before the re-level', () => {
+    const roles = defaultLayoutRoles('radius')
+    const px = (role: string) => resolveLayoutRole('radius', roles, RADIUS_STANDARD, role)
+    expect(px('control')).toBe('4px')
+    expect(px('action')).toBe('16px')
+    expect(px('container')).toBe('24px')
+    expect(px('overlay')).toBe('32px')
+  })
+
+  // The migration's correctness in one assertion: the new rungs are exactly
+  // half the old ones, so re-grading a ramp `lg → 2×lg` reproduces every role's
+  // pixels at every preset. If this fails, store v67 silently restyles systems.
+  it('lg → 2×lg on the legacy rungs is value-identical to the new rungs', () => {
+    for (const preset of RADIUS_PRESETS) {
+      const lg = parseFloat(preset.values.lg)
+      const before = scaleRadiusFromLg(lg)
+      const after = scaleRadiusFromLg(lg * LEGACY_RADIUS_LG_FACTOR)
+      for (const role of ['control', 'action', 'container', 'overlay'] as const) {
+        const legacy = before[LEGACY_RADIUS_ROLE_RUNGS[role]]
+        const next = after[defaultLayoutRoles('radius')[role]]
+        expect(next, `${preset.label} ${role}`).toBe(legacy)
+      }
+    }
   })
 
   it('grades the radius ramp from lg using Tailwind / HeroUI ratios', () => {
@@ -123,7 +154,7 @@ describe('layout primitives', () => {
   })
 
   it('named presets are points on the same formula, so slider and dropdown agree', () => {
-    expect(matchRadiusPreset(RADIUS_STANDARD)).toBe('Sharp')
+    expect(matchRadiusPreset(RADIUS_STANDARD)).toBe('Rounded')
     for (const preset of RADIUS_PRESETS) {
       expect(matchRadiusPreset(preset.values)).toBe(preset.label)
       expect(preset.values).toMatchObject(scaleRadiusFromLg(parseFloat(preset.values.lg)))
@@ -162,9 +193,10 @@ describe('layout primitives', () => {
 describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
-    expect(radius.action).toBe('2xl')
-    expect(radius.control).toBe('sm')
-    expect(radius.overlay).toBe('4xl')
+    expect(radius.action).toBe('lg')
+    expect(radius.control).toBe('xs')
+    expect(radius.container).toBe('xl')
+    expect(radius.overlay).toBe('2xl')
     expect(radius.pill).toBe('full')
     expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
     expect(defaultLayoutRoles('size').control).toBe('md')
@@ -187,15 +219,15 @@ describe('layout semantics', () => {
 
   it('merge keeps a valid edit, drops unknown keys, repairs a stale step', () => {
     const stored = mergeLayoutRoles('radius', {
-      action: 'lg',
+      action: '2xl',
       madeUp: 'md',
       pill: 'nope',
     } as Record<string, string>)
-    expect(stored.action).toBe('lg')
+    expect(stored.action).toBe('2xl')
     expect(stored.madeUp).toBeUndefined()
     expect(stored.pill).toBe('full')
     expect(Object.keys(stored)).toHaveLength(LAYOUT_ROLES.radius.length)
-    expect(layoutRoleIsDefault('radius', 'action', 'lg')).toBe(false)
+    expect(layoutRoleIsDefault('radius', 'action', '2xl')).toBe(false)
     expect(layoutRoleIsDefault('radius', 'pill', 'full')).toBe(true)
   })
 
@@ -216,7 +248,7 @@ describe('layout semantics', () => {
       stroke: defaultLayoutRoles('stroke'),
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
-    expect(css).toContain('--radius-action: var(--radius-2xl);')
+    expect(css).toContain('--radius-action: var(--radius-lg);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')

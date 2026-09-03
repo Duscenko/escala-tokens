@@ -191,8 +191,13 @@ export const RADIUS_PRESETS: { label: string; description: string; values: Recor
   radiusPreset('Pill', 'lg 24px — generous, consumer apps', 24),
 ]
 
-/** System standard = Sharp (HeroUI default). Roles pick 2xl/3xl/4xl so the look matches the previous Rounded ramp. */
-export const RADIUS_STANDARD: Record<RadiusStep, string> = RADIUS_PRESETS[0].values
+/**
+ * System standard = Rounded (lg 16). With the roles on their natural rungs this
+ * resolves control 4 / action 16 / container 24 / overlay 32 — the exact pixels
+ * the old Sharp-ramp-plus-offset produced, so the default system is unchanged.
+ * See the note on `RADIUS_ROLES` for why the offset had to go.
+ */
+export const RADIUS_STANDARD: Record<RadiusStep, string> = RADIUS_PRESETS[2].values
 
 /** Fill missing (or 0px) working steps from the current `lg` without rewriting hand-edited values. */
 export function completeRadiusScale(current?: Record<string, string>): Record<string, string> {
@@ -536,13 +541,72 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
   ],
 }
 
+/**
+ * ── Why the roles sit on xs / lg / xl / 2xl and not sm / 2xl / 3xl / 4xl ─────
+ *
+ * They used to sit two rungs higher, and the reason was written down: "Roles
+ * pick 2xl/3xl/4xl so the look matches the previous Rounded ramp." That is a
+ * one-time VISUAL COMPENSATION — the standard ramp had moved down to Sharp
+ * (lg 8) and the roles were pushed up to keep the old pixels — and encoding it
+ * as a permanent offset on a MULTIPLICATIVE ladder is what broke.
+ *
+ * `scaleRadiusFromLg` grades every step as a ratio of `lg` (3xl = 3×, 4xl = 4×),
+ * so the compensation is exact at lg 8 and amplifies everywhere else. Measured
+ * across the shipped styles, three of which use the Pill preset (lg 24):
+ *
+ *   preset   lg   control  action  container  overlay
+ *   Sharp     8      4       16       24        32     ← the one it was tuned for
+ *   Soft     12      6       24       36        48
+ *   Rounded  16      8       32       48        64
+ *   Pill     24     12       48       72        96     ← a 72px CARD
+ *
+ * At 72px a card on a 156px collage module is 46% of its own width — a stadium,
+ * not a corner, which is exactly the "corners extremadamente bordeadas"
+ * reported. The ladder was also lopsided: control→action jumped 4×, then 1.5×,
+ * then 1.33×.
+ *
+ * On the natural rungs the ladder is even (0.25 / 1 / 1.5 / 2) and bounded:
+ * Sharp 2/8/12/16 … Pill 6/24/36/48. `RADIUS_STANDARD` moves to Rounded (lg 16)
+ * in the same change so the DEFAULT system resolves 4/16/24/32 — byte-identical
+ * to what it rendered before. The look is carried by the RAMP, which is what
+ * the roundness slider edits, instead of by an offset nobody can see.
+ *
+ * Store v63 re-grades any existing GRADED ramp `lg → 2×lg`, which is provably
+ * value-identical for all four roles at every preset (see the test), and pins
+ * the old rungs on a hand-edited ramp rather than reflowing it.
+ */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'sm' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: '2xl' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: '3xl' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: '4xl' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'control', primitive: 'xs' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'control', primitive: 'lg' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'surface', primitive: 'xl' },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'surface', primitive: '2xl' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'surface', primitive: 'full' },
 ]
+
+/** The rungs the roles occupied before v63, and the factor between the two
+ *  ladders. The migration needs both; nothing else should. */
+export const LEGACY_RADIUS_ROLE_RUNGS: Record<string, string> =
+  { control: 'sm', action: '2xl', container: '3xl', overlay: '4xl', pill: 'full' }
+export const LEGACY_RADIUS_LG_FACTOR = 2
+
+/** True when every working step is exactly what `scaleRadiusFromLg` would emit
+ *  for this ramp's own `lg` — i.e. a preset, the slider or the seeded default,
+ *  and therefore safe to re-grade. A ramp with any hand-typed step is not. */
+export function isGradedRadiusRamp(radius: Record<string, string> | undefined): boolean {
+  const lg = parseFloat(radius?.lg ?? '')
+  if (!radius || !Number.isFinite(lg) || lg <= 0) return false
+  const graded = scaleRadiusFromLg(lg)
+  return RADIUS_WORKING_STEPS.every((step) => radius[step] === graded[step])
+}
+
+/** True when the stored radius roles are still the ones the pre-v67 ladder
+ *  shipped — nothing hand-picked, so the migration may re-level them. An absent
+ *  map means "defaults", which is the legacy default at migration time. */
+export function radiusRolesAreLegacyDefault(roles: Record<string, string> | undefined): boolean {
+  if (!roles) return true
+  return Object.entries(LEGACY_RADIUS_ROLE_RUNGS)
+    .every(([key, rung]) => roles[key] === undefined || roles[key] === rung)
+}
 
 export const SPACING_ROLES: LayoutRole[] = [
   { key: 'none', label: 'None', description: 'Collapse a gap or inset.', group: 'gap', primitive: '0' },
