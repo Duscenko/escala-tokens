@@ -15,11 +15,10 @@
 
 import { mintTheme, slotsFromAccent } from '../components/configurator/ThemePanel'
 import { useDesignStore } from '../store/useDesignStore'
-import { previewHarmony } from './colorUtils'
 import { loadGoogleFont } from './fonts'
 import { withStyleSemantics } from './stylePreviewOverlay'
 import { slugify } from './utils'
-import { presetStates, type ThemeStylePreset } from './themePresets'
+import { presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
 import type { ThemeAppearance } from './themeModes'
 
 /**
@@ -63,9 +62,11 @@ export function adoptPreset(
   // families anchor to whatever page the open system happens to have, so
   // adopting a warm `tinted` style into a white system silently produced a white
   // one and the tint was invisible (see MintPages).
-  const h = previewHarmony(preset.accent, preset.neutralTint)
+  const h = presetHarmony(preset)
+  const slots = slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset))
+  if (preset.neutral) slots.gray = preset.neutral
   const result = mintTheme(
-    slotsFromAccent(preset.accent, preset.neutralTint, presetStates(preset)),
+    slots,
     appearance,
     label,
     null,

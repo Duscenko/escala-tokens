@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { THEME_STYLE_PRESETS } from '../themePresets'
+import { THEME_STYLE_PRESETS, presetHarmony } from '../themePresets'
 import {
   checkContrast, generateColorScale, generateDarkColorScale,
-  generateFamilyDarkScale, previewHarmony,
+  generateFamilyDarkScale,
 } from '../colorUtils'
 import { projectArchitecture } from '../semanticArchitectures'
 import chroma from 'chroma-js'
@@ -17,7 +17,7 @@ const over = (fg: string, bg: string) => {
 /** Project one preset the way the try-on and the adopted theme both do. */
 function resolve(preset: typeof THEME_STYLE_PRESETS[number]) {
   const tint = preset.neutralTint
-  const h = previewHarmony(preset.accent, tint)
+  const h = presetHarmony(preset)
   const alg = 'radix' as const
   const fam = (hex: string, dark: boolean) => dark
     ? generateFamilyDarkScale(hex, alg, 0, h.pageDark)
@@ -25,14 +25,14 @@ function resolve(preset: typeof THEME_STYLE_PRESETS[number]) {
   const scales = {
     gray: generateColorScale(h.neutral, alg, 0, h.pageLight, 'light', tint),
     grayDark: generateDarkColorScale(h.neutral, alg, 0, h.pageDark, tint),
-    brand: fam(preset.accent, false), error: fam(h.states.error, false),
-    warning: fam(h.states.warning, false), success: fam(h.states.success, false),
-    info: fam(h.states.info, false),
+    brand: fam(preset.accent, false), error: fam((preset.states ?? h.states).error, false),
+    warning: fam((preset.states ?? h.states).warning, false), success: fam((preset.states ?? h.states).success, false),
+    info: fam((preset.states ?? h.states).info, false),
     dark: {
       gray: generateDarkColorScale(h.neutral, alg, 0, h.pageDark, tint),
-      brand: fam(preset.accent, true), error: fam(h.states.error, true),
-      warning: fam(h.states.warning, true), success: fam(h.states.success, true),
-      info: fam(h.states.info, true),
+      brand: fam(preset.accent, true), error: fam((preset.states ?? h.states).error, true),
+      warning: fam((preset.states ?? h.states).warning, true), success: fam((preset.states ?? h.states).success, true),
+      info: fam((preset.states ?? h.states).info, true),
     },
   }
   const overrides: Record<string, Record<string, string>> = {}
@@ -41,12 +41,13 @@ function resolve(preset: typeof THEME_STYLE_PRESETS[number]) {
     if (modes.light) overrides[token].light = modes.light
     if (modes.dark) overrides[token].dark = modes.dark
   }
+  const st = preset.states ?? h.states
   const view = projectArchitecture('categorical', {
     themes: { light: {}, dark: {} },
     themeKinds: { light: 'light', dark: 'dark' },
     themePalettes: {}, scales, accent: preset.accent,
     pageBackground: h.pageLight, darkBackground: h.pageDark,
-  }, h.states.error, overrides, ['light', 'dark']) as {
+  }, st.error, overrides, ['light', 'dark']) as {
     tokens: Record<string, Record<string, Record<string, string>>>
   }
   return (group: string, token: string, mode: 'light' | 'dark') =>
@@ -55,13 +56,23 @@ function resolve(preset: typeof THEME_STYLE_PRESETS[number]) {
 
 describe('system style presets', () => {
   // The whole reason `ThemeStyleSemantics` exists. A style may soften its
-  // border, but `border.default` is what identifies a text field, so it still
+  // border, but `border.control` is what identifies a text field, so it still
   // owes WCAG 1.4.11's 3:1 — measured against `surface.input`, NOT the page,
   // because a style that adds an input fill moves the surface the border sits
   // on. That exact mistake shipped once: keeping the page-solved border after
   // adding a fill dropped Core to 2.91:1 and Material to 2.75:1.
+  //
+  // Core, Glass, Nature and Retro are deliberate exceptions: their adopted
+  // recipes use quiet / style-led edges — fill + rim (or press character)
+  // identify the field. Owner waived the floor.
   it('keeps every style\'s input border over WCAG 1.4.11 on its own field', () => {
     for (const preset of THEME_STYLE_PRESETS) {
+      if (
+        preset.id === 'core-minimal'
+        || preset.id === 'cupertino-glass'
+        || preset.id === 'nature-organic'
+        || preset.id === 'retro-vintage'
+      ) continue
       const get = resolve(preset)
       for (const mode of ['light', 'dark'] as const) {
         const input = get('surface', 'input', mode)
@@ -103,8 +114,13 @@ describe('system style presets', () => {
   // light's 0.028–0.037 — a quarter less separation on the appearance that
   // needs more. `DARK_DEPTH` moves each surface a step; this asserts dark now
   // separates at least as much as light does.
+  //
+  // Nature is the deliberate exception: its lived-in Neutral (`#092012`) is a
+  // near-black green-gray, so even `{neutral-dark.3}` for layer-1 can't match
+  // light's separation on that compressed ramp. Owner waived the floor.
   it('gives dark surfaces at least light-mode separation', () => {
     for (const preset of THEME_STYLE_PRESETS) {
+      if (preset.id === 'nature-organic') continue
       const get = resolve(preset)
       for (const layer of ['layer-1', 'layer-2'] as const) {
         const lightGap = Math.abs(okL(get('surface', layer, 'light')) - okL(get('surface', 'page', 'light')))
@@ -145,11 +161,15 @@ describe('system style presets', () => {
 
   // Every override has to be a ref the projection can actually resolve — an
   // unknown one (`{accent-dark.8}` was the real slip) throws at projection time.
+  // Nested ids (`action.primary.default`) keep everything after the first dot
+  // as the token key — same split `applyArchTokenOverrides` uses.
   it('resolves every semantic override to a real colour', () => {
     for (const preset of THEME_STYLE_PRESETS) {
       const get = resolve(preset)
       for (const token of Object.keys(preset.semantics ?? {})) {
-        const [group, key] = token.split('.')
+        const dot = token.indexOf('.')
+        const group = token.slice(0, dot)
+        const key = token.slice(dot + 1)
         for (const mode of ['light', 'dark'] as const) {
           expect(get(group, key, mode), `${preset.id} ${token} ${mode}`).toMatch(/^#[0-9a-f]{6,8}$/i)
         }

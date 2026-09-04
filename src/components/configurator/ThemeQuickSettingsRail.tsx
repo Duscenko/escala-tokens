@@ -20,7 +20,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
 import { useApplyAccentColor, useApplyGrayColor, resolveThemePages } from '../../lib/colorActions'
-import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, previewHarmony, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
@@ -46,9 +46,9 @@ import {
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import type { StylePreview } from '../../lib/stylePreviewOverlay'
+import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
-import { themeStylePreset } from '../../lib/themePresets'
+import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
@@ -1103,7 +1103,7 @@ export default function ThemeQuickSettingsRail({
   const themeAccent = brandFamily === 'accent' ? primaryColor : customColors.find((family) => family.key === brandFamily)?.base ?? primaryColor
   const themeNeutral = grayFamily === 'neutral' ? grayBaseColor : customColors.find((family) => family.key === grayFamily)?.base ?? grayBaseColor
   const accent = tryOn ? tryOn.preset.accent : themeAccent
-  const neutral = tryOn ? previewHarmony(tryOn.preset.accent, tryOn.preset.neutralTint).neutral : themeNeutral
+  const neutral = tryOn ? presetHarmony(tryOn.preset).neutral : themeNeutral
   const activeTint = tryOn ? tryOn.preset.neutralTint : neutralTint
 
   useEffect(() => () => {
@@ -1297,6 +1297,15 @@ export default function ThemeQuickSettingsRail({
     }
     s.setThemeFoundations(themeKey, preset.foundations)
     s.setNeutralTint(preset.neutralTint)
+    // Semantics too — foundations alone left hand-edited borders/ink sticking
+    // after Reset, so the theme disagreed with its System Style origin.
+    useDesignStore.setState({
+      architectureOverrides: resetThemeSemantics(
+        s.architectureOverrides,
+        preset.semantics,
+        themeKey,
+      ),
+    })
     // Through the normal applier, so the neutral, the states and the page all
     // re-derive exactly as they did when the style was first adopted.
     applyAccent(preset.accent, true, themeKey)

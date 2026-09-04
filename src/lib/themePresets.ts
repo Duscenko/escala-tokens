@@ -1,5 +1,5 @@
 import { BRAND_SPECTRUM } from './brandPalette'
-import { previewHarmony, type NeutralTint } from './colorUtils'
+import { backgroundFromBase, previewHarmony, type NeutralTint } from './colorUtils'
 import type { PhosphorWeight } from './phosphorIcons'
 import {
   GRID_FRAME_STANDARD,
@@ -100,6 +100,13 @@ export interface ThemeStylePreset {
   accent: string
   preferredAppearance: 'light' | 'dark'
   neutralTint: NeutralTint
+  /**
+   * Optional hand-picked Neutral base. Omit and the try-on / adopt path derive
+   * it from the accent via `previewHarmony` (the common case). Nature's lived-in
+   * recipe keeps a dark green-gray that is NOT link-derived — without this field
+   * the try-on would silently swap in a different paper.
+   */
+  neutral?: string
   foundations: ThemeFoundationOverride
   /** Categorical role overrides — see `ThemeStyleSemantics`. */
   semantics?: ThemeStyleSemantics
@@ -137,6 +144,22 @@ export interface ThemeStylePreset {
  */
 export function presetStates(preset: ThemeStylePreset): ThemeStyleStates {
   return preset.states ?? previewHarmony(preset.accent, preset.neutralTint).states
+}
+
+/**
+ * Accent + tint (+ optional hand-picked Neutral) → the pages and gray the
+ * try-on and `adoptPreset` both use. Shared so a style with `neutral` set
+ * cannot preview one paper and mint another.
+ */
+export function presetHarmony(preset: ThemeStylePreset) {
+  const h = previewHarmony(preset.accent, preset.neutralTint)
+  if (!preset.neutral) return h
+  return {
+    ...h,
+    neutral: preset.neutral,
+    pageLight: backgroundFromBase(preset.neutral, 'light', preset.neutralTint),
+    pageDark: backgroundFromBase(preset.neutral, 'dark', preset.neutralTint),
+  }
 }
 
 function accent(label: string): string {
@@ -207,7 +230,9 @@ const A_DEFAULT_D = '{white-a.6}'
 const A_STRONG_L = '{black-a.9}'
 const A_STRONG_D = '{white-a.8}'
 
-/** Quiet: filled field, mid-grey edge. The default for a restrained style. */
+/** Quiet: filled field, mid-grey edge. Kept as the shared soft recipe Soft
+ *  styles used to share; Nature now ships its own lived-in `natureSemantics`. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const softBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
@@ -216,17 +241,63 @@ const softBorders: ThemeStyleSemantics = {
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
 
-/** Same boundary (it has to be), but the subtlest decorative tier in the set
- *  plus a lifted rim — which is what a translucent panel is actually read by.
- *  `border.subtle` no longer needs an override — the default schema ships
- *  `{black-a.1}`/`{white-a.1}` there since audit F4 moved the whole neutral
- *  ladder onto the alpha primitives. Only the rim is style-specific now. */
-const glassBorders: ThemeStyleSemantics = {
+/**
+ * Nature's lived-in recipe — ported from the adopted "Nature / Organic" theme.
+ * Quiet alpha borders (`{neutral-a.3}` / `{accent-a.3}`), success-tinted
+ * secondary action, and hand-tuned critical surfaces. Owner waived the WCAG
+ * 1.4.11 floor on the control edge (same call as Core / Glass).
+ */
+const natureSemantics: ThemeStyleSemantics = {
+  'surface.layer-1': { dark: '{neutral-dark.3}' },
+  'content.subtle': { dark: '{neutral-dark.10}' },
+  'surface.input': { light: '{neutral.1}', dark: '{neutral-dark.2}' },
+  'border.control': { light: '{neutral-a.3}', dark: '{accent-a.3}' },
+  'border.control-hover': { light: '{black-a.9}', dark: '{white-a.8}' },
+  'border.subtle': { light: '{success-a.2}', dark: '{accent-a.1}' },
+  'content.primary': { light: '{accent.12}' },
+  'action.secondary.accent': { light: '{success-a.9}' },
+  'status.critical.surface': { light: '{error.11}' },
+  'status.critical.surface-pressed': { light: '{error.10}' },
+  'status.critical.surface-solid': { light: '{error.10}' },
+  'status.critical.border': { light: '{error.10}' },
+}
+
+/**
+ * Core's lived-in recipe — ported from the adopted "Core / Minimalist" theme
+ * the designer iterated in-app. Borders are the quiet, fill-led look they
+ * chose (`{neutral.5}` / `{white-a.3}`), not the WCAG 1.4.11 alpha floor the
+ * other soft styles keep. Owner call: accessibility on the control edge is
+ * not required for this style; the fill identifies the field.
+ */
+const coreSemantics: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
-  'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
+  'border.control': { light: '{neutral.5}', dark: '{white-a.3}' },
+  'border.control-hover': { light: '{neutral.7}', dark: '{white-a.5}' },
+  'border.subtle': { light: '{black-a.3}', dark: '{white-a.1}' },
+  'content.primary': { dark: '{accent.12}' },
+  'content.secondary': { dark: '{neutral-dark.11}' },
+}
+
+/**
+ * Glass's lived-in recipe — ported from the adopted "Cupertino / Glass" theme.
+ * Control + subtle borders ride accent alpha in both appearances; the owner
+ * waived the WCAG 1.4.11 floor the same way as Core: fill + rim identify the
+ * field; the edge is decorative glass chrome, not a 3:1 boundary.
+ */
+const glassSemantics: ThemeStyleSemantics = {
+  ...DARK_DEPTH,
+  'surface.input': { light: '{neutral.2}', dark: '{black-a.2}' },
+  'border.control': { light: '{accent-a.4}', dark: '{accent-a.3}' },
+  'border.control-hover': { light: '{black-a.9}', dark: '{white-a.8}' },
+  'border.subtle': { light: '{accent-a.3}', dark: '{accent-a.2}' },
   'border.rim-highlight': { light: '{white-a.9}', dark: '{white-a.4}' },
+  'content.primary': { dark: '{accent-a.12}' },
+  'action.primary.default': { dark: '{accent.9}' },
+  'status.critical.content': { dark: '{error.10}' },
+  'status.critical.surface-solid': { light: '{error.9}', dark: '{error-a.10}' },
+  'status.critical.border-strong': { light: '{error.9}' },
+  'status.success.surface-solid': { light: '{success.10}' },
 }
 
 /** Material's filled text field: the fill goes TWO steps off the page, so the
@@ -242,12 +313,22 @@ const filledBorders: ThemeStyleSemantics = {
   // (audit F4 moved the neutral ladder onto {black-a}/{white-a}).
 }
 
-/** Vintage ink: a firm, WARM edge from the accent's own ramp rather than a grey
- *  one. Tones are the measured minimum that clears 3:1 on Retro's sepia field
- *  (light needs 10 — 8 and 9 read 2.13 and 2.77 — while dark clears at 8).
- *  There is no `{ui:…}` solver on this path: markers are substituted while the
- *  schema projects, and overrides are applied after, so an override has to name
- *  a concrete tone. */
+/**
+ * Retro's lived-in recipe — ported from the adopted "Retro / Vintage" theme.
+ * Light control edge is a firm neutral (`{neutral.9}`); dark rides a soft
+ * accent tint (`{accent.4}`). Owner waived the WCAG 1.4.11 floor where the
+ * adopted edge sits under it (same call as Core / Glass / Nature).
+ */
+const retroSemantics: ThemeStyleSemantics = {
+  ...DARK_DEPTH,
+  'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
+  'border.control': { light: '{neutral.9}', dark: '{accent.4}' },
+  'border.control-hover': { light: '{accent.12}', dark: '{accent.11}' },
+  'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
+}
+
+/** Legacy warm-ink borders — superseded by `retroSemantics`. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const inkBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
@@ -373,21 +454,6 @@ const retroShadows = {
   '2xl': '0 0 0 1px rgba(74,44,26,0.10), 9px 9px 0 rgba(74,44,26,0.42)',
 }
 
-// Cupertino's elevation is a WIDE, low-alpha penumbra over a hairline — the
-// shape a translucent panel needs, and the one thing that keeps Glass distinct
-// from Core now that Core sits on the shared `Soft` ramp. `Soft` peaks at 16px
-// of blur; a blurred panel needs its shadow to be softer than its own backdrop
-// filter or the edge reads as a hard cut. The hairline is what actually
-// separates a translucent surface, since a diffuse shadow alone can't.
-const glassShadows = {
-  xs: '0 0 0 1px rgba(10,13,18,0.04), 0 1px 2px rgba(10,13,18,0.04)',
-  sm: '0 0 0 1px rgba(10,13,18,0.04), 0 4px 10px -2px rgba(10,13,18,0.07)',
-  md: '0 0 0 1px rgba(10,13,18,0.04), 0 10px 22px -4px rgba(10,13,18,0.09)',
-  lg: '0 0 0 1px rgba(10,13,18,0.05), 0 20px 40px -8px rgba(10,13,18,0.12)',
-  xl: '0 0 0 1px rgba(10,13,18,0.05), 0 32px 64px -12px rgba(10,13,18,0.16)',
-  '2xl': '0 0 0 1px rgba(10,13,18,0.06), 0 48px 96px -20px rgba(10,13,18,0.22)',
-}
-
 const warmShadows = {
   xs: '0 1px 2px rgba(78,55,35,0.05)',
   sm: '0 2px 4px rgba(78,55,35,0.08)',
@@ -405,7 +471,8 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     description: 'Quiet, precise, content-first.',
     detail: 'A dependable baseline for SaaS, dashboards, and corporate tools.',
     accent: accent('Blue Dark'),
-    preferredAppearance: 'light',
+    // Matches the adopted Core theme the designer iterated (dark-first).
+    preferredAppearance: 'dark',
     neutralTint: 'subtle',
     // Crisp, conventional product severities — the register a dashboard reads
     // as "correct" rather than expressive. Deliberately the least opinionated
@@ -415,25 +482,19 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Inter', 'Inter', 'default'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'xs' }),
+      // Selectors bumped xs → sm — from the adopted theme's radiusRoles.control.
+      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
-      // `Soft` (the ramp SHADOW_PRESETS itself calls "the default"), not
-      // `Subtle`. Measured on Core's own page, Subtle delivered OKLab ΔL
-      // 0.028–0.034 across all six steps — a six-step ramp that is effectively
-      // one value, and below the bottom of the 0.036–0.132 range this system
-      // documents as readable light-mode elevation. "Quiet" is a design
-      // intention; invisible is a bug, and Core is the style people judge the
-      // set by. Subtle and None are still one click away in Shadow.
-      shadows: { ...SHADOW_PRESETS[2].values },
+      // Subtle elevation — the adopted Core theme's shadow ramp. Softer than
+      // Soft (the previous Core pick); still a six-step ladder, just quieter.
+      shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'solid',
       statusAction: 'solid',
       iconWeight: 'regular',
     },
-    // A filled field + hairline edge — the quiet end of the border spectrum.
-    // See `ThemeStyleSemantics` for why a fill has to come first.
-    semantics: softBorders,
+    semantics: coreSemantics,
   },
   {
     id: 'cupertino-glass',
@@ -441,31 +502,35 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     shortLabel: 'Glass',
     description: 'Fluid, translucent, and spacious.',
     detail: 'Soft depth and generous geometry, using Escala’s existing panel treatment.',
-    // Ice, not Blue. Blue sat at OKLCH hue 254 against Core's 262 — two of six
-    // styles eight degrees apart, which is not a second style, it is the same
-    // one twice. Ice (H 212) is 50° clear of Core and reads as the pale cyan a
-    // glass treatment actually wants.
-    accent: accent('Ice'),
-    preferredAppearance: 'light',
+    // Lived-in accent from the adopted Cupertino / Glass theme (#06aed4), not
+    // spectrum Ice (#22d3ee). Same cyan family; the darker seed is what the
+    // designer actually shipped after iterating in-app.
+    accent: '#06aed4',
+    preferredAppearance: 'dark',
     neutralTint: 'tinted',
     // Apple's own system colours (systemRed / systemOrange / systemGreen /
     // systemBlue), verbatim. A Cupertino style borrowing Cupertino's severities
     // is the same kind of faithfulness as the translucent panel treatment.
     states: { error: '#ff3b30', warning: '#ff9500', success: '#34c759', info: '#007aff' },
     foundations: {
-      typography: typography('Inter', 'Inter', 'comfortable'),
+      typography: typography('Roboto', 'Inter', 'compact'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'sm' }),
+      // Selectors at `lg` (not `sm`) — matches the adopted theme's control
+      // radius so checkboxes don't sit square next to pill fields.
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'lg' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD },
-      shadows: glassShadows,
+      // Hairline stroke — the glass chrome the adopted theme uses.
+      stroke: { ...STROKE_STANDARD, sm: '0.5px' },
+      // Subtle (not the old hairline-penumbra glassShadows) — matches the
+      // adopted Cupertino / Glass theme after the latest iteration.
+      shadows: { ...SHADOW_PRESETS[1].values },
       panelBackground: 'translucent',
       statusAction: 'soft',
       iconWeight: 'light',
     },
-    semantics: glassBorders,
+    semantics: glassSemantics,
     accessibilityNote: 'Translucent surfaces still use semantic foreground roles; verify contrast over real content.',
   },
   {
@@ -516,28 +581,26 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     shortLabel: 'Nature',
     description: 'Grounded, calm, and approachable.',
     detail: 'Earth-led color, soft geometry, warm elevation, and an editorial heading voice.',
-    // Green, not Moss — chroma 0.167 against 0.158 and, more usefully, hue 154
-    // against 132, which widens the gap to both Neo's yellow (81) and Glass's
-    // ice (212). Still a living green rather than a Lime, because this style's
-    // brief is "grounded, calm" and its paper is already vividly tinted.
-    accent: accent('Green'),
+    // Lived-in accent from the adopted Nature / Organic theme (#66c61c), not
+    // spectrum Green (#16b364). Same family; the brighter seed is what the
+    // designer shipped after iterating in-app.
+    accent: '#66c61c',
     preferredAppearance: 'dark',
-    // Earth pigments: clay, honey, leaf, river. Warmer than Core and cleaner
-    // than Retro, so the two earthy styles stay tellable apart.
+    // Earth pigments: clay, honey, leaf, river — unchanged from the adopted
+    // theme's severity families.
     states: { error: '#bf4342', warning: '#e08e0b', success: '#2f9e44', info: '#3b7ea1' },
-    // Same call as Retro: "earth-led" has to reach the paper, not just the
-    // accent. `#edfcdf` light / `#0d1f00` dark, measured 5.58 / 10.97:1 for
-    // tone 11 in the two appearances.
-    //
-    // Together the six now span all four tint levels — pure (Neo) · subtle
-    // (Core) · tinted (Glass, Material) · vivid (Retro, Nature) — so the set
-    // demonstrates the Neutral tint control instead of merely declaring it.
-    neutralTint: 'vivid',
+    // Hand-picked Neutral (#092012), not link-derived — the adopted theme had
+    // `linkNeutralToAccent: false` with this exact base. Tint is the store's
+    // `tinted` at the time of the port (pages grow from this gray + tint).
+    neutral: '#092012',
+    neutralTint: 'tinted',
     foundations: {
       typography: typography('DM Sans', 'Fraunces', 'comfortable'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
+      // Boxes lg · fields sm · selectors sm — matches the adopted radiusRoles
+      // (container/overlay lg, action/control sm), not the earlier 2xl/lg pair.
+      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },
@@ -546,7 +609,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       statusAction: 'soft',
       iconWeight: 'duotone',
     },
-    semantics: softBorders,
+    semantics: natureSemantics,
   },
   {
     id: 'retro-vintage',
@@ -554,20 +617,14 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     shortLabel: 'Retro',
     description: 'Tactile, nostalgic, and structured.',
     detail: 'Monospace typography, compact rhythm, firm borders, and offset depth.',
-    // Flame, not Orange: chroma 0.230 against 0.184. A risograph/vintage press
-    // runs HOT, and the sepia page plus warm ink borders need an accent that
-    // survives them.
+    // Flame (#ff4405) — matches the adopted Retro / Vintage accent byte-for-byte.
     accent: accent('Flame'),
-    preferredAppearance: 'light',
-    // Muted press inks on aged stock: brick, mustard, moss, faded slate. The
-    // hues still read as their severity — that constraint is not negotiable —
-    // but none of them are the saturated screen colours the other styles use.
+    preferredAppearance: 'dark',
+    // Muted press inks on aged stock: brick, mustard, moss, faded slate.
     states: { error: '#b03a2e', warning: '#cc8b1f', success: '#5f8d4e', info: '#4a7a96' },
-    // Aged paper is the whole point of this style, and `tinted` only reached
-    // `#fff8f3` — an off-white nobody would call vintage. `vivid` lands on
-    // `#ffefdf` light and `#300d00` (deep sepia) dark, and still clears AA
-    // comfortably: tone 11 measures 5.99:1 and tone 12 12.04:1 on that page,
-    // because 11–12 are contrast-SEARCHED against whatever the page is.
+    // `vivid` — the adopted theme's gray `#966554` is exactly
+    // `previewHarmony(Flame, vivid).neutral`. Store tint may read `pure` after
+    // later edits; the paper that ships with this recipe is the vivid sepia.
     neutralTint: 'vivid',
     foundations: {
       typography: typography('Courier Prime', 'Courier Prime', 'compact'),
@@ -577,23 +634,12 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
-      // 1px, not 2. Retro kept a 2px stroke copied from Neo, but the two are
-      // not doing the same job: Neo's border IS the design and sits on a FLAT
-      // field (measured ΔL 0.000 between fill and page — the outline is the
-      // only thing identifying the control). Retro's field has a real fill,
-      // ΔL 0.032, the same separation Core gets with a 1px stroke. A vintage
-      // press rules fine lines; the character here is the WARM ink colour
-      // (`inkBorders`), which is untouched, not the weight. Only the thickness
-      // drops, so `border.control` still clears its 3:1 floor.
       shadows: retroShadows,
       panelBackground: 'page',
       statusAction: 'soft',
       iconWeight: 'bold',
     },
-    // Warm ink, not grey: the border belongs to the same sepia the page and the
-    // offset shadow are tinted with, which is what stops Retro reading as
-    // "Neo with a beige background".
-    semantics: inkBorders,
+    semantics: retroSemantics,
   },
   {
     id: 'neo-brutalism',

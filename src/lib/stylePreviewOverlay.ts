@@ -15,10 +15,9 @@ import {
   generateColorScale,
   generateDarkColorScale,
   generateFamilyDarkScale,
-  previewHarmony,
 } from './colorUtils'
 import { resolvePreviewTokens } from './previewTokens'
-import { presetStates, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
+import { presetHarmony, presetStates, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
 import { themeModeKey, type ThemeAppearance } from './themeModes'
 import type { useDesignStore } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
@@ -77,6 +76,36 @@ export function withStyleSemantics(
 }
 
 /**
+ * Drop every override keyed to `themeKey` (both appearances + any bare key),
+ * then write the preset's semantics. Reset needs this: `withStyleSemantics`
+ * alone only REPLACES tokens the style names, so a hand-edit on a role the
+ * style never touches (or a softer border the style later walked back from)
+ * would survive Reset and leave the theme disagreeing with its origin.
+ */
+export function resetThemeSemantics(
+  current: Record<string, Record<string, Record<string, string>>>,
+  semantics: ThemeStyleSemantics | undefined,
+  themeKey: string,
+  architecture = 'categorical',
+): Record<string, Record<string, Record<string, string>>> {
+  const forArch: Record<string, Record<string, string>> = { ...(current[architecture] ?? {}) }
+  const drop = new Set([
+    themeModeKey(themeKey, 'light'),
+    themeModeKey(themeKey, 'dark'),
+    themeKey,
+  ])
+  for (const [tokenId, entry] of Object.entries(forArch)) {
+    const next: Record<string, string> = {}
+    for (const [mode, ref] of Object.entries(entry)) {
+      if (!drop.has(mode)) next[mode] = ref
+    }
+    if (Object.keys(next).length) forArch[tokenId] = next
+    else delete forArch[tokenId]
+  }
+  return withStyleSemantics({ ...current, [architecture]: forArch }, semantics, themeKey, architecture)
+}
+
+/**
  * The preset's BRAND ramp in one appearance, derived exactly the way the
  * overlay below derives it — same pages, same algorithm, same contrast shift.
  *
@@ -93,7 +122,7 @@ export function stylePreviewBrandRamp(
   preset: ThemeStylePreset,
   appearance: ThemeAppearance,
 ): Record<number, string> {
-  const h = previewHarmony(preset.accent, preset.neutralTint)
+  const h = presetHarmony(preset)
   const alg = store.colorAlgorithm
   const shift = store.contrastShift
   return appearance === 'dark'
@@ -107,7 +136,7 @@ export function stylePreviewStore(
   themeKey: string,
 ): StoreState {
   const tint = preset.neutralTint
-  const h = previewHarmony(preset.accent, tint)
+  const h = presetHarmony(preset)
   const alg = store.colorAlgorithm
   const shift = store.contrastShift
   // THE PAGE IS THE PRESET'S, NOT THE OPEN SYSTEM'S.
@@ -122,10 +151,10 @@ export function stylePreviewStore(
   // system: light `#ffffff` and dark `#0c0e12` for all six, where Retro should
   // read `#fff8f3` / `#1c110b` (warm paper) and Nature `#f6fdf0` / `#0f1706`.
   //
-  // `previewHarmony` already computes both pages for exactly this purpose; the
-  // fields were simply never read. Every ramp — accent and status too, not just
-  // the neutral — anchors to them, because a family grows out of the page it
-  // will actually sit on.
+  // `presetHarmony` already computes both pages for exactly this purpose (and
+  // honours an optional hand-picked `neutral`); the fields were simply never
+  // read. Every ramp — accent and status too, not just the neutral — anchors
+  // to them, because a family grows out of the page it will actually sit on.
   const light = h.pageLight
   const dark = h.pageDark
   // The style's OWN severity seeds when it declares them. Same call
