@@ -1,6 +1,118 @@
 import { describe, expect, it } from 'vitest'
-import { inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, rolesForPaints } from '../tokenInspector'
+import { inspectPage, normalizeColor, pairButtonScopes, pairSolidRoles, pairTabMenuScopes, resolveVariantRoles, rolesForPaints } from '../tokenInspector'
 import { parseRef, pickRampCell } from '../../components/configurator/Step3_SemanticTokens'
+
+describe('resolveVariantRoles', () => {
+  const arch = {
+    'action.primary.default': '#22c55e',
+    'content.on-action': '#e1e7dc',
+    'action.secondary.default': '#1a1a1f',
+    'action.secondary.accent': '#14532d',
+    'content.primary': '#f5f5f5',
+    'content.inverse': '#e1e7dc',
+    'content.accent': '#86efac',
+    'status.critical.surface-solid': '#b94136',
+    'status.critical.on-solid': '#fafafa',
+    'status.success.surface-solid': '#1f8340',
+    'status.success.on-solid': '#fafafa',
+    'status.critical.surface': '#b941361a',
+    'status.critical.content': '#9f2b20',
+    'status.success.surface': '#1f83401a',
+  }
+  const t = { archTokens: arch } as never
+
+  it('a Solid Danger button names the status solid pair', () => {
+    const paints = [
+      { css: '#c0392b', where: 'fill' as const },
+      { css: '#ffffff', where: 'ink' as const },
+    ]
+    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Danger' }, paints)?.map((r) => r.id)).toEqual([
+      'status.critical.surface-solid',
+      'status.critical.on-solid',
+    ])
+    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Danger' }, paints)?.[0]?.css).toBe('#c0392b')
+  })
+
+  it('a Solid Success button names the status solid pair', () => {
+    const paints = [
+      { css: '#15803d', where: 'fill' as const },
+      { css: '#ffffff', where: 'ink' as const },
+    ]
+    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid', Color: 'Success' }, paints)?.map((r) => r.id)).toEqual([
+      'status.success.surface-solid',
+      'status.success.on-solid',
+    ])
+  })
+
+  it('a Solid Brand button names the primary pair', () => {
+    const paints = [
+      { css: '#22c55e', where: 'fill' as const },
+      { css: '#e1e7dc', where: 'ink' as const },
+    ]
+    expect(resolveVariantRoles(t, 'Button', { Style: 'Solid' }, paints)?.map((r) => r.id)).toEqual([
+      'action.primary.default',
+      'content.on-action',
+    ])
+  })
+
+  it('a Solid Error badge names the critical solid pair', () => {
+    const paints = [
+      { css: '#b94136', where: 'fill' as const },
+      { css: '#fafafa', where: 'ink' as const },
+    ]
+    expect(resolveVariantRoles(t, 'Badge', { Style: 'Solid', Color: 'Error' }, paints)?.map((r) => r.id)).toEqual([
+      'status.critical.surface-solid',
+      'status.critical.on-solid',
+    ])
+  })
+
+  it('a Soft Error badge names the critical tint and content ink', () => {
+    const paints = [
+      { css: 'rgba(185, 65, 54, 0.11)', where: 'fill' as const },
+      { css: '#9f2b20', where: 'ink' as const },
+    ]
+    expect(resolveVariantRoles(t, 'Badge', { Style: 'Soft', Color: 'Error' }, paints)?.map((r) => r.id)).toEqual([
+      'status.critical.surface',
+      'status.critical.content',
+    ])
+  })
+
+  it('a Success toast names the inverse chip and status solid dot', () => {
+    const archWithInverse = {
+      ...arch,
+      'surface.inverse': '#171717',
+      'status.success.surface-solid': '#1f8340',
+    }
+    const toastT = { archTokens: archWithInverse } as never
+    const paints = [
+      { css: '#171717', where: 'fill' as const },
+      { css: '#e1e7dc', where: 'ink' as const },
+      { css: '#15803d', where: 'fill' as const },
+    ]
+    expect(resolveVariantRoles(toastT, 'Toast', { Status: 'Success' }, paints)?.map((r) => r.id)).toEqual([
+      'surface.inverse',
+      'content.inverse',
+      'status.success.surface-solid',
+    ])
+  })
+})
+
+describe('rolesForPaints field index', () => {
+  it('maps a primitive fill to its categorical role when arch hex differs', () => {
+    const arch = {
+      'status.critical.surface-solid': '#c73a2f',
+      'status.critical.on-solid': '#fafafa',
+    }
+    const fieldIndex = new Map([['201,57,43,1.00', ['status.critical.surface-solid']]])
+    const roles = rolesForPaints(
+      arch,
+      ['status.critical.surface-solid', 'status.critical.on-solid'],
+      [{ css: 'rgb(201, 57, 43)', where: 'fill' }],
+      fieldIndex,
+    )
+    expect(roles.map((r) => r.id)).toEqual(['status.critical.surface-solid'])
+  })
+})
 
 describe('normalizeColor', () => {
   it('equates hex and rgb of the same pixel', () => {

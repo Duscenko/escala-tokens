@@ -217,6 +217,202 @@ function roleIndex(arch: Record<string, string>): Map<string, string[]> {
   return index
 }
 
+/** PreviewTokens field values → role ids. A specimen often paints
+ *  `t.errorColor` (the primitive ramp) while `archTokens` carries the solved
+ *  projection — byte-different, same role. */
+function fieldRoleIndex(
+  t: PreviewTokens,
+  fields: string[],
+): Map<string, string[]> {
+  const index = new Map<string, string[]>()
+  for (const field of fields) {
+    const id = CATEGORICAL_FIELD_ROLE[field]
+    if (!id) continue
+    const val = t[field as keyof PreviewTokens]
+    if (typeof val !== 'string') continue
+    const key = normalizeColor(val)
+    if (!key) continue
+    const bucket = index.get(key) ?? []
+    if (!bucket.includes(id)) bucket.push(id)
+    index.set(key, bucket)
+  }
+  return index
+}
+
+function parseInspectVariant(el: Element): Record<string, string> | null {
+  const raw = el.getAttribute('data-inspect-variant')
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string>
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const STATUS_SEV: Record<string, 'critical' | 'warning' | 'success' | 'info'> = {
+  Error: 'critical',
+  Danger: 'critical',
+  Warning: 'warning',
+  Success: 'success',
+  Info: 'info',
+}
+
+function buttonIntent(color?: string): string {
+  if (color === 'Danger') return 'Error'
+  return color ?? 'Brand'
+}
+
+function roleAt(
+  arch: Record<string, string>,
+  paints: { css: string; where: PaintSlot }[],
+  id: string,
+  where: PaintSlot,
+): InspectedRole | null {
+  if (!arch[id]) return null
+  const paint = paints.find((p) => p.where === where)
+  return { id, css: paint?.css ?? arch[id], where }
+}
+
+/**
+ * The roles a catalogue variant MEANS to paint — mirrors `ButtonSpecimen`,
+ * `BadgeSpecimen`, and `InlineAlertSpecimen` without re-deriving colours.
+ * Measured paint css is kept on the swatch when present.
+ */
+export function resolveVariantRoles(
+  t: PreviewTokens,
+  componentKey: string,
+  variant: Record<string, string>,
+  paints: { css: string; where: PaintSlot }[],
+): InspectedRole[] | null {
+  const arch = t.archTokens
+  if (!arch) return null
+
+  if (componentKey === 'Button') {
+    const intent = buttonIntent(variant.Color)
+    const style = variant.Style ?? 'Solid'
+    if (style === 'Solid') {
+      if (intent === 'Brand') {
+        const roles = [
+          roleAt(arch, paints, 'action.primary.default', 'fill'),
+          roleAt(arch, paints, 'content.on-action', 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+      const sev = STATUS_SEV[intent]
+      if (sev) {
+        const roles = [
+          roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
+          roleAt(arch, paints, `status.${sev}.on-solid`, 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+    }
+    if (style === 'Soft') {
+      if (intent === 'Brand') {
+        const roles = [
+          roleAt(arch, paints, 'action.ghost.brand.hover', 'fill'),
+          roleAt(arch, paints, 'content.accent', 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+      const sev = STATUS_SEV[intent]
+      if (sev) {
+        const roles = [
+          roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
+          roleAt(arch, paints, `status.${sev}.surface-solid`, 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+    }
+    if (style === 'Outline' || style === 'Ghost') {
+      const inkId = intent === 'Brand'
+        ? 'content.accent'
+        : STATUS_SEV[intent] ? `status.${STATUS_SEV[intent]}.content` : null
+      if (!inkId) return null
+      const ink = roleAt(arch, paints, inkId, 'ink')
+      return ink ? [ink] : null
+    }
+  }
+
+  if (componentKey === 'Badge') {
+    const intent = variant.Color ?? 'Brand'
+    const style = variant.Style ?? 'Soft'
+    const isNeutral = intent === 'Neutral'
+    if (style === 'Solid') {
+      if (intent === 'Brand') {
+        const roles = [
+          roleAt(arch, paints, 'action.primary.default', 'fill'),
+          roleAt(arch, paints, 'content.on-action', 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+      const sev = STATUS_SEV[intent]
+      if (sev) {
+        const roles = [
+          roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
+          roleAt(arch, paints, `status.${sev}.on-solid`, 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+    }
+    if (style === 'Soft') {
+      if (isNeutral) {
+        const dotless = variant.Dot === 'False'
+        const roles = [
+          roleAt(arch, paints, 'surface.layer-1', 'fill'),
+          roleAt(arch, paints, dotless ? 'content.primary' : 'content.secondary', 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+      const sev = STATUS_SEV[intent]
+      if (sev) {
+        const roles = [
+          roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
+          roleAt(arch, paints, `status.${sev}.content`, 'ink'),
+        ].filter((r): r is InspectedRole => !!r)
+        return roles.length ? roles : null
+      }
+    }
+    if (style === 'Outline') {
+      const sev = STATUS_SEV[intent]
+      const inkId = intent === 'Brand'
+        ? 'content.accent'
+        : sev ? `status.${sev}.surface-solid` : null
+      if (!inkId) return null
+      const ink = roleAt(arch, paints, inkId, 'ink')
+      return ink ? [ink] : null
+    }
+  }
+
+  if (componentKey === 'InlineAlert') {
+    const status = variant.Status ?? 'Info'
+    const sev = STATUS_SEV[status]
+    if (!sev) return null
+    const roles = [
+      roleAt(arch, paints, `status.${sev}.surface`, 'fill'),
+      roleAt(arch, paints, `status.${sev}.border`, 'stroke'),
+      roleAt(arch, paints, 'content.primary', 'ink'),
+      roleAt(arch, paints, 'content.secondary', 'ink'),
+    ].filter((r): r is InspectedRole => !!r)
+    return roles.length ? roles : null
+  }
+
+  if (componentKey === 'Toast') {
+    const status = variant.Status ?? 'Success'
+    const sev = STATUS_SEV[status]
+    if (!sev) return null
+    const roles = [
+      roleAt(arch, paints, 'surface.inverse', 'fill'),
+      roleAt(arch, paints, 'content.inverse', 'ink'),
+      roleAt(arch, paints, `status.${sev}.surface-solid`, 'fill'),
+    ].filter((r): r is InspectedRole => !!r)
+    return roles.length ? roles : null
+  }
+
+  return null
+}
+
 /**
  * Ink is only painted where there are glyphs. `color` inherits, so every
  * wrapper in the subtree reports the page's text colour whether it renders a
@@ -307,14 +503,17 @@ export function rolesForPaints(
   arch: Record<string, string>,
   declared: string[],
   paints: { css: string; where: PaintSlot }[],
+  fieldIndex?: Map<string, string[]>,
 ): InspectedRole[] {
   const index = roleIndex(arch)
   const roles: InspectedRole[] = []
   for (const paint of paints) {
     const key = normalizeColor(paint.css)
     if (!key) continue
-    const candidates = index.get(key)
-    if (!candidates) continue
+    const fromArch = index.get(key) ?? []
+    const fromField = fieldIndex?.get(key) ?? []
+    const candidates = [...new Set([...fromArch, ...fromField])]
+    if (!candidates.length) continue
     const owned = declared.length
       ? candidates.filter((id) => declared.includes(id))
       : candidates
@@ -442,7 +641,8 @@ export function pairButtonScopes(
     if (inkId) ink = { id: inkId, css: inkPaint.css, where: 'ink' }
   }
   if (fill && !ink && inkPaint) {
-    const inkId = SOLID_INK[fill.id] ?? Object.entries(INK_SURFACE).find(([, surface]) => surface === fill.id)?.[0]
+    const fillId = fill.id
+    const inkId = SOLID_INK[fillId] ?? Object.entries(INK_SURFACE).find(([, surface]) => surface === fillId)?.[0]
     if (inkId && arch[inkId]) ink = { id: inkId, css: inkPaint.css, where: 'ink' }
   }
   if (!fill && fillPaint) {
@@ -524,7 +724,14 @@ export function inspectElement(
   if (!arch) return { roles: [], measured: false }
   const declared = rolesForComponent(componentKey)
   const paints = observePaints(el)
-  let roles = pairSolidRoles(arch, rolesForPaints(arch, declared, paints), paints)
+  const variant = parseInspectVariant(el)
+  if (variant) {
+    const explicit = resolveVariantRoles(t, componentKey, variant, paints)
+    if (explicit?.length) return { roles: explicit, measured: true }
+  }
+  const fields = COMPONENT_COLOR_FIELDS[componentKey] ?? []
+  const fieldIndex = fieldRoleIndex(t, fields)
+  let roles = pairSolidRoles(arch, rolesForPaints(arch, declared, paints, fieldIndex), paints)
   if (componentKey === 'Button') {
     roles = pairButtonScopes(arch, roles, paints)
     // A Button answers with its surface and its label. Falling through to

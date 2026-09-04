@@ -14,7 +14,7 @@ import { tableRowClass } from './tableChrome'
 
 import { useEffect, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColorOn, type GradientDef, type GradientType, type GradientAppearance } from '../../lib/gradients'
+import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColorOn, type GradientDef, type GradientStop, type GradientType, type GradientAppearance } from '../../lib/gradients'
 import { usePopoverPlacement, ScaleRow } from './colorControls'
 import { NAMING_SCHEMES, BASE_TONE } from '../../lib/colorUtils'
 import { themeBrandRamp } from '../../lib/themeSources'
@@ -110,7 +110,7 @@ export default function StepGradients({
   const ramp = isDark ? darkRamp : lightRamp
   const cssOf = (g: GradientDef, ap: GradientAppearance = appearance) =>
     gradientToCss(g, ap, ap === 'dark' ? darkRamp : lightRamp)
-  const hexOf = (s: { color: string; darkColor?: string; tone?: number }, ap: GradientAppearance = appearance) =>
+  const hexOf = (s: GradientStop, ap: GradientAppearance = appearance) =>
     stopColorOn(s, ap, ap === 'dark' ? darkRamp : lightRamp)
   /** The token PREFIX a linked stop's tone names in this theme. A stop reads
    *  "tone 9 of the accent", but which family that is depends on the theme, so

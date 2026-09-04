@@ -23,6 +23,7 @@ import {
   buildTypeScale,
   type TypeScaleMode,
 } from './typographyStandard'
+import type { ThemeAppearance } from './themeModes'
 
 /** Relative positions — same contract as SpectrumSlider, so a voice stays
  *  vivid at every hue instead of ratcheting into mud. */
@@ -182,6 +183,17 @@ export function randomTheme(input: RandomThemeInput): RandomThemeRecipe {
       },
     },
   }
+}
+
+/** Module count on the Theme Preview artefacts board — keep in sync with
+ *  `SystemCollage`'s `ScaledModule` rows. */
+export const COLLAGE_TILE_COUNT = 18
+
+/** Flip the whole artefacts board to light or dark — never a per-tile mix. */
+export function randomBoardAppearance(
+  rng: () => number = Math.random,
+): ThemeAppearance {
+  return rng() < 0.5 ? 'light' : 'dark'
 }
 
 /** Guard: every pairing names a family the type picker actually ships. */

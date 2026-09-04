@@ -12,6 +12,7 @@ import {
   type Role, type RoleScale, type GlobalScales,
 } from '../../lib/semanticRoles'
 import { normalizeColor } from '../../lib/tokenInspector'
+import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
 import { resolveThemePalette } from '../../lib/themeSources'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {

@@ -46,7 +46,7 @@ import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
-import { randomTheme } from '../../lib/randomTheme'
+import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
@@ -1071,6 +1071,7 @@ export default function ThemeQuickSettingsRail({
   onAdoptStyle,
   onQuickEditOpenChange,
   containedDrawerRootRef,
+  onRandomBoardAppearance,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1093,6 +1094,8 @@ export default function ThemeQuickSettingsRail({
   onQuickEditOpenChange?: (open: boolean) => void
   /** Portal target for the contained Accent / Neutral pickers. */
   containedDrawerRootRef?: RefObject<HTMLElement | null>
+  /** Flip the whole artefacts board light or dark — fired with Random. */
+  onRandomBoardAppearance?: (appearance: ThemeAppearance) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -1376,14 +1379,17 @@ export default function ThemeQuickSettingsRail({
 
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
+    const rng = Math.random
     const recipe = randomTheme({
       accent: liveAccent,
       bodyFont: typography.fontFamily,
       headingFont: headingFamily,
       typeScale: inferTypeScaleMode(typography.sizes ?? {}),
       avoidScaffold: lastRandomScaffold.current,
+      rng,
     })
     lastRandomScaffold.current = recipe.scaffoldId
+    onRandomBoardAppearance?.(randomBoardAppearance(rng))
     loadGoogleFont(recipe.bodyFont)
     loadGoogleFont(recipe.headingFont)
     commit(t('Theme randomized'), (themeKey) => {

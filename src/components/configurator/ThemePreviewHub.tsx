@@ -1,14 +1,15 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { usePreviewTokens } from '../../lib/previewTokens'
-import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePreviewOverlay'
+import { usePreviewTokens, resolvePreviewTokens } from '../../lib/previewTokens'
+import { resolveStylePreviewTokens, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
 import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
+import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
-import { Live, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
+import { Live, PhosphorWeightProvider, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { PHOSPHOR_CORE } from '../../lib/iconLibraries'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
@@ -207,41 +208,10 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
   )
 }
 
-// The quick-settings rail stays outside the framed canvas so its property
-// controls remain fixed while the artefacts themselves scroll.
-function ArtefactsView({
-  previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
-  inspecting, onPickRole, onOpenRoleInVariables,
-}: {
-  previewTheme: string
-  previewAppearance: ThemeAppearance
-  accentPreview: string | null
-  stylePreview: StylePreview | null
-  /** Inspector mode — point at a specimen, get the roles that paint it. Lives
-   *  in the hub (the toggle is in the canvas header, a sibling of this view),
-   *  never local here. */
-  inspecting: boolean
-  onPickRole: (roleId: string, css: string) => void
-  /** The badge's own exit to the full Semantics table — the same door Token
-   *  Details carries, one step earlier in the flow. */
-  onOpenRoleInVariables: (roleId: string) => void
-  /** Colour pickers from the quick rail still fly out inside the hub. The
-   *  canvas cedes `PANEL_W` so artefacts reflow instead of sitting under them.
-   *  Token Details is a different drawer — it docks to the Themes Library like
-   *  New theme, and does not use this padding. */
-  drawerOpen: boolean
-}) {
-  const store = useDesignStore()
-  const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
-  const previewTokens = useMemo(
-    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
-    [stylePreview, store, previewTheme],
-  )
-  const tokens = previewTokens ?? liveTokens
-  // Hue dragging is a VIEW-ONLY optimistic paint. The token store still writes
-  // once on release, but the artefacts use the pending anchor immediately so
-  // the control never feels detached from its result.
-  const paintedTokens = accentPreview ? {
+// Hue dragging is a VIEW-ONLY optimistic paint on resolved preview tokens.
+function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null): PreviewTokens {
+  if (!accentPreview) return tokens
+  return {
     ...tokens,
     brandSolid: accentPreview,
     brandText: accentPreview,
@@ -252,7 +222,46 @@ function ArtefactsView({
       'content.accent': accentPreview,
       'border.focus': accentPreview,
     } : undefined,
-  } : tokens
+  }
+}
+
+// The quick-settings rail stays outside the framed canvas so its property
+// controls remain fixed while the artefacts themselves scroll.
+function ArtefactsView({
+  previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
+  inspecting, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables,
+}: {
+  previewTheme: string
+  previewAppearance: ThemeAppearance
+  accentPreview: string | null
+  stylePreview: StylePreview | null
+  /** One appearance for every tile — the whole board is light or dark. */
+  tileAppearances: ThemeAppearance[]
+  /** Uniform board appearance — all tiles share light or dark. */
+  boardAppearance: ThemeAppearance
+  /** Inspector mode — point at a specimen, get the roles that paint it. Lives
+   *  in the hub (the toggle is in the canvas header, a sibling of this view),
+   *  never local here. */
+  inspecting: boolean
+  onPickRole: (roleId: string, css: string, appearance: ThemeAppearance) => void
+  /** The badge's own exit to the full Semantics table — the same door Token
+   *  Details carries, one step earlier in the flow. */
+  onOpenRoleInVariables: (roleId: string) => void
+  /** Colour pickers from the quick rail still fly out inside the hub. The
+   *  canvas cedes `PANEL_W` so artefacts reflow instead of sitting under them.
+   *  Token Details is a different drawer — it docks to the Themes Library like
+   *  New theme, and does not use this padding. */
+  drawerOpen: boolean
+}) {
+  const store = useDesignStore()
+  const overlayStore = useMemo(
+    () => (stylePreview ? stylePreviewStore(store, stylePreview, previewTheme) : store),
+    [stylePreview, store, previewTheme],
+  )
+  const tokensByAppearance = useMemo(() => ({
+    light: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'light'), accentPreview),
+    dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark'), accentPreview),
+  }), [overlayStore, previewTheme, accentPreview])
   const canvasRef = useRef<HTMLDivElement | null>(null)
   return (
     <div
@@ -262,10 +271,21 @@ function ArtefactsView({
     >
       <div className="mx-auto w-full" style={inspecting ? { cursor: 'crosshair' } : undefined}>
         <InspectorModeProvider active={inspecting}>
-          <SystemCollage t={paintedTokens} projectName={store.projectName} />
+          <SystemCollage
+            tokensByAppearance={tokensByAppearance}
+            tileAppearances={tileAppearances}
+            projectName={store.projectName}
+          />
         </InspectorModeProvider>
       </div>
-      <InspectorOverlay active={inspecting} rootRef={canvasRef} t={paintedTokens} onPick={onPickRole} onOpenTable={onOpenRoleInVariables} />
+      <InspectorOverlay
+        active={inspecting}
+        rootRef={canvasRef}
+        tokensByAppearance={tokensByAppearance}
+        defaultAppearance={boardAppearance}
+        onPick={onPickRole}
+        onOpenTable={onOpenRoleInVariables}
+      />
     </div>
   )
 }
@@ -627,6 +647,7 @@ function ComponentVariantsView({
     .filter((row) => row.def && row.values.length > 0)
 
   return (
+    <PhosphorWeightProvider weight={tokens.iconWeight}>
     <div className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6">
       <div className="mx-auto max-w-[1120px]">
         <div className="mb-6">
@@ -685,6 +706,7 @@ function ComponentVariantsView({
         </div>
       </div>
     </div>
+    </PhosphorWeightProvider>
   )
 }
 
@@ -765,6 +787,9 @@ export default function ThemePreviewHub({
   const [inspecting, setInspecting] = useState(false)
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
+  /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */
+  const [randomBoardAppearance, setRandomBoardAppearance] = useState<ThemeAppearance | null>(null)
+  const [inspectedAppearance, setInspectedAppearance] = useState<ThemeAppearance | null>(null)
   // Session picks on a try-on. `resetThemeSemantics` drops live-store
   // overrides so a leftover `surface.layer-1` cannot leak into Nature — which
   // also dropped a Token Details pick on the critical solid. These ride on
@@ -807,31 +832,45 @@ export default function ThemePreviewHub({
   // optimistic hue paint doesn't linger across the swap.
   const handleAppearanceChange = (appearance: ThemeAppearance) => {
     setAccentPreview(null)
+    setRandomBoardAppearance(null)
     onPreviewAppearanceChange(appearance)
   }
+  useEffect(() => { setRandomBoardAppearance(null) }, [previewTheme])
+  useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
   const store = useDesignStore()
   // A role picked on the canvas opens Token Details in the SAME dock as New
   // theme — flush to the Themes Library — not the Variables table. The table
   // is a second destination the drawer itself already carries a door to.
-  const pickRole = (roleId: string, css?: string) => {
+  const pickRole = (roleId: string, css?: string, appearance?: ThemeAppearance) => {
     setEditingToken(roleId)
     setInspectedCss(css ?? null)
+    setInspectedAppearance(appearance ?? null)
   }
   const themeReset = useThemeReset(previewTheme, !stylePreview)
-  const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
-  const stylePreviewTokens = useMemo(
-    () => (paintedPreview ? resolveStylePreviewTokens(store, paintedPreview, previewTheme) : null),
-    [paintedPreview, store, previewTheme],
-  )
-  const hubCanvasTokens = stylePreviewTokens ?? liveTokens
   // What the BOARD is showing: a live try-on renders from `stylePreview.appearance`,
   // a committed theme from `previewAppearance`. The header sun/moon reads and
   // writes this, so it works for both.
   const boardAppearance: ThemeAppearance = stylePreview?.appearance ?? previewAppearance
+  const effectiveBoardAppearance: ThemeAppearance = randomBoardAppearance ?? boardAppearance
+  const effectiveTileAppearances = useMemo(
+    () => Array.from({ length: COLLAGE_TILE_COUNT }, () => effectiveBoardAppearance),
+    [effectiveBoardAppearance],
+  )
+  const boardCanvasTokens = useMemo(() => {
+    const overlay = paintedPreview
+      ? stylePreviewStore(store, paintedPreview, previewTheme)
+      : store
+    return withAccentPreview(
+      resolvePreviewTokens(overlay, previewTheme, effectiveBoardAppearance),
+      accentPreview,
+    )
+  }, [store, previewTheme, effectiveBoardAppearance, paintedPreview, accentPreview])
   // The canvas is the theme's PAGE (`surface.page` / `background-primary`), not
   // workspace chrome (`--app` / `--surface`) — otherwise artefacts float on a
   // fill that isn't the background they ship on.
-  const pageCanvasColor = hubCanvasTokens.pageBackground ?? hubCanvasTokens.surface
+  const pageCanvasColor = boardCanvasTokens.archTokens?.['surface.page']
+    ?? boardCanvasTokens.pageBackground
+    ?? boardCanvasTokens.surface
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
   return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
@@ -886,6 +925,7 @@ export default function ThemePreviewHub({
           onAdoptStyle={onAdoptStyle}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
+          onRandomBoardAppearance={setRandomBoardAppearance}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
@@ -900,7 +940,7 @@ export default function ThemePreviewHub({
           <div className="min-h-0 flex-1 bg-nav p-3">
             <section
               aria-label={`${themeName} preview canvas`}
-              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${boardAppearance === 'dark' ? 'dark' : 'light'}`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
               style={{ background: pageCanvasColor }}
             >
               {/* One header band for every hub view — the active view's NAME
@@ -927,12 +967,12 @@ export default function ThemePreviewHub({
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
                   <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
-                  <PreviewAppearanceButton value={boardAppearance} onChange={handleAppearanceChange} />
+                  <PreviewAppearanceButton value={effectiveBoardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} inspecting={inspecting} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
+                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} inspecting={inspecting} tileAppearances={effectiveTileAppearances} boardAppearance={effectiveBoardAppearance} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={paintedPreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
                 {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={paintedPreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
@@ -952,12 +992,12 @@ export default function ThemePreviewHub({
     </div>
     <SemanticTokenDrawer
       previewTheme={previewTheme}
-      previewAppearance={boardAppearance}
+      previewAppearance={inspectedAppearance ?? effectiveBoardAppearance}
       tokenId={surface === 'artefacts' ? editingToken : null}
       inspectedCss={inspectedCss}
       stylePreview={paintedPreview}
       onTryOnEdit={stylePreview ? recordTryOnEdit : undefined}
-      onClose={() => { setEditingToken(null); setInspectedCss(null) }}
+      onClose={() => { setEditingToken(null); setInspectedCss(null); setInspectedAppearance(null) }}
       onOpenPrimitiveFamily={onOpenPrimitiveFamily}
       onOpenInVariables={onOpenInVariables}
     />

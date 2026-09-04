@@ -388,11 +388,11 @@ function solidStepRef(
   }
   const ui = INTENT_THRESHOLDS['ui-component']
   const found =
-    pick((t) => floor(t, ACTION_LABEL_TARGET.wcag, ACTION_LABEL_TARGET.apcaLc ?? 60), [dir])
-    ?? pick((t) => floor(t, ui.wcag, ui.apcaLc ?? 45), [dir])
+    pick((t) => floor(t, ACTION_LABEL_TARGET.wcag ?? 4.5, ACTION_LABEL_TARGET.apcaLc ?? 60), [dir])
+    ?? pick((t) => floor(t, ui.wcag ?? 3, ui.apcaLc ?? 45), [dir])
     ?? pick((t) => Boolean(ramp[t]), [dir])
-    ?? pick((t) => floor(t, ACTION_LABEL_TARGET.wcag, ACTION_LABEL_TARGET.apcaLc ?? 60), [-dir])
-    ?? pick((t) => floor(t, ui.wcag, ui.apcaLc ?? 45), [-dir])
+    ?? pick((t) => floor(t, ACTION_LABEL_TARGET.wcag ?? 4.5, ACTION_LABEL_TARGET.apcaLc ?? 60), [-dir])
+    ?? pick((t) => floor(t, ui.wcag ?? 3, ui.apcaLc ?? 45), [-dir])
     ?? pick((t) => Boolean(ramp[t]), [-dir])
   if (found != null) {
     used.add(found)

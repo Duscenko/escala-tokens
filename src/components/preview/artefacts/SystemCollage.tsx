@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type SpecimenProps } from '../../configurator/docs/specimens'
+import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
@@ -11,7 +11,16 @@ import {
   typeStyleOf,
 } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
+import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
+import { COMPONENTS } from '../../../lib/componentCatalogue'
+
+export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
+
+/** One axis's values for a catalogue component — same source as ThemePreviewHub. */
+function axisValuesOf(key: string, axis: string): string[] {
+  return COMPONENTS.find((c) => c.key === key)?.axes.find((a) => a.name === axis)?.values ?? []
+}
 
 /**
  * A catalogue specimen, marked up for Inspector mode.
@@ -25,7 +34,7 @@ import { useI18n } from '../../../lib/i18n'
 const inspectable = (key: string) => {
   const Specimen = SPECIMENS[key]
   const Wrapped = (p: SpecimenProps) => (
-    <TokenInspector component={key}>{Specimen(p)}</TokenInspector>
+    <TokenInspector component={key} variant={p.v}>{Specimen(p)}</TokenInspector>
   )
   Wrapped.displayName = `Inspectable(${key})`
   return Wrapped
@@ -42,8 +51,7 @@ const InputOTP = inspectable('InputOTP')
 const TextLink = inspectable('TextLink')
 const Segmented = inspectable('SegmentedControl')
 const ContextMenu = inspectable('ContextMenu')
-const Spinner = inspectable('Spinner')
-const InlineAlert = inspectable('InlineAlert')
+const Toast = inspectable('Toast')
 const TabMenu = inspectable('TabMenu')
 const Progress = inspectable('Progress')
 const StatusBadge = inspectable('StatusBadge')
@@ -52,7 +60,8 @@ const Chip = inspectable('Chip')
 /** `Live` already carries the catalogue key as `c`, so the marker reads it
  *  straight off the prop rather than being restated. */
 function InspectableLive(p: Parameters<typeof Live>[0]) {
-  return <TokenInspector component={p.c}><Live {...p} /></TokenInspector>
+  const icons = p.icons ?? ((p.c === 'Button' || p.c === 'Input') ? catalogueIcons(p.t) : undefined)
+  return <TokenInspector component={p.c} variant={p.v}><Live {...p} icons={icons} /></TokenInspector>
 }
 
 /**
@@ -71,6 +80,11 @@ const MODULE_DISPLAY = 156
 const MASONRY_ROW = 4
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
+
+/** Same icon library + slot contract as Theme Preview · Components. */
+function catalogueIcons(t: PreviewTokens): IconOpts {
+  return { prefix: t.iconPrefix ?? 'phosphor', leading: true, trailing: false }
+}
 
 function px(value: string): number {
   const n = parseFloat(value)
@@ -109,9 +123,10 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE,
 }: {
   t: PreviewTokens
+  appearance?: ThemeAppearance
   children: ReactNode
   chrome?: boolean
   /** When false the photograph can spill past the frame — floating menus
@@ -152,10 +167,17 @@ function ScaledModule({
   }, [])
 
   const body = chrome ? <ModuleSurface t={t} style={style}>{children}</ModuleSurface> : children
+  const appearanceClass = appearance === 'dark' ? 'dark' : 'light'
+  const weighted = (
+    <PhosphorWeightProvider weight={t.iconWeight}>
+      {body}
+    </PhosphorWeightProvider>
+  )
 
   return (
     <div
-      className="relative overflow-visible"
+      className={`relative overflow-visible ${appearanceClass}`}
+      data-collage-appearance={appearance}
       {...inspectGroupAttrs(inspecting)}
       style={{
         width: MODULE_DISPLAY,
@@ -181,7 +203,7 @@ function ScaledModule({
           borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
         }}
       >
-        {body}
+        {weighted}
       </div>
     </div>
   )
@@ -235,20 +257,22 @@ function Well({
  * of the system as a set, not as three stretched desktop tiles.
  */
 export function SystemCollage({
-  t, projectName,
+  tokensByAppearance, tileAppearances, projectName,
 }: {
-  t: PreviewTokens
+  tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
+  tileAppearances: ThemeAppearance[]
   projectName: string
 }) {
   const { t: translate } = useI18n()
-  const muted = t.fgMuted || '#717680'
+  const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
+  const appearanceAt = (index: number) => tileAppearances[index] ?? 'light'
+  const muted = (index: number) => tile(index).fgMuted || '#717680'
   const handle = `@${projectName.replace(/\s+/g, '_').toLowerCase()}`
-  const gutter = gap(t, 'gap-control', '8px')
-  const wellLg = sizeRoleOf(t, 'control', '40px')
-  const wellSm = sizeRoleOf(t, 'compact', '32px')
+  const gutter = gap(tile(0), 'gap-control', '8px')
+  const wellLg = sizeRoleOf(tile(0), 'control', '40px')
+  const wellSm = sizeRoleOf(tile(0), 'compact', '32px')
 
   return (
-    <PhosphorWeightProvider weight={t.iconWeight}>
     <div
       className="w-full"
       style={{
@@ -264,22 +288,34 @@ export function SystemCollage({
         justifyContent: 'center',
       }}
     >
-      <ScaledModule t={t}>
-        <Input t={t} v={{ Type: 'E-Mail', State: 'Filled' }} w="100%" />
-        <div className="flex min-w-0 flex-col" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-          <span style={{ ...typeStyleOf(t, 'label'), color: t.neutralText }}>{translate('State')}</span>
-          <Select t={t} v={{}} w="100%" />
+      <ScaledModule
+        t={tile(0)}
+        appearance={appearanceAt(0)}
+        style={{ gap: gap(tile(0), 'gap-group', '16px') }}
+      >
+        <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(0), 'gap-group', '16px') }}>
+          <Input t={tile(0)} v={{ Type: 'E-Mail', State: 'Filled', Size: 'SM' }} w="100%" />
+          <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(0), 'gap-tight', '4px') }}>
+            <span style={{ ...typeStyleOf(tile(0), 'label'), color: tile(0).neutralText }}>{translate('State')}</span>
+            <Select t={tile(0)} v={{ Size: 'SM' }} w="100%" />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <InspectableLive c="Checkbox" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
-          <InspectableLive c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
-          <InspectableLive c="Radio" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
-          <Spinner t={t} v={{ Size: 'SM' }} />
+        <div
+          className="flex w-full min-w-0 flex-col"
+          style={{
+            gap: gap(tile(0), 'gap-control', '8px'),
+            paddingTop: gap(tile(0), 'gap-group', '16px'),
+            borderTop: `${strokeRoleOf(tile(0), 'divider', '1px')} solid ${tile(0).borderDefault || tile(0).border}`,
+          }}
+        >
+          <InspectableLive c="Checkbox" t={tile(0)} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
+          <InspectableLive c="Toggle" t={tile(0)} v={{ On: 'True', Size: 'SM' }} toggle="On" />
+          <InspectableLive c="Radio" t={tile(0)} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
         </div>
-        <Slider t={t} v={{}} w="100%" />
+        <Slider t={tile(0)} v={{}} w="100%" />
       </ScaledModule>
 
-      <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <ScaledModule t={tile(1)} appearance={appearanceAt(1)} style={{ flexDirection: 'row', alignItems: 'center' }}>
         {/* Three hue-rotated gradient avatars, then ONE accent-tint + initials
             default, then the count. Both avatar kinds are shown; the run of
             three keeps the gradient family (see AVATAR_STACK_HUES) readable as
@@ -287,7 +323,7 @@ export function SystemCollage({
         {AVATAR_STACK_HUES.slice(0, 4).map((hue, i) => (
           <span key={hue} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: 6 - i, position: 'relative' }}>
             <Avatar
-              t={t}
+              t={tile(1)}
               v={i < 3
                 ? { Size: 'SM', Variant: 'Gradient', Hue: String(hue) }
                 : { Size: 'SM' }}
@@ -295,195 +331,225 @@ export function SystemCollage({
           </span>
         ))}
         <span style={{ marginLeft: 8 }}>
-          <Badge t={t} v={{ Style: 'Soft', Color: 'Neutral', Dot: 'False' }}>+5</Badge>
+          <Badge t={tile(1)} v={{ Style: 'Soft', Color: 'Neutral', Dot: 'False' }}>+5</Badge>
         </span>
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>{translate('Verify account')}</span>
-        <InputOTP t={t} v={{ State: 'Filled', Size: 'SM' }} />
-        <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>
+      <ScaledModule t={tile(2)} appearance={appearanceAt(2)}>
+        <span style={{ ...typeStyleOf(tile(2), 'heading-sm'), color: tile(2).neutralText }}>{translate('Verify account')}</span>
+        <InputOTP t={tile(2)} v={{ State: 'Filled', Size: 'SM' }} />
+        <span style={{ ...typeStyleOf(tile(2), 'body-sm'), color: muted(2) }}>
           {translate('Didn’t get a code?')}{' '}
-          <TextLink t={t} v={{}}>{translate('Resend')}</TextLink>
+          <TextLink t={tile(2)} v={{}}>{translate('Resend')}</TextLink>
         </span>
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Ghost', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
-          {/* Destructive and confirming are the SAME control with a different
-              severity, so they're painted the same way — always `Solid`, so
-              the fill IS `status.<sev>.surface-solid` verbatim. Whatever the
-              user assigns that role in Token Details (an alpha primitive or a
-              solid tone) is exactly what shows here — no `statusAction` layer
-              in between deciding to wash it. The token is the control. */}
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Critical')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Success')}</InspectableLive>
+      <ScaledModule
+        t={tile(3)}
+        appearance={appearanceAt(3)}
+        style={{ gap: gap(tile(3), 'gap-group', '16px') }}
+      >
+        <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(3), 'gap-control', '8px') }}>
+          {axisValuesOf('Button', 'Style').map((style) => (
+            <InspectableLive
+              key={style}
+              c="Button"
+              t={tile(3)}
+              v={{ Style: style, Color: 'Brand', Size: 'SM' }}
+              w="100%"
+            >
+              {translate('Click me')}
+            </InspectableLive>
+          ))}
+        </div>
+        <div
+          className="grid w-full grid-cols-2"
+          style={{
+            gap: gap(tile(3), 'gap-control', '8px'),
+            paddingTop: gap(tile(3), 'gap-group', '16px'),
+            borderTop: `${strokeRoleOf(tile(3), 'divider', '1px')} solid ${tile(3).borderDefault || tile(3).border}`,
+          }}
+        >
+          <InspectableLive
+            c="Button"
+            t={tile(3)}
+            v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }}
+            w="100%"
+          >
+            {translate('Critical')}
+          </InspectableLive>
+          <InspectableLive
+            c="Button"
+            t={tile(3)}
+            v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }}
+            w="100%"
+          >
+            {translate('Success')}
+          </InspectableLive>
         </div>
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Badge t={t} v={{ Style: 'Solid', Color: 'Error', Size: 'SM' }}>{translate('Critical')}</Badge>
-          <Badge t={t} v={{ Style: 'Solid', Color: 'Warning', Size: 'SM' }}>{translate('Warning')}</Badge>
-          <Badge t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }}>{translate('Success')}</Badge>
-          <Badge t={t} v={{ Style: 'Solid', Color: 'Info', Size: 'SM' }}>{translate('Info')}</Badge>
+      <ScaledModule t={tile(4)} appearance={appearanceAt(4)}>
+        <div
+          className="grid w-full grid-cols-2 justify-items-center"
+          style={{ gap: gap(tile(4), 'gap-group', '16px') }}
+        >
+          <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Error', Size: 'SM' }}>{translate('Critical')}</Badge>
+          <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Warning', Size: 'SM' }}>{translate('Warning')}</Badge>
+          <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Success', Size: 'SM' }}>{translate('Success')}</Badge>
+          <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Info', Size: 'SM' }}>{translate('Info')}</Badge>
         </div>
       </ScaledModule>
 
-      <ScaledModule t={t}>
+      <ScaledModule t={tile(5)} appearance={appearanceAt(5)}>
         <div className="flex justify-end">
-          <InspectableLive c="CloseButton" t={t} v={{ Size: 'SM' }} />
+          <InspectableLive c="CloseButton" t={tile(5)} v={{ Size: 'SM' }} />
         </div>
-        <div className="flex flex-col items-center text-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-          <GradientAvatar t={t} size={wellLg} />
-          <p style={{ margin: 0, ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>{translate('Create an account')}</p>
-          <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
+        <div className="flex flex-col items-center text-center" style={{ gap: gap(tile(5), 'gap-tight', '4px') }}>
+          <GradientAvatar t={tile(5)} size={wellLg} />
+          <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>{translate('Create an account')}</p>
+          <p style={{ margin: 0, ...typeStyleOf(tile(5), 'body-sm', { leading: true }), color: muted(5) }}>
             {translate('Sign in to continue to your workspace.')}
           </p>
         </div>
-        <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'MD' }} w="100%">{translate('Get Started')}</InspectableLive>
-        <div className="flex items-center" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <span style={{ flex: 1, height: 1, background: t.borderDefault || t.border }} />
-          <span style={{ ...typeStyleOf(t, 'caption'), color: muted }}>{translate('or')}</span>
-          <span style={{ flex: 1, height: 1, background: t.borderDefault || t.border }} />
+        <InspectableLive c="Button" t={tile(5)} v={{ Style: 'Solid', Size: 'MD' }} w="100%">{translate('Get Started')}</InspectableLive>
+        <div className="flex items-center" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
+          <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
+          <span style={{ ...typeStyleOf(tile(5), 'caption'), color: muted(5) }}>{translate('or')}</span>
+          <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
         </div>
-        <SocialLogin t={t} v={{ Provider: 'Google' }} w="100%" />
-        <SocialLogin t={t} v={{ Provider: 'Apple' }} w="100%" />
+        <SocialLogin t={tile(5)} v={{ Provider: 'Google' }} w="100%" />
+        <SocialLogin t={tile(5)} v={{ Provider: 'Apple' }} w="100%" />
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <Segmented t={t} v={{ Size: 'SM' }} />
+      <ScaledModule t={tile(6)} appearance={appearanceAt(6)}>
+        <Segmented t={tile(6)} v={{ Size: 'SM' }} />
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Chats')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Emails')}</InspectableLive>
+      <ScaledModule t={tile(7)} appearance={appearanceAt(7)}>
+        <div className="grid grid-cols-2" style={{ gap: gap(tile(7), 'gap-control', '8px') }}>
+          <InspectableLive c="Button" t={tile(7)} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Chats')}</InspectableLive>
+          <InspectableLive c="Button" t={tile(7)} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Emails')}</InspectableLive>
         </div>
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <div className="flex items-start" style={{ gap: gap(t, 'gap-control', '8px') }}>
+      <ScaledModule t={tile(8)} appearance={appearanceAt(8)}>
+        <div className="flex items-start" style={{ gap: gap(tile(8), 'gap-control', '8px') }}>
           <TokenInspector component="Avatar">
             <span
               aria-hidden
               style={{
                 width: wellSm, height: wellSm, flexShrink: 0,
-                borderRadius: radiusRoleOf(t, 'control', '8px'),
-                background: t.coverGradient || t.brandSolid,
+                borderRadius: radiusRoleOf(tile(8), 'control', '8px'),
+                background: tile(8).coverGradient || tile(8).brandSolid,
               }}
             />
           </TokenInspector>
           <div className="min-w-0 flex-1">
             <TokenInspector component="Badge">
-              <div className="flex items-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-                <span style={{ ...typeStyleOf(t, 'label'), color: t.neutralText }}>{projectName}</span>
-                <TokenIcon t={t} concept="check" size={12} color={t.brandSolid} />
+              <div className="flex items-center" style={{ gap: gap(tile(8), 'gap-tight', '4px') }}>
+                <span style={{ ...typeStyleOf(tile(8), 'label'), color: tile(8).neutralText }}>{projectName}</span>
+                <TokenIcon t={tile(8)} concept="check" size={12} color={tile(8).brandSolid} />
               </div>
             </TokenInspector>
             <TokenInspector component="TextLink">
-              <p style={{ margin: 0, ...typeStyleOf(t, 'helper'), color: muted }}>{handle}</p>
+              <p style={{ margin: 0, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{handle}</p>
             </TokenInspector>
           </div>
         </div>
         <TokenInspector component="InlineAlert">
-          <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.neutralText }}>
+          <p style={{ margin: 0, ...typeStyleOf(tile(8), 'body-sm', { leading: true }), color: tile(8).neutralText }}>
             {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
           </p>
         </TokenInspector>
         <TokenInspector component="Badge">
-          <div className="flex" style={{ gap: gap(t, 'gap-group', '16px') }}>
+          <div className="flex" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
             <div>
-              <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>4</span>
-              <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Following')}</span>
+              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
+              <span style={{ marginLeft: 6, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
             </div>
             <div>
-              <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>12.4K</span>
-              <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Followers')}</span>
+              <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>12.4K</span>
+              <span style={{ marginLeft: 6, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
             </div>
           </div>
         </TokenInspector>
       </ScaledModule>
 
       {([
-        { title: translate('Indie Hackers'), count: '148', by: 'John', icon: 'users' as const },
-        { title: translate('AI Builders'), count: '362', by: 'Martha', icon: 'zap' as const },
+        { title: translate('Indie Hackers'), count: '148', by: 'John', icon: 'users' as const, index: 9 },
+        { title: translate('AI Builders'), count: '362', by: 'Martha', icon: 'zap' as const, index: 10 },
       ]).map((community) => (
-        <ScaledModule key={community.title} t={t} chrome={false} elev="sm">
-          <Card t={t} v={{}} w="100%" elev={false}>
-            <div className="flex flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-              <Well t={t} size={wellSm} icon={community.icon} />
+        <ScaledModule key={community.title} t={tile(community.index)} appearance={appearanceAt(community.index)} chrome={false} elev="sm">
+          <Card t={tile(community.index)} v={{}} w="100%" elev={false}>
+            <div className="flex flex-col" style={{ gap: gap(tile(community.index), 'gap-control', '8px') }}>
+              <Well t={tile(community.index)} size={wellSm} icon={community.icon} />
               <div>
-                <p style={{ margin: 0, ...typeStyleOf(t, 'label'), color: t.neutralText }}>{community.title}</p>
-                <p style={{ margin: 0, ...typeStyleOf(t, 'helper'), color: muted }}>{community.count}</p>
+                <p style={{ margin: 0, ...typeStyleOf(tile(community.index), 'label'), color: tile(community.index).neutralText }}>{community.title}</p>
+                <p style={{ margin: 0, ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{community.count}</p>
               </div>
-              <div className="flex items-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-                <Avatar t={t} v={{ Size: 'XS' }} />
-                <span style={{ ...typeStyleOf(t, 'helper'), color: muted }}>{translate('By')} {community.by}</span>
+              <div className="flex items-center" style={{ gap: gap(tile(community.index), 'gap-tight', '4px') }}>
+                <Avatar t={tile(community.index)} v={{ Size: 'XS' }} />
+                <span style={{ ...typeStyleOf(tile(community.index), 'helper'), color: muted(community.index) }}>{translate('By')} {community.by}</span>
               </div>
             </div>
           </Card>
         </ScaledModule>
       ))}
 
-      {/* Floating menu — same column width as every other module (`w=100%`
-          → MODULE_SOURCE). Elevation on the unscaled frame; specimen shadow off. */}
-      <ScaledModule t={t} chrome={false} clip={false} elev="sm">
-        <ContextMenu t={t} v={{}} w="100%" elev={false} />
+      <ScaledModule t={tile(11)} appearance={appearanceAt(11)} chrome={false} clip={false} elev="sm">
+        <ContextMenu t={tile(11)} v={{}} w="100%" elev={false} />
       </ScaledModule>
 
-      <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ ...typeStyleOf(t, 'body-sm'), color: t.neutralText }}>{translate('You have 2 credits left')}</span>
-        <InspectableLive c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
+      <ScaledModule t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText }}>{translate('You have 2 credits left')}</span>
+        <InspectableLive c="Button" t={tile(12)} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
       </ScaledModule>
 
-      <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <InspectableLive c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
+      <ScaledModule t={tile(13)} appearance={appearanceAt(13)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <InspectableLive c="Toggle" t={tile(13)} v={{ On: 'True', Size: 'SM' }} toggle="On" />
       </ScaledModule>
 
-      <ScaledModule t={t}>
-        <div className="flex items-start justify-between" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Well t={t} size={wellSm} icon="box" />
-          <InspectableLive c="CloseButton" t={t} v={{ Size: 'SM' }} />
+      <ScaledModule t={tile(14)} appearance={appearanceAt(14)}>
+        <div className="flex items-start justify-between" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
+          <Well t={tile(14)} size={wellSm} icon="box" />
+          <InspectableLive c="CloseButton" t={tile(14)} v={{ Size: 'SM' }} />
         </div>
         <div>
-          <p style={{ margin: 0, ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>{translate('Unsaved changes')}</p>
-          <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
+          <p style={{ margin: 0, ...typeStyleOf(tile(14), 'heading-sm'), color: tile(14).neutralText }}>{translate('Unsaved changes')}</p>
+          <p style={{ margin: 0, ...typeStyleOf(tile(14), 'body-sm', { leading: true }), color: muted(14) }}>
             {translate('Do you want to save or discard changes?')}
           </p>
         </div>
-        <div className="flex flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</InspectableLive>
+        <div className="flex flex-col" style={{ gap: gap(tile(14), 'gap-control', '8px') }}>
+          <InspectableLive c="Button" t={tile(14)} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</InspectableLive>
+          <InspectableLive c="Button" t={tile(14)} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</InspectableLive>
         </div>
       </ScaledModule>
 
-      {/* Feedback — every `status.*` role at once: the two tints, their ink and
-          their border. The fastest surface for judging a retinted severity. */}
-      <ScaledModule t={t}>
-        <InlineAlert t={t} v={{ Status: 'Success' }} w="100%" nested />
-        <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" nested />
+      <ScaledModule
+        t={tile(15)}
+        appearance={appearanceAt(15)}
+        style={{ gap: gap(tile(15), 'gap-group', '16px') }}
+      >
+        <Toast t={tile(15)} v={{ Status: 'Success' }} w="100%" elev={false} />
+        <Toast t={tile(15)} v={{ Status: 'Error' }} w="100%" elev={false} />
       </ScaledModule>
 
-      {/* Navigation + progress — accent underline, `neutralFill` track,
-          `brandSolid` fill. */}
-      <ScaledModule t={t}>
-        <TabMenu t={t} v={{}} />
-        <Progress t={t} v={{}} />
+      <ScaledModule
+        t={tile(16)}
+        appearance={appearanceAt(16)}
+        style={{ gap: gap(tile(16), 'gap-group', '16px') }}
+      >
+        <TabMenu t={tile(16)} v={{}} w="100%" />
+        <Progress t={tile(16)} v={{}} w="100%" />
       </ScaledModule>
 
-      {/* Status pills — one per severity plus a brand chip, so a retint of any
-          status or accent family is visible side by side. */}
-      <ScaledModule t={t} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-        <StatusBadge t={t} v={{ Status: 'Online' }} />
-        <StatusBadge t={t} v={{ Status: 'Busy' }} />
-        <Chip t={t} v={{ Selected: 'True' }} />
+      <ScaledModule t={tile(17)} appearance={appearanceAt(17)} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+        <StatusBadge t={tile(17)} v={{ Status: 'Online' }} />
+        <StatusBadge t={tile(17)} v={{ Status: 'Busy' }} />
+        <Chip t={tile(17)} v={{ Selected: 'True' }} />
       </ScaledModule>
     </div>
-    </PhosphorWeightProvider>
   )
 }

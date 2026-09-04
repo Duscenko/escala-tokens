@@ -12,6 +12,7 @@ import { resolveThemePalette } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
+import { getIconLibrary } from './iconLibraries'
 import { typeStyleCss } from './typeRoles'
 import { resolveLayoutRole, extractBreakpoints, hairlineSafe, nestedRadius, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
@@ -293,7 +294,7 @@ export function resolvePreviewTokens(
     shadows: kind === 'dark' ? darkShadowMap(foundations.shadows) : foundations.shadows,
     grid: foundations.grid,
     opacity: foundations.opacity,
-    iconPrefix: 'phosphor',
+    iconPrefix: getIconLibrary(store.iconLibrary).key,
     coverGradient: gradientCssFor(store.gradientAssignments?.cover ?? null),
     avatarGradient: gradientCssFor(store.gradientAssignments?.avatar ?? null),
   }
@@ -422,6 +423,7 @@ export function statusSoftFillOf(t: PreviewTokens, colorName: string, contentHex
     Danger: 'status.critical.surface',
     Warning: 'status.warning.surface',
     Success: 'status.success.surface',
+    Info: 'status.info.surface',
   }
   const surface = surfaces[colorName] ? archTokenOf(t, surfaces[colorName], '') : ''
   return surface || tintOf(t, contentHex, '10', 0.1)

@@ -5,6 +5,7 @@ import { hueDelta, MIN_HUE_DELTA } from '../randomAccent'
 import {
   fontPairingsAreCatalogued,
   randomAccentVoice,
+  randomBoardAppearance,
   randomTheme,
 } from '../randomTheme'
 import { THEME_STYLE_PRESETS } from '../themePresets'
@@ -86,5 +87,12 @@ describe('randomTheme', () => {
     const typeMoved = recipe.bodyFont !== 'Inter' || recipe.headingFont !== 'Inter'
     const scaleMoved = recipe.typeScale !== 'default'
     expect(typeMoved || scaleMoved).toBe(true)
+  })
+
+  it('flips the whole artefacts board to light or dark', () => {
+    const first = randomBoardAppearance(sequence(5))
+    const second = randomBoardAppearance(sequence(5))
+    expect(first === 'light' || first === 'dark').toBe(true)
+    expect(second).toBe(first)
   })
 })

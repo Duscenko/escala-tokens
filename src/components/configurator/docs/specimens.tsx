@@ -534,7 +534,7 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
   const border = fieldStroke(t, state, error)
 
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: w ?? 260 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-tight', '4px'), width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>
         {translate(meta.label)}
       </span>
@@ -705,7 +705,10 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
   const showDot = v.Dot !== 'False'
   let bg = 'transparent'; let fg = c; let line = 'transparent'
   if (style === 'Solid') { bg = c; fg = statusOn(t, v.Color ?? 'Brand') }
-  else if (style === 'Soft') { bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c); fg = isNeutral ? (t.fgMuted ?? c) : c }
+  else if (style === 'Soft') {
+    bg = isNeutral ? t.neutralFill : statusSoftFillOf(t, v.Color ?? 'Brand', c)
+    fg = isNeutral ? (t.fgMuted ?? c) : statusInk(t, v.Color ?? 'Brand')
+  }
   else { line = c + '99' }
   // The Soft NEUTRAL fill is `surface.layer-1` — the same token a Card resolves
   // to, so a neutral badge sitting on a card is invisible. The status dot
@@ -772,40 +775,57 @@ function AvatarSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
 
 // ── Toast (Status) ────────────────────────────────────────────────────────────
 
-function ToastSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const c = statusColor(t, v.Status ?? 'Success')
-  // An "inverse" chip wants a background that's ALWAYS legible against
-  // `color: t.surface` (the page colour, used as ink below) — which is
-  // exactly what `neutralText` already guarantees in every theme, since it's
-  // the tone the system solved specifically to read on the page. Reusing that
-  // pairing (invert it: text colour becomes the chip's fill) is self-
-  // consistent by construction in both directions.
-  //
-  // This used to reach for `background-overlay` — a MODAL SCRIM role (see
-  // semanticRoles.ts), not a card surface. It happens to look right in light
-  // mode (scrim = near-black, same as neutralText there) but breaks in dark:
-  // `recDarkTone` deliberately INVERTS the scrim so it stays near-black in
-  // both themes (a scrim has to darken the backdrop either way) — which means
-  // in dark mode it lands within a few tones of `darkBackground`, i.e. nearly
-  // the page's own colour. Paired with `color: t.surface` (dark mode's near-
-  // black page), the toast became a near-black chip with near-black text on a
-  // near-black page — unreadable, and barely visible as its own surface.
-  const inverse = t.neutralText
+function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
+  const status = v.Status ?? 'Success'
+  const c = statusColor(t, status)
+  // Inverse snackbar: `surface.inverse` fill + `content.inverse` ink. Falls back
+  // to the neutralText/surface pairing that already reads in both themes — see
+  // the note below on why `background-overlay` is wrong here.
+  const inverse = archTokenOf(t, 'surface.inverse', t.neutralText)
+  const ink = archTokenOf(t, 'content.inverse', t.surface)
+  const rowGap = spacingRoleOf(t, 'gap-tight', '8px')
+  const padBlock = spacingRoleOf(t, 'gap-control', '12px')
+  const padInline = spacingRoleOf(t, 'gap-group', '14px')
+  const defaultMessage =
+    status === 'Error' ? 'Something went wrong.'
+      : status === 'Warning' ? 'Storage almost full.'
+        : status === 'Info' ? 'A new version is available.'
+          : 'Changes saved.'
+  const width = w ?? 280
   return (
     <div
+      role={status === 'Error' ? 'alert' : 'status'}
       style={{
         ...baseFont(t),
-        display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
-        borderRadius: radiusRoleOf(t, 'container'), background: inverse, color: t.surface,
-        boxShadow: shadowOf(t, 'xl', '0 8px 24px rgba(10,13,18,0.25)'), minWidth: 280,
+        display: 'flex',
+        alignItems: 'center',
+        gap: rowGap,
+        padding: `${padBlock} ${padInline}`,
+        borderRadius: radiusRoleOf(t, 'container'),
+        background: inverse,
+        color: ink,
+        boxShadow: elev === false ? undefined : shadowOf(t, 'xl', '0 8px 24px rgba(10,13,18,0.25)'),
+        width,
+        maxWidth: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
       }}
     >
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: c, flexShrink: 0 }} />
-      <span style={{ ...typeOf(t, 'body-sm'), flex: 1 }}>
-        {v.Status === 'Error' ? 'Something went wrong.' : v.Status === 'Warning' ? 'Storage almost full.' : v.Status === 'Info' ? 'A new version is available.' : 'Changes saved.'}
+      <span style={{ width: 8, height: 8, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: c, flexShrink: 0 }} />
+      <span
+        style={{
+          ...typeOf(t, 'body-sm'),
+          flex: 1,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {children ?? defaultMessage}
       </span>
-      <span style={{ ...typeOf(t, 'button'), textDecoration: 'underline', cursor: 'pointer' }}>Undo</span>
-      <span style={{ ...typeOf(t, 'button'), opacity: 0.6, cursor: 'pointer' }}>✕</span>
+      <span style={{ ...typeOf(t, 'button'), textDecoration: 'underline', cursor: 'pointer', flexShrink: 0 }}>Undo</span>
+      <span style={{ ...typeOf(t, 'button'), opacity: 0.6, cursor: 'pointer', flexShrink: 0 }}>✕</span>
     </div>
   )
 }
@@ -927,15 +947,55 @@ function BreadcrumbSpecimen({ t }: { t: PreviewTokens }) {
   )
 }
 
-function ProgressSpecimen({ t }: { t: PreviewTokens }) {
+function ProgressSpecimen({ t, w }: SpecimenProps) {
+  const width = w ?? 240
+  const stackGap = spacingRoleOf(t, 'gap-control', '8px')
   return (
-    <div style={{ ...baseFont(t), width: 240, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
-        <span style={{ color: t.fgMuted }}>Uploading…</span>
-        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500) }}>60%</span>
+    <div
+      style={{
+        ...baseFont(t),
+        width,
+        maxWidth: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: stackGap,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: stackGap,
+          minWidth: 0,
+          ...typeOf(t, 'caption'),
+        }}
+      >
+        <span style={{ color: t.fgMuted, minWidth: 0 }}>Uploading…</span>
+        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500), flexShrink: 0 }}>60%</span>
       </div>
-      <div role="progressbar" aria-valuenow={60} aria-valuemin={0} aria-valuemax={100} style={{ height: 8, borderRadius: 999, background: t.neutralFill, overflow: 'hidden' }}>
-        <div style={{ width: '60%', height: '100%', borderRadius: 999, background: t.brandSolid }} />
+      <div
+        role="progressbar"
+        aria-valuenow={60}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        style={{
+          height: 6,
+          borderRadius: radiusRoleOf(t, 'full', '9999px'),
+          background: t.neutralFill,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: '60%',
+            height: '100%',
+            borderRadius: radiusRoleOf(t, 'full', '9999px'),
+            background: t.brandSolid,
+          }}
+        />
       </div>
     </div>
   )
@@ -1413,12 +1473,13 @@ function SliderSpecimen({ t, w }: SpecimenProps) {
   }
 
   const active = drag || hover || focus
+  const stackGap = spacingRoleOf(t, 'gap-control', '8px')
   return (
-    <div style={{ ...baseFont(t), width: w ?? 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
-        <span style={{ color: t.fgMuted }}>Border radius</span>
+    <div style={{ ...baseFont(t), width: w ?? 260, maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: stackGap }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: stackGap, minWidth: 0, ...typeOf(t, 'caption') }}>
+        <span style={{ color: t.fgMuted, minWidth: 0 }}>Border radius</span>
         {/* Tabular so the number doesn't jitter the row width as it changes. */}
-        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500), fontVariantNumeric: 'tabular-nums' }}>{value}%</span>
+        <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500), fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{value}%</span>
       </div>
       <div
         ref={trackRef}
@@ -2055,17 +2116,29 @@ function StepperSpecimen({ t }: { t: PreviewTokens }) {
 // segmented control — and while it slides you can see the brand tint travel
 // across the neutral text, so the two tokens are judged against each other.
 // Tween, not spring: this is a tool, and bounce reads as toy here.
-function TabMenuSpecimen({ t }: { t: PreviewTokens }) {
+function TabMenuSpecimen({ t, w }: SpecimenProps) {
   const items = ['All', 'Drafts', 'Published']
   const [active, setActive] = useState(0)
   const [hover, setHover] = useState<number | null>(null)
   const reduce = useReducedMotion() ?? false
+  const fill = w === '100%'
+  const tabGap = spacingRoleOf(t, 'gap-tight', '4px')
   // Scopes the sliding pill to THIS instance — two TabMenus on one screen would
   // otherwise share a layoutId and animate the pill between each other.
   const pillId = `tabmenu-pill-${useId()}`
 
   return (
-    <div role="tablist" style={{ ...baseFont(t), display: 'inline-flex', gap: 4 }}>
+    <div
+      role="tablist"
+      style={{
+        ...baseFont(t),
+        display: 'flex',
+        width: fill ? '100%' : undefined,
+        maxWidth: '100%',
+        minWidth: 0,
+        gap: tabGap,
+      }}
+    >
       {items.map((item, i) => {
         const on = i === active
         return (
@@ -2096,7 +2169,14 @@ function TabMenuSpecimen({ t }: { t: PreviewTokens }) {
               }
             }}
             style={{
-              position: 'relative', padding: '7px 14px', borderRadius: 999, ...typeOf(t, 'button'), cursor: 'pointer',
+              position: 'relative',
+              flex: fill ? '1 1 0' : undefined,
+              minWidth: fill ? 0 : undefined,
+              padding: fill ? '8px 6px' : '7px 14px',
+              borderRadius: radiusRoleOf(t, 'full', '9999px'),
+              textAlign: fill ? 'center' : undefined,
+              ...typeOf(t, fill ? 'label' : 'button'),
+              cursor: 'pointer',
               // An inactive tab warms toward the brand ink on hover instead of
               // gaining a fill — a second filled pill would compete with the
               // real selection for "which one is active".

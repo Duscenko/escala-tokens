@@ -150,6 +150,13 @@
       transform: rotate(360deg);
     }
   }
+  /* Token Inspector — dashed stroke travels the selection perimeter. */
+  --animate-inspect-march: inspect-march 0.9s linear infinite;
+  @keyframes inspect-march {
+    to {
+      stroke-dashoffset: -26;
+    }
+  }
   /* Magic UI Rainbow Button — ink on the dark (light chrome) / white (dark chrome) fill. */
   --color-primary-foreground: var(--rainbow-ink);
   --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
@@ -611,9 +618,18 @@ body {
   transform: scale(1.18);
 }
 
+/* Token Inspector selection — marching dash around the measured rect. */
+.inspect-ring-stroke {
+  animation: inspect-march 0.9s linear infinite;
+}
+.inspect-ring-stroke--soft {
+  animation-duration: 1.15s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
-  .animate-rainbow {
+  .animate-rainbow,
+  .inspect-ring-stroke {
     animation: none !important;
   }
   .color-hub-tab,

@@ -56,6 +56,7 @@ import {
   inspectElement, inspectGroup, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import type { PreviewTokens } from '../ButtonPreview'
+import type { ThemeAppearance } from '../../../lib/themeModes'
 import { InspectGlyph } from '../../ui/icons'
 
 const InspectorActiveContext = createContext(false)
@@ -73,10 +74,27 @@ export function InspectorModeProvider({ active, children }: { active: boolean; c
  * specimen on the canvas, so "it costs nothing when unused" has to be
  * literally true rather than approximately true.
  */
-export function TokenInspector({ component, children }: { component: string; children: ReactNode }) {
+export function TokenInspector({
+  component, variant, children,
+}: {
+  component: string
+  /** Catalogue axis values for this instance — lets Inspect name the roles THIS
+   *  variant paints instead of guessing from computed colours that may differ
+   *  from `archTokens` (e.g. a status solid read off `pal.error[9]`). */
+  variant?: Record<string, string>
+  children: ReactNode
+}) {
   const active = useContext(InspectorActiveContext)
   if (!active) return <>{children}</>
-  return <span data-inspect={component} style={{ display: 'contents' }}>{children}</span>
+  return (
+    <span
+      data-inspect={component}
+      data-inspect-variant={variant ? JSON.stringify(variant) : undefined}
+      style={{ display: 'contents' }}
+    >
+      {children}
+    </span>
+  )
 }
 
 /**
@@ -148,6 +166,8 @@ interface Target {
   measured: boolean
   /** Group only: how many inspectable components are inside. */
   size?: number
+  /** Which appearance subtree this target was measured in — mixed collage. */
+  appearance: ThemeAppearance
 }
 
 /** The control being attributed inside a pinned group. */
@@ -168,16 +188,56 @@ const MIN_BADGE_H = 160
 
 const SLOT_LABEL: Record<string, string> = { fill: 'surface', ink: 'label', stroke: 'stroke' }
 
+const INSPECT_RING_PAD = 2
+const INSPECT_RING_RX = 6
+
+/** Overlay highlight — fill tint + a dashed stroke that marches around the
+ *  perimeter so "what is selected" reads at a glance without a static ring
+ *  getting lost on busy modules. Static when `prefers-reduced-motion`. */
+function InspectRing({ rect, variant }: { rect: DOMRect; variant: 'component' | 'group' | 'focus' }) {
+  const stroke = variant === 'group' ? 1.5 : 2
+  const w = rect.width + INSPECT_RING_PAD * 2
+  const h = rect.height + INSPECT_RING_PAD * 2
+  const fillAlpha = variant === 'group' ? 4 : variant === 'focus' ? 10 : 8
+  const strokeOpacity = variant === 'group' ? 0.5 : 1
+  const dash = variant === 'group' ? '5 4' : '8 5'
+
+  return (
+    <svg
+      className="pointer-events-none absolute overflow-visible"
+      style={{ left: rect.left - INSPECT_RING_PAD, top: rect.top - INSPECT_RING_PAD, width: w, height: h }}
+      aria-hidden
+    >
+      <rect
+        x={stroke / 2}
+        y={stroke / 2}
+        width={Math.max(0, w - stroke)}
+        height={Math.max(0, h - stroke)}
+        rx={INSPECT_RING_RX}
+        ry={INSPECT_RING_RX}
+        fill={`color-mix(in srgb, var(--accent-solid) ${fillAlpha}%, transparent)`}
+        stroke="var(--accent-solid)"
+        strokeOpacity={strokeOpacity}
+        strokeWidth={stroke}
+        strokeDasharray={dash}
+        className={`inspect-ring-stroke ${variant === 'group' ? 'inspect-ring-stroke--soft' : ''}`}
+      />
+    </svg>
+  )
+}
+
 export function InspectorOverlay({
-  active, rootRef, t, onPick, onOpenTable,
+  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable,
 }: {
   active: boolean
   /** The scroll container the canvas paints into — hit-testing is scoped to it
    *  so the rail, the header and the chrome are never inspectable. */
   rootRef: React.RefObject<HTMLElement | null>
-  t: PreviewTokens
+  tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
+  /** Fallback when the pointer isn't over a per-tile appearance subtree. */
+  defaultAppearance: ThemeAppearance
   /** A role was chosen — open it in the quick rail. */
-  onPick: (roleId: string, css: string) => void
+  onPick: (roleId: string, css: string, appearance: ThemeAppearance) => void
   /** Leave the canvas for the full Semantics table. It takes ONE role because
    *  that is what the table can scroll to; the badge sends whichever row is in
    *  play (the lit control's first role, else the top of the list) rather than
@@ -205,17 +265,31 @@ export function InspectorOverlay({
     setHover(null); setPin(null); setFocus(null)
   }, [])
 
+  const tokensFor = useCallback((el: Element | null): PreviewTokens => {
+    const node = el?.closest?.('[data-collage-appearance]')
+    const appearance = (node?.getAttribute('data-collage-appearance') ?? defaultAppearance) as ThemeAppearance
+    return tokensByAppearance[appearance === 'dark' ? 'dark' : 'light']
+  }, [tokensByAppearance, defaultAppearance])
+
+  const appearanceFor = useCallback((el: Element | null): ThemeAppearance => {
+    const node = el?.closest?.('[data-collage-appearance]')
+    const appearance = node?.getAttribute('data-collage-appearance')
+    return appearance === 'dark' ? 'dark' : appearance === 'light' ? 'light' : defaultAppearance
+  }, [defaultAppearance])
+
   const buildComponent = useCallback((el: Element): Target | null => {
     const label = el.getAttribute('data-inspect') || ''
     const rect = rectOf(el)
     if (!rect) return null
+    const t = tokensFor(el)
     const { roles, measured } = inspectElement(t, label, el)
-    return { kind: 'component', el, label, rect, roles, measured }
-  }, [t])
+    return { kind: 'component', el, label, rect, roles, measured, appearance: appearanceFor(el) }
+  }, [tokensFor, appearanceFor])
 
   const buildGroup = useCallback((el: Element): Target | null => {
     const rect = rectOf(el)
     if (!rect) return null
+    const t = tokensFor(el)
     const { roles, members } = inspectGroup(t, el)
     if (!members.length) return null
     const unique = Array.from(new Set(members))
@@ -225,23 +299,26 @@ export function InspectorOverlay({
       // honest single name, so it reports how many it holds and lets the rows
       // (and the per-control highlight) say the rest.
       label: unique.length === 1 ? unique[0] : `${members.length} components`,
+      appearance: appearanceFor(el),
     }
-  }, [t])
+  }, [tokensFor, appearanceFor])
 
   const buildFocus = useCallback((el: Element): FocusTarget | null => {
     const label = el.getAttribute('data-inspect') || ''
     const rect = rectOf(el)
     if (!rect) return null
+    const t = tokensFor(el)
     return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
-  }, [t])
+  }, [tokensFor])
 
   const buildPage = useCallback((el: Element): Target | null => {
     const rect = rectOf(el)
     if (!rect) return null
+    const t = tokensFor(el)
     const { roles, measured } = inspectPage(t)
     if (!roles.length) return null
-    return { kind: 'page', el, label: 'Page', rect, roles, measured }
-  }, [t])
+    return { kind: 'page', el, label: 'Page', rect, roles, measured, appearance: appearanceFor(el) }
+  }, [tokensFor, appearanceFor])
 
   useEffect(() => {
     if (!active) { clearAll(); return }
@@ -387,24 +464,8 @@ export function InspectorOverlay({
       {/* A group is the coarser target, so it gets the quieter ring — with a
           control lit inside it, two rings of equal weight would compete for
           the "this is what the badge is about" reading. */}
-      <div
-        className={`absolute rounded-[6px] ${kind === 'component' ? 'ring-2 ring-accent-solid' : 'ring-1 ring-accent-solid/50'}`}
-        style={{
-          left: rect.left - 2, top: rect.top - 2,
-          width: rect.width + 4, height: rect.height + 4,
-          background: `color-mix(in srgb, var(--accent-solid) ${kind === 'component' ? 8 : 4}%, transparent)`,
-        }}
-      />
-      {focus && (
-        <div
-          className="absolute rounded-[6px] ring-2 ring-accent-solid"
-          style={{
-            left: focus.rect.left - 2, top: focus.rect.top - 2,
-            width: focus.rect.width + 4, height: focus.rect.height + 4,
-            background: 'color-mix(in srgb, var(--accent-solid) 10%, transparent)',
-          }}
-        />
-      )}
+      <InspectRing rect={rect} variant={kind === 'component' ? 'component' : 'group'} />
+      {focus && <InspectRing rect={focus.rect} variant="focus" />}
       <div
         className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-line bg-rail-section shadow-lg"
         style={{ left, top, width: BADGE_W, maxHeight, transform: flip ? 'translateY(-100%)' : undefined }}
@@ -465,7 +526,7 @@ export function InspectorOverlay({
                 <li key={role.id}>
                   <button
                     type="button"
-                    onClick={() => { clearAll(); onPick(role.id, role.css) }}
+                    onClick={() => { clearAll(); onPick(role.id, role.css, target.appearance) }}
                     className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
                       isLit
                         ? 'bg-accent-ui/10 ring-1 ring-inset ring-accent-ui/40'

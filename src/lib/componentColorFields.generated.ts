@@ -13,7 +13,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "AppStoreBadge": ['neutralText'],
   "AspectRatio": ['brandSolid', 'brandText', 'neutralText', 'borderDefault'],
   "Avatar": ['brandSolid', 'brandText', 'neutralText'],
-  "Badge": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
+  "Badge": ['brandSolid', 'brandText', 'onBrand', 'neutralFill', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
   "Breadcrumb": ['neutralText', 'fgMuted', 'placeholderText'],
   "Button": ['brandSolid', 'brandText', 'onBrand', 'neutralText', 'errorColor', 'disabledBg', 'disabledText', 'successColor', 'warningColor', 'infoColor', 'ghostBrandHover', 'ghostBrandPressed'],
   "ButtonGroup": ['neutralFill', 'neutralText', 'border'],
