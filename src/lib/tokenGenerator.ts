@@ -72,10 +72,32 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   // Themes in the user's column order (themeOrder), with any stragglers appended.
   // The plugin maps each theme to one variable-collection mode (column), so this
   // ordering is the Figma column order.
-  const themeNames = [
+  const allThemeNames = [
     ...store.themeOrder.filter((t) => store.themes[t]),
     ...Object.keys(store.themes).filter((t) => !store.themeOrder.includes(t)),
   ]
+
+  // Drop the pristine built-in `light`/`dark` scaffolding once the user has a
+  // theme of their own. A brand-new system seeds `themes.light`/`.dark` (the
+  // default violet accent); the moment someone adopts a System Style or creates
+  // a theme, those seeds are just noise — but they were still shipping in the
+  // payload and the Export wizard's "My themes" list, so the Figma plugin
+  // created violet Light/Dark modes nobody asked for. Reported for NEW users
+  // specifically, which is exactly the population that never touches light/dark.
+  // "Touched" = the theme has its own family references (`themeSources` — every
+  // adopted/created theme gets one), its own foundation overrides, or a
+  // hand-edited semantic role (`architectureOverrides` keyed by the theme). An
+  // edited built-in is kept; an untouched one is dropped only when a real theme
+  // exists to replace it, so a system that genuinely only has light/dark still
+  // exports them.
+  const isTouched = (t: string) =>
+    Boolean(store.themeSources[t]) ||
+    Boolean(store.themeFoundations?.[t]) ||
+    Object.values(store.architectureOverrides ?? {}).some((byToken) =>
+      Object.values(byToken).some((byMode) => Object.prototype.hasOwnProperty.call(byMode, t)),
+    )
+  const ownThemeNames = allThemeNames.filter((t) => (t !== 'light' && t !== 'dark') || isTouched(t))
+  const themeNames = ownThemeNames.length ? ownThemeNames : allThemeNames
 
   // Normalize every semantic value onto its role's CURRENT source ramp: values
   // that are a tone of the ramp pass through; empty or stale ones (left over
