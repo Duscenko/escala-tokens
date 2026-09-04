@@ -24,6 +24,11 @@ const TextLink = SPECIMENS.TextLink
 const Segmented = SPECIMENS.SegmentedControl
 const ContextMenu = SPECIMENS.ContextMenu
 const Spinner = SPECIMENS.Spinner
+const InlineAlert = SPECIMENS.InlineAlert
+const TabMenu = SPECIMENS.TabMenu
+const Progress = SPECIMENS.Progress
+const StatusBadge = SPECIMENS.StatusBadge
+const Chip = SPECIMENS.Chip
 
 /**
  * Specimens lay out at a real mobile card width (Input 260, SocialLogin 280
@@ -402,6 +407,28 @@ export function SystemCollage({
           <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</Live>
           <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</Live>
         </div>
+      </ScaledModule>
+
+      {/* Feedback — every `status.*` role at once: the two tints, their ink and
+          their border. The fastest surface for judging a retinted severity. */}
+      <ScaledModule t={t}>
+        <InlineAlert t={t} v={{ Status: 'Success' }} w="100%" />
+        <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" />
+      </ScaledModule>
+
+      {/* Navigation + progress — accent underline, `neutralFill` track,
+          `brandSolid` fill. */}
+      <ScaledModule t={t}>
+        <TabMenu t={t} v={{}} />
+        <Progress t={t} v={{}} />
+      </ScaledModule>
+
+      {/* Status pills — one per severity plus a brand chip, so a retint of any
+          status or accent family is visible side by side. */}
+      <ScaledModule t={t} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+        <StatusBadge t={t} v={{ Status: 'Online' }} />
+        <StatusBadge t={t} v={{ Status: 'Busy' }} />
+        <Chip t={t} v={{ Selected: 'True' }} />
       </ScaledModule>
     </div>
     </PhosphorWeightProvider>
