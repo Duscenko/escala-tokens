@@ -744,6 +744,10 @@ export default function Configurator() {
   }
   const changePreviewAppearance = (appearance: ThemeAppearance) => {
     setPreviewSelection((current) => ({ ...current, theme: previewTheme, appearance }))
+    // A live System Style try-on renders from `stylePreview.appearance`, not
+    // `previewAppearance` — so the board's sun/moon has to move it too. This is
+    // the control the per-preset toggle in the Themes Library used to be.
+    setStylePreview((current) => (current ? { ...current, appearance } : current))
   }
   // Right preview panel can be collapsed for more center width; re-expanded
   // via the slim strip that replaces it while collapsed. Starts EXPANDED: it's

@@ -744,6 +744,10 @@ export default function ThemePreviewHub({
     [stylePreview, store, previewTheme],
   )
   const hubCanvasTokens = stylePreviewTokens ?? liveTokens
+  // What the BOARD is showing: a live try-on renders from `stylePreview.appearance`,
+  // a committed theme from `previewAppearance`. The header sun/moon reads and
+  // writes this, so it works for both.
+  const boardAppearance: ThemeAppearance = stylePreview?.appearance ?? previewAppearance
   // The canvas is the theme's PAGE (`surface.page` / `background-primary`), not
   // workspace chrome (`--app` / `--surface`) — otherwise artefacts float on a
   // fill that isn't the background they ship on.
@@ -823,7 +827,7 @@ export default function ThemePreviewHub({
           <div className="min-h-0 flex-1 bg-nav p-3">
             <section
               aria-label={`${themeName} preview canvas`}
-              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${previewAppearance === 'dark' ? 'dark' : 'light'}`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${boardAppearance === 'dark' ? 'dark' : 'light'}`}
               style={{ background: pageCanvasColor }}
             >
               {/* One header band for every hub view — the active view's NAME
@@ -840,7 +844,7 @@ export default function ThemePreviewHub({
                 <div className="flex flex-shrink-0 items-center gap-3">
                   {surface === 'documentation' && hubDocActions}
                   <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
-                  <PreviewAppearanceButton value={previewAppearance} onChange={handleAppearanceChange} />
+                  <PreviewAppearanceButton value={boardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>

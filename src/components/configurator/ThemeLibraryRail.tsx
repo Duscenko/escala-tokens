@@ -11,7 +11,6 @@ import { adoptPreset } from '../../lib/adoptPreset'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
-import { AppearanceGlyph } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 
 export { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
@@ -211,56 +210,6 @@ const PRESET_AVATAR_RAMPS: Record<string, ColorScale> = Object.fromEntries(
   ),
 )
 
-// Sun / moon — the shared `AppearanceGlyph` (mask + `currentColor`, so it
-// follows the button's own ink in both chromes; the unselected side dims with
-// OPACITY, never colour). Same renderer as the Export wizard's theme chips.
-
-/**
- * Sun / moon appearance toggle for a System Style row.
- *
- * DELIBERATELY not shown at rest — it only renders once a row is EXPANDED (the
- * user has clicked the style and the try-on is live). At that point choosing an
- * appearance is a meaningful decision; before it, it's chrome competing with the
- * six style names.
- *
- * The resting selection tracks the WORKSPACE chrome (`kindOf` → `chromeTheme`),
- * not the preset's authored `preferredAppearance` — a dark session previews
- * dark styles, a light one previews light. Every ramp a preset derives carries
- * a dark twin (Radix two-scale model), so both readings are real. This drives
- * the live try-on AND what "Add to system" mints: you cannot preview one
- * appearance and commit the other.
- */
-function AppearanceToggle({
-  value, label, onChange,
-}: {
-  value: 'light' | 'dark'
-  label: string
-  onChange: (appearance: 'light' | 'dark') => void
-}) {
-  const { t } = useI18n()
-  return (
-    <span className="flex flex-shrink-0 items-center gap-px rounded-md border border-line bg-app/60 p-px">
-      {(['light', 'dark'] as const).map((appearance) => (
-        <button
-          key={appearance}
-          type="button"
-          onClick={() => onChange(appearance)}
-          aria-pressed={value === appearance}
-          aria-label={t('Preview {name} in {appearance}', { name: label, appearance: t(appearance) })}
-          title={t('Preview {name} in {appearance}', { name: label, appearance: t(appearance) })}
-          // 24px target (WCAG 2.2 2.5.8) around a 14px glyph — the hit area
-          // grows, the mark does not, the same rule `HitArea` follows.
-          className={`grid h-6 w-6 place-items-center rounded transition-[background-color,opacity] ${
-            value === appearance ? 'bg-elevated text-fg opacity-100' : 'text-fg-muted opacity-40 hover:opacity-75'
-          } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-        >
-          <AppearanceGlyph kind={appearance} />
-        </button>
-      ))}
-    </span>
-  )
-}
-
 /**
  * A theme avatar is a compact rendering of the theme's resolved brand ramp,
  * rather than a baked light/dark asset. This keeps the library honest when a
@@ -392,7 +341,13 @@ export default function ThemeLibraryRail({
     setPresetError(null)
     // `adoptPreset` is shared with the quick rail's auto-adopt, so an explicit
     // "Add to system" and an edit-triggered adopt mint byte-identical themes.
-    const result = adoptPreset(preset, kindOf(preset))
+    // Commit the appearance the board is CURRENTLY showing (the sun/moon icon
+    // there owns that choice now) — you cannot preview one side and mint the
+    // other. Falls back to the chrome when no try-on is live.
+    const appearance = activeStylePreview?.preset.id === preset.id
+      ? activeStylePreview.appearance
+      : kindOf(preset)
+    const result = adoptPreset(preset, appearance)
     if ('error' in result) { setPresetError(result.error); return }
     clearStylePreview()
     onPreviewThemeChange(result.key)
@@ -586,6 +541,12 @@ export default function ThemeLibraryRail({
             {THEME_STYLE_PRESETS.map((preset) => {
               const expanded = selectedPreset === preset.id
               const kind = kindOf(preset)
+              // An open row's avatar follows the LIVE try-on appearance (the
+              // board's sun/moon now owns that choice); a resting row shows the
+              // chrome's.
+              const previewKind = expanded && activeStylePreview?.preset.id === preset.id
+                ? activeStylePreview.appearance
+                : kind
               return (
                 <div key={preset.id} className={`rounded-xl border transition-colors ${expanded ? 'border-line bg-surface' : THEME_RAIL_ROW_IDLE}`}>
                   <div className="flex items-center gap-1.5 p-1.5">
@@ -593,29 +554,16 @@ export default function ThemeLibraryRail({
                       type="button"
                       onClick={() => (expanded ? clearStylePreview() : previewPreset(preset, kind))}
                       aria-expanded={expanded}
-                      // The description moved here when the info icon gave up
-                      // its slot to the appearance toggle — same words, on the
-                      // row they describe, one fewer control to aim at.
                       title={`${preset.label} — ${preset.description} ${preset.detail}${preset.accessibilityNote ? ` ${preset.accessibilityNote}` : ''}`}
                       className="flex flex-1 min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
                     >
-                      <ThemeAvatar ramp={PRESET_AVATAR_RAMPS[`${preset.id}:${kind}`]} appearance={kind} fallback={preset.accent} />
+                      <ThemeAvatar ramp={PRESET_AVATAR_RAMPS[`${preset.id}:${previewKind}`]} appearance={previewKind} fallback={preset.accent} />
                       <span className="min-w-0 flex-1 truncate text-body font-medium text-fg">{preset.shortLabel}</span>
                     </button>
-                    {/* Only once the style is open and the try-on is live —
-                        never at rest, where it would just be chrome next to the
-                        six names. Switching it re-previews in that appearance
-                        and is what "Add to system" will mint. */}
-                    {expanded && (
-                      <AppearanceToggle
-                        value={kind}
-                        label={preset.shortLabel}
-                        onChange={(appearance) => {
-                          setPresetKind((current) => ({ ...current, [preset.id]: appearance }))
-                          previewPreset(preset, appearance)
-                        }}
-                      />
-                    )}
+                    {/* The light/dark choice for an open try-on moved to the
+                        board's own sun/moon icon (Theme Preview header) — one
+                        appearance control per screen, and it's beside what it
+                        actually repaints. */}
                   </div>
                   {expanded && (
                     <div className="px-2 pb-2">
