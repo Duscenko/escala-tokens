@@ -2,7 +2,7 @@ import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
-import { resolveThemePalette, themeBrandRamp } from './themeSources'
+import { resolveThemePalette, themeBrandRamp, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
@@ -99,6 +99,40 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   const ownThemeNames = allThemeNames.filter((t) => (t !== 'light' && t !== 'dark') || isTouched(t))
   const themeNames = ownThemeNames.length ? ownThemeNames : allThemeNames
 
+  // Which primitive FAMILIES land in `colors.primitive`. A brand-new system's
+  // `accent` / `neutral` / `error` … globals (the default violet ramps) were
+  // flattened unconditionally, so a user who adopted a System Style saw the
+  // plugin create an inherited violet "Accent" / "Neutral" / "State" set beside
+  // their theme's own `core--minimalist-*` families — and every OTHER style they
+  // tried on rode along too.
+  //
+  //  · `shippedFamilies` — referenced by a theme that's actually being exported
+  //    (`themeSources` names one family per slot; a sourceless built-in falls
+  //    back to the globals). These always ship.
+  //  · A family referenced by SOME theme but NOT a shipped one is another
+  //    style's — dropped.
+  //  · A `customColors` family referenced by NO theme is a free-standing
+  //    palette the user made by hand (a discarded style's families are swept on
+  //    delete, so this can't be leftover style noise) — it ships.
+  // `black-a` / `white-a` are universal and always ship. `<key>-dark` / `<key>-a`
+  // twins gate on the same rule as their base.
+  const familiesOf = (names: string[]) => {
+    const set = new Set<string>()
+    for (const name of names) {
+      const src = store.themeSources[name]
+      for (const slot of FAMILY_SLOTS) set.add(src?.[slot] || GLOBAL_FAMILY[slot])
+    }
+    return set
+  }
+  const shippedFamilies = familiesOf(themeNames)
+  const anyThemeFamilies = familiesOf(Object.keys(store.themeSources))
+  const customKeys = new Set(store.customColors.map((c) => c.key))
+  const shipsFamily = (key: string) => {
+    const base = key.replace(/-dark$/, '').replace(/-a$/, '')
+    if (shippedFamilies.has(base)) return true
+    return customKeys.has(base) && !anyThemeFamilies.has(base)
+  }
+
   // Normalize every semantic value onto its role's CURRENT source ramp: values
   // that are a tone of the ramp pass through; empty or stale ones (left over
   // after a scale was regenerated) snap to the recommended tone. This keeps the
@@ -166,7 +200,7 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
     orderedThemes[name] = normalizedModes[preferred]
   }
 
-  return { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes }
+  return { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes }
 }
 
 /** Shared theme/scale resolution for exports, docs and the preview overlay. */
@@ -200,7 +234,7 @@ export function buildCategoricalSymbolicTokens(): {
 export function generateTokenJSON() {
   const store = useDesignStore.getState()
   const { typography, colorNaming } = store
-  const { grayDarkScale, hasDarkTheme, themeNames, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store)
+  const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store)
   const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {
     const resolved = resolveThemeFoundations(store, theme)
     return [theme, {
@@ -226,42 +260,38 @@ export function generateTokenJSON() {
     }]
   }))
 
-  // Merge all color scales into a single primitive map with prefixed keys.
-  // Only include secondary scales if they've been populated (non-empty objects).
-  const primitive: Record<string, string> = {
-    ...flattenScale('accent', store.primaryScale, colorNaming),
-    ...flattenScale('neutral', store.grayLightScale, colorNaming),
-    ...(Object.keys(store.errorScale).length
-      ? flattenScale('error', store.errorScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.warningScale).length
-      ? flattenScale('warning', store.warningScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.successScale).length
-      ? flattenScale('success', store.successScale, colorNaming)
-      : {}),
-    ...(Object.keys(store.infoScale).length
-      ? flattenScale('info', store.infoScale, colorNaming)
-      : {}),
+  // Merge the referenced color scales into a single primitive map with prefixed
+  // keys. `shipsFamily` drops any global family (`accent` / `neutral` / `error`
+  // …) the shipped themes don't reference — a system built entirely on custom
+  // families no longer carries the pristine violet globals. Secondary scales
+  // still only ship when populated.
+  const addFamily = (name: string, scale?: Record<number, string>) => {
+    if (!scale || !Object.keys(scale).length || !shipsFamily(name)) return
+    Object.assign(primitive, flattenScale(name, scale, colorNaming))
   }
+  const primitive: Record<string, string> = {}
+  addFamily('accent', store.primaryScale)
+  addFamily('neutral', store.grayLightScale)
+  addFamily('error', store.errorScale)
+  addFamily('warning', store.warningScale)
+  addFamily('success', store.successScale)
+  addFamily('info', store.infoScale)
 
   if (hasDarkTheme) {
-    const dark: [string, Record<number, string> | undefined][] = [
-      ['neutral-dark', grayDarkScale],
-      ['accent-dark', store.primaryDarkScale],
-      ['error-dark', store.errorDarkScale],
-      ['warning-dark', store.warningDarkScale],
-      ['success-dark', store.successDarkScale],
-      ['info-dark', store.infoDarkScale],
-    ]
-    for (const [name, scale] of dark) {
-      if (scale && Object.keys(scale).length) Object.assign(primitive, flattenScale(name, scale, colorNaming))
-    }
+    addFamily('neutral-dark', grayDarkScale)
+    addFamily('accent-dark', store.primaryDarkScale)
+    addFamily('error-dark', store.errorDarkScale)
+    addFamily('warning-dark', store.warningDarkScale)
+    addFamily('success-dark', store.successDarkScale)
+    addFamily('info-dark', store.infoDarkScale)
   }
 
   // Custom color families adopt the same prefixed structure (teal-1 … teal-12),
-  // dark twin included.
+  // dark twin included — but only the ones a shipped theme references, so an
+  // adopted System Style's family set doesn't drag along every OTHER style the
+  // user tried on.
   store.customColors.forEach((c) => {
+    if (!shipsFamily(c.key)) return
     Object.assign(primitive, flattenScale(c.key, c.scale, colorNaming))
     if (hasDarkTheme && c.darkScale && Object.keys(c.darkScale).length) {
       Object.assign(primitive, flattenScale(`${c.key}-dark`, c.darkScale, colorNaming))
@@ -276,11 +306,11 @@ export function generateTokenJSON() {
   // dark one. Hence both `*-a*` and `*-dark-a*`.
   const primitiveAlpha: Record<string, string> = {}
   const alphaOf = (name: string, scale: Record<number, string>, page = store.pageBackground) => {
-    if (!Object.keys(scale).length) return
+    if (!Object.keys(scale).length || !shipsFamily(name)) return
     Object.assign(primitiveAlpha, flattenScale(name, generateAlphaScale(scale, page, 'light'), colorNaming))
   }
   const alphaDarkOf = (name: string, scale?: Record<number, string>, page = store.darkBackground) => {
-    if (!hasDarkTheme || !scale || !Object.keys(scale).length) return
+    if (!hasDarkTheme || !scale || !Object.keys(scale).length || !shipsFamily(name)) return
     Object.assign(primitiveAlpha, flattenScale(`${name}-dark`, generateAlphaScale(scale, page, 'dark'), colorNaming))
   }
   alphaOf('accent', store.primaryScale);   alphaDarkOf('accent', store.primaryDarkScale)
