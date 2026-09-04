@@ -242,24 +242,23 @@ const softBorders: ThemeStyleSemantics = {
 }
 
 /**
- * Nature's lived-in recipe — ported from the adopted "Nature / Organic" theme.
- * Quiet alpha borders (`{neutral-a.3}` / `{accent-a.3}`), success-tinted
- * secondary action, and hand-tuned critical surfaces. Owner waived the WCAG
- * 1.4.11 floor on the control edge (same call as Core / Glass).
+ * Nature's lived-in recipe — ported verbatim from the "superb" theme the
+ * designer iterated in-app and asked to keep under the Nature name. The
+ * personality is a soft alpha control edge (`{neutral-a.5}` light /
+ * `{accent-a.4}` dark), an accent-tinted `content.primary` in light, and a
+ * `{white-a.6}` input surface. Owner waived the WCAG 1.4.11 floor on the
+ * control edge (same call as Core / Glass).
  */
 const natureSemantics: ThemeStyleSemantics = {
-  'surface.layer-1': { dark: '{neutral-dark.3}' },
-  'content.subtle': { dark: '{neutral-dark.10}' },
-  'surface.input': { light: '{neutral.1}', dark: '{neutral-dark.2}' },
-  'border.control': { light: '{neutral-a.3}', dark: '{accent-a.3}' },
-  'border.control-hover': { light: '{black-a.9}', dark: '{white-a.8}' },
-  'border.subtle': { light: '{success-a.2}', dark: '{accent-a.1}' },
+  'border.control': { light: '{neutral-a.5}', dark: '{accent-a.4}' },
+  'border.subtle': { dark: '{accent-a.2}' },
   'content.primary': { light: '{accent.12}' },
-  'action.secondary.accent': { light: '{success-a.9}' },
-  'status.critical.surface': { light: '{error.11}' },
-  'status.critical.surface-pressed': { light: '{error.10}' },
-  'status.critical.surface-solid': { light: '{error.10}' },
-  'status.critical.border': { light: '{error.10}' },
+  'surface.input': { light: '{white-a.6}' },
+  // Not from `superb` — its tinted dark ramp compresses the low steps, so the
+  // schema's `{neutral.9}` subtle ink falls to ~3.1:1 in dark. One tone up
+  // clears the codebase's dark-legibility floor without touching the light
+  // appearance the designer personalised.
+  'content.subtle': { dark: '{neutral-dark.10}' },
 }
 
 /**
@@ -463,15 +462,6 @@ const retroShadows = {
   '2xl': '0 0 0 1px rgba(74,44,26,0.10), 9px 9px 0 rgba(74,44,26,0.42)',
 }
 
-const warmShadows = {
-  xs: '0 1px 2px rgba(78,55,35,0.05)',
-  sm: '0 2px 4px rgba(78,55,35,0.08)',
-  md: '0 5px 10px -2px rgba(78,55,35,0.10)',
-  lg: '0 12px 20px -5px rgba(78,55,35,0.12)',
-  xl: '0 20px 32px -8px rgba(78,55,35,0.14)',
-  '2xl': '0 28px 52px -12px rgba(78,55,35,0.18)',
-}
-
 export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
   {
     id: 'core-minimal',
@@ -589,34 +579,29 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     label: 'Nature / Organic',
     shortLabel: 'Nature',
     description: 'Grounded, calm, and approachable.',
-    detail: 'Earth-led color, soft geometry, warm elevation, and an editorial heading voice.',
-    // Lived-in accent from the adopted Nature / Organic theme (#66c61c), not
-    // spectrum Green (#16b364). Same family; the brighter seed is what the
-    // designer shipped after iterating in-app.
-    accent: '#66c61c',
-    preferredAppearance: 'dark',
-    // Earth pigments: clay, honey, leaf, river — unchanged from the adopted
-    // theme's severity families.
-    states: { error: '#bf4342', warning: '#e08e0b', success: '#2f9e44', info: '#3b7ea1' },
-    // Hand-picked Neutral (#092012), not link-derived — the adopted theme had
-    // `linkNeutralToAccent: false` with this exact base. Tint is the store's
-    // `tinted` at the time of the port (pages grow from this gray + tint).
-    neutral: '#092012',
+    detail: 'Fresh green accent, tinted paper, an editorial heading voice, and no elevation at all.',
+    // Ported verbatim from the designer's own "superb" theme — they kept the
+    // customization and asked for it under the Nature name.
+    accent: '#6bbd2b',
+    preferredAppearance: 'light',
+    // error stays the system default (`superb` referenced the global `error`
+    // family); warning / success / info are the designer's own seeds.
+    states: { error: '#f04438', warning: '#ff8b00', success: '#00b662', info: '#1c8fff' },
+    // Green-grey neutral, pinned so the try-on can't swap in a link-derived one.
+    neutral: '#738863',
     neutralTint: 'tinted',
     foundations: {
-      typography: typography('DM Sans', 'Fraunces'),
-      spacing: buildSpacingFromBase(5),
-      radius: { ...RADIUS_STANDARD },
-      // Boxes lg · fields sm · selectors sm — matches the adopted radiusRoles
-      // (container/overlay lg, action/control sm), not the earlier 2xl/lg pair.
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
-      sizes: buildSizesFromBase(4.5),
-      selector: buildSelectorsFromBase(3.5),
-      stroke: { ...STROKE_STANDARD },
-      shadows: warmShadows,
-      panelBackground: 'solid',
-      statusAction: 'soft',
-      iconWeight: 'duotone',
+      // Inter body over a Fraunces heading. Standard type ramp — density is the
+      // Text-scale slider's job (see the `typography()` note).
+      typography: typography('Inter', 'Fraunces'),
+      spacing: buildSpacingFromBase(4),
+      sizes: buildSizesFromBase(4),
+      selector: buildSelectorsFromBase(3),
+      // FLAT — no shadow on any surface. This is the style's signature.
+      shadows: { xs: 'none', sm: 'none', md: 'none', lg: 'none', xl: 'none', '2xl': 'none' },
+      // Container inset one step deeper than the system default (step 5 → 6).
+      spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
+      padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
     },
     semantics: natureSemantics,
   },
