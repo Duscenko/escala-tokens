@@ -691,7 +691,7 @@ function SemanticPreviewPane({
 }) {
   const tokens = usePreviewTokens(previewTheme, previewAppearance)
   return (
-    <VariablesPreviewPane watch={`${focus}/${previewTheme}/${previewAppearance}`}>
+    <VariablesPreviewPane watch={`${focus}/${previewTheme}/${previewAppearance}`} scope={focus}>
       {SEMANTIC_SPECIMENS[focus]({ tokens, onEditToken })}
     </VariablesPreviewPane>
   )

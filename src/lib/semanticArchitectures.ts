@@ -1257,17 +1257,36 @@ export function buildArchitectureView(
       status: ['Status', 'Feedback fg/bg pairs per severity'],
       border: ['Border', 'Strokes, focus and severity borders'],
     }
-    const categories = Object.entries(tokens).map(([key, group]) => ({
-      key,
-      label: META[key]?.[0] ?? key,
-      description: META[key]?.[1] ?? '',
-      tokens: Object.entries(group).map(([k, byTheme]) => ({
-        key: k,
-        modes: Object.fromEntries(
-          themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
-        ),
-      })),
-    }))
+    // DISPLAY ORDER ONLY. `CATEGORICAL_ROLES` lists the `status` group
+    // slot-first (every `*.surface`, then every `*.border`, …), which reads as
+    // eight severities in the table. Regroup it severity-first — all of
+    // critical's slots, then success, warning, info — so the table matches how
+    // the Figma plugin already renders it ("Status / critical" …). Stable
+    // within a severity, so the slot order the file documents is preserved.
+    // `CATEGORICAL_ROLES` and the export are untouched.
+    const SEVERITY_ORDER = ['critical', 'success', 'warning', 'info']
+    const orderStatus = (entries: [string, Record<string, string>][]) =>
+      entries
+        .map((e, i) => [e, i] as const)
+        .sort(([[ka], ia], [[kb], ib]) => {
+          const d = SEVERITY_ORDER.indexOf(ka.split('.')[0]) - SEVERITY_ORDER.indexOf(kb.split('.')[0])
+          return d !== 0 ? d : ia - ib
+        })
+        .map(([e]) => e)
+    const categories = Object.entries(tokens).map(([key, group]) => {
+      const entries = Object.entries(group)
+      return {
+        key,
+        label: META[key]?.[0] ?? key,
+        description: META[key]?.[1] ?? '',
+        tokens: (key === 'status' ? orderStatus(entries) : entries).map(([k, byTheme]) => ({
+          key: k,
+          modes: Object.fromEntries(
+            themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),
+          ),
+        })),
+      }
+    })
     const edited = applyOverrides(categories, normalizeCategoricalOverrides(overrides), lookByTheme)
     return { categories: edited, total: edited.reduce((n, c) => n + c.tokens.length, 0), modeKeys: themeOrder }
   }

@@ -19,9 +19,9 @@ import { SHADOW_PRESETS } from './shadowTokens'
 import type { ThemeFoundationOverride } from './themeFoundations'
 import { mergeTypeRoles } from './typeRoles'
 import {
+  FONT_SIZE_STANDARD,
   FONT_WEIGHT_STANDARD,
-  TYPE_SCALE_MODES,
-  buildTypeScale,
+  LINE_HEIGHT_STANDARD,
 } from './typographyStandard'
 
 /**
@@ -337,14 +337,23 @@ const inkBorders: ThemeStyleSemantics = {
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
 
-function typography(body: string, heading: string, mode: (typeof TYPE_SCALE_MODES)[number]['key']) {
-  const factor = TYPE_SCALE_MODES.find((item) => item.key === mode)?.factor ?? 1
-  const scale = buildTypeScale(factor)
+/**
+ * Every preset ships the STANDARD type ramp (`FONT_SIZE_STANDARD` —
+ * 12·14·16·18·20·24·30·36·48·60·72). It used to bake a `buildTypeScale(factor)`
+ * variant per style (`comfortable` → 13·15·17·19·21, `compact` → 11·12·14·16·18),
+ * which meant an adopted theme opened on a scale that didn't match Variables'
+ * base and read as "why are these odd sizes here". Density (Compact … Spacious)
+ * is a CHOICE the designer makes on the Text scale slider afterwards, not a
+ * property of the style — so a fresh adoption starts on Default, coherent with
+ * Variables, and the slider still grades the whole ramp from there. A style's
+ * character lives in its family, radius, spacing, shadows and semantics.
+ */
+function typography(body: string, heading: string) {
   return {
     fontFamily: body,
     headingFontFamily: heading,
-    sizes: scale.sizes,
-    lineHeights: scale.lineHeights,
+    sizes: { ...FONT_SIZE_STANDARD },
+    lineHeights: { ...LINE_HEIGHT_STANDARD },
     weights: { ...FONT_WEIGHT_STANDARD },
     roles: mergeTypeRoles(),
   }
@@ -479,7 +488,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // set here: Core is the baseline the other five are variations from.
     states: { error: '#d92d20', warning: '#dc6803', success: '#079455', info: '#1570ef' },
     foundations: {
-      typography: typography('Inter', 'Inter', 'default'),
+      typography: typography('Inter', 'Inter'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
       // Selectors bumped xs → sm — from the adopted theme's radiusRoles.control.
@@ -513,7 +522,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // is the same kind of faithfulness as the translucent panel treatment.
     states: { error: '#ff3b30', warning: '#ff9500', success: '#34c759', info: '#007aff' },
     foundations: {
-      typography: typography('Roboto', 'Inter', 'compact'),
+      typography: typography('Roboto', 'Inter'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
       // Selectors at `lg` (not `sm`) — matches the adopted theme's control
@@ -554,7 +563,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // `#0e0f13`. Two of six styles on indistinguishable paper is a wasted slot.
     neutralTint: 'tinted',
     foundations: {
-      typography: typography('Roboto', 'Roboto', 'default'),
+      typography: typography('Roboto', 'Roboto'),
       spacing: buildSpacingFromBase(4),
       // Rounded (lg 16), not Pill (lg 24). M3's own shape scale puts a card at
       // 12px and its largest container at 28px; Pill resolves this style's
@@ -595,7 +604,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     neutral: '#092012',
     neutralTint: 'tinted',
     foundations: {
-      typography: typography('DM Sans', 'Fraunces', 'comfortable'),
+      typography: typography('DM Sans', 'Fraunces'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_STANDARD },
       // Boxes lg · fields sm · selectors sm — matches the adopted radiusRoles
@@ -627,7 +636,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // later edits; the paper that ships with this recipe is the vivid sepia.
     neutralTint: 'vivid',
     foundations: {
-      typography: typography('Courier Prime', 'Courier Prime', 'compact'),
+      typography: typography('Courier Prime', 'Courier Prime'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'xs', fields: 'xs', selectors: 'none' }),
@@ -654,7 +663,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     // hard black offset. Brutalism does not do muted.
     states: { error: '#e5252c', warning: '#ffb302', success: '#00c853', info: '#2962ff' },
     foundations: {
-      typography: typography('Space Grotesk', 'Space Grotesk', 'comfortable'),
+      typography: typography('Space Grotesk', 'Space Grotesk'),
       spacing: buildSpacingFromBase(5),
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),

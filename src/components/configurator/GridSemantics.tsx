@@ -299,7 +299,7 @@ export default function GridSemantics({
               )}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`}>
+          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`} scope={group}>
             <GridPreview tokens={previewTokens} onEditRole={revealFromPreview} />
           </VariablesPreviewPane>
           </div>

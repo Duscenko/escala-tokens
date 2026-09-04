@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
-import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD } from '../lib/typographyStandard'
+import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
 import { mergeTypeRoles, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
@@ -1564,7 +1564,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 69,
+      version: 70,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2674,6 +2674,43 @@ export const useDesignStore = create<DesignStore>()(
         // rather than waiting for their next publish to do it.
         if (persisted.figmaLastPublishAt && persisted.autoSyncFigma === false) {
           persisted.autoSyncFigma = true
+        }
+        // v69→v70: System Style presets no longer bake a scaled type ramp
+        // (`comfortable` → 13·15·17·19·21, `compact` → 11·12·14·16·18). An
+        // adopted theme opened on a scale that didn't match Variables' base and
+        // read as "why are these odd sizes here". Normalize a theme's
+        // `typography.sizes`/`lineHeights` back to the STANDARD ramp ONLY when
+        // it EXACTLY equals a `buildTypeScale(factor)` output for a non-default
+        // factor — i.e. it was preset-baked, not hand-tuned. A hand-edited
+        // scale matches no factor and is left untouched (detect-don't-assume,
+        // same rule as v47/v49/v67). Density stays a choice on the Text scale
+        // slider afterward.
+        const bakedScaleFactor = (sizes: any): number | null => {
+          if (!sizes || typeof sizes !== 'object') return null
+          for (const mode of TYPE_SCALE_MODES) {
+            if (mode.factor === 1) continue
+            const built = buildTypeScale(mode.factor).sizes
+            if (TYPE_SCALE_KEYS.every((k) => (sizes[k] ?? '') === built[k])) return mode.factor
+          }
+          return null
+        }
+        const destatScaleTypography = (host: any) => {
+          const typo = host?.typography
+          if (!typo || typeof typo !== 'object') return
+          if (bakedScaleFactor(typo.sizes) === null) return
+          typo.sizes = { ...FONT_SIZE_STANDARD }
+          typo.lineHeights = { ...LINE_HEIGHT_STANDARD }
+        }
+        const normalizeThemeTypeScales = (state: any) => {
+          if (!state || typeof state !== 'object') return
+          const foundations = state.themeFoundations
+          if (foundations && typeof foundations === 'object') {
+            for (const key of Object.keys(foundations)) destatScaleTypography(foundations[key])
+          }
+        }
+        normalizeThemeTypeScales(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) normalizeThemeTypeScales(sys?.snapshot)
         }
         return persisted
       },

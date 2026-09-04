@@ -18,9 +18,15 @@ const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, rol
  * `SwitchGroup`'s own demo ("Email notifications" / "Push notifications" /
  * "Marketing emails") is a genuine settings section as-is — `w="100%"` is the
  * only override it needs. The destructive action at the bottom is `Button`'s
- * real `Color: 'Danger'` axis (already resolves to the ERROR ramp — see
- * `statusColor`), not a hand-picked red: the same status colour `OTP` shows
- * on a fill and `Checkout` shows on a tint, here shown on an outline.
+ * real `Color: 'Danger'` axis (resolves to the ERROR ramp — see `statusColor`),
+ * not a hand-picked red.
+ *
+ * `Style: 'Solid'`, so the fill IS `status.critical.surface-solid` verbatim —
+ * whatever the user assigns that role in Token Details (an alpha primitive or
+ * a solid tone) shows here directly. It was `Style: 'Outline'` once, which
+ * reads only `status.critical.content`, so editing `surface-solid` moved
+ * nothing ("the destructive button won't change, it looks like it has an
+ * alpha").
  */
 function ProfileScreen({ t, compact }: ArtefactProps) {
   const muted = t.fgMuted || '#717680'
@@ -56,7 +62,7 @@ function ProfileScreen({ t, compact }: ArtefactProps) {
           >
             Danger zone
           </span>
-          <Button t={t} v={{ Style: 'Outline', Color: 'Danger', Size: 'LG' }} w="100%">Delete account</Button>
+          <Button t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'LG' }} w="100%">Delete account</Button>
         </div>
       </div>
     </DeviceFrame>

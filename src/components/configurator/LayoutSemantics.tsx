@@ -275,7 +275,7 @@ export default function LayoutSemantics({
               })}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${family}/${group}/${previewTheme}/${previewAppearance}`}>
+          <VariablesPreviewPane watch={`${family}/${group}/${previewTheme}/${previewAppearance}`} scope={group}>
             {preview}
           </VariablesPreviewPane>
           </div>

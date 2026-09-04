@@ -327,7 +327,7 @@ export default function TypeSemantics({
               })}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`}>
+          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`} scope={group}>
             <TypeRolesPreview tokens={previewTokens} focus={group} onEditRole={revealFromPreview} />
           </VariablesPreviewPane>
           </div>

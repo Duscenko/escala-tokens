@@ -1418,8 +1418,13 @@ export function KindIcon({ kind }: { kind: 'light' | 'dark' }) {
  *  rows line up when the fly-out is open. */
 // (`THEME_BAND_H` is defined above with `COLOR_RAIL_WIDTH`.)
 const THEME_DRAWER_LEFT = THEME_LIBRARY_WIDTH
-const THEME_DRAWER_TOP = 72
-const THEME_DRAWER_BOTTOM = 36
+/** Fallback vertical insets, used only when the reference rail isn't on screen.
+ *  They mirror `ThemePanel`'s `SHELL_ROWS` (`TOP_NAV_H` 52 + the 52px toolbar)
+ *  and `DOCK_BOTTOM` (28px footer + 8px gap) EXACTLY, so this drawer and the
+ *  "New theme" / "Edit family" drawer land in the identical box when neither
+ *  can measure a column. */
+const THEME_DRAWER_TOP = 52 + 52
+const THEME_DRAWER_BOTTOM = 28 + 8
 
 /** One mode's value editor, in a collapsible card. See `TokenDetailsModal`. */
 export type TokenDetailSection = {
@@ -1467,6 +1472,7 @@ export function TokenDetailsModal({
   contained = false,
   containedRootRef,
   containedDockLeft = COLOR_RAIL_WIDTH,
+  dockToSelector,
 }: {
   name: string
   /** The Figma mock doesn't show this, but the inline editor it replaces did
@@ -1519,12 +1525,46 @@ export function TokenDetailsModal({
    *  panel docks flush to that column's RIGHT edge (Figma: fly-out from the
    *  sidebar, not over it). Defaults to `COLOR_RAIL_WIDTH`. */
   containedDockLeft?: number
+  /** Element to vertically align the (non-`contained`) drawer to — its `top`
+   *  and `bottom` track that column's box, so this drawer is exactly as tall
+   *  as its "New theme" / "Edit family" counterpart (`ThemePanel`), which
+   *  measures the same way. Defaults to Color's `nav[aria-label="Color
+   *  families"]`; falls back to `THEME_DRAWER_TOP` / `_BOTTOM` when it isn't
+   *  mounted (Semantics / Gradients). */
+  dockToSelector?: string
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Match `ThemePanel`'s measured docking exactly: same reference column, same
+  // fallbacks. Without this the drawer sat at a hardcoded top (72) while its
+  // "New theme" twin aligned to the rail, so the two never lined up.
+  const [dockV, setDockV] = useState<{ top: number; bottom: number }>({
+    top: THEME_DRAWER_TOP, bottom: THEME_DRAWER_BOTTOM,
+  })
+  useLayoutEffect(() => {
+    if (contained) return
+    const sel = dockToSelector ?? 'nav[aria-label="Color families"]'
+    const measure = () => {
+      const r = document.querySelector(sel)?.getBoundingClientRect()
+      setDockV({
+        top: r && r.top > 0 ? r.top : THEME_DRAWER_TOP,
+        bottom: r && r.bottom > 0 ? Math.max(0, window.innerHeight - r.bottom) : THEME_DRAWER_BOTTOM,
+      })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const el = document.querySelector(sel)
+    const ro = el ? new ResizeObserver(measure) : null
+    if (el && ro) ro.observe(el)
+    return () => {
+      window.removeEventListener('resize', measure)
+      ro?.disconnect()
+    }
+  }, [contained, dockToSelector])
 
   // Only the FIRST mode opens by default. A system with light + dark + two
   // custom themes stacked four full ramp grids into one dialog, so the mode
@@ -1572,8 +1612,8 @@ export function TokenDetailsModal({
         } : {
           position: 'fixed',
           left: dockLeft,
-          top: THEME_DRAWER_TOP,
-          bottom: THEME_DRAWER_BOTTOM,
+          top: dockV.top,
+          bottom: dockV.bottom,
           width: `min(${PANEL_W}px, calc(100vw - ${dockLeft + 16}px))`,
         }}
         initial={{ opacity: 0, x: -16 }}
@@ -1636,28 +1676,30 @@ export function TokenDetailsModal({
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-          {/* Name + Description — read-only: both are catalogue metadata (the
-              role's fixed key/label and its fixed description), not per-token
-              user text, so there's nothing here to save. Shown for context,
-              styled like the Figma input/textarea so the dialog still reads
-              as an editor, not just a viewer. */}
-          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line">
-            <div className="flex h-6 rounded-md border border-line overflow-hidden">
-              <span className="px-2 flex items-center bg-elevated text-mini text-fg-faint border-r border-line flex-shrink-0">Name</span>
-              <span className="px-2 flex items-center flex-1 min-w-0 text-caption text-fg-muted font-mono truncate" title={name}>{name}</span>
-            </div>
-            {/* Below the Name row, not beside it — at this width (w-64,
-                matching the Edit-family-color popover) a copy chip sharing
-                the row with the name pill left ~2 characters of the name
-                visible on anything longer than "error". */}
-            <CssVarChip name={cssVarName} />
-            <div className="flex flex-col gap-1">
-              <span className="text-mini text-fg-faint">Description</span>
-              <p className="px-2 py-1.5 rounded-md border border-line text-caption text-fg-muted leading-relaxed">{description}</p>
-            </div>
+        {/* Name + Description — read-only: both are catalogue metadata (the
+            role's fixed key/label and its fixed description), not per-token
+            user text, so there's nothing here to save. PINNED, not scrolling:
+            it's the token's identity and stays put beside the header while
+            only the "Values" cards below scroll. Shown for context, styled
+            like the Figma input/textarea so the dialog still reads as an
+            editor, not just a viewer. */}
+        <div className="flex flex-shrink-0 flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line">
+          <div className="flex h-6 rounded-md border border-line overflow-hidden">
+            <span className="px-2 flex items-center bg-elevated text-mini text-fg-faint border-r border-line flex-shrink-0">Name</span>
+            <span className="px-2 flex items-center flex-1 min-w-0 text-caption text-fg-muted font-mono truncate" title={name}>{name}</span>
           </div>
+          {/* Below the Name row, not beside it — at this width (w-64,
+              matching the Edit-family-color popover) a copy chip sharing
+              the row with the name pill left ~2 characters of the name
+              visible on anything longer than "error". */}
+          <CssVarChip name={cssVarName} />
+          <div className="flex flex-col gap-1">
+            <span className="text-mini text-fg-faint">Description</span>
+            <p className="px-2 py-1.5 rounded-md border border-line text-caption text-fg-muted leading-relaxed">{description}</p>
+          </div>
+        </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
           <div className="flex flex-col gap-2 px-4 pt-3.5 pb-4">
             <span className="text-caption font-semibold text-fg">Values</span>
             {sections.map((s) => {

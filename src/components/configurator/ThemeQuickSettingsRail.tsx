@@ -1497,27 +1497,44 @@ export default function ThemeQuickSettingsRail({
           />
         )}
 
-        {foundation === 'typography' && (
+        {foundation === 'typography' && (() => {
+          // The SAME two families Variables · Type ships (`font-family-body` /
+          // `font-family-display`) — the quick card showed only the body one,
+          // so a theme with a distinct heading face (Nature's Fraunces over DM
+          // Sans) couldn't be seen or changed here. `headingFontFamily`
+          // undefined means "same as body", which is exactly what Variables'
+          // display row falls back to.
+          const familyOptions = (current: string) =>
+            FONT_PRESETS.some((item) => item.value === current)
+              ? FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category }))
+              : [
+                  { value: current, label: current, group: 'In this theme' },
+                  ...FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category })),
+                ]
+          const headingFamily = typography.headingFontFamily ?? typography.fontFamily
+          return (
         <EditionCard title="Text edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced}>
-          <SettingItem label="Font family">
+          <SettingItem label="Body font">
             <Menu
-              ariaLabel="Font family"
+              ariaLabel="Body font family"
               value={typography.fontFamily}
               render={(value) => ({ fontFamily: fontStack(value) })}
-              // A family picked in Advanced type (or via the wider Google list)
-              // is prepended under its own eyebrow rather than being silently
-              // absent — the menu must be able to show what is CURRENTLY set.
-              options={(FONT_PRESETS.some((item) => item.value === typography.fontFamily)
-                ? FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category }))
-                : [
-                    { value: typography.fontFamily, label: typography.fontFamily, group: 'In this theme' },
-                    ...FONT_PRESETS.map((font) => ({ value: font.value, label: font.label, group: font.category })),
-                  ])}
+              options={familyOptions(typography.fontFamily)}
               onChange={(value) => commit('Typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, fontFamily: value }) })}
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together.">
+          <SettingItem label="Heading font">
+            <Menu
+              ariaLabel="Heading font family"
+              value={headingFamily}
+              render={(value) => ({ fontFamily: fontStack(value) })}
+              options={familyOptions(headingFamily)}
+              onChange={(value) => commit('Heading typeface updated', (themeKey) => { loadGoogleFont(value); setTypography(themeKey, { ...typography, headingFontFamily: value }) })}
+            />
+          </SettingItem>
+
+          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together. Values match Variables · Type · Font size for this theme.">
             <TypeScaleCard
               sizes={typography.sizes ?? {}}
               onScrubStart={() => beginScrub('Type scale updated')}
@@ -1529,7 +1546,8 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
-        )}
+          )
+        })()}
 
         {foundation === 'radius' && (
         <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>

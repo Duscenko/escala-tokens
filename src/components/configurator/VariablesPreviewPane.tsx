@@ -8,10 +8,15 @@ const MAX_DOTS = 5
 export default function VariablesPreviewPane({
   children,
   watch,
+  scope,
 }: {
   children: ReactNode
   /** Re-measures and resets scroll progress when the preview context changes. */
   watch: string
+  /** The collection / group currently being previewed (e.g. `surface`). Shown
+   *  in the header — "Variables Preview (Surface)" — so the pane names what it
+   *  is showing. Omit for a whole-system preview. */
+  scope?: string
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion() ?? false
@@ -38,8 +43,10 @@ export default function VariablesPreviewPane({
 
   return (
     <aside className="relative hidden min-[1080px]:flex w-[clamp(17rem,29vw,22rem)] flex-shrink-0 flex-col border-l border-line bg-app" aria-label="Variables Preview">
-      <header className="h-10 flex-shrink-0 flex items-center px-4 border-b border-line text-mini font-semibold uppercase tracking-widest text-fg-faint">
-        Variables Preview
+      {/* `h-[52px]` matches every semantic variable TABLE's own column header
+          (the "Token name / Dark / Light" row), so the two columns line up. */}
+      <header className="h-[52px] flex-shrink-0 flex items-center px-4 border-b border-line text-mini font-semibold uppercase tracking-widest text-fg-faint">
+        Variables Preview{scope ? ` (${scope.charAt(0).toUpperCase()}${scope.slice(1)})` : ''}
       </header>
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 pr-6">
         {children}

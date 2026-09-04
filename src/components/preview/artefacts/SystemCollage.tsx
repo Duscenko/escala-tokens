@@ -205,7 +205,6 @@ export function SystemCollage({
   const muted = t.fgMuted || '#717680'
   const handle = `@${projectName.replace(/\s+/g, '_').toLowerCase()}`
   const gutter = gap(t, 'gap-control', '8px')
-  const statusStyle = t.statusAction === 'soft' ? 'Soft' : 'Solid'
   const wellLg = sizeRoleOf(t, 'control', '40px')
   const wellSm = sizeRoleOf(t, 'compact', '32px')
 
@@ -277,13 +276,13 @@ export function SystemCollage({
           <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
           <Live c="Button" t={t} v={{ Style: 'Ghost', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
           {/* Destructive and confirming are the SAME control with a different
-              severity, so they must be painted the same way — this pair used to
-              be Solid Danger beside Soft Success, which reads as two unrelated
-              components and makes the two severities impossible to compare.
-              WHICH treatment is the style's call (`statusAction`), not this
-              file's. */}
-          <Live c="Button" t={t} v={{ Style: statusStyle, Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: statusStyle, Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+              severity, so they're painted the same way — always `Solid`, so
+              the fill IS `status.<sev>.surface-solid` verbatim. Whatever the
+              user assigns that role in Token Details (an alpha primitive or a
+              solid tone) is exactly what shows here — no `statusAction` layer
+              in between deciding to wash it. The token is the control. */}
+          <Live c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+          <Live c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
         </div>
       </ScaledModule>
 
