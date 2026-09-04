@@ -257,6 +257,12 @@ export function resolvePreviewTokens(
       if (arch === 'categorical') {
         put('surface', 'surface.page')
         put('neutralFill', 'surface.layer-1')
+        // Second raised surface — a hovered menu row, a nested panel. Distinct
+        // from `surface.page`: specimens that painted a raised container with
+        // `t.surface` read as the page, which broke the moment a theme pointed
+        // `surface.page` anywhere but near-white. (`surface.input` already has
+        // its own resolver, `inputSurfaceOf`.)
+        put('layer2', 'surface.layer-2')
         put('brandSolid', 'action.primary.default')
         put('onBrand', 'content.on-action')
         put('brandText', 'content.accent')

@@ -25,6 +25,7 @@ export interface PreviewTokens {
   // Resolved in lib/previewTokens.ts; absent in older callers → fallbacks.
   border?: string // field / input border (border-strong)
   borderDefault?: string // general card / container border (border-default)
+  layer2?: string // second raised surface — hovered menu row, nested panel (surface.layer-2)
   fgMuted?: string // secondary copy (text-tertiary)
   placeholderText?: string // input placeholder (text-placeholder)
   successColor?: string

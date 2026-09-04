@@ -28,6 +28,18 @@ export type AxisValues = Record<string, string>
 const darken = (c: string, amt: number) => {
   try { return chroma(c).darken(amt).hex() } catch { return c }
 }
+/** A raised neutral surface — a menu panel, dropdown, popover, card, sheet,
+ *  breadcrumb bar, sidebar. `surface.layer-1` (which is what `t.neutralFill`
+ *  resolves to), NEVER `surface.page`. Specimens historically painted these
+ *  containers with `t.surface`, which IS `surface.page` — invisible while a
+ *  theme keeps its page near-white, wrong the instant it doesn't. */
+// A `function` declaration, not an arrow — `gen-component-color-fields` only
+// follows named function declarations when it walks a specimen's call graph, so
+// an arrow here would hide `neutralFill` / `surface` from every component that
+// paints a panel through this helper.
+function raisedBg(t: PreviewTokens): string {
+  return t.neutralFill ?? t.surface
+}
 /** Soft tint of a hex — reads the Opacity foundation's 10 / 5 / 20 steps, so
  *  soft fills track the user's transparency scale. */
 const soft = (t: PreviewTokens, hex: string) => tintOf(t, hex, '10', 0.1)
@@ -192,7 +204,9 @@ function statusBorder(t: PreviewTokens, status: string, c: string): string {
 
 const focusRing = (t: PreviewTokens, accent: string): string => {
   const ring = strokeRoleOf(t, 'focus', '2px')
-  return `0 0 0 ${ring} ${t.surface}, 0 0 0 calc(${ring} + ${ring}) ${withAlpha(accent, alphaOf(t, '40', 0.4))}`
+  // The gap ring is the surface the focused control sits ON — a raised neutral,
+  // not the page (which a theme can send anywhere).
+  return `0 0 0 ${ring} ${raisedBg(t)}, 0 0 0 calc(${ring} + ${ring}) ${withAlpha(accent, alphaOf(t, '40', 0.4))}`
 }
 
 const strokeControl = (t: PreviewTokens) => strokeRoleOf(t, 'control', '1px')
@@ -571,7 +585,7 @@ function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const disabled = state === 'Disabled'
   const small = (v.Size ?? 'MD') === 'SM'
   const box = selectorGlyph(t, small)
-  const fill = disabled ? t.disabledBg : checked ? t.brandSolid : t.surface
+  const fill = disabled ? t.disabledBg : checked ? t.brandSolid : inputSurfaceOf(t)
   const line = disabled ? t.disabledBg : checked ? t.brandSolid : state === 'Hover' ? t.brandSolid : (t.border ?? '#d0d5dd')
   return (
     <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, box, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
@@ -634,7 +648,7 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
               // because white fails on it, and the knob was ignoring that.
               // OFF the track is `neutralFill`, where the page's own surface is
               // the conventional knob and stays correct in both appearances.
-              borderRadius: 999, background: on ? t.onBrand : t.surface,
+              borderRadius: 999, background: on ? t.onBrand : inputSurfaceOf(t),
               boxShadow: '0 1px 2px rgba(10,13,18,0.2)', transition: 'left 0.15s',
             }}
           />
@@ -818,7 +832,7 @@ function ModalSpecimen({ t }: { t: PreviewTokens }) {
     <div
       style={{
         ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'overlay'),
-        background: t.surface, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
+        background: raisedBg(t), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.25)'), overflow: 'hidden',
       }}
     >
@@ -919,7 +933,7 @@ function ButtonGroupSpecimen({ t, v }: SpecimenProps) {
           style={{
             display: 'inline-flex', alignItems: 'center', height: sizeOf(t, sz.sizeKey, sz.h) - 2,
             padding: `0 ${sz.padX}px`, ...typeOf(t, 'label'), cursor: 'pointer',
-            background: i === 1 ? t.neutralFill : t.surface,
+            background: i === 1 ? t.neutralFill : 'transparent',
             color: t.neutralText,
             borderLeft: i === 0 ? 'none' : `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`,
           }}
@@ -1011,7 +1025,7 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
         width: w ?? (large ? 320 : 280),
         height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
         borderRadius: radiusRoleOf(t, 'action'),
-        background: t.surface, border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
+        background: raisedBg(t), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
         color: t.neutralText,
         ...typeOf(t, 'button'),
       }}
@@ -1132,7 +1146,7 @@ function InputOTPSpecimen({ t, v }: SpecimenProps) {
             ...baseFont(t),
             width: dim, height: dim, borderRadius: radiusRoleOf(t, 'action'),
             border: `${strokeControl(t)} solid ${error ? t.errorColor : filled || i > 0 ? (t.border ?? '#d0d5dd') : t.brandSolid}`,
-            background: t.surface, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            background: inputSurfaceOf(t), display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             ...typeOf(t, 'button'),
             boxShadow: !filled && !error && i === 0 ? `0 0 0 ${strokeFocus(t)} ${t.brandSolid}26` : undefined,
           }}
@@ -1147,12 +1161,12 @@ function InputOTPSpecimen({ t, v }: SpecimenProps) {
 function InputStepperSpecimen({ t }: { t: PreviewTokens }) {
   const btn: CSSProperties = {
     width: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    ...typeOf(t, 'heading-xs'), color: t.fgMuted, cursor: 'pointer', background: t.surface,
+    ...typeOf(t, 'heading-xs'), color: t.fgMuted, cursor: 'pointer', background: inputSurfaceOf(t),
   }
   return (
     <div style={{ ...baseFont(t), display: 'flex', height: 40, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
       <span role="button" aria-label="Decrease" style={{ ...btn, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>−</span>
-      <span style={{ width: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', ...typeOf(t, 'body-md'), background: t.surface }}>12</span>
+      <span style={{ width: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', ...typeOf(t, 'body-md'), background: inputSurfaceOf(t) }}>12</span>
       <span role="button" aria-label="Increase" style={{ ...btn, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>+</span>
     </div>
   )
@@ -1161,7 +1175,7 @@ function InputStepperSpecimen({ t }: { t: PreviewTokens }) {
 function InputTagSpecimen({ t }: { t: PreviewTokens }) {
   const tags = ['tokens', 'figma']
   return (
-    <div style={{ ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, width: 300, minHeight: 40, padding: '6px 10px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface }}>
+    <div style={{ ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, width: 300, minHeight: 40, padding: '6px 10px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: inputSurfaceOf(t) }}>
       {tags.map((tag) => (
         <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: soft(t, t.brandSolid), color: t.brandText, ...typeOf(t, 'label') }}>
           {tag}
@@ -1184,7 +1198,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         style={{
           display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px',
           borderRadius: radiusRoleOf(t, 'action'),
-          border: `${strokeControl(t)} solid ${open ? t.brandSolid : (t.border ?? '#d0d5dd')}`, background: t.surface,
+          border: `${strokeControl(t)} solid ${open ? t.brandSolid : (t.border ?? '#d0d5dd')}`, background: inputSurfaceOf(t),
           boxShadow: open ? `0 0 0 ${strokeFocus(t)} ${t.brandSolid}26` : undefined,
         }}
       >
@@ -1192,7 +1206,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         <PreviewIcon concept="chevron" size={12} color={t.fgMuted} />
       </div>
       {open && (
-        <div style={{ marginTop: 4, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: 4 }}>
+        <div style={{ marginTop: 4, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: 4 }}>
           {options.map((o, i) => (
             <span key={o} style={{ display: 'block', padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? soft(t, t.brandSolid) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
               {o}
@@ -1207,7 +1221,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
 function CheckRow({ t, checked, children }: { t: PreviewTokens; checked?: boolean; children: ReactNode }) {
   return (
     <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-      <span style={{ width: 18, height: 18, borderRadius: radiusRoleOf(t, 'control'), background: checked ? t.brandSolid : t.surface, border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 18, height: 18, borderRadius: radiusRoleOf(t, 'control'), background: checked ? t.brandSolid : inputSurfaceOf(t), border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
         {checked && <PreviewIcon concept="check" size={11} color={t.onBrand} />}
       </span>
       <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{children}</span>
@@ -1232,7 +1246,7 @@ function RadioDot({ t, checked, disabled, focused, d = 18 }: { t: PreviewTokens;
       style={{
         width: d, height: d, borderRadius: 999, flexShrink: 0,
         border: `${strokeControl(t)} solid ${disabled ? t.disabledBg : checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
-        background: disabled ? t.disabledBg : t.surface,
+        background: disabled ? t.disabledBg : inputSurfaceOf(t),
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: focused ? focusRing(t, t.brandSolid) : undefined,
       }}
@@ -1283,7 +1297,7 @@ function MiniSwitch({ t, on }: { t: PreviewTokens; on: boolean }) {
   return (
     <span role="switch" aria-checked={on} style={{ width: 36, height: 20, borderRadius: radiusRoleOf(t, 'pill'), background: on ? t.brandSolid : t.neutralFill, position: 'relative', display: 'inline-block', flexShrink: 0 }}>
       {/* Same rule as SwitchSpecimen's knob — see the comment there. */}
-      <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: on ? t.onBrand : t.surface, boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
+      <span style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 999, background: on ? t.onBrand : inputSurfaceOf(t), boxShadow: '0 1px 2px rgba(10,13,18,0.2)' }} />
     </span>
   )
 }
@@ -1453,11 +1467,11 @@ function SliderSpecimen({ t, w }: SpecimenProps) {
 function FileUploadSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 10, width: 300 }}>
-      <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface, ...typeOf(t, 'button'), cursor: 'pointer' }}>
+      <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), ...typeOf(t, 'button'), cursor: 'pointer' }}>
         <PreviewIcon concept="upload" size={14} color="currentColor" />
         Upload file
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
         <span style={{ ...typeOf(t, 'caption'), color: t.brandText, background: soft(t, t.brandSolid), padding: '3px 6px', borderRadius: radiusRoleOf(t, 'control') }}>PDF</span>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
@@ -1484,7 +1498,7 @@ function DropzoneSpecimen({ t, v }: SpecimenProps) {
         ...baseFont(t),
         width: 300, padding: '28px 20px', borderRadius: radiusRoleOf(t, 'container'),
         border: `1.5px dashed ${line}`,
-        background: active ? softer(t, t.brandSolid) : error ? softer(t, t.errorColor) : t.surface,
+        background: active ? softer(t, t.brandSolid) : error ? softer(t, t.errorColor) : 'transparent',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center',
         transition: STATE_TRANSITION,
       }}
@@ -1508,7 +1522,7 @@ function FieldSpecimen({ t }: { t: PreviewTokens }) {
       <span style={{ ...typeOf(t, 'label') }}>
         Workspace name <span style={{ color: errorInkOf(t) }}>*</span>
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: 40, padding: '0 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: inputSurfaceOf(t), ...typeOf(t, 'placeholder'), color: t.placeholderText }}>
         Acme Inc.
       </div>
       <span style={{ ...typeOf(t, 'helper'), color: t.fgMuted }}>Shown to your teammates.</span>
@@ -1566,7 +1580,7 @@ function StatusBadgeSpecimen({ t, v }: SpecimenProps) {
   const status = v.Status ?? 'Online'
   const c = (PRESENCE[status] ?? PRESENCE.Online)(t)
   return (
-    <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px', borderRadius: 999, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, ...typeOf(t, 'caption') }}>
+    <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px', borderRadius: 999, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), ...typeOf(t, 'caption') }}>
       <span style={{ width: 8, height: 8, borderRadius: 999, background: c }} aria-hidden />
       {status}
     </span>
@@ -1583,7 +1597,7 @@ function ChipSpecimen({ t, v }: SpecimenProps) {
       style={{
         ...baseFont(t),
         display: 'inline-flex', alignItems: 'center', gap: small ? 5 : 6, padding: small ? '3px 10px' : '5px 12px', borderRadius: radiusRoleOf(t, 'pill'),
-        background: selected ? soft(t, t.brandSolid) : t.surface,
+        background: selected ? soft(t, t.brandSolid) : 'transparent',
         border: `${strokeControl(t)} solid ${selected ? t.brandSolid + '66' : (t.border ?? '#d0d5dd')}`,
         color: selected ? t.brandText : t.neutralText,
         ...typeOf(t, 'label'), cursor: 'pointer',
@@ -1624,7 +1638,7 @@ function FileFormatSpecimen({ t, v }: SpecimenProps) {
   return (
     <span style={{ position: 'relative', display: 'inline-block', width: 40, height: 48 }} aria-label={`${format} file`}>
       <svg width="40" height="48" viewBox="0 0 40 48" fill="none" aria-hidden>
-        <path d="M4 4a3 3 0 0 1 3-3h18l11 11v32a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V4Z" fill={t.surface} stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
+        <path d="M4 4a3 3 0 0 1 3-3h18l11 11v32a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V4Z" fill={raisedBg(t)} stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
         <path d="M25 1v8a3 3 0 0 0 3 3h8" stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
       </svg>
       <span style={{ position: 'absolute', left: -4, bottom: 8, padding: '2px 6px', borderRadius: 4, background: c, color: '#ffffff', ...typeOf(t, 'caption'), letterSpacing: 0.5 }}>
@@ -1639,7 +1653,7 @@ function FileFormatSpecimen({ t, v }: SpecimenProps) {
 function AccordionSpecimen({ t }: { t: PreviewTokens }) {
   const rows = ['What are design tokens?', 'How does Figma sync work?', 'Can I export CSS?']
   return (
-    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, overflow: 'hidden' }}>
+    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden' }}>
       {rows.map((q, i) => (
         <div key={q} style={{ borderTop: i === 0 ? 'none' : `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
           <button type="button" aria-expanded={i === 0} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '13px 16px', background: 'transparent', border: 'none', cursor: 'pointer', ...typeOf(t, 'heading-xs'), color: t.neutralText, textAlign: 'left' }}>
@@ -1685,13 +1699,13 @@ function AspectRatioSpecimen({ t, v }: SpecimenProps) {
 function PopoverSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={{ ...typeOf(t, 'heading-xs') }}>Share this system</span>
         <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>Anyone with the link can view tokens and docs.</span>
         <span style={{ alignSelf: 'flex-start', marginTop: 4, ...typeOf(t, 'button'), padding: '6px 12px', borderRadius: radiusRoleOf(t, 'action'), background: t.brandSolid, color: t.onBrand, cursor: 'pointer' }}>Copy link</span>
       </div>
-      <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${t.surface}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
-      <span style={{ ...typeOf(t, 'label'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface, cursor: 'pointer' }}>Share</span>
+      <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${raisedBg(t)}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
+      <span style={{ ...typeOf(t, 'label'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>Share</span>
     </div>
   )
 }
@@ -1716,7 +1730,7 @@ function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
 function ScrollAreaSpecimen({ t }: { t: PreviewTokens }) {
   const rows = ['Accent / 500', 'Accent / 600', 'Neutral / 100', 'Neutral / 200', 'Success / 500']
   return (
-    <div style={{ ...baseFont(t), position: 'relative', width: 240, height: 150, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, overflow: 'hidden', padding: '6px 14px 6px 6px' }}>
+    <div style={{ ...baseFont(t), position: 'relative', width: 240, height: 150, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden', padding: '6px 14px 6px 6px' }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {rows.map((r) => (
           <span key={r} style={{ padding: '8px 10px', ...typeOf(t, 'body-sm'), color: t.neutralText, borderRadius: radiusRoleOf(t, 'control') }}>{r}</span>
@@ -1792,7 +1806,7 @@ function MenuPanel({
   const outerRadius = radiusRoleOf(t, 'overlay')
   const itemRadius = `${nestedRadius(parseFloat(String(outerRadius)) || 0, pad)}px`
   return (
-    <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad }}>
+    <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad }}>
       {items.map((item, i) =>
         item.sep ? (
           <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: '4px 6px' }} aria-hidden />
@@ -1803,7 +1817,9 @@ function MenuPanel({
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
               padding: '7px 10px', borderRadius: itemRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
-              background: item.hover ? t.neutralFill : 'transparent',
+              // Hover sits one layer above the panel (which is now layer-1),
+              // else the highlighted row is invisible against its own menu.
+              background: item.hover ? (t.layer2 ?? darken(raisedBg(t), 0.25)) : 'transparent',
               color: item.danger ? errorInkOf(t) : t.neutralText,
             }}
           >
@@ -1819,7 +1835,7 @@ function MenuPanel({
 function DropdownMenuSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-      <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 6, ...typeOf(t, 'label'), padding: '7px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: t.surface, cursor: 'pointer' }}>
+      <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 6, ...typeOf(t, 'label'), padding: '7px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>
         Options
         <PreviewIcon concept="chevron" size={11} color={t.fgMuted} />
       </span>
@@ -1862,7 +1878,7 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
     { label: 'Export variables.css' },
   ]
   return (
-    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
+    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', borderBottom: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
         <PreviewIcon concept="search" size={14} color={t.fgMuted} />
         <span style={{ flex: 1, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>Type a command…</span>
@@ -1883,7 +1899,7 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
 function NavbarSpecimen({ t }: { t: PreviewTokens }) {
   const links = ['Home', 'Tokens', 'Components', 'Docs']
   return (
-    <header style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 20, width: 420, padding: '10px 16px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface }}>
+    <header style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 20, width: 420, padding: '10px 16px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
       <span style={{ width: 24, height: 24, borderRadius: radiusRoleOf(t, 'control'), background: t.brandSolid, flexShrink: 0 }} aria-hidden />
       <nav aria-label="Main" style={{ display: 'flex', gap: 14, flex: 1 }}>
         {links.map((l, i) => (
@@ -1910,7 +1926,7 @@ function SidebarSpecimen({ t }: { t: PreviewTokens }) {
     { icon: 'gear', label: 'Settings' },
   ]
   return (
-    <nav aria-label="Sidebar" style={{ ...baseFont(t), width: 200, padding: 8, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: t.surface, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <nav aria-label="Sidebar" style={{ ...baseFont(t), width: 200, padding: 8, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: 2 }}>
       {items.map((item) => (
         <span
           key={item.label}
@@ -2085,7 +2101,9 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
           aria-checked={i === 0}
           style={{
             padding: small ? '4px 10px' : '6px 14px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'button'), cursor: 'pointer',
-            background: i === 0 ? t.surface : 'transparent',
+            // Raised chip on the layer-1 track — the input surface, so it stays
+            // a light pill no matter where the theme puts `surface.page`.
+            background: i === 0 ? inputSurfaceOf(t) : 'transparent',
             color: i === 0 ? t.neutralText : t.fgMuted,
             fontWeight: i === 0 ? weightOf(t, 'semibold', 600) : 400,
             boxShadow: i === 0 ? shadowOf(t, 'xs', '0 1px 2px rgba(10,13,18,0.1)') : 'none',
