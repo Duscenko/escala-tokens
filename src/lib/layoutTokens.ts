@@ -141,6 +141,18 @@ export function radiusNestingReport(
   })
 }
 
+/** True when every nesting pair clears. A theme generator should reject
+ *  (or re-roll) picks this flags — the editor reports collisions and does
+ *  not steer them. */
+export function radiusNestingOk(
+  radius: Record<string, string>,
+  radiusRoles: Record<string, string> | undefined,
+  spacing: Record<string, string>,
+  spacingRoles: Record<string, string> | undefined,
+): boolean {
+  return !radiusNestingReport(radius, radiusRoles, spacing, spacingRoles).some((check) => check.broken)
+}
+
 /**
  * Re-derive the nested radius roles after the ramp is regraded, so moving the
  * roundness slider keeps the corners concentric instead of breaking them.
@@ -330,6 +342,12 @@ export const SELECTOR_MULTIPLIERS: Record<SelectorStep, number> = {
   xs: 4, sm: 5, md: 6, lg: 7, xl: 8,
 }
 export const SELECTOR_DEFAULT_BASE = 3
+/** Selector stays on a 3px base while Size and Spacing sit on 4. That is a
+ *  declared ratio, not a drift: 15/18 were the hardcoded specimen values, so
+ *  the default is a visual no-op. A generator that varies the size base should
+ *  keep `selectorBase = sizeBase * SELECTOR_TO_SIZE_BASE` (then clamp to
+ *  `BASE_UNIT_RANGE`) so checkboxes stay optically smaller than fields. */
+export const SELECTOR_TO_SIZE_BASE = SELECTOR_DEFAULT_BASE / SIZE_DEFAULT_BASE
 
 export function buildSelectorsFromBase(base: number): Record<string, string> {
   const out: Record<string, string> = {}

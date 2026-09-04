@@ -53,9 +53,28 @@ export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   // Second raised surface — a hovered menu row, a nested panel. Distinct
   // from `surface.page`: specimens that painted a raised container with
   // `t.surface` read as the page, which broke the moment a theme pointed
-  // `surface.page` anywhere but near-white. (`surface.input` already has
-  // its own resolver, `inputSurfaceOf`.)
+  // `surface.page` anywhere but near-white.
   layer2: 'surface.layer-2',
+  // Form-field fill. Named separately from `surface.page` even when they
+  // share a tone — Inputs, Selects and OTP cells bind this, not the page.
+  // A field-only helper (`inputSurfaceOf`) hid it from the inspector's
+  // generated union; the specimen must read THIS field so Inspect tokens
+  // can name `surface.input`.
+  inputSurface: 'surface.input',
+  // Persistent selection fill — a selected tab, a selected row. Distinct
+  // from the ghost-hover wash (`action.ghost.brand.hover`, one step lighter)
+  // and from `soft(brandSolid)`, which is a specimen-local tint the inspector
+  // cannot name. TabMenu reads THIS field so Inspect tokens can report
+  // `surface.selected` instead of dropping the pill.
+  selectedSurface: 'surface.selected',
+  linkText: 'content.link.default',
+  linkHover: 'content.link.hover',
+  borderHover: 'border.control-hover',
+  borderCritical: 'status.critical.border-strong',
+  ghostNeutralHover: 'action.ghost.neutral.hover',
+  ghostNeutralPressed: 'action.ghost.neutral.pressed',
+  ghostBrandHover: 'action.ghost.brand.hover',
+  ghostBrandPressed: 'action.ghost.brand.pressed',
   brandSolid: 'action.primary.default',
   onBrand: 'content.on-action',
   brandText: 'content.accent',
@@ -225,6 +244,9 @@ export function resolvePreviewTokens(
     borderDefault: resolveRole('border-secondary') || '#e9eaeb',
     fgMuted: resolveRole('content-tertiary') || '#717680',
     placeholderText: resolveRole('content-quaternary') || '#a4a7ae',
+    // Flat has no dedicated input surface — the page is the honest fallback
+    // until Categorical's `put()` overwrites this with `surface.input`.
+    inputSurface: surface,
     successColor: (pal?.success?.[9]) || successColor || '#17b26a',
     warningColor: (pal?.warning?.[9]) || warningColor || '#f79009',
     infoColor: (pal?.info?.[9]) || infoColor || '#2e90fa',
@@ -365,12 +387,32 @@ export function archTokenOf(t: PreviewTokens, id: string, fallback: string): str
 
 /** Form-field background — categorical `surface.input`, else page surface. */
 export function inputSurfaceOf(t: PreviewTokens): string {
-  return archTokenOf(t, 'surface.input', t.surface)
+  return t.inputSurface ?? archTokenOf(t, 'surface.input', t.surface)
+}
+
+/** Persistent selection fill — categorical `surface.selected`, else a brand wash. */
+export function selectedSurfaceOf(t: PreviewTokens): string {
+  return t.selectedSurface ?? archTokenOf(t, 'surface.selected', t.brandSolid)
 }
 
 /** Focus ring / focused control stroke — categorical `border.focus`, else brand. */
 export function focusBorderOf(t: PreviewTokens): string {
   return archTokenOf(t, 'border.focus', t.brandSolid)
+}
+
+/** Hovered control stroke — `border.control-hover`, never a text role. */
+export function borderHoverOf(t: PreviewTokens): string {
+  return t.borderHover ?? archTokenOf(t, 'border.control-hover', t.border ?? t.fgMuted ?? '#717680')
+}
+
+/** Invalid-field stroke — `status.critical.border-strong`, never the solid fill. */
+export function borderCriticalOf(t: PreviewTokens): string {
+  return t.borderCritical ?? archTokenOf(t, 'status.critical.border-strong', t.errorColor)
+}
+
+/** Actionable link ink — `content.link.default`, not `content.accent`. */
+export function linkTextOf(t: PreviewTokens): string {
+  return t.linkText ?? archTokenOf(t, 'content.link.default', t.brandText)
 }
 
 /** Soft status badge/alert fill — categorical status surface, else tinted content. */

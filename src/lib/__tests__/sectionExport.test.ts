@@ -218,4 +218,11 @@ describe('buildCSS hairline guard', () => {
     expect(css).toContain('--selector-md: 18px;')
     expect(css).toContain('--selector-control: var(--selector-md);')
   })
+
+  it('aliases --padding-* onto spacing-inset-surface when the mirror still matches', () => {
+    const css = buildCSS(useDesignStore.getState())
+    expect(css).toContain('--padding-top: var(--spacing-inset-surface);')
+    expect(css).toContain('--padding-left: var(--spacing-inset-surface);')
+    expect(css).not.toMatch(/--padding-top: 20px;/)
+  })
 })

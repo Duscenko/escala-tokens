@@ -18,6 +18,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { loadGoogleFont } from './fonts'
 import { resetThemeSemantics, withStyleSemantics } from './stylePreviewOverlay'
 import { slugify } from './utils'
+import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
 import { presetHarmony, presetStates, themeStylePreset, type ThemeStylePreset } from './themePresets'
 import type { ThemeAppearance } from './themeModes'
 
@@ -43,7 +44,11 @@ export function adoptPreset(
   appearance: ThemeAppearance,
   opts: { asCopy?: boolean; copyWord?: string } = {},
 ): { key: string; name: string } | { error: string } {
-  const themes = useDesignStore.getState().themes
+  const store = useDesignStore.getState()
+  const themes = store.themes
+  if (!canAddMyTheme(myThemeKeys(store.themeOrder, themes).length)) {
+    return { error: MY_THEME_FULL_ERROR }
+  }
   // "Core", then "Core 2"… (explicit add) — or "Core Copy", "Core Copy 2"…
   // (auto-adopt). A style can honestly be adopted more than once, so a collision
   // renames rather than refusing.
@@ -78,7 +83,7 @@ export function adoptPreset(
   )
   if ('error' in result) return result
 
-  const store = useDesignStore.getState()
+  const next = useDesignStore.getState()
   // Same expansion the try-on runs, so an adopted style's borders/fills are
   // byte-identical to the ones previewed (the `MintPages` rule, applied to the
   // semantic layer). They land as ordinary `architectureOverrides`, so the
@@ -87,15 +92,15 @@ export function adoptPreset(
   if (preset.semantics) {
     useDesignStore.setState({
       architectureOverrides: withStyleSemantics(
-        store.architectureOverrides,
+        next.architectureOverrides,
         preset.semantics,
         result.key,
       ),
     })
   }
-  store.setThemeFoundations(result.key, preset.foundations)
-  store.setThemeLabel(result.key, label)
-  store.setThemeOrigin(result.key, preset.id)
+  next.setThemeFoundations(result.key, preset.foundations)
+  next.setThemeLabel(result.key, label)
+  next.setThemeOrigin(result.key, preset.id)
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
   return { key: result.key, name: label }

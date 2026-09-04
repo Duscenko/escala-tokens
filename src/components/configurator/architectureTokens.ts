@@ -21,8 +21,19 @@ import {
   appearanceFromModeKey, appearanceOrder, semanticModesFor, themeModeKey, type ThemeAppearance,
 } from '../../lib/themeModes'
 
-export function useArchitectureTokens(previewTheme: string, previewAppearance?: ThemeAppearance) {
-  const store = useDesignStore()
+type StoreState = ReturnType<typeof useDesignStore.getState>
+
+export function useArchitectureTokens(
+  previewTheme: string,
+  previewAppearance?: ThemeAppearance,
+  /** A try-on overlay — same object `resolveStylePreviewTokens` paints the
+   *  board from. Omit it and the drawer reads the live store, which is how
+   *  pointing at a Nature card opened Token Details on the committed cyan
+   *  theme's refs (accent.7 on `surface.layer-1`). */
+  overlay?: StoreState | null,
+) {
+  const live = useDesignStore()
+  const store = overlay ?? live
   const {
     primaryScale, primaryDarkScale, grayLightScale, grayDarkScale,
     errorScale, errorDarkScale, warningScale, warningDarkScale,

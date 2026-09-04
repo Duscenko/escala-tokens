@@ -339,38 +339,68 @@ function uiAlphaBoundaryTone(fam: string, start: number, kind: 'light' | 'dark',
  * downward when the ramp has no room above. `used` is threaded so pressed
  * cannot land on hover.
  *
- * Ramp geometry still binds: 19 of 58 combinations genuinely have only two
- * label-carrying tones. Those return the HOVER tone for pressed rather than the
- * solid — the documented residual ("legible, not distinct from hover") instead
- * of the strictly worse "pressed reverts to default" this replaced.
+ * ── UPDATE: nearest unused step, then a lower floor, never a half-ramp jump ─
+ *
+ * The loop above started at `d = offset` and exhausted `+` before trying `-`.
+ * Two failures, both measured on the 10-seed audit matrix:
+ *
+ *  1. Pressed (`offset = 2`) skipped the adjacent unused tone. Solid 11 / hover
+ *     12 then opened at tone 9 (11 − 2), a three-step drop — or further when
+ *     9 also failed the label. Green `#16a34a` light went `#297c40 → #153e1f`.
+ *  2. When only two tones cleared `ACTION_LABEL_TARGET`, pressed reused hover.
+ *     31% of seed × appearance pairs had no pressed state. Both fills were
+ *     legible; the test suite never saw it because it only asserted contrast.
+ *
+ * Search is now distance-from-solid, preferred direction first (the direction
+ * hover already took, else `+` — Radix's 9 → 10). Pressed stays on that side
+ * so the three states stay monotonic. If the strict action-label floor cannot
+ * produce a new tone, retry at the `ui-component` floor (3:1 / Lc 45) — a
+ * distinct, still-readable fill beats an identical one. Last resort is any
+ * unused step on that side, then the other side, then hover (the old residual).
  */
 function solidStepRef(
   fam: string,
-  offset: number,
+  _offset: number,
   solidTone: number,
   look: Look,
   inkHex: string,
   used: Set<number>,
 ): string {
   const ramp = rampOf(look, fam)
-  const fits = (t: number): boolean => {
+  const claimed = [...used].filter((t) => t !== solidTone)
+  const dir = claimed.length ? Math.sign(claimed[claimed.length - 1] - solidTone) || 1 : 1
+  const floor = (t: number, wcag: number, lc: number): boolean => {
     const fill = ramp[t]
     if (!fill) return false
     try {
-      return checkContrast(inkHex, fill) >= ACTION_LABEL_TARGET.wcag &&
-        Math.abs(apcaLc(inkHex, fill)) >= (ACTION_LABEL_TARGET.apcaLc ?? 60)
+      return checkContrast(inkHex, fill) >= wcag && Math.abs(apcaLc(inkHex, fill)) >= lc
     } catch { return false }
   }
-  for (const dir of [1, -1]) {
-    for (let d = offset; d <= 11; d++) {
-      const t = solidTone + dir * d
-      if (t < 1 || t > 12 || used.has(t)) continue
-      if (fits(t)) { used.add(t); return `{${fam}.${t}}` }
+  const pick = (allow: (t: number) => boolean, sides: number[]): number | null => {
+    for (let d = 1; d <= 11; d++) {
+      for (const side of sides) {
+        const t = solidTone + side * d
+        if (t < 1 || t > 12 || used.has(t)) continue
+        if (allow(t)) return t
+      }
     }
+    return null
   }
-  // No third tone in this ramp. Reuse the last state we did find (hover) rather
-  // than falling back to the solid, which would make pressing a no-op.
-  const fallback = [...used].filter((t) => t !== solidTone).pop() ?? solidTone
+  const ui = INTENT_THRESHOLDS['ui-component']
+  const found =
+    pick((t) => floor(t, ACTION_LABEL_TARGET.wcag, ACTION_LABEL_TARGET.apcaLc ?? 60), [dir])
+    ?? pick((t) => floor(t, ui.wcag, ui.apcaLc ?? 45), [dir])
+    ?? pick((t) => Boolean(ramp[t]), [dir])
+    ?? pick((t) => floor(t, ACTION_LABEL_TARGET.wcag, ACTION_LABEL_TARGET.apcaLc ?? 60), [-dir])
+    ?? pick((t) => floor(t, ui.wcag, ui.apcaLc ?? 45), [-dir])
+    ?? pick((t) => Boolean(ramp[t]), [-dir])
+  if (found != null) {
+    used.add(found)
+    return `{${fam}.${found}}`
+  }
+  // No unused tone left in this ramp. Reuse hover rather than the solid —
+  // pressing must not revert to default.
+  const fallback = claimed[claimed.length - 1] ?? solidTone
   return `{${fam}.${fallback}}`
 }
 
@@ -662,6 +692,15 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'status', key: 'critical.surface', light: '{error-a.3}',   dark: '{error-a.3}' },
   { group: 'status', key: 'critical.content', light: '{error.11}',       dark: '{error.11}' },
   { group: 'status', key: 'warning.surface',  light: '{warning-a.3}', dark: '{warning-a.3}' },
+  // Warning content / border-strong / surface-solid can resolve to ONE hex.
+  // That is ramp geometry, not a schema defect — do not collapse the three
+  // roles. Content is pinned to tone 11 so the severity hue survives (tone 12
+  // reads near-black). The solid walks to the first label-carrying tone, which
+  // on warning is also 11 in both appearances. border-strong is the first tone
+  // that clears WCAG in light, also 11 (9 and 10 fail). Three jobs, one step
+  // the warning ramp can actually deliver. Critical/success only collide in
+  // one appearance. The four `*.on-solid` sharing near-white/near-black is
+  // correct: `{on:…}` solves ink against the fill, not a second hue.
   { group: 'status', key: 'warning.content',  light: '{warning.11}',     dark: '{warning.11}' },
   { group: 'status', key: 'success.surface',  light: '{success-a.3}', dark: '{success-a.3}' },
   { group: 'status', key: 'success.content',  light: '{success.11}',     dark: '{success.11}' },
@@ -960,12 +999,12 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.critical.content': '[ROLE: Feedback Text] Affects the text and glyph inside an error alert, banner or toast. Ink on status.critical.surface. {error.11} in both themes — Radix\'s chromatic-text step, NOT tone 12 (which reads near-black on a pale tint and near-white on a dark one, losing the severity hue).',
   'status.critical.on-solid': "[ROLE: Feedback Inverted Text] Label ink on status.critical.surface-solid. Solved per theme against that fill.",
   'status.warning.surface': '[ROLE: Feedback Background Subtle] Tinted background for warning alerts. Pair with status.warning.content.',
-  'status.warning.content': '[ROLE: Feedback Text] Affects the text and glyph inside a warning alert, banner or toast. Ink on status.warning.surface. {warning.11} in both themes — the chromatic-text step, not tone 12.',
+  'status.warning.content': '[ROLE: Feedback Text] Affects the text and glyph inside a warning alert, banner or toast. Ink on status.warning.surface. {warning.11} in both themes — the chromatic-text step, not tone 12. Often byte-identical to warning.border-strong and warning.surface-solid: the warning ramp has one tone that is both chromatic text, the 3:1 boundary and the solved solid. Three roles, one step — keep all three names.',
   'status.success.surface': '[ROLE: Feedback Background Subtle] Tinted background for success alerts. Pair with status.success.content.',
   'status.success.content': '[ROLE: Feedback Text] Affects the text and glyph inside a success alert, banner or toast. Ink on status.success.surface. {success.11} in both themes — the chromatic-text step, not tone 12.',
   'status.info.surface': '[ROLE: Feedback Background Subtle] Tinted background for informational alerts and banners. Pair with status.info.content — never a fixed ink on the bg alone.',
   'status.info.content': '[ROLE: Feedback Text] Affects the text and glyph inside an informational alert, banner or toast. Ink on status.info.surface. {info.11} in both themes — the chromatic-text step, not tone 12.',
-  'status.warning.surface-solid': "[ROLE: Feedback Background Solid] Affects warning badges, pills and buttons. Solid fill. Pair with status.warning.on-solid. {warning.solid} in both themes — solved per appearance.",
+  'status.warning.surface-solid': "[ROLE: Feedback Background Solid] Affects warning badges, pills and buttons. Solid fill. Pair with status.warning.on-solid. {warning.solid} in both themes — solved per appearance. On this ramp the solid lands on tone 11, the same step as content and border-strong. Do not delete the role because of that collision.",
   'status.warning.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.warning.surface-solid. Solved per theme against that fill, never assumed white — a warning solid is usually light enough to need dark ink.',
   'status.success.surface-solid': "[ROLE: Feedback Background Solid] Affects success badges, pills and buttons. Solid fill. Pair with status.success.on-solid. {success.solid} in both themes — solved per appearance.",
   'status.success.on-solid': '[ROLE: Feedback Inverted Text] Label ink on status.success.surface-solid. Solved per theme against that fill.',
@@ -976,7 +1015,7 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.success.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around a success message. {success-a.6}. See status.critical.border.',
   'status.info.border': '[ROLE: Feedback Border] Affects alerts, banners, toasts. The stroke around an informational message. {info-a.6}. See status.critical.border.',
   'status.critical.border-strong': '[ROLE: Critical Control Boundary] Affects invalid form fields, error-state inputs and selects. The stroke IS the control, so WCAG 1.4.11 + APCA Lc 45 apply — unlike status.critical.border (the edge of a banner). Light {error.9} = 3.76:1/Lc64. Dark {error.11} = 11.94:1 — error.9/10 fail APCA in dark (Lc 37.6/44.2), the border.control blind spot.',
-  'status.warning.border-strong': '[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} — the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail).',
+  'status.warning.border-strong': '[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} — the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail). Same step as warning.content / warning.surface-solid on every seed measured; the jobs stay distinct even when the hex does not.',
   'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface). DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',

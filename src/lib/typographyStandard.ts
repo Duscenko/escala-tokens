@@ -56,6 +56,33 @@ export function buildTypeScale(factor: number): {
 }
 
 /** Which mode a stored size map matches, or null → the UI reads "Custom". */
+/**
+ * Modular ratios a generator can pick. The shipped `FONT_SIZE_STANDARD` is
+ * hand-tuned (adjacent steps wander 1.111–1.333) and stays the default — this
+ * is the parametric alternative, not a replacement. `buildTypeScale` still
+ * multiplies the irregular table so existing systems do not restyle.
+ */
+export const TYPE_SCALE_RATIOS = [1.125, 1.2, 1.25, 1.333] as const
+export type TypeScaleRatio = (typeof TYPE_SCALE_RATIOS)[number]
+
+/** `text-md` is the base; every other step is `round(base × ratio^n)`. Leading
+ *  is a single factor of the size so the vertical rhythm stays one number. */
+export function buildModularTypeScale(basePx: number, ratio: number, leading = 1.5): {
+  sizes: Record<string, string>
+  lineHeights: Record<string, string>
+} {
+  const origin = TYPE_SCALE_KEYS.indexOf('text-md')
+  const sizes: Record<string, string> = {}
+  const lineHeights: Record<string, string> = {}
+  for (let i = 0; i < TYPE_SCALE_KEYS.length; i++) {
+    const key = TYPE_SCALE_KEYS[i]
+    const px = Math.max(1, Math.round(basePx * (ratio ** (i - origin))))
+    sizes[key] = `${px}px`
+    lineHeights[key] = `${Math.max(px, Math.round(px * leading))}px`
+  }
+  return { sizes, lineHeights }
+}
+
 export function inferTypeScaleMode(sizes?: Record<string, string>): TypeScaleMode | null {
   if (!sizes) return null
   for (const mode of TYPE_SCALE_MODES) {
@@ -101,7 +128,10 @@ export interface FamilyRow {
   label: string
 }
 export const FONT_FAMILY_ROWS: FamilyRow[] = [
-  { key: 'font-family-display', role: 'display', label: 'font-family-display' },
+  // CSS emits `--font-family-heading` (and type roles alias that var). The
+  // standard used to declare `font-family-display` — same slot, two names.
+  // The export name wins; `role: 'display'` is the type-role family slot.
+  { key: 'font-family-heading', role: 'display', label: 'font-family-heading' },
   { key: 'font-family-body',    role: 'body',    label: 'font-family-body' },
 ]
 

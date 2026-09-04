@@ -189,14 +189,16 @@ function ScaledModule({
 
 function GradientAvatar({ t, size }: { t: PreviewTokens; size: string }) {
   return (
-    <span
-      aria-hidden
-      style={{
-        width: size, height: size, flexShrink: 0,
-        borderRadius: 999,
-        background: t.avatarGradient || t.coverGradient || t.brandSolid,
-      }}
-    />
+    <TokenInspector component="Avatar">
+      <span
+        aria-hidden
+        style={{
+          width: size, height: size, flexShrink: 0,
+          borderRadius: 999,
+          background: t.avatarGradient || t.coverGradient || t.brandSolid,
+        }}
+      />
+    </TokenInspector>
   )
 }
 
@@ -318,8 +320,17 @@ export function SystemCollage({
               user assigns that role in Token Details (an alpha primitive or a
               solid tone) is exactly what shows here — no `statusAction` layer
               in between deciding to wash it. The token is the control. */}
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
-          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Critical')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Success')}</InspectableLive>
+        </div>
+      </ScaledModule>
+
+      <ScaledModule t={t}>
+        <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
+          <Badge t={t} v={{ Style: 'Solid', Color: 'Error', Size: 'SM' }}>{translate('Critical')}</Badge>
+          <Badge t={t} v={{ Style: 'Solid', Color: 'Warning', Size: 'SM' }}>{translate('Warning')}</Badge>
+          <Badge t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }}>{translate('Success')}</Badge>
+          <Badge t={t} v={{ Style: 'Solid', Color: 'Info', Size: 'SM' }}>{translate('Info')}</Badge>
         </div>
       </ScaledModule>
 
@@ -357,35 +368,45 @@ export function SystemCollage({
 
       <ScaledModule t={t}>
         <div className="flex items-start" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <span
-            aria-hidden
-            style={{
-              width: wellSm, height: wellSm, flexShrink: 0,
-              borderRadius: radiusRoleOf(t, 'control', '8px'),
-              background: t.coverGradient || t.brandSolid,
-            }}
-          />
+          <TokenInspector component="Avatar">
+            <span
+              aria-hidden
+              style={{
+                width: wellSm, height: wellSm, flexShrink: 0,
+                borderRadius: radiusRoleOf(t, 'control', '8px'),
+                background: t.coverGradient || t.brandSolid,
+              }}
+            />
+          </TokenInspector>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
-              <span style={{ ...typeStyleOf(t, 'label'), color: t.neutralText }}>{projectName}</span>
-              <TokenIcon t={t} concept="check" size={12} color={t.brandSolid} />
+            <TokenInspector component="Badge">
+              <div className="flex items-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
+                <span style={{ ...typeStyleOf(t, 'label'), color: t.neutralText }}>{projectName}</span>
+                <TokenIcon t={t} concept="check" size={12} color={t.brandSolid} />
+              </div>
+            </TokenInspector>
+            <TokenInspector component="TextLink">
+              <p style={{ margin: 0, ...typeStyleOf(t, 'helper'), color: muted }}>{handle}</p>
+            </TokenInspector>
+          </div>
+        </div>
+        <TokenInspector component="InlineAlert">
+          <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.neutralText }}>
+            {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
+          </p>
+        </TokenInspector>
+        <TokenInspector component="Badge">
+          <div className="flex" style={{ gap: gap(t, 'gap-group', '16px') }}>
+            <div>
+              <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>4</span>
+              <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Following')}</span>
             </div>
-            <p style={{ margin: 0, ...typeStyleOf(t, 'helper'), color: muted }}>{handle}</p>
+            <div>
+              <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>12.4K</span>
+              <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Followers')}</span>
+            </div>
           </div>
-        </div>
-        <p style={{ margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.neutralText }}>
-          {translate('One payload underneath: the same JSON Figma, CSS, and an agent all read.')}
-        </p>
-        <div className="flex" style={{ gap: gap(t, 'gap-group', '16px') }}>
-          <div>
-            <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>4</span>
-            <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Following')}</span>
-          </div>
-          <div>
-            <span style={{ ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>12.4K</span>
-            <span style={{ marginLeft: 6, ...typeStyleOf(t, 'helper'), color: muted }}>{translate('Followers')}</span>
-          </div>
-        </div>
+        </TokenInspector>
       </ScaledModule>
 
       {([

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, Fragment, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment, type ComponentType, type ReactNode } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
@@ -12,13 +12,15 @@ import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/Sec
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
-import ThemeCodeFormat, { CODE_SCOPE_ALL, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
+import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
+import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
+import { generateTokenJSON } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
@@ -602,7 +604,7 @@ export default function Configurator() {
   // only after the user deliberately opens one of the other tabs.
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>('preview')
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>('artefacts')
-  const [codeScope, setCodeScope] = useState<CodeThemeScope>(CODE_SCOPE_ALL)
+  const [codeScope, setCodeScope] = useState<CodeThemeScope>('')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -866,7 +868,7 @@ export default function Configurator() {
     : themeBrandRamp(previewTheme, themeSources, themeKinds, store, chromeAppearance)
   const uiAccent =
     theme === 'dark'
-      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#151516', primaryColor)
+      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#1b1b1c', primaryColor)
       : chromeAccent(uiAccentRamp ?? primaryScale, '#f5f5f5', primaryColor)
   // ── …and the chrome accent as a FILL, which is a different question ──
   // `chromeAccent` walks UP the ramp until the tone clears 4.5:1 against the
@@ -912,11 +914,11 @@ export default function Configurator() {
   // `darkChromeWash` pins the depth and takes the full gamut wall at it, so
   // every hue lands equally deep and equally vivid (`#2a0048` for the default
   // violet). Light keeps its ramp tones: pale-tint → white has no such problem.
-  // Second stop stays `#151516` — that IS `--app` in dark, so the wash resolves
+  // Second stop stays `#1b1b1c` — that IS `--app` in dark, so the wash resolves
   // into the page rather than onto a near-match of it.
   const gradient =
     theme === 'dark'
-      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #151516 48%)`
+      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #1b1b1c 48%)`
       : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
@@ -927,6 +929,39 @@ export default function Configurator() {
       markFoundationComplete(activeFoundation)
     }
   }, [activeFoundation, exportMode, markFoundationComplete, tab])
+  const navigateToSearchResult = useCallback((entry: TokenSearchEntry) => {
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setThemeWorkspaceTab('primitives')
+    setColorQuery('')
+
+    const { foundation, collection, id, group } = entry
+
+    if (foundation === 'color') {
+      setActiveFoundation('color')
+      setFoundationCollection('color', collection)
+      if (collection === 'primitives' && group) {
+        setColorFamilyReveal((prev) => ({ key: group, seq: (prev?.seq ?? 0) + 1 }))
+      } else if (collection === 'semantics') {
+        setColorReveal((prev) => ({ key: id, seq: (prev?.seq ?? 0) + 1, as: 'row' }))
+      }
+      return
+    }
+
+    setActiveFoundation(foundation)
+    if (collection === 'semantics') {
+      setFoundationCollection(foundation, 'semantics')
+      if (foundation === 'typography') {
+        setTypeReveal((prev) => ({ key: id, seq: (prev?.seq ?? 0) + 1 }))
+      } else {
+        setLayoutReveal((prev) => ({ key: id, seq: (prev?.seq ?? 0) + 1 }))
+      }
+    } else {
+      setFoundationCollection(foundation, 'primitives')
+      setColorQuery(id)
+    }
+  }, [commitVisit])
   const selectFoundation = (key: string) => {
     commitVisit()
     setExportMode(null)
@@ -959,12 +994,12 @@ export default function Configurator() {
     // therefore behave like Home: restore the original artefacts canvas and
     // its quick-edit rail instead of leaving the integration page in place.
     if (next === 'preview') setThemeHubSurface('artefacts')
-    // Get code defaults to the previewed My-themes row so Theme preview and
-    // this picker don't disagree about "the" theme. Built-in light/dark are
-    // not listed there, so those land on All themes.
+    // Get code is always one My-theme. Theme preview and this picker must
+    // agree on which theme the file describes. Built-in light/dark are not
+    // listed there — those fall through to the first own theme, or empty.
     if (next === 'code' && themeWorkspaceTab !== 'code') {
       const listed = myThemeKeys(themeOrder, themes)
-      setCodeScope(listed.includes(previewTheme) ? previewTheme : CODE_SCOPE_ALL)
+      setCodeScope(resolveCodeTheme(listed, codeScope, previewTheme))
     }
   }
   const openCodeForTheme = (key: string) => {
@@ -1055,8 +1090,42 @@ export default function Configurator() {
     }
   }, [])
 
+  const tokenSearchIndex = useMemo(() => {
+    const json = generateTokenJSON()
+    return buildTokenSearchIndex({
+      colors: {
+        primitive: json.colors.primitive,
+        primitiveAlpha: json.colors.primitiveAlpha,
+        themes: json.colors.themes,
+        themeOrder: json.colors.themeOrder,
+        semanticArchitecture: json.colors.semanticArchitecture,
+        architecture: json.colors.architecture ?? undefined,
+      },
+      typography: json.typography,
+      spacing: json.spacing,
+      spacingRoles: json.spacingRoles,
+      radius: json.radius,
+      radiusRoles: json.radiusRoles,
+      sizes: json.sizes,
+      sizeRoles: json.sizeRoles,
+      selector: json.selector,
+      selectorRoles: json.selectorRoles,
+      stroke: json.stroke,
+      strokeRoles: json.strokeRoles,
+      grid: json.grid,
+      breakpointRoles: json.breakpointRoles,
+      shadows: json.shadows,
+      gradients: json.gradients,
+    }, previewTheme)
+  }, [store, previewTheme])
+
   const tokenSearchField = (
-    <TokenSearchField value={colorQuery} onChange={setColorQuery} />
+    <TokenSearchField
+      value={colorQuery}
+      onChange={setColorQuery}
+      index={tokenSearchIndex}
+      onSelect={navigateToSearchResult}
+    />
   )
 
   const themeWorkspaceSyncFooter = (
@@ -1571,7 +1640,7 @@ export default function Configurator() {
                     scope={codeScope}
                     onScopeChange={(next) => {
                       setCodeScope(next)
-                      if (next !== CODE_SCOPE_ALL) changePreviewTheme(next)
+                      if (next) changePreviewTheme(next)
                     }}
                     onPreviewThemeChange={changePreviewTheme}
                     onOpenThemeLibrary={openThemeLibraryFromCode}
@@ -1694,10 +1763,10 @@ export default function Configurator() {
           is no "bottom of the page" for a conventional footer to sit at. This is
           a 28px rule instead — attribution only, no links: the About TAB already
           carries the full story (how it works, changelog, legal), so repeating
-          entry points here just competed for attention. One quiet line on a
-          step-up surface (`bg-surface`, not `bg-app`) so the rule reads as a
-          distinct strip instead of text floating on the page. */}
-      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-panel dark:bg-tab-bar">
+          entry points here just competed for attention. `bg-nav` keeps this
+          strip on `--nav` (#151516 in dark) with TopNav and the Artefacts
+          well — `--app` / `--panel` lift to #1b1b1c and must not take it. */}
+      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-nav">
         <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
           {COPYRIGHT_LINE} · Built by Cesar Durango
         </span>

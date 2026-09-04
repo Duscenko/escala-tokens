@@ -39,6 +39,7 @@ import {
   SELECTOR_STEPS,
   SIZE_DEFAULT_BASE,
   SELECTOR_DEFAULT_BASE,
+  SELECTOR_TO_SIZE_BASE,
   buildSelectorsFromBase,
   buildSizesFromBase,
   hairlineSafe,
@@ -73,6 +74,8 @@ describe('base-unit scaling', () => {
     // 15 and 18 were `box = small ? 15 : 18` in CheckboxSpecimen/RadioSpecimen.
     expect(SELECTOR_STANDARD.sm).toBe('15px')
     expect(SELECTOR_STANDARD.md).toBe('18px')
+    // Declared 3/4 of the size base — a generator varies size and keeps this ratio.
+    expect(SELECTOR_TO_SIZE_BASE).toBe(0.75)
   })
 
   it('every base in range round-trips through inference', () => {

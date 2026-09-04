@@ -36,6 +36,27 @@ describe('the generated component color-field map is current', () => {
     expect(COMPONENT_COLOR_FIELDS.Button).toContain('disabledText')
   })
 
+  it('Input binds the form-field surface, not the page', () => {
+    expect(COMPONENT_COLOR_FIELDS.Input).toContain('inputSurface')
+  })
+
+  it('TabMenu binds the selected-tab surface', () => {
+    expect(COMPONENT_COLOR_FIELDS.TabMenu).toContain('selectedSurface')
+  })
+
+  it('TextLink binds the link roles, not accent copy', () => {
+    expect(COMPONENT_COLOR_FIELDS.TextLink).toContain('linkText')
+  })
+
+  it('Input hover/error strokes bind control roles, not text or the solid fill', () => {
+    expect(COMPONENT_COLOR_FIELDS.Input).toContain('borderHover')
+    expect(COMPONENT_COLOR_FIELDS.Input).toContain('borderCritical')
+  })
+
+  it('Chip selected bind the selection surface', () => {
+    expect(COMPONENT_COLOR_FIELDS.Chip).toContain('selectedSurface')
+  })
+
   it('Divider — a single hairline with no live axis — resolves only its border', () => {
     expect(COMPONENT_COLOR_FIELDS.Divider).toEqual(['borderDefault'])
   })

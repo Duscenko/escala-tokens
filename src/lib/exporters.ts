@@ -12,15 +12,36 @@ import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMobileCss, breakpointMobileMax } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
+import { type ThemeAppearance } from './themeModes'
 
 // Panel (background-secondary: cards, panels, sections) tokens — translucent
 // mode bakes alpha into the color and pairs it with --panel-blur for backdrop-
 // filter; page mode swaps in the primitives page background (light themes only).
 const PANEL_KEYS = ['background-secondary']
 
+/** `--padding-*` is a four-sided mirror of `spacing-inset-surface`. Emit the
+ *  role alias when the stored px still matches that step; keep raw px only
+ *  when a side has drifted, so the leak is visible rather than silent. */
+function paddingCssEntries(
+  padding: Record<string, string>,
+  spacing: Record<string, string>,
+  spacingRoles?: Record<string, string>,
+): [string, string][] {
+  const step = mergeLayoutRoles('spacing', spacingRoles)['inset-surface']
+  const resolved = spacing[step]
+  return Object.entries(padding).map(([side, value]) => [
+    side,
+    resolved && value === resolved ? 'var(--spacing-inset-surface)' : value,
+  ])
+}
+
 export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): string {
   const { primaryScale, grayLightScale, errorScale, warningScale, successScale, infoScale, customColors, themes, themeOrder, themeKinds, typography, spacing, padding, radius, shadows, grid, sizes, selector, stroke, radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles, gridFrame, colorNaming, panelBackground, pageBackground, gradients } = store
-  const semanticTokens = themes.light ?? {}
+  // First theme in order that actually has tokens. Whole-system exports stay
+  // light-first; Get code remaps a dark-created theme so `:root` is dark.
+  const rootKey = themeOrder.find((theme) => Object.values(themes[theme] ?? {}).some(Boolean)) ?? 'light'
+  const rootKind: ThemeAppearance = themeKinds?.[rootKey] ?? (rootKey === 'dark' ? 'dark' : 'light')
+  const semanticTokens = themes[rootKey] ?? themes.light ?? {}
   const translucent = panelBackground === 'translucent'
   const panelValue = (key: string, hex: string, kind: 'light' | 'dark' = 'light') => {
     if (!PANEL_KEYS.includes(key)) return hex
@@ -89,9 +110,9 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     .sort(([a], [b]) => Number(a) - Number(b))
     .forEach(([k, v]) => lines.push(`  --color-white-a-${toneLabel(colorNaming, Number(k))}: ${v};`))
 
-  lines.push('\n  /* Semantic tokens — light */')
+  lines.push(`\n  /* Semantic tokens — ${rootKind} */`)
   Object.entries(semanticTokens).forEach(([k, v]) => {
-    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v)};`)
+    if (v) lines.push(`  --color-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${panelValue(k, v, rootKind)};`)
   })
 
   lines.push('\n  /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */')
@@ -109,8 +130,8 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
 
-  lines.push('\n  /* Padding — per-side surface inset (resolved px of spacing-inset-surface) */')
-  Object.entries(padding).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
+  lines.push('\n  /* Padding — per-side surface inset (alias of spacing-inset-surface) */')
+  paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
@@ -185,7 +206,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   // Dark keeps the `.dark` convention; extra themes use data-theme.
   themeOrder.forEach((theme) => {
     const hasFoundationOverride = Boolean(store.themeFoundations?.[theme])
-    if (theme === 'light' && !hasFoundationOverride) return
+    if (theme === rootKey && !hasFoundationOverride) return
     const entries = Object.entries(themes[theme] ?? {}).filter(([, v]) => v)
     const kind = themeKinds?.[theme] ?? (theme === 'dark' ? 'dark' : 'light')
     const foundations = resolveThemeFoundations(store, theme)
@@ -206,7 +227,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
       : []
     if (!entries.length && !darkGradients.length && !darkShadows.length && !hasFoundationOverride) return
     const themeSelector = theme === 'light'
-      ? ':root, [data-theme="light"]'
+      ? (rootKind === 'dark' ? '.light, [data-theme="light"]' : ':root, [data-theme="light"]')
       : theme === 'dark'
         ? '.dark, [data-theme="dark"]'
         : `[data-theme="${theme}"]`
@@ -231,7 +252,8 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
       Object.entries(foundations.typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
       typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`))
       Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
-      Object.entries(foundations.padding).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
+      paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles)
+        .forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
       Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
       Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
       Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${v};`))
@@ -381,7 +403,7 @@ ${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`var(--spacing-${
 
 | Token | Value |
 |-------|-------|
-${Object.entries(padding).map(([k,v])=>`| \`--padding-${k}\` | \`${v}\` |`).join('\n')}
+${paddingCssEntries(padding, spacing, spacingRoles).map(([k,v])=>`| \`--padding-${k}\` | \`${v}\` |`).join('\n')}
 
 ---
 

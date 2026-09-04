@@ -2,11 +2,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { buildAgentBundle, type TokenJSON } from '../agentBundle'
+import { buildAgentBundle, buildAgentSkillFiles, type TokenJSON } from '../agentBundle'
 import { generateTokenJSON } from '../tokenGenerator'
 import { buildSkillExport } from '../skillExport'
 import { unzipStore } from '../zipStore'
-import { captureSnapshot, scopeSnapshotToTheme, useDesignStore } from '../../store/useDesignStore'
+import { buildCSS, buildMarkdown } from '../exporters'
+import { captureSnapshot, makeDesignDefaults, scopeSnapshotToTheme, useDesignStore } from '../../store/useDesignStore'
+import { scopeSnapshotForCode } from '../codeScope'
 
 const bundleDir = join(dirname(fileURLToPath(import.meta.url)), '../agentBundle')
 
@@ -84,8 +86,77 @@ describe('wrapper parity', () => {
     const scoped = scopeSnapshotToTheme(captureSnapshot(full), 'dark')
     const json = generateTokenJSON(scoped)
     expect(json.colors.themeOrder).toEqual(['dark'])
-    const pack = buildSkillExport('hex', scoped)
-    expect(pack.skillMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Dark`/)
-    expect(pack.skillMd).not.toMatch(/`Light`, `Dark`/)
+    const { files } = buildAgentSkillFiles(json)
+    const tokensMd = files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
+    expect(tokensMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Dark`/)
+    expect(tokensMd).not.toMatch(/`Light`, `Dark`/)
+  })
+
+  it('Get code ships one theme as a light/dark pair, never every library theme', async () => {
+    useDesignStore.setState(makeDesignDefaults())
+    const { adoptPreset } = await import('../adoptPreset')
+    const { THEME_STYLE_PRESETS } = await import('../themePresets')
+    const neo = THEME_STYLE_PRESETS.find((item) => item.id === 'neo-brutalism')!
+    const glass = THEME_STYLE_PRESETS.find((item) => item.id === 'cupertino-glass')!
+    const adopted = adoptPreset(neo, 'light')
+    const other = adoptPreset(glass, 'light')
+    expect('error' in adopted).toBe(false)
+    expect('error' in other).toBe(false)
+    if ('error' in adopted || 'error' in other) return
+
+    const full = useDesignStore.getState()
+    const scoped = scopeSnapshotForCode(captureSnapshot(full), adopted.key)
+    const asStore = scoped as ReturnType<typeof useDesignStore.getState>
+    const otherBrand = full.themeSources[other.key]?.brand
+
+    const cssAll = buildCSS(full)
+    const cssOne = buildCSS(asStore)
+    expect(cssAll).toContain('.dark, [data-theme="dark"]')
+    expect(cssAll).toContain(`[data-theme="${adopted.key}"]`)
+    expect(cssAll).toContain(`[data-theme="${other.key}"]`)
+    expect(cssOne).toContain('/* Semantic tokens — light */')
+    expect(cssOne).toContain('.dark, [data-theme="dark"]')
+    expect(cssOne).not.toContain(`[data-theme="${adopted.key}"]`)
+    expect(cssOne).not.toContain(`[data-theme="${other.key}"]`)
+    if (otherBrand && otherBrand !== 'accent') {
+      expect(cssOne).not.toContain(`--color-${otherBrand}-`)
+    }
+    expect(scoped.customColors).toEqual([])
+    expect(scoped.themeOrder).toEqual(['light', 'dark'])
+
+    const mdAll = buildMarkdown(full)
+    const mdOne = buildMarkdown(asStore)
+    expect(mdAll).toMatch(/data-theme="<name>"/)
+    expect(mdOne).not.toMatch(/data-theme="<name>"/)
+    expect(mdOne).toMatch(/- \*\*Themes:\*\* Light, Dark/)
+
+    const { files } = buildAgentSkillFiles(generateTokenJSON(scoped))
+    const tokensMd = files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
+    expect(generateTokenJSON(scoped).colors.themeOrder).toEqual(['light', 'dark'])
+    expect(tokensMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Light`, `Dark`/)
+    expect(tokensMd).not.toContain(adopted.key)
+    expect(tokensMd).not.toContain(other.key)
+  })
+
+  it('Get code maps a dark-created theme to :root dark and .light', async () => {
+    useDesignStore.setState(makeDesignDefaults())
+    const { adoptPreset } = await import('../adoptPreset')
+    const { THEME_STYLE_PRESETS } = await import('../themePresets')
+    const preset = THEME_STYLE_PRESETS.find((item) => item.id === 'neo-brutalism')!
+    const adopted = adoptPreset(preset, 'dark')
+    expect('error' in adopted).toBe(false)
+    if ('error' in adopted) return
+
+    const scoped = scopeSnapshotForCode(captureSnapshot(useDesignStore.getState()), adopted.key)
+    const css = buildCSS(scoped as ReturnType<typeof useDesignStore.getState>)
+    expect(scoped.themeOrder).toEqual(['dark', 'light'])
+    expect(css).toContain('/* Semantic tokens — dark */')
+    expect(css).toContain('.light, [data-theme="light"]')
+    expect(css).not.toMatch(/:root, \[data-theme="light"\]/)
+    expect(css).not.toContain(`[data-theme="${adopted.key}"]`)
+
+    const { files } = buildAgentSkillFiles(generateTokenJSON(scoped))
+    const tokensMd = files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
+    expect(tokensMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Dark`, `Light`/)
   })
 })

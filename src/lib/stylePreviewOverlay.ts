@@ -34,6 +34,10 @@ type StoreState = ReturnType<typeof useDesignStore.getState>
 export interface StylePreview {
   preset: ThemeStylePreset
   appearance: ThemeAppearance
+  /** Overrides written from Token Details during THIS try-on. Applied after
+   *  `resetThemeSemantics` so a leftover edit on the open theme cannot leak
+   *  in, but a pick on the canvas still repaints the critical solid. */
+  edits?: Record<string, Record<string, string>>
 }
 
 function omitKey<T extends Record<string, unknown>>(obj: T | undefined, key: string): T {
@@ -105,6 +109,29 @@ export function resetThemeSemantics(
   return withStyleSemantics({ ...current, [architecture]: forArch }, semantics, themeKey, architecture)
 }
 
+/** Layer session picks onto a try-on baseline. `null` / empty ref removes
+ *  that mode so Reset can hand the role back to the style recipe. */
+export function applyTryOnEdits(
+  current: Record<string, Record<string, Record<string, string>>>,
+  edits: Record<string, Record<string, string>> | undefined,
+  architecture = 'categorical',
+): Record<string, Record<string, Record<string, string>>> {
+  if (!edits) return current
+  const tokens = Object.keys(edits)
+  if (!tokens.length) return current
+  const forArch: Record<string, Record<string, string>> = { ...(current[architecture] ?? {}) }
+  for (const tokenId of tokens) {
+    const next: Record<string, string> = { ...(forArch[tokenId] ?? {}) }
+    for (const [mode, ref] of Object.entries(edits[tokenId] ?? {})) {
+      if (ref) next[mode] = ref
+      else delete next[mode]
+    }
+    if (Object.keys(next).length) forArch[tokenId] = next
+    else delete forArch[tokenId]
+  }
+  return { ...current, [architecture]: forArch }
+}
+
 /**
  * The preset's BRAND ramp in one appearance, derived exactly the way the
  * overlay below derives it — same pages, same algorithm, same contrast shift.
@@ -132,9 +159,10 @@ export function stylePreviewBrandRamp(
 
 export function stylePreviewStore(
   store: StoreState,
-  { preset, appearance }: StylePreview,
+  preview: StylePreview,
   themeKey: string,
 ): StoreState {
+  const { preset, appearance } = preview
   const tint = preset.neutralTint
   const h = presetHarmony(preset)
   const alg = store.colorAlgorithm
@@ -196,13 +224,16 @@ export function stylePreviewStore(
     themeSemantics: omitKey(store.themeSemantics, themeKey),
     themes: omitKey(store.themes, themeKey),
     themeKinds: { ...store.themeKinds, [themeKey]: appearance },
-    // The style's own role overrides, expanded onto THIS theme's mode keys —
-    // the same shape `setArchitectureOverride` writes, so the try-on resolves
-    // them through the identical `buildArchitectureView` path an adopted theme
-    // does. Merged UNDER the store's existing overrides for other tokens but
-    // OVER this theme's own entries for the tokens the style names, so trying a
-    // style on never silently keeps the previous style's border recipe.
-    architectureOverrides: withStyleSemantics(store.architectureOverrides, preset.semantics, themeKey),
+    // DROP this theme's hand-edits, then write the style's own recipe.
+    // `withStyleSemantics` only replaces tokens the style names, so a leftover
+    // inspector override (`surface.layer-1` → `{accent.7}`) survived every
+    // Nature try-on and Token Details rang a cyan/teal cell on a dark card.
+    // A try-on has to show the style, not the style wearing the open theme's
+    // accidents — same reason Reset uses `resetThemeSemantics`.
+    architectureOverrides: applyTryOnEdits(
+      resetThemeSemantics(store.architectureOverrides, preset.semantics, themeKey),
+      preview.edits,
+    ),
     // The preset REPLACES this theme's foundations; it does not layer over them.
     // Merging `store.themeFoundations[themeKey]` underneath meant every
     // foundation the preset doesn't define (grid, gradients, icons) leaked in

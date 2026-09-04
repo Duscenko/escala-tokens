@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { THEME_STYLE_PRESETS, presetHarmony } from '../themePresets'
+import { applyTryOnEdits, resetThemeSemantics, withStyleSemantics } from '../stylePreviewOverlay'
 import {
   checkContrast, generateColorScale, generateDarkColorScale,
   generateFamilyDarkScale,
@@ -157,6 +158,18 @@ describe('system style presets', () => {
     }
   })
 
+  it('every style declares the same foundation axes', () => {
+    const required = [
+      'typography', 'spacing', 'radius', 'radiusRoles', 'sizes', 'selector',
+      'stroke', 'shadows', 'panelBackground', 'statusAction', 'iconWeight',
+    ] as const
+    for (const preset of THEME_STYLE_PRESETS) {
+      for (const key of required) {
+        expect(preset.foundations[key], `${preset.id} missing ${key}`).toBeDefined()
+      }
+    }
+  })
+
   it('spans every neutral tint level across the set', () => {
     const tints = new Set(THEME_STYLE_PRESETS.map((p) => p.neutralTint))
     expect([...tints].sort()).toEqual(['pure', 'subtle', 'tinted', 'vivid'])
@@ -166,6 +179,30 @@ describe('system style presets', () => {
   // unknown one (`{accent-dark.8}` was the real slip) throws at projection time.
   // Nested ids (`action.primary.default`) keep everything after the first dot
   // as the token key — same split `applyArchTokenOverrides` uses.
+  it('a Nature try-on does not keep a leftover surface.layer-1 override', () => {
+    const nature = THEME_STYLE_PRESETS.find((p) => p.id === 'nature-organic')
+    expect(nature).toBeTruthy()
+    const poisoned = {
+      categorical: {
+        'surface.layer-1': { 'dark::dark': '{accent.7}' },
+      },
+    }
+    expect(withStyleSemantics(poisoned, nature!.semantics, 'dark').categorical['surface.layer-1']['dark::dark'])
+      .toBe('{accent.7}')
+    expect(resetThemeSemantics(poisoned, nature!.semantics, 'dark').categorical['surface.layer-1'])
+      .toBeUndefined()
+  })
+
+  it('a try-on session pick survives the leftover reset', () => {
+    const nature = THEME_STYLE_PRESETS.find((p) => p.id === 'nature-organic')
+    expect(nature).toBeTruthy()
+    const baseline = resetThemeSemantics({}, nature!.semantics, 'dark')
+    const edited = applyTryOnEdits(baseline, {
+      'status.critical.surface-solid': { 'dark::dark': '{error.6}' },
+    })
+    expect(edited.categorical['status.critical.surface-solid']['dark::dark']).toBe('{error.6}')
+  })
+
   it('resolves every semantic override to a real colour', () => {
     for (const preset of THEME_STYLE_PRESETS) {
       const get = resolve(preset)

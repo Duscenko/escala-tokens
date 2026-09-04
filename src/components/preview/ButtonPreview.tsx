@@ -26,8 +26,18 @@ export interface PreviewTokens {
   border?: string // field / input border (border-strong)
   borderDefault?: string // general card / container border (border-default)
   layer2?: string // second raised surface — hovered menu row, nested panel (surface.layer-2)
+  inputSurface?: string // form-field fill — categorical `surface.input`
+  selectedSurface?: string // selected-tab / selected-row fill — `surface.selected`
   fgMuted?: string // secondary copy (text-tertiary)
   placeholderText?: string // input placeholder (text-placeholder)
+  linkText?: string // actionable link ink — `content.link.default`
+  linkHover?: string // link hover ink — `content.link.hover`
+  borderHover?: string // hovered control stroke — `border.control-hover`
+  borderCritical?: string // invalid-field stroke — `status.critical.border-strong`
+  ghostNeutralHover?: string // close / menu-item hover wash — `action.ghost.neutral.hover`
+  ghostNeutralPressed?: string // close / menu-item pressed wash — `action.ghost.neutral.pressed`
+  ghostBrandHover?: string // ghost brand hover wash — `action.ghost.brand.hover`
+  ghostBrandPressed?: string // ghost brand pressed wash — `action.ghost.brand.pressed`
   successColor?: string
   warningColor?: string
   infoColor?: string

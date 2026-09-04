@@ -593,13 +593,21 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // Text-scale slider's job (see the `typography()` note).
       typography: typography('Inter', 'Fraunces'),
       spacing: buildSpacingFromBase(4),
+      // Generous boxes, moderate fields, soft selectors — Nature's documented
+      // 32 · 16 · 8 ladder on `RADIUS_STANDARD`.
+      radius: { ...RADIUS_STANDARD },
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
+      stroke: { ...STROKE_STANDARD },
       // FLAT — no shadow on any surface. This is the style's signature.
       shadows: { xs: 'none', sm: 'none', md: 'none', lg: 'none', xl: 'none', '2xl': 'none' },
       // Container inset one step deeper than the system default (step 5 → 6).
       spacingRoles: { ...defaultLayoutRoles('spacing'), 'inset-surface': '6' },
       padding: { top: '24px', right: '24px', bottom: '24px', left: '24px' },
+      panelBackground: 'page',
+      statusAction: 'soft',
+      iconWeight: 'duotone',
     },
     semantics: natureSemantics,
   },

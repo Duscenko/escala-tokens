@@ -11,7 +11,7 @@ import {
   toneIndexOf, sourceScaleFor, recToneFor, recHexFor,
   type Role, type RoleScale, type GlobalScales,
 } from '../../lib/semanticRoles'
-import { toneLabel, type ColorNaming } from '../../lib/colorUtils'
+import { normalizeColor } from '../../lib/tokenInspector'
 import { resolveThemePalette } from '../../lib/themeSources'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
@@ -207,10 +207,38 @@ function rampsOf(
   return Object.fromEntries(ARCH_PICKABLE_FAMILIES.map((fam) => [fam, build(fam)]))
 }
 
-/** `neutral.12` → ['neutral', 12]; null for raw CSS (vibrancy alphas, blur). */
+/** `{neutral-dark.2}` or `neutral-dark.2` → ['neutral-dark', 2]; null for raw CSS. */
 export function parseRef(label: string): [string, number] | null {
-  const m = /^([a-z-]+)\.(\d+)$/.exec(label)
+  const m = /^\{?([a-z-]+)\.(\d+)\}?$/.exec(label.trim())
   return m ? [m[1], Number(m[2])] : null
+}
+
+/**
+ * Which ramp cell Token Details should ring.
+ *
+ * The stored label is the answer — that is the primitive the role aliases.
+ * A measured inspect hex used to win when they disagreed, which retargeted
+ * `surface.layer-1` onto `accent.7` whenever a sibling paint (avatar, CTA)
+ * collided with the brand ramp. Only search by colour when the label is not
+ * a `{family.tone}` ref (markers like `{accent.solid}`).
+ */
+export function pickRampCell(
+  value: ArchTokenValue,
+  ramps: Record<string, Record<number, string> | undefined>,
+  preferCss?: string | null,
+): { family: string; tone: number } | null {
+  const parsed = parseRef(value.label)
+  if (parsed) return { family: parsed[0], tone: parsed[1] }
+
+  const target = normalizeColor(preferCss || value.css)
+  if (!target) return null
+  for (const [fam, scale] of Object.entries(ramps)) {
+    if (!scale) continue
+    for (const [tone, hex] of Object.entries(scale)) {
+      if (normalizeColor(hex) === target) return { family: fam, tone: Number(tone) }
+    }
+  }
+  return null
 }
 
 // The mode's name + light/dark glyph used to live here; it's the collapsible
@@ -218,6 +246,7 @@ export function parseRef(label: string): [string, number] | null {
 // grid alone rather than printing a second label inside its own card.
 export function ArchModeEditor({
   label, value, scales, palette, kind, pageBackground, darkBackground, onPick, onOpenFamily,
+  preferCss,
 }: {
   /** That mode's own palette + polarity — the grid MUST resolve through these
    *  (see `rampsOf`), or a dark mode offers light swatches. */
@@ -238,11 +267,13 @@ export function ArchModeEditor({
    *  (`accent`, `neutral`, `error`…); the table resolves it against the
    *  previewed theme's own families. */
   onOpenFamily?: (family: string) => void
+  /** Colour sampled on the canvas. When set, the ring follows this hex even
+   *  if the stored ref names a different primitive. */
+  preferCss?: string | null
 }) {
-  const parsed = parseRef(value.label)
   const ramps = rampsOf(scales, palette, kind, pageBackground, darkBackground)
-  const family = parsed?.[0] ?? 'accent'
-  const tone = parsed?.[1] ?? null
+  const selected = pickRampCell(value, ramps, preferCss)
+  const family = selected?.family
 
   // `neutral` and `neutral-dark` are the only two families that mean the same
   // ROLE at opposite polarities — a role's light ref is `{neutral.N}`, its dark
@@ -266,7 +297,7 @@ export function ArchModeEditor({
           the colour picker used to carry as its "Palette" block. */}
       <SystemRampGrid
         ramps={pickableFamilies.map((key) => ({ key, scale: ramps[key] }))}
-        selected={tone != null ? { family, tone } : null}
+        selected={selected}
         onPick={(fam, t) => onPick(`{${fam}.${t}}`)}
         ariaLabel={`Pick a token for ${label}`}
         onOpenFamily={onOpenFamily}

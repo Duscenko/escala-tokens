@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -26,6 +26,7 @@ import type { GitHubPushState } from '../../lib/github'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
+import { InspectGlyph } from '../ui/icons'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -170,35 +171,36 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 }
 
 /**
- * Inspector mode toggle. Same shell as `ThemeResetButton` — a `bg-tab-bar`
- * pill sitting in the canvas header — because both are canvas-scoped actions
- * and a second button shape beside it would imply a different kind of control.
+ * Inspector mode toggle — Figma `41:1544` / `41:1545` (Button - Inspect tokens).
+ * Same outline shell as `ThemeResetButton` (`41:1550`): border is the boundary,
+ * no `bg-tab-bar` fill. The view switcher beside them keeps the filled track
+ * because it is a segmented control, not an outline action.
  *
  * It's a TOGGLE, not a momentary key: reading a role, going to the rail and
  * coming back for the next one is a sequence, and a mode that dropped every
  * time the pointer left the canvas couldn't survive it.
+ *
+ * Inspect-on fills the inner pill with `--accent-solid` / `--accent-ink` so
+ * the mode reads as armed without inventing a second selected-chip language.
  */
 function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
   const { t } = useI18n()
   const label = t('Inspect tokens')
   return (
-    <div className="flex h-8 items-center rounded-lg p-0.5 border border-line bg-tab-bar">
+    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
       <button
         type="button"
         onClick={() => onChange(!active)}
         aria-pressed={active}
         aria-label={label}
-        title={`${label} — ${t('point at a component to see the roles that paint it')}`}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        title={`${label} — ${t('point at a component or the page to see the roles that paint it')}`}
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
             ? 'bg-accent-solid text-accent-ink'
             : 'text-fg-faint hover:bg-surface hover:text-fg'
         }`}
       >
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
-          <path d="M8 2v3M8 11v3M2 8h3M11 8h3" />
-          <circle cx="8" cy="8" r="2.25" />
-        </svg>
+        <InspectGlyph size={16} />
         {label}
       </button>
     </div>
@@ -219,7 +221,7 @@ function ArtefactsView({
    *  in the hub (the toggle is in the canvas header, a sibling of this view),
    *  never local here. */
   inspecting: boolean
-  onPickRole: (roleId: string) => void
+  onPickRole: (roleId: string, css: string) => void
   /** The badge's own exit to the full Semantics table — the same door Token
    *  Details carries, one step earlier in the flow. */
   onOpenRoleInVariables: (roleId: string) => void
@@ -762,6 +764,30 @@ export default function ThemePreviewHub({
   // not a property of the system being designed.
   const [inspecting, setInspecting] = useState(false)
   const [editingToken, setEditingToken] = useState<string | null>(null)
+  const [inspectedCss, setInspectedCss] = useState<string | null>(null)
+  // Session picks on a try-on. `resetThemeSemantics` drops live-store
+  // overrides so a leftover `surface.layer-1` cannot leak into Nature — which
+  // also dropped a Token Details pick on the critical solid. These ride on
+  // the overlay AFTER that reset, and die with the preset.
+  const [tryOnEdits, setTryOnEdits] = useState<Record<string, Record<string, string>>>({})
+  const tryOnPresetId = stylePreview?.preset.id ?? ''
+  useEffect(() => { setTryOnEdits({}) }, [tryOnPresetId])
+  const paintedPreview = useMemo<StylePreview | null>(() => {
+    if (!stylePreview) return null
+    if (!Object.keys(tryOnEdits).length) return stylePreview
+    return { ...stylePreview, edits: tryOnEdits }
+  }, [stylePreview, tryOnEdits])
+  const recordTryOnEdit = (tokenId: string, mode: string, ref: string | null) => {
+    setTryOnEdits((prev) => {
+      const nextToken = { ...(prev[tokenId] ?? {}) }
+      if (ref) nextToken[mode] = ref
+      else delete nextToken[mode]
+      const next = { ...prev }
+      if (Object.keys(nextToken).length) next[tokenId] = nextToken
+      else delete next[tokenId]
+      return next
+    })
+  }
   const [showcase, setShowcase] = useState('all')
   const [docPage, setDocPage] = useState<string>(OVERVIEW_KEY)
   // ONE collapse preference for the whole hub, not one per view: it's the same
@@ -787,12 +813,15 @@ export default function ThemePreviewHub({
   // A role picked on the canvas opens Token Details in the SAME dock as New
   // theme — flush to the Themes Library — not the Variables table. The table
   // is a second destination the drawer itself already carries a door to.
-  const pickRole = (roleId: string) => setEditingToken(roleId)
+  const pickRole = (roleId: string, css?: string) => {
+    setEditingToken(roleId)
+    setInspectedCss(css ?? null)
+  }
   const themeReset = useThemeReset(previewTheme, !stylePreview)
   const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
   const stylePreviewTokens = useMemo(
-    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
-    [stylePreview, store, previewTheme],
+    () => (paintedPreview ? resolveStylePreviewTokens(store, paintedPreview, previewTheme) : null),
+    [paintedPreview, store, previewTheme],
   )
   const hubCanvasTokens = stylePreviewTokens ?? liveTokens
   // What the BOARD is showing: a live try-on renders from `stylePreview.appearance`,
@@ -885,11 +914,8 @@ export default function ThemePreviewHub({
                   <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
                   <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
                 </span>
-                <div className="flex flex-shrink-0 items-center gap-3">
+                <div className="flex flex-shrink-0 items-center gap-2">
                   {surface === 'documentation' && hubDocActions}
-                  {surface === 'artefacts' && (
-                    <InspectorToggle active={inspecting} onChange={setInspecting} />
-                  )}
                   {themeReset.show && (
                     <ThemeResetButton
                       mode={themeReset.mode}
@@ -897,15 +923,18 @@ export default function ThemePreviewHub({
                       onClick={themeReset.onClick}
                     />
                   )}
+                  {surface === 'artefacts' && (
+                    <InspectorToggle active={inspecting} onChange={setInspecting} />
+                  )}
                   <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
                   <PreviewAppearanceButton value={boardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} drawerOpen={quickEditOpen} inspecting={inspecting} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
-                {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={stylePreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
-                {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={stylePreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
+                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} inspecting={inspecting} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
+                {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={paintedPreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
+                {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={paintedPreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
               </ThemeHubHeaderActionsProvider>
             </section>
@@ -923,9 +952,12 @@ export default function ThemePreviewHub({
     </div>
     <SemanticTokenDrawer
       previewTheme={previewTheme}
-      previewAppearance={previewAppearance}
+      previewAppearance={boardAppearance}
       tokenId={surface === 'artefacts' ? editingToken : null}
-      onClose={() => setEditingToken(null)}
+      inspectedCss={inspectedCss}
+      stylePreview={paintedPreview}
+      onTryOnEdit={stylePreview ? recordTryOnEdit : undefined}
+      onClose={() => { setEditingToken(null); setInspectedCss(null) }}
       onOpenPrimitiveFamily={onOpenPrimitiveFamily}
       onOpenInVariables={onOpenInVariables}
     />

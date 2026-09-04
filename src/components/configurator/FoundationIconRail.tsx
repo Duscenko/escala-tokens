@@ -60,7 +60,7 @@ export default function FoundationIconRail({
       className={vertical
         // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
         // icons begin near the top with `pt-2`. Group spacing is per-group.
-        ? 'h-full flex-shrink-0 flex flex-col items-center border-r border-line bg-nav pt-2 pb-3 overflow-y-auto scrollbar-thin'
+        ? 'h-full flex-shrink-0 flex flex-col items-center border-r border-line bg-app pt-2 pb-3 overflow-y-auto scrollbar-thin'
         : 'flex items-center gap-4'}
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >

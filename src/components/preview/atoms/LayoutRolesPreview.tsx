@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import type { PreviewTokens } from '../ButtonPreview'
 import {
   radiusRoleOf,
+  selectorRoleOf,
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
@@ -127,6 +128,21 @@ function Swatch({ family, role, t }: { family: LayoutFamily; role: string; t: Pr
       />
     )
   }
+  if (family === 'selector') {
+    const px = num(selectorRoleOf(t, role, '18px'), 18)
+    return (
+      <span
+        className="flex-shrink-0 mt-0.5 rounded-sm"
+        style={{
+          width: Math.max(8, Math.min(px, 22)),
+          height: Math.max(8, Math.min(px, 22)),
+          background: accent + '33',
+          border: `1.5px solid ${accent}66`,
+        }}
+        aria-hidden
+      />
+    )
+  }
   if (family === 'size') {
     const px = num(sizeRoleOf(t, role, '40px'), 40)
     return (
@@ -150,10 +166,29 @@ function Swatch({ family, role, t }: { family: LayoutFamily; role: string; t: Pr
   )
 }
 
-const EXAMPLES: Record<'spacing' | 'size' | 'stroke', (role: string, t: PreviewTokens) => ReactNode> = {
+function SelectorExamples({ role, t }: { role: string; t: PreviewTokens }) {
+  const px = num(selectorRoleOf(t, role, '18px'), 18)
+  const accent = t.brandSolid ?? '#7f56d9'
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        width: px,
+        height: px,
+        borderRadius: 4,
+        background: accent + '22',
+        border: `1.5px solid ${accent}66`,
+      }}
+      aria-hidden
+    />
+  )
+}
+
+const EXAMPLES: Record<'spacing' | 'size' | 'stroke' | 'selector', (role: string, t: PreviewTokens) => ReactNode> = {
   spacing: (role, t) => <SpacingExamples role={role} t={t} />,
   size: (role, t) => <SizeExamples role={role} t={t} />,
   stroke: (role, t) => <StrokeExamples role={role} t={t} />,
+  selector: (role, t) => <SelectorExamples role={role} t={t} />,
 }
 
 export function LayoutRolesPreview({
@@ -161,7 +196,7 @@ export function LayoutRolesPreview({
   tokens,
   onEditRole,
 }: {
-  family: 'spacing' | 'size' | 'stroke'
+  family: 'spacing' | 'size' | 'stroke' | 'selector'
   tokens: PreviewTokens
   onEditRole?: (key: string) => void
 }) {

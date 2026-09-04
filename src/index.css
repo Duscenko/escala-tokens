@@ -429,18 +429,21 @@
      `--surface`. */
   --nav: #151516;
   --tab-bar: #222223;
-  --panel: #151516;
+  --panel: #1b1b1c;
   --rail-section: #222223;
   --chip-rest: #1b1b1c;
   --input-bg: #100f12;
-  --app: #151516;
+  --app: #1b1b1c;
   --surface: #18181b;
   --elevated: #2a2a2f;
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
   --fg-faint: #7b7b83;
-  /* 6% white — a hairline on `--app` #151516 (ΔL 0.0604), not a frame.
-     `--line-strong` shares the alpha: two roles by usage, not a second %. */
+  /* `--nav` stays #151516 (TopNav, Artefacts well, footer). `--app` /
+     `--panel` lift to #1b1b1c so Variables / Get code / rails sit one
+     step off that chrome. 6% white is a hairline on either (ΔL 0.0604
+     on #151516), not a frame. `--line-strong` shares the alpha: two
+     roles by usage, not a second %. */
   --line-alpha: rgba(255, 255, 255, 0.06);
   --line: var(--line-alpha);
   --line-strong: var(--line-alpha);

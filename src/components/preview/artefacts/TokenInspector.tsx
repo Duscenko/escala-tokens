@@ -21,8 +21,8 @@
 // real box, which is exactly what re-flows a scaled 260px module inside a
 // 156px frame. Measuring and drawing separately is what buys layout neutrality.
 //
-// THREE LEVELS OF ANSWER, because "which token is this?" is three different
-// questions depending on what you point at:
+// FOUR LEVELS OF ANSWER, because "which token is this?" depends on what you
+// point at:
 //  1. **A control** → only the roles that control actually paints. Pointing at
 //     one Solid button used to hand back all ten roles the Button SPECIMEN can
 //     reach across its whole axis matrix, six of them belonging to variants
@@ -38,6 +38,9 @@
 //     you what the cluster costs, then moving across it attributes each role to
 //     the thing that spends it, without the list you are reading being replaced
 //     on every pointer move.
+//  4. **The page** — empty canvas, not a control and not a module. The board
+//     is painted with `surface.page`; clicking the gaps used to just dismiss,
+//     so the one token every artefact sits on was unreachable from Inspect.
 //
 // Clicking PINS the badge (level 2 is unusable otherwise — the container's list
 // would vanish the moment the pointer entered a child), and while pinned a
@@ -50,9 +53,10 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  inspectElement, inspectGroup, INSPECTOR_BLIND_SPOT, type InspectedRole,
+  inspectElement, inspectGroup, inspectPage, INSPECTOR_BLIND_SPOT, type InspectedRole,
 } from '../../../lib/tokenInspector'
 import type { PreviewTokens } from '../ButtonPreview'
+import { InspectGlyph } from '../../ui/icons'
 
 const InspectorActiveContext = createContext(false)
 
@@ -133,7 +137,7 @@ const CHECKER: React.CSSProperties = {
 const VARIABLES_MASK = "url('/icons/theme-hub-icons/Icon/variables.svg') center / contain no-repeat"
 
 interface Target {
-  kind: 'component' | 'group'
+  kind: 'component' | 'group' | 'page'
   /** The marked element — identity for pin and containment checks. */
   el: Element
   label: string
@@ -162,7 +166,7 @@ const GAP = 8
  *  still yields a usable (scrolling) panel rather than a sliver. */
 const MIN_BADGE_H = 160
 
-const SLOT_LABEL: Record<string, string> = { fill: 'fill', ink: 'ink', stroke: 'stroke' }
+const SLOT_LABEL: Record<string, string> = { fill: 'surface', ink: 'label', stroke: 'stroke' }
 
 export function InspectorOverlay({
   active, rootRef, t, onPick, onOpenTable,
@@ -173,7 +177,7 @@ export function InspectorOverlay({
   rootRef: React.RefObject<HTMLElement | null>
   t: PreviewTokens
   /** A role was chosen — open it in the quick rail. */
-  onPick: (roleId: string) => void
+  onPick: (roleId: string, css: string) => void
   /** Leave the canvas for the full Semantics table. It takes ONE role because
    *  that is what the table can scroll to; the badge sends whichever row is in
    *  play (the lit control's first role, else the top of the list) rather than
@@ -220,7 +224,7 @@ export function InspectorOverlay({
       // One kind of component in the box names itself; a mixed module has no
       // honest single name, so it reports how many it holds and lets the rows
       // (and the per-control highlight) say the rest.
-      label: unique.length === 1 ? unique[0] : `${unique.length} components`,
+      label: unique.length === 1 ? unique[0] : `${members.length} components`,
     }
   }, [t])
 
@@ -229,6 +233,14 @@ export function InspectorOverlay({
     const rect = rectOf(el)
     if (!rect) return null
     return { el, label, rect, ids: inspectElement(t, label, el).roles.map((role) => role.id) }
+  }, [t])
+
+  const buildPage = useCallback((el: Element): Target | null => {
+    const rect = rectOf(el)
+    if (!rect) return null
+    const { roles, measured } = inspectPage(t)
+    if (!roles.length) return null
+    return { kind: 'page', el, label: 'Page', rect, roles, measured }
   }, [t])
 
   useEffect(() => {
@@ -258,7 +270,11 @@ export function InspectorOverlay({
       // re-targets, or the pin would just be a slower hover.
       if (pinned) return
 
-      const target = leaf ? buildComponent(leaf) : group ? buildGroup(group) : null
+      const target = leaf
+        ? buildComponent(leaf)
+        : group
+          ? (buildGroup(group) ?? buildPage(root))
+          : buildPage(root)
       if (!target) { setHover(null); return }
       setHover((prev) =>
         prev && prev.el === target.el && prev.rect.top === target.rect.top && prev.rect.left === target.rect.left
@@ -277,7 +293,7 @@ export function InspectorOverlay({
 
     const onClick = (e: MouseEvent) => {
       const { leaf, group } = markers(e.target as Element | null)
-      if (!leaf && !group) { clearAll(); return }
+      if (!root.contains(e.target as Node)) { clearAll(); return }
       e.preventDefault()
       e.stopPropagation()
       const pinned = pinRef.current
@@ -293,7 +309,11 @@ export function InspectorOverlay({
         return
       }
 
-      const target = leaf ? buildComponent(leaf) : buildGroup(group!)
+      const target = leaf
+        ? buildComponent(leaf)
+        : group
+          ? (buildGroup(group) ?? buildPage(root))
+          : buildPage(root)
       if (!target) return
       if (pinned && pinned.el === target.el) { setPin(null); return }
       focusHeld.current = false
@@ -321,7 +341,7 @@ export function InspectorOverlay({
       root.removeEventListener('pointerleave', onLeave)
       root.removeEventListener('scroll', onScroll, true)
     }
-  }, [active, rootRef, buildComponent, buildGroup, buildFocus, clearAll])
+  }, [active, rootRef, buildComponent, buildGroup, buildFocus, buildPage, clearAll])
 
   // Escape unwinds one layer at a time — the held control, then the pin, then
   // the hover — the same "dismiss the transient thing first" order every other
@@ -368,11 +388,11 @@ export function InspectorOverlay({
           control lit inside it, two rings of equal weight would compete for
           the "this is what the badge is about" reading. */}
       <div
-        className={`absolute rounded-[6px] ${kind === 'group' ? 'ring-1 ring-accent-solid/50' : 'ring-2 ring-accent-solid'}`}
+        className={`absolute rounded-[6px] ${kind === 'component' ? 'ring-2 ring-accent-solid' : 'ring-1 ring-accent-solid/50'}`}
         style={{
           left: rect.left - 2, top: rect.top - 2,
           width: rect.width + 4, height: rect.height + 4,
-          background: `color-mix(in srgb, var(--accent-solid) ${kind === 'group' ? 4 : 8}%, transparent)`,
+          background: `color-mix(in srgb, var(--accent-solid) ${kind === 'component' ? 8 : 4}%, transparent)`,
         }}
       />
       {focus && (
@@ -395,7 +415,8 @@ export function InspectorOverlay({
             when you move between two specimens, so it must not be the thing
             that scrolls away. */}
         <div className="flex flex-shrink-0 items-center gap-1.5 border-b border-line px-3 py-2">
-          <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{label}</span>
+          <InspectGlyph size={16} className="text-fg-faint" />
+          <span className="min-w-0 flex-1 truncate text-caption font-normal tracking-[0.18px] text-fg">{label}</span>
           {onOpenTable && tableRole && (
             <button
               type="button"
@@ -444,7 +465,7 @@ export function InspectorOverlay({
                 <li key={role.id}>
                   <button
                     type="button"
-                    onClick={() => { clearAll(); onPick(role.id) }}
+                    onClick={() => { clearAll(); onPick(role.id, role.css) }}
                     className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
                       isLit
                         ? 'bg-accent-ui/10 ring-1 ring-inset ring-accent-ui/40'

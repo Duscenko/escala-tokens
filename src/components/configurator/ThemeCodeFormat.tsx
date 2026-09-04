@@ -1,22 +1,24 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useState } from 'react'
-import { captureSnapshot, scopeSnapshotToTheme, useDesignStore } from '../../store/useDesignStore'
+import { useDesignStore } from '../../store/useDesignStore'
+import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
-import { buildSkillExport } from '../../lib/skillExport'
+import { generateTokenJSON } from '../../lib/tokenGenerator'
+import { buildAgentSkillFiles } from '../../lib/agentBundle'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
 import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
-import ThemeCodeScopeRail, { CODE_SCOPE_ALL, type CodeThemeScope } from './ThemeCodeScopeRail'
+import ThemeCodeScopeRail, { resolveCodeTheme, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
 
 export type { CodeThemeScope }
-export { CODE_SCOPE_ALL }
+export { resolveCodeTheme }
 
 type Format = 'css' | 'markdown' | 'agent'
 
 const FORMATS: { key: Format; label: string; file: string }[] = [
   { key: 'css', label: 'CSS', file: 'variables.css' },
   { key: 'markdown', label: 'Markdown', file: 'README.md' },
-  { key: 'agent', label: 'Agent context', file: 'SKILL.md' },
+  { key: 'agent', label: 'Agent context', file: 'references/tokens.md' },
 ]
 
 const PREVIEW_LINE_LIMIT = 32
@@ -58,17 +60,18 @@ function highlightedCss(line: string): ReactNode {
 }
 
 function CodeLine({ value, number, format }: { value: string; number: number; format: Format }) {
-  // Agent context is prose (long SKILL.md paragraphs, lists, headings), not a
-  // declaration dump. `min-w-max` + `whitespace-pre` on CSS/Markdown is what
-  // keeps tables and `--var:` rows intact; the same pair turns Agent context
-  // into an infinitely-wide column. Wrap + a prose measure only there.
+  // Agent context is prose (headings, paragraphs, lists) plus markdown tables,
+  // not a declaration dump. `min-w-max` + `whitespace-pre` on CSS/Markdown is
+  // what keeps tables and `--var:` rows intact; the same pair turns Agent
+  // context into an infinitely-wide column. Wrap + a prose measure only there;
+  // table rows keep the pane width so columns stay aligned.
   const wrap = format === 'agent'
   const heading = wrap && /^#{1,6}\s/.test(value)
   const table = wrap && /^\s*\|/.test(value)
   return (
     <div className={`grid grid-cols-[48px_minmax(0,1fr)] ${wrap ? 'text-caption leading-relaxed' : 'min-w-max text-body leading-[22px]'} ${heading ? 'pt-2.5' : ''}`}>
       <span aria-hidden className="select-none border-r border-line pr-3 text-right font-mono text-fg-faint/70">{number}</span>
-      <code className={`px-4 font-mono text-fg-muted ${wrap ? `min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'css' ? highlightedCss(value) : highlightedMarkdown(value)}</code>
+      <code className={`px-4 font-mono text-fg-muted ${wrap ? `block min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${table ? '' : 'max-w-prose'}` : 'min-w-max whitespace-pre'}`}>{format === 'css' ? highlightedCss(value) : highlightedMarkdown(value)}</code>
     </div>
   )
 }
@@ -79,7 +82,7 @@ function CodeLine({ value, number, format }: { value: string; number: number; fo
  */
 export default function ThemeCodeFormat({
   previewTheme,
-  scope = CODE_SCOPE_ALL,
+  scope = '',
   onScopeChange,
   onPreviewThemeChange,
   onOpenThemeLibrary,
@@ -99,26 +102,28 @@ export default function ThemeCodeFormat({
   const [expanded, setExpanded] = useState(false)
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
-  const effectiveScope = scope !== CODE_SCOPE_ALL && listed.includes(scope) ? scope : CODE_SCOPE_ALL
-  const scopeToTheme = effectiveScope !== CODE_SCOPE_ALL
-  // The top-level Code Format keeps documenting the complete system. Picking
-  // one theme narrows to a real snapshot so CSS, Markdown and Agent context
-  // remain honest consumers of the same exporter contract.
+  const effectiveScope = resolveCodeTheme(listed, scope, previewTheme)
+  // One library theme, both appearances. Kits save still uses
+  // scopeSnapshotToTheme; this file is what someone pastes.
   const source = useMemo(() => (
-    scopeToTheme
-      ? scopeSnapshotToTheme(captureSnapshot(store), effectiveScope)
-      : store
-  ), [store, effectiveScope, scopeToTheme])
+    effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
+  ), [store, effectiveScope])
   const content = useMemo(() => {
+    if (!source) return ''
     if (format === 'css') return buildCSS(source as ReturnType<typeof useDesignStore.getState>)
     if (format === 'markdown') return buildMarkdown(source as ReturnType<typeof useDesignStore.getState>)
-    return buildSkillExport('hex', source).skillMd
+    const json = generateTokenJSON(source)
+    const { files } = buildAgentSkillFiles(json, {
+      projectFallback: source.projectName,
+      iconKey: source.iconAiSource,
+    })
+    return files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
   }, [format, source])
-  const lines = useMemo(() => content.split('\n'), [content])
+  const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
-  const scopedLabel = scopeToTheme
+  const scopedLabel = effectiveScope
     ? themeDisplayName(effectiveScope, store.themeLabels)
-    : t('All themes')
+    : t('Add a theme to get its code.')
 
   const copy = async () => {
     await navigator.clipboard.writeText(content)
@@ -152,47 +157,56 @@ export default function ThemeCodeFormat({
         onOpenThemeLibrary={onOpenThemeLibrary}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {showBreadcrumb ? <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint"><span>Theme preview</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span><span className="font-medium text-fg">{active.label}</span></nav>
-      </header> : null}
-      <div className="flex min-h-0 flex-1 p-3">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
-      <header className="flex min-h-[54px] flex-shrink-0 items-center gap-4 border-b border-line px-3 foundation-layer-bar">
-        <div
-          className="flex h-8 flex-shrink-0 items-center gap-0.5 rounded-lg border border-line bg-tab-bar p-0.5"
-          role="tablist"
-          aria-label="Code format"
-          onKeyDown={onTabListKeyDown}
-        >
-          {FORMATS.map((item) => {
-            const selected = item.key === format
-            return (
-              <button
-                key={item.key}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => selectFormat(item.key)}
-                className={`h-7 rounded-md px-3 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${WORKSPACE_CHIP_ACTIVE} shadow-sm` : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
+        {showBreadcrumb ? (
+          <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint">
+              <span>Theme preview</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span>
+              <span className="font-medium text-fg">{active.label}</span>
+            </nav>
+          </header>
+        ) : null}
+        <div className="flex min-h-0 flex-1 p-3">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
+            <header className="flex min-h-[54px] flex-shrink-0 items-center gap-4 border-b border-line px-3 foundation-layer-bar">
+              <div
+                className="flex h-8 flex-shrink-0 items-center gap-0.5 rounded-lg border border-line bg-tab-bar p-0.5"
+                role="tablist"
+                aria-label="Code format"
+                onKeyDown={onTabListKeyDown}
               >
-                {item.label}
+                {FORMATS.map((item) => {
+                  const selected = item.key === format
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => selectFormat(item.key)}
+                      className={`h-7 rounded-md px-3 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${selected ? `${WORKSPACE_CHIP_ACTIVE} shadow-sm` : 'text-fg-faint hover:bg-surface hover:text-fg'}`}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="min-w-0 truncate text-caption text-fg-faint">
+                <span className="font-mono text-fg-muted">{active.file}</span>
+                <span className="px-2 text-fg-faint/70" aria-hidden>·</span>
+                <span>{scopedLabel}</span>
+                {lines.length ? (
+                  <>
+                    <span className="px-2 text-fg-faint/70" aria-hidden>·</span>
+                    <span>{lines.length} lines</span>
+                  </>
+                ) : null}
+              </div>
+              {expanded ? <button type="button" onClick={() => setExpanded(false)} className="ml-auto flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">Collapse</button> : <span className="ml-auto" />}
+              <button type="button" disabled={!effectiveScope} onClick={() => void copy()} className="inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55 disabled:pointer-events-none disabled:opacity-40">
+                <CopyIcon done={copied} /> {copied ? 'Copied' : 'Copy file'}
               </button>
-            )
-          })}
-        </div>
-        <div className="min-w-0 truncate text-caption text-fg-faint">
-          <span className="font-mono text-fg-muted">{active.file}</span>
-          <span className="px-2 text-fg-faint/70" aria-hidden>·</span>
-          <span>{scopedLabel}</span>
-          <span className="px-2 text-fg-faint/70" aria-hidden>·</span>
-          <span>{lines.length} lines</span>
-        </div>
-        {expanded ? <button type="button" onClick={() => setExpanded(false)} className="ml-auto flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">Collapse</button> : <span className="ml-auto" />}
-        <button type="button" onClick={() => void copy()} className="inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">
-          <CopyIcon done={copied} /> {copied ? 'Copied' : 'Copy file'}
-        </button>
-      </header>
+            </header>
       {/* The fade + "Show full file" is a SIBLING of the scroller, inside a
           `relative` wrapper — it used to be a child of it, `absolute bottom-0`.
           Inside a scroll container that resolves against the UNSCROLLED padding
@@ -208,20 +222,22 @@ export default function ThemeCodeFormat({
           between them, larger than most of this app's own elevation steps, so
           it read as a dark BAR across the bottom instead of a dissolve. One
           opaque token on both sides is the only way the two can't disagree. */}
-      <div className="relative min-h-0 flex-1">
-        <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
-          {visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)}
-        </div>
-        {!expanded && lines.length > PREVIEW_LINE_LIMIT ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-app via-app/90 to-transparent pb-4 pt-8">
-            <button type="button" onClick={() => setExpanded(true)} className="pointer-events-auto h-8 rounded-lg border border-line-strong bg-elevated px-3 text-caption font-semibold text-fg shadow-sm transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">
-              Show full file <span className="ml-1 font-normal text-fg-faint">{lines.length} lines</span>
-            </button>
+            <div className="relative min-h-0 flex-1">
+              <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
+                {effectiveScope
+                  ? visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)
+                  : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a theme to get its code.')}</p>}
+              </div>
+              {!expanded && lines.length > PREVIEW_LINE_LIMIT ? (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-app via-app/90 to-transparent pb-4 pt-8">
+                  <button type="button" onClick={() => setExpanded(true)} className="pointer-events-auto h-8 rounded-lg border border-line-strong bg-elevated px-3 text-caption font-semibold text-fg shadow-sm transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">
+                    Show full file <span className="ml-1 font-normal text-fg-faint">{lines.length} lines</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
-        ) : null}
-      </div>
         </div>
-      </div>
       </div>
     </section>
   )

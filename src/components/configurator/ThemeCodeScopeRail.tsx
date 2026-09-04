@@ -7,8 +7,15 @@ import { useI18n } from '../../lib/i18n'
 import { COLOR_RAIL_WIDTH } from './colorControls'
 import { myThemeKeys, DeleteThemeConfirmation, LibraryOptionsIcon } from './ThemeLibraryRail'
 
-export const CODE_SCOPE_ALL = 'all'
-export type CodeThemeScope = typeof CODE_SCOPE_ALL | string
+export type CodeThemeScope = string
+
+/** One My-theme key, or '' when the library is empty. Get code never
+ *  ships an All-themes file — foundations and behaviour stay exact. */
+export function resolveCodeTheme(listed: string[], scope: string, previewTheme: string): string {
+  if (listed.includes(scope)) return scope
+  if (listed.includes(previewTheme)) return previewTheme
+  return listed[0] ?? ''
+}
 
 function RadioMark({ selected }: { selected: boolean }) {
   return (
@@ -80,12 +87,12 @@ function ThemeRowMenu({
 }
 
 /**
- * Get code's left column — which theme the CSS / Markdown / Agent context
- * file is scoped to. Radio + All themes, not checkboxes: the header already
- * carries one scope string, and a multi-theme subset would be ambiguous.
- * Lists My themes (`themeOrder` minus the built-in light/dark scaffolding),
- * the same identity as the Themes library. Width is the workspace's 240px
- * groups column (`COLOR_RAIL_WIDTH`), not a fourth number.
+ * Get code's left column — which ONE theme the CSS / Markdown / Agent
+ * context file is scoped to. Radio only, no All themes: a mixed file
+ * would blur foundations and behaviour. Lists My themes (`themeOrder`
+ * minus the built-in light/dark scaffolding), the same identity as the
+ * Themes library. Width is the workspace's 240px groups column
+ * (`COLOR_RAIL_WIDTH`), not a fourth number.
  */
 export default function ThemeCodeScopeRail({
   scope,
@@ -104,6 +111,7 @@ export default function ThemeCodeScopeRail({
   const store = useDesignStore()
   const { themeOrder, themes, themeKinds, themeLabels, themeSources, removeTheme } = store
   const listed = myThemeKeys(themeOrder, themes)
+  const selected = resolveCodeTheme(listed, scope, previewTheme)
   const [menuKey, setMenuKey] = useState<string | null>(null)
   const [deleteKey, setDeleteKey] = useState<string | null>(null)
   const menuRootRef = useRef<HTMLDivElement>(null)
@@ -130,19 +138,17 @@ export default function ThemeCodeScopeRail({
   const deleteTheme = (key: string) => {
     const available = themeOrder.filter((theme) => themes[theme])
     const nextPreview = available.find((theme) => theme !== key)
-    const nextOwn = listed.find((theme) => theme !== key)
+    const nextOwn = listed.find((theme) => theme !== key) ?? ''
     if (previewTheme === key && nextPreview) onPreviewThemeChange(nextPreview)
-    if (scope === key) onScopeChange(nextOwn ?? CODE_SCOPE_ALL)
+    if (selected === key) onScopeChange(nextOwn)
     removeTheme(key)
     setDeleteKey(null)
     setMenuKey(null)
   }
 
-  const allSelected = scope === CODE_SCOPE_ALL || (scope !== CODE_SCOPE_ALL && !listed.includes(scope))
-
   return (
     <aside
-      className="flex h-full min-h-0 flex-shrink-0 flex-col border-r border-line bg-nav"
+      className="flex h-full min-h-0 flex-shrink-0 flex-col border-r border-line bg-app"
       style={{ width: COLOR_RAIL_WIDTH }}
       aria-label={t('Themes')}
     >
@@ -155,29 +161,16 @@ export default function ThemeCodeScopeRail({
           title={t('Themes library')}
           className="inline-flex flex-shrink-0 items-center gap-0.5 text-mini font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
-          {t('All themes')}
+          {t('Themes library')}
           <ArrowIcon />
         </button>
       </div>
 
       <div ref={menuRootRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2" role="radiogroup" aria-label={t('Themes')}>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={allSelected}
-          onClick={() => onScopeChange(CODE_SCOPE_ALL)}
-          className={`flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-            allSelected ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06]'
-          }`}
-        >
-          <RadioMark selected={allSelected} />
-          <span className={`min-w-0 flex-1 truncate text-body ${allSelected ? 'font-semibold text-fg' : 'font-medium'}`}>
-            {t('All themes')}
-          </span>
-        </button>
-
-        {listed.map((key) => {
-          const selected = !allSelected && scope === key
+        {listed.length === 0 ? (
+          <p className="px-2 py-3 text-caption text-fg-faint">{t('Add a theme to get its code.')}</p>
+        ) : listed.map((key) => {
+          const isSelected = selected === key
           const ramp = themeBrandRamp(key, themeSources, themeKinds, store)
           const swatch = ramp?.[BASE_TONE] ?? store.primaryColor
           const name = themeDisplayName(key, themeLabels)
@@ -187,15 +180,15 @@ export default function ThemeCodeScopeRail({
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={selected}
+                  aria-checked={isSelected}
                   onClick={() => selectTheme(key)}
                   className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                    selected ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06]'
+                    isSelected ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06]'
                   }`}
                 >
-                  <RadioMark selected={selected} />
+                  <RadioMark selected={isSelected} />
                   <ThemeSwatch hex={swatch} />
-                  <span className={`min-w-0 flex-1 truncate text-body ${selected ? 'font-semibold text-fg' : 'font-medium'}`}>
+                  <span className={`min-w-0 flex-1 truncate text-body ${isSelected ? 'font-semibold text-fg' : 'font-medium'}`}>
                     {name}
                   </span>
                 </button>
@@ -207,7 +200,7 @@ export default function ThemeCodeScopeRail({
                   aria-haspopup="menu"
                   aria-expanded={menuKey === key}
                   className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-[color,background-color,opacity] hover:bg-white/45 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 dark:hover:bg-white/[0.06] ${
-                    menuKey === key || selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                    menuKey === key || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                   } ${menuKey === key ? 'bg-white/45 text-fg dark:bg-white/[0.06]' : ''}`}
                 >
                   <LibraryOptionsIcon />

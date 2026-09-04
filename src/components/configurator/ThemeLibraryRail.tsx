@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
@@ -10,18 +11,23 @@ import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePrese
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
+import {
+  MY_THEME_FULL_ERROR,
+  MY_THEME_HARD_CAP,
+  MY_THEME_RAIL_LIMIT,
+  canAddMyTheme,
+  myThemeKeys,
+  myThemeRoom,
+  visibleMyThemes,
+} from '../../lib/themeLibrary'
 
 export { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+export { myThemeKeys } from '../../lib/themeLibrary'
 
 /** Shared with the hub and the Export wizard — see `themeDisplayName`. */
 const labelForTheme = themeDisplayName
-
-/** My themes in Get code and the library — own keys only, never the built-in
- *  `light`/`dark` scaffolding or System style try-ons. */
-export function myThemeKeys(themeOrder: string[], themes: Record<string, unknown>): string[] {
-  return themeOrder.filter((key) => key !== 'light' && key !== 'dark' && Boolean(themes[key]))
-}
 
 function PlusIcon() {
   return (
@@ -227,6 +233,276 @@ function ThemeAvatar({ ramp, appearance, fallback }: { ramp?: ColorScale; appear
   )
 }
 
+function BackIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7.25 2.5 3.75 6l3.5 3.5" />
+    </svg>
+  )
+}
+
+/** `w-44` at this app's 18px root — used to clamp the portaled menu. */
+const THEME_OPTIONS_MENU_REM = 11
+const THEME_OPTIONS_MENU_GAP = 4
+const THEME_OPTIONS_MENU_PAD = 8
+
+/**
+ * Portaled to `<body>` and positioned `fixed` off the ⋮ trigger. The Themes
+ * library nav is `overflow-y-auto` (load-bearing — the list scrolls), and a
+ * 196px rail cannot contain a `w-44` absolute panel: measured left ≈ −18.
+ * Same class of fix as ColorPrimitives' ColumnExportMenu.
+ */
+function ThemeOptionsMenu({
+  open,
+  anchorRef,
+  onClose,
+  onOpenInCode,
+  onAskDelete,
+}: {
+  open: boolean
+  anchorRef: RefObject<HTMLElement | null>
+  onClose: () => void
+  onOpenInCode?: () => void
+  onAskDelete: () => void
+}) {
+  const { t } = useI18n()
+  const reduceMotion = useReducedMotion()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const place = usePopoverPlacement(anchorRef, open, { prefer: 96, min: 80, max: 200 })
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  const lastRect = useRef<DOMRect | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const measure = () => {
+      const r = anchorRef.current?.getBoundingClientRect()
+      if (!r) return
+      lastRect.current = r
+      setRect(r)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [open, anchorRef])
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (anchorRef.current?.contains(target) || panelRef.current?.contains(target)) return
+      onClose()
+    }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open, onClose, anchorRef])
+
+  const box = rect ?? lastRect.current
+  if (typeof document === 'undefined') return null
+
+  let left = THEME_OPTIONS_MENU_PAD
+  if (box) {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const menuW = THEME_OPTIONS_MENU_REM * rem
+    left = Math.min(
+      Math.max(THEME_OPTIONS_MENU_PAD, box.right - menuW),
+      window.innerWidth - menuW - THEME_OPTIONS_MENU_PAD,
+    )
+  }
+
+  return createPortal(
+    <AnimatePresence>
+      {open && box && (
+        <motion.div
+          ref={panelRef}
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.98, y: place.up ? 4 : -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98, y: place.up ? 4 : -4 }}
+          transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          role="menu"
+          aria-label={t('Theme options')}
+          className={`z-[60] w-44 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl ${
+            place.up ? 'origin-bottom-right' : 'origin-top-right'
+          }`}
+          style={{
+            position: 'fixed',
+            left,
+            ...(place.up
+              ? { bottom: window.innerHeight - box.top + THEME_OPTIONS_MENU_GAP }
+              : { top: box.bottom + THEME_OPTIONS_MENU_GAP }),
+            maxHeight: place.max,
+          }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onOpenInCode}
+            className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] active:bg-white/60 dark:active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+          >
+            {t('Open in code')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onAskDelete}
+            className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-status-danger transition-colors hover:bg-status-danger/10 active:bg-status-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger/50"
+          >
+            {t('Delete')}
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  )
+}
+
+function ThemeLibraryRow({
+  label,
+  active,
+  kind,
+  ramp,
+  fallback,
+  menuOpen,
+  deleteOpen,
+  isLast,
+  onPreview,
+  onEdit,
+  onToggleMenu,
+  onCloseMenu,
+  onOpenInCode,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
+}: {
+  label: string
+  active: boolean
+  kind: 'light' | 'dark'
+  ramp?: ColorScale
+  fallback: string
+  menuOpen: boolean
+  deleteOpen: boolean
+  isLast: boolean
+  onPreview: () => void
+  onEdit: () => void
+  onToggleMenu: () => void
+  onCloseMenu: () => void
+  onOpenInCode?: () => void
+  onAskDelete: () => void
+  onCancelDelete: () => void
+  onConfirmDelete: () => void
+}) {
+  const { t } = useI18n()
+  const menuBtnRef = useRef<HTMLButtonElement>(null)
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        className={`group relative flex items-center gap-2 p-1.5 rounded-xl border transition-colors ${
+          active
+            ? 'border-line-strong bg-app shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
+            : THEME_RAIL_ROW_IDLE
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={t('Edit {name} theme', { name: label })}
+          title={t('Edit {name} theme', { name: label })}
+          className="flex-shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+        >
+          <ThemeAvatar ramp={ramp} appearance={kind} fallback={fallback} />
+        </button>
+        <button
+          type="button"
+          onClick={onPreview}
+          aria-current={active ? 'true' : undefined}
+          className={`flex-1 min-w-0 flex items-center text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+            active ? 'pr-6' : 'group-hover:pr-6 group-focus-within:pr-6'
+          }`}
+        >
+          <span className={`min-w-0 flex-1 truncate text-body text-fg ${active ? 'font-semibold' : 'font-medium'}`}>
+            {label}
+          </span>
+        </button>
+        <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active || menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
+          <button
+            ref={menuBtnRef}
+            type="button"
+            onClick={onToggleMenu}
+            aria-label={t('Theme options')}
+            title={t('Theme options')}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className={`${THEME_RAIL_ICON_BTN} ${menuOpen ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
+          >
+            <LibraryOptionsIcon />
+          </button>
+        </div>
+        <ThemeOptionsMenu
+          open={menuOpen}
+          anchorRef={menuBtnRef}
+          onClose={onCloseMenu}
+          onOpenInCode={onOpenInCode}
+          onAskDelete={onAskDelete}
+        />
+      </div>
+      <AnimatePresence initial={false}>
+        {deleteOpen && (
+          <DeleteThemeConfirmation
+            name={label}
+            isPreviewed={active}
+            isLast={isLast}
+            onCancel={onCancelDelete}
+            onConfirm={onConfirmDelete}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function CreateThemeButton({
+  disabled,
+  onClick,
+}: {
+  disabled: boolean
+  onClick: () => void
+}) {
+  const { t } = useI18n()
+  const reduceMotion = useReducedMotion()
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      title={disabled ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : undefined}
+      onClick={onClick}
+      initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
+      whileHover={reduceMotion || disabled ? undefined : { scale: 1.015 }}
+      whileTap={reduceMotion || disabled ? undefined : { scale: 0.985 }}
+      className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-white/45 p-1.5 text-left transition-colors dark:bg-white/[0.06] hover:bg-white/60 dark:hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white/45 dark:disabled:hover:bg-white/[0.06]"
+    >
+      <span
+        aria-hidden
+        className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-dashed border-line-strong text-fg-faint transition-colors group-hover/cta:border-accent-ui/60 group-hover/cta:text-accent-ui group-disabled/cta:group-hover/cta:border-line-strong group-disabled/cta:group-hover/cta:text-fg-faint"
+      >
+        <PlusIcon />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-body font-medium text-fg-muted transition-colors group-hover/cta:text-fg group-disabled/cta:group-hover/cta:text-fg-muted">
+        {t('Create your theme')}
+      </span>
+    </motion.button>
+  )
+}
+
 export default function ThemeLibraryRail({
   previewTheme,
   onPreviewThemeChange,
@@ -261,8 +537,9 @@ export default function ThemeLibraryRail({
   const [rowMenuKey, setRowMenuKey] = useState<string | null>(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const optionsRootRef = useRef<HTMLDivElement>(null)
-  const rowMenuRootRef = useRef<HTMLDivElement>(null)
   const [confirmDeleteOwnThemes, setConfirmDeleteOwnThemes] = useState(false)
+  const [allOpen, setAllOpen] = useState(false)
+  const [themeQuery, setThemeQuery] = useState('')
   // Per-preset appearance choice. Sparse on purpose — an entry only exists once
   // the user has explicitly picked a side; until then a preset previews in
   // whichever appearance the WORKSPACE is in (`chromeTheme`), so a dark session
@@ -270,7 +547,6 @@ export default function ThemeLibraryRail({
   // authored metadata, not a default — it never overrides the current chrome.
   const [presetKind, setPresetKind] = useState<Record<string, 'light' | 'dark'>>({})
   const availableThemes = themeOrder.filter((key) => themes[key])
-  const reduceMotion = useReducedMotion()
   // "Has the user made a theme of their own yet?" — anything beyond the two
   // built-ins the store ships. Renaming Light/Dark doesn't count as creating
   // one, and shouldn't: the keys are what identify them.
@@ -291,6 +567,12 @@ export default function ThemeLibraryRail({
   // (`themeSemantics[key]`), so one theme per appearance is a distinction the
   // data no longer makes.
   const listedThemes = ownThemeKeys
+  const railThemes = visibleMyThemes(listedThemes, previewTheme)
+  const room = myThemeRoom(listedThemes.length)
+  const canAdd = canAddMyTheme(listedThemes.length)
+  const filteredAll = themeQuery.trim()
+    ? listedThemes.filter((key) => labelForTheme(key, themeLabels).toLowerCase().includes(themeQuery.trim().toLowerCase()))
+    : listedThemes
   const kindOf = (preset: ThemeStylePreset) => presetKind[preset.id] ?? chromeTheme
   const corePreset = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
 
@@ -313,20 +595,6 @@ export default function ThemeLibraryRail({
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [optionsOpen])
-  useEffect(() => {
-    if (!rowMenuKey) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rowMenuRootRef.current?.contains(event.target as Node)) setRowMenuKey(null)
-    }
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setRowMenuKey(null) }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [rowMenuKey])
-
   const previewPreset = (preset: ThemeStylePreset, appearance: 'light' | 'dark') => {
     loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
     loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
@@ -375,13 +643,33 @@ export default function ThemeLibraryRail({
     setEditor(false)
     setDeleteKey(null)
     setConfirmDeleteOwnThemes(false)
+    setAllOpen(false)
+    setThemeQuery('')
   }
+
+  useEffect(() => {
+    if (!allOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (rowMenuKey || deleteKey) return
+      setAllOpen(false)
+      setThemeQuery('')
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [allOpen, rowMenuKey, deleteKey])
+
+  useEffect(() => {
+    if (!allOpen || listedThemes.length > MY_THEME_RAIL_LIMIT) return
+    setAllOpen(false)
+    setThemeQuery('')
+  }, [allOpen, listedThemes.length])
 
   return (
     <aside
       id="themes-library"
       tabIndex={-1}
-      className="flex-shrink-0 flex flex-col min-h-0 bg-nav outline-none"
+      className="flex-shrink-0 flex flex-col min-h-0 bg-app outline-none"
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
@@ -417,10 +705,21 @@ export default function ThemeLibraryRail({
 
       <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
         <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
-          <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
-          {/* Counts what the list SHOWS. It read `availableThemes.length`, so
-              a library with no themes of its own still claimed "2" — the two
-              hidden built-ins — over an empty list. */}
+          {allOpen ? (
+            <button
+              type="button"
+              onClick={() => { setAllOpen(false); setThemeQuery('') }}
+              aria-label={t('Back to My themes')}
+              title={t('Back to My themes')}
+              className="flex min-w-0 items-center gap-1.5 rounded-md text-caption font-semibold text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              <BackIcon />
+              <span className="truncate">{t('All themes')}</span>
+            </button>
+          ) : (
+            <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
+          )}
+          {/* Counts every owned theme, not the 5 the rail shows. */}
           <span
             className={THEME_RAIL_COUNT_BADGE}
             title={t('{count} in this system', { count: listedThemes.length })}
@@ -437,133 +736,64 @@ export default function ThemeLibraryRail({
             />
           )}
         </AnimatePresence>
-        <div ref={rowMenuRootRef} className="flex flex-col gap-1">
-          {listedThemes.map((key) => {
-            const active = key === previewTheme
-            const kind = themeKinds[key] ?? 'light'
-            const ramp = themeBrandRamp(key, themeSources, themeKinds, store)
-            return (
-              <div key={key} className="flex flex-col gap-1">
-              <div
-                // Uniform `p-1.5` on the card, nothing on the children: the
-                // avatar sits 6px from the card's top / bottom / left edges, so
-                // its `rounded-md` (0.375rem) is concentric with the card's
-                // `rounded-xl` (0.75rem − 0.375rem inset). `gap-2` is the only
-                // horizontal spacing.
-                className={`group relative flex items-center gap-2 p-1.5 rounded-xl border transition-colors ${
-                  active
-                    ? 'border-line-strong bg-app shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
-                    : THEME_RAIL_ROW_IDLE
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => { clearStylePreview(); onPreviewThemeChange(key); setEditor(key) }}
-                  aria-label={t('Edit {name} theme', { name: labelForTheme(key, themeLabels) })}
-                  title={t('Edit {name} theme', { name: labelForTheme(key, themeLabels) })}
-                  className="flex-shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
-                >
-                  <ThemeAvatar ramp={ramp} appearance={kind} fallback={store.primaryColor} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { clearStylePreview(); onPreviewThemeChange(key) }}
-                  aria-current={active ? 'true' : undefined}
-                  // No padding of its own — the card owns it. Right room for the
-                  // menu is only claimed WHEN the menu is actually shown
-                  // (active, or hover), so a resting inactive row is symmetric.
-                  className={`flex-1 min-w-0 flex items-center text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-                    active ? 'pr-6' : 'group-hover:pr-6 group-focus-within:pr-6'
-                  }`}
-                >
-                  {/* No "{kind} appearance" subline: the name IS "Light" / "Dark",
-                      and the kind is already shown by the avatar's border and the
-                      workspace's own Light/Dark appearance toggle. */}
-                  <span className={`min-w-0 flex-1 truncate text-body text-fg ${active ? 'font-semibold' : 'font-medium'}`}>
-                    {labelForTheme(key, themeLabels)}
-                  </span>
-                </button>
-                <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active || rowMenuKey === key ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
-                  <button
-                    type="button"
-                    onClick={() => setRowMenuKey((open) => (open === key ? null : key))}
-                    aria-label={t('Theme options')}
-                    title={t('Theme options')}
-                    aria-haspopup="menu"
-                    aria-expanded={rowMenuKey === key}
-                    className={`${THEME_RAIL_ICON_BTN} ${rowMenuKey === key ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
-                  >
-                    <LibraryOptionsIcon />
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {rowMenuKey === key && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.98, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -4 }}
-                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute right-1.5 top-full z-[60] mt-1 w-44 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
-                      role="menu" aria-label={t('Theme options')}
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => { setRowMenuKey(null); onOpenInCode?.(key) }}
-                        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-                      >
-                        {t('Open in code')}
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => { setRowMenuKey(null); setDeleteKey(key) }}
-                        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-status-danger transition-colors hover:bg-status-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger/50"
-                      >
-                        {t('Delete')}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <AnimatePresence initial={false}>
-                {deleteKey === key && (
-                  <DeleteThemeConfirmation
-                    name={labelForTheme(key, themeLabels)}
-                    isPreviewed={previewTheme === key}
-                    isLast={availableThemes.length <= 1}
-                    onCancel={() => setDeleteKey(null)}
-                    onConfirm={() => deleteTheme(key)}
-                  />
-                )}
-              </AnimatePresence>
-              </div>
-            )
-          })}
-          {/* Always at the end of My themes — under any existing rows — so
-              creating another theme stays one click away. The dashed border
-              and accent tint say it isn't a theme yet. */}
-          <motion.button
+        {room !== 'ok' && (
+          <p className={`mb-2 px-2 text-mini leading-relaxed ${room === 'full' ? 'text-status-warning' : 'text-fg-faint'}`}>
+            {room === 'full'
+              ? t(MY_THEME_FULL_ERROR, { count: listedThemes.length })
+              : t('A large theme list makes the editor and export heavier.')}
+          </p>
+        )}
+        {allOpen && listedThemes.length > MY_THEME_RAIL_LIMIT && (
+          <label className="mb-2 block px-0.5">
+            <span className="sr-only">{t('Search themes')}</span>
+            <input
+              type="search"
+              value={themeQuery}
+              onChange={(event) => setThemeQuery(event.target.value)}
+              placeholder={t('Search themes')}
+              className="h-8 w-full rounded-lg border border-line-strong bg-app px-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            />
+          </label>
+        )}
+        <div className="flex flex-col gap-1">
+          {(allOpen ? filteredAll : railThemes).map((key) => (
+            <ThemeLibraryRow
+              key={key}
+              label={labelForTheme(key, themeLabels)}
+              active={key === previewTheme}
+              kind={themeKinds[key] ?? 'light'}
+              ramp={themeBrandRamp(key, themeSources, themeKinds, store)}
+              fallback={store.primaryColor}
+              menuOpen={rowMenuKey === key}
+              deleteOpen={deleteKey === key}
+              isLast={availableThemes.length <= 1}
+              onPreview={() => { clearStylePreview(); onPreviewThemeChange(key) }}
+              onEdit={() => { clearStylePreview(); onPreviewThemeChange(key); setEditor(key) }}
+              onToggleMenu={() => setRowMenuKey((open) => (open === key ? null : key))}
+              onCloseMenu={() => setRowMenuKey(null)}
+              onOpenInCode={() => { setRowMenuKey(null); onOpenInCode?.(key) }}
+              onAskDelete={() => { setRowMenuKey(null); setDeleteKey(key) }}
+              onCancelDelete={() => setDeleteKey(null)}
+              onConfirmDelete={() => deleteTheme(key)}
+            />
+          ))}
+          <CreateThemeButton
+            disabled={!canAdd}
+            onClick={() => { if (!canAdd) return; clearStylePreview(); setEditor('new') }}
+          />
+          {!allOpen && listedThemes.length > MY_THEME_RAIL_LIMIT && (
+            <button
               type="button"
-              onClick={() => { clearStylePreview(); setEditor('new') }}
-              initial={reduceMotion ? false : { opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
-              whileHover={reduceMotion ? undefined : { scale: 1.015 }}
-              whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-              className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-white/45 p-1.5 text-left transition-colors dark:bg-white/[0.06] hover:bg-white/60 dark:hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              onClick={() => { setRowMenuKey(null); setAllOpen(true) }}
+              className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
-              <span
-                aria-hidden
-                className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-dashed border-line-strong text-fg-faint transition-colors group-hover/cta:border-accent-ui/60 group-hover/cta:text-accent-ui"
-              >
-                <PlusIcon />
-              </span>
-              <span className="min-w-0 flex-1 truncate text-body font-medium text-fg-muted transition-colors group-hover/cta:text-fg">
-                {t('Create your theme')}
-              </span>
-            </motion.button>
+              <span>{t('All themes')} ({listedThemes.length})</span>
+              <span className="tabular-nums text-micro text-fg-faint">+{listedThemes.length - railThemes.length}</span>
+            </button>
+          )}
         </div>
 
-        <div className="mt-4 border-t border-line pt-3">
+        {!allOpen && <div className="mt-4 border-t border-line pt-3">
           <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
             <span className="text-caption font-semibold text-fg-muted">{t('System styles')}</span>
             <span className={THEME_RAIL_COUNT_BADGE} title={t('{count} system styles', { count: THEME_STYLE_PRESETS.length })}>
@@ -627,7 +857,7 @@ export default function ThemeLibraryRail({
               )
             })}
           </div>
-        </div>
+        </div>}
       </nav>
 
       {syncFooter && (

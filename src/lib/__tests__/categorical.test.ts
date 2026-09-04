@@ -5,7 +5,7 @@ import {
   categoricalNestedPath,
   projectArchitecture,
 } from '../semanticArchitectures'
-import { buildSystem } from '../color/audit'
+import { buildSystem, SEEDS } from '../color/audit'
 import { buildCategoricalSymbolicTokens, generateTokenJSON } from '../tokenGenerator'
 import { buildWizardExport } from '../exportWizard'
 import { unzipStore } from '../zipStore'
@@ -363,6 +363,26 @@ describe('action.primary hover/pressed — solved relative to the resolved solid
         // Monotonic: both steps go the same way, so the ramp reads as one
         // direction of travel rather than oscillating around the fill.
         expect(Math.sign(h - d), `${name}/${appearance} direction`).toBe(Math.sign(p - h))
+      }
+    }
+  })
+
+  it('every audit seed keeps three distinct primary states, each a single step', () => {
+    for (const [name, hex] of SEEDS) {
+      const sys = buildSystem(`${name}/radix`, hex, 'radix')
+      const v = buildArchitectureView('categorical', {
+        themes: {}, themeKinds: { light: 'light', dark: 'dark' }, themePalettes: {},
+        scales: sys.scales, accent: sys.accent,
+        pageBackground: sys.lightBg, darkBackground: sys.darkBg,
+      } as never, sys.errorSeed)!
+      for (const appearance of ['light', 'dark'] as const) {
+        const toneOf = (label?: string) => Number(label?.split('.')[1] ?? 0)
+        const d = toneOf(actionOf(v, 'primary.default')?.[appearance].label)
+        const h = toneOf(actionOf(v, 'primary.hover')?.[appearance].label)
+        const p = toneOf(actionOf(v, 'primary.pressed')?.[appearance].label)
+        expect(new Set([d, h, p]).size, `${name}/${appearance} ${d}/${h}/${p}`).toBe(3)
+        expect(Math.abs(h - d), `${name}/${appearance} hover jump`).toBeLessThanOrEqual(2)
+        expect(Math.abs(p - h), `${name}/${appearance} pressed jump`).toBeLessThanOrEqual(2)
       }
     }
   })

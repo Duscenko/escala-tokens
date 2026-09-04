@@ -1,6 +1,10 @@
 // Theme Preview's left rail — every quick-edit card stacked in one column.
 //
-// Color edition sits at the top (accent hue + neutral tint). Text, Radius,
+// Color edition sits at the top (accent hue + neutral tint + Random theme).
+// Figma `working` 40:1336: Advanced is the header sliders chip; Random is
+// the footer wand. Random borrows a System Style's geometry/borders and
+// swaps accent, type
+// and density — one recipe, one Undo. Text, Radius,
 // Shadow, Size and Stroke follow. The foundation icon rail used to switch
 // between these one at a time; inspector mode made the color-role groups
 // redundant, which freed the column to carry every foundation at once.
@@ -40,11 +44,15 @@ import {
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { type StylePreview } from '../../lib/stylePreviewOverlay'
+import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
+import { randomTheme } from '../../lib/randomTheme'
+import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
+import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
+import type { StatusAction } from '../../lib/themePresets'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
@@ -365,13 +373,19 @@ export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow
  *
  * The "Go to advanced edition" button is `selectFoundation` in disguise —
  * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
- * lands on the very foundation you were adjusting.
+ * lands on the very foundation you were adjusting. Color edition moves that
+ * door to the header sliders chip (Figma 40:1373) and replaces this footer
+ * with Random.
  */
-function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children }: {
+function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, children }: {
   title: string
   foundationKey: string
-  /** Header slot — the Color panel puts its light/dark toggle here. */
+  /** Header slot — Color edition puts the Advanced sliders chip here. */
   trailing?: React.ReactNode
+  /** Replaces the default Advanced footer. Color edition puts Random here. */
+  footer?: React.ReactNode
+  /** No row rules, Regular title — Color edition is one stacked block. */
+  flush?: boolean
   onOpenAdvanced: (foundationKey: string) => void
   children: React.ReactNode
 }) {
@@ -383,21 +397,66 @@ function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children 
           6px above the first row — top-heavy, and the gap the eye reads as
           "title belongs to this card" was the smaller of the two. */}
       <div className="flex min-h-8 items-center justify-between gap-2 px-3 pt-2 pb-1.5">
-        <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
+        <span className={`min-w-0 truncate text-caption text-fg ${flush ? 'font-normal' : 'font-semibold'}`}>{t(title)}</span>
         {trailing}
       </div>
-      <div className="divide-y divide-line">{children}</div>
-      <div className="px-3 pb-2.5 pt-2">
-        <button
-          type="button"
-          onClick={() => onOpenAdvanced(foundationKey)}
-          className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-app px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-        >
-          <AdvancedIcon />
-          {t('Go to advanced edition')}
-        </button>
-      </div>
+      <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
+      {footer ?? (
+        <div className="px-3 pb-2.5 pt-2">
+          <button
+            type="button"
+            onClick={() => onOpenAdvanced(foundationKey)}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-app px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            <AdvancedIcon />
+            {t('Go to advanced edition')}
+          </button>
+        </div>
+      )}
     </section>
+  )
+}
+
+/**
+ * Color edition's Random footer — Figma 40:1365. Fill is the same 6% wash
+ * as `--line`; the stroke is the designed rainbow at 25% opacity, last stop
+ * resolving into the card so it never cuts hard against `--rail-section`.
+ */
+const RANDOM_STROKE =
+  'linear-gradient(90deg, #40ff99 0%, #beff34 13.4%, #ffff00 20.8%, #bb1212 36.1%, #db0fff 52.1%, var(--rail-section) 97.1%)'
+
+function RandomThemeButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t('Random theme')}
+      title={t('Random theme')}
+      className="relative flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-line text-mini font-normal text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <span
+        aria-hidden
+        className="relative z-[1] block size-[14px] bg-current"
+        style={{
+          WebkitMask: "url('/icons/settings/random.svg') center / contain no-repeat",
+          mask: "url('/icons/settings/random.svg') center / contain no-repeat",
+        }}
+      />
+      <span className="relative z-[1]">{t('Random')}</span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-lg opacity-25"
+        style={{
+          padding: 1,
+          background: RANDOM_STROKE,
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'exclude',
+        }}
+      />
+    </button>
   )
 }
 
@@ -562,7 +621,7 @@ function Menu<T extends string>({
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} className="w-full h-9 px-2.5 flex items-center gap-2 rounded-lg border border-line-strong/80 bg-elevated/70 hover:border-line-strong hover:bg-elevated text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
-        <span className="min-w-0 flex-1 truncate text-body text-fg" style={render?.(value)}>{value}</span>
+        <span className="min-w-0 flex-1 truncate text-body text-fg" style={render?.(value)}>{options.find((option) => option.value === value)?.label ?? value}</span>
         <Chevron open={open} />
       </button>
       <AnimatePresence>
@@ -1049,6 +1108,7 @@ export default function ThemeQuickSettingsRail({
   const [adoptError, setAdoptError] = useState<string | null>(null)
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
+  const lastRandomScaffold = useRef<string | undefined>(undefined)
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // `target` is resolved once per gesture — a drag must adopt the tried-on
   // style on its FIRST move, not on every frame.
@@ -1060,11 +1120,17 @@ export default function ThemeQuickSettingsRail({
   // While a style is being tried on, every readout comes from the PRESET — the
   // same source `resolveStylePreviewTokens` paints the artefacts from, so the
   // rail and the canvas can't describe different systems.
+  const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
+  const canAddTheme = canAddMyTheme(ownThemeCount)
   const tryOn = stylePreview ?? null
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
-  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles } = foundations
+  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, statusAction, iconWeight } = foundations
+  const setStatusAction = (key: string, value: StatusAction) =>
+    patchThemeFoundations(key, { statusAction: value })
+  const setIconWeight = (key: string, value: PhosphorWeight) =>
+    patchThemeFoundations(key, { iconWeight: value })
   // Every write takes an explicit theme KEY rather than closing over
   // `previewTheme`, because during a try-on the first edit adopts the style and
   // the write has to land on the NEWLY minted theme — a key that does not exist
@@ -1149,7 +1215,7 @@ export default function ThemeQuickSettingsRail({
     // starting to iterate, so it lands in MY THEMES as a duplication of the
     // style, not as the style itself.
     const adopted = adoptPreset(tryOn.preset, previewAppearance, { asCopy: true, copyWord: t('Copy') })
-    if ('error' in adopted) { setAdoptError(adopted.error); return null }
+    if ('error' in adopted) { setAdoptError(t(adopted.error, { count: ownThemeCount })); return null }
     setAdoptError(null)
     // The write itself is silent — a slider that repaints the board is its own
     // feedback — but ADOPTING is a second thing happening that the user did not
@@ -1167,7 +1233,7 @@ export default function ThemeQuickSettingsRail({
   const addTryOnToSystem = () => {
     if (!tryOn) return
     const adopted = adoptPreset(tryOn.preset, previewAppearance)
-    if ('error' in adopted) { setAdoptError(adopted.error); return }
+    if ('error' in adopted) { setAdoptError(t(adopted.error, { count: ownThemeCount })); return }
     setAdoptError(null)
     announceAdopted(adopted.name)
     onAdoptStyle?.(adopted.key)
@@ -1216,67 +1282,69 @@ export default function ThemeQuickSettingsRail({
   // through it the page, the neutral and every status ramp — from a control
   // that claims to edit one theme. That is also why the Accent swatch and the
   // Neutral-tint row could end up describing two different colours.
-  const applyAccentScoped = (value: string) => {
-    commit('Accent updated', (themeKey) => {
-      const s = useDesignStore.getState()
-      // Re-read the family from the store: after an auto-adopt this is the
-      // NEWLY minted theme's brand family, not the host's.
-      const family = s.themeSources[themeKey]?.brand ?? DEFAULT_THEME_SOURCES.brand
-      const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.brand ?? DEFAULT_THEME_SOURCES.brand) === family)
-      const isGlobal = family === DEFAULT_THEME_SOURCES.brand
-      if (!isGlobal && affected.length <= 1) {
-        // A private theme may safely retint its own linked Neutral in place.
-        // Passing `false` here was the direct cause of Accent moving while the
-        // neutral/page remained the old purple.
-        applyAccent(value, s.linkNeutralToAccent, themeKey)
-        return
-      }
+  const writeAccent = (themeKey: string, value: string) => {
+    const s = useDesignStore.getState()
+    // Re-read the family from the store: after an auto-adopt this is the
+    // NEWLY minted theme's brand family, not the host's.
+    const family = s.themeSources[themeKey]?.brand ?? DEFAULT_THEME_SOURCES.brand
+    const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.brand ?? DEFAULT_THEME_SOURCES.brand) === family)
+    const isGlobal = family === DEFAULT_THEME_SOURCES.brand
+    if (!isGlobal && affected.length <= 1) {
+      // A private theme may safely retint its own linked Neutral in place.
+      // Passing `false` here was the direct cause of Accent moving while the
+      // neutral/page remained the old purple.
+      applyAccent(value, s.linkNeutralToAccent, themeKey)
+      return
+    }
 
-      const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
-      const baseKey = slugify(`${labelRoot}-brand`) || `${themeKey}-brand`
-      let familyKey = baseKey
-      let suffix = 2
-      while (s.customColors.some((color) => color.key === familyKey)) familyKey = `${baseKey}-${suffix++}`
-      const linkedNeutral = s.linkNeutralToAccent
-        ? neutralFromBrand(value, s.neutralTint)
-        : null
-      const themePages = linkedNeutral
-        ? {
-            light: backgroundFromBase(linkedNeutral, 'light', s.neutralTint),
-            dark: backgroundFromBase(linkedNeutral, 'dark', s.neutralTint),
-          }
-        : resolveThemePages(s, themeKey)
+    const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
+    const baseKey = slugify(`${labelRoot}-brand`) || `${themeKey}-brand`
+    let familyKey = baseKey
+    let suffix = 2
+    while (s.customColors.some((color) => color.key === familyKey)) familyKey = `${baseKey}-${suffix++}`
+    const linkedNeutral = s.linkNeutralToAccent
+      ? neutralFromBrand(value, s.neutralTint)
+      : null
+    const themePages = linkedNeutral
+      ? {
+          light: backgroundFromBase(linkedNeutral, 'light', s.neutralTint),
+          dark: backgroundFromBase(linkedNeutral, 'dark', s.neutralTint),
+        }
+      : resolveThemePages(s, themeKey)
 
-      s.addCustomColor({
-        key: familyKey,
-        label: `${labelRoot} Accent`,
-        base: value,
-        scale: generateColorScale(value, s.colorAlgorithm, s.contrastShift, themePages.light),
-        darkScale: generateFamilyDarkScale(value, s.colorAlgorithm, s.contrastShift, themePages.dark),
-      })
-
-      let gray = s.themeSources[themeKey]?.gray ?? DEFAULT_THEME_SOURCES.gray
-      if (linkedNeutral) {
-        const neutralRoot = slugify(`${labelRoot}-neutral`) || `${themeKey}-neutral`
-        let neutralKey = neutralRoot
-        let neutralSuffix = 2
-        while (s.customColors.some((color) => color.key === neutralKey)) neutralKey = `${neutralRoot}-${neutralSuffix++}`
-        s.addCustomColor({
-          key: neutralKey,
-          label: `${labelRoot} Neutral`,
-          base: linkedNeutral,
-          scale: generateColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.light, 'light', s.neutralTint),
-          darkScale: generateDarkColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.dark, s.neutralTint),
-        })
-        gray = neutralKey
-      }
-      s.updateTheme(themeKey, s.themeKinds[themeKey] ?? 'light', {
-        ...DEFAULT_THEME_SOURCES,
-        ...s.themeSources[themeKey],
-        brand: familyKey,
-        gray,
-      })
+    s.addCustomColor({
+      key: familyKey,
+      label: `${labelRoot} Accent`,
+      base: value,
+      scale: generateColorScale(value, s.colorAlgorithm, s.contrastShift, themePages.light),
+      darkScale: generateFamilyDarkScale(value, s.colorAlgorithm, s.contrastShift, themePages.dark),
     })
+
+    let gray = s.themeSources[themeKey]?.gray ?? DEFAULT_THEME_SOURCES.gray
+    if (linkedNeutral) {
+      const neutralRoot = slugify(`${labelRoot}-neutral`) || `${themeKey}-neutral`
+      let neutralKey = neutralRoot
+      let neutralSuffix = 2
+      while (s.customColors.some((color) => color.key === neutralKey)) neutralKey = `${neutralRoot}-${neutralSuffix++}`
+      s.addCustomColor({
+        key: neutralKey,
+        label: `${labelRoot} Neutral`,
+        base: linkedNeutral,
+        scale: generateColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.light, 'light', s.neutralTint),
+        darkScale: generateDarkColorScale(linkedNeutral, s.colorAlgorithm, s.contrastShift, themePages.dark, s.neutralTint),
+      })
+      gray = neutralKey
+    }
+    s.updateTheme(themeKey, s.themeKinds[themeKey] ?? 'light', {
+      ...DEFAULT_THEME_SOURCES,
+      ...s.themeSources[themeKey],
+      brand: familyKey,
+      gray,
+    })
+  }
+
+  const applyAccentScoped = (value: string) => {
+    commit('Accent updated', (themeKey) => writeAccent(themeKey, value))
   }
 
   const restore = () => {
@@ -1306,6 +1374,39 @@ export default function ThemeQuickSettingsRail({
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
 
+  const applyRandomTheme = () => {
+    const headingFamily = typography.headingFontFamily ?? typography.fontFamily
+    const recipe = randomTheme({
+      accent: liveAccent,
+      bodyFont: typography.fontFamily,
+      headingFont: headingFamily,
+      typeScale: inferTypeScaleMode(typography.sizes ?? {}),
+      avoidScaffold: lastRandomScaffold.current,
+    })
+    lastRandomScaffold.current = recipe.scaffoldId
+    loadGoogleFont(recipe.bodyFont)
+    loadGoogleFont(recipe.headingFont)
+    commit(t('Theme randomized'), (themeKey) => {
+      setNeutralTint(recipe.neutralTint)
+      writeAccent(themeKey, recipe.accent)
+      if (useDesignStore.getState().linkNeutralToAccent) {
+        applyNeutral(neutralFromBrand(recipe.accent, recipe.neutralTint), themeKey, true)
+      }
+      useDesignStore.getState().setThemeFoundations(themeKey, recipe.foundations)
+      const next = useDesignStore.getState()
+      useDesignStore.setState({
+        architectureOverrides: resetThemeSemantics(
+          next.architectureOverrides,
+          recipe.semantics,
+          themeKey,
+        ),
+      })
+      if (Object.keys(next.themes).length === 1 && recipe.foundations.typography) {
+        setTypography(themeKey, recipe.foundations.typography)
+      }
+    })
+  }
+
   const parsedStrokeSm = parseFloat(stroke?.sm ?? '1px')
   const strokeSm = Number.isFinite(parsedStrokeSm) ? parsedStrokeSm : 1
   const strokeIndex = Math.max(0, STROKE_SM_STOPS.findIndex((stop) => stop === strokeSm))
@@ -1332,7 +1433,7 @@ export default function ThemeQuickSettingsRail({
   return (
     <aside
       aria-label={t('Quick settings')}
-      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 bg-nav"
+      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 bg-app"
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       <div className="flex-shrink-0">
@@ -1355,17 +1456,21 @@ export default function ThemeQuickSettingsRail({
           <button
             type="button"
             onClick={addTryOnToSystem}
+            disabled={!canAddTheme}
+            title={!canAddTheme ? t(MY_THEME_FULL_ERROR, { count: ownThemeCount }) : undefined}
             // `bg-fg text-app` — the CHROME's primary action, the same pill
             // TopNav's Export uses. Deliberately not `bg-accent-ui`: this button
             // belongs to Escala, not to the style being tried on, and painting
             // it with the previewed accent made the one control that commits a
             // theme change colour with the thing it was about to commit.
-            className="h-9 w-full rounded-lg bg-fg px-3 text-body font-semibold text-app transition-opacity hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            className="h-9 w-full rounded-lg bg-fg px-3 text-body font-semibold text-app transition-opacity hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:opacity-45"
           >
             {t('Add to system')}
           </button>
           <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
-            {t('Trying {name}. Editing anything below adds it too.', { name: tryOn.preset.shortLabel })}
+            {canAddTheme
+              ? t('Trying {name}. Editing anything below adds it too.', { name: tryOn.preset.shortLabel })
+              : t(MY_THEME_FULL_ERROR, { count: ownThemeCount })}
           </p>
           {adoptError && <p role="alert" className="mt-1.5 text-mini text-status-danger">{adoptError}</p>}
         </div>
@@ -1379,10 +1484,27 @@ export default function ThemeQuickSettingsRail({
         <EditionCard
           title="Color edition"
           foundationKey="color"
+          flush
           onOpenAdvanced={onOpenAdvanced}
+          trailing={
+            <button
+              type="button"
+              onClick={() => onOpenAdvanced('color')}
+              aria-label={t('Go to advanced edition')}
+              title={t('Go to advanced edition')}
+              className="grid h-6 w-6 place-items-center rounded-md bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+            >
+              <AdvancedIcon />
+            </button>
+          }
+          footer={(
+            <div className="px-3 pb-2.5">
+              <RandomThemeButton onClick={applyRandomTheme} />
+            </div>
+          )}
         >
-          <SettingItem>
-            <div className="flex items-start gap-2">
+          <div className="flex flex-col gap-2 pb-4">
+            <div className="flex items-start gap-2 px-3 py-2">
               <div className="min-w-0 flex-1">
                 <SpectrumSlider
                   value={accent}
@@ -1429,10 +1551,8 @@ export default function ThemeQuickSettingsRail({
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
-          </SettingItem>
 
-          <SettingItem>
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 px-3">
               <div className="min-w-0 flex-1">
                 <TintSlider
                   hueHex={liveNeutral}
@@ -1487,13 +1607,12 @@ export default function ThemeQuickSettingsRail({
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
-          </SettingItem>
-
+          </div>
         </EditionCard>
 
         {(() => {
           // The SAME two families Variables · Type ships (`font-family-body` /
-          // `font-family-display`) — the quick card showed only the body one,
+          // `font-family-heading`) — the quick card showed only the body one,
           // so a theme with a distinct heading face (Nature's Fraunces over DM
           // Sans) couldn't be seen or changed here. `headingFontFamily`
           // undefined means "same as body", which is exactly what Variables'
@@ -1589,13 +1708,38 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Containers" hint="Inner padding of cards, panels, alerts, and other boxed surfaces.">
+          <SettingItem label="Inset surface" hint="Card, modal and alert padding — the same Spacing · Inset surface role Variables edits.">
             <ContainerInsetCard
               stepIndex={insetSurfaceStepIndex(spacingRoles)}
               spacing={spacing}
               onScrubStart={() => beginScrub('Container padding updated')}
               onScrubEnd={endScrub}
               onChange={(index) => applyScrub('Container padding updated', (themeKey) => setContainerInset(themeKey, index))}
+            />
+          </SettingItem>
+        </EditionCard>
+
+        <EditionCard title="Style edition" foundationKey="color" onOpenAdvanced={onOpenAdvanced}>
+          <SettingItem label="Status action" hint="How destructive and confirming buttons paint — a solid fill or a soft wash. System styles set this; it is a real axis, not a preset-only secret.">
+            <Menu
+              ariaLabel="Status action style"
+              value={statusAction ?? 'solid'}
+              options={[
+                { value: 'solid', label: t('Solid') },
+                { value: 'soft', label: t('Soft') },
+              ]}
+              onChange={(value) => commit('Status action updated', (themeKey) => setStatusAction(themeKey, value))}
+            />
+          </SettingItem>
+          <SettingItem label="Icon weight" hint="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision.">
+            <Menu
+              ariaLabel="Icon weight"
+              value={iconWeight ?? 'regular'}
+              options={PHOSPHOR_WEIGHTS.map((weight) => ({
+                value: weight,
+                label: weight.charAt(0).toUpperCase() + weight.slice(1),
+              }))}
+              onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
             />
           </SettingItem>
         </EditionCard>

@@ -103,7 +103,9 @@ describe('typeStyleCss (preview / docs / components)', () => {
 // ── Type-scale modes (rail quick setting) ──────────────────────────────────
 import {
   TYPE_SCALE_MODES,
+  TYPE_SCALE_RATIOS,
   buildTypeScale,
+  buildModularTypeScale,
   inferTypeScaleMode,
   FONT_SIZE_STANDARD,
   LINE_HEIGHT_STANDARD,
@@ -137,6 +139,17 @@ describe('type-scale modes', () => {
       const s = buildTypeScale(mode.factor).sizes
       const text = ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'].map((k) => parseFloat(s[k]))
       for (let i = 1; i < text.length; i++) expect(text[i]).toBeGreaterThan(text[i - 1])
+    }
+  })
+
+  it('a modular scale is strictly geometric around text-md', () => {
+    const built = buildModularTypeScale(16, 1.25)
+    expect(built.sizes['text-md']).toBe('16px')
+    expect(parseFloat(built.sizes['text-lg']) / parseFloat(built.sizes['text-md'])).toBeCloseTo(1.25, 1)
+    expect(parseFloat(built.sizes['text-sm']) / parseFloat(built.sizes['text-md'])).toBeCloseTo(1 / 1.25, 1)
+    for (const ratio of TYPE_SCALE_RATIOS) {
+      const steps = TYPE_SCALE_KEYS.map((key) => parseFloat(buildModularTypeScale(16, ratio).sizes[key]))
+      for (let i = 1; i < steps.length; i++) expect(steps[i]).toBeGreaterThan(steps[i - 1])
     }
   })
 

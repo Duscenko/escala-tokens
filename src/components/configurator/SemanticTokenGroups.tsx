@@ -11,12 +11,14 @@
 // the quick rail) was the old groups-column language and does not apply here.
 
 import { AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useMemo } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useArchitectureTokens } from './architectureTokens'
 import { ArchModeEditor, parseRef } from './Step3_SemanticTokens'
 import { TokenDetailsModal } from './colorControls'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 
 export default function SemanticTokenDrawer({
   previewTheme,
@@ -25,6 +27,9 @@ export default function SemanticTokenDrawer({
   onClose,
   onOpenPrimitiveFamily,
   onOpenInVariables,
+  stylePreview,
+  inspectedCss,
+  onTryOnEdit,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -32,13 +37,27 @@ export default function SemanticTokenDrawer({
   onClose: () => void
   onOpenPrimitiveFamily?: (family: string) => void
   onOpenInVariables?: (tokenId: string) => void
+  /** Same try-on the artefacts board is painted from. */
+  stylePreview?: StylePreview | null
+  /** Colour sampled on the canvas for this token — the grid rings the
+   *  primitive that matches THIS hex, not a stale stored ref. */
+  inspectedCss?: string | null
+  /** Session pick on a try-on. Live-store writes are skipped while a style
+   *  is tried on — `resetThemeSemantics` would drop them, and they would
+   *  also leak onto the committed theme the moment the try-on closed. */
+  onTryOnEdit?: (tokenId: string, mode: string, ref: string | null) => void
 }) {
   const reduce = useReducedMotion() ?? false
+  const live = useDesignStore()
+  const overlay = useMemo(
+    () => (stylePreview ? stylePreviewStore(live, stylePreview, previewTheme) : null),
+    [stylePreview, live, previewTheme],
+  )
   const setArchitectureOverride = useDesignStore((s) => s.setArchitectureOverride)
   const {
     archView, scales, resolvedPalettes, kindOf, archModeKeys, previewedMode,
-    pageBackground, darkBackground, semanticArchitecture,
-  } = useArchitectureTokens(previewTheme, previewAppearance)
+    pageBackground, darkBackground, semanticArchitecture, activeAppearance,
+  } = useArchitectureTokens(previewTheme, previewAppearance, overlay)
 
   const modeLabel = (mode: string) => (kindOf(mode) === 'dark' ? 'Dark' : 'Light')
 
@@ -52,7 +71,7 @@ export default function SemanticTokenDrawer({
     <AnimatePresence>
       {token && (
         <TokenDetailsModal
-          key="quick-token-details"
+          key={token.id}
           name={token.id}
           cssVarName={token.id.replace(/\./g, '-')}
           description={token.description}
@@ -60,14 +79,22 @@ export default function SemanticTokenDrawer({
           dockToSelector={'aside[aria-label="Themes library"]'}
           onOpenInTable={onOpenInVariables ? () => onOpenInVariables(token.id) : undefined}
           onReset={() => {
+            if (stylePreview && onTryOnEdit) {
+              for (const mode of archModeKeys) onTryOnEdit(token.id, mode, null)
+              return
+            }
             for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, token.id, mode, null)
           }}
-          resetDisabled={!archModeKeys.some((m) => token.edited?.[m])}
+          resetDisabled={
+            stylePreview
+              ? !archModeKeys.some((m) => stylePreview.edits?.[token.id]?.[m])
+              : !archModeKeys.some((m) => token.edited?.[m])
+          }
           onClose={onClose}
           reduce={reduce}
           initialOpenKey={previewedMode}
           sections={archModeKeys
-            .filter((mode) => parseRef(token.modes[mode]?.label ?? ''))
+            .filter((mode) => parseRef(token.modes[mode]?.label ?? '') || token.modes[mode]?.css)
             .map((mode) => ({
               key: mode,
               label: modeLabel(mode),
@@ -81,8 +108,15 @@ export default function SemanticTokenDrawer({
                   pageBackground={pageBackground}
                   darkBackground={darkBackground}
                   label={modeLabel(mode)}
-                  onPick={(refStr) => setArchitectureOverride(semanticArchitecture, token.id, mode, refStr)}
+                  onPick={(refStr) => {
+                    if (stylePreview && onTryOnEdit) {
+                      onTryOnEdit(token.id, mode, refStr)
+                      return
+                    }
+                    setArchitectureOverride(semanticArchitecture, token.id, mode, refStr)
+                  }}
                   onOpenFamily={onOpenPrimitiveFamily}
+                  preferCss={kindOf(mode) === activeAppearance ? inspectedCss : undefined}
                 />
               ),
             }))}

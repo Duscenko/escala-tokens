@@ -68,7 +68,7 @@ function RolePreview({
     )
   }
   const px = parseFloat(value) || 0
-  const max = family === 'size' ? 64 : 64
+  const max = family === 'selector' ? 24 : 64
   return (
     <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
       <div className="h-full rounded-full" style={{ width: `${Math.max((px / max) * 100, 2)}%`, backgroundColor: accent + '88' }} />
@@ -97,8 +97,8 @@ export default function LayoutSemantics({
 }) {
   const { store, foundations, patch } = useThemeFoundations(previewTheme)
   const {
-    radius, spacing, sizes, stroke, grid,
-    radiusRoles, spacingRoles, sizeRoles, strokeRoles, breakpointRoles,
+    radius, spacing, sizes, selector, stroke, grid,
+    radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles,
   } = foundations
   const { primaryColor, primaryScale } = store
   const accent = primaryScale[9] ?? primaryColor
@@ -110,65 +110,102 @@ export default function LayoutSemantics({
   const [flashKey, setFlashKey] = useState<string | null>(null)
   const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
 
-  const primitives =
-    family === 'radius' ? radius
-    : family === 'spacing' ? spacing
-    : family === 'size' ? sizes
-    : family === 'stroke' ? stroke
-    : extractBreakpoints(grid)
-  const stored =
-    family === 'radius' ? radiusRoles
-    : family === 'spacing' ? spacingRoles
-    : family === 'size' ? sizeRoles
-    : family === 'stroke' ? strokeRoles
-    : breakpointRoles
-  const roles = mergeLayoutRoles(family, stored)
-  const setRoles =
-    family === 'radius' ? (value: Record<string, string>) => patch({ radiusRoles: value })
-    : family === 'spacing' ? (value: Record<string, string>) => patch({ spacingRoles: value })
-    : family === 'size' ? (value: Record<string, string>) => patch({ sizeRoles: value })
-    : family === 'stroke' ? (value: Record<string, string>) => patch({ strokeRoles: value })
-    : (value: Record<string, string>) => patch({ breakpointRoles: value })
+  // Sizes owns two families (heights + selector glyphs). The primitive table
+  // already splits them; semantics used to hand LayoutSemantics only `size`,
+  // so selectorRoles exported with no editor. Combined here so one tab edits
+  // both maps.
+  const viewFamilies: LayoutFamily[] = family === 'size' ? ['size', 'selector'] : [family]
 
-  const groups = LAYOUT_ROLE_GROUPS[family]
+  const primitivesOf = (fam: LayoutFamily) =>
+    fam === 'radius' ? radius
+    : fam === 'spacing' ? spacing
+    : fam === 'size' ? sizes
+    : fam === 'selector' ? (selector ?? {})
+    : fam === 'stroke' ? stroke
+    : extractBreakpoints(grid)
+  const rolesOf = (fam: LayoutFamily) =>
+    mergeLayoutRoles(
+      fam,
+      fam === 'radius' ? radiusRoles
+      : fam === 'spacing' ? spacingRoles
+      : fam === 'size' ? sizeRoles
+      : fam === 'selector' ? selectorRoles
+      : fam === 'stroke' ? strokeRoles
+      : breakpointRoles,
+    )
+  const setRolesOf = (fam: LayoutFamily, value: Record<string, string>) => {
+    if (fam === 'radius') patch({ radiusRoles: value })
+    else if (fam === 'spacing') patch({ spacingRoles: value })
+    else if (fam === 'size') patch({ sizeRoles: value })
+    else if (fam === 'selector') patch({ selectorRoles: value })
+    else if (fam === 'stroke') patch({ strokeRoles: value })
+    else patch({ breakpointRoles: value })
+  }
+
+  const groups = viewFamilies.flatMap((fam) => LAYOUT_ROLE_GROUPS[fam])
   const q = activeQuery.trim().toLowerCase()
-  const rows = layoutRolesInGroup(family, group).filter((r) =>
-    !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
-  )
-  const steps = LAYOUT_PRIMITIVE_STEPS[family]
+  const rows = viewFamilies.flatMap((fam) => {
+    if (group !== 'all' && !LAYOUT_ROLE_GROUPS[fam].some((g) => g.id === group)) return []
+    return layoutRolesInGroup(fam, group)
+      .filter((r) => !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q))
+      .map((role) => ({ family: fam, role }))
+  })
+
+  const locateRole = (raw: string): { family: LayoutFamily; key: string; spec: (typeof LAYOUT_ROLES)[LayoutFamily][number] } | null => {
+    const dotted = raw.includes('.') ? raw.split('.') : null
+    const hinted = dotted && (viewFamilies as string[]).includes(dotted[0])
+      ? { family: dotted[0] as LayoutFamily, key: dotted.slice(1).join('.') }
+      : null
+    const candidates = hinted ? [hinted.family] : viewFamilies
+    const key = hinted?.key ?? raw
+    for (const fam of candidates) {
+      const spec = LAYOUT_ROLES[fam].find((r) => r.key === key)
+      if (spec) return { family: fam, key, spec }
+    }
+    return null
+  }
+
+  const flash = (fam: LayoutFamily, key: string) => {
+    setQuery('')
+    const spec = LAYOUT_ROLES[fam].find((r) => r.key === key)
+    if (spec) setGroup((g) => (g === 'all' || g === spec.group ? g : spec.group))
+    setFlashKey(`${fam}.${key}`)
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.setTimeout(() => {
+      document.getElementById(`layout-role-${fam}-${key}`)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' })
+    }, 40)
+    window.setTimeout(() => setFlashKey(null), 1400)
+  }
 
   useEffect(() => {
     if (!revealRole?.key) return
-    const spec = LAYOUT_ROLES[family].find((r) => r.key === revealRole.key)
-    if (!spec) return
-    setQuery('')
-    setGroup((g) => (g === 'all' || g === spec.group ? g : spec.group))
-    setFlashKey(revealRole.key)
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const id = `layout-role-${family}-${revealRole.key}`
-    const t0 = window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' })
-    }, 40)
-    const t1 = window.setTimeout(() => setFlashKey(null), 1400)
-    return () => {
-      window.clearTimeout(t0)
-      window.clearTimeout(t1)
-    }
+    const hit = locateRole(revealRole.key)
+    if (!hit) return
+    flash(hit.family, hit.key)
   }, [family, revealRole?.key, revealRole?.seq])
 
-  const revealFromPreview = (key: string) => {
-    const spec = LAYOUT_ROLES[family].find((role) => role.key === key)
-    if (!spec) return
-    setQuery('')
-    setGroup(spec.group)
-    setFlashKey(key)
-    window.setTimeout(() => document.getElementById(`layout-role-${family}-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40)
-    window.setTimeout(() => setFlashKey(null), 1400)
+  const revealFromPreview = (key: string, fromFamily: LayoutFamily = family) => {
+    const hit = locateRole(key.includes('.') ? key : `${fromFamily}.${key}`) ?? locateRole(key)
+    if (!hit) return
+    flash(hit.family, hit.key)
   }
+
+  const sizePreview = family === 'size' && (group === 'all' || group === 'glyph')
   const preview = family === 'radius'
     ? <RadiusRolesPreview tokens={previewTokens} onEditRole={revealFromPreview} />
-    : family === 'spacing' || family === 'size' || family === 'stroke'
+    : family === 'spacing' || family === 'stroke'
       ? <LayoutRolesPreview family={family} tokens={previewTokens} onEditRole={revealFromPreview} />
+    : family === 'size'
+      ? (
+        <>
+          {(group === 'all' || group !== 'glyph') && (
+            <LayoutRolesPreview family="size" tokens={previewTokens} onEditRole={(key) => revealFromPreview(key, 'size')} />
+          )}
+          {sizePreview && (
+            <LayoutRolesPreview family="selector" tokens={previewTokens} onEditRole={(key) => revealFromPreview(key, 'selector')} />
+          )}
+        </>
+      )
       : null
 
   return (
@@ -180,11 +217,11 @@ export default function LayoutSemantics({
           collapsed={railCollapsed}
           onChange={setGroup}
           items={[
-            { key: 'all', label: 'All', count: LAYOUT_ROLES[family].length, shortLabel: 'ALL' },
+            { key: 'all', label: 'All', count: viewFamilies.reduce((n, fam) => n + LAYOUT_ROLES[fam].length, 0), shortLabel: 'ALL' },
             ...groups.map((item) => ({
               key: item.id,
               label: item.label,
-              count: layoutRolesInGroup(family, item.id).length,
+              count: viewFamilies.reduce((n, fam) => n + layoutRolesInGroup(fam, item.id).length, 0),
               hint: item.hint,
             })),
           ]}
@@ -227,19 +264,22 @@ export default function LayoutSemantics({
               </div>
               {rows.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{activeQuery}”.</div>
-              ) : rows.map((role, i) => {
+              ) : rows.map(({ family: rowFamily, role }, i) => {
+                const roles = rolesOf(rowFamily)
+                const primitives = primitivesOf(rowFamily)
+                const steps = LAYOUT_PRIMITIVE_STEPS[rowFamily]
                 const step = roles[role.key]
-                const modified = !layoutRoleIsDefault(family, role.key, step)
-                const resolved = resolveLayoutRole(family, roles, primitives, role.key, '')
+                const modified = !layoutRoleIsDefault(rowFamily, role.key, step)
+                const resolved = resolveLayoutRole(rowFamily, roles, primitives, role.key, '')
                 return (
                   <div
-                    key={role.key}
-                    id={`layout-role-${family}-${role.key}`}
-                    className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                    key={`${rowFamily}-${role.key}`}
+                    id={`layout-role-${rowFamily}-${role.key}`}
+                    className={`${rowClass(i)} ${flashKey === `${rowFamily}.${role.key}` ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                   >
                     <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                       <span className="flex items-center gap-2 min-w-0">
-                        <code className="font-mono text-body text-fg-muted truncate">{family}-{role.key}</code>
+                        <code className="font-mono text-body text-fg-muted truncate">{rowFamily}-{role.key}</code>
                         {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
                       </span>
                       <span className="text-caption text-fg-faint truncate">{role.description}</span>
@@ -248,7 +288,7 @@ export default function LayoutSemantics({
                       <select
                         aria-label={`${role.key} primitive`}
                         value={step}
-                        onChange={(e) => setRoles({ ...roles, [role.key]: e.target.value })}
+                        onChange={(e) => setRolesOf(rowFamily, { ...roles, [role.key]: e.target.value })}
                         className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
                       >
                         {steps.map((s) => (
@@ -257,12 +297,12 @@ export default function LayoutSemantics({
                       </select>
                     </div>
                     <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden gap-2">
-                      <RolePreview family={family} value={resolved} accent={accent} />
+                      <RolePreview family={rowFamily} value={resolved} accent={accent} />
                       <span className="text-caption font-mono text-fg-faint tabular-nums flex-shrink-0">{resolved || '—'}</span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setRoles({ ...roles, [role.key]: role.primitive })}
+                      onClick={() => setRolesOf(rowFamily, { ...roles, [role.key]: role.primitive })}
                       disabled={!modified}
                       title="Reset to standard"
                       aria-label={`Reset ${role.label}`}

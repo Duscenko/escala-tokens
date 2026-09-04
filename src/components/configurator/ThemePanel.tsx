@@ -8,6 +8,8 @@ import {
   type NeutralTint,
 } from '../../lib/colorUtils'
 import { slugify } from '../../lib/utils'
+import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
+import { useI18n } from '../../lib/i18n'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
@@ -190,6 +192,9 @@ export function mintTheme(
   pages?: MintPages,
 ): { key: string; renamedFrom?: string } | { error: string } {
   const s = useDesignStore.getState()
+  if (!editKey && !canAddMyTheme(myThemeKeys(s.themeOrder, s.themes).length)) {
+    return { error: MY_THEME_FULL_ERROR }
+  }
   const typed = nameLabel.trim()
   // An unnamed theme still gets a name: the accent's own industry label, or
   // "Theme". Erroring on a blank field was the edit form's rule and the create
@@ -290,6 +295,7 @@ function ThemeForm({
   onCreated,
   onRenamed,
 }: ThemeFormProps) {
+  const { t } = useI18n()
   const store = useDesignStore()
   const {
     themes, themeKinds, themeSources, neutralTint,
@@ -400,7 +406,10 @@ function ThemeForm({
   function handleSubmit() {
     setErr(null)
     const result = mintTheme(slots, kind, name, editKey, neutralTint, themePages)
-    if ('error' in result) { setErr(result.error); return }
+    if ('error' in result) {
+      setErr(t(result.error, { count: MY_THEME_HARD_CAP }))
+      return
+    }
     if (result.renamedFrom) onRenamed?.(result.renamedFrom, result.key)
     else if (!isEdit) onCreated?.(result.key)
     onClose()

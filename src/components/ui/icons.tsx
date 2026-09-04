@@ -86,6 +86,24 @@ export function CopyGlyph({ size = 13, className = '' }: { size?: number; classN
   )
 }
 
+/** Inspect tokens — designer-supplied mark (`public/icons/settings/inspect.svg`).
+ *  Same CSS-mask + currentColor treatment as `CopyGlyph` / `ViewIcon`: the
+ *  asset ships `fill="white"`, so a bare `<img>` can't track button ink. */
+export function InspectGlyph({ size = 16, className = '' }: { size?: number; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`inline-block flex-shrink-0 bg-current ${className}`}
+      style={{
+        width: size,
+        height: size,
+        WebkitMask: "url('/icons/settings/inspect.svg') center / contain no-repeat",
+        mask: "url('/icons/settings/inspect.svg') center / contain no-repeat",
+      }}
+    />
+  )
+}
+
 /** Painter's palette — the color-token mark: token-table rows and the rail's
  *  Color entry. */
 export function PaletteIcon({ size = 16, strokeWidth = 1.8, className = '' }: {

@@ -22,11 +22,17 @@ export type PreviewColorField =
   | 'surface' | 'brandSolid' | 'brandText' | 'onBrand' | 'neutralFill' | 'neutralText'
   | 'errorColor' | 'disabledBg' | 'disabledText' | 'border' | 'borderDefault'
   | 'fgMuted' | 'placeholderText' | 'successColor' | 'warningColor' | 'infoColor'
+  | 'inputSurface' | 'selectedSurface'
+  | 'linkText' | 'linkHover' | 'borderHover' | 'borderCritical'
+  | 'ghostNeutralHover' | 'ghostNeutralPressed' | 'ghostBrandHover' | 'ghostBrandPressed'
 
 export const PREVIEW_COLOR_FIELDS: PreviewColorField[] = [
   'surface', 'brandSolid', 'brandText', 'onBrand', 'neutralFill', 'neutralText',
   'errorColor', 'disabledBg', 'disabledText', 'border', 'borderDefault',
   'fgMuted', 'placeholderText', 'successColor', 'warningColor', 'infoColor',
+  'inputSurface', 'selectedSurface',
+  'linkText', 'linkHover', 'borderHover', 'borderCritical',
+  'ghostNeutralHover', 'ghostNeutralPressed', 'ghostBrandHover', 'ghostBrandPressed',
 ]
 
 export interface ColorFieldInfo {
@@ -55,4 +61,14 @@ export const COLOR_FIELD_INFO: Record<PreviewColorField, ColorFieldInfo> = {
   warningColor:    { role: null, cssVar: null, label: 'Warning accent (state family, anchor tone)' },
   successColor:    { role: null, cssVar: null, label: 'Success accent (state family, anchor tone)' },
   infoColor:       { role: null, cssVar: null, label: 'Info accent (state family, anchor tone)' },
+  inputSurface:    { role: null, cssVar: '--color-surface-input', label: 'Form field surface' },
+  selectedSurface: { role: null, cssVar: '--color-surface-selected', label: 'Selected surface' },
+  linkText:        { role: null, cssVar: '--color-content-link-default', label: 'Link text' },
+  linkHover:       { role: null, cssVar: '--color-content-link-hover', label: 'Link text hover' },
+  borderHover:     { role: null, cssVar: '--color-border-control-hover', label: 'Control border hover' },
+  borderCritical:  { role: null, cssVar: '--color-status-critical-border-strong', label: 'Invalid field border' },
+  ghostNeutralHover:   { role: null, cssVar: '--color-action-ghost-neutral-hover', label: 'Ghost neutral hover' },
+  ghostNeutralPressed: { role: null, cssVar: '--color-action-ghost-neutral-pressed', label: 'Ghost neutral pressed' },
+  ghostBrandHover:     { role: null, cssVar: '--color-action-ghost-brand-hover', label: 'Ghost brand hover' },
+  ghostBrandPressed:   { role: null, cssVar: '--color-action-ghost-brand-pressed', label: 'Ghost brand pressed' },
 }

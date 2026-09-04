@@ -168,7 +168,7 @@ const rgbaKey = (r: number, g: number, b: number, a: number) =>
  * what every specimen writes for "this style has no fill/stroke", so matching
  * it would report a role for the absence of one.
  */
-function normalizeColor(css: string | null | undefined): string | null {
+export function normalizeColor(css: string | null | undefined): string | null {
   if (!css) return null
   const value = css.trim().toLowerCase()
   if (!value || value === 'transparent' || value === 'currentcolor' || value === 'none') return null
@@ -231,42 +231,281 @@ function paintsText(node: Element): boolean {
   return false
 }
 
-interface Observation { key: string; where: PaintSlot }
+interface Observation { key: string; where: PaintSlot; css: string }
+
+function observeNode(
+  node: Element,
+  out: Observation[],
+  seen: Set<string>,
+): void {
+  const cs = getComputedStyle(node)
+  // A `display: contents` marker generates no box, so it paints nothing —
+  // reading it would attribute its inherited ink to the component.
+  if (cs.display === 'contents') return
+  const push = (css: string | null | undefined, where: PaintSlot) => {
+    const key = normalizeColor(css)
+    if (!key || !css) return
+    const tag = `${key}|${where}`
+    if (seen.has(tag)) return
+    seen.add(tag)
+    out.push({ key, where, css })
+  }
+  const masked = (cs.maskImage && cs.maskImage !== 'none') || (cs.webkitMaskImage && cs.webkitMaskImage !== 'none')
+  // A masked span IS a glyph (see `PreviewIcon`): its background is the
+  // icon's ink, not a surface fill.
+  push(cs.backgroundColor, masked ? 'ink' : 'fill')
+  if (paintsText(node)) push(cs.color, 'ink')
+  for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
+    const width = parseFloat(cs.getPropertyValue(`border-${side.toLowerCase()}-width`))
+    if (!(width > 0)) continue
+    if (cs.getPropertyValue(`border-${side.toLowerCase()}-style`) === 'none') continue
+    push(cs.getPropertyValue(`border-${side.toLowerCase()}-color`), 'stroke')
+  }
+  if (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') push(cs.outlineColor, 'stroke')
+}
 
 /** Every colour the element and its descendants actually paint, in paint
  *  order — fill, then ink, then strokes, walking down the tree. */
 function observePaints(root: Element): Observation[] {
   const out: Observation[] = []
   const seen = new Set<string>()
-  const push = (css: string | null | undefined, where: PaintSlot) => {
-    const key = normalizeColor(css)
-    if (!key) return
-    const tag = `${key}|${where}`
-    if (seen.has(tag)) return
-    seen.add(tag)
-    out.push({ key, where })
-  }
+  const nodes = [root, ...Array.from(root.querySelectorAll('*')).slice(0, MAX_NODES)]
+  for (const node of nodes) observeNode(node, out, seen)
+  return out
+}
 
+/** Paints on the container itself — the card fill, its stroke — skipping
+ *  anything already owned by a `[data-inspect]` child. Those children are
+ *  measured separately so a button's green cannot be re-attributed as the
+ *  module chrome. */
+function observeChromePaints(root: Element): Observation[] {
+  const out: Observation[] = []
+  const seen = new Set<string>()
   const nodes = [root, ...Array.from(root.querySelectorAll('*')).slice(0, MAX_NODES)]
   for (const node of nodes) {
-    const cs = getComputedStyle(node)
-    // A `display: contents` marker generates no box, so it paints nothing —
-    // reading it would attribute its inherited ink to the component.
-    if (cs.display === 'contents') continue
-    const masked = (cs.maskImage && cs.maskImage !== 'none') || (cs.webkitMaskImage && cs.webkitMaskImage !== 'none')
-    // A masked span IS a glyph (see `PreviewIcon`): its background is the
-    // icon's ink, not a surface fill.
-    push(cs.backgroundColor, masked ? 'ink' : 'fill')
-    if (paintsText(node)) push(cs.color, 'ink')
-    for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) {
-      const width = parseFloat(cs.getPropertyValue(`border-${side.toLowerCase()}-width`))
-      if (!(width > 0)) continue
-      if (cs.getPropertyValue(`border-${side.toLowerCase()}-style`) === 'none') continue
-      push(cs.getPropertyValue(`border-${side.toLowerCase()}-color`), 'stroke')
-    }
-    if (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') push(cs.outlineColor, 'stroke')
+    if (node !== root && node.closest('[data-inspect]')) continue
+    observeNode(node, out, seen)
   }
   return out
+}
+
+/**
+ * Map observed paints back to role ids.
+ *
+ * `declared` is the component's field-closure union. When it is non-empty,
+ * ONLY those ids may be reported — a hex that also belongs to an unrelated
+ * role (`content.accent` sharing a button's fill, `surface.layer-1` sharing
+ * a social-login well) must not sneak in. Falling through to every role
+ * with that hex is what made Token Details open on a primitive that was
+ * never the pixel you pointed at.
+ *
+ * The swatch is the MEASURED css, not `arch[id]`. Those two disagree the
+ * moment a try-on overlay, an optimistic hue drag, or a hex collision is
+ * in play; the badge has to show the colour on screen.
+ */
+export function rolesForPaints(
+  arch: Record<string, string>,
+  declared: string[],
+  paints: { css: string; where: PaintSlot }[],
+): InspectedRole[] {
+  const index = roleIndex(arch)
+  const roles: InspectedRole[] = []
+  for (const paint of paints) {
+    const key = normalizeColor(paint.css)
+    if (!key) continue
+    const candidates = index.get(key)
+    if (!candidates) continue
+    const owned = declared.length
+      ? candidates.filter((id) => declared.includes(id))
+      : candidates
+    for (const id of owned) {
+      if (roles.some((role) => role.id === id)) continue
+      roles.push({ id, css: paint.css, where: paint.where })
+    }
+  }
+  return roles
+}
+
+/**
+ * A solid fill carries a paired ink. Button's declared union maps the
+ * label of every Solid to `content.on-action` (`onBrand`), so a Danger
+ * button's near-white ink was reported as the brand pair — and
+ * `status.critical.on-solid` never appeared, even though that is what
+ * `statusOn()` actually paints. Once the fill is a status/brand solid,
+ * the badge lists that fill and its own on-ink, nothing else.
+ */
+const SOLID_INK: Record<string, string> = {
+  'status.critical.surface-solid': 'status.critical.on-solid',
+  'status.warning.surface-solid': 'status.warning.on-solid',
+  'status.success.surface-solid': 'status.success.on-solid',
+  'status.info.surface-solid': 'status.info.on-solid',
+  'action.primary.default': 'content.on-action',
+}
+
+export function pairSolidRoles(
+  arch: Record<string, string>,
+  roles: InspectedRole[],
+  paints: { css: string; where: PaintSlot }[],
+): InspectedRole[] {
+  const fill = Object.keys(SOLID_INK)
+    .map((id) => roles.find((role) => role.where === 'fill' && role.id === id))
+    .find((role): role is InspectedRole => !!role)
+  if (!fill) return roles
+
+  const inkId = SOLID_INK[fill.id]
+  const inkPaint = paints.find((paint) => paint.where === 'ink')
+  const out: InspectedRole[] = [{ ...fill, where: 'fill' }]
+  if (inkId && arch[inkId] && inkPaint) {
+    out.push({ id: inkId, css: inkPaint.css, where: 'ink' })
+  }
+  const fillKey = normalizeColor(fill.css)
+  for (const role of roles) {
+    if (role.where !== 'stroke') continue
+    if (normalizeColor(role.css) === fillKey) continue
+    out.push(role)
+  }
+  return out
+}
+
+/**
+ * A Button is one fill and one label. Soft / Ghost / Outline / Pressed paint
+ * a wash or a `darken()` that is not byte-identical to any role, so
+ * `rolesForPaints` keeps the ink and drops the surface — or matches nothing
+ * and the badge falls back to Button's whole union (solids of every severity).
+ * Once a fill is actually on the element, the badge names that surface and
+ * its label, nothing else: no outline, no leftover content roles.
+ *
+ * The wash still has a role. Translucent brand ink → the ghost ladder
+ * (`hover` at ~10 %, `pressed` deeper); opaque `content.accent` → the
+ * secondary accent fill Soft is. Solid on-ink → `action.primary.default`
+ * unless the pixel already is hover/pressed.
+ */
+const INK_SURFACE: Record<string, string> = {
+  'content.on-action': 'action.primary.default',
+  'content.accent': 'action.secondary.accent',
+  'content.primary': 'action.secondary.default',
+  'status.critical.on-solid': 'status.critical.surface-solid',
+  'status.warning.on-solid': 'status.warning.surface-solid',
+  'status.success.on-solid': 'status.success.surface-solid',
+  'status.info.on-solid': 'status.info.surface-solid',
+}
+
+function paintAlpha(css: string): number {
+  const key = normalizeColor(css)
+  if (!key) return 0
+  return Number(key.slice(key.lastIndexOf(',') + 1))
+}
+
+function surfaceForInk(
+  arch: Record<string, string>,
+  inkId: string,
+  fillCss: string,
+): string | undefined {
+  if (inkId === 'content.on-action') {
+    const key = normalizeColor(fillCss)
+    for (const id of ['action.primary.pressed', 'action.primary.hover', 'action.primary.default'] as const) {
+      if (key && normalizeColor(arch[id]) === key) return id
+    }
+    return 'action.primary.default'
+  }
+  if (inkId === 'content.accent') {
+    const a = paintAlpha(fillCss)
+    if (a > 0 && a < 0.99) return a > 0.15 ? 'action.ghost.brand.pressed' : 'action.ghost.brand.hover'
+    return 'action.secondary.accent'
+  }
+  return INK_SURFACE[inkId]
+}
+
+function firstArchId(
+  arch: Record<string, string>,
+  css: string,
+  prefer: (id: string) => boolean,
+): string | undefined {
+  const key = normalizeColor(css)
+  if (!key) return
+  const candidates = roleIndex(arch).get(key) ?? []
+  return candidates.find(prefer) ?? candidates[0]
+}
+
+export function pairButtonScopes(
+  arch: Record<string, string>,
+  roles: InspectedRole[],
+  paints: { css: string; where: PaintSlot }[],
+): InspectedRole[] {
+  const fillPaint = paints.find((paint) => paint.where === 'fill')
+  const inkPaint = paints.find((paint) => paint.where === 'ink')
+  let fill = roles.find((role) => role.where === 'fill')
+  let ink = roles.find((role) => role.where === 'ink')
+
+  if (!ink && inkPaint) {
+    const inkId = firstArchId(arch, inkPaint.css, (id) => id.startsWith('content.') || id.endsWith('.content') || id.endsWith('.on-solid'))
+    if (inkId) ink = { id: inkId, css: inkPaint.css, where: 'ink' }
+  }
+  if (fill && !ink && inkPaint) {
+    const inkId = SOLID_INK[fill.id] ?? Object.entries(INK_SURFACE).find(([, surface]) => surface === fill.id)?.[0]
+    if (inkId && arch[inkId]) ink = { id: inkId, css: inkPaint.css, where: 'ink' }
+  }
+  if (!fill && fillPaint) {
+    const matched = firstArchId(
+      arch,
+      fillPaint.css,
+      (id) => id.startsWith('action.') || id.includes('.surface'),
+    )
+    const inferred = ink ? surfaceForInk(arch, ink.id, fillPaint.css) : undefined
+    const fillId = [matched, inferred, 'action.secondary.accent', 'action.primary.default']
+      .find((id): id is string => !!id && !!arch[id])
+    if (fillId) fill = { id: fillId, css: fillPaint.css, where: 'fill' }
+  }
+
+  const out: InspectedRole[] = []
+  if (fill) out.push({ ...fill, where: 'fill' })
+  if (ink) out.push({ ...ink, where: 'ink' })
+  return out
+}
+
+/**
+ * A TabMenu is a selected pill and the labels on it. The pill used to be
+ * `soft(brandSolid)` — a wash that matched no role — so the badge kept
+ * `content.secondary` (inactive tabs) and dropped the selection. Once a
+ * fill is on the element, name `surface.selected` and the inks, nothing
+ * else: no leftover brand solid from the specimen union.
+ */
+export function pairTabMenuScopes(
+  arch: Record<string, string>,
+  roles: InspectedRole[],
+  paints: { css: string; where: PaintSlot }[],
+): InspectedRole[] {
+  const fillPaint = paints.find((paint) => paint.where === 'fill')
+  let fill = roles.find((role) => role.where === 'fill' && role.id === 'surface.selected')
+    ?? roles.find((role) => role.where === 'fill')
+  if (!fill && fillPaint) {
+    const matched = firstArchId(
+      arch,
+      fillPaint.css,
+      (id) => id === 'surface.selected' || id.startsWith('action.ghost'),
+    )
+    const fillId = [matched, 'surface.selected'].find((id): id is string => !!id && !!arch[id])
+    if (fillId) fill = { id: fillId, css: fillPaint.css, where: 'fill' }
+  }
+
+  const out: InspectedRole[] = []
+  if (fill) out.push({ ...fill, where: 'fill' })
+  for (const paint of paints) {
+    if (paint.where !== 'ink') continue
+    const existing = roles.find((role) => role.where === 'ink' && normalizeColor(role.css) === normalizeColor(paint.css))
+    const inkId = existing?.id ?? firstArchId(arch, paint.css, (id) => id.startsWith('content.'))
+    if (!inkId || out.some((role) => role.id === inkId)) continue
+    out.push({ id: inkId, css: paint.css, where: 'ink' })
+  }
+  return out
+}
+
+/** Chrome fills/strokes prefer surface and border roles when several ids
+ *  share the hex — a card should name `surface.layer-1`, not whatever
+ *  action/content role happens to collide with it. */
+function chromeIds(candidates: string[]): string[] {
+  const preferred = candidates.filter((id) => id.startsWith('surface.') || id.startsWith('border.'))
+  return preferred.length ? preferred : candidates
 }
 
 /**
@@ -284,19 +523,35 @@ export function inspectElement(
   const arch = t.archTokens
   if (!arch) return { roles: [], measured: false }
   const declared = rolesForComponent(componentKey)
-  const index = roleIndex(arch)
-  const roles: InspectedRole[] = []
-  for (const paint of observePaints(el)) {
-    const candidates = index.get(paint.key)
-    if (!candidates) continue
-    const owned = candidates.filter((id) => declared.includes(id))
-    for (const id of owned.length ? owned : candidates) {
-      if (roles.some((role) => role.id === id)) continue
-      roles.push({ id, css: arch[id], where: paint.where })
-    }
+  const paints = observePaints(el)
+  let roles = pairSolidRoles(arch, rolesForPaints(arch, declared, paints), paints)
+  if (componentKey === 'Button') {
+    roles = pairButtonScopes(arch, roles, paints)
+    // A Button answers with its surface and its label. Falling through to
+    // the specimen's UNION would list every severity the axis can paint.
+    return { roles, measured: true }
+  }
+  if (componentKey === 'TabMenu') {
+    roles = pairTabMenuScopes(arch, roles, paints)
+    return { roles, measured: true }
   }
   if (roles.length) return { roles, measured: true }
   return { roles: inspectComponent(t, componentKey), measured: false }
+}
+
+/**
+ * The canvas the artefacts sit on. That fill is `surface.page` by contract
+ * (`ThemePreviewHub`'s `pageCanvasColor`), not a measured paint — the scroll
+ * container is transparent over the framed section that actually holds the
+ * colour, so reading `backgroundColor` here would report nothing.
+ */
+export function inspectPage(t: PreviewTokens): Inspection {
+  const css = t.archTokens?.['surface.page'] ?? t.pageBackground ?? t.surface
+  if (!css) return { roles: [], measured: false }
+  return {
+    roles: [{ id: 'surface.page', css, where: 'fill' }],
+    measured: true,
+  }
 }
 
 /** A group's members and their combined roles. */
@@ -319,11 +574,29 @@ export interface GroupInspection {
 export function inspectGroup(t: PreviewTokens, el: Element): GroupInspection {
   const members: string[] = []
   const roles: InspectedRole[] = []
+  const arch = t.archTokens
+  if (arch) {
+    const index = roleIndex(arch)
+    for (const paint of observeChromePaints(el)) {
+      const candidates = index.get(paint.key)
+      if (!candidates) continue
+      for (const id of chromeIds(candidates)) {
+        if (roles.some((existing) => existing.id === id)) continue
+        roles.push({ id, css: paint.css, where: paint.where })
+      }
+    }
+  }
   for (const child of Array.from(el.querySelectorAll('[data-inspect]'))) {
     const key = child.getAttribute('data-inspect') || ''
     if (!key) continue
     members.push(key)
-    for (const role of inspectElement(t, key, child).roles) {
+    // Unmeasured children dump the component's WHOLE union — six variants
+    // that aren't on screen. A GradientAvatar with a CSS gradient (no
+    // `backgroundColor` to match) would otherwise inject `content.primary`
+    // as the accent hex, which is the cyan swatch on a white heading.
+    const inspection = inspectElement(t, key, child)
+    if (!inspection.measured) continue
+    for (const role of inspection.roles) {
       if (roles.some((existing) => existing.id === role.id)) continue
       roles.push(role)
     }
