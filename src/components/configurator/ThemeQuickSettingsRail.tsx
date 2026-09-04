@@ -419,12 +419,10 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
 
 /**
  * Color edition's Random footer — Figma 40:1365. Fill is the same 6% wash
- * as `--line`; the stroke is the designed rainbow at 25% opacity, last stop
- * resolving into the card so it never cuts hard against `--rail-section`.
+ * as `--line`. The stroke is that designed rainbow, traveling the perimeter
+ * as a comet (`.random-theme-border` in index.css) so the button reads as
+ * the one generative action without a static rainbow sitting on every row.
  */
-const RANDOM_STROKE =
-  'linear-gradient(90deg, #40ff99 0%, #beff34 13.4%, #ffff00 20.8%, #bb1212 36.1%, #db0fff 52.1%, var(--rail-section) 97.1%)'
-
 function RandomThemeButton({ onClick }: { onClick: () => void }) {
   const { t } = useI18n()
   return (
@@ -444,18 +442,7 @@ function RandomThemeButton({ onClick }: { onClick: () => void }) {
         }}
       />
       <span className="relative z-[1]">{t('Random')}</span>
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-lg opacity-25"
-        style={{
-          padding: 1,
-          background: RANDOM_STROKE,
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          maskComposite: 'exclude',
-        }}
-      />
+      <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
     </button>
   )
 }

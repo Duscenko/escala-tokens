@@ -626,10 +626,48 @@ body {
   animation-duration: 1.15s;
 }
 
+/* Random theme — designed rainbow (Figma 40:1365) as a traveling 1px comet.
+   @property keeps the spin on the gradient angle, not a rotating box, so
+   the rounded rect never shears. Opacity lifts on hover; reduced-motion
+   freezes the same stops the static stroke used to show. */
+@property --random-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes random-border-travel {
+  to { --random-border-angle: 360deg; }
+}
+.random-theme-border {
+  padding: 1px;
+  opacity: 0.38;
+  background: conic-gradient(
+    from var(--random-border-angle),
+    transparent 0deg,
+    #40ff99 48deg,
+    #beff34 86deg,
+    #ffff00 118deg,
+    #bb1212 168deg,
+    #db0fff 220deg,
+    transparent 278deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: random-border-travel 5.5s linear infinite;
+  transition: opacity 150ms var(--ease-out-quint);
+}
+button:hover > .random-theme-border,
+button:focus-visible > .random-theme-border {
+  opacity: 0.65;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-agent-ring-drift,
   .animate-rainbow,
-  .inspect-ring-stroke {
+  .inspect-ring-stroke,
+  .random-theme-border {
     animation: none !important;
   }
   .color-hub-tab,
