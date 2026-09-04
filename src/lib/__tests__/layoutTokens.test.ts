@@ -338,6 +338,16 @@ describe('concentric radius nesting', () => {
     expect(nestedRadius(8, 24)).toBe(0)
   })
 
+  it('a 2xl card at inset-surface 20 nests a 12px inner — not the card\'s own 32', () => {
+    // Glass / Playful boxes = 2xl (32). Default inset-surface is 20. Reusing
+    // 32 on a short alert is the pill/pinch the collage was showing.
+    expect(nestedRadius(32, 20)).toBe(12)
+  })
+
+  it('default card 16 with default inset 20 squares the inner', () => {
+    expect(nestedRadius(16, 20)).toBe(0)
+  })
+
   it('picks the roundest step that does not EXCEED the limit', () => {
     // Undershooting reads as a slightly tighter inner corner. Overshooting is
     // the collision, so the search may never land above the limit.

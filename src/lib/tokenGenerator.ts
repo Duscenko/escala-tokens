@@ -1,4 +1,4 @@
-import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
+import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -231,8 +231,10 @@ export function buildCategoricalSymbolicTokens(): {
   return { themeOrder: themeNames, tokens }
 }
 
-export function generateTokenJSON() {
-  const store = useDesignStore.getState()
+export function generateTokenJSON(
+  source?: DesignSnapshot | ReturnType<typeof useDesignStore.getState>,
+) {
+  const store = (source ?? useDesignStore.getState()) as ReturnType<typeof useDesignStore.getState>
   const { typography, colorNaming } = store
   const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store)
   const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {

@@ -12,11 +12,10 @@ import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/Sec
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
-import ThemeLibraryRail, { THEME_LIBRARY_WIDTH } from '../components/configurator/ThemeLibraryRail'
+import ThemeCodeFormat, { CODE_SCOPE_ALL, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
+import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
-import { adoptPreset } from '../lib/adoptPreset'
-import ThemeCodeFormat from '../components/configurator/ThemeCodeFormat'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
@@ -35,7 +34,6 @@ import type { ThemeAppearance } from '../lib/themeModes'
 // single-purpose rail.
 type Tab = 'about' | 'foundations' | 'components' | 'docs'
 import PreviewPanel from '../components/preview/PreviewPanel'
-import { QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ExportView from '../components/configurator/ExportView'
 import FigmaSyncView from '../components/configurator/FigmaSyncView'
 import FigmaDownloadView from '../components/configurator/FigmaDownloadView'
@@ -45,6 +43,7 @@ import ComponentsRail from '../components/configurator/ComponentsRail'
 import ComponentsView from '../components/configurator/ComponentsView'
 import DocsView, { CHANGELOG_KEY, FAQ_KEY } from '../components/configurator/DocsView'
 import { GUIDE_MCP_KEY, GUIDE_FIGMA_KEY } from '../components/configurator/docs/getStarted'
+import { OPEN_FAQ_EVENT } from '../lib/aiContext'
 import SaveView, { SaveSidePanel } from '../components/configurator/SaveView'
 import Step2_ColorPalette from '../components/configurator/Step2_ColorPalette'
 import ColorHub, { type ColorTab } from '../components/configurator/ColorHub'
@@ -603,6 +602,7 @@ export default function Configurator() {
   // only after the user deliberately opens one of the other tabs.
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>('preview')
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>('artefacts')
+  const [codeScope, setCodeScope] = useState<CodeThemeScope>(CODE_SCOPE_ALL)
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -689,11 +689,24 @@ export default function Configurator() {
   // do not read or write `sd-theme`: the latter is chrome-only and lives in
   // lib/theme.ts. A dark-spectrum theme leads with Dark, while the user can
   // inspect its Light appearance without repainting the Escala workspace.
-  const initialTheme = themeOrder[0] ?? 'light'
+  //
+  // SEEDED from the chrome's own appearance, never from `themeOrder[0]`. The
+  // store ships its two built-ins in a fixed order (`['light', 'dark']`), so
+  // `themeOrder[0]` is literally the string `'light'` — which rendered a LIGHT
+  // board inside dark chrome on every first load, in an app whose documented
+  // default is dark (`getTheme()`, and the pre-paint script in index.html).
+  // The board has to read the same source that decided the chrome: prefer a
+  // theme whose `themeKinds` matches it, and keep `themeOrder[0]` as the
+  // fallback for a system with no theme on that side (a theme-scoped kit — see
+  // the clamp below).
+  //
+  // A SEED, not a link. The two stay decoupled after this first render, which
+  // is what lets the user inspect a Light theme without repainting Escala.
+  const initialTheme = themeOrder.find((key) => themeKinds[key] === theme) ?? themeOrder[0] ?? theme
   const [previewSelection, setPreviewSelection] = useState<{
     theme: string
     appearance: ThemeAppearance
-  }>(() => ({ theme: initialTheme, appearance: themeKinds[initialTheme] ?? 'light' }))
+  }>(() => ({ theme: initialTheme, appearance: themeKinds[initialTheme] ?? theme }))
   // CLAMPED to a theme the current system actually has. `previewThemeRaw` can
   // point at a theme that no longer exists, and nothing used to notice:
   //
@@ -724,11 +737,12 @@ export default function Configurator() {
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
   // any real theme change and whenever the preview surface isn't on screen.
   //
-  // Seeding "Core, pre-tried-on" for a first-run browser is the LIBRARY's job,
+  // Seeding "Core, pre-tried-on" for a themeless browser is the LIBRARY's job,
   // not the shell's: this state's only writer that survives is the rail (its
   // unmount cleanup nulls it, and in dev StrictMode's mount/unmount/mount
   // clobbered any value seeded here before the rail ever rendered). The rail
-  // re-seeds Core on every mount while `firstRun` holds — see `firstRun` there.
+  // re-seeds Core on every mount until a theme is committed — see `hasOwnTheme`
+  // there.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
@@ -927,10 +941,8 @@ export default function Configurator() {
    * `selectFoundation` (above) forces `themeWorkspaceTab: 'primitives'`, which
    * is right for every OUTSIDE door into the editor (Docs' "Edit tokens",
    * TopNav, a quick panel's "Go to advanced edition") and wrong for the rail
-   * itself: on Theme preview the rail selects which QUICK PANEL you're
-   * editing, so jumping to the token table on every click made the rail
-   * useless there — it wasn't even lit. Same rail, two roles, one shared
-   * `activeFoundation`, so the choice survives the tab switch either way.
+   * itself: on Variables the rail is which TABLE you're editing, so jumping
+   * tabs on every click would be leaving the screen you meant to stay on.
    */
   const selectWorkspaceFoundation = (key: string) => {
     commitVisit()
@@ -947,6 +959,24 @@ export default function Configurator() {
     // therefore behave like Home: restore the original artefacts canvas and
     // its quick-edit rail instead of leaving the integration page in place.
     if (next === 'preview') setThemeHubSurface('artefacts')
+    // Get code defaults to the previewed My-themes row so Theme preview and
+    // this picker don't disagree about "the" theme. Built-in light/dark are
+    // not listed there, so those land on All themes.
+    if (next === 'code' && themeWorkspaceTab !== 'code') {
+      const listed = myThemeKeys(themeOrder, themes)
+      setCodeScope(listed.includes(previewTheme) ? previewTheme : CODE_SCOPE_ALL)
+    }
+  }
+  const openCodeForTheme = (key: string) => {
+    changePreviewTheme(key)
+    setCodeScope(key)
+    setThemeWorkspaceTab('code')
+  }
+  const openThemeLibraryFromCode = () => {
+    changeThemeWorkspaceTab('preview')
+    window.requestAnimationFrame(() => {
+      document.getElementById('themes-library')?.focus()
+    })
   }
   /** Docs destination, opened at a specific foundation — the reverse of
    *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
@@ -958,6 +988,16 @@ export default function Configurator() {
     setTab('docs')
     setDocFoundationKey(key)
   }
+  useEffect(() => {
+    const onOpenFaq = () => {
+      commitVisit()
+      setExportMode(null)
+      setTab('docs')
+      setDocFoundationKey(FAQ_KEY)
+    }
+    window.addEventListener(OPEN_FAQ_EVENT, onOpenFaq)
+    return () => window.removeEventListener(OPEN_FAQ_EVENT, onOpenFaq)
+  }, [commitVisit])
   const selectComponent = (c: ComponentDef) => {
     commitVisit()
     markFoundationComplete('components')
@@ -1334,12 +1374,11 @@ export default function Configurator() {
   // aside beside it put the SAME specimen on screen twice and squeezed the
   // token table to ~238px between them (measured at 1266px). One preview.
   const showPreview = exportMode === 'save'
-  const themeWorkspaceRailVisible = themesCanvas
-  /** The icon rail's entries for the active tab — see the rail's own note. */
-  const quickRailFoundations = (items: FoundationSection[]) =>
-    themeWorkspaceTab === 'preview'
-      ? items.filter((foundation) => (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))
-      : items
+  const themeWorkspaceRailVisible = themesCanvas && themeWorkspaceTab === 'primitives'
+  /** Foundation icon rail is Variables-only. Theme Preview and Get code both
+   *  already name their destination in the tab strip; a 64px Color/Font/Radius
+   *  switcher beside a CSS pane (or the artefact canvas) is leftover Variables
+   *  chrome. Switching lives on Variables, and it always offers all nine. */
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
   const skipCenterHeader = themesCanvas || tab === 'about'
@@ -1347,17 +1386,20 @@ export default function Configurator() {
   // A live System-Style try-on is a PREVIEW surface only — it holds no ramps in
   // the store, so the Variables editor (ColorPrimitives et al.) can't reflect
   // it and would keep showing the OPEN system's ramps under the tried-on
-  // style's name (the reported "click Core, still see the old ramps" bug). The
-  // moment the user leaves Theme Preview for an editing tab they're iterating,
-  // so materialise the try-on into a real theme named "<Style> Copy" (see
-  // `adoptPreset`'s `asCopy`) — the same auto-adopt `ThemeQuickSettingsRail`
-  // runs on its first control edit, hoisted to the navigation transition.
-  // `changePreviewTheme` clears `stylePreview`, so this fires once per try-on.
+  // style's name (the reported "click Core, still see the old ramps" bug).
+  // Leaving Theme Preview therefore DROPS the try-on, so the editing tabs show
+  // the system they can actually edit.
+  //
+  // It used to MINT a theme here instead (`adoptPreset(…, { asCopy: true })`),
+  // and that is what put a "Core Copy" row in My themes on a browser that had
+  // never created anything: the rail seeds a Core try-on whenever the user owns
+  // no theme, and About's "Start building" CTA lands on Variables — an editing
+  // tab — so the seed was committed before the user touched a single control.
+  // Committing is now only ever explicit ("Add to system") or a real edit (the
+  // quick rail's first-control auto-adopt). Navigating is neither.
   useEffect(() => {
     if (!themesCanvas || themeWorkspaceTab === 'preview' || !stylePreview) return
-    const adopted = adoptPreset(stylePreview.preset, stylePreview.appearance, { asCopy: true, copyWord: t('Copy') })
-    if ('error' in adopted) { setStylePreview(null); return }
-    changePreviewTheme(adopted.key)
+    setStylePreview(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themesCanvas, themeWorkspaceTab, stylePreview])
 
@@ -1422,7 +1464,7 @@ export default function Configurator() {
             onPreviewThemeChange={changePreviewTheme}
             onStylePreview={setStylePreview}
             activeStylePreview={stylePreview}
-            firstRun={firstRun}
+            onOpenInCode={openCodeForTheme}
             syncFooter={themeWorkspaceSyncFooter}
           />
         )}
@@ -1443,21 +1485,17 @@ export default function Configurator() {
           )}
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
-            // ONE rail, TWO roles — and it is lit in both, because both are a
-            // real selection of `activeFoundation`:
-            //  · Variables      → which token TABLE the centre column shows.
-            //  · Theme preview  → which QUICK PANEL the left column shows.
-            // Theme preview therefore only offers the foundations that HAVE a
-            // quick panel (`QUICK_PANEL_FOUNDATIONS`); Variables offers all
-            // nine. An icon leading to an empty column would claim a feature
-            // that isn't there — the same call the Figma Make toggle makes.
+            // Variables only — which token TABLE the centre column shows.
+            // Theme Preview and Get code do not mount this rail: the tab strip
+            // already names those destinations, and a Color/Font/Radius column
+            // beside a CSS pane (or the artefact canvas) is leftover chrome.
             <FoundationIconRail
               orientation="vertical"
               active={activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
-                { label: t('Variables'), items: quickRailFoundations(VARIABLE_FOUNDATIONS).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-                { label: t('Styles'), items: quickRailFoundations(FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
             />
           )}
@@ -1495,16 +1533,11 @@ export default function Configurator() {
                   <ThemePreviewHub
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
-                    quickFoundation={activeFoundation}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
-                    onOpenColor={() => { setActiveFoundation('color'); setFoundationCollection('color', 'semantics'); setThemeWorkspaceTab('primitives') }}
-                    onOpenTypography={() => { setActiveFoundation('typography'); setFoundationCollection('typography', 'semantics'); setThemeWorkspaceTab('primitives') }}
-                    onOpenRadius={() => { setActiveFoundation('radius'); setFoundationCollection('radius', 'semantics'); setThemeWorkspaceTab('primitives') }}
-                    onOpenSemanticFoundation={(foundation) => { setActiveFoundation(foundation); setFoundationCollection(foundation, 'semantics'); setThemeWorkspaceTab('primitives') }}
                     onOpenComponent={selectComponent}
                     onOpenComponents={() => changeTab('components')}
                     onEditFoundation={selectFoundation}
@@ -1533,7 +1566,16 @@ export default function Configurator() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <ThemeCodeFormat />
+                  <ThemeCodeFormat
+                    previewTheme={previewTheme}
+                    scope={codeScope}
+                    onScopeChange={(next) => {
+                      setCodeScope(next)
+                      if (next !== CODE_SCOPE_ALL) changePreviewTheme(next)
+                    }}
+                    onPreviewThemeChange={changePreviewTheme}
+                    onOpenThemeLibrary={openThemeLibraryFromCode}
+                  />
                 </motion.div>
               ) : foundationCanvas ? (
                 <FoundationWorkbench

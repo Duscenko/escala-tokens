@@ -23,8 +23,9 @@ export interface FontPreset {
 // variable.
 //
 // It also carries every family the System Styles ship (Space Grotesk,
-// Roboto, Courier Prime), so adopting a style no longer lands its typeface as a
-// one-off entry prepended to the list.
+// Roboto, Courier Prime, Playfair Display, Newsreader, JetBrains Mono,
+// IBM Plex Sans, Cormorant Garamond, Plus Jakarta Sans), so adopting a
+// style no longer lands its typeface as a one-off entry prepended to the list.
 export const FONT_PRESETS: FontPreset[] = [
   // Sans-serif
   { label: 'Inter',           value: 'Inter',                category: 'Sans-serif' },

@@ -118,14 +118,19 @@ export const SWATCH = 'w-[18px] h-[18px] rounded-[4px] flex-shrink-0 ring-1 ring
 // through the header, so a magic number in two files is a broken line waiting
 // to happen.
 export const COLOR_RAIL_WIDTH = 240
-// 56px = the nav's own `px-2` (16) + a 40px row that centres an 18px swatch or
-// a 15px glyph. Deliberately NOT the 32px dead strip `PreviewPanel` collapses
-// to: that panel is a read-only specimen, so collapsing it costs nothing but
+// 56px = 8px pad + a 40px well + 8px pad. Pixel-explicit on purpose: this
+// app's root is 18px (`index.css`), so Tailwind `px-2` is 9px and `w-10` is
+// 45px — together they overflow the column and shove glyphs off the centre
+// line. Deliberately NOT the 32px dead strip `PreviewPanel` collapses to:
+// that panel is a read-only specimen, so collapsing it costs nothing but
 // sight, whereas this column is NAVIGATION — at 32px there's no room for the
 // swatches/icons and switching would mean expanding first, every time. Keeping
 // them is what makes this a collapse rather than a hide (the same call
 // `FoundationIconRail` already makes: drop the labels, keep the glyphs).
 export const COLOR_RAIL_COLLAPSED_WIDTH = 56
+/** Hit well inside the 56px collapsed rail. Width is px so it actually fits;
+ *  height matches the expanded row (`h-8`) so collapse doesn't change rhythm. */
+export const COLLAPSED_RAIL_WELL = 'flex h-8 w-[40px] items-center justify-center'
 /** Dialog width — shared by Token Details and the contained colour picker. */
 export const PANEL_W = 360
 /** Pinned top band on the Theme Preview quick-settings rail. */
@@ -1500,21 +1505,14 @@ export function TokenDetailsModal({
    *  shared Themes Library drawer position rather than a table-local popover. */
   anchorRef?: RefObject<HTMLElement | null>
   /** Which vertical edge the drawer slides out from. Defaults to the Themes
-   *  Library's, which is right for the Semantics TABLE — that table spans
-   *  everything to the library's right, so any nearer edge would put the drawer
-   *  on top of the rows. The Theme preview quick column passes its OWN right
-   *  edge instead: its rows are only 240px wide and sit immediately left of the
-   *  canvas, so docking at the library would bury the list you're editing from. */
+   *  Library's right edge — the same slot New theme uses. Theme Preview's
+   *  inspector also docks here now that the role groups left that column;
+   *  `contained` is the remaining fly-out language for colour pickers that
+   *  still open beside the quick rail. */
   dockLeft?: number
-  /** The Semantics table's world is the viewport-fixed drawer above — leave
-   *  it alone. The Theme Preview hub's world is different: that drawer must
-   *  live and clip INSIDE `ThemePreviewHub`'s own box (a sibling of the
-   *  Themes Library / icon rail / TopNav, not a viewport-level overlay), and
-   *  dock flush to the quick-settings rail's RIGHT edge — the Figma fly-out
-   *  sits beside the column you're editing from, not on top of it.
-   *  `contained` switches both the overlay and the inner panel from `fixed`
-   *  (viewport) to `absolute` (nearest positioned ancestor, which is
-   *  `ThemePreviewHub`'s `relative` root), with `left: containedDockLeft`. */
+  /** Colour pickers on Theme Preview still fly out inside the hub (`absolute`
+   *  against `ThemePreviewHub`'s `relative` root). Token Details does not —
+   *  it shares New theme's viewport-fixed dock. */
   contained?: boolean
   /** When `contained`, portals the drawer onto this element — typically
    *  `ThemePreviewHub`'s `relative` root — so `absolute inset-0` scopes to

@@ -106,9 +106,12 @@ describe('system style presets', () => {
     }
   })
 
-  // Three of six accents used to sit within 20° of each other (Core 262°,
-  // Glass 254°, Material 274°) — that is not six styles, it is four plus two
-  // duplicates. Hue is the cheapest axis of distinctness; spend it.
+  // Three of the original six accents used to sit within 20° of each other
+  // (Core 262°, Glass 254°, Material 274°) — that is not a set, it is four
+  // plus two duplicates. Hue is still the cheapest axis of distinctness.
+  // Twelve styles cannot all clear the old 30° floor (360/12 = 30, and the
+  // existing six already cluster), so the gate is the defect that forced
+  // this test: no two adjacent hues within 18°.
   // Dark is not light inverted: the dark ramp's low steps are compressed, so
   // the schema's `{neutral.2}` card lifted by only ΔL 0.022–0.027 against
   // light's 0.028–0.037 — a quarter less separation on the appearance that
@@ -150,7 +153,7 @@ describe('system style presets', () => {
       .map((h) => (Number.isNaN(h) ? 0 : h))
       .sort((a, b) => a - b)
     for (let i = 1; i < hues.length; i++) {
-      expect(hues[i] - hues[i - 1], `hues too close: ${hues[i - 1]} / ${hues[i]}`).toBeGreaterThan(30)
+      expect(hues[i] - hues[i - 1], `hues too close: ${hues[i - 1]} / ${hues[i]}`).toBeGreaterThan(18)
     }
   })
 

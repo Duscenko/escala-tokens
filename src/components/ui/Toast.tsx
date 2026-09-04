@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
-type Toast = { id: number; message: string }
+export type ToastAction = { label: string; onClick: () => void }
 
-let push: ((message: string) => void) | null = null
+type Toast = { id: number; message: string; action?: ToastAction }
+
+let push: ((message: string, action?: ToastAction) => void) | null = null
 let seq = 0
 
 /** Fire a quiet confirmation. Safe to call from click handlers. */
-export function showToast(message: string) {
-  push?.(message)
+export function showToast(message: string, action?: ToastAction) {
+  push?.(message, action)
 }
 
 /** Mount once at the app root. Renders the live toast above the workspace. */
@@ -17,13 +19,13 @@ export function ToastHost() {
   const [toast, setToast] = useState<Toast | null>(null)
 
   useEffect(() => {
-    push = (message) => setToast({ id: ++seq, message })
+    push = (message, action) => setToast({ id: ++seq, message, action })
     return () => { push = null }
   }, [])
 
   useEffect(() => {
     if (!toast) return
-    const t = window.setTimeout(() => setToast(null), 2400)
+    const t = window.setTimeout(() => setToast(null), toast.action ? 5600 : 2400)
     return () => window.clearTimeout(t)
   }, [toast])
 
@@ -38,10 +40,24 @@ export function ToastHost() {
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-none flex items-center gap-2 rounded-xl bg-fg text-app px-3.5 py-2 text-body font-medium shadow-lg"
+            className={`flex items-center gap-2 rounded-xl bg-fg text-app px-3.5 py-2 text-body font-medium shadow-lg ${
+              toast.action ? 'pointer-events-auto' : 'pointer-events-none'
+            }`}
           >
             <span className="text-status-success" aria-hidden>✓</span>
-            {toast.message}
+            <span>{toast.message}</span>
+            {toast.action && (
+              <button
+                type="button"
+                className="ml-1 text-app underline underline-offset-2 decoration-app/50 hover:decoration-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app/60 rounded-sm"
+                onClick={() => {
+                  toast.action?.onClick()
+                  setToast(null)
+                }}
+              >
+                {toast.action.label}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -6,10 +6,15 @@
 // Page chrome (DocHeader · DocTitle) stays shared with every other Docs
 // article; only the body is the accordion.
 
-import { type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { CONTACT } from '../AboutMenu'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../../ui/accordion'
 import { DocHeader, DocTitle, Prose, type TocEntry } from './blocks'
+import {
+  AGENT_CONTEXT_FAQ_ID, OPEN_FAQ_EVENT, takePendingFaqItem,
+} from '../../../lib/aiContext'
+import { useI18n } from '../../../lib/i18n'
 
 export const FAQ_KEY = '__faq'
 
@@ -34,9 +39,11 @@ function Para({ text }: { text: string }) {
   return <Prose text={text} className="text-ui leading-relaxed" />
 }
 
+type Translate = (source: string) => string
+
 /** Single source for both the accordion body and the "On this page" TOC —
  *  the same shape `AboutMenu`'s `SECTIONS` uses. */
-const FAQ_ITEMS: { id: string; q: string; body: ReactNode }[] = [
+const FAQ_ITEMS: { id: string; q: string; body?: ReactNode; paras?: string[] }[] = [
   {
     id: 'architecture',
     q: 'Why is there only one architecture?',
@@ -79,6 +86,15 @@ const FAQ_ITEMS: { id: string; q: string; body: ReactNode }[] = [
     ),
   },
   {
+    id: AGENT_CONTEXT_FAQ_ID,
+    q: 'Send this system to an agent',
+    paras: [
+      'Copy page puts a markdown brief on the clipboard — token names, semantic roles, and how they map in Figma and CSS. It is a snapshot you paste, not a live MCP connection.',
+      'Paste it into Google Stitch, Claude (Claude Code or Claude Design), Figma Make’s chat, Cursor, or any LLM so the agent uses this system’s roles instead of inventing hex and px.',
+      'A live connection in the product repo is Docs → Use in code (MCP). The Figma Make Skill zip is a separate install on that page — Copy page does not upload a zip.',
+    ],
+  },
+  {
     id: 'who',
     q: 'Who makes this?',
     body: (
@@ -112,11 +128,39 @@ const FAQ_ITEMS: { id: string; q: string; body: ReactNode }[] = [
   },
 ]
 
-export function faqToc(): TocEntry[] {
-  return [{ id: 'description', label: 'Overview' }, ...FAQ_ITEMS.map((i) => ({ id: i.id, label: i.q }))]
+export function faqToc(t: Translate = (source) => source): TocEntry[] {
+  return [{ id: 'description', label: t('Overview') }, ...FAQ_ITEMS.map((i) => ({ id: i.id, label: t(i.q) }))]
+}
+
+function scrollFaqItem(id: string, reduce: boolean) {
+  window.setTimeout(() => {
+    document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, 200)
 }
 
 export function FaqArticle() {
+  const { t } = useI18n()
+  const reduce = useReducedMotion()
+  const [open, setOpen] = useState(() => takePendingFaqItem() ?? FAQ_ITEMS[0].id)
+
+  useEffect(() => {
+    if (open && open !== FAQ_ITEMS[0].id) scrollFaqItem(open, !!reduce)
+    // First paint only — later accordion clicks must not yank the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const item = (event as CustomEvent<{ item?: string }>).detail?.item
+      if (!item) return
+      takePendingFaqItem()
+      setOpen(item)
+      scrollFaqItem(item, !!reduce)
+    }
+    window.addEventListener(OPEN_FAQ_EVENT, onOpen)
+    return () => window.removeEventListener(OPEN_FAQ_EVENT, onOpen)
+  }, [reduce])
+
   return (
     <div className="flex flex-col gap-8">
       <DocHeader section="Docs" kind="Get started" title="FAQ" actions={null} />
@@ -126,15 +170,17 @@ export function FaqArticle() {
         lead="Escala Tokens is an independent, one-person project, and it's in beta. Here's what that means before you build a system on it."
       />
 
-      <Accordion type="single" collapsible defaultValue={FAQ_ITEMS[0].id} className="max-w-2xl -mx-3">
+      <Accordion type="single" collapsible value={open} onValueChange={setOpen} className="max-w-2xl -mx-3">
         {FAQ_ITEMS.map((item) => (
           <AccordionItem key={item.id} value={item.id} id={item.id} className="border-b border-line scroll-mt-4">
             <AccordionTrigger className="px-3 hover:bg-elevated/40 text-ui text-fg">
-              {item.q}
+              {t(item.q)}
             </AccordionTrigger>
             <AccordionContent className="px-3">
               <div className="flex flex-col gap-2 text-ui text-fg-muted leading-relaxed">
-                {item.body}
+                {item.paras
+                  ? item.paras.map((para) => <Para key={para} text={t(para)} />)
+                  : item.body}
               </div>
             </AccordionContent>
           </AccordionItem>

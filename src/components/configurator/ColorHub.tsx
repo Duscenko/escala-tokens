@@ -95,7 +95,6 @@ export default function ColorHub({
       ) : (
         <div className="flex-1 min-h-0">
           <StepGradients
-            tabBar={<span className="text-ui text-fg-muted"><span>Color / </span><strong className="font-semibold text-fg">Gradients</strong></span>}
             previewTheme={previewTheme}
             onPreviewThemeChange={onPreviewThemeChange}
             onBackToSystemColors={onBackToSystemColors}

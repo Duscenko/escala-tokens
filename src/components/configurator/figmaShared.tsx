@@ -59,8 +59,15 @@ export function relativeTime(iso: string | null): string {
 }
 
 /** Install affordance inside the Sync hero — one Figma mark on the page, not a
- *  second card that reads as a duplicate screen. Single row: name + version on
- *  the left, download on the right. Helper copy only when an update exists. */
+ *  second card that reads as a duplicate screen.
+ *
+ *  It rides on the hero's TITLE row (right-aligned), not on a full-width row
+ *  of its own under a `border-t`: the hero's own subject is the file below it,
+ *  and a banded row spent the same vertical weight on "here is a download
+ *  link" as on the identity it sits under. Named "Escala DS Plugin" rather
+ *  than "Plugin" because on a right-aligned cluster there's no heading above
+ *  it to say whose plugin it is. The update case swaps both the badge AND the
+ *  button label, so the row still states it without a second line of copy. */
 export function PluginInstallPromo({
   version,
   updateAvailable,
@@ -72,29 +79,24 @@ export function PluginInstallPromo({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 border-t border-line pt-4 ${
-        updateAvailable ? 'rounded-lg bg-accent-ui/[0.04] -mx-1 px-2 pb-2' : ''
-      }`}
+      className="flex flex-shrink-0 items-center gap-2.5"
+      title={updateAvailable ? `v${version} — download and re-import in Figma desktop.` : undefined}
     >
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-body font-semibold text-fg">Plugin</p>
-          {updateAvailable ? (
-            <span className="inline-flex items-center rounded-full bg-accent-ui/10 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-ui">
-              Update available
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted border border-line">
-              v{version}
-            </span>
-          )}
-        </div>
-        {updateAvailable && (
-          <p className="mt-1 text-caption text-fg-muted leading-snug">
-            v{version} — download and re-import in Figma desktop.
-          </p>
+      <span className="flex items-center gap-2">
+        <span className="text-caption font-semibold text-fg">Escala DS Plugin</span>
+        {/* At rest the version is plain quiet TEXT, not a bordered pill — the
+            resting version isn't a state anyone has to act on, and a pill for
+            it put a second outlined box beside the Download button for no
+            reason. Only the update case earns a badge, because that one IS a
+            state (and it's the accent, so it reads at a glance). */}
+        {updateAvailable ? (
+          <span className="inline-flex items-center rounded-full bg-accent-ui/10 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-ui">
+            Update available
+          </span>
+        ) : (
+          <span className="text-micro font-medium text-fg-faint">v{version}</span>
         )}
-      </div>
+      </span>
       <button
         type="button"
         onClick={onOpenInstall}

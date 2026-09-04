@@ -16,9 +16,9 @@
 import { mintTheme, slotsFromAccent } from '../components/configurator/ThemePanel'
 import { useDesignStore } from '../store/useDesignStore'
 import { loadGoogleFont } from './fonts'
-import { withStyleSemantics } from './stylePreviewOverlay'
+import { resetThemeSemantics, withStyleSemantics } from './stylePreviewOverlay'
 import { slugify } from './utils'
-import { presetHarmony, presetStates, type ThemeStylePreset } from './themePresets'
+import { presetHarmony, presetStates, themeStylePreset, type ThemeStylePreset } from './themePresets'
 import type { ThemeAppearance } from './themeModes'
 
 /**
@@ -33,13 +33,16 @@ import type { ThemeAppearance } from './themeModes'
  * button leaves `asCopy` off and keeps the clean name (`preset.label`), because
  * that press is a deliberate "make this style mine".
  *
- * Returns the new theme's key, or an error string — never throws.
+ * Returns the new theme's key and the label it was actually FILED under, or an
+ * error string — never throws. The label is returned rather than re-derived by
+ * the caller because a collision renames ("Core" → "Core 2", see below), so a
+ * caller announcing the adopt would otherwise name a theme that isn't there.
  */
 export function adoptPreset(
   preset: ThemeStylePreset,
   appearance: ThemeAppearance,
   opts: { asCopy?: boolean; copyWord?: string } = {},
-): { key: string } | { error: string } {
+): { key: string; name: string } | { error: string } {
   const themes = useDesignStore.getState().themes
   // "Core", then "Core 2"… (explicit add) — or "Core Copy", "Core Copy 2"…
   // (auto-adopt). A style can honestly be adopted more than once, so a collision
@@ -95,5 +98,67 @@ export function adoptPreset(
   store.setThemeOrigin(result.key, preset.id)
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
-  return { key: result.key }
+  return { key: result.key, name: label }
+}
+
+type ThemeEditState = {
+  themeOrigin?: Record<string, string>
+  themeFoundations: Record<string, object | undefined>
+  themeSources: Record<string, { brand?: string } | undefined>
+  customColors: { key: string; base: string }[]
+  primaryColor: string
+  neutralTint: string
+}
+
+function themeAccentHex(state: ThemeEditState, themeKey: string): string {
+  const brandFamily = state.themeSources[themeKey]?.brand ?? 'accent'
+  if (brandFamily === 'accent') return state.primaryColor
+  return state.customColors.find((family) => family.key === brandFamily)?.base ?? state.primaryColor
+}
+
+/**
+ * Whether `themeKey` has moved off the thing Reset would restore.
+ *
+ * A System Style goes back to its origin preset; a hand-made theme goes back
+ * to the system defaults (no foundation overrides). A live try-on is not a
+ * theme, so the header Reset stays hidden until something is actually owned.
+ */
+export function themeHasEdits(state: ThemeEditState, themeKey: string): boolean {
+  const origin = themeStylePreset(state.themeOrigin?.[themeKey] ?? '')
+  const foundations = state.themeFoundations[themeKey]
+  if (!origin) return Boolean(foundations && Object.keys(foundations).length)
+  if (JSON.stringify(foundations ?? {}) !== JSON.stringify(origin.foundations)) return true
+  if (state.neutralTint !== origin.neutralTint) return true
+  return themeAccentHex(state, themeKey).toLowerCase() !== origin.accent.toLowerCase()
+}
+
+/**
+ * Restore `themeKey` to its origin System Style, or drop its foundation
+ * overrides if it was made by hand. Colour re-derives through the same
+ * accent applier a first adopt uses, so the page / neutral / states land
+ * where they did at creation — not a second, simpler path.
+ */
+export function resetThemeToOrigin(
+  themeKey: string,
+  applyAccent: (hex: string, fromLink: boolean, themeKey: string) => void,
+): { label: string } {
+  const s = useDesignStore.getState()
+  const preset = themeStylePreset(s.themeOrigin?.[themeKey] ?? '')
+  if (!preset) {
+    s.setThemeFoundations(themeKey, null)
+    return { label: 'System defaults' }
+  }
+  s.setThemeFoundations(themeKey, preset.foundations)
+  s.setNeutralTint(preset.neutralTint)
+  useDesignStore.setState({
+    architectureOverrides: resetThemeSemantics(
+      s.architectureOverrides,
+      preset.semantics,
+      themeKey,
+    ),
+  })
+  applyAccent(preset.accent, true, themeKey)
+  loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
+  loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
+  return { label: preset.label }
 }

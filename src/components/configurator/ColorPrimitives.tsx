@@ -31,7 +31,7 @@ import {
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
-  curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
+  curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL,
 } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
@@ -1817,7 +1817,7 @@ export default function ColorPrimitives({
                     aria-current={isActive}
                     title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
                     aria-label={f.label}
-                    className={`w-10 h-8 flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+                    className={`${COLLAPSED_RAIL_WELL} rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
                       isActive ? 'bg-elevated shadow-sm' : 'hover:bg-elevated/50'
                     }`}
                   >

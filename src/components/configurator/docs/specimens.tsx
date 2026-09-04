@@ -12,8 +12,7 @@ import { createContext, useContext, useEffect, useId, useRef, useState, type CSS
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusRoleOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
-import { nestedRadius } from '../../../lib/layoutTokens'
+import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, focusBorderOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -37,8 +36,20 @@ const darken = (c: string, amt: number) => {
 // follows named function declarations when it walks a specimen's call graph, so
 // an arrow here would hide `neutralFill` / `surface` from every component that
 // paints a panel through this helper.
+/** A container RESTING on the page — card, header, sidebar, scroll panel. */
 function raisedBg(t: PreviewTokens): string {
   return t.neutralFill ?? t.surface
+}
+/**
+ * A container FLOATING above another container — modal, dropdown panel, context
+ * menu, popover, command palette. One step deeper than `raisedBg`.
+ *
+ * Both used to be `raisedBg`, so a modal was painted the exact fill of the card
+ * it floats over and only its shadow told them apart. Falls back to `raisedBg`
+ * on a flat system, which has no `surface.layer-2` to reach for.
+ */
+function floatingBg(t: PreviewTokens): string {
+  return overlaySurfaceOf(t)
 }
 /** Soft tint of a hex — reads the Opacity foundation's 10 / 5 / 20 steps, so
  *  soft fills track the user's transparency scale. */
@@ -386,6 +397,13 @@ export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewToke
  */
 export interface SpecimenProps {
   t: PreviewTokens; v: AxisValues; icons?: IconOpts; w?: number | string; children?: ReactNode
+  /**
+   * Flush inside a Boxes-radius parent (a card, a collage module) whose
+   * padding is `inset-surface`. Inner corner = parent − padding, so a short
+   * alert cannot reuse the card's own radius and read as a pill. Opt-in and
+   * inert — omit and the specimen keeps `container` verbatim.
+   */
+  nested?: boolean
   /**
    * Which step of the SHADOW ramp this specimen sits on. Honoured by `Card`
    * (and floating menus). Opt-in like `w` / `children` — omit → `sm`.
@@ -832,7 +850,7 @@ function ModalSpecimen({ t }: { t: PreviewTokens }) {
     <div
       style={{
         ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'overlay'),
-        background: raisedBg(t), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
+        ...overlaySurfaceStyle(t), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
         boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.25)'), overflow: 'hidden',
       }}
     >
@@ -1206,7 +1224,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         <PreviewIcon concept="chevron" size={12} color={t.fgMuted} />
       </div>
       {open && (
-        <div style={{ marginTop: 4, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: 4 }}>
+        <div style={{ marginTop: 4, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: 4 }}>
           {options.map((o, i) => (
             <span key={o} style={{ display: 'block', padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? soft(t, t.brandSolid) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
               {o}
@@ -1699,12 +1717,12 @@ function AspectRatioSpecimen({ t, v }: SpecimenProps) {
 function PopoverSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={{ ...typeOf(t, 'heading-xs') }}>Share this system</span>
         <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>Anyone with the link can view tokens and docs.</span>
         <span style={{ alignSelf: 'flex-start', marginTop: 4, ...typeOf(t, 'button'), padding: '6px 12px', borderRadius: radiusRoleOf(t, 'action'), background: t.brandSolid, color: t.onBrand, cursor: 'pointer' }}>Copy link</span>
       </div>
-      <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${raisedBg(t)}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
+      <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${floatingBg(t)}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
       <span style={{ ...typeOf(t, 'label'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>Share</span>
     </div>
   )
@@ -1749,11 +1767,16 @@ function StatusIcon({ c, status }: { c: string; status: string }) {
   return <PreviewIcon concept={concept} size={15} color={c} />
 }
 
-function AlertBannerSpecimen({ t, v }: SpecimenProps) {
+function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
   return (
-    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 10, width: 380, padding: '10px 14px', borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    // `container`, not `action` — an alert is a BOX. `RADIUS_GROUPS`' Boxes
+    // axis is hinted "card, modal, alert" and `RADIUS_ROLES.container` is
+    // described "Cards, accordion, inline alerts". When `nested`, the inner
+    // corner is parent − `inset-surface` so a short banner cannot reuse the
+    // card's radius and read as a pill (see `nestedRadiusOf`).
+    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 10, width: 380, padding: '10px 14px', borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <span style={{ ...typeOf(t, 'body-sm'), flex: 1 }}>
         {status === 'Error' ? 'Sync failed — tokens were not published.' : status === 'Warning' ? 'Your trial ends in 3 days.' : status === 'Success' ? 'All tokens are synced to Figma.' : 'Scheduled maintenance on Sunday 02:00 UTC.'}
@@ -1766,11 +1789,12 @@ function AlertBannerSpecimen({ t, v }: SpecimenProps) {
   )
 }
 
-function InlineAlertSpecimen({ t, v, w, children }: SpecimenProps) {
+function InlineAlertSpecimen({ t, v, w, children, nested }: SpecimenProps) {
   const status = v.Status ?? 'Info'
   const c = statusColor(t, status)
   return (
-    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: radiusRoleOf(t, 'action'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    // `container` — see `AlertBannerSpecimen`; an alert is a Box, not a Field.
+    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
         {children ?? (
@@ -1799,14 +1823,17 @@ function MenuPanel({
   w?: number | string
   elev?: string | false
 }) {
-  // Concentric corners: item radius = overlay − panel padding (Steve Ruiz).
-  // `control` is independent and often too square inside a large overlay, so the
-  // hover fill read as floating off the panel curve.
+  // Panel is an overlay. Items float in `pad` (not a flush nesting pair), so
+  // they take `control` — the role named for menu items — capped so they never
+  // out-round the gutter. `overflow: hidden` clips the first/last hover to the
+  // panel curve; overlay−pad on a ~32px row made the hover a pill.
   const pad = 4
   const outerRadius = radiusRoleOf(t, 'overlay')
-  const itemRadius = `${nestedRadius(parseFloat(String(outerRadius)) || 0, pad)}px`
+  const nestedPx = parseFloat(nestedRadiusOf(t, 'overlay', pad)) || 0
+  const controlPx = parseFloat(radiusRoleOf(t, 'control')) || 0
+  const rowRadius = `${Math.min(controlPx || nestedPx, nestedPx)}px`
   return (
-    <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad }}>
+    <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad, overflow: 'hidden' }}>
       {items.map((item, i) =>
         item.sep ? (
           <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: '4px 6px' }} aria-hidden />
@@ -1816,10 +1843,14 @@ function MenuPanel({
             role="menuitem"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-              padding: '7px 10px', borderRadius: itemRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
-              // Hover sits one layer above the panel (which is now layer-1),
-              // else the highlighted row is invisible against its own menu.
-              background: item.hover ? (t.layer2 ?? darken(raisedBg(t), 0.25)) : 'transparent',
+              padding: '7px 10px', borderRadius: rowRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
+              // `surface.selected`, not the next layer up. The panel is layer-2
+              // (the deepest surface role there is), so a hover painted one
+              // layer above it had nowhere to go and rendered the row the exact
+              // fill of the menu it sits in. `surface.selected` is an ALPHA
+              // role, so it reads as a wash over whatever surface it lands on
+              // instead of needing a layer of its own.
+              background: item.hover ? archTokenOf(t, 'surface.selected', darken(floatingBg(t), 0.25)) : 'transparent',
               color: item.danger ? errorInkOf(t) : t.neutralText,
             }}
           >
@@ -1878,7 +1909,7 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
     { label: 'Export variables.css' },
   ]
   return (
-    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
+    <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', borderBottom: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
         <PreviewIcon concept="search" size={14} color={t.fgMuted} />
         <span style={{ flex: 1, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>Type a command…</span>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import {
+  AGENT_CONTEXT_TOAST_MORE,
   AI_CONTEXT_COPY,
+  requestOpenFaq,
   resolveMarkdown,
   type AIContextScope,
 } from '../../lib/aiContext'
@@ -38,7 +40,10 @@ export function AIContextButton({ scope, markdown, label }: AIContextButtonProps
     try {
       await navigator.clipboard.writeText(resolveMarkdown(markdown))
       setDone(true)
-      showToast(t(copy.toast))
+      showToast(t(copy.toast), {
+        label: t(AGENT_CONTEXT_TOAST_MORE),
+        onClick: () => requestOpenFaq(),
+      })
       window.setTimeout(() => setDone(false), 2000)
     } catch {
       showToast(t('Couldn’t copy — try again'))

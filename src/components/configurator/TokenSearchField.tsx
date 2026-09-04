@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 
 /** Field width as rem — must match the animated overflow mask AND the label
  *  `w-[14rem]`. A px constant (224) assumed a 16px root; this app's root is
@@ -16,19 +16,31 @@ const IS_MAC = typeof navigator !== 'undefined'
 
 const ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
 
-const FIELD_SHELL = `bg-input-bg ${CHROME_CONTROL_HOVER} ${CHROME_CONTROL_FOCUS}`
+/** Search sits `bg-input-bg` on `bg-tab-bar` — fill does not separate (dark
+ *  ΔL 0.081, WCAG 1.20:1), so the edge is the boundary. Hover is a real fill
+ *  step to `--elevated`, not the shared chip inset wash: that 7% white lift
+ *  lands on the tab-bar (ΔL 0.007) and the control vanishes. */
+const FIELD_SHELL = [
+  'border border-line bg-input-bg',
+  'transition-[color,border-color,background-color,box-shadow] duration-150 ease-out',
+  'hover:border-line-strong hover:bg-elevated hover:text-fg',
+  'focus-within:border-accent-ui focus-within:bg-elevated focus-within:text-fg',
+  'focus-within:ring-2 focus-within:ring-accent-ui/60 focus-within:ring-offset-2 focus-within:ring-offset-tab-bar',
+].join(' ')
 
-function SearchGlyph({ className = 'h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint' }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={className}
-      style={{
-        WebkitMask: "url('/icons/settings/search.svg') center / contain no-repeat",
-        mask: "url('/icons/settings/search.svg') center / contain no-repeat",
-      }}
-    />
-  )
+function MaskGlyph({
+  src,
+  className = 'h-3.5 w-3.5 flex-shrink-0 bg-current',
+}: {
+  src: string
+  className?: string
+}) {
+  const mask = `url('${src}') center / contain no-repeat`
+  return <span aria-hidden className={className} style={{ WebkitMask: mask, mask }} />
+}
+
+function SearchGlyph({ className = 'h-3.5 w-3.5 flex-shrink-0 bg-current' }: { className?: string }) {
+  return <MaskGlyph src="/icons/settings/search.svg" className={className} />
 }
 
 export type TokenSearchHandle = { focus: () => void }
@@ -115,7 +127,7 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
         placeholder={t('Search tokens')}
         aria-label={t('Search tokens')}
         aria-keyshortcuts={IS_MAC ? 'Meta+K' : 'Control+K'}
-        className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-faint"
+        className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-muted"
         onBlur={() => {
           if (value || wide) return
           window.setTimeout(() => {
@@ -130,22 +142,20 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
         type="button"
         onClick={() => onChange('')}
         aria-label={t('Clear search')}
-        className="grid h-5 w-5 flex-shrink-0 place-items-center rounded text-ui text-fg-faint hover:bg-elevated hover:text-fg"
+        className="grid h-5 w-5 flex-shrink-0 place-items-center rounded text-ui text-fg-muted hover:bg-chip-rest hover:text-fg"
       >
         ×
       </button>
     ) : (
-      <img
+      <MaskGlyph
         src="/icons/settings/search-comands.svg"
-        alt=""
-        aria-hidden
-        className="hidden min-[1180px]:block h-3.5 flex-shrink-0 opacity-80"
+        className="hidden min-[1180px]:block h-3.5 w-[33px] flex-shrink-0 bg-current"
       />
     )
 
     if (wide) {
       return (
-        <label className={`flex h-8 w-[14rem] flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-fg-muted transition-colors ${FIELD_SHELL}`}>
+        <label className={`flex h-8 w-[14rem] flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-fg-muted ${FIELD_SHELL}`}>
           <SearchGlyph />
           {input}
           {clearBtn}

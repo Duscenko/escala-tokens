@@ -16,6 +16,7 @@ import { resolveThemePalette } from '../../lib/themeSources'
 import { useEnsureColorScales } from '../../lib/colorActions'
 import {
   BRAND_GROUPS, findOption, ScaleRow, SystemRampGrid, TokenDetailsModal, DeleteThemeModal,
+  COLLAPSED_RAIL_WELL,
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import ThemePanel from './ThemePanel'
@@ -27,6 +28,7 @@ import {
 } from '../../lib/themeModes'
 import VariablesPreviewPane from './VariablesPreviewPane'
 import VariableCollectionRail from './VariableCollectionRail'
+import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -97,9 +99,10 @@ function archNavForToken(
 // concept (see ArchitectureView.modeKeys' doc comment in semanticArchitectures.ts).
 
 // ── Category nav metadata: icon + one-line description (tooltip) ─────────────
-const catIc = (d: string, filled = false): ReactNode => (
+const catIc = (d: string, filled = false, optical = ''): ReactNode => (
   <svg
-    width="15" height="15" viewBox="0 0 24 24"
+    width="16" height="16" viewBox="0 0 24 24"
+    className={`block ${optical}`}
     fill={filled ? 'currentColor' : 'none'}
     stroke={filled ? 'none' : 'currentColor'}
     strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
@@ -111,7 +114,8 @@ const catIc = (d: string, filled = false): ReactNode => (
 const CATEGORY_ICON: Record<SemanticCategory, ReactNode> = {
   all:        catIc('M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'),
   content:    catIc('M4 7V4h16v3M9 20h6M12 4v16'),
-  background: catIc('M3 3h18v18H3z', true),
+  // Inset fill — a 18×18 solid in a 24 box outweighed every stroke glyph beside it.
+  background: catIc('M6 6h12v12H6z', true),
   border:     catIc('M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'),
 }
 
@@ -132,7 +136,8 @@ const FOCUS_ICON: Record<SemanticFocus, ReactNode> = {
   icon:    catIc('M12 3l2.6 6.2 6.4.5-4.9 4.2 1.5 6.1L12 16.8 6.4 20l1.5-6.1L3 9.7l6.4-.5L12 3z'),
   surface: CATEGORY_ICON.background,
   border:  CATEGORY_ICON.border,
-  action:  catIc('M3 3l7.5 18 2.6-7.9L21 10.5 3 3z', true),
+  // Pointer sits in the top-left of its viewBox; nudge it onto the well's centre.
+  action:  catIc('M3 3l7.5 18 2.6-7.9L21 10.5 3 3z', true, 'origin-center scale-110 translate-x-[2px] translate-y-px'),
   status:  catIc('M3 12h4l2.5-7 4 14L16 12h5'),
 }
 // A nav row's glyph comes from the SAME mapping the preview focus does, so the
@@ -690,8 +695,15 @@ function SemanticPreviewPane({
   onEditToken: (id: string) => void
 }) {
   const tokens = usePreviewTokens(previewTheme, previewAppearance)
+  const themeReset = useThemeReset(previewTheme)
   return (
-    <VariablesPreviewPane watch={`${focus}/${previewTheme}/${previewAppearance}`} scope={focus}>
+    <VariablesPreviewPane
+      watch={`${focus}/${previewTheme}/${previewAppearance}`}
+      scope={focus}
+      headerTrailing={themeReset.show ? (
+        <ThemeResetButton mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />
+      ) : undefined}
+    >
       {SEMANTIC_SPECIMENS[focus]({ tokens, onEditToken })}
     </VariablesPreviewPane>
   )
@@ -1263,13 +1275,13 @@ export default function Step3_SemanticTokens({
                   aria-label={item.label}
                   aria-current={isActive}
                   title={railCollapsed ? `${item.label} — ${item.description}` : item.description}
-                  className={`flex items-center rounded-lg transition-colors ${
-                    railCollapsed ? 'w-10 h-8 justify-center' : 'w-full gap-2.5 px-2.5 py-2 text-left'
+                  className={`rounded-lg transition-colors ${
+                    railCollapsed ? COLLAPSED_RAIL_WELL : 'flex w-full items-center gap-2.5 px-2.5 py-2 text-left'
                   } ${
                     isActive ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  <span className="flex-shrink-0 flex items-center justify-center w-[15px]" aria-hidden>{item.icon}</span>
+                  <span className="grid size-[16px] place-items-center flex-shrink-0" aria-hidden>{item.icon}</span>
                   {!railCollapsed && (
                     <>
                       <span className="flex-1 min-w-0 truncate text-ui font-medium">{item.label}</span>

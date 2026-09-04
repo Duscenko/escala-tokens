@@ -47,7 +47,7 @@ function OTPScreen({ t, compact }: ArtefactProps) {
               <InputOTP t={t} v={{ State: 'Filled' }} />
             </div>
 
-            <InlineAlert t={t} v={{ Status: 'Error' }} w="100%">
+            <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" nested>
               <span style={{ ...typeStyleOf(t, 'button') }}>Incorrect code</span>
               <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: muted }}>
                 2 attempts remaining before it resets.

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
+import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type SpecimenProps } from '../../configurator/docs/specimens'
+import { TokenInspector, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -12,23 +13,47 @@ import {
 import type { PreviewTokens } from '../ButtonPreview'
 import { useI18n } from '../../../lib/i18n'
 
-const Input = SPECIMENS.Input
-const Select = SPECIMENS.Select
-const Slider = SPECIMENS.Slider
-const SocialLogin = SPECIMENS.SocialLoginButton
-const Card = SPECIMENS.Card
-const Avatar = SPECIMENS.Avatar
-const Badge = SPECIMENS.Badge
-const InputOTP = SPECIMENS.InputOTP
-const TextLink = SPECIMENS.TextLink
-const Segmented = SPECIMENS.SegmentedControl
-const ContextMenu = SPECIMENS.ContextMenu
-const Spinner = SPECIMENS.Spinner
-const InlineAlert = SPECIMENS.InlineAlert
-const TabMenu = SPECIMENS.TabMenu
-const Progress = SPECIMENS.Progress
-const StatusBadge = SPECIMENS.StatusBadge
-const Chip = SPECIMENS.Chip
+/**
+ * A catalogue specimen, marked up for Inspector mode.
+ *
+ * Wrapping here rather than at each of the ~30 call sites below is deliberate:
+ * the collage's JSX is the composition, and threading a `component="Input"`
+ * prop through every tag would be repeating a name the registry lookup already
+ * knows — one that could then disagree with it. `TokenInspector` renders
+ * nothing while the mode is off, so this costs nothing in the normal case.
+ */
+const inspectable = (key: string) => {
+  const Specimen = SPECIMENS[key]
+  const Wrapped = (p: SpecimenProps) => (
+    <TokenInspector component={key}>{Specimen(p)}</TokenInspector>
+  )
+  Wrapped.displayName = `Inspectable(${key})`
+  return Wrapped
+}
+
+const Input = inspectable('Input')
+const Select = inspectable('Select')
+const Slider = inspectable('Slider')
+const SocialLogin = inspectable('SocialLoginButton')
+const Card = inspectable('Card')
+const Avatar = inspectable('Avatar')
+const Badge = inspectable('Badge')
+const InputOTP = inspectable('InputOTP')
+const TextLink = inspectable('TextLink')
+const Segmented = inspectable('SegmentedControl')
+const ContextMenu = inspectable('ContextMenu')
+const Spinner = inspectable('Spinner')
+const InlineAlert = inspectable('InlineAlert')
+const TabMenu = inspectable('TabMenu')
+const Progress = inspectable('Progress')
+const StatusBadge = inspectable('StatusBadge')
+const Chip = inspectable('Chip')
+
+/** `Live` already carries the catalogue key as `c`, so the marker reads it
+ *  straight off the prop rather than being restated. */
+function InspectableLive(p: Parameters<typeof Live>[0]) {
+  return <TokenInspector component={p.c}><Live {...p} /></TokenInspector>
+}
 
 /**
  * Specimens lay out at a real mobile card width (Input 260, SocialLogin 280
@@ -99,6 +124,12 @@ function ScaledModule({
 }) {
   const innerRef = useRef<HTMLDivElement>(null)
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null)
+  // A module IS the container Inspector mode groups by — the cluster of
+  // controls that read a set of roles together. The frame is already a real
+  // box, so this is an attribute and not a wrapper (see `inspectGroupAttrs`),
+  // and the badge derives its name and its members from what's inside rather
+  // than from a label passed down here.
+  const inspecting = useInspectorActive()
   const scale = MODULE_DISPLAY / sourceWidth
   const frameRadius = (parseFloat(radiusRoleOf(t, 'container', '16px')) || 0) * scale
   const displayHeight = naturalHeight != null ? naturalHeight * scale : 0
@@ -125,6 +156,7 @@ function ScaledModule({
   return (
     <div
       className="relative overflow-visible"
+      {...inspectGroupAttrs(inspecting)}
       style={{
         width: MODULE_DISPLAY,
         minWidth: MODULE_DISPLAY,
@@ -237,9 +269,9 @@ export function SystemCollage({
           <Select t={t} v={{}} w="100%" />
         </div>
         <div className="flex flex-wrap items-center" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Live c="Checkbox" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
-          <Live c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
-          <Live c="Radio" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
+          <InspectableLive c="Checkbox" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
+          <InspectableLive c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
+          <InspectableLive c="Radio" t={t} v={{ Checked: 'True', Size: 'SM' }} toggle="Checked" />
           <Spinner t={t} v={{ Size: 'SM' }} />
         </div>
         <Slider t={t} v={{}} w="100%" />
@@ -276,24 +308,24 @@ export function SystemCollage({
 
       <ScaledModule t={t}>
         <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Ghost', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Ghost', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
           {/* Destructive and confirming are the SAME control with a different
               severity, so they're painted the same way — always `Solid`, so
               the fill IS `status.<sev>.surface-solid` verbatim. Whatever the
               user assigns that role in Token Details (an alpha primitive or a
               solid tone) is exactly what shows here — no `statusAction` layer
               in between deciding to wash it. The token is the control. */}
-          <Live c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</Live>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Danger', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Color: 'Success', Size: 'SM' }} w="100%">{translate('Click me')}</InspectableLive>
         </div>
       </ScaledModule>
 
       <ScaledModule t={t}>
         <div className="flex justify-end">
-          <Live c="CloseButton" t={t} v={{ Size: 'SM' }} />
+          <InspectableLive c="CloseButton" t={t} v={{ Size: 'SM' }} />
         </div>
         <div className="flex flex-col items-center text-center" style={{ gap: gap(t, 'gap-tight', '4px') }}>
           <GradientAvatar t={t} size={wellLg} />
@@ -302,7 +334,7 @@ export function SystemCollage({
             {translate('Sign in to continue to your workspace.')}
           </p>
         </div>
-        <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'MD' }} w="100%">{translate('Get Started')}</Live>
+        <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'MD' }} w="100%">{translate('Get Started')}</InspectableLive>
         <div className="flex items-center" style={{ gap: gap(t, 'gap-control', '8px') }}>
           <span style={{ flex: 1, height: 1, background: t.borderDefault || t.border }} />
           <span style={{ ...typeStyleOf(t, 'caption'), color: muted }}>{translate('or')}</span>
@@ -318,8 +350,8 @@ export function SystemCollage({
 
       <ScaledModule t={t}>
         <div className="grid grid-cols-2" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Chats')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Emails')}</Live>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Chats')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Emails')}</InspectableLive>
         </div>
       </ScaledModule>
 
@@ -385,17 +417,17 @@ export function SystemCollage({
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ ...typeStyleOf(t, 'body-sm'), color: t.neutralText }}>{translate('You have 2 credits left')}</span>
-        <Live c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</Live>
+        <InspectableLive c="Button" t={t} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
       </ScaledModule>
 
       <ScaledModule t={t} style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Live c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
+        <InspectableLive c="Toggle" t={t} v={{ On: 'True', Size: 'SM' }} toggle="On" />
       </ScaledModule>
 
       <ScaledModule t={t}>
         <div className="flex items-start justify-between" style={{ gap: gap(t, 'gap-control', '8px') }}>
           <Well t={t} size={wellSm} icon="box" />
-          <Live c="CloseButton" t={t} v={{ Size: 'SM' }} />
+          <InspectableLive c="CloseButton" t={t} v={{ Size: 'SM' }} />
         </div>
         <div>
           <p style={{ margin: 0, ...typeStyleOf(t, 'heading-sm'), color: t.neutralText }}>{translate('Unsaved changes')}</p>
@@ -404,16 +436,16 @@ export function SystemCollage({
           </p>
         </div>
         <div className="flex flex-col" style={{ gap: gap(t, 'gap-control', '8px') }}>
-          <Live c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</Live>
-          <Live c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</Live>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Outline', Size: 'SM' }} w="100%">{translate('Discard')}</InspectableLive>
+          <InspectableLive c="Button" t={t} v={{ Style: 'Solid', Size: 'SM' }} w="100%">{translate('Save changes')}</InspectableLive>
         </div>
       </ScaledModule>
 
       {/* Feedback — every `status.*` role at once: the two tints, their ink and
           their border. The fastest surface for judging a retinted severity. */}
       <ScaledModule t={t}>
-        <InlineAlert t={t} v={{ Status: 'Success' }} w="100%" />
-        <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" />
+        <InlineAlert t={t} v={{ Status: 'Success' }} w="100%" nested />
+        <InlineAlert t={t} v={{ Status: 'Error' }} w="100%" nested />
       </ScaledModule>
 
       {/* Navigation + progress — accent underline, `neutralFill` track,

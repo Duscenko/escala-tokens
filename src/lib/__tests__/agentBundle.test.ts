@@ -6,7 +6,7 @@ import { buildAgentBundle, type TokenJSON } from '../agentBundle'
 import { generateTokenJSON } from '../tokenGenerator'
 import { buildSkillExport } from '../skillExport'
 import { unzipStore } from '../zipStore'
-import { useDesignStore } from '../../store/useDesignStore'
+import { captureSnapshot, scopeSnapshotToTheme, useDesignStore } from '../../store/useDesignStore'
 
 const bundleDir = join(dirname(fileURLToPath(import.meta.url)), '../agentBundle')
 
@@ -77,5 +77,15 @@ describe('wrapper parity', () => {
     })
     expect(a.skillMd).toBe(b.skillMd)
     expect(bytes(a.zip, b.zip)).toBe(true)
+  })
+
+  it('a theme-scoped snapshot lists one mode in agent context', () => {
+    const full = useDesignStore.getState()
+    const scoped = scopeSnapshotToTheme(captureSnapshot(full), 'dark')
+    const json = generateTokenJSON(scoped)
+    expect(json.colors.themeOrder).toEqual(['dark'])
+    const pack = buildSkillExport('hex', scoped)
+    expect(pack.skillMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Dark`/)
+    expect(pack.skillMd).not.toMatch(/`Light`, `Dark`/)
   })
 })

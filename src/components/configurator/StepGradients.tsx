@@ -12,9 +12,9 @@ import { tableRowClass } from './tableChrome'
 // mapping of row 1 is: Primitives → family hex + its ramp · Semantics →
 // architecture + its contrast chips · Gradients → gradient type + the live bar.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
-import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColor, type GradientDef, type GradientType, type GradientAppearance } from '../../lib/gradients'
+import { gradientToCss, gradientSlug, makeGradient, isLinkable, linkedStopsFor, stopColorOn, type GradientDef, type GradientType, type GradientAppearance } from '../../lib/gradients'
 import { usePopoverPlacement, ScaleRow } from './colorControls'
 import { NAMING_SCHEMES, BASE_TONE } from '../../lib/colorUtils'
 import { themeBrandRamp } from '../../lib/themeSources'
@@ -44,11 +44,13 @@ const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
   { key: 'radial', label: 'Radial' },
 ]
 
-function AssignSelect({ label, value, onChange, gradients }: {
+function AssignSelect({ label, value, onChange, gradients, appearance, ramp }: {
   label: string
   value: string | null
   onChange: (id: string | null) => void
   gradients: GradientDef[]
+  appearance: GradientAppearance
+  ramp?: Record<number, string>
 }) {
   return (
     <label className="flex items-center gap-2">
@@ -56,7 +58,7 @@ function AssignSelect({ label, value, onChange, gradients }: {
       <div className="relative flex-1">
         <span
           className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded ring-1 ring-black/10 pointer-events-none"
-          style={{ background: value ? gradientToCss(gradients.find((g) => g.id === value) ?? gradients[0]) : 'transparent' }}
+          style={{ background: value ? gradientToCss(gradients.find((g) => g.id === value) ?? gradients[0], appearance, ramp) : 'transparent' }}
           aria-hidden
         />
         <select
@@ -75,9 +77,8 @@ function AssignSelect({ label, value, onChange, gradients }: {
 }
 
 export default function StepGradients({
-  tabBar, previewTheme = 'light', onPreviewThemeChange,
+  previewTheme = 'light', onPreviewThemeChange,
 }: {
-  tabBar?: ReactNode
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
   /** Returns to the System colors family collection without leaving Color. */
@@ -95,15 +96,22 @@ export default function StepGradients({
   // way every other appearance-aware surface does it.
   const appearance: GradientAppearance = (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light'
   const isDark = appearance === 'dark'
-  /** The accent ramp the previewed THEME resolves against — its own brand
-   *  family, in its own appearance. This used to be the GLOBAL accent
-   *  (`primaryScale`/`primaryDarkScale`) regardless of theme, which made the
-   *  gradient the one foundation that ignored the theme picker: previewing a
-   *  teal theme still painted the default accent. Step N means the same ROLE in
-   *  both appearances (Radix two-scale model) — a linked stop keeps its tone and
-   *  swaps ramps, it never inverts. */
-  const ramp = themeBrandRamp(previewTheme, themeSources, themeKinds, store)
-    ?? (isDark ? primaryDarkScale : primaryScale)
+  /** Both appearances of the previewed THEME's brand family. A linked stop is a
+   *  tone reference; the stored `color`/`darkColor` caches are the GLOBAL accent
+   *  and go stale the moment you preview a theme whose brand isn't that family.
+   *  Painting always resolves through these ramps (`stopColorOn` / `gradientToCss`)
+   *  so the table, rail chips and type-select preview match the theme on screen.
+   *  Step N means the same ROLE in both appearances — a linked stop keeps its
+   *  tone and swaps ramps, it never inverts. */
+  const lightRamp = themeBrandRamp(previewTheme, themeSources, themeKinds, store, 'light')
+    ?? primaryScale
+  const darkRamp = themeBrandRamp(previewTheme, themeSources, themeKinds, store, 'dark')
+    ?? primaryDarkScale
+  const ramp = isDark ? darkRamp : lightRamp
+  const cssOf = (g: GradientDef, ap: GradientAppearance = appearance) =>
+    gradientToCss(g, ap, ap === 'dark' ? darkRamp : lightRamp)
+  const hexOf = (s: { color: string; darkColor?: string; tone?: number }, ap: GradientAppearance = appearance) =>
+    stopColorOn(s, ap, ap === 'dark' ? darkRamp : lightRamp)
   /** The token PREFIX a linked stop's tone names in this theme. A stop reads
    *  "tone 9 of the accent", but which family that is depends on the theme, so
    *  the row must say `sky-9` under Sky and `accent-9` under Theme 1 — the same
@@ -235,7 +243,7 @@ export default function StepGradients({
                     active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
                   }`}
                 >
-                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: gradientToCss(g, appearance) }} aria-hidden />
+                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: cssOf(g) }} aria-hidden />
                   <span className="flex-1 min-w-0 truncate text-ui font-medium">{g.name}</span>
                 </button>
                 {gradients.length > 1 && (
@@ -264,14 +272,9 @@ export default function StepGradients({
           FoundationWorkbench. `border-line` since this sits between Groups
           above and the nav + table below. ── */}
       <div className="flex flex-col flex-shrink-0 border-b border-line">
-        {/* No `foundation-layer-bar` (its `--surface` fill + inset hairline) and
-            no local search box: the gradient list is three named rows in the
-            rail, the workspace already owns "Search tokens", and a recessed
-            header here read as a stray coloured band. Just the breadcrumb, flush
-            on the page. */}
-        <div className="flex items-stretch flex-shrink-0 h-[52px] gap-3 pr-3">
-          <div className="foundation-layer-title flex flex-1 min-w-0 items-center px-5">{tabBar}</div>
-        </div>
+        {/* No per-table title bar: ColorHub's collection already names this
+            tab, and Primitives / Semantics ship without a "Color / X"
+            breadcrumb. Type selector + live bar sit flush as row 1. */}
         <div className="flex-1 min-w-0 flex items-center gap-4 pl-6 lg:pl-8 pr-3 py-5">
           {selected ? (
             <>
@@ -284,7 +287,7 @@ export default function StepGradients({
                   icon={
                     <span
                       className="block w-4 h-4 rounded-full ring-1 ring-black/10"
-                      style={{ background: gradientToCss(selected, appearance) }}
+                      style={{ background: cssOf(selected) }}
                       aria-hidden
                     />
                   }
@@ -314,7 +317,7 @@ export default function StepGradients({
                   >
                     <span
                       className="block h-9 rounded-[7px] ring-1 ring-black/10"
-                      style={{ background: gradientToCss(selected, ap) }}
+                      style={{ background: cssOf(selected, ap) }}
                     />
                   </button>
                 ))}
@@ -374,8 +377,8 @@ export default function StepGradients({
                         <span className="text-xs font-semibold text-fg">Assignments</span>
                         <span className="text-caption text-fg-faint">Which gradient renders on each surface in the live previews.</span>
                       </div>
-                      <AssignSelect label="Card cover" value={gradientAssignments.cover} gradients={gradients} onChange={(id) => setGradientAssignment('cover', id)} />
-                      <AssignSelect label="Avatars" value={gradientAssignments.avatar} gradients={gradients} onChange={(id) => setGradientAssignment('avatar', id)} />
+                      <AssignSelect label="Card cover" value={gradientAssignments.cover} gradients={gradients} appearance={appearance} ramp={ramp} onChange={(id) => setGradientAssignment('cover', id)} />
+                      <AssignSelect label="Avatars" value={gradientAssignments.avatar} gradients={gradients} appearance={appearance} ramp={ramp} onChange={(id) => setGradientAssignment('avatar', id)} />
                     </div>
                   </div>
                 )}
@@ -422,7 +425,7 @@ export default function StepGradients({
                   </span>
                   {/* Link-to-accent lives in the STOPS header because it's a
                       statement about where every stop's COLOR comes from, not
-                      about one row. Only the two built-ins can derive. */}
+                      about one row. Only the three built-ins can derive. */}
                   {linkable && (
                     <button
                       type="button"
@@ -500,14 +503,14 @@ export default function StepGradients({
                       <>
                         <span
                           className="w-[22px] h-[22px] rounded-md flex-shrink-0 ring-1 ring-black/10"
-                          style={{ background: stopColor(s, appearance) }}
+                          style={{ background: hexOf(s) }}
                           aria-hidden
                         />
                         <div className="flex-1 min-w-0 flex flex-col gap-1">
                           {/* The token NAME carries the appearance, matching the
                               exported prefixes (`accent-9` / `accent-dark-9`) —
                               same tone, other ramp, no inversion. */}
-                          <span className="text-body font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone, appearance)} — ${stopColor(s, appearance).toUpperCase()}`}>
+                          <span className="text-body font-mono text-fg-muted truncate" title={`${tokenNameFor(s.tone, appearance)} — ${hexOf(s).toUpperCase()}`}>
                             {tokenNameFor(s.tone, appearance)}
                           </span>
                           <ScaleRow
@@ -529,13 +532,13 @@ export default function StepGradients({
                             make one it inherits the light colour (that IS the
                             pre-dark behaviour) and says so, with a way back. */}
                         <ColorField
-                          value={stopColor(s, appearance)}
+                          value={hexOf(s)}
                           onChange={(hex) => updateStop(i, 'color', hex)}
                           ariaLabel={`Stop ${i + 1} ${appearance} color`}
                           size={22}
                         />
                         <span className="flex-1 min-w-0 flex items-center gap-2 text-body font-mono text-fg-muted truncate">
-                          {stopColor(s, appearance).toUpperCase()}
+                          {hexOf(s).toUpperCase()}
                           {isDark && !s.darkColor && (
                             <span className="text-mini font-sans text-fg-faint whitespace-nowrap">same as light</span>
                           )}

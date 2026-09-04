@@ -2,14 +2,17 @@ import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
+import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
+import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import { Live, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { PHOSPHOR_CORE } from '../../lib/iconLibraries'
 import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
+import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
 import FigmaSyncView from './FigmaSyncView'
 import IntegrationStatusRail from './IntegrationStatusRail'
@@ -166,20 +169,64 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
   )
 }
 
+/**
+ * Inspector mode toggle. Same shell as `ThemeResetButton` — a `bg-tab-bar`
+ * pill sitting in the canvas header — because both are canvas-scoped actions
+ * and a second button shape beside it would imply a different kind of control.
+ *
+ * It's a TOGGLE, not a momentary key: reading a role, going to the rail and
+ * coming back for the next one is a sequence, and a mode that dropped every
+ * time the pointer left the canvas couldn't survive it.
+ */
+function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
+  const { t } = useI18n()
+  const label = t('Inspect tokens')
+  return (
+    <div className="flex h-8 items-center rounded-lg p-0.5 border border-line bg-tab-bar">
+      <button
+        type="button"
+        onClick={() => onChange(!active)}
+        aria-pressed={active}
+        aria-label={label}
+        title={`${label} — ${t('point at a component to see the roles that paint it')}`}
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+          active
+            ? 'bg-accent-solid text-accent-ink'
+            : 'text-fg-faint hover:bg-surface hover:text-fg'
+        }`}
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+          <path d="M8 2v3M8 11v3M2 8h3M11 8h3" />
+          <circle cx="8" cy="8" r="2.25" />
+        </svg>
+        {label}
+      </button>
+    </div>
+  )
+}
+
 // The quick-settings rail stays outside the framed canvas so its property
 // controls remain fixed while the artefacts themselves scroll.
 function ArtefactsView({
   previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
+  inspecting, onPickRole, onOpenRoleInVariables,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
   accentPreview: string | null
   stylePreview: StylePreview | null
-  /** The Semantics quick-edit drawer (`TokenDetailsModal`, `contained`) is
-   *  scoped to `ThemePreviewHub`'s box and docks flush to the quick-settings
-   *  rail's right edge — beside the column, not over it. The canvas cedes
-   *  the full `PANEL_W` so artefacts reflow instead of sitting under the
-   *  fly-out. */
+  /** Inspector mode — point at a specimen, get the roles that paint it. Lives
+   *  in the hub (the toggle is in the canvas header, a sibling of this view),
+   *  never local here. */
+  inspecting: boolean
+  onPickRole: (roleId: string) => void
+  /** The badge's own exit to the full Semantics table — the same door Token
+   *  Details carries, one step earlier in the flow. */
+  onOpenRoleInVariables: (roleId: string) => void
+  /** Colour pickers from the quick rail still fly out inside the hub. The
+   *  canvas cedes `PANEL_W` so artefacts reflow instead of sitting under them.
+   *  Token Details is a different drawer — it docks to the Themes Library like
+   *  New theme, and does not use this padding. */
   drawerOpen: boolean
 }) {
   const store = useDesignStore()
@@ -204,14 +251,19 @@ function ArtefactsView({
       'border.focus': accentPreview,
     } : undefined,
   } : tokens
+  const canvasRef = useRef<HTMLDivElement | null>(null)
   return (
     <div
+      ref={canvasRef}
       className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
       style={drawerOpen ? { paddingLeft: PANEL_W } : undefined}
     >
-      <div className="mx-auto w-full">
-        <SystemCollage t={paintedTokens} projectName={store.projectName} />
+      <div className="mx-auto w-full" style={inspecting ? { cursor: 'crosshair' } : undefined}>
+        <InspectorModeProvider active={inspecting}>
+          <SystemCollage t={paintedTokens} projectName={store.projectName} />
+        </InspectorModeProvider>
       </div>
+      <InspectorOverlay active={inspecting} rootRef={canvasRef} t={paintedTokens} onPick={onPickRole} onOpenTable={onOpenRoleInVariables} />
     </div>
   )
 }
@@ -665,18 +717,13 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
 
 export default function ThemePreviewHub({
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, stylePreview, onAdoptStyle, onPreviewAppearanceChange, onOpenColor, onOpenTypography, onOpenRadius,
-  onOpenSemanticFoundation, onOpenComponent, onOpenComponents,
+  previewTheme, previewAppearance, stylePreview, onAdoptStyle, onPreviewAppearanceChange,
+  onOpenComponent, onOpenComponents,
   onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
   onOpenSave, githubPushState, onGithubPushStateChange, docsExits,
-  quickFoundation,
 }: {
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
-  /** Which foundation's quick panel the artefacts rail shows — the shell's
-   *  `activeFoundation`, so the workspace icon rail and this column are one
-   *  selection instead of two. */
-  quickFoundation: string
   previewTheme: string
   previewAppearance: ThemeAppearance
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
@@ -685,17 +732,13 @@ export default function ThemePreviewHub({
    *  and drop the ephemeral try-on. */
   onAdoptStyle: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
-  onOpenColor: () => void
-  onOpenTypography: () => void
-  onOpenRadius: () => void
-  onOpenSemanticFoundation: (foundation: 'spacing' | 'grid' | 'sizes' | 'stroke') => void
   /** Open one component's full article on the Components destination. */
   onOpenComponent: (component: ComponentDef) => void
   /** Open the Components destination itself — the showcase's whole payoff. */
   onOpenComponents: () => void
   onEditFoundation: (key: string) => void
   /** Jump to a family's ramp in Color · Primitives from the Semantics
-   *  quick-edit ramp grid (family vocabulary name). */
+   *  Token Details drawer (family vocabulary name). */
   onOpenPrimitiveFamily: (family: string) => void
   /** Open a semantic token's row in the full Color · Semantics table. */
   onOpenInVariables: (tokenId: string) => void
@@ -711,11 +754,14 @@ export default function ThemePreviewHub({
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
-  // Whether the Semantics quick-edit drawer is open. Only meaningful on the
-  // artefacts surface (the only one that mounts `ThemeQuickSettingsRail`),
-  // so it's ANDed with `surface === 'artefacts'` at the one place that reads
-  // it rather than reset on every surface change.
+  // Whether a contained colour picker from the quick rail is open — the canvas
+  // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
   const [quickEditOpen, setQuickEditOpen] = useState(false)
+  // Inspector mode. Deliberately NOT persisted and NOT part of `DesignSnapshot`
+  // — it's a way of LOOKING at the canvas for a minute, like `previewCollapsed`,
+  // not a property of the system being designed.
+  const [inspecting, setInspecting] = useState(false)
+  const [editingToken, setEditingToken] = useState<string | null>(null)
   const [showcase, setShowcase] = useState('all')
   const [docPage, setDocPage] = useState<string>(OVERVIEW_KEY)
   // ONE collapse preference for the whole hub, not one per view: it's the same
@@ -738,6 +784,11 @@ export default function ThemePreviewHub({
     onPreviewAppearanceChange(appearance)
   }
   const store = useDesignStore()
+  // A role picked on the canvas opens Token Details in the SAME dock as New
+  // theme — flush to the Themes Library — not the Variables table. The table
+  // is a second destination the drawer itself already carries a door to.
+  const pickRole = (roleId: string) => setEditingToken(roleId)
+  const themeReset = useThemeReset(previewTheme, !stylePreview)
   const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
   const stylePreviewTokens = useMemo(
     () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
@@ -794,30 +845,23 @@ export default function ThemePreviewHub({
       {surface === 'artefacts' && (
         <ThemeQuickSettingsRail
           key={previewTheme}
-          foundation={quickFoundation}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
-          onPreviewAppearanceChange={handleAppearanceChange}
           // "Go to advanced edition" IS `selectFoundation` — the shell handler
           // that switches to the Variables tab on a given foundation. Passing
           // it straight through is what makes the button land on the very
-          // foundation whose quick panel you were in; the five `onOpen*` props
-          // it replaces each hardcoded their own key (and `stroke` had none).
+          // foundation whose quick panel you were in.
           onOpenAdvanced={onEditFoundation}
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
           onAdoptStyle={onAdoptStyle}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
-          onOpenPrimitiveFamily={onOpenPrimitiveFamily}
-          onOpenInVariables={onOpenInVariables}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
         <IntegrationStatusRail
           provider={surface}
-          previewTheme={previewTheme}
-          previewAppearance={previewAppearance}
           githubPushState={githubPushState}
           figmaPublishState={figmaPublishState}
         />
@@ -827,7 +871,7 @@ export default function ThemePreviewHub({
           <div className="min-h-0 flex-1 bg-nav p-3">
             <section
               aria-label={`${themeName} preview canvas`}
-              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${boardAppearance === 'dark' ? 'dark' : 'light'}`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${boardAppearance === 'dark' ? 'dark' : 'light'}`}
               style={{ background: pageCanvasColor }}
             >
               {/* One header band for every hub view — the active view's NAME
@@ -843,13 +887,23 @@ export default function ThemePreviewHub({
                 </span>
                 <div className="flex flex-shrink-0 items-center gap-3">
                   {surface === 'documentation' && hubDocActions}
+                  {surface === 'artefacts' && (
+                    <InspectorToggle active={inspecting} onChange={setInspecting} />
+                  )}
+                  {themeReset.show && (
+                    <ThemeResetButton
+                      mode={themeReset.mode}
+                      target={themeReset.target}
+                      onClick={themeReset.onClick}
+                    />
+                  )}
                   <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
                   <PreviewAppearanceButton value={boardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} drawerOpen={quickEditOpen} /> : null}
+                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={stylePreview} drawerOpen={quickEditOpen} inspecting={inspecting} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={stylePreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
                 {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={stylePreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
@@ -867,5 +921,13 @@ export default function ThemePreviewHub({
         )}
       </div>
     </div>
+    <SemanticTokenDrawer
+      previewTheme={previewTheme}
+      previewAppearance={previewAppearance}
+      tokenId={surface === 'artefacts' ? editingToken : null}
+      onClose={() => setEditingToken(null)}
+      onOpenPrimitiveFamily={onOpenPrimitiveFamily}
+      onOpenInVariables={onOpenInVariables}
+    />
   </section>
 }

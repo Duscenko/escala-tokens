@@ -1,8 +1,8 @@
 // The Categorical projection, resolved for ONE theme — shared derivation.
 //
 // Two surfaces render the same semantic tokens and must never disagree about
-// them: the Semantics TABLE (`Step3_SemanticTokens`) and the Theme preview
-// quick column's group ACCORDIONS. Both need the identical chain —
+// them: the Semantics TABLE (`Step3_SemanticTokens`) and Theme Preview's
+// inspector Token Details drawer. Both need the identical chain —
 // `scales` → `resolveThemePalette` per mode → `buildArchitectureView` — and
 // that chain is where the subtle rules live (the dark twin under `scales.dark`,
 // `pageBackground`/`darkBackground` being REQUIRED or every alpha ref resolves

@@ -68,7 +68,7 @@ export default function DocsView({
     : isChangelog
       ? changelogToc()
       : isFaq
-        ? faqToc()
+        ? faqToc(t)
         : doc
           ? foundationToc(doc)
           : overviewToc()

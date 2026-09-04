@@ -66,6 +66,26 @@ export function SparkleCircleIcon({ size = 16, className = '' }: { size?: number
   )
 }
 
+/** Copy / duplicate — the designer-supplied mark (`public/icons/settings/copy.svg`,
+ *  filed beside `edit.svg` rather than in the `Icon/` subfolder it exported into).
+ *  Painted as a CSS MASK with `currentColor`, not an `<img>`: the asset ships a
+ *  hardcoded `fill="white"`, so a bare `<img>` is invisible in light chrome and
+ *  can't track a button's hover ink. The mask reads only the file's alpha. */
+export function CopyGlyph({ size = 13, className = '' }: { size?: number; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`inline-block flex-shrink-0 bg-current ${className}`}
+      style={{
+        width: size,
+        height: size,
+        WebkitMask: "url('/icons/settings/copy.svg') center / contain no-repeat",
+        mask: "url('/icons/settings/copy.svg') center / contain no-repeat",
+      }}
+    />
+  )
+}
+
 /** Painter's palette — the color-token mark: token-table rows and the rail's
  *  Color entry. */
 export function PaletteIcon({ size = 16, strokeWidth = 1.8, className = '' }: {

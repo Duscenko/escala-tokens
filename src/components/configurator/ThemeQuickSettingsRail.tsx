@@ -1,15 +1,9 @@
-// Theme Preview's left rail — quick settings for the theme on screen.
+// Theme Preview's left rail — every quick-edit card stacked in one column.
 //
-// This column used to hold an artefact filter (Overview / Forms / Cards /
-// Others), while the real quick-edit controls sat in a dock pinned to the
-// bottom of the canvas. Both are retired: the controls now live beside the
-// artefacts they repaint, and the grid always shows every screen.
-//
-// Two halves. The top rows edit COLOUR and TYPE — one primitive each, via the
-// same appliers the Color hub uses. The `Sizes` section edits a whole RAMP from
-// one base unit: `size` (control heights) and `selector` (the checkbox square)
-// are `base × multiplier` scales, so a slider regenerates them exactly the way
-// Spacing's base unit already regenerates `--spacing-*`.
+// Color edition sits at the top (accent hue + neutral tint). Text, Radius,
+// Shadow, Size and Stroke follow. The foundation icon rail used to switch
+// between these one at a time; inspector mode made the color-role groups
+// redundant, which freed the column to carry every foundation at once.
 //
 // Deliberately NOT here: a "Theme recipe" preset, a Radius Form axis, and the
 // Noise effect toggle. Shadows are included because they are a real,
@@ -46,14 +40,14 @@ import {
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
+import { type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
-import { presetHarmony, themeStylePreset } from '../../lib/themePresets'
+import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
-import SemanticTokenGroups from './SemanticTokenGroups'
 import SpectrumSlider from '../ui/SpectrumSlider'
+import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
 
 /**
@@ -70,6 +64,37 @@ export const QUICK_SETTINGS_WIDTH = COLOR_RAIL_WIDTH
 
 /** One vertical rhythm for edition cards and semantic accordion rows. */
 const QUICK_RAIL_STACK_GAP = 'gap-3'
+
+/**
+ * The rail's vertical rhythm, in ONE place — six foundations are stacked in
+ * this column now, so a card's height is what decides how many of them you can
+ * see at once, and the padding was written when a card was the only thing on
+ * screen.
+ *
+ * Every value here is a Tailwind step, NOT an arbitrary `[15px]`: this app sets
+ * `:root { font: 18px }`, so the scale resolves 12.5% larger than its name
+ * (`py-3` = 13.5px, `h-9` = 40.5px) — which is why the rows read heavier than
+ * the class names suggest and why eyeballing a pixel value here goes wrong.
+ *
+ * `ROW_GAP_CONTROL` is deliberately smaller than the `mt-3` it replaced above
+ * sliders: `.quick-settings-range` is a 20px box drawing a 4px track, so it
+ * carries ~8px of its own air on each side and a 13.5px margin on top of that
+ * read as ~21px of gap. Measured against the value it labels, not in isolation.
+ */
+/**
+ * ONE ink rule across the six cards, because compacting them removed the air
+ * that used to do this job: full-strength `text-fg` is reserved for a card's
+ * TITLE and its resolved VALUES (the base-unit number, the stroke px, the
+ * selected radius badge). Every label, caption and axis name is `text-fg-muted`
+ * or fainter. Before this, a 9px axis name and an 11px row label were both on
+ * `--fg` while the card title differed only by semibold-vs-medium at the same
+ * 11px — three levels rendering as one.
+ */
+/** Preview block above a slider — tall enough for the largest specimen in it
+ *  (a 17px `Aa`, a 20px selector square), no taller. */
+const ROW_PREVIEW_H = 'h-8'
+/** Preview/readout → slider, and slider → its axis labels. */
+const ROW_GAP_CONTROL = 'mt-2'
 
 function defaultThemeLabel(key: string) {
   if (key === 'light') return 'Light'
@@ -101,7 +126,21 @@ function EditThemeIcon() {
  * than scrolled: renaming the theme you're looking at shouldn't
  * be something you scroll a column of sliders back up to reach.
  */
-export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
+export function ThemeIdentityBand({
+  previewTheme,
+  tryOnLabel,
+}: {
+  previewTheme: string
+  /** The System Style currently being tried on, if any. While a try-on is live
+   *  this band names THAT style and is read-only — the try-on holds no theme of
+   *  its own, so `previewTheme` is still whichever built-in was selected and the
+   *  field read "Dark" while the board rendered Core. Worse than confusing:
+   *  typing in it renamed a theme that MY THEMES deliberately doesn't list. The
+   *  name becomes editable the moment the style is real (Add to system, or the
+   *  first-edit auto-adopt), which is also the first moment there is something
+   *  for a name to belong to. */
+  tryOnLabel?: string
+}) {
   const { t } = useI18n()
   const { themeLabels, setThemeLabel } = useDesignStore()
   const stored = themeLabels[previewTheme] || defaultThemeLabel(previewTheme)
@@ -112,6 +151,16 @@ export function ThemeIdentityBand({ previewTheme }: { previewTheme: string }) {
     if (!next) { setNameError(true); return }
     setNameError(false)
     setThemeLabel(previewTheme, next)
+  }
+  if (tryOnLabel) {
+    return (
+      <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
+        <div className="flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-dashed border-line bg-transparent pl-3 pr-3">
+          <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
+          <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">{tryOnLabel}</span>
+        </div>
+      </div>
+    )
   }
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
@@ -186,10 +235,6 @@ function Chevron({ open }: { open: boolean }) {
 
 function InfoIcon() {
   return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden><circle cx="8" cy="8" r="5.75" /><path d="M8 7.25v3.4M8 5.1h.01" /></svg>
-}
-
-function ResetIcon() {
-  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M2.75 8a5.25 5.25 0 1 0 1.6-3.77" /><path d="M2.4 2.9v2.6h2.6" /></svg>
 }
 
 function AdvancedIcon() {
@@ -270,7 +315,10 @@ function HeaderAction({ label, onClick, children }: { label: string; onClick: ()
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="grid h-7 w-7 place-items-center rounded-md text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+      // 27px (`h-6` at this 18px root), not 31.5 — still over WCAG 2.5.8's
+      // 24px floor, and a header action sitting beside an 11px caption should
+      // not be the tallest thing in the row.
+      className="grid h-6 w-6 place-items-center rounded-md text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
     >
       {children}
     </button>
@@ -285,7 +333,7 @@ function InfoHint({ children }: { children: string }) {
         type="button"
         aria-label={`About this setting: ${children}`}
         aria-describedby={id}
-        className="grid h-7 w-7 place-items-center rounded-md text-fg-faint transition-colors duration-150 hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
+        className="grid h-6 w-6 place-items-center rounded-md text-fg-faint transition-colors duration-150 hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
       >
         <InfoIcon />
       </button>
@@ -303,14 +351,9 @@ function SettingsSection({ label, children }: { label: string; children: React.R
 }
 
 /**
- * The foundations that have a quick panel below — and therefore the ONLY ones
- * the Theme preview icon rail offers.
- *
- * Exported so the rail filters off this list instead of keeping its own copy:
- * an icon that leads to an empty column claims a feature that isn't there, and
- * a second list in `Configurator` is exactly how that drifts. `spacing`, `grid`
+ * The stacked edition cards in this rail, in paint order. `spacing`, `grid`
  * and `icons` are absent because they have no quick control at all — they stay
- * fully editable on the Variables tab, which always offers all nine.
+ * fully editable on the Variables tab.
  *
  * Adding a panel below means adding its key here, and nowhere else.
  */
@@ -322,8 +365,7 @@ export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow
  *
  * The "Go to advanced edition" button is `selectFoundation` in disguise —
  * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
- * lands on the very foundation you were adjusting, and the icon rail's
- * selection survives the jump.
+ * lands on the very foundation you were adjusting.
  */
 function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children }: {
   title: string
@@ -336,12 +378,16 @@ function EditionCard({ title, foundationKey, trailing, onOpenAdvanced, children 
   const { t } = useI18n()
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-rail-section">
-      <div className="flex min-h-9 items-center justify-between gap-2 px-3 pt-2.5">
+      {/* Explicit top AND bottom padding: with `pt` alone the title's air came
+          from `min-h`'s leftover, which centred it 18px below the card edge and
+          6px above the first row — top-heavy, and the gap the eye reads as
+          "title belongs to this card" was the smaller of the two. */}
+      <div className="flex min-h-8 items-center justify-between gap-2 px-3 pt-2 pb-1.5">
         <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
         {trailing}
       </div>
       <div className="divide-y divide-line">{children}</div>
-      <div className="px-3 pb-3 pt-2">
+      <div className="px-3 pb-2.5 pt-2">
         <button
           type="button"
           onClick={() => onOpenAdvanced(foundationKey)}
@@ -365,7 +411,12 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
   const { t } = useI18n()
   const compact = !label
   const trailing = (hint || (advancedLabel && onAdvanced)) ? (
-    <span className="flex flex-shrink-0 items-center gap-0.5">
+    // `-my-1` lets the 27px buttons overhang the 16px label line instead of
+    // setting the row's height. Without it a hinted row's label sits ~5px
+    // further from its control than an unhinted one's — invisible alone, and
+    // exactly the kind of drift that makes a stack of six cards read as
+    // hand-placed. The overhang stays inside the row's own top padding.
+    <span className="-my-1 flex flex-shrink-0 items-center gap-0.5">
       {hint ? <InfoHint>{t(hint)}</InfoHint> : null}
       {advancedLabel && onAdvanced ? <HeaderAction label={t(advancedLabel)} onClick={onAdvanced}><AdvancedIcon /></HeaderAction> : null}
     </span>
@@ -384,10 +435,24 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
 
   const hasHeader = Boolean(label || trailing)
   return (
-    <div className={`min-w-0 px-3 ${compact ? 'py-2' : 'py-3'}`}>
+    <div className={`min-w-0 px-3 ${compact ? 'py-2' : 'py-2.5'}`}>
       {hasHeader && (
-        <div className={`flex min-h-7 items-center gap-2 ${compact ? 'mb-1 justify-end' : 'mb-2 justify-between'}`}>
-          {label ? <span className="min-w-0 truncate text-caption font-medium text-fg">{t(label)}</span> : null}
+        // No `min-h` — the header is one label line tall, full stop. It was
+        // `min-h-7` (31.5px) to reserve room for the trailing buttons, i.e.
+        // 15px of air bought for a control most rows don't have; the buttons
+        // now overhang the line instead (see `trailing`), so every row's
+        // label→control gap is the same whether it carries a hint or not.
+        <div className={`flex items-center gap-2 ${compact ? 'mb-1 justify-end' : 'mb-1.5 justify-between'}`}>
+          {/* `text-fg-muted`, one step under the card title's `text-fg`. Both
+              were 11px on `--fg` and differed only by semibold-vs-medium, which
+              at 11px is not a legible difference — "Text edition" and "Body
+              font" read as siblings, so the card's own panel was the only thing
+              saying where a set started. Compacting made that worse, not
+              better: less air between two levels that look identical is mush.
+              Measured 6.2:1 on `--rail-section` (AA for small text; `fg-faint`
+              would be 3.79 and is why the house eyebrow treatment is not the
+              answer here). */}
+          {label ? <span className="min-w-0 truncate text-caption font-medium text-fg-muted">{t(label)}</span> : null}
           {trailing}
         </div>
       )}
@@ -543,7 +608,7 @@ function BaseUnitCard({
   return (
     <div>
       <div className="flex items-end justify-between gap-3">
-        <div role="img" aria-label={`${kind === 'selector' ? 'Selector' : 'Field'} size scale preview`} className="flex h-9 min-w-0 flex-1 items-center justify-between gap-1">
+        <div role="img" aria-label={`${kind === 'selector' ? 'Selector' : 'Field'} size scale preview`} className={`flex ${ROW_PREVIEW_H} min-w-0 flex-1 items-center justify-between gap-1`}>
           {px.map((value, index) => {
             const ratio = value / peak
             return kind === 'selector' ? (
@@ -570,7 +635,7 @@ function BaseUnitCard({
           </span>
         </div>
       </div>
-      <div className="mt-3 grid gap-x-1 text-center" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
+      <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
         {steps.map((step) => <span key={step} className="text-micro font-medium uppercase text-fg-faint">{step}</span>)}
         {steps.map((step) => <span key={step} className="text-mini tabular-nums text-fg-muted">{px[steps.indexOf(step)]}</span>)}
       </div>
@@ -583,7 +648,7 @@ function BaseUnitCard({
         onScrubStart={onScrubStart}
         onScrubEnd={onScrubEnd}
         ariaLabel={ariaLabel}
-        className="mt-3"
+        className={ROW_GAP_CONTROL}
       />
     </div>
   )
@@ -618,7 +683,7 @@ function ContainerInsetCard({
   return (
     <div>
       <div className="flex items-end justify-between gap-3">
-        <div role="img" aria-label="Container inset preview" className="flex h-9 items-center">
+        <div role="img" aria-label="Container inset preview" className={`flex ${ROW_PREVIEW_H} items-center`}>
           <span
             className="grid place-items-stretch rounded-[4px] border border-fg/45 bg-fg/[0.06]"
             style={{ width: 46, height: 34, padding: visualInset }}
@@ -640,7 +705,7 @@ function ContainerInsetCard({
         onScrubStart={onScrubStart}
         onScrubEnd={onScrubEnd}
         ariaLabel="Container padding in pixels"
-        className="mt-3"
+        className={ROW_GAP_CONTROL}
       />
       <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
         <span>0</span>
@@ -677,7 +742,7 @@ function TypeScaleCard({
   return (
     <div>
       <div className="flex items-end justify-between gap-2">
-        <div role="img" aria-label="Type scale preview" className="flex h-9 items-end gap-1.5">
+        <div role="img" aria-label="Type scale preview" className={`flex ${ROW_PREVIEW_H} items-end gap-1.5`}>
           {px.map((value, i) => (
             <span
               key={TYPE_READOUT_KEYS[i]}
@@ -697,7 +762,7 @@ function TypeScaleCard({
           </span>
         </div>
       </div>
-      <div className="mt-3 grid gap-x-1 text-center" style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_KEYS.length}, minmax(0, 1fr))` }}>
+      <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_KEYS.length}, minmax(0, 1fr))` }}>
         {TYPE_READOUT_KEYS.map((k) => <span key={k} className="text-micro font-medium uppercase text-fg-faint">{k.replace('text-', '')}</span>)}
         {TYPE_READOUT_KEYS.map((k, i) => <span key={k} className="text-mini tabular-nums text-fg-muted">{px[i]}</span>)}
       </div>
@@ -710,7 +775,7 @@ function TypeScaleCard({
         onScrubStart={onScrubStart}
         onScrubEnd={onScrubEnd}
         ariaLabel="Type scale"
-        className="mt-3"
+        className={ROW_GAP_CONTROL}
       />
     </div>
   )
@@ -810,14 +875,23 @@ function RadiusCard({
   radiusRoles: Record<string, string> | undefined
   onRoles: (next: Record<string, string>) => void
 }) {
+  // `gap-3` (13.5px here), not the design's literal 15px — a one-off arbitrary
+  // value in a column where every other gap is a scale step is a 2px difference
+  // nobody can see and one more number to keep in step.
   return (
-    <div className="flex flex-col gap-[15px]">
+    <div className="flex flex-col gap-3">
       {RADIUS_GROUPS.map((group) => {
         const current = radiusGroupStep(group, radiusRoles)
         return (
           <div key={group.key} className="min-w-0">
             <div className="mb-1 flex min-w-0 items-center gap-1.5">
-              <span className="min-w-0 flex-shrink-0 text-micro font-medium text-fg">{group.label}</span>
+              {/* Muted, like every other label in this rail — see the rule
+                  under `SettingItem`'s own label. At `text-fg` these 9px axis
+                  names read STRONGER than the 11px row label above them, which
+                  inverts the hierarchy: the only full-strength text in a card
+                  is its title and its resolved values (here, the px badge on
+                  the selected tile). */}
+              <span className="min-w-0 flex-shrink-0 text-micro font-medium text-fg-muted">{group.label}</span>
               <span className="min-w-0 flex-1 truncate text-nano text-fg-faint">{group.hint}</span>
               {/* The Figma has no header readout — the badge on the selected
                   well carries the value. `Custom` is the one case it does not
@@ -930,27 +1004,17 @@ function TintSlider({
 }
 
 export default function ThemeQuickSettingsRail({
-  foundation,
   previewTheme,
   previewAppearance,
-  onPreviewAppearanceChange,
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
   onAdoptStyle,
   onQuickEditOpenChange,
   containedDrawerRootRef,
-  onOpenPrimitiveFamily,
-  onOpenInVariables,
 }: {
-  /** Which foundation's quick panel to render — driven by the workspace's icon
-   *  rail, so the lit icon and the column on screen are the same decision. The
-   *  column used to stack ALL of them (Color / Typography / Shape / Components)
-   *  in one scroll, which left the rail with nothing to point at. */
-  foundation: string
   previewTheme: string
   previewAppearance: ThemeAppearance
-  onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
   /** Opens the Variables tab on a foundation — ONE handler where there used to
    *  be five `onOpen*` props plus a per-`SettingItem` `advancedLabel`, and
    *  where `stroke` had none of its own (it borrowed Sizes'). Each panel now
@@ -965,19 +1029,11 @@ export default function ThemeQuickSettingsRail({
    *  previewed style). The shell re-points `previewTheme` and drops the
    *  ephemeral preview. */
   onAdoptStyle?: (themeKey: string) => void
-  /** Reports whether the Semantics quick-edit drawer (`TokenDetailsModal`,
-   *  `contained` — scoped to `ThemePreviewHub`'s own box) is open, so the
-   *  canvas beside this rail can cede matching space instead of letting the
-   *  drawer's absolutely-positioned panel paint over it. */
+  /** Reports whether a contained colour picker is open, so the canvas beside
+   *  this rail can cede matching space instead of sitting under the fly-out. */
   onQuickEditOpenChange?: (open: boolean) => void
-  /** Portal target for the contained token drawer — `ThemePreviewHub`'s root. */
+  /** Portal target for the contained Accent / Neutral pickers. */
   containedDrawerRootRef?: RefObject<HTMLElement | null>
-  /** A ramp-grid family label in the Semantics quick-edit drawer → open that
-   *  family's ramp in the Color · Primitives table. */
-  onOpenPrimitiveFamily?: (family: string) => void
-  /** Leave the Semantics quick-edit drawer for that token's row in the full
-   *  Color · Semantics table. */
-  onOpenInVariables?: (tokenId: string) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -987,7 +1043,10 @@ export default function ThemeQuickSettingsRail({
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [accentPickerOpen, setAccentPickerOpen] = useState(false)
   const [neutralPickerOpen, setNeutralPickerOpen] = useState(false)
-  const [semanticDrawerOpen, setSemanticDrawerOpen] = useState(false)
+  // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
+  // can't resolve, a slot it can't fill). Rendered next to the button, not as a
+  // toast: a failure the user has to act on shouldn't time out.
+  const [adoptError, setAdoptError] = useState<string | null>(null)
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1069,6 +1128,9 @@ export default function ThemeQuickSettingsRail({
     onAccentPreview?.(null)
   }, [previewTheme, onAccentPreview])
 
+  const announceAdopted = (name: string) =>
+    showToast(t('{name} added to My themes', { name }))
+
   const showUndo = (snapshot: DesignSnapshot, label: string) => {
     setUndo({ snapshot, label })
     if (undoTimer.current) clearTimeout(undoTimer.current)
@@ -1087,9 +1149,28 @@ export default function ThemeQuickSettingsRail({
     // starting to iterate, so it lands in MY THEMES as a duplication of the
     // style, not as the style itself.
     const adopted = adoptPreset(tryOn.preset, previewAppearance, { asCopy: true, copyWord: t('Copy') })
-    if ('error' in adopted) return null
+    if ('error' in adopted) { setAdoptError(adopted.error); return null }
+    setAdoptError(null)
+    // The write itself is silent — a slider that repaints the board is its own
+    // feedback — but ADOPTING is a second thing happening that the user did not
+    // ask for in that gesture, and the only place it shows is a new row in a
+    // column they may not be looking at. Say it out loud once.
+    announceAdopted(adopted.name)
     onAdoptStyle?.(adopted.key)
     return adopted.key
+  }
+
+  /** Explicit "Add to system", the button under the Name field. Mints the style
+   *  under its OWN name — no "Copy" suffix — because nothing has diverged from
+   *  it yet; that suffix is the auto-adopt path's way of saying an edit already
+   *  moved it away from the style it came from. */
+  const addTryOnToSystem = () => {
+    if (!tryOn) return
+    const adopted = adoptPreset(tryOn.preset, previewAppearance)
+    if ('error' in adopted) { setAdoptError(adopted.error); return }
+    setAdoptError(null)
+    announceAdopted(adopted.name)
+    onAdoptStyle?.(adopted.key)
   }
 
   const commit = (label: string, action: (themeKey: string) => void) => {
@@ -1225,93 +1306,76 @@ export default function ThemeQuickSettingsRail({
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
 
-  // What Reset goes back TO. A theme adopted from a System Style returns to
-  // that style; one made by hand returns to the system defaults, which is the
-  // honest answer — there is no earlier version of it to restore.
-  const originPreset = tryOn
-    ? tryOn.preset
-    : themeStylePreset(store.themeOrigin?.[previewTheme] ?? '')
-  const resetTargetLabel = originPreset ? originPreset.label : 'System defaults'
-
-  const resetTheme = () => commit('Theme reset', (themeKey) => {
-    const s = useDesignStore.getState()
-    const preset = themeStylePreset(s.themeOrigin?.[themeKey] ?? '')
-    if (!preset) {
-      // No origin — drop every theme-scoped override so the theme falls back to
-      // the system's own foundations. Colours are left alone: a hand-made
-      // theme's accent IS the thing the user chose, not a deviation from
-      // something else.
-      s.setThemeFoundations(themeKey, null)
-      return
-    }
-    s.setThemeFoundations(themeKey, preset.foundations)
-    s.setNeutralTint(preset.neutralTint)
-    // Semantics too — foundations alone left hand-edited borders/ink sticking
-    // after Reset, so the theme disagreed with its System Style origin.
-    useDesignStore.setState({
-      architectureOverrides: resetThemeSemantics(
-        s.architectureOverrides,
-        preset.semantics,
-        themeKey,
-      ),
-    })
-    // Through the normal applier, so the neutral, the states and the page all
-    // re-derive exactly as they did when the style was first adopted.
-    applyAccent(preset.accent, true, themeKey)
-    loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
-    loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
-  })
-
   const parsedStrokeSm = parseFloat(stroke?.sm ?? '1px')
   const strokeSm = Number.isFinite(parsedStrokeSm) ? parsedStrokeSm : 1
   const strokeIndex = Math.max(0, STROKE_SM_STOPS.findIndex((stop) => stop === strokeSm))
-  // A System Style try-on from the library is preview-only until "Add to
-  // system" — the rail dims and stops taking input so it reads as inactive
-  // beside an uncommitted style, not as something you can edit in place.
-  const previewingStyle = tryOn !== null
-  const disabledShell = previewingStyle ? 'opacity-50 pointer-events-none select-none' : ''
+  // A try-on is EDITABLE. The rail used to dim to `opacity-50
+  // pointer-events-none` while one was live, on the theory that it should read
+  // as inactive beside an uncommitted style — and that is the reported
+  // "parálisis": the workspace lands on a seeded Core try-on, so the very first
+  // thing a new user sees is a whole column of controls they cannot touch, with
+  // no visible way out except a button in a different column.
+  //
+  // Nothing about the dimming was load-bearing. `resolveWriteTarget` already
+  // adopts the style on the first write and every path into the store
+  // (`commit`, `applyScrub`) goes through it, so the controls were mechanically
+  // ready the whole time — the CSS was the only obstacle. Editing a try-on now
+  // does exactly what editing anything else does, and the adopt announces
+  // itself (`announceAdopted`) so the new row in My themes isn't a surprise.
   const drawerContained = Boolean(containedDrawerRootRef)
   const colorPickerOpen = accentPickerOpen || neutralPickerOpen
 
   useEffect(() => {
-    onQuickEditOpenChange?.(colorPickerOpen || semanticDrawerOpen)
-  }, [colorPickerOpen, semanticDrawerOpen, onQuickEditOpenChange])
-
-  useEffect(() => {
-    if (!semanticDrawerOpen) return
-    setAccentPickerOpen(false)
-    setNeutralPickerOpen(false)
-  }, [semanticDrawerOpen])
-
-  useEffect(() => {
-    if (!previewingStyle) return
-    setAccentPickerOpen(false)
-    setNeutralPickerOpen(false)
-  }, [previewingStyle])
+    onQuickEditOpenChange?.(colorPickerOpen)
+  }, [colorPickerOpen, onQuickEditOpenChange])
 
   return (
     <aside
       aria-label={t('Quick settings')}
-      aria-disabled={previewingStyle || undefined}
       className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 bg-nav"
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
-      <div className={`flex-shrink-0 ${disabledShell}`}>
-        <ThemeIdentityBand previewTheme={previewTheme} />
+      <div className="flex-shrink-0">
+        <ThemeIdentityBand previewTheme={previewTheme} tryOnLabel={tryOn?.preset.label} />
       </div>
+      {/* "Add to system" sits directly UNDER the Name field, at the field's own
+          width — it used to live in the Themes Library's expanded style row,
+          which put the one control that commits a style in a different column
+          from the controls that edit it. Here, "this is the theme, this is its
+          name, this is how you keep it" reads as one block.
+
+          Rendered only while a try-on is live, because that is the only state
+          in which there is anything to add: once adopted, `onAdoptStyle`
+          re-points `previewTheme` and drops the try-on, so the button removes
+          itself and the Name field starts describing a real theme. It is not
+          disabled-when-idle — a permanent control that is dead most of the time
+          is the thing this fix exists to remove. */}
       {tryOn && (
-        <div className="flex-shrink-0 border-b border-line px-3 py-2 text-mini leading-relaxed text-fg-muted">
-          Trying <span className="font-semibold text-fg">{tryOn.preset.shortLabel}</span> — add it from the
-          library to edit here.
+        <div className="flex-shrink-0 px-3 pb-3">
+          <button
+            type="button"
+            onClick={addTryOnToSystem}
+            // `bg-fg text-app` — the CHROME's primary action, the same pill
+            // TopNav's Export uses. Deliberately not `bg-accent-ui`: this button
+            // belongs to Escala, not to the style being tried on, and painting
+            // it with the previewed accent made the one control that commits a
+            // theme change colour with the thing it was about to commit.
+            className="h-9 w-full rounded-lg bg-fg px-3 text-body font-semibold text-app transition-opacity hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          >
+            {t('Add to system')}
+          </button>
+          <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
+            {t('Trying {name}. Editing anything below adds it too.', { name: tryOn.preset.shortLabel })}
+          </p>
+          {adoptError && <p role="alert" className="mt-1.5 text-mini text-status-danger">{adoptError}</p>}
         </div>
       )}
       {/* Only this region scrolls; the Undo bar below is a pinned footer, so it
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
-      <div className={`flex flex-1 min-h-0 flex-col ${disabledShell}`}>
+      <div className="flex flex-1 min-h-0 flex-col">
       <ThemeRailScrollRegion>
       <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
-        {foundation === 'color' && (
         <EditionCard
           title="Color edition"
           foundationKey="color"
@@ -1426,26 +1490,8 @@ export default function ThemeQuickSettingsRail({
           </SettingItem>
 
         </EditionCard>
-        )}
 
-        {/* The theme's semantic colour roles, grouped exactly as the Semantics
-            table groups them. Scroll past the Edition card and you are editing
-            the same tokens, from the same projection — the card is the fast way
-            to move the whole system, this is the precise way to move one role. */}
-        {foundation === 'color' && (
-          <SemanticTokenGroups
-            previewTheme={previewTheme}
-            previewAppearance={previewAppearance}
-            stackGap={QUICK_RAIL_STACK_GAP}
-            onEditingChange={setSemanticDrawerOpen}
-            colorPickerOpen={colorPickerOpen}
-            containedRootRef={containedDrawerRootRef}
-            onOpenPrimitiveFamily={onOpenPrimitiveFamily}
-            onOpenInVariables={onOpenInVariables}
-          />
-        )}
-
-        {foundation === 'typography' && (() => {
+        {(() => {
           // The SAME two families Variables · Type ships (`font-family-body` /
           // `font-family-display`) — the quick card showed only the body one,
           // so a theme with a distinct heading face (Nature's Fraunces over DM
@@ -1497,7 +1543,6 @@ export default function ThemeQuickSettingsRail({
           )
         })()}
 
-        {foundation === 'radius' && (
         <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Radius" hint="Boxes, fields and selectors round independently. Regrade the underlying scale in Variables.">
             <RadiusCard
@@ -1507,9 +1552,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
-        )}
 
-        {foundation === 'shadow' && (
         <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
@@ -1518,9 +1561,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
-        )}
 
-        {foundation === 'sizes' && (
         <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
             <BaseUnitCard
@@ -1558,9 +1599,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
-        )}
 
-        {foundation === 'stroke' && (
         <EditionCard title="Stroke edition" foundationKey="stroke" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
             <div>
@@ -1580,7 +1619,7 @@ export default function ThemeQuickSettingsRail({
                   const next = STROKE_SM_STOPS[index]
                   applyScrub('Border width updated', (themeKey) => setStroke(themeKey, { ...stroke, sm: `${next}px` }))
                 }}
-                className="mt-2"
+                className={ROW_GAP_CONTROL}
               />
               <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
                 {STROKE_SM_STOPS.map((stop) => <span key={stop}>{stop === 0 ? 'None' : stop}</span>)}
@@ -1588,12 +1627,8 @@ export default function ThemeQuickSettingsRail({
             </div>
           </SettingItem>
         </EditionCard>
-        )}
 
-        {/* Scoped to the Sizes panel — it resets the three dials that panel
-            owns (Fields · Selectors · Containers), so it has no business under
-            Color or Stroke. */}
-        {foundation === 'sizes' && (
+        {(
           inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
           inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
           (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP
@@ -1610,33 +1645,12 @@ export default function ThemeQuickSettingsRail({
             Reset sizes to the standard ramp
           </button>
         )}
-        {/* The way BACK. Adopting a style is now one edit away, which only
-            works if undoing that exploration is equally cheap — otherwise the
-            first edit feels irreversible and you get the paralysis this whole
-            row exists to remove. It resets to the style the theme came FROM
-            (`themeOrigin`), or to the system defaults for a hand-made theme,
-            and lands in the same 9s Undo as every other edit. */}
-        <div className="mt-1 flex items-center justify-between gap-2 border-t border-line pt-3">
-          <div className="min-w-0">
-            <p className="truncate text-mini font-medium text-fg-muted">{t('Reset theme')}</p>
-            <p className="truncate text-micro text-fg-faint">{t(resetTargetLabel)}</p>
-          </div>
-          <button
-            type="button"
-            onClick={resetTheme}
-            title={`Reset this theme to ${resetTargetLabel}`}
-            aria-label={`Reset this theme to ${resetTargetLabel}`}
-            className="h-7 w-7 flex-shrink-0 grid place-items-center rounded-lg border border-line text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-          >
-            <ResetIcon />
-          </button>
-        </div>
       </div>
       </ThemeRailScrollRegion>
 
       <AnimatePresence>
         {undo && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className={`flex-shrink-0 border-t border-line bg-app px-4 py-2 ${disabledShell}`}>
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className="flex-shrink-0 border-t border-line bg-app px-4 py-2">
             <button type="button" onClick={restore} className="text-caption font-medium text-accent-ui hover:underline underline-offset-2">
               Undo {undo.label}
             </button>

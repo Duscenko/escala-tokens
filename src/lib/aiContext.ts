@@ -21,26 +21,49 @@ export interface AIContextCopy {
   instruction: string
 }
 
+/** Shared success toast for every Copy page / Copy context control. */
+export const AGENT_CONTEXT_TOAST = 'Copied. Paste into any LLM or design agent.'
+export const AGENT_CONTEXT_TOAST_MORE = 'See more'
+
+/** Docs FAQ accordion id — toast “See more” opens this entry. */
+export const AGENT_CONTEXT_FAQ_ID = 'send-to-agent'
+export const OPEN_FAQ_EVENT = 'escala:open-faq'
+
+let pendingFaqItem: string | null = null
+
+/** Switch to Docs → FAQ and open `itemId` (consumed by `FaqArticle` on mount). */
+export function requestOpenFaq(itemId: string = AGENT_CONTEXT_FAQ_ID) {
+  pendingFaqItem = itemId
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(OPEN_FAQ_EVENT, { detail: { item: itemId } }))
+}
+
+export function takePendingFaqItem(): string | null {
+  const id = pendingFaqItem
+  pendingFaqItem = null
+  return id
+}
+
 export const AI_CONTEXT_COPY: Record<AIContextScope, AIContextCopy> = {
   global: {
     label: 'Copy context to Agents',
     done: 'Copied',
     hint: 'Pastes the system into a chat (no install). For Cursor or Claude to keep it in the repo, follow Docs → Use in code.',
-    toast: 'System context copied for agents',
+    toast: AGENT_CONTEXT_TOAST,
     instruction: 'Use this markdown as the source of truth for the whole product. Prefer these token names over exploring the repo. Do not invent parallel names, hex, or px when a token exists.',
   },
   component: {
     label: 'Copy context to Agents',
     done: 'Copied',
     hint: 'Pastes this page into a chat (no install): Figma set, live tokens, semantic color bindings, and the API. The agent can implement the component without guessing names or px.',
-    toast: 'Component context copied for agents',
+    toast: AGENT_CONTEXT_TOAST,
     instruction: 'Use this markdown as the source of truth for implementing this component in code or Figma. Bind paints to semantic variables only. Layout comes from the Design tokens tables — do not invent px.',
   },
   variable: {
     label: 'Copy context to Agents',
     done: 'Copied',
     hint: 'Pastes this foundation into a chat (no install): why the tokens exist, live names, and how they ship in CSS, JSON, and Figma.',
-    toast: 'Variable context copied for agents',
+    toast: AGENT_CONTEXT_TOAST,
     instruction: 'Use this markdown as the source of truth for this foundation only. Prefer these token names in CSS, JSON, and Figma. Do not hardcode px, rem, or hex when a token exists.',
   },
 }

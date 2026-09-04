@@ -194,6 +194,9 @@ export function derivedStopsFor(id: string, accent: string): GradientStop[] | nu
 export const LINKED_GRADIENT_TONES: Record<string, { tone: number; pos: number }[]> = {
   'brand-cover': [{ tone: 9, pos: 0 }, { tone: 12, pos: 100 }],
   aurora: [{ tone: 7, pos: 0 }, { tone: 9, pos: 50 }, { tone: 11, pos: 100 }],
+  // Radial glow: a chromatic mid (border band) to the text-end — not brand-cover's
+  // solid→deep descent, not Aurora's three-stop walk. Same ramp, different shape.
+  'moss-glow': [{ tone: 7, pos: 0 }, { tone: 11, pos: 100 }],
 }
 
 /** True when this gradient can be accent-linked at all (the built-ins can; a
@@ -244,9 +247,20 @@ export function linkedStopsFor(
 
 // ── Defaults ─────────────────────────────────────────────────────────────────
 
-/** Fresh default gradient set. Brand Cover + Aurora are derived from `accent`
- *  (defaults to the app's default violet) so a new system's gradients already
- *  match its brand; Moss Glow stays a fixed example of a non-brand gradient. */
+/** The pre-link Moss Glow seed — a hardcoded lime that ignored the theme.
+ *  Migration-only: detect an untouched decorative green and convert it. Nothing
+ *  live should paint these hexes. */
+export const LEGACY_MOSS_GLOW_STOPS: GradientStop[] = [
+  { color: '#66c61c', pos: 0 },
+  { color: '#16653a', pos: 100 },
+]
+
+/** Fresh default gradient set. All three built-ins are accent-linked so a new
+ *  system's gradients already match its brand — Brand Cover and Aurora as
+ *  linear walks, Moss Glow as a radial glow on the same ramp. Omitted `scale`
+ *  ⇒ the legacy hex derivation for Cover/Aurora (which the v45 migration then
+ *  converts); Moss Glow has no pre-tone derivation, so it still needs a ramp
+ *  (or the v71 migration) to become tone-backed. */
 export function makeDefaultGradients(
   accent: string = DEFAULT_ACCENT,
   /** The accent's 12-tone ramp, so a brand-new system's linked gradients are
@@ -285,10 +299,8 @@ export function makeDefaultGradients(
       name: 'Moss Glow',
       type: 'radial',
       angle: 0,
-      stops: [
-        { color: '#66c61c', pos: 0 },
-        { color: '#16653a', pos: 100 },
-      ],
+      stops: (ramp && linkedStopsFor('moss-glow', ramp, undefined, darkScale)) || [...LEGACY_MOSS_GLOW_STOPS],
+      linked: true,
     },
   ]
 }

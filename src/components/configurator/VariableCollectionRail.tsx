@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react'
-import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
+import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients'
 
@@ -42,7 +42,7 @@ export function FolderIcon({ size = 12 }: { size?: number }) {
   return (
     <span
       aria-hidden
-      className="inline-block flex-shrink-0 bg-current"
+      className="block flex-shrink-0 bg-current"
       style={{
         width: size,
         height: size,
@@ -142,8 +142,8 @@ export function RailGroupNav<Key extends string>({
             aria-current={selected ? 'page' : undefined}
             aria-label={item.label}
             title={collapsed ? `${item.label}${item.count !== undefined ? ` · ${item.count}` : ''}${item.hint ? ` — ${item.hint}` : ''}` : item.hint}
-            className={`flex items-center rounded-lg text-left transition-colors ${
-              collapsed ? 'w-10 h-8 justify-center px-0' : 'w-full gap-2 px-2 py-2'
+            className={`rounded-lg text-left transition-colors ${
+              collapsed ? COLLAPSED_RAIL_WELL : 'flex w-full items-center gap-2 px-2 py-2'
             } ${
               selected ? 'bg-elevated text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
             }`}
@@ -190,10 +190,10 @@ export default function VariableCollectionRail({
       style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
     >
       {context.header}
-      <div className={collapsed ? 'px-2 py-2' : 'px-3 py-3'}>
+      <div className={collapsed ? 'px-[8px] py-2' : 'px-3 py-3'}>
       <section aria-labelledby="variable-collections-heading">
         {!collapsed && <h2 id="variable-collections-heading" className="px-1 pb-2 text-ui font-semibold text-fg">Collections</h2>}
-        <div className="flex flex-col gap-0.5">
+        <div className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>
           {context.collections.map((collection) => {
             const selected = context.active === collection.key
             return (
@@ -204,11 +204,11 @@ export default function VariableCollectionRail({
                 aria-current={selected ? 'page' : undefined}
                 aria-label={collection.label}
                 title={collapsed ? collection.label : undefined}
-                className={`flex items-center rounded-lg transition-colors ${collapsed ? 'h-9 w-10 justify-center' : 'w-full gap-2 px-2 py-2 text-left'} ${
+                className={`rounded-lg transition-colors ${collapsed ? COLLAPSED_RAIL_WELL : 'flex w-full items-center gap-2 px-2 py-2 text-left'} ${
                   selected ? 'text-fg bg-elevated/70' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/40'
                 }`}
               >
-                <span className="flex-shrink-0"><FolderIcon /></span>
+                <span className="flex-shrink-0"><FolderIcon size={collapsed ? 16 : 12} /></span>
                 {!collapsed && <>
                   {/* Verbatim, no `uppercase` — these are names ("Color
                       primitives", "Shadow styles"), and shouting a name in CSS

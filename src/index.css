@@ -44,20 +44,25 @@
   inherits: true;
   initial-value: #ffffff;
 }
+@property --line-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0.8px;
+}
 @property --line-alpha {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.051);
+  initial-value: rgba(255, 255, 255, 0.06);
 }
 @property --line {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.051);
+  initial-value: rgba(255, 255, 255, 0.06);
 }
 @property --line-strong {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.051);
+  initial-value: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Status roles ──────────────────────────────────────────────────────────
@@ -85,8 +90,13 @@
 
 /* Semantic color utilities — track runtime CSS vars so they switch with `.dark`.
    bg-app/surface/elevated · text-fg/fg-muted/fg-faint · border-line (structure)
-   / border-line-strong (control outline). Two line roles, 1px, no opacities. */
+   / border-line-strong (control outline). Two line roles, 0.8px hairline
+   (1px on 1x displays), no opacities. */
 @theme inline {
+  /* Chrome hairline. Consumed by `border` / `border-r` / `divide-y` (the
+     default width, not `border-2`) and `ring-1`. Focus stays on `ring-2`. */
+  --default-border-width: var(--line-width);
+  --ring-width-1: var(--line-width);
   --color-app: var(--app);
   --color-surface: var(--surface);
   --color-elevated: var(--elevated);
@@ -205,17 +215,32 @@
   --fg: #18181b;
   --fg-muted: #52525b;
   --fg-faint: #737373;
-  /* Chrome lines — TWO roles, 1px always. Do not invent a third via
-     opacity on `--line` (`border-line/40` … `/80`): those tints were the
-     overlap chaos (a header seam at 60% meeting a column at full `--line`
-     reads as two colours stacked). Draw a seam ONCE — left owns `border-r`,
-     top owns `border-b`.
+  /* Chrome lines — TWO colour roles, ONE width. Hairline is 0.8px on
+     retina and floors to 1px below 2dppx (same guard `hairlineSafe` uses
+     for token strokes — a sub-pixel line vanishes on 1x). Do not invent a
+     third via opacity on `--line` (`border-line/40` … `/80`): those tints
+     were the overlap chaos (a header seam at 60% meeting a column at full
+     `--line` reads as two colours stacked). Draw a seam ONCE — left owns
+     `border-r`, top owns `border-b`.
+       --line-width   chrome hairline. `--default-border-width` and
+                      `ring-1` read this, so every `border-line` /
+                      `divide-line` / `border-line-strong` follows — borders
+                      AND separators. Not a token stroke (`stroke.sm`).
        --line         structure: columns, header bands, table lattice,
                       section separators. `border-line` / `divide-line` /
-                      `bg-line` for a 1px rule.
+                      `bg-line` for a hairline rule.
        --line-strong  control outline, only when fill is NOT the separator
                       (`bg-app` inputs, dashed add-rows). Hover of a
-                      `border-line` control. */
+                      `border-line` control. Same alpha as `--line` —
+                      two roles by usage, not a second ink %. */
+  --line-width: 0.8px;
+  @media (max-resolution: 1.99dppx) {
+    --line-width: 1px;
+  }
+  /* 7% black, not 6%. Dark 6% white on `--app` #151516 is ΔL 0.0604;
+     the same 6% black on `--app` #f5f5f5 is ΔL 0.0452 (25% fainter —
+     near-white compression). 7% lands at ΔL 0.0513; 8% would match
+     dark exactly but reads as a frame, not a hairline. */
   --line-alpha: rgba(0, 0, 0, 0.07);
   --line: var(--line-alpha);
   --line-strong: var(--line-alpha);
@@ -262,6 +287,11 @@
   }
 }
 
+/* Hairline painted as a fill (`RailDivider`, inline separators). Same
+   `--line-width` as the border utilities so a seam and a rule can meet. */
+.bg-line.h-px { height: var(--line-width); }
+.bg-line.w-px { width: var(--line-width); }
+
 /* Forces the LIGHT palette on a subtree, mirroring `.dark` below. Needed
    because a subtree can opt INTO dark with `class="dark"` but had no way to opt
    back out — the Token Details dialog paints each mode's card in that mode's
@@ -280,6 +310,7 @@
   --fg: #18181b;
   --fg-muted: #52525b;
   --fg-faint: #737373;
+  /* Same 7% as `:root` — see the ΔL note there. */
   --line-alpha: rgba(0, 0, 0, 0.07);
   --line: var(--line-alpha);
   --line-strong: var(--line-alpha);
@@ -408,7 +439,9 @@
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
   --fg-faint: #7b7b83;
-  --line-alpha: rgba(255, 255, 255, 0.051);
+  /* 6% white — a hairline on `--app` #151516 (ΔL 0.0604), not a frame.
+     `--line-strong` shares the alpha: two roles by usage, not a second %. */
+  --line-alpha: rgba(255, 255, 255, 0.06);
   --line: var(--line-alpha);
   --line-strong: var(--line-alpha);
   /* Active workspace-tab icon chip — dark fill, light glyph (same inversion
@@ -486,7 +519,7 @@ body {
   height: 18px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 1px solid var(--line-strong);
+  border: var(--line-width) solid var(--line-strong);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
@@ -495,7 +528,7 @@ body {
   height: 18px;
   border-radius: 9999px;
   background: #ffffff;
-  border: 1px solid var(--line-strong);
+  border: var(--line-width) solid var(--line-strong);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
@@ -601,10 +634,11 @@ body {
    chrome (app) and the table (app): one clear depth step, light and dark. */
 .foundation-layer-bar {
   background: var(--surface);
-  /* An inset shadow, not a border — a border-bottom eats 1px of the box's
-     OWN content height (box-sizing: border-box), so a tab sized to "fill
-     the strip" via items-end landed 1px short of the actual bottom edge. */
-  box-shadow: inset 0 -1px 0 var(--line);
+  /* An inset shadow, not a border — a border-bottom eats the hairline of
+     the box's OWN content height (box-sizing: border-box), so a tab sized
+     to "fill the strip" via items-end landed short of the actual bottom
+     edge. Thickness tracks `--line-width`. */
+  box-shadow: inset 0 calc(-1 * var(--line-width)) 0 var(--line);
   overflow: visible;
 }
 /* Tab-bearing bars drop the hairline — the real Chrome tab shape (see

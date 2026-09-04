@@ -7,7 +7,6 @@ import { generateColorScale } from '../../lib/colorUtils'
 import type { ColorScale } from '../../types/tokens'
 import ThemePanel from './ThemePanel'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
-import { adoptPreset } from '../../lib/adoptPreset'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
@@ -17,6 +16,12 @@ export { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 
 /** Shared with the hub and the Export wizard — see `themeDisplayName`. */
 const labelForTheme = themeDisplayName
+
+/** My themes in Get code and the library — own keys only, never the built-in
+ *  `light`/`dark` scaffolding or System style try-ons. */
+export function myThemeKeys(themeOrder: string[], themes: Record<string, unknown>): string[] {
+  return themeOrder.filter((key) => key !== 'light' && key !== 'dark' && Boolean(themes[key]))
+}
 
 function PlusIcon() {
   return (
@@ -34,16 +39,7 @@ function TrashIcon() {
   )
 }
 
-function TuneIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden>
-      <path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1" />
-      <circle cx="10" cy="4" r="1.4" /><circle cx="6" cy="8" r="1.4" /><circle cx="11" cy="12" r="1.4" />
-    </svg>
-  )
-}
-
-function LibraryOptionsIcon() {
+export function LibraryOptionsIcon() {
   return (
     <span
       aria-hidden
@@ -152,7 +148,7 @@ function DeleteMyThemesConfirmation({ count, onCancel, onConfirm }: { count: num
   )
 }
 
-function DeleteThemeConfirmation({
+export function DeleteThemeConfirmation({
   name, isPreviewed, isLast, onCancel, onConfirm,
 }: {
   name: string
@@ -236,7 +232,7 @@ export default function ThemeLibraryRail({
   onPreviewThemeChange,
   onStylePreview,
   activeStylePreview,
-  firstRun = false,
+  onOpenInCode,
   syncFooter,
 }: {
   previewTheme: string
@@ -251,13 +247,8 @@ export default function ThemeLibraryRail({
    *  local, the row stayed expanded offering "Add to system" for a style that
    *  had just been added, which is the confusion this fixes. */
   activeStylePreview?: StylePreview | null
-  /** This browser opened the workspace for the very first time (captured once
-   *  by the shell — see its `firstRun`). Until the user commits a theme of
-   *  their own, MY THEMES collapses to just the "Create your theme" invitation:
-   *  the two built-ins (Light / Dark) are still in the store and still drive the
-   *  preview, they're simply not offered as a choice on a screen whose whole
-   *  job right now is "start from a System Style". */
-  firstRun?: boolean
+  /** Get code — select this theme and switch the workspace to that tab. */
+  onOpenInCode?: (theme: string) => void
   /** GitHub · Figma sync destinations — pinned above the app footer. */
   syncFooter?: ReactNode
 }) {
@@ -267,10 +258,11 @@ export default function ThemeLibraryRail({
   const chromeTheme = useTheme()
   const [editor, setEditor] = useState<false | 'new' | string>(false)
   const [deleteKey, setDeleteKey] = useState<string | null>(null)
+  const [rowMenuKey, setRowMenuKey] = useState<string | null>(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const optionsRootRef = useRef<HTMLDivElement>(null)
+  const rowMenuRootRef = useRef<HTMLDivElement>(null)
   const [confirmDeleteOwnThemes, setConfirmDeleteOwnThemes] = useState(false)
-  const [presetError, setPresetError] = useState<string | null>(null)
   // Per-preset appearance choice. Sparse on purpose — an entry only exists once
   // the user has explicitly picked a side; until then a preset previews in
   // whichever appearance the WORKSPACE is in (`chromeTheme`), so a dark session
@@ -282,13 +274,23 @@ export default function ThemeLibraryRail({
   // "Has the user made a theme of their own yet?" — anything beyond the two
   // built-ins the store ships. Renaming Light/Dark doesn't count as creating
   // one, and shouldn't: the keys are what identify them.
-  const hasOwnTheme = availableThemes.some((key) => key !== 'light' && key !== 'dark')
-  const ownThemeKeys = availableThemes.filter((key) => key !== 'light' && key !== 'dark')
-  // On a first-run browser MY THEMES shows only the "Create your theme" door —
-  // until the user actually makes one (adopting a System Style counts, it mints
-  // a real theme), at which point the built-ins rejoin the list beside it.
-  const showBuiltInThemes = !firstRun || hasOwnTheme
-  const listedThemes = showBuiltInThemes ? availableThemes : []
+  const ownThemeKeys = myThemeKeys(themeOrder, themes)
+  const hasOwnTheme = ownThemeKeys.length > 0
+  // MY THEMES lists the user's OWN themes and nothing else, ever. The two
+  // built-ins (`light` / `dark`) stay in the store and still drive the preview
+  // — they are simply not a choice on a screen whose job is "start from a
+  // System Style or make your own".
+  //
+  // This used to be gated on `firstRun`, and that gate could not hold: it comes
+  // from `hasOnboarded()`, which is true as soon as the zustand persist key
+  // exists, and zustand writes that key on the first persisted change. So the
+  // very next RELOAD stopped counting as a first run and the two built-ins
+  // reappeared as rows named "Light" and "Dark" — reported as previous themes
+  // showing up by themselves. They also read as a duplicated pair, because
+  // since the v60 semantic model EVERY theme owns both a Light and a Dark map
+  // (`themeSemantics[key]`), so one theme per appearance is a distinction the
+  // data no longer makes.
+  const listedThemes = ownThemeKeys
   const kindOf = (preset: ThemeStylePreset) => presetKind[preset.id] ?? chromeTheme
   const corePreset = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
 
@@ -311,9 +313,21 @@ export default function ThemeLibraryRail({
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [optionsOpen])
+  useEffect(() => {
+    if (!rowMenuKey) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rowMenuRootRef.current?.contains(event.target as Node)) setRowMenuKey(null)
+    }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setRowMenuKey(null) }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [rowMenuKey])
 
   const previewPreset = (preset: ThemeStylePreset, appearance: 'light' | 'dark') => {
-    setPresetError(null)
     loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
     loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
     onStylePreview?.({ preset, appearance })
@@ -325,7 +339,7 @@ export default function ThemeLibraryRail({
   // committed: the try-on is an overlay, so Core is SHOWN, not added to My
   // themes.
   //
-  // Gated on `hasOwnTheme` alone, NOT on `firstRun`. Tying it to the first
+  // Gated on `hasOwnTheme` alone, never on a first-visit flag. Tying it to the first
   // browser visit meant the default only ever appeared once: a reload landed
   // the same user, still without a theme, back on the bare default — which is
   // the state this seed exists to avoid, not a state worth returning to.
@@ -337,23 +351,9 @@ export default function ThemeLibraryRail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const addPreset = (preset: ThemeStylePreset, customize: boolean) => {
-    setPresetError(null)
-    // `adoptPreset` is shared with the quick rail's auto-adopt, so an explicit
-    // "Add to system" and an edit-triggered adopt mint byte-identical themes.
-    // Commit the appearance the board is CURRENTLY showing (the sun/moon icon
-    // there owns that choice now) — you cannot preview one side and mint the
-    // other. Falls back to the chrome when no try-on is live.
-    const appearance = activeStylePreview?.preset.id === preset.id
-      ? activeStylePreview.appearance
-      : kindOf(preset)
-    const result = adoptPreset(preset, appearance)
-    if ('error' in result) { setPresetError(result.error); return }
-    clearStylePreview()
-    onPreviewThemeChange(result.key)
-    if (customize) setEditor(result.key)
-  }
-
+  // Adopting a style is the quick-settings rail's job now — `adoptPreset` is
+  // called there, from the "Add to system" button under the Name field and from
+  // the first-edit auto-adopt. This rail previews; it no longer commits.
   const deleteTheme = (key: string) => {
     clearStylePreview()
     const next = availableThemes.find((theme) => theme !== key)
@@ -379,7 +379,9 @@ export default function ThemeLibraryRail({
 
   return (
     <aside
-      className="flex-shrink-0 flex flex-col min-h-0 bg-panel"
+      id="themes-library"
+      tabIndex={-1}
+      className="flex-shrink-0 flex flex-col min-h-0 bg-nav outline-none"
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
@@ -404,7 +406,6 @@ export default function ThemeLibraryRail({
               hasOwnThemes={hasOwnTheme}
               onResetSuggestedStyles={() => {
                 setPresetKind({})
-                setPresetError(null)
                 if (corePreset) previewPreset(corePreset, chromeTheme)
                 setOptionsOpen(false)
               }}
@@ -417,11 +418,14 @@ export default function ThemeLibraryRail({
       <nav aria-label="Themes" className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
         <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
           <span className="text-caption font-semibold text-fg-muted">{t('My themes')}</span>
+          {/* Counts what the list SHOWS. It read `availableThemes.length`, so
+              a library with no themes of its own still claimed "2" — the two
+              hidden built-ins — over an empty list. */}
           <span
             className={THEME_RAIL_COUNT_BADGE}
-            title={t('{count} in this system', { count: availableThemes.length })}
+            title={t('{count} in this system', { count: listedThemes.length })}
           >
-            {availableThemes.length}
+            {listedThemes.length}
           </span>
         </div>
         <AnimatePresence initial={false}>
@@ -433,7 +437,7 @@ export default function ThemeLibraryRail({
             />
           )}
         </AnimatePresence>
-        <div className="flex flex-col gap-1">
+        <div ref={rowMenuRootRef} className="flex flex-col gap-1">
           {listedThemes.map((key) => {
             const active = key === previewTheme
             const kind = themeKinds[key] ?? 'light'
@@ -448,7 +452,7 @@ export default function ThemeLibraryRail({
                 // horizontal spacing.
                 className={`group relative flex items-center gap-2 p-1.5 rounded-xl border transition-colors ${
                   active
-                    ? 'border-accent-ui/30 bg-app shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
+                    ? 'border-line-strong bg-app shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
                     : THEME_RAIL_ROW_IDLE
                 }`}
               >
@@ -466,7 +470,7 @@ export default function ThemeLibraryRail({
                   onClick={() => { clearStylePreview(); onPreviewThemeChange(key) }}
                   aria-current={active ? 'true' : undefined}
                   // No padding of its own — the card owns it. Right room for the
-                  // trash is only claimed WHEN the trash is actually shown
+                  // menu is only claimed WHEN the menu is actually shown
                   // (active, or hover), so a resting inactive row is symmetric.
                   className={`flex-1 min-w-0 flex items-center text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
                     active ? 'pr-6' : 'group-hover:pr-6 group-focus-within:pr-6'
@@ -479,17 +483,46 @@ export default function ThemeLibraryRail({
                     {labelForTheme(key, themeLabels)}
                   </span>
                 </button>
-                <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
+                <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active || rowMenuKey === key ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
                   <button
                     type="button"
-                    onClick={() => setDeleteKey(key)}
-                    aria-label={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                    title={t('Delete {name}', { name: labelForTheme(key, themeLabels) })}
-                    className={`${THEME_RAIL_ICON_BTN} hover:text-status-danger focus-visible:ring-status-danger/50`}
+                    onClick={() => setRowMenuKey((open) => (open === key ? null : key))}
+                    aria-label={t('Theme options')}
+                    title={t('Theme options')}
+                    aria-haspopup="menu"
+                    aria-expanded={rowMenuKey === key}
+                    className={`${THEME_RAIL_ICON_BTN} ${rowMenuKey === key ? THEME_RAIL_ICON_BTN_ACTIVE : ''}`}
                   >
-                    <TrashIcon />
+                    <LibraryOptionsIcon />
                   </button>
                 </div>
+                <AnimatePresence>
+                  {rowMenuKey === key && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -4 }}
+                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-1.5 top-full z-[60] mt-1 w-44 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+                      role="menu" aria-label={t('Theme options')}
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setRowMenuKey(null); onOpenInCode?.(key) }}
+                        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+                      >
+                        {t('Open in code')}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setRowMenuKey(null); setDeleteKey(key) }}
+                        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-status-danger transition-colors hover:bg-status-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger/50"
+                      >
+                        {t('Delete')}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               <AnimatePresence initial={false}>
                 {deleteKey === key && (
@@ -576,34 +609,18 @@ export default function ThemeLibraryRail({
                         <span>{preset.foundations.radius?.md} radius</span>
                         <span className="text-right">{preset.foundations.stroke?.sm} border</span>
                       </div>
-                      {presetError && <p role="alert" className="mt-2 text-mini text-status-danger">{presetError}</p>}
-                      <div className="mt-2 grid grid-cols-[1fr_auto] gap-1.5">
-                        {/* `bg-fg text-app` — the CHROME's primary action (the
-                            same pill TopNav's Export uses), deliberately not
-                            `bg-accent-ui`. This button belongs to Escala, not to
-                            the style being tried on: painting it with the
-                            previewed theme's accent made the one control that
-                            commits a theme change colour with the thing it was
-                            about to commit. Theme-independent by construction —
-                            white on black ink in dark chrome, and the inverse in
-                            light — with no ink to solve for. */}
-                        <button
-                          type="button"
-                          onClick={() => addPreset(preset, false)}
-                          className="h-7 rounded-lg bg-fg px-2 text-mini font-semibold text-app transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                        >
-                          {t('Add to system')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => addPreset(preset, true)}
-                          title={t('Add and edit colors')}
-                          aria-label={t('Add and customize {name}', { name: preset.label })}
-                          className={`h-7 w-7 grid place-items-center rounded-lg text-fg-muted transition-colors ${THEME_RAIL_GLASS_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-                        >
-                          <TuneIcon />
-                        </button>
-                      </div>
+                      {/* No "Add to system" / "Add and customize" pair here any
+                          more. Both MOVED to the quick-settings rail, under the
+                          Name field (see its own note): committing a style and
+                          editing it are one intent, and splitting them across
+                          two columns meant the button that unlocked the editor
+                          lived nowhere near the editor it unlocked. An expanded
+                          row now does one thing — try the style on — and the
+                          canvas plus that rail carry the decision.
+
+                          "Add and customize" is gone rather than relocated: with
+                          the rail editable during a try-on, "add it and open the
+                          editor" is what simply editing already does. */}
                     </div>
                   )}
                 </div>

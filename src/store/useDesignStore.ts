@@ -35,6 +35,7 @@ import {
   type GradientDef, type GradientAssignments,
   makeDefaultGradients, makeDefaultGradientAssignments,
   brandCoverStops, brandAvatarStops, stopsMatch, derivedStopsFor, linkedStopsFor,
+  LEGACY_MOSS_GLOW_STOPS,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
@@ -1564,7 +1565,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 70,
+      version: 71,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2711,6 +2712,33 @@ export const useDesignStore = create<DesignStore>()(
         normalizeThemeTypeScales(persisted)
         if (Array.isArray(persisted.savedSystems)) {
           for (const sys of persisted.savedSystems) normalizeThemeTypeScales(sys?.snapshot)
+        }
+        // v70→v71: Moss Glow was a decorative lime (`#66c61c` → `#16653a`) that
+        // never tracked the accent — the one built-in gradient that stayed on a
+        // previous theme's green after every other token had moved. Convert the
+        // untouched seed into the same tone-backed link Brand Cover / Aurora
+        // already use. A hand-edited Moss Glow won't match the lime signature
+        // and is left alone (detect-don't-assume, same rule as v33's brand
+        // retint and v47/v49).
+        const linkMossGlow = (state: any) => {
+          if (!state || !Array.isArray(state.gradients)) return
+          const scale = state.primaryScale && typeof state.primaryScale === 'object'
+            ? state.primaryScale
+            : undefined
+          const darkScale = state.primaryDarkScale && typeof state.primaryDarkScale === 'object'
+            ? state.primaryDarkScale
+            : undefined
+          state.gradients = state.gradients.map((g: any) => {
+            if (g?.id !== 'moss-glow') return g
+            if (Array.isArray(g.stops) && g.stops.some((s: any) => typeof s.tone === 'number')) return g
+            if (!Array.isArray(g.stops) || !stopsMatch(g.stops, LEGACY_MOSS_GLOW_STOPS)) return g
+            const stops = linkedStopsFor('moss-glow', scale, undefined, darkScale)
+            return stops ? { ...g, linked: true, stops } : g
+          })
+        }
+        linkMossGlow(persisted)
+        if (Array.isArray(persisted.savedSystems)) {
+          for (const sys of persisted.savedSystems) linkMossGlow(sys?.snapshot)
         }
         return persisted
       },

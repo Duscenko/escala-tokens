@@ -13,7 +13,7 @@ import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } fro
 import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
 import { typeStyleCss } from './typeRoles'
-import { resolveLayoutRole, extractBreakpoints, hairlineSafe, type LayoutFamily } from './layoutTokens'
+import { resolveLayoutRole, extractBreakpoints, hairlineSafe, nestedRadius, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 
@@ -33,6 +33,80 @@ function hairlineSafeMap(stroke: Record<string, string>): Record<string, string>
 // Role lookup for the fallback resolver below.
 const ROLE_BY_KEY: Record<string, (typeof ALL_ROLES)[number]> =
   Object.fromEntries(ALL_ROLES.map((r) => [r.key, r]))
+
+/**
+ * `PreviewTokens` colour field → the Categorical role it resolves FROM.
+ *
+ * Read in two directions, which is the whole reason it's a table rather than a
+ * run of `put()` calls. FORWARD, `resolvePreviewTokens` uses it to paint the
+ * fields (only when the projection defines the slot, so a projection that
+ * omits one keeps its flat-resolved value instead of blanking the atom out).
+ * BACKWARD, `tokenInspector.ts` inverts it to answer "which roles does this
+ * component drink from" — `COMPONENT_COLOR_FIELDS` is generated from the
+ * specimens' own call graph and names FIELDS, and this is the only thing that
+ * turns those into role ids. Two tables would let the inspector name a role
+ * the preview doesn't actually paint.
+ */
+export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
+  surface: 'surface.page',
+  neutralFill: 'surface.layer-1',
+  // Second raised surface — a hovered menu row, a nested panel. Distinct
+  // from `surface.page`: specimens that painted a raised container with
+  // `t.surface` read as the page, which broke the moment a theme pointed
+  // `surface.page` anywhere but near-white. (`surface.input` already has
+  // its own resolver, `inputSurfaceOf`.)
+  layer2: 'surface.layer-2',
+  brandSolid: 'action.primary.default',
+  onBrand: 'content.on-action',
+  brandText: 'content.accent',
+  neutralText: 'content.primary',
+  fgMuted: 'content.secondary',
+  placeholderText: 'content.subtle',
+  disabledBg: 'action.disabled',
+  disabledText: 'content.disabled',
+  // `PreviewTokens.border` is the component stroke (inputs, selects), so
+  // it takes the CONTROL BOUNDARY — the role carrying WCAG 1.4.11 + APCA
+  // Lc 45. That role is `border.control` since phase 1 of
+  // design-plans/foundations-geometry-and-strokes.md split the neutral
+  // strokes by JOB; it was `border.default`, and before that
+  // `border.strong`. The value is unchanged across all three renames —
+  // only the name moved, so nothing here restyles.
+  border: 'border.control',
+  // `PreviewTokens.borderDefault` is the DECORATIVE outline (card edges,
+  // panel boundaries). It STAYS on `border.subtle` even though phase 1
+  // added a middle rung that is arguably the better match (tone 4, ΔL
+  // 0.112, against the reference export's own panel border at 0.099).
+  // Moving it was tried and reverted: every System Style overrides
+  // `border.subtle` with its own alpha (Glass sits at `{black-a.1}`,
+  // nearly invisible, on purpose) and none of them override the new
+  // `border.default`, so the repoint silently gave six curated styles a
+  // solid neutral card edge. Phase 1's job is to separate decoration from
+  // the control boundary, not to redecorate — the new rungs are added
+  // vocabulary, and moving a consumer onto one is its own decision.
+  borderDefault: 'border.subtle',
+  // These four are FILLS, and they were being fed the INK role.
+  //
+  // `PreviewTokens.errorColor` is documented as "destructive accent" and
+  // its flat definition is `pal.error[9]` — a solid. Specimens paint it
+  // as one: the Solid Danger button's background, the ContextMenu's
+  // Delete pill, the Avatar presence dots. Pointing it at
+  // `status.critical.content` — the tone SOLVED TO READ AS TEXT on a
+  // pale tint — meant a destructive button took its ink as its fill, and
+  // then drew `content.on-action` on top of it.
+  //
+  // It hid because in LIGHT the two roles resolve to the same hex
+  // (measured across all six styles: content == surface-solid == #b94136
+  // on Core). They only diverge in DARK, which is where it was reported.
+  //
+  // `status.*.surface-solid` is the role whose own description reads
+  // "Solid fill for destructive badges and buttons", and it is paired
+  // with `status.*.on-solid`. Using it restores agreement with the flat
+  // definition instead of contradicting it.
+  errorColor: 'status.critical.surface-solid',
+  warningColor: 'status.warning.surface-solid',
+  successColor: 'status.success.surface-solid',
+  infoColor: 'status.info.surface-solid',
+}
 
 export function resolvePreviewTokens(
   store: StoreState,
@@ -255,64 +329,9 @@ export function resolvePreviewTokens(
         if (css) (tokens as unknown as Record<string, unknown>)[field] = css
       }
       if (arch === 'categorical') {
-        put('surface', 'surface.page')
-        put('neutralFill', 'surface.layer-1')
-        // Second raised surface — a hovered menu row, a nested panel. Distinct
-        // from `surface.page`: specimens that painted a raised container with
-        // `t.surface` read as the page, which broke the moment a theme pointed
-        // `surface.page` anywhere but near-white. (`surface.input` already has
-        // its own resolver, `inputSurfaceOf`.)
-        put('layer2', 'surface.layer-2')
-        put('brandSolid', 'action.primary.default')
-        put('onBrand', 'content.on-action')
-        put('brandText', 'content.accent')
-        put('neutralText', 'content.primary')
-        put('fgMuted', 'content.secondary')
-        put('placeholderText', 'content.subtle')
-        put('disabledBg', 'action.disabled')
-        put('disabledText', 'content.disabled')
-        // `PreviewTokens.border` is the component stroke (inputs, selects), so
-        // it takes the CONTROL BOUNDARY — the role carrying WCAG 1.4.11 + APCA
-        // Lc 45. That role is `border.control` since phase 1 of
-        // design-plans/foundations-geometry-and-strokes.md split the neutral
-        // strokes by JOB; it was `border.default`, and before that
-        // `border.strong`. The value is unchanged across all three renames —
-        // only the name moved, so nothing here restyles.
-        put('border', 'border.control')
-        // `PreviewTokens.borderDefault` is the DECORATIVE outline (card edges,
-        // panel boundaries). It STAYS on `border.subtle` even though phase 1
-        // added a middle rung that is arguably the better match (tone 4, ΔL
-        // 0.112, against the reference export's own panel border at 0.099).
-        // Moving it was tried and reverted: every System Style overrides
-        // `border.subtle` with its own alpha (Glass sits at `{black-a.1}`,
-        // nearly invisible, on purpose) and none of them override the new
-        // `border.default`, so the repoint silently gave six curated styles a
-        // solid neutral card edge. Phase 1's job is to separate decoration from
-        // the control boundary, not to redecorate — the new rungs are added
-        // vocabulary, and moving a consumer onto one is its own decision.
-        put('borderDefault', 'border.subtle')
-        // These four are FILLS, and they were being fed the INK role.
-        //
-        // `PreviewTokens.errorColor` is documented as "destructive accent" and
-        // its flat definition is `pal.error[9]` — a solid. Specimens paint it
-        // as one: the Solid Danger button's background, the ContextMenu's
-        // Delete pill, the Avatar presence dots. Pointing it at
-        // `status.critical.content` — the tone SOLVED TO READ AS TEXT on a
-        // pale tint — meant a destructive button took its ink as its fill, and
-        // then drew `content.on-action` on top of it.
-        //
-        // It hid because in LIGHT the two roles resolve to the same hex
-        // (measured across all six styles: content == surface-solid == #b94136
-        // on Core). They only diverge in DARK, which is where it was reported.
-        //
-        // `status.*.surface-solid` is the role whose own description reads
-        // "Solid fill for destructive badges and buttons", and it is paired
-        // with `status.*.on-solid`. Using it restores agreement with the flat
-        // definition instead of contradicting it.
-        put('errorColor', 'status.critical.surface-solid')
-        put('warningColor', 'status.warning.surface-solid')
-        put('successColor', 'status.success.surface-solid')
-        put('infoColor', 'status.info.surface-solid')
+        for (const [field, id] of Object.entries(CATEGORICAL_FIELD_ROLE)) {
+          put(field as keyof PreviewTokens, id)
+        }
       }
     }
   }
@@ -372,6 +391,31 @@ export function radiusOf(t: PreviewTokens, key: string, fallback: string): strin
 export function radiusRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('radius', t.radiusRoles, t.radius ?? {}, role, fallback || radiusOf(t, 'md', '16px'))
 }
+
+/**
+ * Inner corner for a child flush inside a rounded box.
+ *
+ * Three caps, the tightest wins:
+ *  1. the parent's Boxes radius (never out-round the card)
+ *  2. the Fields radius (a nested alert is smaller than the card; reusing
+ *     Boxes on a short row is what read as a pill)
+ *  3. Steve Ruiz `outer − inset`, when the parent's curve still reaches the
+ *     child. Glass/Playful (32px boxes, 20px inset) land on 12. When padding
+ *     swallows the curve this cap is skipped — returning 0 squared Core.
+ */
+export function nestedRadiusOf(
+  t: PreviewTokens,
+  outerRole: string,
+  inset: string | number = 'inset-surface',
+): string {
+  const outer = parseFloat(radiusRoleOf(t, outerRole)) || 0
+  const field = parseFloat(radiusRoleOf(t, 'action')) || 0
+  const insetPx = typeof inset === 'number' ? inset : (parseFloat(spacingRoleOf(t, inset)) || 0)
+  const limit = nestedRadius(outer, insetPx)
+  const cap = Math.min(outer, field)
+  return `${Math.min(cap, limit || cap)}px`
+}
+
 export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('spacing', t.spacingRoles, t.spacing ?? {}, role, fallback)
 }
@@ -488,6 +532,39 @@ export function panelStyle(t: PreviewTokens, hex: string): CSSProperties {
 /** Raised container fill — categorical `surface.layer-1`, flat `background-secondary`. */
 export function elevatedSurfaceOf(t: PreviewTokens): string {
   return archTokenOf(t, 'surface.layer-1', t.neutralFill || t.surface)
+}
+
+/**
+ * FLOATING container fill — categorical `surface.layer-2`, falling back to
+ * layer-1 and then the page.
+ *
+ * The elevation contract the preview renders, stated once: the board is
+ * `surface.page`, a container resting ON it (card, module tile, header,
+ * sidebar) is `surface.layer-1`, and a container floating ABOVE another
+ * container (modal, dropdown panel, context menu, popover, toast) is
+ * `surface.layer-2`. Three roles, three depths, in that order.
+ *
+ * Every floating surface used to read `raisedBg(t)` — layer-1, i.e. the exact
+ * fill of the card it floats over — so a modal was the same colour as its own
+ * backdrop content and the only thing separating them was the shadow. That is
+ * the reported "los bg de los contenedores no saben cuál usar porque no están
+ * identificando el rol de ese elemento": nothing was wrong with the token, the
+ * container simply never asked for the depth it actually has.
+ *
+ * The fallback chain matters. A FLAT system has no `surface.layer-2` (its role
+ * catalogue stops at `background-secondary`), so falling back to layer-1 keeps
+ * those systems rendering byte-identically to before rather than inventing a
+ * third fill for them.
+ */
+export function overlaySurfaceOf(t: PreviewTokens): string {
+  return archTokenOf(t, 'surface.layer-2', t.layer2 || elevatedSurfaceOf(t))
+}
+
+/** Floating-panel fill, honouring the style's `panelBackground` treatment. */
+export function overlaySurfaceStyle(t: PreviewTokens): CSSProperties {
+  const fill = overlaySurfaceOf(t)
+  if (t.panelBackground === 'translucent') return panelStyle(t, fill)
+  return { background: fill }
 }
 
 /** Card / grouped-panel fill. Cards are elevation, never the `page` panel blend. */
