@@ -89,6 +89,43 @@ function ThemeViewSwitcher({ view, onChange }: {
   )
 }
 
+// Sun / moon assets carry a hardcoded `stroke="white"`, so they're painted as
+// CSS masks to follow the button's ink — same technique as ThemeViewSwitcher's
+// `ViewIcon` and the Themes Library toggle.
+const APPEARANCE_ICON: Record<ThemeAppearance, string> = {
+  light: '/icons/settings/light-mode.svg',
+  dark: '/icons/settings/dark-mode.svg',
+}
+
+/**
+ * ONE-icon toggle for the board's appearance: a dark board shows the sun (click
+ * to go light), a light board shows the moon — the icon is the action, not the
+ * current state. Sized to match `ThemeViewSwitcher` beside it (same `h-8`
+ * pill, same `h-7 min-w-7` button). Flips the PREVIEW only, never the workspace
+ * chrome.
+ */
+function PreviewAppearanceButton({ value, onChange }: {
+  value: ThemeAppearance
+  onChange: (appearance: ThemeAppearance) => void
+}) {
+  const { t } = useI18n()
+  const next: ThemeAppearance = value === 'dark' ? 'light' : 'dark'
+  const mask = `url("${APPEARANCE_ICON[next]}") center center / contain no-repeat`
+  return (
+    <div className="flex h-8 items-center rounded-lg p-0.5 border border-line bg-tab-bar">
+      <button
+        type="button"
+        onClick={() => onChange(next)}
+        aria-label={t('Preview in {appearance}', { appearance: t(next) })}
+        title={t('Preview in {appearance}', { appearance: t(next) })}
+        className="grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 text-fg-faint hover:bg-surface hover:text-fg"
+      >
+        <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
+      </button>
+    </div>
+  )
+}
+
 function IntegrationContextBar({ view, onBack }: { view: 'github' | 'figma'; onBack: () => void }) {
   const { t } = useI18n()
   return (
@@ -691,6 +728,15 @@ export default function ThemePreviewHub({
   const hubSurface: HubView | null = surface === 'artefacts' || surface === 'components' || surface === 'documentation'
     ? surface
     : null
+  const hubViewLabel = HUB_VIEWS.find((v) => v.key === hubSurface)?.label ?? ''
+  // Flip the PREVIEW's appearance (the board on the right), not the workspace
+  // chrome — same contract the Color-edition card's toggle had before it moved
+  // up here. Clearing `accentPreview` mirrors the rail's own wrapper so an
+  // optimistic hue paint doesn't linger across the swap.
+  const handleAppearanceChange = (appearance: ThemeAppearance) => {
+    setAccentPreview(null)
+    onPreviewAppearanceChange(appearance)
+  }
   const store = useDesignStore()
   const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
   const stylePreviewTokens = useMemo(
@@ -747,10 +793,7 @@ export default function ThemePreviewHub({
           foundation={quickFoundation}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
-          onPreviewAppearanceChange={(appearance) => {
-            setAccentPreview(null)
-            onPreviewAppearanceChange(appearance)
-          }}
+          onPreviewAppearanceChange={handleAppearanceChange}
           // "Go to advanced edition" IS `selectFoundation` — the shell handler
           // that switches to the Variables tab on a given foundation. Passing
           // it straight through is what makes the button land on the very
@@ -783,13 +826,22 @@ export default function ThemePreviewHub({
               className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl ${previewAppearance === 'dark' ? 'dark' : 'light'}`}
               style={{ background: pageCanvasColor }}
             >
-              {/* One header band for every hub view — page actions (Copy page,
-                  etc.) sit immediately left of the switcher; the switcher stays
-                  pinned on the right when you move between Artefacts ·
-                  Components · Documentation. */}
-              <div className="flex flex-shrink-0 items-center justify-end gap-3 px-3" style={{ height: THEME_BAND_H }}>
-                {surface === 'documentation' && hubDocActions}
-                <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
+              {/* One header band for every hub view — the active view's NAME
+                  sits top-left; page actions (Copy page…), the view switcher and
+                  the preview appearance toggle stay pinned on the right when you
+                  move between Artefacts · Components · Documentation. The
+                  sun/moon toggle flips ONLY the board on the right, not the
+                  workspace chrome — it used to live in the Color-edition card. */}
+              <div className="flex flex-shrink-0 items-center justify-between gap-3 px-3" style={{ height: THEME_BAND_H }}>
+                <span className="min-w-0 flex flex-col">
+                  <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
+                  <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
+                </span>
+                <div className="flex flex-shrink-0 items-center gap-3">
+                  {surface === 'documentation' && hubDocActions}
+                  <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
+                  <PreviewAppearanceButton value={previewAppearance} onChange={handleAppearanceChange} />
+                </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">

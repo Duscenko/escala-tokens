@@ -316,57 +316,6 @@ function SettingsSection({ label, children }: { label: string; children: React.R
  */
 export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow', 'sizes', 'stroke'] as const
 
-// Sun / moon, painted as CSS masks off the shipped assets (they carry a
-// hardcoded `stroke="white"`, so a bare <img> can't follow the button's ink).
-// Same technique — and the same two files — as the Themes Library's own
-// appearance toggle.
-const APPEARANCE_ICON: Record<ThemeAppearance, string> = {
-  light: '/icons/settings/light-mode.svg',
-  dark: '/icons/settings/dark-mode.svg',
-}
-
-/**
- * Which appearance of this theme the canvas shows.
- *
- * Lives in the Color panel's CARD HEADER, not as a `SettingItem` row of its
- * own: it is the one control here that writes no token (it re-reads each
- * family's light ramp or its dark twin), and the two rows under it — the
- * accent hue and the neutral tint — are exactly what it re-reads. A full row
- * spent on a view control, above the two it qualifies, read as a third token
- * setting.
- */
-function AppearanceToggle({ value, onChange }: {
-  value: ThemeAppearance
-  onChange: (appearance: ThemeAppearance) => void
-}) {
-  const { t } = useI18n()
-  return (
-    <span className="flex flex-shrink-0 items-center gap-px rounded-md border border-line bg-app/60 p-px" role="group" aria-label={t('Preview appearance')}>
-      {(['light', 'dark'] as const).map((appearance) => {
-        const on = value === appearance
-        const mask = `url('${APPEARANCE_ICON[appearance]}') center / contain no-repeat`
-        return (
-          <button
-            key={appearance}
-            type="button"
-            onClick={() => onChange(appearance)}
-            aria-pressed={on}
-            aria-label={t('Preview in {appearance}', { appearance: t(appearance) })}
-            title={t('Preview in {appearance}', { appearance: t(appearance) })}
-            // 24px target around a 14px glyph — the hit area grows, the mark
-            // does not, the rule `HitArea` follows everywhere else.
-            className={`grid h-6 w-6 place-items-center rounded transition-[background-color,opacity] ${
-              on ? 'bg-elevated text-fg opacity-100' : 'text-fg-muted opacity-40 hover:opacity-75'
-            } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-          >
-            <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
-          </button>
-        )
-      })}
-    </span>
-  )
-}
-
 /**
  * One foundation's quick panel: a titled card, its controls, and the single
  * door to the full token table.
@@ -1366,7 +1315,6 @@ export default function ThemeQuickSettingsRail({
         <EditionCard
           title="Color edition"
           foundationKey="color"
-          trailing={<AppearanceToggle value={previewAppearance} onChange={onPreviewAppearanceChange} />}
           onOpenAdvanced={onOpenAdvanced}
         >
           <SettingItem>
