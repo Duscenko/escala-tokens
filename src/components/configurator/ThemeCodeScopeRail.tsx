@@ -5,6 +5,7 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { useI18n } from '../../lib/i18n'
 import { COLOR_RAIL_WIDTH } from './colorControls'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { myThemeKeys, DeleteThemeConfirmation, LibraryOptionsIcon } from './ThemeLibraryRail'
 
 export type CodeThemeScope = string
@@ -70,7 +71,7 @@ function ThemeRowMenu({
         type="button"
         role="menuitem"
         onClick={onOpenInCode}
-        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+        className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
       >
         {t('Open in code')}
       </button>
@@ -148,7 +149,7 @@ export default function ThemeCodeScopeRail({
 
   return (
     <aside
-      className="flex h-full min-h-0 flex-shrink-0 flex-col border-r border-line bg-app"
+      className={`flex h-full min-h-0 flex-shrink-0 flex-col border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: COLOR_RAIL_WIDTH }}
       aria-label={t('Themes')}
     >
@@ -183,7 +184,7 @@ export default function ThemeCodeScopeRail({
                   aria-checked={isSelected}
                   onClick={() => selectTheme(key)}
                   className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                    isSelected ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06]'
+                    isSelected ? 'bg-app text-fg shadow-sm' : 'text-fg-muted hover:bg-elevated hover:text-fg'
                   }`}
                 >
                   <RadioMark selected={isSelected} />
@@ -199,9 +200,9 @@ export default function ThemeCodeScopeRail({
                   title={t('Theme options')}
                   aria-haspopup="menu"
                   aria-expanded={menuKey === key}
-                  className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-[color,background-color,opacity] hover:bg-white/45 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 dark:hover:bg-white/[0.06] ${
+                  className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-[color,background-color,opacity] hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                     menuKey === key || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                  } ${menuKey === key ? 'bg-white/45 text-fg dark:bg-white/[0.06]' : ''}`}
+                  } ${menuKey === key ? 'bg-elevated text-fg' : ''}`}
                 >
                   <LibraryOptionsIcon />
                 </button>

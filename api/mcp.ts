@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     const proto = (req.headers['x-forwarded-proto'] as string) || 'https'
-    const host = req.headers.host || 'www.escalatokens.com'
+    const host = req.headers.host || 'escalatokens.com'
     const origin = `${proto}://${host}`
     return res.status(200).json(mcpDiscovery(origin))
   }

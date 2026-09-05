@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { RailToggle } from './colorControls'
 import VariableCollectionRail, { RailNoGroups, VariableCollectionProvider, type VariableCollectionItem, type VariableCollectionKey } from './VariableCollectionRail'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
 // One workbench band (family heading + icon rail) for every Variables
 // Generator section. Mounted by Configurator OUTSIDE the keyed page motion,
@@ -34,7 +35,7 @@ export default function FoundationWorkbench({
   children: ReactNode
 }) {
   const embeddedRailHeader = (
-    <div className={`sticky top-0 z-20 flex h-[52px] items-center border-b border-line bg-app ${railCollapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-3 pr-2'}`}>
+    <div className={`sticky top-0 z-20 flex h-[52px] items-center border-b border-line ${WORKSPACE_CHROME} ${railCollapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-3 pr-2'}`}>
       {/* The foundation's OWN name, not a bare "Variables" — `label` is
           `section.variablesLabel` ("Color Variables", "Text Variables", …), so
           the rail header says which variables it lists. */}

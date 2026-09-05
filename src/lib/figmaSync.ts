@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateTokenJSON, setActiveThemeHint } from './tokenGenerator'
+import { generateTokenJSON, setActiveThemeHint, type GenerateTokenOptions } from './tokenGenerator'
 import { DEFAULT_PUBLISH_ORIGIN } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
@@ -87,8 +87,22 @@ export interface PublishResult {
  * `Authorization: Bearer`. The claim also lands in `.escala/system.json` when
  * the system is pushed to GitHub, so another machine can recover it.
  */
-export async function publishTokens(theme?: string): Promise<PublishResult> {
-  if (theme) setActiveThemeHint(theme)
+export type PublishTokensInput = Pick<GenerateTokenOptions, 'theme' | 'themes' | 'modes' | 'project' | 'section'>
+
+function publishOptions(
+  themeOrOpts?: string | PublishTokensInput,
+  section?: string,
+): PublishTokensInput {
+  if (themeOrOpts && typeof themeOrOpts === 'object') return themeOrOpts
+  return { theme: themeOrOpts, section }
+}
+
+export async function publishTokens(
+  themeOrOpts?: string | PublishTokensInput,
+  section?: string,
+): Promise<PublishResult> {
+  const opts = publishOptions(themeOrOpts, section)
+  if (opts.theme) setActiveThemeHint(opts.theme)
   const slug = syncProjectId()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const claim = getStoredClaim(slug)
@@ -99,7 +113,13 @@ export async function publishTokens(theme?: string): Promise<PublishResult> {
     res = await fetch(syncPath(), {
       method: 'POST',
       headers,
-      body: JSON.stringify(generateTokenJSON(undefined, theme ? { theme } : undefined)),
+      body: JSON.stringify(generateTokenJSON(undefined, {
+        ...(opts.theme ? { theme: opts.theme } : {}),
+        ...(opts.themes?.length ? { themes: opts.themes } : {}),
+        ...(opts.modes?.length ? { modes: opts.modes } : {}),
+        ...(opts.project?.trim() ? { project: opts.project.trim() } : {}),
+        ...(opts.section ? { section: opts.section } : {}),
+      })),
     })
   } catch {
     return { ok: false, reason: 'network' }
@@ -159,9 +179,21 @@ export function describePublishFailure(reason: PublishFailureReason | undefined)
  */
 export function useAutoFigmaSync(
   onStateChange?: (state: FigmaPublishState, reason?: PublishFailureReason) => void,
-  activeTheme?: string,
+  activeThemeOrOpts?: string | PublishTokensInput,
+  section?: string,
 ): void {
   const auto = useDesignStore((s) => s.autoSyncFigma)
+  const opts = typeof activeThemeOrOpts === 'object' && activeThemeOrOpts
+    ? activeThemeOrOpts
+    : { theme: activeThemeOrOpts, section }
+  const activeTheme = opts.theme
+  const publishKey = JSON.stringify({
+    theme: opts.theme ?? null,
+    themes: opts.themes ?? null,
+    modes: opts.modes ?? null,
+    project: opts.project ?? null,
+    section: opts.section ?? section ?? null,
+  })
 
   useEffect(() => {
     if (activeTheme) setActiveThemeHint(activeTheme)
@@ -169,16 +201,29 @@ export function useAutoFigmaSync(
 
     let timer: ReturnType<typeof setTimeout> | undefined
     let lastSig = ''
+    const publishOpts: PublishTokensInput = {
+      ...opts,
+      section: opts.section ?? section,
+    }
 
     const schedule = () => {
       if (activeTheme) setActiveThemeHint(activeTheme)
-      const sig = JSON.stringify(generateTokenJSON(undefined, activeTheme ? { theme: activeTheme } : undefined))
+      const payload = generateTokenJSON(undefined, {
+        ...(publishOpts.theme ? { theme: publishOpts.theme } : {}),
+        ...(publishOpts.themes?.length ? { themes: publishOpts.themes } : {}),
+        ...(publishOpts.modes?.length ? { modes: publishOpts.modes } : {}),
+        ...(publishOpts.project?.trim() ? { project: publishOpts.project.trim() } : {}),
+        ...(publishOpts.section ? { section: publishOpts.section } : {}),
+      }) as { editor?: unknown }
+      // Section is chrome. A tab switch must not republish the token blob.
+      const { editor: _editor, ...forSig } = payload
+      const sig = JSON.stringify(forSig)
       if (sig === lastSig) return
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         lastSig = sig
         onStateChange?.('publishing')
-        void publishTokens(activeTheme).then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
+        void publishTokens(publishOpts).then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
       }, 1500)
     }
 
@@ -189,5 +234,5 @@ export function useAutoFigmaSync(
       unsubscribe()
       if (timer) clearTimeout(timer)
     }
-  }, [auto, onStateChange, activeTheme])
+  }, [auto, onStateChange, activeTheme, publishKey, section])
 }

@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo, Fragment, type ComponentType, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
-import { themeBrandRamp } from '../lib/themeSources'
-import { isLiveEnvironment, publishTokens, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
+import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
+import { defaultFigmaSyncModes, type FigmaSyncMode } from '../lib/figmaSyncModes'
+import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
+import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
@@ -15,7 +18,7 @@ import type { VariableCollectionItem, VariableCollectionKey } from '../component
 import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { resolveListedTheme } from '../lib/themeLibrary'
-import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
+import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
@@ -26,6 +29,7 @@ import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
+import { usePopoverPlacement } from '../components/configurator/colorControls'
 import type { ThemeAppearance } from '../lib/themeModes'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
@@ -314,7 +318,7 @@ function SyncTrack({
     <div
       role="tablist"
       aria-label="Sync destinations"
-      className="flex h-9 w-full items-center gap-0.5 rounded-xl bg-chip-rest p-1 dark:bg-tab-bar"
+      className="flex h-9 w-full items-center gap-0.5 rounded-xl bg-app p-1"
     >
       {items.map((item) => {
         const { key, label, status, statusText, active, Icon, onClick } = item
@@ -462,7 +466,7 @@ function ThemeWorkspaceTabs({
 }) {
   const { t } = useI18n()
   return (
-    <div className="theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line bg-tab-bar pl-[8px] pr-3 xl:pr-4">
+    <div className={`theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line ${WORKSPACE_CHROME} pl-[8px] pr-3 xl:pr-4`}>
       <div
         role="tablist"
         aria-label={t('Theme workspace')}
@@ -521,17 +525,132 @@ function ThemeWorkspaceTabs({
   )
 }
 
-function ExportPill({ onClick }: { onClick: () => void }) {
+const EXPORT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+const EXPORT_MENU_W = 220
+const EXPORT_HALF =
+  'transition-[color,background-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)]'
+
+function ExportMenuGlyph({ src }: { src: string }) {
+  const mask = `url('${src}') center / contain no-repeat`
+  return <span aria-hidden className="h-3.5 w-3.5 flex-shrink-0 bg-current" style={{ WebkitMask: mask, mask }} />
+}
+
+function ExportPill({
+  onExport,
+  onSyncFigma,
+  onConnectGithub,
+  onExportCode,
+  onConnectMcp,
+}: {
+  onExport: () => void
+  onSyncFigma: () => void
+  onConnectGithub: () => void
+  onExportCode: () => void
+  onConnectMcp: () => void
+}) {
   const { t } = useI18n()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const place = usePopoverPlacement(rootRef, open, { prefer: 200, min: 160, max: 280 })
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const rect = rootRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const left = Math.max(8, Math.min(window.innerWidth - EXPORT_MENU_W - 8, rect.right - EXPORT_MENU_W))
+    setPos({
+      left,
+      top: place.up ? rect.top - 8 : rect.bottom + 6,
+    })
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, place.up])
+
+  const pick = (go: () => void) => {
+    setOpen(false)
+    go()
+  }
+
+  const itemClass = `flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-caption font-medium text-fg transition-colors hover:bg-fg/8 ${EXPORT_FOCUS}`
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 text-caption font-medium text-black transition-[color,background-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-    >
-      <ExportIcon />
-      <span>{t('Export')}</span>
-    </button>
+    <div ref={rootRef} className="relative inline-flex h-8 flex-shrink-0">
+      <div className="inline-flex h-8 overflow-hidden rounded-lg bg-white text-black">
+        <button
+          type="button"
+          onClick={onExport}
+          className={`inline-flex h-full items-center gap-1.5 px-2.5 text-caption font-medium ${EXPORT_HALF} active:scale-[0.98] ${EXPORT_FOCUS}`}
+        >
+          <ExportIcon />
+          <span>{t('Export')}</span>
+        </button>
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={t('More export destinations')}
+          onClick={() => setOpen((next) => !next)}
+          className={`grid h-full w-8 place-items-center border-l border-black/10 ${EXPORT_HALF} ${EXPORT_FOCUS}`}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={open ? 'rotate-180' : undefined}>
+            <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+      {open && pos && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label={t('More export destinations')}
+          className="fixed z-[70] overflow-hidden rounded-lg border border-line-strong bg-app py-1 shadow-lg"
+          style={{
+            width: EXPORT_MENU_W,
+            left: pos.left,
+            ...(place.up ? { bottom: window.innerHeight - (rootRef.current?.getBoundingClientRect().top ?? 0) + 6 } : { top: pos.top }),
+            maxHeight: place.max,
+          }}
+        >
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExport)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><ExportIcon /></span>
+            {t('Export')}
+          </button>
+          <div className="my-1 border-t border-line" />
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onSyncFigma)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><FigmaGlyph size={14} /></span>
+            {t('Sync Figma')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
+            {t('Connect GitHub')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExportCode)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><CodeIcon /></span>
+            {t('Export code')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectMcp)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">
+              <ExportMenuGlyph src="/icons/settings/mcp.svg" />
+            </span>
+            {t('Connect with MCP')}
+          </button>
+        </div>,
+        document.body,
+      )}
+    </div>
   )
 }
 
@@ -587,11 +706,16 @@ export default function Configurator() {
   // (About as the landing tab, Core already tried on, the Themes Library
   // collapsed to just "Create your theme") must hold for the whole session.
   const [firstRun] = useState(() => !hasOnboarded())
+  // App deep-link (`?project=&section=`). Per-window, not Zustand — two
+  // windows can sit on two sections of the same system. A shared section
+  // wins over the first-visit About landing.
+  const [incomingWorkspace] = useState(() => parseWorkspaceSearch(window.location.search))
+  const incomingPlace = incomingWorkspace.place
   // Every session lands on Variables · Color — EXCEPT a first-time visitor,
   // who lands on About instead. This is the one exception to "no separate
   // landing screen": About is a real tab a returning user can still switch to
   // any time, not a wizard step.
-  const [tab, setTab] = useState<Tab>(() => (firstRun ? 'about' : 'foundations'))
+  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? (firstRun ? 'about' : 'foundations'))
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -600,14 +724,14 @@ export default function Configurator() {
   useEffect(() => {
     if (tab !== 'about') markOnboarded()
   }, [tab])
-  const [activeFoundation, setActiveFoundation] = useState<string>('color')
+  const [activeFoundation, setActiveFoundation] = useState<string>(() => incomingPlace?.foundation ?? 'color')
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
-  const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>('preview')
-  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>('artefacts')
+  const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => incomingPlace?.workspace ?? 'preview')
+  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => incomingPlace?.surface ?? 'artefacts')
   const [codeScope, setCodeScope] = useState<CodeThemeScope>('')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
-    () => COMPONENTS.find((c) => c.key === 'Button') ?? null,
+    () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
   const [exportMode, setExportMode] = useState<ExportMode>(null)
   // Manual Figma publishing is one interaction shared by the top bar and the
@@ -636,7 +760,11 @@ export default function Configurator() {
   // Figma Variables hierarchy: family → collection → group. Remembering the
   // last collection per family prevents Color Semantics from forcing Radius
   // to open on semantics too.
-  const [collectionByFoundation, setCollectionByFoundation] = useState<Record<string, VariableCollectionKey>>({})
+  const [collectionByFoundation, setCollectionByFoundation] = useState<Record<string, VariableCollectionKey>>(() => {
+    const foundation = incomingPlace?.foundation
+    const collection = incomingPlace?.collection
+    return foundation && collection ? { [foundation]: collection } : {}
+  })
   const activeFoundationCollections = VARIABLE_COLLECTIONS[activeFoundation] ?? [{ key: 'primitives', label: 'Primitives' }]
   const requestedCollection = collectionByFoundation[activeFoundation] ?? 'primitives'
   const activeCollection = activeFoundationCollections.some(({ key }) => key === requestedCollection)
@@ -705,7 +833,7 @@ export default function Configurator() {
   //
   // A SEED, not a link. The two stay decoupled after this first render, which
   // is what lets the user inspect a Light theme without repainting Escala.
-  const initialTheme = resolveListedTheme(themeOrder, themes, themeKinds, undefined, theme)
+  const initialTheme = resolveListedTheme(themeOrder, themes, themeKinds, incomingPlace?.theme, theme)
   const [previewSelection, setPreviewSelection] = useState<{
     theme: string
     appearance: ThemeAppearance
@@ -741,6 +869,34 @@ export default function Configurator() {
   const previewAppearance = previewSelection.theme === previewTheme
     ? previewSelection.appearance
     : (themeKinds[previewTheme] ?? 'light')
+  const syncThemes = useMemo(() => {
+    const own = myThemeKeys(themeOrder, themes)
+    return own.length ? own : themeOrder.filter((key) => Boolean(themes[key]))
+  }, [themeOrder, themes])
+  const [figmaFileName, setFigmaFileName] = useState(() =>
+    themeDisplayName(syncThemes[0] ?? previewTheme, store.themeLabels),
+  )
+  const [figmaFileNameDirty, setFigmaFileNameDirty] = useState(false)
+  const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() =>
+    defaultFigmaSyncModes(syncThemes, themeKinds),
+  )
+  const syncThemeKey = syncThemes.join('|')
+  useEffect(() => {
+    if (!figmaFileNameDirty && syncThemes[0]) {
+      setFigmaFileName(themeDisplayName(syncThemes[0], store.themeLabels))
+    }
+  }, [figmaFileNameDirty, syncThemes, store.themeLabels, syncThemeKey])
+  useEffect(() => {
+    setFigmaSyncModes((current) => {
+      const valid = current.filter((mode) => syncThemes.includes(mode.theme))
+      return valid.length ? valid : defaultFigmaSyncModes(syncThemes, themeKinds)
+    })
+  }, [syncThemeKey, syncThemes, themeKinds])
+  const figmaPublishBase = useMemo(() => ({
+    theme: previewTheme,
+    modes: figmaSyncModes,
+    project: figmaFileName.trim() || undefined,
+  }), [previewTheme, figmaSyncModes, figmaFileName])
   // Ephemeral "try-on" of a System Style preset from the Themes Library. It
   // never touches the store — the preview reads `resolveStylePreviewTokens`
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
@@ -820,7 +976,7 @@ export default function Configurator() {
   // Docs exposes only focused operating pages from the top-menu. The token
   // reference stays in the preview's contextual documentation surface, so the
   // global destination never duplicates it.
-  const [docFoundationKey, setDocFoundationKey] = useState<string>(GUIDE_MCP_KEY)
+  const [docFoundationKey, setDocFoundationKey] = useState<string>(() => incomingPlace?.doc ?? GUIDE_MCP_KEY)
 
   const section = FOUNDATIONS.find((s) => s.key === activeFoundation) ?? FOUNDATIONS[0]
 
@@ -1030,6 +1186,38 @@ export default function Configurator() {
     setTab('docs')
     setDocFoundationKey(key)
   }
+  const leaveExportWizard = () => setSectionExportOpen(false)
+  const openFigmaSyncPage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setThemeWorkspaceTab('preview')
+    setThemeHubSurface('figma')
+  }
+  const openGithubPage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setThemeWorkspaceTab('preview')
+    setThemeHubSurface('github')
+  }
+  const openGetCodePage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    if (themeWorkspaceTab !== 'code') {
+      const listed = myThemeKeys(themeOrder, themes)
+      setCodeScope(resolveCodeTheme(listed, codeScope, previewTheme))
+    }
+    setThemeWorkspaceTab('code')
+  }
+  const openMcpPage = () => {
+    leaveExportWizard()
+    openDocs(GUIDE_MCP_KEY)
+  }
   useEffect(() => {
     const onOpenFaq = () => {
       commitVisit()
@@ -1075,7 +1263,20 @@ export default function Configurator() {
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op
   // otherwise) — shares handleFigmaPublishState with the manual button below
   // so a background failure lights the same red dot instead of failing silently.
-  useAutoFigmaSync(handleFigmaPublishState, previewTheme)
+  const workspaceSection = encodeWorkspaceSection({
+    tab,
+    workspace: themeWorkspaceTab,
+    surface: themeHubSurface,
+    theme: previewTheme,
+    foundation: activeFoundation,
+    collection: activeCollection,
+    component: activeComponent?.key,
+    doc: docFoundationKey,
+  })
+  useEffect(() => {
+    syncWorkspaceSearch({ project: syncProjectId(), section: workspaceSection })
+  }, [workspaceSection, store.projectName])
+  useAutoFigmaSync(handleFigmaPublishState, { ...figmaPublishBase, section: workspaceSection })
   useEffect(() => {
     setActiveThemeHint(previewTheme)
   }, [previewTheme])
@@ -1083,8 +1284,8 @@ export default function Configurator() {
     commitVisit()
     if (!isLiveEnvironment() || figmaPublishState === 'publishing') return
     handleFigmaPublishState('publishing')
-    void publishTokens(previewTheme).then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
-  }, [commitVisit, figmaPublishState, handleFigmaPublishState, previewTheme])
+    void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
+  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
     publishFigmaNow()
@@ -1185,7 +1386,7 @@ export default function Configurator() {
     )
     centerKey = 'export-github'
   } else if (exportMode === 'figma-sync') {
-    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Pick a theme, then publish it to the plugin.' }
+        header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Name the file, pick modes, then publish to the plugin.' }
     body = (
       <div className="h-full overflow-y-auto">
         <FigmaSyncView
@@ -1196,6 +1397,14 @@ export default function Configurator() {
           onRequestSync={syncFigmaNow}
           previewTheme={previewTheme}
           onSelectTheme={changePreviewTheme}
+          fileName={figmaFileName}
+          onFileNameChange={(name) => {
+            setFigmaFileNameDirty(true)
+            setFigmaFileName(name)
+          }}
+          syncModes={figmaSyncModes}
+          onSyncModesChange={setFigmaSyncModes}
+          section={workspaceSection}
         />
       </div>
     )
@@ -1497,7 +1706,15 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
-        exportAction={<ExportPill onClick={openSectionExport} />}
+        exportAction={(
+          <ExportPill
+            onExport={openSectionExport}
+            onSyncFigma={openFigmaSyncPage}
+            onConnectGithub={openGithubPage}
+            onExportCode={openGetCodePage}
+            onConnectMcp={openMcpPage}
+          />
+        )}
         brandWidth={themeLibraryVisible ? THEME_LIBRARY_WIDTH : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
@@ -1627,8 +1844,16 @@ export default function Configurator() {
                     onOpenPrimitiveFamily={openPrimitiveFamily}
                     onOpenInVariables={openTokenInVariables}
                     figmaPublishState={figmaPublishState}
+                    workspaceSection={workspaceSection}
                     onRequestFigmaSync={publishFigmaNow}
                     onOpenFigmaDownload={() => openExport('figma-download')}
+                    figmaFileName={figmaFileName}
+                    onFigmaFileNameChange={(name) => {
+                      setFigmaFileNameDirty(true)
+                      setFigmaFileName(name)
+                    }}
+                    figmaSyncModes={figmaSyncModes}
+                    onFigmaSyncModesChange={setFigmaSyncModes}
                     githubPushState={githubPushState}
                     onGithubPushStateChange={handleGithubPushState}
                     docsExits={{
@@ -1777,9 +2002,9 @@ export default function Configurator() {
           a 28px rule instead — attribution only, no links: the About TAB already
           carries the full story (how it works, changelog, legal), so repeating
           entry points here just competed for attention. `bg-nav` keeps this
-          strip on `--nav` (#151516 in dark) with TopNav and the Artefacts
-          well — `--app` / `--panel` lift to #1b1b1c and must not take it. */}
-      <footer className="flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line bg-nav">
+          strip on `--nav` with TopNav and the Themes library — the shell
+          frame. `--tab-bar` is the workspace level; `--app` is the page. */}
+      <footer className={`flex-shrink-0 h-7 flex items-center gap-3 px-4 lg:px-5 border-t border-line ${SHELL_CHROME}`}>
         <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
           {COPYRIGHT_LINE} · Built by Cesar Durango
         </span>

@@ -2,11 +2,13 @@ import { type ReactNode } from 'react'
 import { useDesignStore } from '../../store/useDesignStore'
 import { getStoredToken, type GitHubPushState } from '../../lib/github'
 import { syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
+import { FIGMA_SYNC_MODE_CAP } from '../../lib/figmaSyncModes'
 import { GitHubGlyph } from '../ui/icons'
 import { FigmaLogo, PluginInstallPromo, relativeTime } from './figmaShared'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { QUICK_SETTINGS_WIDTH, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
 import { THEME_BAND_H } from './colorControls'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
 type IntegrationProvider = 'github' | 'figma'
 
@@ -67,6 +69,9 @@ export default function IntegrationStatusRail({
   figmaPublishState,
   onOpenPluginDownload,
   onOpenGithub,
+  workspaceSection,
+  fileName,
+  modeCount,
 }: {
   provider: IntegrationProvider
   githubPushState: GitHubPushState
@@ -75,6 +80,10 @@ export default function IntegrationStatusRail({
   onOpenPluginDownload?: () => void
   /** Opens the GitHub surface — the Figma card no longer hosts this door. */
   onOpenGithub?: () => void
+  /** Handshake facts from the Sync card — Protocol names the same IDs. */
+  workspaceSection?: string
+  fileName?: string
+  modeCount?: number
 }) {
   const { githubRepo, githubLastPushAt, figmaLastPublishAt, autoSyncFigma, pluginBuildSeen } = useDesignStore()
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
@@ -104,7 +113,7 @@ export default function IntegrationStatusRail({
   return (
     <aside
       aria-label={`${isGithub ? 'GitHub' : 'Figma'} integration status`}
-      className="flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-line bg-app"
+      className={`flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       {/* Provider band. `THEME_BAND_H` + `border-b` because it sits on the SAME
@@ -137,7 +146,7 @@ export default function IntegrationStatusRail({
               <>
                 <StatusRow label="Sync status" value={statusValue} dot={<StatusDot active={connected} busy={busy} error={error} />} />
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
-                <StatusRow label="Endpoint" value={`/api/tokens · ${syncProjectId()}`} mono />
+                <StatusRow label="ID to plugin" value={`/api/tokens · ${syncProjectId()}`} mono />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />
                 <StatusRow
                   label="GitHub"
@@ -178,8 +187,12 @@ export default function IntegrationStatusRail({
           ) : (
             <>
               <dl className="mt-2 divide-y divide-line">
-                <StatusRow label="Transport" value="Published endpoint" />
-                <StatusRow label="Scope" value="Active design system" />
+                <StatusRow label="This page" value={workspaceSection || 'This window'} mono={Boolean(workspaceSection)} />
+                <StatusRow label="File" value={fileName?.trim() || 'Untitled'} />
+                <StatusRow
+                  label="Modes"
+                  value={`${modeCount ?? 0} of ${FIGMA_SYNC_MODE_CAP}`}
+                />
                 <StatusRow label="Backup" value={githubRepo ? githubRepo : 'No repository'} mono={Boolean(githubRepo)} />
               </dl>
               {onOpenPluginDownload ? (
@@ -188,7 +201,7 @@ export default function IntegrationStatusRail({
                   version={PLUGIN_VERSION}
                   updateAvailable={pluginUpdateAvailable}
                   onOpenInstall={onOpenPluginDownload}
-                  info="The plugin reads the current token payload from this system’s scoped endpoint."
+                  info="Paste ID to plugin in Live Sync. This page is the resume link. File and modes travel in the published payload."
                 />
               ) : null}
             </>

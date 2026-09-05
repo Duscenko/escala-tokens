@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { evaluate } from '../color/apca'
 import type { TokenJSON } from '../agentBundle'
+import { COMPONENT_KEYS } from '../componentCatalogue'
 import {
   callTool,
   checkContrast,
@@ -12,6 +13,7 @@ import {
   listComponents,
   mcpDiscovery,
   normalizeTokenId,
+  parseIntent,
   resolveToken,
   TOOL_SPECS,
 } from '../agentAccess'
@@ -113,11 +115,47 @@ describe('resolve_token', () => {
     expect(hit.found).toBe(false)
     expect(hit.kind).toBe('unknown')
   })
+
+  it('reads foundationsByTheme over the root fallback', () => {
+    const json: TokenJSON = {
+      ...JSON_FIXTURE,
+      radius: { lg: '32px' },
+      stroke: { sm: '1px' },
+      selector: { md: '18px' },
+      colors: {
+        ...JSON_FIXTURE.colors,
+        themeOrder: ['material--elevation'],
+      },
+      foundationsByTheme: {
+        'material--elevation': {
+          radius: { lg: '16px' },
+          stroke: { sm: '0.5px' },
+          selector: { md: '21px' },
+        },
+      },
+    }
+    const radius = resolveToken(json, 'radius.lg')
+    expect(radius.found).toBe(true)
+    expect(radius.css).toBe('var(--radius-lg)')
+    expect(radius.values).toEqual({ 'material--elevation': '16px' })
+    expect(radius.values.default).toBeUndefined()
+
+    const stroke = resolveToken(json, 'stroke.sm')
+    expect(stroke.found).toBe(true)
+    expect(stroke.css).toBe('var(--stroke-sm)')
+    expect(stroke.values).toEqual({ 'material--elevation': '0.5px' })
+
+    const selector = resolveToken(json, 'selector.md')
+    expect(selector.found).toBe(true)
+    expect(selector.css).toBe('var(--selector-md)')
+    expect(selector.values).toEqual({ 'material--elevation': '21px' })
+  })
 })
 
 describe('catalogue and contrast tools', () => {
   it('lists catalogue keys and fetches Button', () => {
     const list = listComponents()
+    expect(list.map((c) => c.key)).toEqual(COMPONENT_KEYS)
     expect(list.some((c) => c.key === 'Button' && c.essential)).toBe(true)
     const button = getComponent('button')
     expect(button?.key).toBe('Button')
@@ -125,10 +163,12 @@ describe('catalogue and contrast tools', () => {
     expect(button?.accessibility).toMatch(/button/i)
   })
 
-  it('check_contrast matches evaluate() from apca.ts', () => {
+  it('check_contrast matches evaluate() from apca.ts, including action-label', () => {
     const fg = '#111111'
     const bg = '#ffffff'
     expect(checkContrast(fg, bg, 'body-text')).toEqual(evaluate(fg, bg, 'body-text'))
+    expect(checkContrast(fg, bg, 'action-label')).toEqual(evaluate(fg, bg, 'action-label'))
+    expect(parseIntent('action-label')).toBe('action-label')
     expect(checkContrast(fg, bg).pass).toBe(true)
   })
 })
@@ -193,6 +233,16 @@ describe('discovery and schema publish', () => {
       'list_icons',
       'check_contrast',
     ])
+  })
+
+  it('requires a published project slug and exposes action-label', () => {
+    const getTokens = TOOL_SPECS.find((t) => t.name === 'get_tokens')
+    const resolve = TOOL_SPECS.find((t) => t.name === 'resolve_token')
+    const contrast = TOOL_SPECS.find((t) => t.name === 'check_contrast')
+    expect(getTokens?.inputSchema.required).toEqual(['project'])
+    expect(resolve?.inputSchema.required).toEqual(['token', 'project'])
+    const intent = contrast?.inputSchema.properties.intent as { enum?: string[] }
+    expect(intent.enum).toContain('action-label')
   })
 
   it('public schema matches docs/agent-native/tokens.schema.json', () => {

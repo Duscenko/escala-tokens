@@ -1,8 +1,11 @@
 /** MCP tool layer. Store-free, Blob-free — the HTTP handler injects `loadTokens`. */
 
 import type { TokenJSON } from '../agentBundle/types.js'
+import { INTENT_THRESHOLDS, type IntentClass } from '../color/apca.js'
 
-export type IntentClass = 'body-text' | 'large-text' | 'ui-component' | 'decorative' | 'surface'
+export type { IntentClass }
+
+const INTENT_ENUM = Object.keys(INTENT_THRESHOLDS) as IntentClass[]
 
 export interface LoadTokens {
   (project?: string | null): Promise<TokenJSON | null>
@@ -29,20 +32,21 @@ export const TOOL_SPECS: ToolSpec[] = [
       properties: {
         project: { type: 'string', description: 'Project slug (slugify of the system name).' },
       },
+      required: ['project'],
       additionalProperties: false,
     },
   },
   {
     name: 'resolve_token',
     description:
-      'Resolve one token to Figma name, CSS var(), and values (hex per theme, or px). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), or alpha primitives (accent-a-3, black-a-8). A semantic value may come back as 8-digit #rrggbbaa — 16 roles resolve to a translucent primitive.',
+      'Resolve one token to Figma name, CSS var(), and values (hex/px per theme). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), alpha primitives (accent-a-3, black-a-8), and foundations (radius.lg, stroke.sm, selector.md). Foundation values come from foundationsByTheme when the published payload has it — the root map is only the fallback. A semantic value may come back as 8-digit #rrggbbaa. project is required: this server reads the last published Blob, not unsaved editor state.',
     inputSchema: {
       type: 'object',
       properties: {
-        token: { type: 'string', description: 'Role id, Figma name, or primitive key.' },
-        project: { type: 'string', description: 'Project slug. Required unless TokenJSON is already loaded by the server for the latest publish.' },
+        token: { type: 'string', description: 'Role id, Figma name, primitive key, or foundation id.' },
+        project: { type: 'string', description: 'Published project slug (slugify of the system name). Required.' },
       },
-      required: ['token'],
+      required: ['token', 'project'],
       additionalProperties: false,
     },
   },
@@ -91,8 +95,8 @@ export const TOOL_SPECS: ToolSpec[] = [
         background: { type: 'string', description: 'sRGB hex of the surface.' },
         intent: {
           type: 'string',
-          enum: ['body-text', 'large-text', 'ui-component', 'decorative', 'surface'],
-          description: 'Defaults to body-text. A pair passes only if both WCAG and APCA clear the intent floors.',
+          enum: INTENT_ENUM,
+          description: 'Defaults to body-text. action-label is the button/chip row (WCAG 4.5 + APCA Lc 60). A pair passes only if both WCAG and APCA clear the intent floors.',
         },
       },
       required: ['foreground', 'background'],

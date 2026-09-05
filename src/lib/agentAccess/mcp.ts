@@ -58,7 +58,7 @@ async function handleOne(msg: JsonRpcRequest, loadTokens: LoadTokens): Promise<J
         capabilities: { tools: {} },
         serverInfo: { name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION },
         instructions:
-          'Escala design tokens. Prefer resolve_token and the component catalogue over inventing names or hex. Semantic roles over primitives. /api/tokens stays the publish/fetch endpoint; this server only reads.',
+          'Escala design tokens. Prefer resolve_token and the component catalogue over inventing names or hex. Semantic roles over primitives. Every token tool needs project = slugify(system name) from /api/tokens?project=. This server reads the last published Blob — not unsaved editor state. Publish from the live configurator (Sync now / auto-sync); localhost Vite cannot write the Blob. /api/tokens stays the publish/fetch endpoint; this server only reads.',
       })
     }
     case 'ping':

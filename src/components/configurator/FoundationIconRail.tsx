@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { RailGroup } from './SectionRail'
-import { CHROME_CONTROL_HOVER } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
 const VARIABLE_ICON_SOURCES: Record<string, string> = {
   'theme-preview': '/icons/theme-hub-icons/Icon/theme.svg',
@@ -60,7 +60,7 @@ export default function FoundationIconRail({
       className={vertical
         // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
         // icons begin near the top with `pt-2`. Group spacing is per-group.
-        ? 'h-full flex-shrink-0 flex flex-col items-center border-r border-line bg-app pt-2 pb-3 overflow-y-auto scrollbar-thin'
+        ? `h-full flex-shrink-0 flex flex-col items-center border-r border-line ${WORKSPACE_CHROME} pt-2 pb-3 overflow-y-auto scrollbar-thin`
         : 'flex items-center gap-4'}
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >

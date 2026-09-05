@@ -14,7 +14,7 @@
     },
     "project": {
       "type": "string",
-      "description": "Display name. Blob key and sync URL use slugify(project)."
+      "description": "Display name the plugin uses for the Figma file. The sync URL slug comes from the editor project name and may differ."
     },
     "colors": {
       "type": "object",
@@ -65,6 +65,23 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Figma Color Semantics mode / column order."
+        },
+        "activeTheme": {
+          "type": "string",
+          "description": "Library theme the configurator is previewing. Overview / Cover read this theme's brand family as the identity ramp. Additive — older plugins ignore it."
+        },
+        "themeSources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "description": "Shipped theme → slot (brand/gray/error/…) → primitive family key. Plugin groups Color Primitives from this. Additive."
+        },
+        "themeLabels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Shipped theme key → display name (My themes label)."
         },
         "panelBackground": { "type": "string" },
         "semanticArchitecture": {
@@ -212,6 +229,17 @@
         "additionalProperties": { "type": "string" }
       },
       "description": "Additive. Figma collection name → variable name → description. Plugin sets Variable.description on sync."
+    },
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "type": "string",
+          "description": "Workspace section id (see src/lib/workspaceLink.ts). App URL is /?project=<slug>&section=<id>. Not an /api/tokens query param."
+        }
+      },
+      "description": "Additive publish handshake. Present only when the configurator published a workspace section. Older plugins ignore it. /api/tokens GET still keys only on project."
     }
   },
   "$defs": {

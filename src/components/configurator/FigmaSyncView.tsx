@@ -1,11 +1,20 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
+import { useI18n } from '../../lib/i18n'
 import { useDesignStore } from '../../store/useDesignStore'
-import { isLiveEnvironment, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
+import { isLiveEnvironment, publishOrigin, syncProjectId, syncUrl as buildSyncUrl, type FigmaPublishState } from '../../lib/figmaSync'
+import { buildWorkspaceAppUrl } from '../../lib/workspaceLink'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
+import {
+  FIGMA_SYNC_MODE_CAP,
+  hasFigmaSyncMode,
+  toggleFigmaSyncAppearance,
+  toggleFigmaSyncTheme,
+  type FigmaSyncMode,
+} from '../../lib/figmaSyncModes'
 import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
 import { CopyGlyph } from '../ui/icons'
@@ -23,9 +32,19 @@ interface FigmaSyncViewProps {
    *  hiccup) — same string the Sync pill's tooltip shows. Null outside 'error'. */
   publishError?: string | null
   onRequestSync: () => void
-  /** Theme the next publish will ship — one radio, one payload. */
+  /** Theme the canvas is previewing — selecting a sync row also previews it. */
   previewTheme: string
   onSelectTheme: (key: string) => void
+  /** Plugin file display name. Defaults to the first theme; does not change
+   *  the `/api/tokens?project=` slug. */
+  fileName: string
+  onFileNameChange: (name: string) => void
+  /** Selected Figma columns — theme × Light/Dark, max 3. */
+  syncModes: FigmaSyncMode[]
+  onSyncModesChange: (modes: FigmaSyncMode[]) => void
+  /** Workspace section id for this window (`workspaceLink.ts`). Drives the
+   *  auto-updating This page link. ID to plugin stays `?project=` only. */
+  section?: string
 }
 
 /** Theme radios, the sync URL field, and Sync now — one height, one radius. */
@@ -35,16 +54,75 @@ const SYNC_CONTROL = 'h-10 rounded-lg'
  *  gold — this surface is chrome, not a specimen. */
 const SYNC_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
-function RadioMark({ selected }: { selected: boolean }) {
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={`flex-shrink-0 transition-transform duration-200 ease-out ${open ? 'rotate-90' : ''}`}
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  )
+}
+
+/** Progressive disclosure for the cases Sync now cannot finish in Figma.
+ *  Closed by default — the success banner already names Update now. */
+function SyncStuckHelp() {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const panelId = useId()
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((next) => !next)}
+        className={`inline-flex items-center gap-1.5 rounded-md text-caption text-fg-muted transition-colors hover:text-fg ${SYNC_FOCUS}`}
+      >
+        <Chevron open={open} />
+        {t('No sync yet? Help')}
+      </button>
+      {open ? (
+        <ol id={panelId} className="mt-2 list-decimal space-y-2 pl-5 text-caption leading-relaxed text-fg-muted">
+          <li>{t('Open the Escala plugin in Figma. In Live Sync, paste ID to plugin and click Update now.')}</li>
+          <li>{t('A hand-imported tokens.json stays a snapshot. Keep updating that file yourself — Live Sync will not rewrite a pasted import.')}</li>
+          <li>{t('Renamed or newly added variables cannot merge onto an existing collection. Use Import into this file, or Reset this file — not another Sync now here.')}</li>
+        </ol>
+      ) : null}
+    </div>
+  )
+}
+
+function CheckMark({ selected }: { selected: boolean }) {
   return (
     <span
-      className={`grid h-4 w-4 flex-shrink-0 place-items-center rounded-full border-2 ${
-        selected ? 'border-fg' : 'border-line-strong'
+      className={`grid h-4 w-4 flex-shrink-0 place-items-center rounded border-2 ${
+        selected ? 'border-fg bg-fg text-app' : 'border-line-strong'
       }`}
       aria-hidden
     >
-      {selected ? <span className="h-1.5 w-1.5 rounded-full bg-fg" /> : null}
+      {selected ? (
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+          <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
     </span>
+  )
+}
+
+function EditIcon() {
+  return (
+    <span
+      aria-hidden
+      className="h-3.5 w-3.5 flex-shrink-0 bg-current"
+      style={{
+        WebkitMask: "url('/icons/settings/edit.svg') center / contain no-repeat",
+        mask: "url('/icons/settings/edit.svg') center / contain no-repeat",
+      }}
+    />
   )
 }
 
@@ -58,10 +136,9 @@ function InfoIcon() {
   )
 }
 
-/** Click-only, same interaction as the quick-settings `InfoHint`. The two
- *  tutorial lines used to sit under the URL and crowded the hero; they stay
- *  reachable from the info mark without occupying a row. */
-function SyncUrlInfo({ deployed }: { deployed: boolean }) {
+/** Click-only, same interaction as the quick-settings `InfoHint`. Tutorial
+ *  lines stay reachable from the info mark without occupying a row. */
+function SyncInfoTip({ label, children }: { label: string; children: ReactNode }) {
   const tooltipId = useId()
   const anchor = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
@@ -90,9 +167,13 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
     }
     window.addEventListener('resize', updatePosition)
     window.addEventListener('scroll', updatePosition, true)
-    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
+    // The opening click's leftover pointerdown must not dismiss.
+    const listen = window.setTimeout(() => {
+      document.addEventListener('pointerdown', onPointerDown)
+    }, 0)
     return () => {
+      window.clearTimeout(listen)
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
       document.removeEventListener('pointerdown', onPointerDown)
@@ -107,7 +188,7 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
         type="button"
         aria-expanded={open}
         aria-controls={tooltipId}
-        aria-label="About this sync URL"
+        aria-label={label}
         onClick={() => setOpen((next) => !next)}
         className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
       >
@@ -121,17 +202,26 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
           className="fixed z-[70] w-72 rounded-lg border border-line-strong bg-app px-3 py-2.5 text-caption leading-relaxed text-fg-muted shadow-lg"
           style={position}
         >
-          <p>Paste this in the plugin&apos;s Live Sync tab, then use Sync now to publish your tokens.</p>
-          <p className="mt-2">This URL only changes when you rename the file — never when you edit colours or themes.</p>
-          {!deployed && (
-            <p className="mt-2">
-              Live publish needs the deployed app — on localhost, copy this URL for production or use the plugin&apos;s Import tab with exported tokens.json.
-            </p>
-          )}
+          {children}
         </div>,
         document.body,
       )}
     </>
+  )
+}
+
+function SyncUrlInfo({ deployed }: { deployed: boolean }) {
+  const { t } = useI18n()
+  return (
+    <SyncInfoTip label={t('About ID to plugin')}>
+      <p>{t('Paste ID to plugin in Live Sync, then Sync now.')}</p>
+      <p className="mt-2">{t('Changes only when you rename the file. This page is the resume link.')}</p>
+      {!deployed && (
+        <p className="mt-2">
+          {t('Live publish needs the deployed app — on localhost, copy the production URL or use Import with tokens.json.')}
+        </p>
+      )}
+    </SyncInfoTip>
   )
 }
 
@@ -143,6 +233,7 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload,
   publishState, publishError, onRequestSync, previewTheme, onSelectTheme,
+  fileName, onFileNameChange, syncModes, onSyncModesChange, section,
 }: FigmaSyncViewProps) {
   const store = useDesignStore()
   const {
@@ -153,18 +244,33 @@ export default function FigmaSyncView({
     const own = myThemeKeys(themeOrder, themes)
     return own.length ? own : themeOrder.filter((key) => Boolean(themes[key]))
   }, [themeOrder, themes])
-  const selectedTheme = syncThemes.includes(previewTheme) ? previewTheme : (syncThemes[0] ?? previewTheme)
-
   const [isDeployed] = useState(isLiveEnvironment)
   // Per-system scoped endpoint (re-reads projectName each render so it stays current).
   const syncUrl = buildSyncUrl()
+  const pageUrl = section
+    ? buildWorkspaceAppUrl({ origin: publishOrigin(), project: syncProjectId(), section })
+    : null
 
-  const [copied, setCopied] = useState(false)
+  const { t } = useI18n()
+  const pageLabelId = useId()
+  const pluginLabelId = useId()
+  const fileHintId = useId()
+  const fileNameRef = useRef<HTMLInputElement>(null)
+  const [copied, setCopied] = useState<'sync' | 'page' | null>(null)
+  // Parent flips `done` back to `idle` after 1.8s, and localhost never
+  // publishes at all — the plugin handoff has to ride this click, not that
+  // ephemeral state.
+  const [handoff, setHandoff] = useState(false)
 
-  function copyUrl() {
-    navigator.clipboard.writeText(syncUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  function requestSync() {
+    setHandoff(true)
+    onRequestSync()
+  }
+
+  function copyUrl(kind: 'sync' | 'page', value: string) {
+    navigator.clipboard.writeText(value)
+    setCopied(kind)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
@@ -192,103 +298,244 @@ export default function FigmaSyncView({
       {syncThemes.length > 0 && (
         <div className="flex flex-col rounded-xl border border-line bg-surface/50">
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
-            <p className="text-sm font-semibold text-fg">Theme to sync</p>
-          </div>
-          <div className="flex flex-col gap-3 p-5">
-            <p className="text-caption text-fg-faint leading-relaxed">
-              Figma receives this theme only — its colours, type and spacing. Other themes stay in the library.
+            <p className="text-sm font-semibold text-fg">{t('File & modes')}</p>
+            <p className="ml-auto text-caption text-fg-faint">
+              {t('{count} of {max}', { count: String(syncModes.length), max: String(FIGMA_SYNC_MODE_CAP) })}
             </p>
-            <div role="radiogroup" aria-label="Theme to sync" className="flex flex-col gap-1">
-              {syncThemes.map((key) => {
-                const selected = key === selectedTheme
-                const ramp = themeBrandRamp(key, themeSources, themeKinds, store)
-                const swatch = ramp?.[BASE_TONE] ?? store.primaryColor
-                const name = themeDisplayName(key, themeLabels)
-                const kind = (themeKinds[key] ?? 'light') as 'light' | 'dark'
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => onSelectTheme(key)}
-                    className={`flex min-w-0 items-center gap-2.5 border px-3 text-left transition-colors ${SYNC_CONTROL} ${SYNC_FOCUS} ${
-                      selected
-                        ? 'border-fg bg-fg/8 text-fg'
-                        : 'border-line text-fg-muted hover:border-fg/40 hover:bg-fg/6 hover:text-fg'
-                    }`}
-                  >
-                    <RadioMark selected={selected} />
-                    <span
-                      className="h-3.5 w-3.5 flex-shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
-                      style={{ background: swatch }}
-                      aria-hidden
-                    />
-                    <span className={`min-w-0 flex-1 truncate text-body ${selected ? 'font-semibold text-fg' : 'font-medium'}`}>
-                      {name}
-                    </span>
-                    <AppearanceGlyph kind={kind} />
-                  </button>
-                )
-              })}
+          </div>
+          <div className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="figma-file-name" className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
+                {t('File name')}
+              </label>
+              <div className={`group flex min-w-0 items-center gap-2 border border-line bg-app pl-3 pr-2 ${SYNC_CONTROL} focus-within:ring-2 focus-within:ring-fg/40`}>
+                <input
+                  ref={fileNameRef}
+                  id="figma-file-name"
+                  type="text"
+                  value={fileName}
+                  onChange={(event) => onFileNameChange(event.target.value)}
+                  placeholder={themeDisplayName(syncThemes[0], themeLabels)}
+                  aria-describedby={fileHintId}
+                  className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none"
+                />
+                <span
+                  aria-hidden
+                  title={t('Rename file')}
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    fileNameRef.current?.focus()
+                  }}
+                  className="grid h-6 w-6 flex-shrink-0 cursor-text place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-fg/8 group-hover:text-fg group-focus-within:bg-fg/8 group-focus-within:text-fg"
+                >
+                  <EditIcon />
+                </span>
+              </div>
+              <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
+                {t('The plugin names the Figma file this. The sync URL stays the same.')}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-caption text-fg-faint leading-relaxed">
+                {t('Figma gets Light and Dark as columns for each selected theme. Pick up to 3 modes.')}
+              </p>
+              <div role="group" aria-label={t('Modes to sync')} className="flex flex-col gap-1">
+                {syncThemes.map((key) => {
+                  const lightOn = hasFigmaSyncMode(syncModes, key, 'light')
+                  const darkOn = hasFigmaSyncMode(syncModes, key, 'dark')
+                  const selected = lightOn || darkOn
+                  const atCap = syncModes.length >= FIGMA_SYNC_MODE_CAP
+                  const ramp = themeBrandRamp(key, themeSources, themeKinds, store)
+                  const swatch = ramp?.[BASE_TONE] ?? store.primaryColor
+                  const name = themeDisplayName(key, themeLabels)
+                  return (
+                    <div
+                      key={key}
+                      className={`flex min-w-0 items-center gap-2.5 border px-3 ${SYNC_CONTROL} ${
+                        selected
+                          ? 'border-fg bg-fg/8 text-fg'
+                          : 'border-line text-fg-muted'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        aria-current={key === previewTheme ? 'true' : undefined}
+                        onClick={() => {
+                          onSyncModesChange(toggleFigmaSyncTheme(syncModes, key, themeKinds))
+                          onSelectTheme(key)
+                        }}
+                        className={`flex min-w-0 flex-1 items-center gap-2.5 text-left ${SYNC_FOCUS}`}
+                      >
+                        <CheckMark selected={selected} />
+                        <span
+                          className="h-3.5 w-3.5 flex-shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
+                          style={{ background: swatch }}
+                          aria-hidden
+                        />
+                        <span className={`min-w-0 flex-1 truncate text-body ${selected ? 'font-semibold text-fg' : 'font-medium'}`}>
+                          {name}
+                        </span>
+                      </button>
+                      <div className="flex flex-shrink-0 items-center gap-1">
+                        {(['light', 'dark'] as const).map((appearance) => {
+                          const on = appearance === 'light' ? lightOn : darkOn
+                          const blocked = !on && atCap
+                          return (
+                            <button
+                              key={appearance}
+                              type="button"
+                              aria-pressed={on}
+                              disabled={blocked}
+                              title={blocked ? t('Maximum 3 modes') : t(appearance === 'light' ? 'Light' : 'Dark')}
+                              aria-label={`${name} ${appearance === 'light' ? t('Light') : t('Dark')}`}
+                              onClick={() => {
+                                onSyncModesChange(toggleFigmaSyncAppearance(syncModes, key, appearance))
+                                onSelectTheme(key)
+                              }}
+                              className={`inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-caption transition-colors ${SYNC_FOCUS} ${
+                                on
+                                  ? 'bg-fg/12 text-fg'
+                                  : blocked
+                                    ? 'cursor-not-allowed text-fg-faint opacity-40'
+                                    : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
+                              }`}
+                            >
+                              <AppearanceGlyph kind={appearance} size={12} />
+                              <span className="hidden min-[520px]:inline">{t(appearance === 'light' ? 'Light' : 'Dark')}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface/50 p-5">
-        <div className="flex items-stretch gap-2">
-          <div className={`flex min-w-0 flex-1 items-center gap-2 border border-line bg-app px-3 ${SYNC_CONTROL}`}>
+      <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface/50 p-5">
+        {pageUrl ? (
+          <div className="flex flex-col gap-1.5">
+            <p id={pageLabelId} className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('This page')}</p>
+            <div
+              className={`flex min-w-0 items-center gap-2 border border-line bg-app/60 px-3 ${SYNC_CONTROL}`}
+            >
+              <code
+                className="pointer-events-none min-w-0 flex-1 cursor-default select-none truncate font-mono text-caption text-fg-muted outline-none"
+                title={pageUrl}
+                aria-labelledby={pageLabelId}
+                aria-readonly="true"
+              >
+                {pageUrl}
+              </code>
+              <SyncInfoTip label={t('About this page')}>
+                <p>{t('Resume this section if you close the tab. Each window has its own section id.')}</p>
+              </SyncInfoTip>
+              <button
+                type="button"
+                onClick={() => copyUrl('page', pageUrl)}
+                aria-label={copied === 'page' ? t('Page link copied') : t('Copy page link')}
+                title={copied === 'page' ? t('Copied') : t('Copy')}
+                className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
+              >
+                {copied === 'page' ? (
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-status-success" aria-hidden>
+                    <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <CopyGlyph size={13} />
+                )}
+              </button>
+            </div>
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1">
+            <p id={pluginLabelId} className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('ID to plugin')}</p>
             <SyncUrlInfo deployed={isDeployed} />
-            <code className="min-w-0 flex-1 truncate font-mono text-caption text-fg">{syncUrl}</code>
+          </div>
+          <div className="flex items-stretch gap-2">
+            <div className={`flex min-w-0 flex-1 items-center gap-2 border border-line bg-app px-3 ${SYNC_CONTROL}`}>
+              <code
+                className="pointer-events-none min-w-0 flex-1 cursor-default select-none truncate font-mono text-caption text-fg outline-none"
+                title={syncUrl}
+                aria-labelledby={pluginLabelId}
+                aria-readonly="true"
+              >
+                {syncUrl}
+              </code>
+              <button
+                type="button"
+                onClick={() => copyUrl('sync', syncUrl)}
+                aria-label={copied === 'sync' ? t('ID to plugin copied') : t('Copy ID to plugin')}
+                title={copied === 'sync' ? t('Copied') : t('Copy')}
+                className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
+              >
+                {copied === 'sync' ? (
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-status-success" aria-hidden>
+                    <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <CopyGlyph size={13} />
+                )}
+              </button>
+            </div>
             <button
               type="button"
-              onClick={copyUrl}
-              aria-label={copied ? 'Sync URL copied' : 'Copy sync URL'}
-              title={copied ? 'Copied' : 'Copy'}
-              className={`grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
+              onClick={requestSync}
+              disabled={publishState === 'publishing'}
+              className={`inline-flex min-w-[112px] flex-shrink-0 items-center justify-center gap-2 bg-fg px-3 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${SYNC_CONTROL} ${SYNC_FOCUS}`}
             >
-              {copied ? (
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="text-status-success" aria-hidden>
-                  <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              {publishState === 'publishing' ? (
+                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M8 2a6 6 0 1 1-5.2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               ) : (
-                <CopyGlyph size={13} />
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M13.5 5.5A6 6 0 1 0 14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M13.5 1.8v3.7H9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               )}
+              {publishState === 'publishing' ? 'Publishing…' : publishState === 'error' ? 'Retry sync' : 'Sync now'}
             </button>
           </div>
-          <button
-            type="button"
-            onClick={onRequestSync}
-            disabled={publishState === 'publishing'}
-            className={`inline-flex min-w-[112px] flex-shrink-0 items-center justify-center gap-2 bg-fg px-3 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${SYNC_CONTROL} ${SYNC_FOCUS}`}
-          >
-            {publishState === 'publishing' ? (
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M8 2a6 6 0 1 1-5.2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M13.5 5.5A6 6 0 1 0 14 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                <path d="M13.5 1.8v3.7H9.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-            {publishState === 'publishing' ? 'Publishing…' : publishState === 'error' ? 'Retry sync' : 'Sync now'}
-          </button>
+          <p className="text-caption leading-relaxed text-fg-faint">
+            {t('Code the plugin uses to sync.')}
+          </p>
         </div>
-        {publishState !== 'idle' && (
+        {publishState === 'publishing' && (
           <div className="flex items-center gap-1.5 text-caption">
-            {publishState === 'publishing' && (
-              <><span className="w-1.5 h-1.5 rounded-full bg-status-warning-solid animate-pulse" /><span className="text-fg-faint">Publishing your tokens…</span></>
-            )}
-            {publishState === 'done' && (
-              <><span className="text-status-success">✓</span><span className="text-fg-muted">Tokens published — the plugin picks them up on its next sync.</span></>
-            )}
-            {publishState === 'error' && (
-              <><span className="w-1.5 h-1.5 rounded-full bg-status-danger-solid" /><span className="text-fg-faint">{publishError || "Couldn't publish your tokens. Retry sync, or use the plugin's Import tab to paste them manually."}</span></>
-            )}
+            <span className="h-1.5 w-1.5 rounded-full bg-status-warning-solid animate-pulse" />
+            <span className="text-fg-faint">Publishing your tokens…</span>
           </div>
         )}
+        {publishState === 'error' && (
+          <div className="flex items-center gap-1.5 text-caption">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-status-danger-solid" />
+            <span className="text-fg-faint">{publishError || "Couldn't publish your tokens. Retry sync, or use the plugin's Import tab to paste them manually."}</span>
+          </div>
+        )}
+        {handoff && publishState !== 'publishing' && publishState !== 'error' && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-2.5 rounded-lg bg-fg/6 px-3 py-2.5"
+          >
+            <span className="mt-0.5 text-status-success" aria-hidden>✓</span>
+            <div className="min-w-0">
+              <p className="text-caption font-semibold text-fg">{t('Go to the plugin')}</p>
+              <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
+                {publishState === 'done' || isDeployed
+                  ? t('Open it and click Update now. This only published the URL.')
+                  : t('Open it and click Update now.')}
+              </p>
+            </div>
+          </div>
+        )}
+        <SyncStuckHelp />
         {isDeployed && (
           <div className="flex items-start justify-between gap-3 rounded-lg border border-line bg-app px-3 py-2.5">
             <div className="min-w-0">

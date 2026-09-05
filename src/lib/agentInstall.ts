@@ -12,8 +12,20 @@ export type SkillAgent = 'cursor' | 'claude'
 export type McpClient = 'cursor' | 'claude' | 'vscode'
 
 export const CLI_PACKAGE = '@escala/cli'
-/** Public site. Vercel is only the host — never put *.vercel.app in user-facing copy. */
-export const DEFAULT_PUBLISH_ORIGIN = 'https://www.escalatokens.com'
+/**
+ * Public site. Vercel is only the host — never put *.vercel.app in user-facing copy.
+ *
+ * APEX, not `www.` — and that is load-bearing, not cosmetic. The certificate
+ * Vercel serves carries a single SAN (`DNS:escalatokens.com`), so
+ * `https://www.escalatokens.com` fails TLS verification for any strict client;
+ * `www` is only a 307 you can reach by disabling cert checks. Every MCP client
+ * (Cursor, Claude Code, VS Code) verifies, so a generated config pointing at
+ * `www` dies at the handshake, before a single JSON-RPC byte. Pointing at a
+ * redirecting host is fragile even with a valid cert: a 307 on POST is only
+ * followed by clients that follow redirects at all. Both hosts are already in
+ * `publishTrust.KNOWN_HOSTS`, so publishing is unaffected either way.
+ */
+export const DEFAULT_PUBLISH_ORIGIN = 'https://escalatokens.com'
 
 export function mcpEndpoint(origin: string): string {
   const base = origin.replace(/\/$/, '') || DEFAULT_PUBLISH_ORIGIN

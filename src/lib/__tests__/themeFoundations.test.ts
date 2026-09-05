@@ -191,6 +191,40 @@ describe('My themes sync scope', () => {
     expect(prim.some((k) => k.startsWith(`${sources[adoptedNeo.key].brand}-`))).toBe(false)
   })
 
+  it('sync modes flatten Light and Dark into Figma columns and rename the file', async () => {
+    const { adoptPreset } = await import('../adoptPreset')
+    const glass = THEME_STYLE_PRESETS.find((item) => item.id === 'cupertino-glass')!
+    const neo = THEME_STYLE_PRESETS.find((item) => item.id === 'neo-brutalism')!
+    const adoptedGlass = adoptPreset(glass, 'light')
+    const adoptedNeo = adoptPreset(neo, 'dark')
+    expect('error' in adoptedGlass).toBe(false)
+    expect('error' in adoptedNeo).toBe(false)
+    if ('error' in adoptedGlass || 'error' in adoptedNeo) return
+
+    const scoped = generateTokenJSON(undefined, {
+      project: 'Nature / Organic',
+      modes: [
+        { theme: adoptedGlass.key, appearance: 'light' },
+        { theme: adoptedGlass.key, appearance: 'dark' },
+        { theme: adoptedNeo.key, appearance: 'dark' },
+      ],
+    })
+    expect(scoped.project).toBe('Nature / Organic')
+    expect(scoped.colors.themeOrder).toEqual([
+      `${adoptedGlass.key}::light`,
+      `${adoptedGlass.key}::dark`,
+      `${adoptedNeo.key}::dark`,
+    ])
+    expect(scoped.colors.themeLabels[`${adoptedGlass.key}::light`]).toMatch(/Light$/)
+    expect(scoped.colors.themeLabels[`${adoptedGlass.key}::dark`]).toMatch(/Dark$/)
+    expect(scoped.colors.themeLabels[`${adoptedGlass.key}::light`]).not.toContain('::')
+    expect(scoped.colors.themeModes).toHaveProperty(adoptedGlass.key)
+    expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('light')
+    expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('dark')
+    expect(scoped.colors.themes).not.toHaveProperty(adoptedNeo.key)
+    expect(useDesignStore.getState().projectName).not.toBe('Nature / Organic')
+  })
+
   it('drops Dark Brand leftovers minted on scaffolding dark', async () => {
     const { adoptPreset } = await import('../adoptPreset')
     const swiss = THEME_STYLE_PRESETS.find((item) => item.id === 'nature')

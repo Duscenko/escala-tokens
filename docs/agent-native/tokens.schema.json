@@ -14,7 +14,7 @@
     },
     "project": {
       "type": "string",
-      "description": "Display name. Blob key and sync URL use slugify(project)."
+      "description": "Display name the plugin uses for the Figma file. The sync URL slug comes from the editor project name and may differ."
     },
     "colors": {
       "type": "object",
@@ -229,6 +229,17 @@
         "additionalProperties": { "type": "string" }
       },
       "description": "Additive. Figma collection name → variable name → description. Plugin sets Variable.description on sync."
+    },
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "type": "string",
+          "description": "Workspace section id (see src/lib/workspaceLink.ts). App URL is /?project=<slug>&section=<id>. Not an /api/tokens query param."
+        }
+      },
+      "description": "Additive publish handshake. Present only when the configurator published a workspace section. Older plugins ignore it. /api/tokens GET still keys only on project."
     }
   },
   "$defs": {

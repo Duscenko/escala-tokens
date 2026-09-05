@@ -5,13 +5,20 @@ import { resolveFamilyPages } from './colorActions'
 import { resolveThemePalette, themeBrandRamp, themeDisplayName, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
 import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
-import { projectArchitecture, projectCategorical } from './semanticArchitectures'
+import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
 import { mergeLayoutRoles, mergeGridFrame } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 import { buildVariableDescriptions } from './tokenDescriptions'
+import {
+  clampFigmaSyncModes,
+  figmaSyncModeId,
+  figmaSyncModeLabel,
+  uniqueThemesFromModes,
+  type FigmaSyncMode,
+} from './figmaSyncModes'
 
 // Version of the tokens.json contract shared with the Figma plugin. The plugin
 // declares the schema it supports and logs a warning when this is newer.
@@ -85,11 +92,27 @@ export type GenerateTokenOptions = {
    *  scaffolding (Dark Brand, unused styles) cannot ride along. An
    *  unknown key is ignored — the listed My-themes set still ships. */
   theme?: string | null
+  /** Ship these library themes (families + themeModes). Figma columns
+   *  come from `modes` when that is also set. */
+  themes?: string[] | null
+  /** Figma Color Semantics columns — theme × Light/Dark, max 3. Flattens
+   *  `themeOrder` / `themes` / `themeLabels` to `theme::appearance` so the
+   *  plugin creates one mode per selected appearance. `themeModes` stays
+   *  keyed by the real library theme. */
+  modes?: FigmaSyncMode[] | null
+  /** Plugin file display name (`tokens.project`). Does not change the
+   *  `/api/tokens?project=` slug, which still comes from `projectName`. */
+  project?: string | null
+  /** Workspace section id (`src/lib/workspaceLink.ts`). Emitted as
+   *  additive `editor.section` so the plugin can open the page this
+   *  publish came from. Omit to leave the payload unchanged. */
+  section?: string | null
 }
 
 function buildThemeContext(
   store: ReturnType<typeof useDesignStore.getState>,
   scopeTheme?: string | null,
+  scopeThemes?: string[] | null,
 ) {
   // Dark-appearance ramps — EVERY family ships both scales (the Radix model),
   // because dark-theme semantics resolve from the dark twin (see
@@ -115,9 +138,12 @@ function buildThemeContext(
   // A system that genuinely only has light/dark still exports them.
   const ownThemeNames = myThemeKeys(allThemeNames, store.themes)
   const listedNames = ownThemeNames.length ? ownThemeNames : allThemeNames
-  const themeNames = scopeTheme && listedNames.includes(scopeTheme)
-    ? [scopeTheme]
-    : listedNames
+  const scopedList = (scopeThemes ?? []).filter((key) => listedNames.includes(key))
+  const themeNames = scopedList.length
+    ? scopedList
+    : scopeTheme && listedNames.includes(scopeTheme)
+      ? [scopeTheme]
+      : listedNames
 
   // Which primitive FAMILIES land in `colors.primitive`. A brand-new system's
   // `accent` / `neutral` / `error` … globals (the default violet ramps) were
@@ -265,13 +291,89 @@ export function buildCategoricalSymbolicTokens(): {
   return { themeOrder: themeNames, tokens }
 }
 
+function flattenThemesForSyncModes<TFoundation>(
+  store: ReturnType<typeof useDesignStore.getState>,
+  modes: FigmaSyncMode[],
+  orderedThemeModes: Record<string, Record<ThemeAppearance, Record<string, string>>>,
+  foundationsByTheme: Record<string, TFoundation>,
+): {
+  themeOrder: string[]
+  themes: Record<string, Record<string, string>>
+  themeKinds: Record<string, ThemeAppearance>
+  themePalettes: Record<string, NonNullable<ReturnType<typeof resolveThemePalette>>>
+  themeLabels: Record<string, string>
+  themeSources: Record<string, (typeof store.themeSources)[string]>
+  foundationsByTheme: Record<string, TFoundation>
+  gradientsByTheme: Record<string, Record<string, string>>
+} {
+  const themeOrder: string[] = []
+  const themes: Record<string, Record<string, string>> = {}
+  const themeKinds: Record<string, ThemeAppearance> = {}
+  const themePalettes: Record<string, NonNullable<ReturnType<typeof resolveThemePalette>>> = {}
+  const themeLabels: Record<string, string> = {}
+  const themeSources: Record<string, (typeof store.themeSources)[string]> = {}
+  const nextFoundations: Record<string, TFoundation> = {}
+  const gradientsByTheme: Record<string, Record<string, string>> = {}
+
+  for (const mode of clampFigmaSyncModes(modes)) {
+    const values = orderedThemeModes[mode.theme]?.[mode.appearance]
+    if (!values) continue
+    const id = figmaSyncModeId(mode)
+    const name = themeDisplayName(mode.theme, store.themeLabels)
+    themeOrder.push(id)
+    themes[id] = values
+    themeKinds[id] = mode.appearance
+    const palette = resolveThemePalette(store.themeSources[mode.theme], mode.appearance, store)
+    if (palette) themePalettes[id] = palette
+    themeLabels[id] = figmaSyncModeLabel(name, mode.appearance)
+    if (store.themeSources[mode.theme]) themeSources[id] = store.themeSources[mode.theme]
+    if (foundationsByTheme[mode.theme]) nextFoundations[id] = foundationsByTheme[mode.theme]
+    const ramp = themeBrandRamp(mode.theme, store.themeSources, store.themeKinds, store, mode.appearance)
+    gradientsByTheme[id] = Object.fromEntries(
+      store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, mode.appearance, ramp)]),
+    )
+  }
+
+  return {
+    themeOrder,
+    themes,
+    themeKinds,
+    themePalettes,
+    themeLabels,
+    themeSources,
+    foundationsByTheme: nextFoundations,
+    gradientsByTheme,
+  }
+}
+
+/** Copy a theme-keyed override onto each selected `theme::appearance` so
+ *  `applyArchTokenOverrides` can see the slot it already projected. */
+function remapOverridesForSyncModes(overrides: ArchOverrides, modes: FigmaSyncMode[]): ArchOverrides {
+  const next: ArchOverrides = {}
+  for (const [id, byMode] of Object.entries(overrides)) {
+    const mapped = { ...byMode }
+    for (const mode of modes) {
+      const src = byMode[mode.theme] ?? byMode[figmaSyncModeId(mode)]
+      if (src) mapped[figmaSyncModeId(mode)] = src
+    }
+    next[id] = mapped
+  }
+  return next
+}
+
 export function generateTokenJSON(
   source?: DesignSnapshot | ReturnType<typeof useDesignStore.getState>,
   opts?: GenerateTokenOptions,
 ) {
   const store = (source ?? useDesignStore.getState()) as ReturnType<typeof useDesignStore.getState>
   const { typography, colorNaming } = store
-  const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store, opts?.theme)
+  const syncModes = opts?.modes?.length ? clampFigmaSyncModes(opts.modes) : null
+  const scopeThemes = uniqueThemesFromModes(syncModes ?? undefined)
+  const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(
+    store,
+    opts?.theme,
+    scopeThemes.length ? scopeThemes : (opts?.themes ?? null),
+  )
   const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {
     const resolved = resolveThemeFoundations(store, theme)
     return [theme, {
@@ -379,15 +481,48 @@ export function generateTokenJSON(
   // (themeNames/globalScales/resolvedPalettes/orderedThemes are all resolved
   // above, by the shared `buildThemeContext` call.)
 
+  const syncFlat = syncModes
+    ? flattenThemesForSyncModes(store, syncModes, orderedThemeModes, foundationsByTheme)
+    : null
+  const exportOrder = syncFlat?.themeOrder.length ? syncFlat.themeOrder : themeNames
+  const exportThemes = syncFlat?.themeOrder.length ? syncFlat.themes : orderedThemes
+  const exportKinds = syncFlat?.themeOrder.length ? syncFlat.themeKinds : store.themeKinds
+  const exportPalettes = syncFlat?.themeOrder.length ? syncFlat.themePalettes : resolvedPalettes
+  const exportLabels = syncFlat?.themeOrder.length
+    ? syncFlat.themeLabels
+    : Object.fromEntries(themeNames.map((t) => [t, themeDisplayName(t, store.themeLabels)]))
+  const exportSources = syncFlat?.themeOrder.length
+    ? syncFlat.themeSources
+    : Object.fromEntries(
+        themeNames
+          .filter((t) => store.themeSources[t])
+          .map((t) => [t, store.themeSources[t]]),
+      )
+  const exportFoundations = syncFlat?.themeOrder.length ? syncFlat.foundationsByTheme : foundationsByTheme
+  const exportGradientsByTheme = syncFlat?.themeOrder.length
+    ? syncFlat.gradientsByTheme
+    : Object.fromEntries(
+        themeNames.map((t) => {
+          const ramp = themeBrandRamp(t, store.themeSources, store.themeKinds, store)
+          const appearance = (store.themeKinds[t] ?? 'light') === 'dark' ? 'dark' : 'light'
+          return [
+            t,
+            Object.fromEntries(
+              store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, appearance, ramp)]),
+            ),
+          ]
+        }),
+      )
+
   // Semantic architecture projection (Alias/Semantics picker). Additive: the
   // flat shape above always ships (plugin contract, schemaVersion 3); a
   // non-flat choice ships its projection alongside under colors.architecture.
   const architecture = projectArchitecture(
     store.semanticArchitecture,
     {
-      themes: orderedThemes,
-      themeKinds: store.themeKinds,
-      themePalettes: resolvedPalettes,
+      themes: exportThemes,
+      themeKinds: exportKinds,
+      themePalettes: exportPalettes,
       scales: globalScales,
       accent: store.primaryColor,
       pageBackground: store.pageBackground,
@@ -396,17 +531,19 @@ export function generateTokenJSON(
     store.errorColor,
     // Was missing entirely — table edits (setArchitectureOverride) never
     // reached the actual export, only the live Alias/Semantics preview.
-    store.architectureOverrides[store.semanticArchitecture] ?? {},
-    // Every theme, so a Categorical system with an added theme ships that
-    // column too, not just the two built-ins.
-    themeNames,
+    syncModes
+      ? remapOverridesForSyncModes(store.architectureOverrides[store.semanticArchitecture] ?? {}, syncModes)
+      : (store.architectureOverrides[store.semanticArchitecture] ?? {}),
+    // Sync modes flatten to `theme::appearance` so Categorical columns match
+    // the Light/Dark Figma modes. Whole-system export still uses themeNames.
+    exportOrder,
   )
 
   return {
     // Contract version the Figma plugin checks on import. Bump only on a
     // breaking change to the payload shape; the plugin warns on a mismatch.
     schemaVersion: TOKEN_SCHEMA_VERSION,
-    project: store.projectName,
+    project: opts?.project?.trim() || store.projectName,
     colors: {
       // The page background every ramp is generated against and every alpha
       // token composites over (Radix custom-palette "background" input).
@@ -419,25 +556,20 @@ export function generateTokenJSON(
       // 'themeOrder' is the column order the plugin creates modes in.
       semantic: orderedThemeModes[themeNames[0]]?.light ?? orderedThemes.light ?? store.themes.light ?? {},
       semanticDark: orderedThemeModes[themeNames[0]]?.dark ?? orderedThemes.dark ?? store.themes.dark ?? {},
-      themes: orderedThemes,
+      themes: exportThemes,
       // Additive canonical shape: a library theme owns both appearances.
-      // `themes` above remains the preferred-appearance compatibility slice.
+      // `themes` above is the Figma column slice (preferred appearance, or
+      // `theme::appearance` when Sync picked Light/Dark modes).
       themeModes: orderedThemeModes,
-      themeOrder: themeNames,
+      themeOrder: exportOrder,
       // Which library theme Overview / Cover should read as "the" brand
       // ramp. Additive — an older plugin ignores it and keeps themeOrder[0].
       activeTheme: resolveActiveTheme(themeNames),
       // Which primitive family each shipped theme reads per slot — the plugin
       // groups Color Primitives (Accents / Neutrals / States/<theme>) from this,
       // so a leftover global `error` cannot sit beside `glass-error` unlabeled.
-      themeSources: Object.fromEntries(
-        themeNames
-          .filter((t) => store.themeSources[t])
-          .map((t) => [t, store.themeSources[t]]),
-      ),
-      themeLabels: Object.fromEntries(
-        themeNames.map((t) => [t, themeDisplayName(t, store.themeLabels)]),
-      ),
+      themeSources: exportSources,
+      themeLabels: exportLabels,
       // Radix-style panel treatment for surface-1 (cards, panels, sections).
       panelBackground: store.panelBackground,
       // Which semantic architecture the system standardizes on, plus the
@@ -448,7 +580,7 @@ export function generateTokenJSON(
     // Complete, resolved foundation collections per library theme. Additive:
     // existing consumers keep reading the global fields below, while clients
     // that understand style themes can switch every foundation with one key.
-    foundationsByTheme,
+    foundationsByTheme: exportFoundations,
     typography: {
       fontFamily: typography.fontFamily,
       headingFontFamily: typography.headingFontFamily ?? typography.fontFamily,
@@ -482,18 +614,7 @@ export function generateTokenJSON(
     // Figma plugin, which ignores gradients entirely today — is unaffected and
     // no `schemaVersion` bump is needed. Complete for every shipped theme
     // (`themeNames` = My themes, or light/dark when the library is empty).
-    gradientsByTheme: Object.fromEntries(
-      themeNames.map((t) => {
-        const ramp = themeBrandRamp(t, store.themeSources, store.themeKinds, store)
-        const appearance = (store.themeKinds[t] ?? 'light') === 'dark' ? 'dark' : 'light'
-        return [
-          t,
-          Object.fromEntries(
-            store.gradients.map((g) => [gradientSlug(g), gradientToCss(g, appearance, ramp)]),
-          ),
-        ]
-      }),
-    ),
+    gradientsByTheme: exportGradientsByTheme,
     gradientAssignments: (() => {
       const slugOf = (id: string | null) => {
         const g = store.gradients.find((x) => x.id === id)
@@ -544,6 +665,9 @@ export function generateTokenJSON(
     // Additive: older plugins ignore. Built from ALL_ROLES, CATEGORICAL_ROLE_COMMENTS,
     // LAYOUT_ROLES, TYPE_ROLES (same catalogues as the Semantics table / Skill).
     descriptions: buildVariableDescriptions(),
+    // Additive workspace handshake. Older plugins ignore it. Not a store
+    // field — only present when the publisher passed `opts.section`.
+    ...(opts?.section?.trim() ? { editor: { section: opts.section.trim() } } : {}),
   }
 }
 

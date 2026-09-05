@@ -21,8 +21,9 @@ import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { type DocsRailRow } from './DocsRail'
 import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
+import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
@@ -137,7 +138,7 @@ function PreviewAppearanceButton({ value, onChange }: {
 function IntegrationContextBar({ view, onBack }: { view: 'github' | 'figma'; onBack: () => void }) {
   const { t } = useI18n()
   return (
-    <header className="flex h-[54px] flex-shrink-0 items-center gap-2 border-b border-line bg-app px-4">
+    <header className={`flex h-[54px] flex-shrink-0 items-center gap-2 border-b border-line ${WORKSPACE_CHROME} px-4`}>
       <HubBreadcrumb section={t(view === 'github' ? 'GitHub' : 'Figma')} onBack={onBack} />
     </header>
   )
@@ -606,7 +607,7 @@ function HubRail<Key extends string>({
   return (
     <nav
       aria-label={ariaLabel}
-      className="flex-shrink-0 h-full flex flex-col border-r border-line bg-app overflow-hidden transition-[width] duration-200"
+      className={`flex-shrink-0 h-full flex flex-col border-r border-line ${WORKSPACE_CHROME} overflow-hidden transition-[width] duration-200`}
       style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
     >
       <div className={`h-[54px] flex-shrink-0 flex items-center border-b border-line ${collapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-4 pr-2'}`}>
@@ -785,7 +786,8 @@ export default function ThemePreviewHub({
   surface, onSurfaceChange,
   previewTheme, previewAppearance, stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange,
   onOpenComponent, onOpenComponents,
-  onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
+  onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
+  figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange,
   githubPushState, onGithubPushStateChange, docsExits,
 }: {
   surface: ThemeHubSurface
@@ -810,8 +812,14 @@ export default function ThemePreviewHub({
   /** Open a semantic token's row in the full Color · Semantics table. */
   onOpenInVariables: (tokenId: string) => void
   figmaPublishState: FigmaPublishState
+  /** This window's workspace section id — Sync card's This page link. */
+  workspaceSection?: string
   onRequestFigmaSync: () => void
   onOpenFigmaDownload: () => void
+  figmaFileName: string
+  onFigmaFileNameChange: (name: string) => void
+  figmaSyncModes: FigmaSyncMode[]
+  onFigmaSyncModesChange: (modes: FigmaSyncMode[]) => void
   githubPushState: GitHubPushState
   onGithubPushStateChange: (state: GitHubPushState) => void
   docsExits: Parameters<typeof DocsView>[0]['exits']
@@ -1001,11 +1009,17 @@ export default function ThemePreviewHub({
           figmaPublishState={figmaPublishState}
           onOpenPluginDownload={surface === 'figma' ? onOpenFigmaDownload : undefined}
           onOpenGithub={surface === 'figma' ? () => onSurfaceChange('github') : undefined}
+          workspaceSection={workspaceSection}
+          fileName={figmaFileName}
+          modeCount={figmaSyncModes.length}
         />
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {hubSurface ? (
-          <div className="min-h-0 flex-1 bg-nav p-3">
+          // Same `--nav` as TopNav + footer — the shell well. The board
+          // inside paints `surface.page`, so the gutter is what separates
+          // chrome from the previewed theme.
+          <div className={`min-h-0 flex-1 ${SHELL_CHROME} p-3`}>
             <section
               aria-label={`${themeName} preview canvas`}
               className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
@@ -1052,7 +1066,7 @@ export default function ThemePreviewHub({
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
               {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} section={workspaceSection} /></div> : null}
             </div>
           </>
         )}

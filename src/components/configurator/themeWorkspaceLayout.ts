@@ -2,6 +2,25 @@
 export const THEME_LIBRARY_WIDTH = 196
 
 /**
+ * Shell frame — TopNav, the Themes library (same 196px column as the brand
+ * lockup), and the attribution footer. `--nav` is the outermost chrome
+ * level (#f5f5f5 light / #151516 dark). The library must stay here: its
+ * right rule is the brand block's rule continued, so a `--tab-bar` fill
+ * under a `--nav` lockup is two levels on one column.
+ */
+export const SHELL_CHROME = 'bg-nav'
+
+/**
+ * Workspace chrome — the 52px tab strip, Quick settings / Hub / Get-code
+ * rails, Variables' icon + collections columns. `--tab-bar` / `--rail-section`
+ * (white / #222223) sit one step above `--nav` and one step off `--app`.
+ * Active workspace chips recess with `bg-app` on this plane — do not paint
+ * the strip `bg-app` or the chip vanishes. Export stays on `--nav` so the
+ * white pill still separates in light.
+ */
+export const WORKSPACE_CHROME = 'bg-tab-bar'
+
+/**
  * Workspace tabs — Figma `11:5128` (Tablist - Theme workspace).
  * Clear strip (no track fill), active = `bg-app` pill (#f5f5f5 in light),
  * inactive = transparent + muted type, hairline dividers between tabs.

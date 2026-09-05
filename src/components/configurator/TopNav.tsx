@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { LOCALES, useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME } from './themeWorkspaceLayout'
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
 // Section switching lives HERE — there is no left icon rail. The bar is split
@@ -262,7 +262,7 @@ export default function TopNav({
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
   return (
-    <header className="relative z-30 flex items-stretch flex-shrink-0 bg-nav border-b border-line" style={{ height: TOP_NAV_H }}>
+    <header className={`relative z-30 flex items-stretch flex-shrink-0 ${SHELL_CHROME} border-b border-line`} style={{ height: TOP_NAV_H }}>
       {/* Brand block — spans the left column below, so its right border and the
           column divider read as one rule from the very top. Collapses to just
           the mark (no wordmark) in step with the rail below it. One line, never

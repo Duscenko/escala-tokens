@@ -54,6 +54,7 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import type { StatusAction } from '../../lib/themePresets'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -173,7 +174,7 @@ export function ThemeIdentityBand({
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
       <label
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-white pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:bg-input-bg dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${nameError ? 'border-status-danger/70' : 'border-line'}`}
+        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-input-bg pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${nameError ? 'border-status-danger/70' : 'border-line'}`}
         title={t('Rename theme')}
       >
           <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
@@ -352,7 +353,7 @@ function InfoHint({ children }: { children: string }) {
 function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-rail-section">
+    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-app">
       {children}
     </section>
   )
@@ -391,7 +392,7 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
 }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-rail-section">
+    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-app">
       {/* Explicit top AND bottom padding: with `pt` alone the title's air came
           from `min-h`'s leftover, which centred it 18px below the card edge and
           6px above the first row — top-heavy, and the gap the eye reads as
@@ -1440,7 +1441,7 @@ export default function ThemeQuickSettingsRail({
   return (
     <aside
       aria-label={t('Quick settings')}
-      className="flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 bg-app"
+      className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 ${WORKSPACE_CHROME}`}
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       <div className="flex-shrink-0">
@@ -1801,7 +1802,7 @@ export default function ThemeQuickSettingsRail({
 
       <AnimatePresence>
         {undo && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className="flex-shrink-0 border-t border-line bg-app px-4 py-2">
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className={`flex-shrink-0 border-t border-line ${WORKSPACE_CHROME} px-4 py-2`}>
             <button type="button" onClick={restore} className="text-caption font-medium text-accent-ui hover:underline underline-offset-2">
               Undo {undo.label}
             </button>

@@ -2,6 +2,10 @@
  *  `generateTokenJSON()`. Extra fields on a live payload are ignored. This
  *  module must not import the store or `tokenGenerator`. */
 
+/** The six slots a theme reads. Mirrors `ThemeSources` in the store — a mapped
+ *  type, so the store's interface stays structurally assignable to it. */
+export type ThemeSlot = 'brand' | 'gray' | 'error' | 'warning' | 'success' | 'info'
+
 export interface TypeRoleAlias {
   family: string
   size: string
@@ -13,8 +17,15 @@ export interface TokenJSON {
   project: string
   colors: {
     primitive?: Record<string, string>
+    primitiveAlpha?: Record<string, string>
     themeOrder?: string[]
     themes?: Record<string, Record<string, string>>
+    /** Theme key → slot (`brand`/`gray`/`error`/…) → the real family key its
+     *  ramp lives under. A theme-minted family is named after the theme, so
+     *  this is the ONLY thing tying `accent` to `material--elevation`. */
+    themeSources?: Record<string, Record<ThemeSlot, string>>
+    themeLabels?: Record<string, string>
+    activeTheme?: string
     semanticArchitecture?: string
     architecture?: {
       kind?: string
@@ -33,8 +44,23 @@ export interface TokenJSON {
   padding?: Record<string, string>
   radius: Record<string, string>
   sizes?: Record<string, string>
+  selector?: Record<string, string>
+  stroke?: Record<string, string>
   grid?: Record<string, string>
   shadows?: Record<string, string>
+  /** Per-library-theme copies of the foundation maps. Root fields are the
+   *  compatibility fallback — a theme that differs (Material radius vs the
+   *  leftover root ramp) is the value consumers must resolve. */
+  foundationsByTheme?: Record<string, {
+    typography?: TokenJSON['typography']
+    spacing?: Record<string, string>
+    radius?: Record<string, string>
+    sizes?: Record<string, string>
+    selector?: Record<string, string>
+    stroke?: Record<string, string>
+    grid?: Record<string, string>
+    shadows?: Record<string, string>
+  }>
   gradients?: Record<string, string>
   gradientAssignments?: Record<string, string | null>
   icons?: {

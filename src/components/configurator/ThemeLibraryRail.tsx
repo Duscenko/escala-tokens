@@ -10,7 +10,7 @@ import ThemePanel from './ThemePanel'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
-import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { SHELL_CHROME, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 import {
@@ -62,14 +62,14 @@ export function LibraryOptionsIcon() {
 const THEME_RAIL_CHIP =
   'grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg text-fg-faint transition-[color,background-color]'
 
-/** Alpha-white glass wash on hover — no resting fill. */
-const THEME_RAIL_GLASS_HOVER = 'hover:bg-white/45 dark:hover:bg-white/[0.06]'
+/** Wash on hover — `--elevated` reads on both `--app` and `--tab-bar`. */
+const THEME_RAIL_GLASS_HOVER = 'hover:bg-elevated'
 
 /** Icon control inside a chip — menu, add, delete. */
 const THEME_RAIL_ICON_BTN =
   `${THEME_RAIL_CHIP} ${THEME_RAIL_GLASS_HOVER} hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`
 
-const THEME_RAIL_ICON_BTN_ACTIVE = 'bg-white/45 dark:bg-white/[0.06] text-fg'
+const THEME_RAIL_ICON_BTN_ACTIVE = 'bg-elevated text-fg'
 
 /** Numeric count — same footprint as icon chips (System styles tally). */
 const THEME_RAIL_COUNT_BADGE =
@@ -108,7 +108,7 @@ function ThemeLibraryOptionsPopover({
             type="button"
             role="menuitem"
             onClick={onResetSuggestedStyles}
-            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-white/45 dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
           >
             <ResetStyleIcon />
             <span className="text-caption font-medium">{t('Reset system style')}</span>
@@ -345,7 +345,7 @@ function ThemeOptionsMenu({
             type="button"
             role="menuitem"
             onClick={onOpenInCode}
-            className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] active:bg-white/60 dark:active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
           >
             {t('Open in code')}
           </button>
@@ -488,7 +488,7 @@ function CreateThemeButton({
       transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
       whileHover={reduceMotion || disabled ? undefined : { scale: 1.015 }}
       whileTap={reduceMotion || disabled ? undefined : { scale: 0.985 }}
-      className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-white/45 p-1.5 text-left transition-colors dark:bg-white/[0.06] hover:bg-white/60 dark:hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white/45 dark:disabled:hover:bg-white/[0.06]"
+      className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-app p-1.5 text-left transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-app"
     >
       <span
         aria-hidden
@@ -669,7 +669,7 @@ export default function ThemeLibraryRail({
     <aside
       id="themes-library"
       tabIndex={-1}
-      className="flex-shrink-0 flex flex-col min-h-0 bg-app outline-none"
+      className={`flex-shrink-0 flex flex-col min-h-0 ${SHELL_CHROME} outline-none`}
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
@@ -785,7 +785,7 @@ export default function ThemeLibraryRail({
             <button
               type="button"
               onClick={() => { setRowMenuKey(null); setAllOpen(true) }}
-              className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-white/45 hover:text-fg dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
             >
               <span>{t('All themes')} ({listedThemes.length})</span>
               <span className="tabular-nums text-micro text-fg-faint">+{listedThemes.length - railThemes.length}</span>

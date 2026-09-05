@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients'
 
@@ -186,7 +187,7 @@ export default function VariableCollectionRail({
     <nav
       ref={navRef}
       aria-label={ariaLabel}
-      className="flex-shrink-0 h-full overflow-y-auto border-r border-line bg-app transition-[width] duration-200"
+      className={`flex-shrink-0 h-full overflow-y-auto border-r border-line ${WORKSPACE_CHROME} transition-[width] duration-200`}
       style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
     >
       {context.header}

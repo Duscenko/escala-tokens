@@ -446,11 +446,14 @@
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
   --fg-faint: #7b7b83;
-  /* `--nav` stays #151516 (TopNav, Artefacts well, footer). `--app` /
-     `--panel` lift to #1b1b1c so Variables / Get code / rails sit one
-     step off that chrome. 6% white is a hairline on either (ΔL 0.0604
-     on #151516), not a frame. `--line-strong` shares the alpha: two
-     roles by usage, not a second %. */
+  /* Chrome levels (dark):
+       `--nav`        #151516  shell frame — TopNav, Themes library, footer,
+                               Artefacts well (`SHELL_CHROME`)
+       `--app`        #1b1b1c  page / canvas / recessed wells
+       `--tab-bar`    #222223  workspace chrome — tab strip + editor rails
+                               (`WORKSPACE_CHROME`; same hex as `--rail-section`)
+     6% white is a hairline on either (ΔL 0.0604 on #151516), not a frame.
+     `--line-strong` shares the alpha: two roles by usage, not a second %. */
   --line-alpha: rgba(255, 255, 255, 0.06);
   --line: var(--line-alpha);
   --line-strong: var(--line-alpha);

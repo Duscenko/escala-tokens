@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { buildAgentBundle, buildAgentSkillFiles, type TokenJSON } from '../agentBundle'
+import { agentMarkdownFromJSON, buildAgentBundle, buildAgentSkillFiles, type TokenJSON } from '../agentBundle'
 import { generateTokenJSON } from '../tokenGenerator'
 import { buildSkillExport } from '../skillExport'
 import { unzipStore } from '../zipStore'
@@ -158,5 +158,20 @@ describe('wrapper parity', () => {
     const { files } = buildAgentSkillFiles(generateTokenJSON(scoped))
     const tokensMd = files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
     expect(tokensMd).toMatch(/\*\*Modes \(Color Semantics columns\):\*\* `Dark`, `Light`/)
+  })
+})
+
+describe('agentMarkdownFromJSON is the Get code · Agent clipboard', () => {
+  it('wraps the Skill catalog files in the agent-context envelope', () => {
+    const json = generateTokenJSON()
+    const { files } = buildAgentSkillFiles(json)
+    const tokensMd = files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
+    const foundationsMd = files.find((file) => file.path === 'references/foundations.md')?.text ?? ''
+    const md = agentMarkdownFromJSON(json)
+    expect(md).toContain('format: agent-context/v1')
+    expect(md).toContain('source: escala-tokens')
+    expect(md).toContain(tokensMd.trim())
+    expect(md).toContain(foundationsMd.trim())
+    expect(md).toContain('Do not invent parallel names, hex, or px when a token exists.')
   })
 })

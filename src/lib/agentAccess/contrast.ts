@@ -1,11 +1,9 @@
-import { evaluate, type IntentClass } from '../color/apca.js'
+import { evaluate, INTENT_THRESHOLDS, type IntentClass } from '../color/apca.js'
 
 export type { IntentClass }
 
-const INTENTS: IntentClass[] = ['body-text', 'large-text', 'ui-component', 'decorative', 'surface']
-
 export function parseIntent(raw: unknown): IntentClass {
-  if (typeof raw === 'string' && (INTENTS as string[]).includes(raw)) return raw as IntentClass
+  if (typeof raw === 'string' && raw in INTENT_THRESHOLDS) return raw as IntentClass
   return 'body-text'
 }
 

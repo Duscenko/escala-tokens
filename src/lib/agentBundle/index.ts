@@ -15,5 +15,6 @@ export {
   skillName,
   webCodeSyntax,
 } from './names'
+export { agentMarkdownFromJSON, buildFoundationsMd, buildTokensMd } from './fromJson'
 export { buildAgentBundle, buildAgentSkillFiles } from './skill'
 export { buildAgentProductBundle, buildAgentProductFiles, type ProductPackage } from './product'
