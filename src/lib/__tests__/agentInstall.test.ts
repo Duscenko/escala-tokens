@@ -4,8 +4,13 @@ import { MCP_SERVER_NAME } from '../agentAccess/mcp'
 import {
   CLI_PACKAGE,
   DEFAULT_PUBLISH_ORIGIN,
+  FIGMA_MAKE_URL,
+  agentSetupPrompt,
+  claudeChatUrl,
   cliMcpInitCommand,
   cliSkillCommand,
+  cursorPromptUrl,
+  figmaAgentLead,
   mcpClaudeAddCommand,
   mcpConfigPath,
   mcpCursorConfig,
@@ -105,6 +110,29 @@ describe('agentInstall recipes', () => {
     expect(mcpConfigPath('cursor')).toBe('.cursor/mcp.json')
     expect(mcpConfigPath('claude')).toBe('.mcp.json')
     expect(mcpConfigPath('vscode')).toBe('.vscode/mcp.json')
+  })
+
+  it('Get code Open-in URLs carry the same MCP setup prompt, not a catalog dump', () => {
+    const prompt = agentSetupPrompt('https://escalatokens.com', 'hola')
+    expect(prompt).toContain('https://escalatokens.com/api/mcp')
+    expect(prompt).toContain('get_tokens with project "hola"')
+    expect(prompt).toContain('resolve_token')
+    const claude = claudeChatUrl(prompt)
+    expect(claude.startsWith('https://claude.ai/new?q=')).toBe(true)
+    expect(new URL(claude).searchParams.get('q')).toBe(prompt)
+    const cursor = cursorPromptUrl(prompt)
+    expect(cursor.startsWith('https://cursor.com/link/prompt?')).toBe(true)
+    expect(new URL(cursor).searchParams.get('text')).toBe(prompt)
+  })
+
+  it('Figma Agent lead is Make + skill, never a live MCP add', () => {
+    expect(FIGMA_MAKE_URL).toBe('https://www.figma.com/make')
+    const lead = figmaAgentLead('Acme App')
+    expect(lead).toContain('Acme App')
+    expect(lead).toContain('figma-use')
+    expect(lead).toContain('Action/primary/default')
+    expect(lead).toMatch(/cannot hold a live MCP/i)
+    expect(lead).not.toMatch(/mcp add|\/api\/mcp/)
   })
 })
 

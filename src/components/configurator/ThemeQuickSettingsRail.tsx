@@ -47,7 +47,7 @@ import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
-import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
+import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
@@ -1144,8 +1144,17 @@ export default function ThemeQuickSettingsRail({
   }
   // Axis picks write the ROLES only — the primitive ramp is untouched, which is
   // the whole point of the split: Boxes cannot move Fields.
-  const setRadiusRoles = (key: string, value: Record<string, string>) =>
+  const setRadiusRoles = (key: string, value: Record<string, string>) => {
     patchThemeFoundations(key, { radiusRoles: value })
+    // Same single-theme lockstep as the typeface: Theme Preview writes
+    // `themeFoundations[theme]`, but Live Sync's root `radiusRoles` is what a
+    // one-column Radius collection actually applies. Without this, boxes /
+    // fields / selectors move on the canvas and stay put in Figma.
+    const themes = useDesignStore.getState().themes
+    if (Object.keys(themes).length === 1) {
+      useDesignStore.getState().setRadiusRoles(value)
+    }
+  }
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
   const setSizes = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { sizes: value })
   const setSelector = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { selector: value })
@@ -1200,7 +1209,12 @@ export default function ThemeQuickSettingsRail({
    * makes it real. Returns `null` only if minting failed.
    */
   const resolveWriteTarget = (): string | null => {
-    if (!tryOn) return previewTheme
+    if (!tryOn) {
+      if (!isScaffoldTheme(previewTheme)) return previewTheme
+      const listed = myThemeKeys(store.themeOrder, store.themes)
+      if (!listed.length) return previewTheme
+      return resolveListedTheme(store.themeOrder, store.themes, store.themeKinds, listed[listed.length - 1], previewAppearance)
+    }
     // Auto-adopt as "<Style> Copy" — the first quick-settings edit is the user
     // starting to iterate, so it lands in MY THEMES as a duplication of the
     // style, not as the style itself.

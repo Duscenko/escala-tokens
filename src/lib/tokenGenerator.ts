@@ -2,7 +2,8 @@ import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '..
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
-import { resolveThemePalette, themeBrandRamp, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
+import { resolveThemePalette, themeBrandRamp, themeDisplayName, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
+import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
@@ -39,6 +40,24 @@ import { buildVariableDescriptions } from './tokenDescriptions'
 //     fully opaque — only the architecture projection carries alpha.
 export const TOKEN_SCHEMA_VERSION = 7
 
+// Theme Preview's `previewTheme` is local Configurator state — not a
+// DesignSnapshot field — so a theme switch never mutated the store and
+// `generateTokenJSON()` kept shipping the same families. Overview then
+// preferred leftover `accent-*` keys and the ramp never moved. This hint
+// is the previewed key for THIS publish only (no persist / no schema bump).
+let activeThemeHint: string | null = null
+
+export function setActiveThemeHint(theme: string | null) {
+  const next = theme?.trim()
+  activeThemeHint = next ? next : null
+}
+
+export function resolveActiveTheme(themeNames: string[], hint = activeThemeHint): string {
+  if (hint && themeNames.includes(hint)) return hint
+  const own = themeNames.filter((t) => t !== 'light' && t !== 'dark')
+  return own[own.length - 1] ?? themeNames[0] ?? 'light'
+}
+
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
 export function flattenScale(
@@ -61,7 +80,17 @@ export function flattenScale(
  * different answers for the same theme/scale — "everything derives from one
  * source" applies to this resolution step too, not just the final JSON call.
  */
-function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
+export type GenerateTokenOptions = {
+  /** Ship this library theme only. Figma sync uses it so leftover
+   *  scaffolding (Dark Brand, unused styles) cannot ride along. An
+   *  unknown key is ignored — the listed My-themes set still ships. */
+  theme?: string | null
+}
+
+function buildThemeContext(
+  store: ReturnType<typeof useDesignStore.getState>,
+  scopeTheme?: string | null,
+) {
   // Dark-appearance ramps — EVERY family ships both scales (the Radix model),
   // because dark-theme semantics resolve from the dark twin (see
   // sourceScaleFor). Without them the plugin has nothing to alias a dark brand
@@ -77,27 +106,18 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
     ...Object.keys(store.themes).filter((t) => !store.themeOrder.includes(t)),
   ]
 
-  // Drop the pristine built-in `light`/`dark` scaffolding once the user has a
-  // theme of their own. A brand-new system seeds `themes.light`/`.dark` (the
-  // default violet accent); the moment someone adopts a System Style or creates
-  // a theme, those seeds are just noise — but they were still shipping in the
-  // payload and the Export wizard's "My themes" list, so the Figma plugin
-  // created violet Light/Dark modes nobody asked for. Reported for NEW users
-  // specifically, which is exactly the population that never touches light/dark.
-  // "Touched" = the theme has its own family references (`themeSources` — every
-  // adopted/created theme gets one), its own foundation overrides, or a
-  // hand-edited semantic role (`architectureOverrides` keyed by the theme). An
-  // edited built-in is kept; an untouched one is dropped only when a real theme
-  // exists to replace it, so a system that genuinely only has light/dark still
-  // exports them.
-  const isTouched = (t: string) =>
-    Boolean(store.themeSources[t]) ||
-    Boolean(store.themeFoundations?.[t]) ||
-    Object.values(store.architectureOverrides ?? {}).some((byToken) =>
-      Object.values(byToken).some((byMode) => Object.prototype.hasOwnProperty.call(byMode, t)),
-    )
-  const ownThemeNames = allThemeNames.filter((t) => (t !== 'light' && t !== 'dark') || isTouched(t))
-  const themeNames = ownThemeNames.length ? ownThemeNames : allThemeNames
+  // Sync / export is My themes only. The built-in `light`/`dark` pair is
+  // scaffolding (the default violet / near-black reading) — the moment the
+  // library has a theme of its own, those seeds must not become Figma modes
+  // or leftover Accent/States ramps. `isTouched` used to keep them if anyone
+  // had ever written themeSources / foundations / an override on them, which
+  // is how a "default dark blue" column survived next to Glass / Neo.
+  // A system that genuinely only has light/dark still exports them.
+  const ownThemeNames = myThemeKeys(allThemeNames, store.themes)
+  const listedNames = ownThemeNames.length ? ownThemeNames : allThemeNames
+  const themeNames = scopeTheme && listedNames.includes(scopeTheme)
+    ? [scopeTheme]
+    : listedNames
 
   // Which primitive FAMILIES land in `colors.primitive`. A brand-new system's
   // `accent` / `neutral` / `error` … globals (the default violet ramps) were
@@ -120,7 +140,17 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
     const set = new Set<string>()
     for (const name of names) {
       const src = store.themeSources[name]
-      for (const slot of FAMILY_SLOTS) set.add(src?.[slot] || GLOBAL_FAMILY[slot])
+      const named = src
+        ? FAMILY_SLOTS.map((slot) => src[slot]).filter((key): key is string => Boolean(key))
+        : []
+      if (named.length) {
+        for (const key of named) set.add(key)
+      } else if (!ownThemeNames.includes(name)) {
+        // Scaffolding light/dark with no slot map still read the globals.
+        // A My theme with an empty map must not inherit accent/error — that
+        // is the leftover "default dark blue" ramp.
+        for (const slot of FAMILY_SLOTS) set.add(GLOBAL_FAMILY[slot])
+      }
     }
     return set
   }
@@ -130,6 +160,10 @@ function buildThemeContext(store: ReturnType<typeof useDesignStore.getState>) {
   const shipsFamily = (key: string) => {
     const base = key.replace(/-dark$/, '').replace(/-a$/, '')
     if (shippedFamilies.has(base)) return true
+    // With My themes, only those themes' families ship. Orphan customs used
+    // to ride along — `Dark Brand` minted by editing scaffolding `dark`
+    // while Swiss-copy was the real library theme.
+    if (ownThemeNames.length) return false
     return customKeys.has(base) && !anyThemeFamilies.has(base)
   }
 
@@ -233,10 +267,11 @@ export function buildCategoricalSymbolicTokens(): {
 
 export function generateTokenJSON(
   source?: DesignSnapshot | ReturnType<typeof useDesignStore.getState>,
+  opts?: GenerateTokenOptions,
 ) {
   const store = (source ?? useDesignStore.getState()) as ReturnType<typeof useDesignStore.getState>
   const { typography, colorNaming } = store
-  const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store)
+  const { grayDarkScale, hasDarkTheme, themeNames, shipsFamily, globalScales, resolvedPalettes, orderedThemes, orderedThemeModes } = buildThemeContext(store, opts?.theme)
   const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {
     const resolved = resolveThemeFoundations(store, theme)
     return [theme, {
@@ -389,6 +424,20 @@ export function generateTokenJSON(
       // `themes` above remains the preferred-appearance compatibility slice.
       themeModes: orderedThemeModes,
       themeOrder: themeNames,
+      // Which library theme Overview / Cover should read as "the" brand
+      // ramp. Additive — an older plugin ignores it and keeps themeOrder[0].
+      activeTheme: resolveActiveTheme(themeNames),
+      // Which primitive family each shipped theme reads per slot — the plugin
+      // groups Color Primitives (Accents / Neutrals / States/<theme>) from this,
+      // so a leftover global `error` cannot sit beside `glass-error` unlabeled.
+      themeSources: Object.fromEntries(
+        themeNames
+          .filter((t) => store.themeSources[t])
+          .map((t) => [t, store.themeSources[t]]),
+      ),
+      themeLabels: Object.fromEntries(
+        themeNames.map((t) => [t, themeDisplayName(t, store.themeLabels)]),
+      ),
       // Radix-style panel treatment for surface-1 (cards, panels, sections).
       panelBackground: store.panelBackground,
       // Which semantic architecture the system standardizes on, plus the
@@ -431,10 +480,10 @@ export function generateTokenJSON(
     // (they are still the GLOBAL accent's resolution, which is what the
     // built-in light/dark themes give), so an older consumer — including the
     // Figma plugin, which ignores gradients entirely today — is unaffected and
-    // no `schemaVersion` bump is needed. Complete for every theme in
-    // `themeOrder`, so a consumer never tests which entries exist.
+    // no `schemaVersion` bump is needed. Complete for every shipped theme
+    // (`themeNames` = My themes, or light/dark when the library is empty).
     gradientsByTheme: Object.fromEntries(
-      store.themeOrder.map((t) => {
+      themeNames.map((t) => {
         const ramp = themeBrandRamp(t, store.themeSources, store.themeKinds, store)
         const appearance = (store.themeKinds[t] ?? 'light') === 'dark' ? 'dark' : 'light'
         return [

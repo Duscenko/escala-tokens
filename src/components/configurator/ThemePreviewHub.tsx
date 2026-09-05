@@ -21,13 +21,16 @@ import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { type DocsRailRow } from './DocsRail'
 import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { GitHubPushState } from '../../lib/github'
-import type { ThemeAppearance } from '../../lib/themeModes'
+import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
+import { adoptPreset } from '../../lib/adoptPreset'
+import { myThemeKeys } from '../../lib/themeLibrary'
+import { showToast } from '../ui/Toast'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -227,9 +230,13 @@ function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null):
 
 // The quick-settings rail stays outside the framed canvas so its property
 // controls remain fixed while the artefacts themselves scroll.
+/** Breathing room between the docked drawer's edge and the first artefact —
+ *  without it the board butts straight against the panel. */
+const DRAWER_GUTTER = 24
+
 function ArtefactsView({
   previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
-  inspecting, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables,
+  inspecting, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -244,13 +251,14 @@ function ArtefactsView({
    *  never local here. */
   inspecting: boolean
   onPickRole: (roleId: string, css: string, appearance: ThemeAppearance) => void
+  /** A role picked here is open in Token Details — the overlay holds its pin
+   *  for the duration and drops it when the drawer closes. */
+  editingRole: boolean
   /** The badge's own exit to the full Semantics table — the same door Token
    *  Details carries, one step earlier in the flow. */
   onOpenRoleInVariables: (roleId: string) => void
-  /** Colour pickers from the quick rail still fly out inside the hub. The
-   *  canvas cedes `PANEL_W` so artefacts reflow instead of sitting under them.
-   *  Token Details is a different drawer — it docks to the Themes Library like
-   *  New theme, and does not use this padding. */
+  /** The quick rail's colour fly-out is open. It flies out FROM the canvas's
+   *  own left edge, so the width it covers is the width the canvas cedes. */
   drawerOpen: boolean
 }) {
   const store = useDesignStore()
@@ -263,11 +271,44 @@ function ArtefactsView({
     dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark'), accentPreview),
   }), [overlayStore, previewTheme, accentPreview])
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  // Token Details docks to the THEMES LIBRARY's edge, not the canvas's — the
+  // library column and the foundation icon rail sit between the two, so the
+  // canvas already begins well to the right of where the drawer starts.
+  // Ceding `PANEL_W` here therefore over-reserves by exactly that offset:
+  // measured at a 1385px viewport, the drawer spans 196→556 while the canvas
+  // begins at 451, so 360px was reserved to clear 106px and left 245px of dead
+  // gutter — more than the 164px a collage column occupies, which is why a
+  // column that would have fit didn't appear. Cede the real OVERLAP instead.
+  const [dockInset, setDockInset] = useState(0)
+  useEffect(() => {
+    if (!editingRole) { setDockInset(0); return }
+    const measure = () => {
+      const el = canvasRef.current
+      if (!el) return
+      // Measured, not derived from the rail's own widths: the library can be
+      // collapsed and the icon rail is its own column, so the canvas's left
+      // edge is the only honest input. `paddingLeft` moves the CONTENT box,
+      // never this border-box edge, so re-measuring cannot feed back on itself.
+      const overlap = THEME_LIBRARY_WIDTH + PANEL_W - el.getBoundingClientRect().left
+      setDockInset(overlap > 0 ? Math.round(overlap) + DRAWER_GUTTER : 0)
+    }
+    measure()
+    // A ResizeObserver on the canvas, not a window listener: the canvas also
+    // moves when a sibling column changes (the Themes Library collapsing), and
+    // that fires no resize event. Observing its own box covers both. It cannot
+    // feed back — the value is read from the border-box edge, which the
+    // `paddingLeft` this sets never moves.
+    const ro = new ResizeObserver(measure)
+    if (canvasRef.current) ro.observe(canvasRef.current)
+    return () => ro.disconnect()
+  }, [editingRole])
+  // Both can be open at once; the wider claim wins.
+  const padLeft = Math.max(drawerOpen ? PANEL_W : 0, dockInset)
   return (
     <div
       ref={canvasRef}
       className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
-      style={drawerOpen ? { paddingLeft: PANEL_W } : undefined}
+      style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
       <div className="mx-auto w-full" style={inspecting ? { cursor: 'crosshair' } : undefined}>
         <InspectorModeProvider active={inspecting}>
@@ -285,6 +326,7 @@ function ArtefactsView({
         defaultAppearance={boardAppearance}
         onPick={onPickRole}
         onOpenTable={onOpenRoleInVariables}
+        editing={editingRole}
       />
     </div>
   )
@@ -741,10 +783,10 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
 
 export default function ThemePreviewHub({
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, stylePreview, onAdoptStyle, onPreviewAppearanceChange,
+  previewTheme, previewAppearance, stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange,
   onOpenComponent, onOpenComponents,
   onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, onRequestFigmaSync, onOpenFigmaDownload,
-  onOpenSave, githubPushState, onGithubPushStateChange, docsExits,
+  githubPushState, onGithubPushStateChange, docsExits,
 }: {
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
@@ -755,6 +797,7 @@ export default function ThemePreviewHub({
   /** A tried-on style was adopted into the system — re-point the preview at it
    *  and drop the ephemeral try-on. */
   onAdoptStyle: (themeKey: string) => void
+  onSelectTheme: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
   /** Open one component's full article on the Components destination. */
   onOpenComponent: (component: ComponentDef) => void
@@ -769,7 +812,6 @@ export default function ThemePreviewHub({
   figmaPublishState: FigmaPublishState
   onRequestFigmaSync: () => void
   onOpenFigmaDownload: () => void
-  onOpenSave: () => void
   githubPushState: GitHubPushState
   onGithubPushStateChange: (state: GitHubPushState) => void
   docsExits: Parameters<typeof DocsView>[0]['exits']
@@ -802,7 +844,32 @@ export default function ThemePreviewHub({
     if (!Object.keys(tryOnEdits).length) return stylePreview
     return { ...stylePreview, edits: tryOnEdits }
   }, [stylePreview, tryOnEdits])
+  const store = useDesignStore()
+  // A REAL pick (not a Reset-driven clear) during a try-on is a deliberate
+  // edit, not a glance — it can't stay ephemeral the way `tryOnEdits` is,
+  // because nothing ephemeral survives leaving the tab. So it adopts the
+  // style into My themes on the spot, the same "first edit makes it real"
+  // rule `ThemeQuickSettingsRail`'s `resolveWriteTarget` already applies to
+  // the quick-edit rail. `mode` here is the PREVIEWED theme's own mode key
+  // (`<previewTheme>::light|dark` — see `useArchitectureTokens`), which
+  // still points at whatever real theme sits under the try-on; writing
+  // straight to it would silently edit that committed theme instead of the
+  // style being tried on, so the edit is re-targeted at the freshly minted
+  // theme's OWN mode key (same appearance, new theme id) once adoption
+  // hands one back.
   const recordTryOnEdit = (tokenId: string, mode: string, ref: string | null) => {
+    if (ref && stylePreview) {
+      const adopted = adoptPreset(stylePreview.preset, previewAppearance, { asCopy: true, copyWord: t('Copy') })
+      if ('error' in adopted) {
+        showToast(t(adopted.error, { count: myThemeKeys(store.themeOrder, store.themes).length }))
+        return
+      }
+      showToast(t('{name} added to My themes', { name: adopted.name }))
+      onAdoptStyle(adopted.key)
+      const appearance = appearanceFromModeKey(mode) ?? previewAppearance
+      store.setArchitectureOverride(store.semanticArchitecture, tokenId, themeModeKey(adopted.key, appearance), ref)
+      return
+    }
     setTryOnEdits((prev) => {
       const nextToken = { ...(prev[tokenId] ?? {}) }
       if (ref) nextToken[mode] = ref
@@ -837,7 +904,6 @@ export default function ThemePreviewHub({
   }
   useEffect(() => { setRandomBoardAppearance(null) }, [previewTheme])
   useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
-  const store = useDesignStore()
   // A role picked on the canvas opens Token Details in the SAME dock as New
   // theme — flush to the Themes Library — not the Variables table. The table
   // is a second destination the drawer itself already carries a door to.
@@ -933,6 +999,8 @@ export default function ThemePreviewHub({
           provider={surface}
           githubPushState={githubPushState}
           figmaPublishState={figmaPublishState}
+          onOpenPluginDownload={surface === 'figma' ? onOpenFigmaDownload : undefined}
+          onOpenGithub={surface === 'figma' ? () => onSurfaceChange('github') : undefined}
         />
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -972,7 +1040,7 @@ export default function ThemePreviewHub({
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} inspecting={inspecting} tileAppearances={effectiveTileAppearances} boardAppearance={effectiveBoardAppearance} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
+                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} editingRole={editingToken != null} inspecting={inspecting} tileAppearances={effectiveTileAppearances} boardAppearance={effectiveBoardAppearance} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={paintedPreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
                 {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={paintedPreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
               </div>
@@ -984,7 +1052,7 @@ export default function ThemePreviewHub({
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
               {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} onOpenGithub={() => onSurfaceChange('github')} onOpenSave={onOpenSave} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} /></div> : null}
             </div>
           </>
         )}

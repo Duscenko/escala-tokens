@@ -3,8 +3,10 @@ import {
   MY_THEME_HARD_CAP,
   MY_THEME_RAIL_LIMIT,
   canAddMyTheme,
+  isScaffoldTheme,
   myThemeKeys,
   myThemeRoom,
+  resolveListedTheme,
   visibleMyThemes,
 } from '../themeLibrary'
 
@@ -12,6 +14,22 @@ describe('myThemeKeys', () => {
   it('drops the built-in light/dark scaffolding', () => {
     expect(myThemeKeys(['light', 'dark', 'core-copy'], { light: {}, dark: {}, 'core-copy': {} }))
       .toEqual(['core-copy'])
+  })
+})
+
+describe('resolveListedTheme', () => {
+  const themes = { light: {}, dark: {}, 'swiss-copy': {} }
+  const kinds = { light: 'light', dark: 'dark', 'swiss-copy': 'dark' }
+
+  it('never lands on scaffolding dark when a My theme exists', () => {
+    expect(isScaffoldTheme('dark')).toBe(true)
+    expect(resolveListedTheme(['light', 'dark', 'swiss-copy'], themes, kinds, 'dark', 'dark'))
+      .toBe('swiss-copy')
+  })
+
+  it('keeps a listed My theme', () => {
+    expect(resolveListedTheme(['light', 'dark', 'swiss-copy'], themes, kinds, 'swiss-copy', 'dark'))
+      .toBe('swiss-copy')
   })
 })
 

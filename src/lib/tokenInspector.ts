@@ -13,7 +13,7 @@
 // The cost of deriving it is a known blind spot, stated rather than hidden:
 // see `INSPECTOR_BLIND_SPOT` below.
 
-import { COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
+import { COMPONENT_ARCH_ROLES, COMPONENT_COLOR_FIELDS } from './componentColorFields.generated'
 import { CATEGORICAL_FIELD_ROLE } from './previewTokens'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
 
@@ -75,17 +75,25 @@ export interface Inspection {
  * fell back to the union below (`Inspection.measured === false`), which is the
  * one state where the derivation is still the field closure.
  *
- * Left as a gap on purpose rather than patched with a hardcoded supplement:
- * a hand-kept list of "roles the generator misses" is precisely the drifting
- * second source this module's header rejects. The real fix is in the
- * generator — following imported helpers for (2) and collecting
- * `archTokens[...]` string literals for (1), along the same closure it already
- * walks — at which point this constant and the badge's own footnote both go
- * away. Both cases UNDER-report; the badge never names a role a component
- * doesn't read, so what's here is always true, just not always complete.
+ * UPDATE 2: both escapes are now closed for the UNION too, the way this note
+ * always said they should be — in the generator, not with a hardcoded
+ * supplement. It collects role-id literals for (1) and walks `previewTokens.ts`
+ * helpers for (2), emitting `COMPONENT_ARCH_ROLES` beside the field map;
+ * `rolesForComponent` unions the two. That mattered beyond the fallback,
+ * because the union is also the ALLOW-LIST a measured inspection filters
+ * against (`rolesForPaints`) — so a role missing from it was dropped from the
+ * badge even when the element visibly painted it. `surface.layer-2` on
+ * SegmentedControl, `border.focus` on every text field and
+ * `action.primary.hover` on Toggle were all in that hole.
+ *
+ * What REMAINS a blind spot is different in kind: a colour a specimen mixes
+ * itself (`soft()`, `tintOf()`, `darken()`) exists in no ramp, so there is no
+ * role to name — the fix there is the specimen binding an alpha role instead,
+ * not more static analysis. It still UNDER-reports: the badge never names a
+ * role a component doesn't paint, so what's listed is always true.
  */
 export const INSPECTOR_BLIND_SPOT =
-  'Roles read straight from archTokens (status borders, ghost washes) are not listed.'
+  'Colours a specimen mixes itself (soft washes, derived hovers) match no token, so they are not listed.'
 
 /**
  * Field → role, inverted once. Several fields can share a role; the id is what
@@ -102,11 +110,22 @@ export const INSPECTOR_BLIND_SPOT =
  */
 export function rolesForComponent(componentKey: string): string[] {
   const fields = COMPONENT_COLOR_FIELDS[componentKey]
-  if (!fields) return []
+  const direct = COMPONENT_ARCH_ROLES[componentKey]
+  if (!fields && !direct) return []
   const ids: string[] = []
-  for (const field of fields) {
+  for (const field of fields ?? []) {
     const id = CATEGORICAL_FIELD_ROLE[field]
     if (id && !ids.includes(id)) ids.push(id)
+  }
+  // Roles the specimen resolves BY NAME rather than through a field —
+  // `archTokenOf(t, 'surface.inverse')` and the `previewTokens` helpers. A
+  // field list structurally cannot express these, and this list is used as an
+  // ALLOW-LIST (`rolesForPaints`), so anything missing here is dropped from
+  // the badge even when the component visibly paints it. That is what hid
+  // `surface.layer-2` on SegmentedControl, `border.focus` on every text
+  // field, and `action.primary.hover` on Toggle.
+  for (const id of direct ?? []) {
+    if (!ids.includes(id)) ids.push(id)
   }
   return ids
 }
@@ -270,7 +289,17 @@ function roleAt(
   where: PaintSlot,
 ): InspectedRole | null {
   if (!arch[id]) return null
-  const paint = paints.find((p) => p.where === where)
+  // Match the paint that IS this role's colour first; only fall back to
+  // "the first paint in this slot" when nothing measured that value (a
+  // state variant, say, where the rendered fill is the hover tone rather
+  // than the role's own). Slot alone is not enough the moment a component
+  // paints two of the same kind: Toast asks for `surface.inverse` AND
+  // `status.<sev>.surface-solid`, both fills, and both used to resolve to
+  // the first fill observed — so the severity dot's row was stamped with
+  // the toast body's near-black instead of its own red.
+  const want = normalizeColor(arch[id])
+  const paint = paints.find((p) => p.where === where && want && normalizeColor(p.css) === want)
+    ?? paints.find((p) => p.where === where)
   return { id, css: paint?.css ?? arch[id], where }
 }
 

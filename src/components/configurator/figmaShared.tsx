@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 // ── Shared between FigmaSyncView and FigmaDownloadView ──────────────────────
 
@@ -68,40 +69,148 @@ export function relativeTime(iso: string | null): string {
  *  than "Plugin" because on a right-aligned cluster there's no heading above
  *  it to say whose plugin it is. The update case swaps both the badge AND the
  *  button label, so the row still states it without a second line of copy. */
+function InfoIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M8 7.1v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="4.9" r=".8" fill="currentColor" />
+    </svg>
+  )
+}
+
+function ClickInfo({ label, children }: { label: string; children: ReactNode }) {
+  const tooltipId = useId()
+  const anchor = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
+  const updatePosition = useCallback(() => {
+    const rect = anchor.current?.getBoundingClientRect()
+    if (!rect) return
+    const width = 220
+    setPosition({
+      left: Math.max(8, Math.min(window.innerWidth - width - 8, rect.left)),
+      top: rect.bottom + 6,
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    updatePosition()
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (anchor.current?.contains(target) || panel.current?.contains(target)) return
+      setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open, updatePosition])
+
+  return (
+    <>
+      <button
+        ref={anchor}
+        type="button"
+        aria-expanded={open}
+        aria-controls={tooltipId}
+        aria-label={label}
+        onClick={() => setOpen((next) => !next)}
+        className="grid h-5 w-5 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
+      >
+        <InfoIcon />
+      </button>
+      {open && position && createPortal(
+        <div
+          ref={panel}
+          id={tooltipId}
+          role="tooltip"
+          className="fixed z-[70] w-[220px] rounded-lg border border-line-strong bg-app px-3 py-2.5 text-caption leading-relaxed text-fg-muted shadow-lg"
+          style={position}
+        >
+          {children}
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 export function PluginInstallPromo({
   version,
   updateAvailable,
   onOpenInstall,
+  layout = 'inline',
+  info,
 }: {
   version: string
   updateAvailable: boolean
   onOpenInstall: () => void
+  /** `stacked` fits the integration rail; `inline` stays in wide hero rows. */
+  layout?: 'inline' | 'stacked'
+  /** Click-info copy for the mark on the name/version row. */
+  info?: string
 }) {
+  const rootClass = layout === 'stacked'
+    ? 'mt-3 flex w-full flex-col gap-2.5'
+    : 'flex flex-shrink-0 items-center gap-2.5'
+  // Stroke, not a filled slab. Sync now is the payoff on this screen; a
+  // solid `bg-fg` Download sat at the same weight and stole the eye from
+  // it. Border + label use `--fg` so they invert with the chrome page
+  // (near-white in dark, near-black in light) instead of a hardcoded white
+  // that would vanish on a light rail.
+  const buttonClass = layout === 'stacked'
+    ? 'inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-fg bg-transparent px-3 text-caption font-semibold text-fg transition-[background-color,transform] hover:bg-fg/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+    : 'inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-fg bg-transparent px-3 text-caption font-semibold text-fg transition-[background-color,transform] hover:bg-fg/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+
   return (
     <div
-      className="flex flex-shrink-0 items-center gap-2.5"
+      className={rootClass}
       title={updateAvailable ? `v${version} — download and re-import in Figma desktop.` : undefined}
     >
-      <span className="flex items-center gap-2">
-        <span className="text-caption font-semibold text-fg">Escala DS Plugin</span>
+      <span className={`flex min-w-0 items-center gap-2 ${layout === 'stacked' ? 'w-full' : ''}`}>
+        <img
+          src="/sync-figma/favicon-escalatokens.svg"
+          alt=""
+          aria-hidden
+          className="h-5 w-5 flex-shrink-0 rounded-[5px]"
+        />
+        <span className="min-w-0 truncate text-caption font-semibold text-fg">Escala DS Plugin</span>
         {/* At rest the version is plain quiet TEXT, not a bordered pill — the
             resting version isn't a state anyone has to act on, and a pill for
             it put a second outlined box beside the Download button for no
-            reason. Only the update case earns a badge, because that one IS a
-            state (and it's the accent, so it reads at a glance). */}
+            reason. Only the update case earns a badge. Ink is `--fg`, same
+            as every other chrome control on this screen — `--accent-ui`
+            tracks the previewed theme and would paint this gold/red. */}
         {updateAvailable ? (
-          <span className="inline-flex items-center rounded-full bg-accent-ui/10 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-ui">
+          <span className="inline-flex flex-shrink-0 items-center rounded-full bg-fg/10 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-fg">
             Update available
           </span>
         ) : (
-          <span className="text-micro font-medium text-fg-faint">v{version}</span>
+          <span className="flex-shrink-0 text-micro font-medium text-fg-faint">v{version}</span>
         )}
+        {info ? (
+          <span className={layout === 'stacked' ? 'ml-auto' : undefined}>
+            <ClickInfo label="About the Escala DS plugin">{info}</ClickInfo>
+          </span>
+        ) : null}
       </span>
       <button
         type="button"
         onClick={onOpenInstall}
         aria-label={updateAvailable ? 'Download plugin update and open install steps' : 'Download plugin and open install steps'}
-        className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-fg px-3 text-caption font-semibold text-app shadow-sm transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className={buttonClass}
       >
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />

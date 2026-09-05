@@ -227,7 +227,7 @@ function InspectRing({ rect, variant }: { rect: DOMRect; variant: 'component' | 
 }
 
 export function InspectorOverlay({
-  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable,
+  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing,
 }: {
   active: boolean
   /** The scroll container the canvas paints into — hit-testing is scoped to it
@@ -243,6 +243,12 @@ export function InspectorOverlay({
    *  play (the lit control's first role, else the top of the list) rather than
    *  inventing a component-shaped destination the table doesn't have. */
   onOpenTable?: (roleId: string) => void
+  /** Whether a role picked here is currently open in Token Details. The pin is
+   *  held for the whole edit (that is what keeps the ring on the element being
+   *  edited) and RELEASED when the drawer closes — otherwise the board reads as
+   *  dead afterwards, since a pin deliberately ignores `pointermove` and the
+   *  next component you point at never lights up. */
+  editing?: boolean
 }) {
   const [hover, setHover] = useState<Target | null>(null)
   const [pin, setPin] = useState<Target | null>(null)
@@ -420,6 +426,45 @@ export function InspectorOverlay({
     }
   }, [active, rootRef, buildComponent, buildGroup, buildFocus, buildPage, clearAll])
 
+  // Release the pin the edit was holding, once the edit is over. Only on the
+  // true → false edge: a pin made by clicking an element (no drawer) is the
+  // user's own and stays until they clear it.
+  const wasEditing = useRef(false)
+  useEffect(() => {
+    if (wasEditing.current && !editing) clearAll()
+    wasEditing.current = !!editing
+  }, [editing, clearAll])
+
+  // A PINNED rect has to follow its element, because the pin now outlives the
+  // click that made it: opening Token Details makes the canvas cede the
+  // drawer's width, which slides the whole board sideways under a ring that
+  // was measured before it moved. `onScroll` can afford to just `clearAll()`
+  // (that note is about a gesture the user is actively driving); this one
+  // happens TO the user, mid-edit, so the ring re-measures instead of
+  // vanishing. rAF rather than a ResizeObserver: the element's own size never
+  // changes here, only its position, and the reflow is an animated transition
+  // rather than a single jump. Runs only while pinned, and only writes state
+  // on an actual move, so it settles as soon as the transition ends.
+  useEffect(() => {
+    if (!pin) return
+    let frame = 0
+    const tick = () => {
+      frame = requestAnimationFrame(tick)
+      // `rectOf`, never a bare `getBoundingClientRect` — the marker is
+      // `display: contents` (so it cannot disturb the layout it wraps), which
+      // means its own box is all zeros and the ring would collapse into the
+      // top-left corner.
+      const next = rectOf(pin.el)
+      const prev = pin.rect
+      if (!next) return
+      if (next.top === prev.top && next.left === prev.left
+        && next.width === prev.width && next.height === prev.height) return
+      setPin((current) => (current && current.el === pin.el ? { ...current, rect: next } : current))
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [pin])
+
   // Escape unwinds one layer at a time — the held control, then the pin, then
   // the hover — the same "dismiss the transient thing first" order every other
   // overlay here follows. The mode itself is never left from here.
@@ -526,7 +571,20 @@ export function InspectorOverlay({
                 <li key={role.id}>
                   <button
                     type="button"
-                    onClick={() => { clearAll(); onPick(role.id, role.css, target.appearance) }}
+                    // The ring STAYS while Token Details edits this role: the
+                    // drawer names a token, not a place, so dismissing the
+                    // highlight left the user editing `content.primary` with
+                    // nothing on screen saying which of the board's dozen
+                    // components they had picked it off.
+                    //
+                    // A HOVER target is promoted to a pin rather than kept as
+                    // hover — hover dies the moment the pointer leaves for the
+                    // drawer, and a pin ignores `pointermove`, so crossing the
+                    // board on the way there cannot retarget it either.
+                    onClick={() => {
+                      if (!pinRef.current) { setPin(target); setHover(null) }
+                      onPick(role.id, role.css, target.appearance)
+                    }}
                     className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
                       isLit
                         ? 'bg-accent-ui/10 ring-1 ring-inset ring-accent-ui/40'

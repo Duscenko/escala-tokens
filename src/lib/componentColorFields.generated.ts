@@ -50,7 +50,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "RadioGroup": ['brandSolid', 'neutralText', 'disabledBg', 'disabledText', 'border', 'fgMuted', 'inputSurface'],
   "Rating": ['neutralFill', 'neutralText', 'fgMuted', 'warningColor'],
   "ScrollArea": ['surface', 'neutralFill', 'neutralText', 'borderDefault'],
-  "SegmentedControl": ['neutralFill', 'neutralText', 'fgMuted', 'inputSurface'],
+  "SegmentedControl": ['neutralText', 'fgMuted', 'inputSurface'],
   "Select": ['neutralText', 'disabledBg', 'disabledText', 'border', 'fgMuted', 'placeholderText', 'inputSurface', 'borderHover', 'borderCritical'],
   "Sidebar": ['surface', 'brandSolid', 'brandText', 'neutralFill', 'neutralText', 'borderDefault'],
   "Slider": ['brandSolid', 'neutralFill', 'neutralText', 'fgMuted'],
@@ -66,4 +66,49 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Toast": ['surface', 'brandSolid', 'neutralText', 'errorColor', 'successColor', 'warningColor', 'infoColor'],
   "Toggle": ['brandSolid', 'onBrand', 'neutralFill', 'neutralText', 'disabledBg', 'disabledText', 'inputSurface'],
   "Tooltip": ['surface', 'neutralText'],
+}
+
+/** Component catalogue key → Categorical role ids its specimen resolves BY
+ *  NAME rather than through a `PreviewTokens` field — `archTokenOf(t,
+ *  'surface.inverse')` and the `previewTokens` helpers (`overlaySurfaceOf`,
+ *  `focusBorderOf`, `statusSoftFillOf`…).
+ *
+ *  `COMPONENT_COLOR_FIELDS` alone can't express these: it is a list of
+ *  FIELDS, and a role reached by id never touches one. Inspect tokens
+ *  filters measured colours against the roles a component is allowed to
+ *  own, so a role missing from both maps is silently dropped from the
+ *  badge even though the component visibly paints it. */
+export const COMPONENT_ARCH_ROLES: Record<string, string[]> = {
+  "Badge": ['status.critical.surface', 'status.info.surface', 'status.success.surface', 'status.warning.surface'],
+  "Button": ['action.ghost.brand.hover', 'action.ghost.brand.pressed'],
+  "Card": ['surface.layer-1'],
+  "Checkbox": ['surface.input'],
+  "CheckboxGroup": ['surface.input'],
+  "Chip": ['surface.selected'],
+  "CloseButton": ['action.ghost.neutral.hover', 'action.ghost.neutral.pressed'],
+  "Combobox": ['surface.input', 'surface.layer-1', 'surface.layer-2'],
+  "Command": ['surface.layer-1', 'surface.layer-2'],
+  "ContextMenu": ['action.ghost.neutral.hover', 'status.critical.content', 'surface.layer-1', 'surface.layer-2'],
+  "DropdownMenu": ['action.ghost.neutral.hover', 'status.critical.content', 'surface.layer-1', 'surface.layer-2'],
+  "Dropzone": ['status.critical.content'],
+  "Field": ['status.critical.content', 'surface.input'],
+  "Input": ['border.control-hover', 'border.focus', 'status.critical.border-strong', 'status.critical.content', 'surface.input'],
+  "InputGroup": ['surface.input'],
+  "InputOTP": ['status.critical.border-strong', 'surface.input'],
+  "InputStepper": ['surface.input'],
+  "InputTag": ['surface.input'],
+  "Label": ['status.critical.content'],
+  "Modal": ['surface.layer-1', 'surface.layer-2'],
+  "PasswordStrength": ['status.critical.content', 'status.success.content', 'status.warning.content', 'surface.input'],
+  "Popover": ['surface.layer-1', 'surface.layer-2'],
+  "Radio": ['surface.input'],
+  "RadioGroup": ['surface.input'],
+  "SegmentedControl": ['surface.input', 'surface.layer-1', 'surface.layer-2'],
+  "Select": ['border.control-hover', 'border.focus', 'status.critical.border-strong', 'surface.input'],
+  "SwitchGroup": ['surface.input'],
+  "TabMenu": ['surface.selected'],
+  "Textarea": ['border.control-hover', 'border.focus', 'status.critical.border-strong', 'status.critical.content', 'surface.input'],
+  "TextLink": ['content.link.default', 'content.link.hover'],
+  "Toast": ['content.inverse', 'surface.inverse'],
+  "Toggle": ['action.primary.hover', 'surface.input'],
 }

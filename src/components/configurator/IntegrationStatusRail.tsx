@@ -3,7 +3,8 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { getStoredToken, type GitHubPushState } from '../../lib/github'
 import { syncProjectId, type FigmaPublishState } from '../../lib/figmaSync'
 import { GitHubGlyph } from '../ui/icons'
-import { FigmaLogo, relativeTime } from './figmaShared'
+import { FigmaLogo, PluginInstallPromo, relativeTime } from './figmaShared'
+import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { QUICK_SETTINGS_WIDTH, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
 import { THEME_BAND_H } from './colorControls'
 
@@ -19,13 +20,34 @@ function StatusDot({ active, busy, error }: { active: boolean; busy?: boolean; e
 // above this list, which meant the column stated its identity twice (band +
 // header) and the dot annotated the provider name instead of the state it
 // actually reports.
-function StatusRow({ label, value, mono = false, dot }: { label: string; value: string; mono?: boolean; dot?: ReactNode }) {
+function StatusRow({
+  label, value, mono = false, dot, onClick,
+}: {
+  label: string
+  value: string
+  mono?: boolean
+  dot?: ReactNode
+  onClick?: () => void
+}) {
+  const valueClass = `min-w-0 break-words text-right ${mono ? 'font-mono' : ''}`
   return (
     <div className="grid grid-cols-[76px_minmax(0,1fr)] items-start gap-2 py-2.5">
       <dt className="text-mini uppercase tracking-[0.12em] text-fg-faint">{label}</dt>
       <dd className="flex min-w-0 items-center justify-end gap-1.5 text-caption leading-relaxed text-fg-muted">
         {dot}
-        <span className={`min-w-0 break-words text-right ${mono ? 'font-mono' : ''}`}>{value}</span>
+        {onClick ? (
+          <button
+            type="button"
+            onClick={onClick}
+            className={`${valueClass} rounded-sm transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40 ${
+              value === 'Connect' ? 'underline decoration-fg-faint underline-offset-2 hover:decoration-fg' : ''
+            }`}
+          >
+            {value}
+          </button>
+        ) : (
+          <span className={valueClass}>{value}</span>
+        )}
       </dd>
     </div>
   )
@@ -43,12 +65,19 @@ export default function IntegrationStatusRail({
   provider,
   githubPushState,
   figmaPublishState,
+  onOpenPluginDownload,
+  onOpenGithub,
 }: {
   provider: IntegrationProvider
   githubPushState: GitHubPushState
   figmaPublishState: FigmaPublishState
+  /** Theme Preview hub — plugin install lives in this rail, not the sync card. */
+  onOpenPluginDownload?: () => void
+  /** Opens the GitHub surface — the Figma card no longer hosts this door. */
+  onOpenGithub?: () => void
 }) {
-  const { githubRepo, githubLastPushAt, figmaLastPublishAt, autoSyncFigma } = useDesignStore()
+  const { githubRepo, githubLastPushAt, figmaLastPublishAt, autoSyncFigma, pluginBuildSeen } = useDesignStore()
+  const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
   const githubCredentialSaved = Boolean(getStoredToken())
   const isGithub = provider === 'github'
   const connected = isGithub ? githubCredentialSaved : Boolean(figmaLastPublishAt)
@@ -61,6 +90,16 @@ export default function IntegrationStatusRail({
     : busy
       ? stateLabel(isGithub ? githubPushState : figmaPublishState)
       : connected ? 'Connected' : 'Not connected'
+  const githubConnected = Boolean(githubRepo || githubCredentialSaved)
+  const githubStatusValue = githubPushState === 'error'
+    ? 'Needs attention'
+    : githubPushState === 'pushing'
+      ? 'Pushing…'
+      : githubRepo
+        ? 'Connected'
+        : githubCredentialSaved
+          ? 'Signed in'
+          : 'Not connected'
 
   return (
     <aside
@@ -100,12 +139,32 @@ export default function IntegrationStatusRail({
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
                 <StatusRow label="Endpoint" value={`/api/tokens · ${syncProjectId()}`} mono />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />
+                <StatusRow
+                  label="GitHub"
+                  value={
+                    githubPushState === 'error' || githubPushState === 'pushing'
+                      ? githubStatusValue
+                      : githubRepo
+                        ? 'Connected'
+                        : onOpenGithub
+                          ? 'Connect'
+                          : githubStatusValue
+                  }
+                  onClick={onOpenGithub}
+                  dot={
+                    <StatusDot
+                      active={githubConnected}
+                      busy={githubPushState === 'pushing'}
+                      error={githubPushState === 'error'}
+                    />
+                  }
+                />
               </>
             )}
           </dl>
         </section>
 
-        <section aria-labelledby={`${provider}-protocol-heading`} className="mt-5 border-t border-line pt-4">
+        <section aria-labelledby={`${provider}-protocol-heading`} className="mt-5">
           <h2 id={`${provider}-protocol-heading`} className="text-mini font-semibold uppercase tracking-[0.16em] text-fg-faint">Protocol</h2>
           {isGithub ? (
             <>
@@ -123,7 +182,15 @@ export default function IntegrationStatusRail({
                 <StatusRow label="Scope" value="Active design system" />
                 <StatusRow label="Backup" value={githubRepo ? githubRepo : 'No repository'} mono={Boolean(githubRepo)} />
               </dl>
-              <p className="mt-3 text-mini leading-relaxed text-fg-faint">The plugin reads the current token payload from this system’s scoped endpoint.</p>
+              {onOpenPluginDownload ? (
+                <PluginInstallPromo
+                  layout="stacked"
+                  version={PLUGIN_VERSION}
+                  updateAvailable={pluginUpdateAvailable}
+                  onOpenInstall={onOpenPluginDownload}
+                  info="The plugin reads the current token payload from this system’s scoped endpoint."
+                />
+              ) : null}
             </>
           )}
         </section>

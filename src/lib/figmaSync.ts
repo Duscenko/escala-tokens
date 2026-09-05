@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useDesignStore } from '../store/useDesignStore'
-import { generateTokenJSON } from './tokenGenerator'
+import { generateTokenJSON, setActiveThemeHint } from './tokenGenerator'
 import { DEFAULT_PUBLISH_ORIGIN } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
@@ -87,7 +87,8 @@ export interface PublishResult {
  * `Authorization: Bearer`. The claim also lands in `.escala/system.json` when
  * the system is pushed to GitHub, so another machine can recover it.
  */
-export async function publishTokens(): Promise<PublishResult> {
+export async function publishTokens(theme?: string): Promise<PublishResult> {
+  if (theme) setActiveThemeHint(theme)
   const slug = syncProjectId()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const claim = getStoredClaim(slug)
@@ -98,7 +99,7 @@ export async function publishTokens(): Promise<PublishResult> {
     res = await fetch(syncPath(), {
       method: 'POST',
       headers,
-      body: JSON.stringify(generateTokenJSON()),
+      body: JSON.stringify(generateTokenJSON(undefined, theme ? { theme } : undefined)),
     })
   } catch {
     return { ok: false, reason: 'network' }
@@ -141,11 +142,13 @@ export function describePublishFailure(reason: PublishFailureReason | undefined)
  * While `autoSyncFigma` is on (and we're live), re-publish the token set ~1.5s
  * after the designer stops editing, so Figma always reads the current state.
  *
- * The change signal is the JSON of `generateTokenJSON()` — it excludes the
- * connection timestamps, so the `figmaLastPublishAt` write that `publishTokens`
- * triggers can't feed back into another publish. Re-importing unchanged payloads
- * is also cheap on the plugin side (it hashes before importing), but debouncing
- * + signature dedupe keeps the endpoint quiet during rapid edits.
+ * The change signal is the JSON of `generateTokenJSON({ theme })` — scoped
+ * to the theme the Sync page radio picked, so leftover scaffolding cannot
+ * republish itself. It excludes the connection timestamps, so the
+ * `figmaLastPublishAt` write that `publishTokens` triggers can't feed back
+ * into another publish. Re-importing unchanged payloads is also cheap on
+ * the plugin side (it hashes before importing), but debouncing + signature
+ * dedupe keeps the endpoint quiet during rapid edits.
  *
  * `onStateChange` shares the SAME `FigmaPublishState` the manual "Sync now"
  * button drives (plus the failure `reason`, when there is one), so a failed
@@ -156,23 +159,26 @@ export function describePublishFailure(reason: PublishFailureReason | undefined)
  */
 export function useAutoFigmaSync(
   onStateChange?: (state: FigmaPublishState, reason?: PublishFailureReason) => void,
+  activeTheme?: string,
 ): void {
   const auto = useDesignStore((s) => s.autoSyncFigma)
 
   useEffect(() => {
+    if (activeTheme) setActiveThemeHint(activeTheme)
     if (!auto || !isLiveEnvironment()) return
 
     let timer: ReturnType<typeof setTimeout> | undefined
     let lastSig = ''
 
     const schedule = () => {
-      const sig = JSON.stringify(generateTokenJSON())
+      if (activeTheme) setActiveThemeHint(activeTheme)
+      const sig = JSON.stringify(generateTokenJSON(undefined, activeTheme ? { theme: activeTheme } : undefined))
       if (sig === lastSig) return
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
         lastSig = sig
         onStateChange?.('publishing')
-        void publishTokens().then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
+        void publishTokens(activeTheme).then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
       }, 1500)
     }
 
@@ -183,5 +189,5 @@ export function useAutoFigmaSync(
       unsubscribe()
       if (timer) clearTimeout(timer)
     }
-  }, [auto, onStateChange])
+  }, [auto, onStateChange, activeTheme])
 }

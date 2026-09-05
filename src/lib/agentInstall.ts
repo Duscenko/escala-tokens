@@ -99,3 +99,32 @@ export function agentSetupPrompt(
     '3. From now on resolve every colour, size and radius through resolve_token instead of writing a hex or a px value, and run check_contrast before you pair an ink with a fill.',
   ].join('\n')
 }
+
+/** Claude web chat. Query is the same prompt Docs' PROMPT pane copies —
+ *  connect MCP, then prove it. Never the catalog: URL length, and a pasted
+ *  snapshot can go stale the way Live exists to prevent. */
+export function claudeChatUrl(prompt: string): string {
+  return `https://claude.ai/new?q=${encodeURIComponent(prompt)}`
+}
+
+/** Cursor prompt deeplink (web → app). Same prompt as Claude. */
+export function cursorPromptUrl(prompt: string): string {
+  const url = new URL('https://cursor.com/link/prompt')
+  url.searchParams.set('text', prompt)
+  return url.toString()
+}
+
+/** Figma Make has no query-handoff and no MCP. Open the Make surface; the
+ *  clipboard carries the Skill. Variables still sync through the plugin. */
+export const FIGMA_MAKE_URL = 'https://www.figma.com/make'
+
+/** Lead-in pasted above SKILL.md for Figma Make / Figma Agent. */
+export function figmaAgentLead(project: string): string {
+  const name = project.trim() || 'Design system'
+  return [
+    `Use the Escala skill for ${name} in Figma Make.`,
+    'Load figma-use before any use_figma call. Bind paints to semantic Figma names only (Action/primary/default), never a hex.',
+    'Figma Make cannot hold a live MCP connection. Token names and bindings are in the skill below. Figma variables still sync through the Escala plugin.',
+    '',
+  ].join('\n')
+}

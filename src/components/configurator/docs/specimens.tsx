@@ -18,6 +18,7 @@ import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
 import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import { useI18n } from '../../../lib/i18n'
+import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
 
 export type AxisValues = Record<string, string>
@@ -650,7 +651,14 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const knob = selectorGlyph(t, small)
   const trackH = knob + 4
   const trackW = knob + (small ? 18 : 22)
-  const track = disabled ? t.disabledBg : on ? (state === 'Hover' ? darken(t.brandSolid, 0.4) : t.brandSolid) : (state === 'Hover' ? darken(t.neutralFill, 0.3) : t.neutralFill)
+  // ON + hover is a real, SOLVED role (`{step:accent+1}`, re-verified for
+  // label contrast) — not a `darken()` of the solid. An ad-hoc hex matches
+  // nothing in `archTokens`, so the inspector could not name the track at
+  // all while hovering it, and the tone itself ignored the ramp the rest of
+  // the system hovers on. OFF has no equivalent solved role, so it keeps the
+  // derived tint.
+  const trackOnHover = archTokenOf(t, 'action.primary.hover', darken(t.brandSolid, 0.4))
+  const track = disabled ? t.disabledBg : on ? (state === 'Hover' ? trackOnHover : t.brandSolid) : (state === 'Hover' ? darken(t.neutralFill, 0.3) : t.neutralFill)
   return (
     <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, trackH, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
       <HitArea t={t} box={trackH}>
@@ -2214,7 +2222,12 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
   const items = ['List', 'Board', 'Timeline']
   const small = (v.Size ?? 'MD') === 'SM'
   return (
-    <div role="radiogroup" style={{ ...baseFont(t), display: 'inline-flex', padding: 3, gap: 2, borderRadius: radiusRoleOf(t, 'action'), background: t.neutralFill }}>
+    // The TRACK is a container sitting on another container (this control
+    // lives inside a card, never straight on the page), which is exactly what
+    // `surface.layer-2` means in the elevation contract `overlaySurfaceOf`
+    // states — layer-1 is the card it sits ON, so painting the track with it
+    // too left the two indistinguishable.
+    <div role="radiogroup" style={{ ...baseFont(t), display: 'inline-flex', padding: 3, gap: 2, borderRadius: radiusRoleOf(t, 'action'), background: overlaySurfaceOf(t) }}>
       {items.map((item, i) => (
         <span
           key={item}
@@ -2222,7 +2235,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
           aria-checked={i === 0}
           style={{
             padding: small ? '4px 10px' : '6px 14px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'button'), cursor: 'pointer',
-            // Raised chip on the layer-1 track — the input surface, so it stays
+            // Raised chip on the track — the input surface, so it stays
             // a light pill no matter where the theme puts `surface.page`.
             background: i === 0 ? t.inputSurface ?? inputSurfaceOf(t) : 'transparent',
             color: i === 0 ? t.neutralText : t.fgMuted,
@@ -2381,6 +2394,13 @@ export function Live({
   const [hover, setHover] = useState(false)
   const [press, setPress] = useState(false)
   const [focus, setFocus] = useState(false)
+  // Pointing AT a specimen is how the inspector selects it, so the same
+  // gesture was also driving this wrapper's Hover variant — the inspector
+  // then measured the hover paint and named the roles of a state the user
+  // never asked to see (worst on Toggle, whose hovered track resolves to a
+  // tone no role owns, so it dropped out of the list entirely). While
+  // inspecting, specimens hold their Default variant.
+  const inspecting = useInspectorActive()
 
   const toggleValues = toggle ? axisValues(c, toggle) : []
   const canToggle = !!toggle && toggleValues.includes('True') && toggleValues.includes('False')
@@ -2392,10 +2412,11 @@ export function Live({
   // it's the weakest signal of the three and only shows when nothing else does.
   const pick = (...want: (string | undefined)[]) =>
     want.find((s): s is string => !!s && states.includes(s))
-  const state =
+  const state = inspecting ? undefined : (
     (press ? pick('Pressed', hoverState, 'Hover') : undefined) ??
     (hover ? pick(hoverState, 'Hover') : undefined) ??
     (focus ? pick('Focused') : undefined)
+  )
 
   const merged: AxisValues = { ...v }
   if (state) merged.State = state

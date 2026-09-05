@@ -11,9 +11,35 @@ export const MY_THEME_HARD_CAP = 12
 export const MY_THEME_FULL_ERROR =
   'This system is at {count} themes. Delete one to add another.'
 
+/** Built-in Light/Dark pair. They stay in the store; they are not My themes. */
+export function isScaffoldTheme(key: string): boolean {
+  return key === 'light' || key === 'dark'
+}
+
 /** Own keys only — never the built-in `light`/`dark` scaffolding. */
 export function myThemeKeys(themeOrder: string[], themes: Record<string, unknown>): string[] {
-  return themeOrder.filter((key) => key !== 'light' && key !== 'dark' && Boolean(themes[key]))
+  return themeOrder.filter((key) => !isScaffoldTheme(key) && Boolean(themes[key]))
+}
+
+/**
+ * Theme the workspace / sync should treat as current. When My themes exist,
+ * scaffolding `light`/`dark` are never chosen — they were minting leftover
+ * `Dark Brand` / `Dark Neutral` ramps and becoming the Figma principal mode.
+ */
+export function resolveListedTheme(
+  themeOrder: string[],
+  themes: Record<string, unknown>,
+  themeKinds: Record<string, string | undefined>,
+  preferred: string | undefined,
+  appearance: 'light' | 'dark',
+): string {
+  const own = myThemeKeys(themeOrder, themes)
+  const pool = own.length ? own : themeOrder.filter((key) => Boolean(themes[key]))
+  if (preferred && pool.includes(preferred)) return preferred
+  return pool.find((key) => themeKinds[key] === appearance)
+    ?? pool[pool.length - 1]
+    ?? preferred
+    ?? 'light'
 }
 
 export function canAddMyTheme(count: number): boolean {

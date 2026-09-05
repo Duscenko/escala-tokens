@@ -66,6 +66,23 @@
           "items": { "type": "string" },
           "description": "Figma Color Semantics mode / column order."
         },
+        "activeTheme": {
+          "type": "string",
+          "description": "Library theme the configurator is previewing. Overview / Cover read this theme's brand family as the identity ramp. Additive — older plugins ignore it."
+        },
+        "themeSources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "description": "Shipped theme → slot (brand/gray/error/…) → primitive family key. Plugin groups Color Primitives from this. Additive."
+        },
+        "themeLabels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Shipped theme key → display name (My themes label)."
+        },
         "panelBackground": { "type": "string" },
         "semanticArchitecture": {
           "type": "string",

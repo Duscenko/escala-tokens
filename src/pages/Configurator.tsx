@@ -14,13 +14,14 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import { resolveListedTheme } from '../lib/themeLibrary'
 import { WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
-import { generateTokenJSON } from '../lib/tokenGenerator'
+import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
@@ -704,7 +705,7 @@ export default function Configurator() {
   //
   // A SEED, not a link. The two stay decoupled after this first render, which
   // is what lets the user inspect a Light theme without repainting Escala.
-  const initialTheme = themeOrder.find((key) => themeKinds[key] === theme) ?? themeOrder[0] ?? theme
+  const initialTheme = resolveListedTheme(themeOrder, themes, themeKinds, undefined, theme)
   const [previewSelection, setPreviewSelection] = useState<{
     theme: string
     appearance: ThemeAppearance
@@ -730,7 +731,13 @@ export default function Configurator() {
   // The RAW value is deliberately kept, so re-loading a system that has the
   // user's preferred theme again snaps back to it instead of stranding them on
   // whatever the narrow system happened to carry.
-  const previewTheme = themeOrder.includes(previewSelection.theme) ? previewSelection.theme : (themeOrder[0] ?? 'light')
+  const previewTheme = resolveListedTheme(
+    themeOrder,
+    themes,
+    themeKinds,
+    previewSelection.theme,
+    previewSelection.appearance,
+  )
   const previewAppearance = previewSelection.theme === previewTheme
     ? previewSelection.appearance
     : (themeKinds[previewTheme] ?? 'light')
@@ -1068,13 +1075,16 @@ export default function Configurator() {
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op
   // otherwise) — shares handleFigmaPublishState with the manual button below
   // so a background failure lights the same red dot instead of failing silently.
-  useAutoFigmaSync(handleFigmaPublishState)
+  useAutoFigmaSync(handleFigmaPublishState, previewTheme)
+  useEffect(() => {
+    setActiveThemeHint(previewTheme)
+  }, [previewTheme])
   const publishFigmaNow = useCallback(() => {
     commitVisit()
     if (!isLiveEnvironment() || figmaPublishState === 'publishing') return
     handleFigmaPublishState('publishing')
-    void publishTokens().then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
-  }, [commitVisit, figmaPublishState, handleFigmaPublishState])
+    void publishTokens(previewTheme).then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
+  }, [commitVisit, figmaPublishState, handleFigmaPublishState, previewTheme])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
     publishFigmaNow()
@@ -1175,17 +1185,17 @@ export default function Configurator() {
     )
     centerKey = 'export-github'
   } else if (exportMode === 'figma-sync') {
-    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Check your connection and live sync URL.' }
+    header = { Icon: FigmaIcon, title: 'Figma', subtitle: 'Pick a theme, then publish it to the plugin.' }
     body = (
       <div className="h-full overflow-y-auto">
         <FigmaSyncView
           onClose={() => setExportMode(null)}
           onOpenDownload={() => setExportMode('figma-download')}
-          onOpenGithub={() => openExport('github')}
-          onOpenSave={() => openExport('save')}
           publishState={figmaPublishState}
           publishError={figmaPublishError}
           onRequestSync={syncFigmaNow}
+          previewTheme={previewTheme}
+          onSelectTheme={changePreviewTheme}
         />
       </div>
     )
@@ -1319,7 +1329,10 @@ export default function Configurator() {
       right: (
         <div className="flex items-center gap-2">
           <PreviewThemeSwitch
-            themes={themeOrder.filter((t) => themes[t])}
+            themes={(() => {
+              const own = myThemeKeys(themeOrder, themes)
+              return own.length ? own : themeOrder.filter((t) => themes[t])
+            })()}
             kinds={themeKinds}
             value={previewTheme}
             onChange={changePreviewTheme}
@@ -1606,6 +1619,7 @@ export default function Configurator() {
                     previewAppearance={previewAppearance}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
+                    onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponent={selectComponent}
                     onOpenComponents={() => changeTab('components')}
@@ -1615,7 +1629,6 @@ export default function Configurator() {
                     figmaPublishState={figmaPublishState}
                     onRequestFigmaSync={publishFigmaNow}
                     onOpenFigmaDownload={() => openExport('figma-download')}
-                    onOpenSave={() => openExport('save')}
                     githubPushState={githubPushState}
                     onGithubPushStateChange={handleGithubPushState}
                     docsExits={{

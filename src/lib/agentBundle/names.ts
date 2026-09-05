@@ -16,10 +16,10 @@ const PRIMITIVE_GROUPS: Record<string, string> = {
   'accent-dark': 'Accent Dark', 'brand-dark': 'Accent Dark',
   neutral: 'Neutral', gray: 'Neutral',
   'neutral-dark': 'Neutral Dark', 'gray-dark': 'Neutral Dark',
-  error: 'State/Error', 'error-dark': 'State/Error Dark',
-  success: 'State/Success', 'success-dark': 'State/Success Dark',
-  warning: 'State/Warning', 'warning-dark': 'State/Warning Dark',
-  info: 'State/Info', 'info-dark': 'State/Info Dark',
+  error: 'States/Error', 'error-dark': 'States/Error Dark',
+  success: 'States/Success', 'success-dark': 'States/Success Dark',
+  warning: 'States/Warning', 'warning-dark': 'States/Warning Dark',
+  info: 'States/Info', 'info-dark': 'States/Info Dark',
 }
 
 export function skillName(project: string): string {

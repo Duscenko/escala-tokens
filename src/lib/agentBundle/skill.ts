@@ -32,7 +32,7 @@ function catalogLines(iconKey?: string): string[] {
     '',
     '| Collection | Modes | What it holds |',
     '|---|---|---|',
-    '| `Color Primitives` | 1 | Raw ramps: `Accent/*`, `Neutral/*`, `State/{Error,Success,Warning,Info}/*` and dark twins. Designers do not pick these. |',
+    '| `Color Primitives` | 1 | Raw ramps: `Accent/*`, `Neutral/*`, `States/{Error,Success,Warning,Info}/*` and dark twins. Designers do not pick these. |',
     '| `Color Semantics` | one per theme (`Light`, `Dark`, …) | Categorical roles in five groups: **Content · Action · Surface · Status · Border**. |',
     '| `Typography` | Desktop · Mobile | Primitives (`family`, `size/*`, `weight/*`, `line-height/*`) plus semantic text styles `text-{role}` (label, placeholder, heading, …) that alias those primitives. |',
     '| `Spacing` | 1 | Scale steps `step/{n}` plus `padding/{top,right,bottom,left}` |',

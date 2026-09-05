@@ -1,12 +1,23 @@
-import { Fragment, type KeyboardEvent, type ReactNode, useMemo, useState } from 'react'
+import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useDesignStore } from '../../store/useDesignStore'
 import { captureCodeSnapshot } from '../../lib/codeScope'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildAgentSkillFiles } from '../../lib/agentBundle'
+import {
+  FIGMA_MAKE_URL,
+  agentSetupPrompt,
+  claudeChatUrl,
+  cursorPromptUrl,
+  figmaAgentLead,
+} from '../../lib/agentInstall'
+import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
+import { showToast } from '../ui/Toast'
 import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
+import { usePopoverPlacement } from './colorControls'
 import ThemeCodeScopeRail, { resolveCodeTheme, type CodeThemeScope } from './ThemeCodeScopeRail'
 import { myThemeKeys } from './ThemeLibraryRail'
 
@@ -23,11 +34,206 @@ const FORMATS: { key: Format; label: string; file: string }[] = [
 
 const PREVIEW_LINE_LIMIT = 32
 
+const COPY_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
+const COPY_MENU_W = 220
+
 function CopyIcon({ done = false }: { done?: boolean }) {
   if (done) {
     return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m3.25 8.25 3 3 6.5-6.5" /></svg>
   }
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden><rect x="5.25" y="2.25" width="7.5" height="9" rx="1.5" /><path d="M10.75 12v.75a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5v-8a1.5 1.5 0 0 1 1.5-1.5H4" /></svg>
+}
+
+function DestLogo({ name }: { name: 'claudecode' | 'cursor' | 'figma' }) {
+  return (
+    <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center" aria-hidden>
+      <img src={`/ide-logos/${name}-dark.svg`} alt="" className="h-3.5 w-3.5 dark:hidden" />
+      <img src={`/ide-logos/${name}-light.svg`} alt="" className="hidden h-3.5 w-3.5 dark:block" />
+    </span>
+  )
+}
+
+function MarkdownMark() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M2.5 4.25h11v7.5h-11z" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4.25 9.5V6.5L6 8.25 7.75 6.5v3M10.25 6.5v3l2-1.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+async function writeClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function openHandoff(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+function CopyPageSplit({
+  disabled,
+  pageContent,
+  markdown,
+  skillMd,
+  projectName,
+}: {
+  disabled: boolean
+  pageContent: string
+  markdown: string
+  skillMd: string
+  projectName: string
+}) {
+  const { t } = useI18n()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const place = usePopoverPlacement(rootRef, open, { prefer: 200, min: 160, max: 280 })
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const rect = rootRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const left = Math.max(8, Math.min(window.innerWidth - COPY_MENU_W - 8, rect.right - COPY_MENU_W))
+    setPos({
+      left,
+      top: place.up ? rect.top - 8 : rect.bottom + 6,
+    })
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, place.up])
+
+  const flashCopied = () => {
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1800)
+  }
+
+  const copyPage = async () => {
+    if (!(await writeClipboard(pageContent))) {
+      showToast(t('Couldn’t copy — try again'))
+      return
+    }
+    flashCopied()
+    showToast(t('Copied the file on this page.'))
+  }
+
+  const copyMarkdown = async () => {
+    setOpen(false)
+    if (!(await writeClipboard(markdown))) {
+      showToast(t('Couldn’t copy — try again'))
+      return
+    }
+    flashCopied()
+    showToast(t('Copied README.md.'))
+  }
+
+  const openClaude = async () => {
+    const prompt = agentSetupPrompt(publishOrigin(), syncProjectId())
+    const copiedOk = await writeClipboard(prompt)
+    openHandoff(claudeChatUrl(prompt))
+    setOpen(false)
+    showToast(copiedOk
+      ? t('Copied the setup prompt. Finish connecting MCP in the chat that opened.')
+      : t('Couldn’t copy — try again'))
+  }
+
+  const openCursor = async () => {
+    const prompt = agentSetupPrompt(publishOrigin(), syncProjectId())
+    const copiedOk = await writeClipboard(prompt)
+    openHandoff(cursorPromptUrl(prompt))
+    setOpen(false)
+    showToast(copiedOk
+      ? t('Copied the setup prompt. Finish connecting MCP in the chat that opened.')
+      : t('Couldn’t copy — try again'))
+  }
+
+  const openFigmaAgent = async () => {
+    const copiedOk = await writeClipboard(`${figmaAgentLead(projectName)}${skillMd}`)
+    openHandoff(FIGMA_MAKE_URL)
+    setOpen(false)
+    showToast(copiedOk
+      ? t('Copied the Figma skill. Paste it in Make — it cannot hold a live MCP connection.')
+      : t('Couldn’t copy — try again'))
+  }
+
+  const itemClass = `flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-caption font-medium text-fg transition-colors hover:bg-fg/8 ${COPY_FOCUS}`
+
+  return (
+    <div ref={rootRef} className="relative inline-flex h-8 flex-shrink-0">
+      <div className={`inline-flex h-8 overflow-hidden rounded-lg border border-line bg-app ${disabled ? 'pointer-events-none opacity-40' : ''}`}>
+        <button
+          type="button"
+          onClick={() => void copyPage()}
+          className={`inline-flex h-full items-center gap-2 px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg ${COPY_FOCUS}`}
+        >
+          <CopyIcon done={copied} />
+          {copied ? t('Copied') : t('Copy page')}
+        </button>
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={t('More copy destinations')}
+          onClick={() => setOpen((next) => !next)}
+          className={`grid h-full w-8 place-items-center border-l border-line text-fg-muted transition-colors hover:bg-fg/8 hover:text-fg ${COPY_FOCUS}`}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={open ? 'rotate-180' : undefined}>
+            <path d="M2.5 4.25 6 7.75l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+      {open && pos && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label={t('More copy destinations')}
+          className="fixed z-[70] overflow-hidden rounded-lg border border-line-strong bg-app py-1 shadow-lg"
+          style={{
+            width: COPY_MENU_W,
+            left: pos.left,
+            ...(place.up ? { bottom: window.innerHeight - (rootRef.current?.getBoundingClientRect().top ?? 0) + 6 } : { top: pos.top }),
+            maxHeight: place.max,
+          }}
+        >
+          <button type="button" role="menuitem" className={itemClass} onClick={() => void openClaude()}>
+            <DestLogo name="claudecode" />
+            {t('Open in Claude')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => void openCursor()}>
+            <DestLogo name="cursor" />
+            {t('Open in Cursor')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => void openFigmaAgent()}>
+            <DestLogo name="figma" />
+            {t('Figma Agent')}
+          </button>
+          <button type="button" role="menuitem" className={itemClass} onClick={() => void copyMarkdown()}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><MarkdownMark /></span>
+            {t('Copy Markdown')}
+          </button>
+        </div>,
+        document.body,
+      )}
+    </div>
+  )
 }
 
 function highlightedMarkdown(line: string): ReactNode {
@@ -98,7 +304,6 @@ export default function ThemeCodeFormat({
   const { t } = useI18n()
   const store = useDesignStore()
   const [format, setFormat] = useState<Format>('css')
-  const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
@@ -108,32 +313,29 @@ export default function ThemeCodeFormat({
   const source = useMemo(() => (
     effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
   ), [store, effectiveScope])
-  const content = useMemo(() => {
-    if (!source) return ''
-    if (format === 'css') return buildCSS(source as ReturnType<typeof useDesignStore.getState>)
-    if (format === 'markdown') return buildMarkdown(source as ReturnType<typeof useDesignStore.getState>)
+  const artifacts = useMemo(() => {
+    if (!source) return { css: '', markdown: '', tokensMd: '', skillMd: '' }
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
       projectFallback: source.projectName,
       iconKey: source.iconAiSource,
     })
-    return files.find((file) => file.path === 'references/tokens.md')?.text ?? ''
-  }, [format, source])
+    return {
+      css: buildCSS(source as ReturnType<typeof useDesignStore.getState>),
+      markdown: buildMarkdown(source as ReturnType<typeof useDesignStore.getState>),
+      tokensMd: files.find((file) => file.path === 'references/tokens.md')?.text ?? '',
+      skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
+    }
+  }, [source])
+  const content = format === 'css' ? artifacts.css : format === 'markdown' ? artifacts.markdown : artifacts.tokensMd
   const lines = useMemo(() => (effectiveScope && content ? content.split('\n') : []), [content, effectiveScope])
   const visibleLines = expanded ? lines : lines.slice(0, PREVIEW_LINE_LIMIT)
   const scopedLabel = effectiveScope
     ? themeDisplayName(effectiveScope, store.themeLabels)
     : t('Add a theme to get its code.')
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(content)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1800)
-  }
-
   const selectFormat = (key: Format) => {
     setFormat(key)
-    setCopied(false)
     setExpanded(false)
   }
 
@@ -203,9 +405,13 @@ export default function ThemeCodeFormat({
                 ) : null}
               </div>
               {expanded ? <button type="button" onClick={() => setExpanded(false)} className="ml-auto flex-shrink-0 text-caption font-medium text-fg-faint transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">Collapse</button> : <span className="ml-auto" />}
-              <button type="button" disabled={!effectiveScope} onClick={() => void copy()} className="inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg border border-line bg-app px-2.5 text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55 disabled:pointer-events-none disabled:opacity-40">
-                <CopyIcon done={copied} /> {copied ? 'Copied' : 'Copy file'}
-              </button>
+              <CopyPageSplit
+                disabled={!effectiveScope}
+                pageContent={content}
+                markdown={artifacts.markdown}
+                skillMd={artifacts.skillMd}
+                projectName={source?.projectName || store.projectName}
+              />
             </header>
       {/* The fade + "Show full file" is a SIBLING of the scroller, inside a
           `relative` wrapper — it used to be a child of it, `absolute bottom-0`.

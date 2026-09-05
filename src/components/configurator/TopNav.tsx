@@ -178,8 +178,8 @@ function AppearanceToggle({
  *  that dock under TopNav add another 52 for their top fallback. */
 export const TOP_NAV_H = 52
 
-/** Fallback until the live lockup is measured — mark + wordmark + `px-3`. */
-const TOP_NAV_CONTENT_BRAND_W = 168
+/** Fallback until the live lockup is measured — mark + wordmark + Beta + `px-3`. */
+const TOP_NAV_CONTENT_BRAND_W = 196
 
 // Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
 // #18181B) so the lockup inverts with the theme instead of going invisible on
@@ -277,7 +277,10 @@ export default function TopNav({
         <div ref={brandContentRef} className="flex w-max items-center gap-2.5">
           <BrandMark size={24} />
           {!railCollapsed && (
-            <div className="text-ui font-semibold text-fg whitespace-nowrap leading-none">Escala Tokens</div>
+            <div className="flex items-baseline gap-1 whitespace-nowrap leading-none">
+              <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>
+              <span className="text-mini font-light leading-none text-fg-faint">Beta</span>
+            </div>
           )}
         </div>
       </div>
