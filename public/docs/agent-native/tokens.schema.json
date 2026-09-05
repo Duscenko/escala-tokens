@@ -14,7 +14,7 @@
     },
     "project": {
       "type": "string",
-      "description": "Display name the plugin uses for the Figma file. The sync URL slug comes from the editor project name and may differ."
+      "description": "Display name the plugin uses for the Figma file. The sync URL slug is slugify of this name."
     },
     "colors": {
       "type": "object",

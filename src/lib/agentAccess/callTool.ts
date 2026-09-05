@@ -36,7 +36,18 @@ export async function callTool(
       const json = await requireTokens(loadTokens, a.project)
       const resolved = resolveToken(json, asString(a.token, 'token'))
       if (!resolved.found) {
-        throw new Error(`Unknown token "${resolved.query}". Use a catalogue id (action.primary.default) or Figma name (Action/primary/default). Do not invent a new role.`)
+        // "Do not invent a role" is the wrong advice when the token is real but
+        // the PUBLISH is old — `selector.*`, `black-a-*` and `white-a-*` simply
+        // do not exist in a schema-6 payload, and an agent told it hallucinated
+        // will work around a token the system actually ships. Name the version
+        // so the agent can tell the two apart and ask for a re-publish.
+        const v = json.schemaVersion
+        throw new Error(
+          `Unknown token "${resolved.query}" in project "${String(a.project)}"` +
+            (v ? ` (published schemaVersion ${v})` : '') +
+            '. Use a catalogue id (action.primary.default) or Figma name (Action/primary/default). ' +
+            'Do not invent a role — but if you expected this token, the published system may predate it: re-publish from the configurator (Sync now) and retry.',
+        )
       }
       return resolved
     }

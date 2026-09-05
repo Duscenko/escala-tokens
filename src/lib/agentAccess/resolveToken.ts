@@ -1,4 +1,4 @@
-import { figmaPrimitiveName, figmaSemanticName, figmaSpacingName, webCodeSyntax, type PrimitiveNameContext } from '../agentBundle/names.js'
+import { figmaPrimitiveName, figmaPrimitiveNameAliases, flatKeyFromFigmaName, figmaSemanticName, figmaSpacingName, webCodeSyntax, type PrimitiveNameContext } from '../agentBundle/names.js'
 import type { ThemeSlot, TokenJSON } from '../agentBundle/types.js'
 
 export type ResolvedKind = 'semantic' | 'primitive' | 'foundation' | 'unknown'
@@ -119,11 +119,13 @@ function primitiveValues(json: TokenJSON, raw: string, id: string): { key: strin
   if (primitive[raw]) return { key: raw, hex: primitive[raw] }
   const ctx = nameContext(json)
   for (const [key, hex] of Object.entries(primitive)) {
-    if (figmaPrimitiveName(key, ctx) === raw || figmaPrimitiveName(key, ctx) === id) {
-      return { key, hex }
-    }
+    const names = figmaPrimitiveNameAliases(key, ctx)
+    if (names.includes(raw) || names.includes(id)) return { key, hex }
   }
-  for (const q of [id, raw]) {
+  // A canonical Figma name (`Accents/Accent/09`) on a themed system: fold it to
+  // the flat canonical key first, then let `themeSources` find the real family.
+  for (const q of [id, raw, flatKeyFromFigmaName(raw) ?? '']) {
+    if (!q) continue
     const aliased = themeAliasedKey(json, q, 'primitive')
     if (aliased) return { key: aliased, hex: primitive[aliased]! }
   }

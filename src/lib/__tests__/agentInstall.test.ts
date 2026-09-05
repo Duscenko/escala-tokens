@@ -44,10 +44,15 @@ const FIXTURE: TokenJSON = {
 }
 
 describe('agentInstall recipes', () => {
-  it('defaults the public origin to www.escalatokens.com, not a Vercel preview host', () => {
-    expect(DEFAULT_PUBLISH_ORIGIN).toBe('https://www.escalatokens.com')
-    expect(mcpEndpoint(DEFAULT_PUBLISH_ORIGIN)).toBe('https://www.escalatokens.com/api/mcp')
+  // The apex is not a style choice: the served certificate carries a single SAN
+  // (`DNS:escalatokens.com`), so every strict TLS client — which is every MCP
+  // client — fails the handshake on `www.` before any JSON-RPC. This test used
+  // to assert `www.` and was therefore pinning a config that could not connect.
+  it('defaults the public origin to the apex host, not www and not a Vercel preview host', () => {
+    expect(DEFAULT_PUBLISH_ORIGIN).toBe('https://escalatokens.com')
+    expect(mcpEndpoint(DEFAULT_PUBLISH_ORIGIN)).toBe('https://escalatokens.com/api/mcp')
     expect(DEFAULT_PUBLISH_ORIGIN).not.toMatch(/vercel\.app/)
+    expect(DEFAULT_PUBLISH_ORIGIN).not.toMatch(/\/\/www\./)
   })
 
   it('points MCP at /api/mcp on the given origin', () => {

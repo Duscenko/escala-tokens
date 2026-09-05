@@ -146,6 +146,62 @@ function primitiveGroupFor(family: string, ctx?: PrimitiveNameContext): string {
  * folders are still correct and only per-theme State nesting (which needs
  * `themeSources`) is skipped.
  */
+/**
+ * Every Figma name this primitive has EVER been written under — current first.
+ *
+ * Emitting the corrected name is only half the job: an agent holding a name
+ * from an older file (or from this server's own previous answers) would get
+ * "unknown token" for a ramp that exists. The plugin keeps the same list
+ * (`previousPrimitiveVarNames`) so re-import renames in place instead of
+ * orphaning bindings; lookup here accepts what the plugin still recognises.
+ */
+/** Figma group path → canonical flat family, for the reverse direction. */
+const FAMILY_FROM_GROUP: Record<string, string> = {
+  Accent: 'accent', 'Accent Dark': 'accent-dark',
+  Neutral: 'neutral', 'Neutral Dark': 'neutral-dark',
+  'States/Error': 'error', 'States/Error Dark': 'error-dark',
+  'States/Success': 'success', 'States/Success Dark': 'success-dark',
+  'States/Warning': 'warning', 'States/Warning Dark': 'warning-dark',
+  'States/Info': 'info', 'States/Info Dark': 'info-dark',
+}
+
+/**
+ * `Accents/Accent/09` → `accent-9`. The inverse of the CANONICAL naming only —
+ * a theme-minted family (`Accents/Material Elevation/01`) has no canonical
+ * form and returns null, because it is already addressable by its own key.
+ *
+ * This is what lets a Figma-shaped query reach a theme-minted ramp: the caller
+ * normalises to `accent-9` and the `themeSources` alias resolves it from there.
+ * Zero-padding is dropped so `09` and `9` are one token.
+ */
+export function flatKeyFromFigmaName(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (!trimmed.includes('/')) return null
+  const cut = trimmed.lastIndexOf('/')
+  const tone = trimmed.slice(cut + 1)
+  if (!/^\d+$/.test(tone)) return null
+  let group = trimmed.slice(0, cut)
+  const family = FAMILY_FROM_GROUP[group]
+    ?? (/^(Accents|Neutrals)\//.test(group) ? FAMILY_FROM_GROUP[(group = group.slice(group.indexOf('/') + 1))] : undefined)
+  if (!family) return null
+  return `${family}-${String(Number(tone))}`
+}
+
+export function figmaPrimitiveNameAliases(key: string, ctx?: PrimitiveNameContext): string[] {
+  const dash = key.lastIndexOf('-')
+  if (dash === -1) return [key]
+  const family = key.slice(0, dash)
+  const tone = key.slice(dash + 1)
+  const padded = /^\d$/.test(tone) ? `0${tone}` : tone
+  const legacyGroup = PRIMITIVE_GROUPS[family]
+    ?? family.split('/').map((seg) => PRIMITIVE_GROUPS[seg] ?? cap(seg)).join('/')
+  return [...new Set([
+    figmaPrimitiveName(key, ctx),
+    `${legacyGroup}/${padded}`,
+    `${slotFolderFor(family)}/${titleCaseFamily(family)}/${padded}`,
+  ])]
+}
+
 export function figmaPrimitiveName(key: string, ctx?: PrimitiveNameContext): string {
   const dash = key.lastIndexOf('-')
   if (dash === -1) return key

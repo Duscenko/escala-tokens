@@ -75,12 +75,16 @@ export const TOOL_SPECS: ToolSpec[] = [
   },
   {
     name: 'list_icons',
-    description: 'Icon AI source (repo/npm) and custom icon names for a published system.',
+    description: 'Icon AI source (repo/npm) and custom icon names for a published system. project is required.',
     inputSchema: {
       type: 'object',
       properties: {
-        project: { type: 'string' },
+        project: { type: 'string', description: 'Published project slug (slugify of the system name).' },
       },
+      // The handler has always thrown without it; leaving it out of `required`
+      // just meant an agent trusting the schema called with no args and got an
+      // error instead of icons.
+      required: ['project'],
       additionalProperties: false,
     },
   },

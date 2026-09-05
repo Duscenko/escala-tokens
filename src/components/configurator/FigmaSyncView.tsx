@@ -35,15 +35,15 @@ interface FigmaSyncViewProps {
   /** Theme the canvas is previewing — selecting a sync row also previews it. */
   previewTheme: string
   onSelectTheme: (key: string) => void
-  /** Plugin file display name. Defaults to the first theme; does not change
-   *  the `/api/tokens?project=` slug. */
+  /** Figma file name and `/api/tokens?project=` slug (`slugify` of this).
+   *  Defaults to the first theme. Does not rename the editor project. */
   fileName: string
   onFileNameChange: (name: string) => void
   /** Selected Figma columns — theme × Light/Dark, max 3. */
   syncModes: FigmaSyncMode[]
   onSyncModesChange: (modes: FigmaSyncMode[]) => void
   /** Workspace section id for this window (`workspaceLink.ts`). Drives the
-   *  auto-updating This page link. ID to plugin stays `?project=` only. */
+   *  auto-updating This page link. ID to plugin is `?project=<file slug>`. */
   section?: string
 }
 
@@ -245,10 +245,10 @@ export default function FigmaSyncView({
     return own.length ? own : themeOrder.filter((key) => Boolean(themes[key]))
   }, [themeOrder, themes])
   const [isDeployed] = useState(isLiveEnvironment)
-  // Per-system scoped endpoint (re-reads projectName each render so it stays current).
-  const syncUrl = buildSyncUrl()
+  const pluginSlug = syncProjectId(fileName)
+  const syncUrl = buildSyncUrl(fileName)
   const pageUrl = section
-    ? buildWorkspaceAppUrl({ origin: publishOrigin(), project: syncProjectId(), section })
+    ? buildWorkspaceAppUrl({ origin: publishOrigin(), project: pluginSlug, section })
     : null
 
   const { t } = useI18n()
@@ -292,9 +292,7 @@ export default function FigmaSyncView({
         />
       ) : null}
 
-      {/* Choose first, publish second. Identity (file name, GitHub) lives on
-          the Connection rail — repeating it here was a second door to the
-          same facts and hid the actual task. */}
+      {/* Modes first, then File name + ID to plugin as one link. */}
       {syncThemes.length > 0 && (
         <div className="flex flex-col rounded-xl border border-line bg-surface/50">
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
@@ -304,37 +302,6 @@ export default function FigmaSyncView({
             </p>
           </div>
           <div className="flex flex-col gap-4 p-5">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="figma-file-name" className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
-                {t('File name')}
-              </label>
-              <div className={`group flex min-w-0 items-center gap-2 border border-line bg-app pl-3 pr-2 ${SYNC_CONTROL} focus-within:ring-2 focus-within:ring-fg/40`}>
-                <input
-                  ref={fileNameRef}
-                  id="figma-file-name"
-                  type="text"
-                  value={fileName}
-                  onChange={(event) => onFileNameChange(event.target.value)}
-                  placeholder={themeDisplayName(syncThemes[0], themeLabels)}
-                  aria-describedby={fileHintId}
-                  className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none"
-                />
-                <span
-                  aria-hidden
-                  title={t('Rename file')}
-                  onMouseDown={(event) => {
-                    event.preventDefault()
-                    fileNameRef.current?.focus()
-                  }}
-                  className="grid h-6 w-6 flex-shrink-0 cursor-text place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-fg/8 group-hover:text-fg group-focus-within:bg-fg/8 group-focus-within:text-fg"
-                >
-                  <EditIcon />
-                </span>
-              </div>
-              <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
-                {t('The plugin names the Figma file this. The sync URL stays the same.')}
-              </p>
-            </div>
             <div className="flex flex-col gap-1.5">
               <p className="text-caption text-fg-faint leading-relaxed">
                 {t('Figma gets Light and Dark as columns for each selected theme. Pick up to 3 modes.')}
@@ -452,21 +419,52 @@ export default function FigmaSyncView({
             </div>
           </div>
         ) : null}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="figma-file-name" className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
+              {t('File name')}
+            </label>
+            <div className={`group flex min-w-0 items-center gap-2 border border-line bg-app pl-3 pr-2 ${SYNC_CONTROL} focus-within:ring-2 focus-within:ring-fg/40`}>
+              <input
+                ref={fileNameRef}
+                id="figma-file-name"
+                type="text"
+                value={fileName}
+                onChange={(event) => onFileNameChange(event.target.value)}
+                placeholder={themeDisplayName(syncThemes[0], themeLabels)}
+                aria-describedby={fileHintId}
+                className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none"
+              />
+              <span
+                aria-hidden
+                title={t('Rename file')}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  fileNameRef.current?.focus()
+                }}
+                className="grid h-6 w-6 flex-shrink-0 cursor-text place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-fg/8 group-hover:text-fg group-focus-within:bg-fg/8 group-focus-within:text-fg"
+              >
+                <EditIcon />
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1">
             <p id={pluginLabelId} className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('ID to plugin')}</p>
             <SyncUrlInfo deployed={isDeployed} />
           </div>
           <div className="flex items-stretch gap-2">
             <div className={`flex min-w-0 flex-1 items-center gap-2 border border-line bg-app px-3 ${SYNC_CONTROL}`}>
-              <code
-                className="pointer-events-none min-w-0 flex-1 cursor-default select-none truncate font-mono text-caption text-fg outline-none"
+              <a
+                href={syncUrl}
+                target="_blank"
+                rel="noreferrer"
                 title={syncUrl}
                 aria-labelledby={pluginLabelId}
-                aria-readonly="true"
+                className={`min-w-0 flex-1 truncate font-mono text-caption text-fg underline-offset-2 hover:underline ${SYNC_FOCUS}`}
               >
                 {syncUrl}
-              </code>
+              </a>
               <button
                 type="button"
                 onClick={() => copyUrl('sync', syncUrl)}
@@ -502,9 +500,10 @@ export default function FigmaSyncView({
               {publishState === 'publishing' ? 'Publishing…' : publishState === 'error' ? 'Retry sync' : 'Sync now'}
             </button>
           </div>
-          <p className="text-caption leading-relaxed text-fg-faint">
-            {t('Code the plugin uses to sync.')}
+          <p id={fileHintId} className="text-caption leading-relaxed text-fg-faint">
+            {t('The plugin names the Figma file this. ID to plugin ends with this name.')}
           </p>
+          </div>
         </div>
         {publishState === 'publishing' && (
           <div className="flex items-center gap-1.5 text-caption">

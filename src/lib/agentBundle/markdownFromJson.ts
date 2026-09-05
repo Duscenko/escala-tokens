@@ -37,7 +37,11 @@ export function buildTokensMd(json: TokenJSON): string {
   const byGroup = new Map<string, [string, string][]>()
   for (const [key, hex] of Object.entries(json.colors.primitive ?? {})) {
     if (!hex) continue
-    const name = figmaPrimitiveName(key)
+    const name = figmaPrimitiveName(key, {
+      themeSources: json.colors.themeSources,
+      themeOrder: json.colors.themeOrder,
+      themeLabels: json.colors.themeLabels,
+    })
     const group = name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : name
     const list = byGroup.get(group) ?? []
     list.push([name, hex])

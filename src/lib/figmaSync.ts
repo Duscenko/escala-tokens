@@ -22,12 +22,13 @@ export function isLiveEnvironment(): boolean {
 }
 
 /**
- * Per-system scoping key derived from the project name. Each design system
- * publishes to its own blob (`/api/tokens?project=<id>`) so the plugin can sync
- * one system without other systems overwriting it. Renaming a system changes
- * its key (and its sync URL) — that's expected.
+ * Blob key for `/api/tokens?project=<id>`.
+ * A Figma file name wins — ID to plugin and the POST must use the same slug.
+ * Without one, the editor project name is the fallback (MCP, GitHub, Docs).
  */
-export function syncProjectId(): string {
+export function syncProjectId(fileName?: string): string {
+  const fromFile = fileName?.trim() ? slugify(fileName.trim()) : ''
+  if (fromFile) return fromFile
   return slugify(useDesignStore.getState().projectName) || 'design-system'
 }
 
@@ -41,13 +42,13 @@ export function publishOrigin(): string {
 }
 
 /** Relative endpoint used for the POST (and what the plugin should GET). */
-export function syncPath(): string {
-  return `/api/tokens?project=${encodeURIComponent(syncProjectId())}`
+export function syncPath(fileName?: string): string {
+  return `/api/tokens?project=${encodeURIComponent(syncProjectId(fileName))}`
 }
 
 /** Absolute, copy-pasteable sync URL for the active system (for display). */
-export function syncUrl(): string {
-  return `${publishOrigin()}${syncPath()}`
+export function syncUrl(fileName?: string): string {
+  return `${publishOrigin()}${syncPath(fileName)}`
 }
 
 export function getStoredClaim(slug: string): string | null {
@@ -103,14 +104,14 @@ export async function publishTokens(
 ): Promise<PublishResult> {
   const opts = publishOptions(themeOrOpts, section)
   if (opts.theme) setActiveThemeHint(opts.theme)
-  const slug = syncProjectId()
+  const slug = syncProjectId(opts.project ?? undefined)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const claim = getStoredClaim(slug)
   if (claim) headers.Authorization = `Bearer ${claim}`
 
   let res: Response
   try {
-    res = await fetch(syncPath(), {
+    res = await fetch(syncPath(opts.project ?? undefined), {
       method: 'POST',
       headers,
       body: JSON.stringify(generateTokenJSON(undefined, {
@@ -146,10 +147,13 @@ export async function publishTokens(
 /** Human copy for a `PublishResult.reason` — shared by the Sync pill's tooltip
  * and FigmaSyncView's status line so the two never phrase the same failure
  * differently. A missing reason (the success case) has no caller. */
-export function describePublishFailure(reason: PublishFailureReason | undefined): string {
+export function describePublishFailure(
+  reason: PublishFailureReason | undefined,
+  fileName?: string,
+): string {
   switch (reason) {
     case 'claim-lost':
-      return `This project name ("${syncProjectId()}") is already published from another browser or device. Rename the project to publish under a new URL, or reconnect from the browser that published it first.`
+      return `This file name ("${syncProjectId(fileName)}") is already published from another browser or device. Rename the file to publish under a new URL, or reconnect from the browser that published it first.`
     case 'network':
       return 'Could not reach the server — check your connection and try again.'
     case 'server':

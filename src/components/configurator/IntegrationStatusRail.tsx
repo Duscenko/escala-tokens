@@ -146,7 +146,7 @@ export default function IntegrationStatusRail({
               <>
                 <StatusRow label="Sync status" value={statusValue} dot={<StatusDot active={connected} busy={busy} error={error} />} />
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
-                <StatusRow label="ID to plugin" value={`/api/tokens · ${syncProjectId()}`} mono />
+                <StatusRow label="ID to plugin" value={`/api/tokens · ${syncProjectId(fileName)}`} mono />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />
                 <StatusRow
                   label="GitHub"

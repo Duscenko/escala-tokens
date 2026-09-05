@@ -1255,11 +1255,11 @@ export default function Configurator() {
       figmaPublishResetTimer.current = null
     }
     setFigmaPublishState(next)
-    setFigmaPublishError(next === 'error' ? describePublishFailure(reason) : null)
+    setFigmaPublishError(next === 'error' ? describePublishFailure(reason, figmaFileName) : null)
     if (next === 'done') {
       figmaPublishResetTimer.current = setTimeout(() => setFigmaPublishState('idle'), 1800)
     }
-  }, [])
+  }, [figmaFileName])
   // Re-publish to /api/tokens after edits while auto-sync is on (no-op
   // otherwise) — shares handleFigmaPublishState with the manual button below
   // so a background failure lights the same red dot instead of failing silently.
@@ -1274,8 +1274,8 @@ export default function Configurator() {
     doc: docFoundationKey,
   })
   useEffect(() => {
-    syncWorkspaceSearch({ project: syncProjectId(), section: workspaceSection })
-  }, [workspaceSection, store.projectName])
+    syncWorkspaceSearch({ project: syncProjectId(figmaFileName), section: workspaceSection })
+  }, [workspaceSection, store.projectName, figmaFileName])
   useAutoFigmaSync(handleFigmaPublishState, { ...figmaPublishBase, section: workspaceSection })
   useEffect(() => {
     setActiveThemeHint(previewTheme)

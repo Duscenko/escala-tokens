@@ -56,6 +56,116 @@ const load = async (project?: string | null) => {
   return JSON_FIXTURE
 }
 
+/**
+ * A REAL published system: `+ Theme` / adopting a System Style mints families
+ * named after the theme, so the payload has no `accent` family at all — the
+ * `themeSources` map is the only thing tying the canonical vocabulary to it.
+ * Shape copied from a live `/api/tokens?project=` payload.
+ */
+const THEMED_FIXTURE: TokenJSON = {
+  project: 'Hola',
+  colors: {
+    primitive: {
+      'material--elevation-9': '#2e7769',
+      'material--elevation-gray-1': '#ffffff',
+      'material--elevation-error-9': '#b3261e',
+    },
+    primitiveAlpha: { 'material--elevation-3': '#2e77691f' },
+    themeOrder: ['material--elevation'],
+    activeTheme: 'material--elevation',
+    themeLabels: { 'material--elevation': 'Material / Elevation' },
+    themeSources: {
+      'material--elevation': {
+        brand: 'material--elevation',
+        gray: 'material--elevation-gray',
+        error: 'material--elevation-error',
+        warning: 'material--elevation-warning',
+        success: 'material--elevation-success',
+        info: 'material--elevation-info',
+      },
+    },
+  },
+  typography: { fontFamily: 'Inter', sizes: {}, weights: {} },
+  spacing: {},
+  radius: { lg: '32px' },
+  foundationsByTheme: { 'material--elevation': { radius: { lg: '16px' } } },
+}
+
+describe('tool schemas match the handlers', () => {
+  // Exactly the arguments each schema marks `required`, and nothing more.
+  const MINIMAL: Record<string, Record<string, unknown>> = {
+    get_tokens: { project: 'parity' },
+    resolve_token: { project: 'parity', token: 'accent-6' },
+    list_components: {},
+    get_component: { key: 'Button' },
+    list_icons: { project: 'parity' },
+    check_contrast: { foreground: '#111111', background: '#ffffff' },
+  }
+
+  it('covers every shipped tool', () => {
+    expect(Object.keys(MINIMAL).sort()).toEqual(TOOL_SPECS.map((t) => t.name).sort())
+  })
+
+  // `list_icons` declared `project` optional while its handler had always
+  // thrown without it — an agent trusting the schema called with no args and
+  // got an error instead of icons. Required must mean required, both ways.
+  it.each(TOOL_SPECS.map((t) => [t.name] as const))('%s succeeds on exactly its required args', async (name) => {
+    const spec = TOOL_SPECS.find((t) => t.name === name)!
+    expect(Object.keys(MINIMAL[name]!).sort()).toEqual([...(spec.inputSchema.required ?? [])].sort())
+    await expect(callTool(name, MINIMAL[name], load)).resolves.toBeDefined()
+  })
+
+  it.each(
+    TOOL_SPECS.flatMap((t) => (t.inputSchema.required ?? []).map((arg) => [t.name, arg] as const)),
+  )('%s rejects when required %s is missing', async (name, arg) => {
+    const args = { ...MINIMAL[name] }
+    delete args[arg]
+    await expect(callTool(name, args, load)).rejects.toThrow()
+  })
+})
+
+describe('resolve_token on a theme-minted system', () => {
+  // Every one of these returned `unknown` before `themeSources` was consulted —
+  // i.e. the skill's own vocabulary failed against a real published system.
+  it.each([
+    ['accent-9', 'material--elevation-9', '#2e7769'],
+    ['neutral-1', 'material--elevation-gray-1', '#ffffff'],
+    ['error-9', 'material--elevation-error-9', '#b3261e'],
+  ])('resolves canonical %s through themeSources', (query, key, hex) => {
+    const r = resolveToken(THEMED_FIXTURE, query)
+    expect(r.found).toBe(true)
+    expect(r.id).toBe(key)
+    expect(r.values.default).toBe(hex)
+  })
+
+  it('resolves the canonical Figma name too, padded or not', () => {
+    for (const q of ['Accent/09', 'Accents/Accent/09', 'Accent/9']) {
+      expect(resolveToken(THEMED_FIXTURE, q).id).toBe('material--elevation-9')
+    }
+  })
+
+  it('resolves an alpha twin through the same alias', () => {
+    const r = resolveToken(THEMED_FIXTURE, 'accent-a-3')
+    expect(r.found).toBe(true)
+    expect(r.values.default).toBe('#2e77691f')
+  })
+
+  it('reports the Figma name the PLUGIN writes, not the legacy one', () => {
+    // The plugin nests every family under Accents / Neutrals / States; the old
+    // name is what it keeps solely to rename variables in place on re-import.
+    expect(resolveToken(THEMED_FIXTURE, 'accent-9').figma).toBe('Accents/Material Elevation/09')
+    expect(resolveToken(THEMED_FIXTURE, 'neutral-1').figma).toBe('Neutrals/Material Elevation Gray/01')
+    expect(resolveToken(THEMED_FIXTURE, 'error-9').figma).toBe('States/Error/09')
+    expect(resolveToken(JSON_FIXTURE, 'accent-6').figma).toBe('Accents/Accent/06')
+  })
+
+  it('prefers the per-theme foundation over the root fallback', () => {
+    // Root says lg 32; the theme actually ships 16. Root is the plugin's
+    // compatibility copy and must never win.
+    expect(resolveToken(THEMED_FIXTURE, 'radius.lg').values).toEqual({ 'material--elevation': '16px' })
+  })
+})
+
 describe('agentAccess import boundary', () => {
   it('does not import the store or tokenGenerator', () => {
     const files = readdirSync(accessDir).filter((f) => f.endsWith('.ts'))
