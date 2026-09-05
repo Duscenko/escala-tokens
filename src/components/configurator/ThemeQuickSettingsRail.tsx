@@ -72,7 +72,8 @@ import { useI18n } from '../../lib/i18n'
 export const QUICK_SETTINGS_WIDTH = COLOR_RAIL_WIDTH
 
 /** One vertical rhythm for edition cards and semantic accordion rows. */
-const QUICK_RAIL_STACK_GAP = 'gap-3'
+/** Card-to-card gap, shared with the integration rail. */
+export const QUICK_RAIL_STACK_GAP = 'gap-3'
 
 /**
  * The rail's vertical rhythm, in ONE place — six foundations are stacked in
@@ -378,16 +379,22 @@ export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow
  * door to the header sliders chip (Figma 40:1373) and replaces this footer
  * with Random.
  */
-function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, children }: {
+/**
+ * The card shell every Theme-workspace rail uses — `EditionCard` here and the
+ * integration rail's Connection / Protocol blocks. Extracted when the second
+ * rail needed it: two hand-rolled copies of one card is the drift this project
+ * keeps paying for (`RailGroupNav`, `RailSelect`, `TokenDetailsModal`).
+ *
+ * `bg-app` on the rail's own `WORKSPACE_CHROME` is what makes it read as a
+ * card — there is no border; the fill is the boundary.
+ */
+export function RailCard({ title, trailing, footer, flush, children }: {
   title: string
-  foundationKey: string
   /** Header slot — Color edition puts the Advanced sliders chip here. */
   trailing?: React.ReactNode
-  /** Replaces the default Advanced footer. Color edition puts Random here. */
   footer?: React.ReactNode
   /** No row rules, Regular title — Color edition is one stacked block. */
   flush?: boolean
-  onOpenAdvanced: (foundationKey: string) => void
   children: React.ReactNode
 }) {
   const { t } = useI18n()
@@ -402,7 +409,30 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
         {trailing}
       </div>
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
-      {footer ?? (
+      {footer}
+    </section>
+  )
+}
+
+function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, children }: {
+  title: string
+  foundationKey: string
+  /** Header slot — Color edition puts the Advanced sliders chip here. */
+  trailing?: React.ReactNode
+  /** Replaces the default Advanced footer. Color edition puts Random here. */
+  footer?: React.ReactNode
+  /** No row rules, Regular title — Color edition is one stacked block. */
+  flush?: boolean
+  onOpenAdvanced: (foundationKey: string) => void
+  children: React.ReactNode
+}) {
+  const { t } = useI18n()
+  return (
+    <RailCard
+      title={title}
+      trailing={trailing}
+      flush={flush}
+      footer={footer ?? (
         <div className="px-3 pb-2.5 pt-2">
           <button
             type="button"
@@ -414,7 +444,9 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
           </button>
         </div>
       )}
-    </section>
+    >
+      {children}
+    </RailCard>
   )
 }
 

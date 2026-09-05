@@ -6,7 +6,7 @@ import { FIGMA_SYNC_MODE_CAP } from '../../lib/figmaSyncModes'
 import { GitHubGlyph } from '../ui/icons'
 import { FigmaLogo, PluginInstallPromo, relativeTime } from './figmaShared'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
-import { QUICK_SETTINGS_WIDTH, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
+import { QUICK_RAIL_STACK_GAP, QUICK_SETTINGS_WIDTH, RailCard, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
 import { THEME_BAND_H } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
@@ -33,8 +33,8 @@ function StatusRow({
 }) {
   const valueClass = `min-w-0 break-words text-right ${mono ? 'font-mono' : ''}`
   return (
-    <div className="grid grid-cols-[76px_minmax(0,1fr)] items-start gap-2 py-2.5">
-      <dt className="text-mini uppercase tracking-[0.12em] text-fg-faint">{label}</dt>
+    <div className="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-start gap-2 px-3 py-2">
+      <dt className="text-caption text-fg-faint">{label}</dt>
       <dd className="flex min-w-0 items-center justify-end gap-1.5 text-caption leading-relaxed text-fg-muted">
         {dot}
         {onClick ? (
@@ -131,10 +131,10 @@ export default function IntegrationStatusRail({
         </span>
         <span className="min-w-0 truncate text-ui font-semibold text-fg">{isGithub ? 'GitHub' : 'Figma'}</span>
       </div>
-      <ThemeRailScrollRegion padClass="px-4 py-4">
-        <section aria-labelledby={`${provider}-connection-heading`}>
-          <h2 id={`${provider}-connection-heading`} className="text-mini font-semibold uppercase tracking-[0.16em] text-fg-faint">Connection</h2>
-          <dl className="mt-2 divide-y divide-line">
+      <ThemeRailScrollRegion padClass="px-3 py-3">
+        <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
+        <RailCard title="Connection">
+          <dl className="divide-y divide-line">
             {isGithub ? (
               <>
                 <StatusRow label="Push status" value={statusValue} dot={<StatusDot active={connected} busy={busy} error={error} />} />
@@ -171,22 +171,21 @@ export default function IntegrationStatusRail({
               </>
             )}
           </dl>
-        </section>
+        </RailCard>
 
-        <section aria-labelledby={`${provider}-protocol-heading`} className="mt-5">
-          <h2 id={`${provider}-protocol-heading`} className="text-mini font-semibold uppercase tracking-[0.16em] text-fg-faint">Protocol</h2>
+        <RailCard title="Protocol">
           {isGithub ? (
             <>
-              <dl className="mt-2 divide-y divide-line">
+              <dl className="divide-y divide-line">
                 <StatusRow label="Snapshot" value={githubRepo ? '.escala/system.json' : 'On first push'} mono />
                 <StatusRow label="Visibility" value="Private recommended" />
                 <StatusRow label="Backup" value={githubRepo ? 'Repository linked' : 'Not configured'} />
               </dl>
-              <p className="mt-3 text-mini leading-relaxed text-fg-faint">Pushes tokens, CSS, documentation, and the recoverable editor snapshot.</p>
+              <p className="px-3 pb-2.5 pt-2 text-mini leading-relaxed text-fg-muted">Pushes tokens, CSS, documentation, and the recoverable editor snapshot.</p>
             </>
           ) : (
             <>
-              <dl className="mt-2 divide-y divide-line">
+              <dl className="divide-y divide-line">
                 <StatusRow label="This page" value={workspaceSection || 'This window'} mono={Boolean(workspaceSection)} />
                 <StatusRow label="File" value={fileName?.trim() || 'Untitled'} />
                 <StatusRow
@@ -196,6 +195,10 @@ export default function IntegrationStatusRail({
                 <StatusRow label="Backup" value={githubRepo ? githubRepo : 'No repository'} mono={Boolean(githubRepo)} />
               </dl>
               {onOpenPluginDownload ? (
+                // Inside the card now, so it takes the card's own gutter — it
+                // used to sit full-bleed in the scroll region, which reads as
+                // misaligned against rows inset 14px above it.
+                <div className="px-3 pb-2.5 pt-2">
                 <PluginInstallPromo
                   layout="stacked"
                   version={PLUGIN_VERSION}
@@ -203,10 +206,12 @@ export default function IntegrationStatusRail({
                   onOpenInstall={onOpenPluginDownload}
                   info="Paste ID to plugin in Live Sync. This page is the resume link. File and modes travel in the published payload."
                 />
+                </div>
               ) : null}
             </>
           )}
-        </section>
+        </RailCard>
+        </div>
       </ThemeRailScrollRegion>
     </aside>
   )

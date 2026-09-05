@@ -2,7 +2,6 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { usePreviewTokens, resolvePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
-import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
 import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
@@ -177,7 +176,8 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 
 /**
  * Inspector mode toggle — Figma `41:1544` / `41:1545` (Button - Inspect tokens).
- * Same outline shell as `ThemeResetButton` (`41:1550`): border is the boundary,
+ * Same outline shell as `ThemeResetButton` (`41:1550`, now rendered only by
+ * Variables · Semantics): border is the boundary,
  * no `bg-tab-bar` fill. The view switcher beside them keeps the filled track
  * because it is a segmented control, not an outline action.
  *
@@ -218,8 +218,8 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
  * The only door to the Figma page was the `SyncTrack` pinned to the bottom of
  * the Themes library rail: the least-looked-at corner of the workspace, for the
  * handoff this product is largely about. Same outline shell as
- * `InspectorToggle` / `ThemeResetButton`, so it joins the action cluster rather
- * than inventing a third button language beside them.
+ * `InspectorToggle`, so it joins the action cluster rather than inventing a
+ * second button language beside it.
  *
  * Deliberately NOT a second status readout. The footer track and the Figma page
  * itself both report publish state; a third would be the "two doors to the same
@@ -958,7 +958,6 @@ export default function ThemePreviewHub({
     setInspectedCss(css ?? null)
     setInspectedAppearance(appearance ?? null)
   }
-  const themeReset = useThemeReset(previewTheme, !stylePreview)
   // What the BOARD is showing: a live try-on renders from `stylePreview.appearance`,
   // a committed theme from `previewAppearance`. The header sun/moon reads and
   // writes this, so it works for both.
@@ -1076,13 +1075,6 @@ export default function ThemePreviewHub({
                 </span>
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {surface === 'documentation' && hubDocActions}
-                  {themeReset.show && (
-                    <ThemeResetButton
-                      mode={themeReset.mode}
-                      target={themeReset.target}
-                      onClick={themeReset.onClick}
-                    />
-                  )}
                   {surface === 'artefacts' && (
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
