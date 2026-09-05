@@ -29,6 +29,7 @@ import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
+import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
 import { usePopoverPlacement } from '../components/configurator/colorControls'
 import type { ThemeAppearance } from '../lib/themeModes'
 
@@ -272,8 +273,6 @@ const SaveIcon: ComponentType = () => (
 const FigmaIcon: ComponentType = () => <FigmaGlyph size={18} />
 const GitHubIcon: ComponentType = () => <GitHubGlyph size={18} />
 /** Rail footer — match `FoundationIconRail`'s h-5 mask (~14px artwork). */
-const FigmaRailIcon: ComponentType = () => <FigmaGlyph size={14} />
-const GitHubRailIcon: ComponentType = () => <GitHubGlyph size={14} />
 
 const ExportIcon: ComponentType = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -283,76 +282,6 @@ const ExportIcon: ComponentType = () => (
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
-
-/** Themes-library sync footer destinations — Figma Sync · GitHub Push.
- *  Rendered as a segmented track (node 1:3664), not icon-only squares. */
-type SyncStatus = 'ok' | 'idle' | 'busy' | 'error'
-
-const SYNC_DOT: Record<SyncStatus, string> = {
-  ok: 'bg-status-success-solid',
-  idle: 'bg-fg-faint',
-  busy: 'bg-status-warning-solid animate-pulse',
-  error: 'bg-status-danger-solid',
-}
-
-/**
- * Themes-library sync footer — Figma node 1:3664.
- * Segmented track: Sync (Figma) · Push (GitHub). Active segment fills; status
- * dots sit on the trailing edge of each segment (colour is never the only cue —
- * `aria-label` / `title` still spell the status out).
- */
-function SyncTrack({
-  items,
-}: {
-  items: Array<{
-    key: string
-    label: string
-    status: SyncStatus
-    statusText: string
-    active: boolean
-    Icon: ComponentType
-    onClick: () => void
-  }>
-}) {
-  return (
-    <div
-      role="tablist"
-      aria-label="Sync destinations"
-      className="flex h-9 w-full items-center gap-0.5 rounded-xl bg-app p-1"
-    >
-      {items.map((item) => {
-        const { key, label, status, statusText, active, Icon, onClick } = item
-        return (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            aria-label={`${label} — ${statusText}`}
-            title={`${label} — ${statusText}`}
-            onClick={onClick}
-            className={`relative flex h-[31.5px] min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 text-caption tracking-[0.18px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-              active
-                ? 'bg-white text-fg-muted dark:bg-black dark:text-fg-muted'
-                : 'text-fg-faint hover:text-fg-muted'
-            }`}
-          >
-            <span className={`grid h-3.5 w-3.5 flex-shrink-0 place-items-center ${active ? 'opacity-90' : 'opacity-70'}`}>
-              <Icon />
-            </span>
-            <span className="truncate">{label}</span>
-            {status !== 'idle' && (
-              <span
-                aria-hidden
-                className={`absolute right-2.5 top-1/2 h-[5px] w-[5px] -translate-y-1/2 rounded-full ${SYNC_DOT[status]}`}
-              />
-            )}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -1170,6 +1099,29 @@ export default function Configurator() {
     setCodeScope(key)
     setThemeWorkspaceTab('code')
   }
+  /**
+   * Per-theme twin of the canvas header's Sync button. Same shape as
+   * `openCodeForTheme` directly above, plus one thing that shape doesn't need:
+   * it SELECTS the theme as the sync target.
+   *
+   * Previewing alone is not enough and shipped wrong once — the page opened on
+   * the clicked theme while File & modes still had the previous one checked and
+   * the slug still read `?project=core--minimalist`, i.e. a menu item on the
+   * Glass Copy row that would have published Core. `defaultFigmaSyncModes` is
+   * the same helper the initial state uses, handed one theme, so the selection
+   * is both appearances of it in the usual kind-first order — not a second
+   * mode-building code path that could disagree with the picker.
+   *
+   * The FILE NAME is deliberately left alone: one Figma file carries a column
+   * per theme, so the name belongs to the file, not to whichever theme is
+   * checked, and it is a user-editable field with its own default rule.
+   */
+  const syncFigmaForTheme = (key: string) => {
+    changePreviewTheme(key)
+    setFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds))
+    setThemeWorkspaceTab('preview')
+    setThemeHubSurface('figma')
+  }
   const openThemeLibraryFromCode = () => {
     changeThemeWorkspaceTab('preview')
     window.requestAnimationFrame(() => {
@@ -1339,38 +1291,10 @@ export default function Configurator() {
     />
   )
 
-  const themeWorkspaceSyncFooter = (
-    <SyncTrack
-      items={[
-        {
-          key: 'figma',
-          label: t('Sync'),
-          Icon: FigmaRailIcon,
-          status: figmaPublishState === 'publishing' ? 'busy' : figmaPublishState === 'error' ? 'error' : store.figmaLastPublishAt ? 'ok' : 'idle',
-          statusText:
-            figmaPublishState === 'publishing' ? t('publishing…')
-              : figmaPublishState === 'error' ? (figmaPublishError ?? t('publish failed'))
-              : store.figmaLastPublishAt ? t('published')
-              : t('not published yet'),
-          active: themeWorkspaceTab === 'preview' && themeHubSurface === 'figma',
-          onClick: () => { setThemeWorkspaceTab('preview'); setThemeHubSurface('figma') },
-        },
-        {
-          key: 'github',
-          label: t('Push'),
-          Icon: GitHubRailIcon,
-          status: githubPushState === 'pushing' ? 'busy' : githubPushState === 'error' ? 'error' : store.githubRepo ? 'ok' : 'idle',
-          statusText:
-            githubPushState === 'pushing' ? t('pushing…')
-              : githubPushState === 'error' ? t('push failed')
-              : store.githubRepo ? `${t('connected')} (${store.githubRepo})`
-              : t('not connected'),
-          active: themeWorkspaceTab === 'preview' && themeHubSurface === 'github',
-          onClick: () => { setThemeWorkspaceTab('preview'); setThemeHubSurface('github') },
-        },
-      ]}
-    />
-  )
+  // The rail footer is Reset now. Figma sync moved to the canvas header (and
+  // each theme's options menu); GitHub keeps its doors in the connection rail,
+  // SaveView, the Export wizard and Docs — see `ResetScopeControl`.
+  const themeWorkspaceSyncFooter = <ResetScopeControl previewTheme={previewTheme} />
 
   // ── Resolve center header + body for the current mode ──
   let header: { Icon: ComponentType; title: string; subtitle: string; right?: ReactNode }
@@ -1763,6 +1687,7 @@ export default function Configurator() {
             onPreviewThemeChange={changePreviewTheme}
             onStylePreview={setStylePreview}
             activeStylePreview={stylePreview}
+            onSyncFigma={syncFigmaForTheme}
             onOpenInCode={openCodeForTheme}
             syncFooter={themeWorkspaceSyncFooter}
           />

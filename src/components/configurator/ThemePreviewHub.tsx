@@ -28,7 +28,7 @@ import type { GitHubPushState } from '../../lib/github'
 import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
-import { InspectGlyph } from '../ui/icons'
+import { FigmaGlyph, InspectGlyph } from '../ui/icons'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
@@ -207,6 +207,44 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
       >
         <InspectGlyph size={16} />
         {label}
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Figma sync — a DESTINATION in the canvas header, beside Inspect tokens.
+ *
+ * The only door to the Figma page was the `SyncTrack` pinned to the bottom of
+ * the Themes library rail: the least-looked-at corner of the workspace, for the
+ * handoff this product is largely about. Same outline shell as
+ * `InspectorToggle` / `ThemeResetButton`, so it joins the action cluster rather
+ * than inventing a third button language beside them.
+ *
+ * Deliberately NOT a second status readout. The footer track and the Figma page
+ * itself both report publish state; a third would be the "two doors to the same
+ * facts" duplication this hub already avoids. It says where it goes, nothing
+ * more — which is also why it is a plain action, not an `aria-pressed` toggle
+ * like Inspect: the surface it opens replaces this header entirely, so there is
+ * no state here for it to reflect.
+ *
+ * The mark renders at 14 against Inspect's 16: `FigmaGlyph` is a 38×57 mark
+ * that fills its full height, so matching the square glyph's number would read
+ * visibly taller. 14 is the size `SyncTrack` already uses.
+ */
+function FigmaSyncButton({ onOpen }: { onOpen: () => void }) {
+  const { t } = useI18n()
+  return (
+    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={t('Sync with Figma')}
+        title={t('Sync with Figma')}
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        <FigmaGlyph size={14} />
+        {t('Sync')}
       </button>
     </div>
   )
@@ -1048,6 +1086,7 @@ export default function ThemePreviewHub({
                   {surface === 'artefacts' && (
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
+                  <FigmaSyncButton onOpen={() => onSurfaceChange('figma')} />
                   <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
                   <PreviewAppearanceButton value={effectiveBoardAppearance} onChange={handleAppearanceChange} />
                 </div>

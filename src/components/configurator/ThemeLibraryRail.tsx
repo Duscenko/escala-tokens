@@ -252,16 +252,26 @@ const THEME_OPTIONS_MENU_PAD = 8
  * 196px rail cannot contain a `w-44` absolute panel: measured left ≈ −18.
  * Same class of fix as ColorPrimitives' ColumnExportMenu.
  */
+/** Both non-destructive rows in the theme menu. Delete keeps its own danger
+ *  styling; these two are one decision and must not drift apart. */
+const THEME_MENU_ITEM =
+  'flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+
 function ThemeOptionsMenu({
   open,
   anchorRef,
   onClose,
+  onSyncFigma,
   onOpenInCode,
   onAskDelete,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
   onClose: () => void
+  /** Preview this theme and open the Figma page — the per-theme twin of the
+   *  canvas header's Sync button, so the handoff is reachable from the row
+   *  that names the theme it would publish. */
+  onSyncFigma?: () => void
   onOpenInCode?: () => void
   onAskDelete: () => void
 }) {
@@ -344,8 +354,16 @@ function ThemeOptionsMenu({
           <button
             type="button"
             role="menuitem"
+            onClick={onSyncFigma}
+            className={THEME_MENU_ITEM}
+          >
+            {t('Sync with Figma')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={onOpenInCode}
-            className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            className={THEME_MENU_ITEM}
           >
             {t('Open in code')}
           </button>
@@ -377,6 +395,7 @@ function ThemeLibraryRow({
   onEdit,
   onToggleMenu,
   onCloseMenu,
+  onSyncFigma,
   onOpenInCode,
   onAskDelete,
   onCancelDelete,
@@ -394,6 +413,7 @@ function ThemeLibraryRow({
   onEdit: () => void
   onToggleMenu: () => void
   onCloseMenu: () => void
+  onSyncFigma?: () => void
   onOpenInCode?: () => void
   onAskDelete: () => void
   onCancelDelete: () => void
@@ -449,6 +469,7 @@ function ThemeLibraryRow({
           open={menuOpen}
           anchorRef={menuBtnRef}
           onClose={onCloseMenu}
+          onSyncFigma={onSyncFigma}
           onOpenInCode={onOpenInCode}
           onAskDelete={onAskDelete}
         />
@@ -508,6 +529,7 @@ export default function ThemeLibraryRail({
   onPreviewThemeChange,
   onStylePreview,
   activeStylePreview,
+  onSyncFigma,
   onOpenInCode,
   syncFooter,
 }: {
@@ -524,6 +546,8 @@ export default function ThemeLibraryRail({
    *  had just been added, which is the confusion this fixes. */
   activeStylePreview?: StylePreview | null
   /** Get code — select this theme and switch the workspace to that tab. */
+  /** Preview a theme and open the Figma page with it. */
+  onSyncFigma?: (theme: string) => void
   onOpenInCode?: (theme: string) => void
   /** GitHub · Figma sync destinations — pinned above the app footer. */
   syncFooter?: ReactNode
@@ -771,6 +795,7 @@ export default function ThemeLibraryRail({
               onEdit={() => { clearStylePreview(); onPreviewThemeChange(key); setEditor(key) }}
               onToggleMenu={() => setRowMenuKey((open) => (open === key ? null : key))}
               onCloseMenu={() => setRowMenuKey(null)}
+              onSyncFigma={() => { setRowMenuKey(null); onSyncFigma?.(key) }}
               onOpenInCode={() => { setRowMenuKey(null); onOpenInCode?.(key) }}
               onAskDelete={() => { setRowMenuKey(null); setDeleteKey(key) }}
               onCancelDelete={() => setDeleteKey(null)}

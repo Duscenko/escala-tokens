@@ -465,9 +465,20 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   pill is gone: a rare, no-undo action given equal billing with GitHub · Figma · Search,
   when the resets anyone actually reaches for are the per-token "reset to standard" icons
   in the tables and the quick-edit strip's per-family reset (all unrelated, all stay).
-  `useDesignStore.resetToDefaults` is untouched — just unreachable from the UI, which is
-  what this line always claimed. The file is kept for reference, same as
+  `useDesignStore.resetToDefaults` is untouched. The file is kept for reference, same as
   `WorkbenchLayout`/`PickerColor`/`NewTokenWizard`; don't wire it back.
+
+  > **UPDATE — the whole-system reset is REACHABLE again, and the two objections above
+  > are what the new shape answers.** It lives in `ResetScopeControl`
+  > (`ThemeResetButton.tsx`), in the Themes-library rail footer. It is no longer "a rare
+  > action given EQUAL BILLING": the footer button says only "Reset" and the scope is
+  > chosen inside a modal, so nothing fires on the click itself — you have to pick
+  > "Whole system" by name, next to the far commoner "This theme". And it is no longer
+  > "NO-UNDO": both scopes `captureSnapshot` first and the footer becomes a 9s Undo bar,
+  > the same affordance `useThemeReset` already gave the theme-scoped reset. The
+  > per-token and per-family resets that note lists are unrelated and all still stand.
+  > Don't re-add a bare Reset pill — the modal IS the guardrail that makes this
+  > acceptable.
 - **"New" (guided token creation) and this row's "Import JSON" are RETIRED, not just
   hidden.** Both used to sit in `HomeActions` next to Kits: New opened `NewTokenMenu` → a
   category popover → `NewTokenWizard.tsx` (a 2–4 step Name/Target → Value/Scale →
@@ -1020,6 +1031,37 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   this row also holds three workspace tabs, so a pill still showing its mark and
 >   its dot is a smaller loss than a wrapped label.
 >
+> **UPDATE: the Themes-library footer's `SyncTrack` (Sync · Push) is DELETED. Figma sync
+> is a button in the CANVAS HEADER now, beside Inspect tokens; the footer is Reset.**
+> Reported as the Figma button not being visible enough — and it wasn't: the handoff this
+> product is largely about lived in a segmented track pinned to the bottom of the left
+> rail, the least-looked-at corner of the workspace. Rules that came out of it:
+> - **`FigmaSyncButton` (`ThemePreviewHub.tsx`) reuses `InspectorToggle`'s shell
+>   verbatim** — same `h-8 rounded-lg border border-line p-0.5` outer, same `h-7
+>   rounded-md px-2 text-caption` inner. Measured after: identical height, radius,
+>   border, padding, font-size and ink, on the same row. It joins the existing action
+>   cluster rather than inventing a third button language beside Reset and Inspect.
+> - **It carries NO status dot, deliberately.** The Figma page it opens reports publish
+>   state in full, and the connection rail carries it too; a third readout is the "two
+>   doors to the same facts" duplication this hub already avoids. It says where it goes.
+> - **It is a plain action, not an `aria-pressed` toggle like Inspect** — the surface it
+>   opens replaces that header entirely, so there is no state left for it to reflect.
+> - **The mark renders at 14 against Inspect's 16.** `FigmaGlyph` is a 38×57 mark that
+>   fills its full height, so matching the square glyph's number reads visibly taller.
+> - **Each theme's options menu gained "Sync with Figma"** (`ThemeOptionsMenu`, above
+>   "Open in code"). It PREVIEWS the theme and SELECTS it as the sync target —
+>   `defaultFigmaSyncModes([key], themeKinds)`, the same helper the initial state uses,
+>   so it can't build a mode list the picker disagrees with. Previewing alone shipped
+>   wrong once: the page opened on the clicked theme while File & modes still had the
+>   previous one checked, i.e. a menu item on the Glass Copy row that would have
+>   published Core. The FILE NAME is left alone on purpose — one Figma file carries a
+>   column per theme, so the name belongs to the file, not to whichever theme is checked.
+> - **Nothing was orphaned.** Figma: canvas header, the per-theme menu, the connection
+>   rail, Docs exits, the Export wizard. GitHub: the connection rail's own row,
+>   `SaveView`, the Export wizard's GitHub destination, Docs exits. Both verified before
+>   the track was deleted.
+>
+
 > **The token search field lives in TopNav's right cluster (before Language +
 > Appearance), NOT in the workspace tab strip.** It sat in the tab strip for a
 > while — the argument being "per-workspace tool, not global chrome" — and moved
