@@ -16,15 +16,29 @@ describe('figma sync modes', () => {
     expect(defaultFigmaSyncModes([], { light: 'light', dark: 'dark' })).toEqual([])
   })
 
-  it('defaults to the first theme in both appearances', () => {
-    expect(defaultFigmaSyncModes(['nature', 'core'], { nature: 'light' })).toEqual([
+  it('defaults to every listed theme in both appearances', () => {
+    expect(defaultFigmaSyncModes(['nature', 'core'], { nature: 'light', core: 'dark' })).toEqual([
       { theme: 'nature', appearance: 'light' },
       { theme: 'nature', appearance: 'dark' },
+      { theme: 'core', appearance: 'dark' },
+      { theme: 'core', appearance: 'light' },
     ])
     expect(defaultFigmaSyncModes(['neo'], { neo: 'dark' })).toEqual([
       { theme: 'neo', appearance: 'dark' },
       { theme: 'neo', appearance: 'light' },
     ])
+  })
+
+  it('fills five themes to the ten-column cap and stops', () => {
+    const keys = ['a', 'b', 'c', 'd', 'e', 'f']
+    const kinds = Object.fromEntries(keys.map((key) => [key, 'light']))
+    const next = defaultFigmaSyncModes(keys, kinds)
+    expect(next).toHaveLength(FIGMA_SYNC_MODE_CAP)
+    expect(next.filter((mode) => mode.theme === 'e')).toEqual([
+      { theme: 'e', appearance: 'light' },
+      { theme: 'e', appearance: 'dark' },
+    ])
+    expect(next.some((mode) => mode.theme === 'f')).toBe(false)
   })
 
   // Built from the constant, not from a literal count: the cap is a product

@@ -52,15 +52,28 @@ export function clampFigmaSyncModes(modes: readonly FigmaSyncMode[]): FigmaSyncM
   return modes.slice(0, FIGMA_SYNC_MODE_CAP)
 }
 
-/** First library theme, both appearances — preferred kind leads. */
+/**
+ * File & modes' opening selection: every listed library theme × Light/Dark,
+ * preferred kind first, stopped at `FIGMA_SYNC_MODE_CAP`.
+ *
+ * Used to be the first theme only. That read as "the plugin only imports 2
+ * modes" once the cap moved to 10 — Sync published two columns and the
+ * plugin created exactly those. A one-theme call (`[key]`) still returns
+ * just that theme's pair — Theme Preview's per-row "Sync with Figma".
+ */
 export function defaultFigmaSyncModes(
   themes: readonly string[],
   themeKinds: Record<string, string | undefined>,
 ): FigmaSyncMode[] {
-  const first = themes[0]
-  if (!first) return []
-  const preferred: ThemeAppearance = themeKinds[first] === 'dark' ? 'dark' : 'light'
-  return appearanceOrder(preferred).map((appearance) => ({ theme: first, appearance }))
+  const next: FigmaSyncMode[] = []
+  for (const theme of themes) {
+    const preferred: ThemeAppearance = themeKinds[theme] === 'dark' ? 'dark' : 'light'
+    for (const appearance of appearanceOrder(preferred)) {
+      if (next.length >= FIGMA_SYNC_MODE_CAP) return next
+      next.push({ theme, appearance })
+    }
+  }
+  return next
 }
 
 export function appearanceTitle(appearance: ThemeAppearance): 'Light' | 'Dark' {

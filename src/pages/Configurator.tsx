@@ -824,7 +824,15 @@ export default function Configurator() {
   useEffect(() => {
     setFigmaSyncModes((current) => {
       const valid = current.filter((mode) => syncThemes.includes(mode.theme))
-      return valid.length ? valid : defaultFigmaSyncModes(syncThemes, themeKinds)
+      const all = defaultFigmaSyncModes(syncThemes, themeKinds)
+      if (!valid.length) return all
+      // The old default was first-theme × Light/Dark. That left a 5-theme
+      // library publishing 2 columns, which read as "the plugin only
+      // imports two modes". Expand that leftover once more themes exist.
+      // A deliberate one-theme pick of a LATER row is left alone.
+      const onlyFirst = Boolean(syncThemes[0] && valid.every((mode) => mode.theme === syncThemes[0]))
+      if (onlyFirst && syncThemes.length > 1 && valid.length <= 2) return all
+      return valid
     })
   }, [syncThemeKey, syncThemes, themeKinds])
   const figmaPublishBase = useMemo(() => ({
