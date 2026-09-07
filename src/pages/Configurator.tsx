@@ -17,6 +17,7 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
 import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
@@ -632,8 +633,8 @@ export default function Configurator() {
   // browser), and read from this one value everywhere first-run behaviour
   // branches. `markOnboarded()` flips `hasOnboarded()` the instant the user
   // leaves About, so a second call is worthless; the affordances it gates
-  // (About as the landing tab, Core already tried on, the Themes Library
-  // collapsed to just "Create your theme") must hold for the whole session.
+  // (About as the landing tab, the Themes Library collapsed to just
+  // "Create your theme") must hold for the whole session.
   const [firstRun] = useState(() => !hasOnboarded())
   // App deep-link (`?project=&section=`). Per-window, not Zustand — two
   // windows can sit on two sections of the same system. A shared section
@@ -836,12 +837,10 @@ export default function Configurator() {
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
   // any real theme change and whenever the preview surface isn't on screen.
   //
-  // Seeding "Core, pre-tried-on" for a themeless browser is the LIBRARY's job,
-  // not the shell's: this state's only writer that survives is the rail (its
-  // unmount cleanup nulls it, and in dev StrictMode's mount/unmount/mount
-  // clobbered any value seeded here before the rail ever rendered). The rail
-  // re-seeds Core on every mount until a theme is committed — see `hasOwnTheme`
-  // there.
+  // The Themes Library seeds Core as a try-on when My themes is empty, so the
+  // artefact board is painted on first view. That overlay never writes the
+  // store — Core is SELECTED, not added. Variables still cannot hold a try-on:
+  // an empty My themes shows NeedMyThemeEmpty there until something is added.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
@@ -1392,7 +1391,13 @@ export default function Configurator() {
     // Inner body only — Groups | icon-rail is the STABLE shell
     // (FoundationWorkbench, mounted outside the keyed motion below) so
     // Color → Font doesn't remount the switcher.
-    body = section.key === 'color' ? (
+    //
+    // Scaffold `light`/`dark` still hold the default accent. With nothing in
+    // My themes those ramps are not a theme the user added — empty tables,
+    // not the purple file.
+    body = myThemeKeys(themeOrder, themes).length === 0 ? (
+      <NeedMyThemeEmpty />
+    ) : section.key === 'color' ? (
       <ColorHub
         mode={colorTab}
         onFocusChange={setSemanticFocus}
@@ -1607,21 +1612,22 @@ export default function Configurator() {
   // the store, so the Variables editor (ColorPrimitives et al.) can't reflect
   // it and would keep showing the OPEN system's ramps under the tried-on
   // style's name (the reported "click Core, still see the old ramps" bug).
-  // Leaving Theme Preview therefore DROPS the try-on, so the editing tabs show
-  // the system they can actually edit.
+  // Leaving Theme Preview therefore DROPS the try-on WHEN My themes already
+  // has a committed theme, so the editing tabs show the system they can
+  // actually edit.
   //
   // It used to MINT a theme here instead (`adoptPreset(…, { asCopy: true })`),
   // and that is what put a "Core Copy" row in My themes on a browser that had
-  // never created anything: the rail seeds a Core try-on whenever the user owns
-  // no theme, and About's "Start building" CTA lands on Variables — an editing
-  // tab — so the seed was committed before the user touched a single control.
-  // Committing is now only ever explicit ("Add to system") or a real edit (the
-  // quick rail's first-control auto-adopt). Navigating is neither.
+  // never created anything. Committing is only ever explicit ("Add to system")
+  // or a real edit (the quick rail's first-control auto-adopt). Navigating is
+  // neither. A themeless session KEEPS the seeded Core try-on across the
+  // workspace tabs so coming back to Theme Preview is not an empty board.
   useEffect(() => {
     if (!themesCanvas || themeWorkspaceTab === 'preview' || !stylePreview) return
+    if (myThemeKeys(themeOrder, themes).length === 0) return
     setStylePreview(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themesCanvas, themeWorkspaceTab, stylePreview])
+  }, [themesCanvas, themeWorkspaceTab, stylePreview, themeOrder, themes])
 
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">

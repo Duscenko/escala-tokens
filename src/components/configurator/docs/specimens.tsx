@@ -8,7 +8,7 @@
 // retunes Docs, Components, and Preview together — inline styles by design
 // (see CLAUDE.md conventions).
 
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -269,6 +269,98 @@ const hitGap = (t: PreviewTokens, box: number, gap: number) => {
  *  the control still feels immediate under the cursor. */
 const STATE_TRANSITION =
   'background 0.14s ease-out, border-color 0.14s ease-out, color 0.14s ease-out, box-shadow 0.14s ease-out'
+
+/** Tween for a selection pill that the user just moved. Same curve the
+ *  layoutId pills used — bounce still reads as toy on this canvas. */
+const PILL_TRANSITION = { duration: 0.26, ease: [0.16, 1, 0.3, 1] as const }
+const PILL_SNAP = { duration: 0 }
+
+/**
+ * One sliding selection mark, measured in the track's OWN layout pixels.
+ *
+ * `layoutId` is the obvious tool and the wrong one here. Theme Preview
+ * photographs every module with `transform: scale()` (`ScaledModule`,
+ * `ScaledArtefactCard`). Framer's projection is in screen space, so a token
+ * refresh, a first measure, or a page reload plays the same "slide" as a
+ * click — the pill jumps through the scale. `layoutDependency` only gates
+ * layout animations; it does not stop that projection.
+ *
+ * `offsetLeft` / `offsetTop` are pre-transform, so a click still slides and
+ * a resize/refresh snaps. The mark is a sibling of the items (not a child of
+ * the active one) so it can travel without remounting.
+ */
+function SlidingSelection({
+  trackRef,
+  selection,
+  reduce,
+  style,
+}: {
+  trackRef: { current: HTMLElement | null }
+  selection: string | number
+  reduce: boolean
+  style: CSSProperties
+}) {
+  const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [slide, setSlide] = useState(false)
+  const prevSel = useRef(selection)
+
+  const measure = useCallback(() => {
+    const track = trackRef.current
+    const item = track?.querySelector<HTMLElement>('[data-sliding-active="true"]')
+    if (!track || !item) return
+    const next = {
+      x: item.offsetLeft,
+      y: item.offsetTop,
+      w: item.offsetWidth,
+      h: item.offsetHeight,
+    }
+    setBox((prev) =>
+      prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h
+        ? prev
+        : next,
+    )
+  }, [trackRef])
+
+  useLayoutEffect(() => {
+    const moved = prevSel.current !== selection
+    prevSel.current = selection
+    if (moved) setSlide(!reduce)
+    measure()
+  }, [selection, measure, reduce])
+
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    const ro = new ResizeObserver(() => measure())
+    ro.observe(track)
+    for (const child of track.children) {
+      // The mark itself is aria-hidden; watching it would re-measure
+      // mid-tween and fight the slide.
+      if (child instanceof HTMLElement && child.getAttribute('aria-hidden') !== 'true') {
+        ro.observe(child)
+      }
+    }
+    return () => ro.disconnect()
+  }, [measure])
+
+  if (!box) return null
+  return (
+    <motion.span
+      aria-hidden
+      initial={false}
+      animate={{ x: box.x, y: box.y, width: box.w, height: box.h }}
+      transition={slide && !reduce ? PILL_TRANSITION : PILL_SNAP}
+      onAnimationComplete={() => setSlide(false)}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        pointerEvents: 'none',
+        ...style,
+      }}
+    />
+  )
+}
 
 function baseFont(t: PreviewTokens): CSSProperties {
   return { ...typeStyleOf(t, 'body-md', { leading: false }), color: t.neutralText }
@@ -2215,10 +2307,19 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
   const [active, setActive] = useState(1)
   const [hover, setHover] = useState<number | null>(null)
   const reduce = useReducedMotion() ?? false
-  const pillId = `sidebar-pill-${useId()}`
+  const trackRef = useRef<HTMLElement>(null)
 
   return (
-    <nav aria-label="Sidebar" style={{ ...baseFont(t), width: w ?? 200, padding: 8, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <nav ref={trackRef} aria-label="Sidebar" style={{ ...baseFont(t), position: 'relative', width: w ?? 200, padding: 8, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <SlidingSelection
+        trackRef={trackRef}
+        selection={active}
+        reduce={reduce}
+        style={{
+          borderRadius: radiusRoleOf(t, 'control'),
+          background: t.selectedSurface ?? selectedSurfaceOf(t),
+        }}
+      />
       {items.map((item, i) => {
         const on = i === active
         const hot = hover === i
@@ -2236,10 +2337,11 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
                 e.preventDefault()
                 const next = (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
                 setActive(next)
-                const el = e.currentTarget.parentElement?.children[next] as HTMLElement | undefined
-                el?.focus()
+                const rows = e.currentTarget.parentElement?.querySelectorAll<HTMLElement>('button')
+                rows?.[next]?.focus()
               }
             }}
+            data-sliding-active={on ? 'true' : undefined}
             style={{
               position: 'relative',
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
@@ -2254,18 +2356,6 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
               transition: STATE_TRANSITION,
             }}
           >
-            {on && (
-              <motion.span
-                layoutId={pillId}
-                layoutDependency={active}
-                aria-hidden
-                style={{
-                  position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'control'),
-                  background: t.selectedSurface ?? selectedSurfaceOf(t),
-                }}
-                transition={reduce ? { duration: 0 } : { duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-              />
-            )}
             <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
               <PreviewIcon concept={SIDEBAR_ICONS[item.icon]} size={15} color={on ? t.brandText : hot ? t.neutralText : t.fgMuted} />
               {item.label}
@@ -2282,7 +2372,7 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
   const [page, setPage] = useState(2)
   const [hover, setHover] = useState<string | null>(null)
   const reduce = useReducedMotion() ?? false
-  const pillId = `pagination-pill-${useId()}`
+  const trackRef = useRef<HTMLElement>(null)
   const at = pages.indexOf(page)
   const go = (n: number) => setPage(pages[Math.min(pages.length - 1, Math.max(0, n))] ?? page)
 
@@ -2294,6 +2384,7 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         type="button"
         disabled={opts.muted}
         aria-current={opts.current ? 'page' : undefined}
+        data-sliding-active={opts.current ? 'true' : undefined}
         onClick={opts.muted ? undefined : opts.onClick}
         onMouseEnter={() => setHover(id)}
         onMouseLeave={() => setHover((h) => (h === id ? null : h))}
@@ -2309,18 +2400,6 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
           transition: STATE_TRANSITION,
         }}
       >
-        {opts.current && (
-          <motion.span
-            layoutId={pillId}
-            layoutDependency={page}
-            aria-hidden
-            style={{
-              position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'action'),
-              background: t.brandSolid,
-            }}
-            transition={reduce ? { duration: 0 } : { duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-          />
-        )}
         <span style={{ position: 'relative' }}>{label}</span>
       </button>
     )
@@ -2328,9 +2407,11 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
 
   return (
     <nav
+      ref={trackRef}
       aria-label="Pagination"
       style={{
         ...baseFont(t),
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         gap: 2,
@@ -2340,6 +2421,15 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
       }}
     >
+      <SlidingSelection
+        trackRef={trackRef}
+        selection={page}
+        reduce={reduce}
+        style={{
+          borderRadius: radiusRoleOf(t, 'action'),
+          background: t.brandSolid,
+        }}
+      />
       {cell('prev', '‹', { onClick: () => go(at - 1) })}
       {cell('p1', '1', { current: page === 1, onClick: () => setPage(1) })}
       {cell('p2', '2', { current: page === 2, onClick: () => setPage(2) })}
@@ -2393,17 +2483,15 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
 // TabMenu declares no axes, so there's no variant dropdown for a click to
 // contradict, and the docs playground wants the real behaviour too.
 //
-// The active pill is ONE element that slides between tabs (`layoutId`) rather
-// than a background that blinks on and off per tab. That's what makes the
-// selection read as a single object moving, which is the whole point of a
-// segmented control — and while it slides you can see the brand tint travel
-// across the neutral text, so the two tokens are judged against each other.
-// Tween, not spring: this is a tool, and bounce reads as toy here.
+// The active pill is ONE element that slides between tabs rather than a
+// background that blinks on and off per tab. That's what makes the selection
+// read as a single object moving — and while it slides you can see the brand
+// tint travel across the neutral text, so the two tokens are judged against
+// each other. Tween, not spring: this is a tool, and bounce reads as toy here.
 //
-// `layoutDependency` is the selection index, not the box. A token reset
-// resizes the track (type, padding, radius) and would otherwise play the
-// same slide — inside the collage's `transform: scale()` that projection
-// jumps. Clicking a tab still animates; Random / Reset must not.
+// Measured with `SlidingSelection` (offset*, not `layoutId`): the collage
+// photographs this module with `transform: scale()`, and a layout projection
+// would jump on refresh / token reset even when the selection did not change.
 function TabMenuSpecimen({ t, w }: SpecimenProps) {
   const items = ['All', 'Drafts', 'Published']
   const [active, setActive] = useState(0)
@@ -2411,15 +2499,15 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
   const reduce = useReducedMotion() ?? false
   const fill = w === '100%'
   const tabGap = spacingRoleOf(t, 'gap-tight', '4px')
-  // Scopes the sliding pill to THIS instance — two TabMenus on one screen would
-  // otherwise share a layoutId and animate the pill between each other.
-  const pillId = `tabmenu-pill-${useId()}`
+  const trackRef = useRef<HTMLDivElement>(null)
 
   return (
     <div
+      ref={trackRef}
       role="tablist"
       style={{
         ...baseFont(t),
+        position: 'relative',
         display: 'flex',
         width: fill ? '100%' : undefined,
         maxWidth: '100%',
@@ -2427,6 +2515,19 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
         gap: tabGap,
       }}
     >
+      <SlidingSelection
+        trackRef={trackRef}
+        selection={active}
+        reduce={reduce}
+        style={{
+          borderRadius: 999,
+          // Persistent selection — `surface.selected`, not a local
+          // `soft(brandSolid)` wash. That wash matched no role, so
+          // Inspect tokens dropped the pill and kept only the inactive
+          // label (`content.secondary`).
+          background: t.selectedSurface ?? selectedSurfaceOf(t),
+        }}
+      />
       {items.map((item, i) => {
         const on = i === active
         return (
@@ -2448,14 +2549,16 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
                 setActive(next)
                 // Focus follows selection — the ARIA pattern for an
                 // automatic-activation tablist, and the only way the arrows
-                // stay usable past the first press.
-                const el = e.currentTarget.parentElement?.children[next] as HTMLElement | undefined
-                el?.focus()
+                // stay usable past the first press. Query by role: the
+                // sliding mark is a sibling in this track.
+                const tabs = e.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="tab"]')
+                tabs?.[next]?.focus()
               } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 setActive(i)
               }
             }}
+            data-sliding-active={on ? 'true' : undefined}
             style={{
               position: 'relative',
               flex: fill ? '1 1 0' : undefined,
@@ -2474,22 +2577,6 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
               outline: 'none',
             }}
           >
-            {on && (
-              <motion.span
-                layoutId={pillId}
-                layoutDependency={active}
-                aria-hidden
-                style={{
-                  position: 'absolute', inset: 0, borderRadius: 999,
-                  // Persistent selection — `surface.selected`, not a local
-                  // `soft(brandSolid)` wash. That wash matched no role, so
-                  // Inspect tokens dropped the pill and kept only the inactive
-                  // label (`content.secondary`).
-                  background: t.selectedSurface ?? selectedSurfaceOf(t),
-                }}
-                transition={reduce ? { duration: 0 } : { duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-              />
-            )}
             {/* Above the pill, which is absolutely positioned over the cell. */}
             <span style={{ position: 'relative' }}>{item}</span>
           </span>
@@ -2505,14 +2592,24 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
   const [active, setActive] = useState(0)
   const [hover, setHover] = useState<number | null>(null)
   const reduce = useReducedMotion() ?? false
-  const pillId = `segmented-pill-${useId()}`
+  const trackRef = useRef<HTMLDivElement>(null)
   return (
     // The TRACK is a container sitting on another container (this control
     // lives inside a card, never straight on the page), which is exactly what
     // `surface.layer-2` means in the elevation contract `overlaySurfaceOf`
     // states — layer-1 is the card it sits ON, so painting the track with it
     // too left the two indistinguishable.
-    <div role="radiogroup" style={{ ...baseFont(t), display: 'inline-flex', padding: 3, gap: 2, borderRadius: radiusRoleOf(t, 'action'), background: overlaySurfaceOf(t) }}>
+    <div ref={trackRef} role="radiogroup" style={{ ...baseFont(t), position: 'relative', display: 'inline-flex', padding: 3, gap: 2, borderRadius: radiusRoleOf(t, 'action'), background: overlaySurfaceOf(t) }}>
+      <SlidingSelection
+        trackRef={trackRef}
+        selection={active}
+        reduce={reduce}
+        style={{
+          borderRadius: radiusRoleOf(t, 'control'),
+          background: t.inputSurface ?? inputSurfaceOf(t),
+          boxShadow: shadowOf(t, 'xs', '0 1px 2px rgba(10,13,18,0.1)'),
+        }}
+      />
       {items.map((item, i) => {
         const on = i === active
         const hot = hover === i
@@ -2522,6 +2619,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
             type="button"
             role="radio"
             aria-checked={on}
+            data-sliding-active={on ? 'true' : undefined}
             onClick={() => setActive(i)}
             onMouseEnter={() => setHover(i)}
             onMouseLeave={() => setHover((h) => (h === i ? null : h))}
@@ -2535,19 +2633,6 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
               transition: STATE_TRANSITION,
             }}
           >
-            {on && (
-              <motion.span
-                layoutId={pillId}
-                layoutDependency={active}
-                aria-hidden
-                style={{
-                  position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'control'),
-                  background: t.inputSurface ?? inputSurfaceOf(t),
-                  boxShadow: shadowOf(t, 'xs', '0 1px 2px rgba(10,13,18,0.1)'),
-                }}
-                transition={reduce ? { duration: 0 } : { duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-              />
-            )}
             <span style={{ position: 'relative' }}>{item}</span>
           </button>
         )

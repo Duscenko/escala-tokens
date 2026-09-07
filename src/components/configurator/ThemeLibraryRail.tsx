@@ -626,18 +626,16 @@ export default function ThemeLibraryRail({
   }
 
   // With no theme of their own yet, the workspace lands with Core already tried
-  // on — a real, opinionated system on screen instead of the bare violet
-  // default, its row expanded and "Add to system" one click away. Nothing is
-  // committed: the try-on is an overlay, so Core is SHOWN, not added to My
-  // themes.
+  // on — a real, opinionated system on screen instead of an empty canvas, its
+  // row expanded and "Add to system" one click away. Nothing is committed: the
+  // try-on is an overlay, so Core is SHOWN, not added to My themes.
   //
-  // Gated on `hasOwnTheme` alone, never on a first-visit flag. Tying it to the first
-  // browser visit meant the default only ever appeared once: a reload landed
-  // the same user, still without a theme, back on the bare default — which is
-  // the state this seed exists to avoid, not a state worth returning to.
-  // Mount-only (`[]`), so closing the try-on stays closed for the session; it
-  // re-seeds on a rail remount (a tab round-trip) and stops for good the moment
-  // a theme is committed.
+  // Gated on `hasOwnTheme` alone, never on a first-visit flag. Tying it to the
+  // first browser visit meant the default only ever appeared once: a reload
+  // landed the same user, still without a theme, back on an empty board — which
+  // is the state this seed exists to avoid. Mount-only (`[]`), so closing the
+  // try-on stays closed for the session; it re-seeds on a rail remount (a tab
+  // round-trip) and stops for good the moment a theme is committed.
   useEffect(() => {
     if (!hasOwnTheme) previewPreset(corePreset, chromeTheme)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -648,11 +646,13 @@ export default function ThemeLibraryRail({
   // the first-edit auto-adopt. This rail previews; it no longer commits.
   const deleteTheme = (key: string) => {
     clearStylePreview()
-    const next = availableThemes.find((theme) => theme !== key)
+    const nextOwn = ownThemeKeys.find((theme) => theme !== key)
+    const next = nextOwn ?? availableThemes.find((theme) => theme !== key)
     if (previewTheme === key) {
-      if (next) onPreviewThemeChange(next)
+      if (nextOwn) onPreviewThemeChange(nextOwn)
+      else if (next) onPreviewThemeChange(next)
       else if (corePreset) previewPreset(corePreset, chromeTheme)
-    } else if (!next && corePreset) {
+    } else if (!nextOwn && corePreset) {
       previewPreset(corePreset, chromeTheme)
     }
     removeTheme(key)

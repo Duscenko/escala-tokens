@@ -32,6 +32,7 @@ import { FigmaGlyph, InspectGlyph } from '../ui/icons'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
+import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -944,6 +945,8 @@ export default function ThemePreviewHub({
     return { ...stylePreview, edits: tryOnEdits }
   }, [stylePreview, tryOnEdits])
   const store = useDesignStore()
+  const hasOwnTheme = myThemeKeys(store.themeOrder, store.themes).length > 0
+  const needsMyTheme = !hasOwnTheme && !stylePreview
   // A REAL pick (not a Reset-driven clear) during a try-on is a deliberate
   // edit, not a glance — it can't stay ephemeral the way `tryOnEdits` is,
   // because nothing ephemeral survives leaving the tab. So it adopts the
@@ -1044,7 +1047,7 @@ export default function ThemePreviewHub({
   // and collapse state cannot disturb the preview surface.
   return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
     <div className="flex-1 min-h-0 flex">
-      {surface === 'components' && (
+      {surface === 'components' && !needsMyTheme && (
         <HubRail
           title={t('Components')}
           ariaLabel={t('Component showcase')}
@@ -1067,7 +1070,7 @@ export default function ThemePreviewHub({
           }
         />
       )}
-      {surface === 'documentation' && (
+      {surface === 'documentation' && !needsMyTheme && (
         <HubRail
           title="Theme doc"
           ariaLabel="Documentation pages"
@@ -1079,7 +1082,7 @@ export default function ThemePreviewHub({
           onChange={setDocPage}
         />
       )}
-      {surface === 'artefacts' && (
+      {surface === 'artefacts' && !needsMyTheme && (
         <ThemeQuickSettingsRail
           key={previewTheme}
           previewTheme={previewTheme}
@@ -1116,9 +1119,9 @@ export default function ThemePreviewHub({
           // chrome from the previewed theme.
           <div className={`min-h-0 flex-1 ${SHELL_CHROME} p-3`}>
             <section
-              aria-label={`${themeName} preview canvas`}
-              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
-              style={{ background: pageCanvasColor }}
+              aria-label={needsMyTheme ? t('Theme preview') : `${themeName} preview canvas`}
+              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${needsMyTheme ? 'bg-app' : effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
+              style={needsMyTheme ? undefined : { background: pageCanvasColor }}
             >
               {/* One header band for every hub view — the active view's NAME
                   sits top-left; page actions (Copy page…), the view switcher and
@@ -1133,7 +1136,7 @@ export default function ThemePreviewHub({
                 </span>
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {surface === 'documentation' && hubDocActions}
-                  {surface === 'artefacts' && (
+                  {surface === 'artefacts' && !needsMyTheme && (
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
                   <FigmaSyncButton onOpen={() => onSurfaceChange('figma')} />
@@ -1143,9 +1146,15 @@ export default function ThemePreviewHub({
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
               <div className="flex min-h-0 flex-1 flex-col">
+                {needsMyTheme ? (
+                  <NeedMyThemeEmpty />
+                ) : (
+                  <>
                 {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} editingRole={editingToken != null} inspecting={inspecting} tileAppearances={effectiveTileAppearances} boardAppearance={effectiveBoardAppearance} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
                 {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={paintedPreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
                 {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={paintedPreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
+                  </>
+                )}
               </div>
               </ThemeHubHeaderActionsProvider>
             </section>

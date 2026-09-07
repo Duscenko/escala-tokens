@@ -20,18 +20,20 @@ const WIDE_BP = '(min-width: 1280px)'
 const IS_MAC = typeof navigator !== 'undefined'
   && /mac/i.test(navigator.platform || navigator.userAgent || '')
 
-const ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
+const ICON_ACTION = `token-search-icon grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER}`
 
 /** Search sits `bg-input-bg` on `bg-tab-bar` — fill does not separate (dark
  *  ΔL 0.081, WCAG 1.20:1), so the edge is the boundary. Hover is a real fill
  *  step to `--elevated`, not the shared chip inset wash: that 7% white lift
- *  lands on the tab-bar (ΔL 0.007) and the control vanishes. */
+ *  lands on the tab-bar (ΔL 0.007) and the control vanishes.
+ *  Active stroke lives on `.token-search-field` in `index.css` — the same
+ *  `inset 0 0 0 2px var(--fg)` Color Hub tabs use (near-white in dark, ink
+ *  in light). No accent ring, no offset halo. */
 const FIELD_SHELL = [
+  'token-search-field',
   'border border-line bg-input-bg',
   'transition-[color,border-color,background-color,box-shadow] duration-150 ease-out',
   'hover:border-line-strong hover:bg-elevated hover:text-fg',
-  'focus-within:border-accent-ui focus-within:bg-elevated focus-within:text-fg',
-  'focus-within:ring-2 focus-within:ring-accent-ui/60 focus-within:ring-offset-2 focus-within:ring-offset-tab-bar',
 ].join(' ')
 
 const FOUNDATION_LABEL: Record<string, string> = {
@@ -91,9 +93,8 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
     const [activeIndex, setActiveIndex] = useState(-1)
     const [panelRect, setPanelRect] = useState<{ top: number; left: number; width: number } | null>(null)
     // The width mask MUST clip while the chip is growing/shrinking or the
-    // 14rem field spills. Once settled, clip OFF — `ring-offset-2` paints
-    // 4px outside the label and `overflow-hidden` was slicing that halo
-    // (top/right especially, against the tab-bar edge).
+    // 14rem field spills. Once settled, clip OFF so the hairline isn't
+    // sliced against the tab-bar edge.
     const [clipping, setClipping] = useState(false)
     const reduceMotion = useReducedMotion()
 

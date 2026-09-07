@@ -89,7 +89,14 @@ export default function IntegrationStatusRail({
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
   const githubCredentialSaved = Boolean(getStoredToken())
   const isGithub = provider === 'github'
-  const connected = isGithub ? githubCredentialSaved : Boolean(figmaLastPublishAt)
+  const published = Boolean(figmaLastPublishAt)
+  // A publish is not a live connection. The plugin's own green `.sync-dot.active`
+  // only lands when THIS file pasted the ID and Start sync is running — the
+  // configurator cannot see that. The honest analogue here is: a payload exists
+  // AND we are keeping it live. A faint idle dot used to claim "Connected" from
+  // `figmaLastPublishAt` alone; don't put the ok dot back on that.
+  const figmaSyncActive = published && autoSyncFigma
+  const connected = isGithub ? githubCredentialSaved : figmaSyncActive
   const busy = isGithub ? githubPushState === 'pushing' : figmaPublishState === 'publishing'
   const error = isGithub ? githubPushState === 'error' : figmaPublishState === 'error'
   // The header's own expression, moved onto the status ROW: in-flight and
@@ -98,7 +105,16 @@ export default function IntegrationStatusRail({
     ? 'Needs attention'
     : busy
       ? stateLabel(isGithub ? githubPushState : figmaPublishState)
-      : connected ? 'Connected' : 'Not connected'
+      : isGithub
+        ? (connected ? 'Connected' : 'Not connected')
+        : figmaSyncActive
+          ? 'Active'
+          : published
+            ? 'Not active'
+            : 'Not connected'
+  const figmaSyncDot = busy || error || figmaSyncActive
+    ? <StatusDot active={figmaSyncActive} busy={busy} error={error} />
+    : undefined
   const githubConnected = Boolean(githubRepo || githubCredentialSaved)
   const githubStatusValue = githubPushState === 'error'
     ? 'Needs attention'
@@ -144,7 +160,7 @@ export default function IntegrationStatusRail({
               </>
             ) : (
               <>
-                <StatusRow label="Sync status" value={statusValue} dot={<StatusDot active={connected} busy={busy} error={error} />} />
+                <StatusRow label="Sync status" value={statusValue} dot={figmaSyncDot} />
                 <StatusRow label="Published" value={relativeTime(figmaLastPublishAt)} />
                 <StatusRow label="ID to plugin" value={`/api/tokens · ${syncProjectId(fileName)}`} mono />
                 <StatusRow label="Auto sync" value={autoSyncFigma ? 'On' : 'Off'} />

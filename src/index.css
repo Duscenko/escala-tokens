@@ -724,6 +724,22 @@ button:focus-visible > .random-theme-border {
   box-shadow: inset 0 0 0 2px var(--fg);
 }
 
+/* Token search — same `--fg` inset stroke as the tab above. The field's
+   fill does not separate from the tab-bar, so rest keeps a `--line`
+   hairline; :focus-within drops that edge so only this stroke remains.
+   No accent ring. */
+.token-search-field:focus-within,
+.token-search-field:focus-within:hover {
+  border-color: transparent;
+  background-color: var(--elevated);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 2px var(--fg);
+}
+.token-search-icon:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--fg);
+}
+
 /* The SVG shape layer — absolutely filling the tab, behind the label
    (painted first in DOM order; z-index below the text span). Hidden at
    rest, exactly like the source repo, so resting inactive tabs show no
