@@ -30,10 +30,10 @@ describe('figma sync modes', () => {
   // Built from the constant, not from a literal count: the cap is a product
   // decision that has moved once already (3 → 10) and these assert the
   // BEHAVIOUR at the cap, not what the cap happens to be.
-  const atCap = () =>
+  const atCap = (): { theme: string; appearance: 'light' | 'dark' }[] =>
     Array.from({ length: FIGMA_SYNC_MODE_CAP }, (_, i) => ({
       theme: `t${Math.floor(i / 2)}`,
-      appearance: (i % 2 === 0 ? 'light' : 'dark') as const,
+      appearance: i % 2 === 0 ? 'light' : 'dark',
     }))
 
   it('caps the selection and never empties it', () => {
