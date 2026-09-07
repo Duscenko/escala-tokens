@@ -71,9 +71,17 @@ async function handleOne(msg: JsonRpcRequest, loadTokens: LoadTokens): Promise<J
       if (!name) return fail(id, -32602, 'tools/call requires params.name')
       try {
         const result = await callTool(name, params.arguments, loadTokens)
+        // structuredContent MUST be a JSON object per the MCP spec. list_components
+        // returns an array, and sending it here fails client-side schema validation
+        // ("expected record") — the tool errors out before the caller sees anything.
+        // The text content already carries the full result, so omit it for non-objects.
+        const structured =
+          result !== null && typeof result === 'object' && !Array.isArray(result)
+            ? (result as Record<string, unknown>)
+            : undefined
         return ok(id, {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-          structuredContent: result,
+          ...(structured ? { structuredContent: structured } : {}),
         })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
