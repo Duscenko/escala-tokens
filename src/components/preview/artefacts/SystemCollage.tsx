@@ -171,11 +171,6 @@ function ScaledModule({
 
   const body = chrome ? <ModuleSurface t={t} style={style}>{children}</ModuleSurface> : children
   const appearanceClass = appearance === 'dark' ? 'dark' : 'light'
-  const weighted = (
-    <PhosphorWeightProvider weight={t.iconWeight}>
-      {body}
-    </PhosphorWeightProvider>
-  )
 
   return (
     <div
@@ -206,7 +201,7 @@ function ScaledModule({
           borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
         }}
       >
-        {weighted}
+        {body}
       </div>
     </div>
   )
@@ -276,6 +271,7 @@ export function SystemCollage({
   const wellSm = sizeRoleOf(tile(2), 'compact', '32px')
 
   return (
+    <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
     <div
       className="w-full"
       style={{
@@ -556,5 +552,6 @@ export function SystemCollage({
         <Spinner t={tile(23)} v={{ Size: 'MD' }} />
       </ScaledModule>
     </div>
+    </PhosphorWeightProvider>
   )
 }

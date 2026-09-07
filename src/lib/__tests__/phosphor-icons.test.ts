@@ -12,10 +12,12 @@ import {
   iconAiContext,
 } from '../iconLibraries'
 import {
+  PHOSPHOR_CORE_BODIES,
   PHOSPHOR_ICONS_COUNT,
   PHOSPHOR_WEIGHTS,
   findPhosphorIcon,
   loadPhosphorWeight,
+  peekPhosphorWeight,
   phosphorCoreBody,
   phosphorIconSvg,
   phosphorIconSvgForFigma,
@@ -93,5 +95,11 @@ describe('phosphor catalog', () => {
     const bold = await loadPhosphorWeight('bold')
     expect(Object.keys(bold).length).toBe(PHOSPHOR_ICONS_COUNT)
     expect(bold['gear']).toContain('<path')
+  })
+
+  it('peeks a cached weight without another load', async () => {
+    expect(peekPhosphorWeight('regular')).toBe(PHOSPHOR_CORE_BODIES)
+    const bold = await loadPhosphorWeight('bold')
+    expect(peekPhosphorWeight('bold')).toBe(bold)
   })
 })

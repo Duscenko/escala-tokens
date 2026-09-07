@@ -222,7 +222,68 @@ describe('My themes sync scope', () => {
     expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('light')
     expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('dark')
     expect(scoped.colors.themes).not.toHaveProperty(adoptedNeo.key)
+    // Last adopted theme is dark-kind and in the selection — the plugin
+    // looks up this key exactly in themeOrder, so it must be flattened.
+    expect(scoped.colors.activeTheme).toBe(`${adoptedNeo.key}::dark`)
+    expect(scoped.colors.themeOrder).toContain(scoped.colors.activeTheme)
     expect(useDesignStore.getState().projectName).not.toBe('Nature / Organic')
+  })
+
+  it('ships ten flattened columns the plugin iterates with no leftover cap of 3', async () => {
+    const { adoptPreset } = await import('../adoptPreset')
+    const { FIGMA_SYNC_MODE_CAP } = await import('../figmaSyncModes')
+    const adopted: { key: string; name: string }[] = []
+    for (const id of [
+      'core-minimal',
+      'cupertino-glass',
+      'material-elevation',
+      'nature-organic',
+      'retro-vintage',
+    ]) {
+      const preset = THEME_STYLE_PRESETS.find((item) => item.id === id)!
+      const result = adoptPreset(preset, 'light')
+      expect('error' in result).toBe(false)
+      if ('error' in result) return
+      adopted.push(result)
+    }
+
+    const modes = adopted.flatMap((theme) => [
+      { theme: theme.key, appearance: 'light' as const },
+      { theme: theme.key, appearance: 'dark' as const },
+    ])
+    expect(modes).toHaveLength(FIGMA_SYNC_MODE_CAP)
+
+    setActiveThemeHint(adopted[0].key)
+    const json = generateTokenJSON(undefined, { modes })
+    const order = json.colors.themeOrder
+    expect(order).toHaveLength(FIGMA_SYNC_MODE_CAP)
+    expect(order.every((key) => key.includes('::'))).toBe(true)
+    expect(Object.keys(json.colors.themes)).toEqual(order)
+    expect(order.every((key) => json.colors.themeLabels[key] && !json.colors.themeLabels[key].includes('::'))).toBe(true)
+    expect(Object.keys(json.foundationsByTheme)).toEqual(order)
+
+    const arch = json.colors.architecture as {
+      tokens: Record<string, Record<string, Record<string, string>>>
+    }
+    const solid = arch.tokens.action['primary.default']
+    expect(Object.keys(solid)).toEqual(order)
+    // Hex or a `{family.tone}` ref — the plugin resolves both via
+    // `archValueRgba` / `primitiveRefHex`. An empty cell would become a
+    // transparent-black variable.
+    expect(order.every((key) => Boolean(solid[key]))).toBe(true)
+
+    // Plugin `activeThemeKey` / `componentThemeKey` do an exact lookup.
+    expect(json.colors.activeTheme).toBe(`${adopted[0].key}::light`)
+    expect(order).toContain(json.colors.activeTheme)
+
+    // Same construction Color Semantics uses: themeOrder ∩ themes, labels
+    // from themeLabels. No slice — a leftover `3` here is the old cap.
+    const modeSpec = order
+      .filter((key) => json.colors.themes[key])
+      .map((key) => [key, json.colors.themeLabels[key]] as const)
+    expect(modeSpec).toHaveLength(10)
+    expect(modeSpec[0][1]).toMatch(/Light$/)
+    expect(modeSpec[1][1]).toMatch(/Dark$/)
   })
 
   it('drops Dark Brand leftovers minted on scaffolding dark', async () => {

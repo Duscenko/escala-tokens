@@ -68,7 +68,7 @@
         },
         "activeTheme": {
           "type": "string",
-          "description": "Library theme the configurator is previewing. Overview / Cover read this theme's brand family as the identity ramp. Additive — older plugins ignore it."
+          "description": "Library theme the configurator is previewing, or `theme::appearance` when Sync flattened Light/Dark into Color Semantics columns. Overview / Cover read this column's brand family as the identity ramp. Additive — older plugins ignore it."
         },
         "themeSources": {
           "type": "object",

@@ -25,6 +25,7 @@ import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
+import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { FigmaGlyph, InspectGlyph } from '../ui/icons'
@@ -1002,6 +1003,11 @@ export default function ThemePreviewHub({
   }
   useEffect(() => { setRandomBoardAppearance(null) }, [previewTheme])
   useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
+  // Random paints a view-only light/dark on the board. Reset restores the
+  // theme's tokens but used to leave that overlay on, so the canvas stayed
+  // on the random appearance while everything else snapped back.
+  const themeEdited = themeHasEdits(store, previewTheme)
+  useEffect(() => { if (!themeEdited) setRandomBoardAppearance(null) }, [themeEdited])
   // A role picked on the canvas opens Token Details in the SAME dock as New
   // theme — flush to the Themes Library — not the Variables table. The table
   // is a second destination the drawer itself already carries a door to.

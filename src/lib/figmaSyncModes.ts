@@ -1,8 +1,29 @@
 import { appearanceOrder, themeModeKey, type ThemeAppearance } from './themeModes'
 
-/** Figma Professional allows 4 modes per collection. Sync caps at 3 so one
- *  column stays free and a Free-plan file (1 mode) still gets a clear skip. */
-export const FIGMA_SYNC_MODE_CAP = 3
+/**
+ * How many Color Semantics columns Sync will offer — five themes, each as a
+ * Light and a Dark column.
+ *
+ * This is NOT Figma's limit, and it deliberately exceeds it on most plans:
+ * Starter allows 1 mode per collection, Professional and Organization 4,
+ * Enterprise 40. The cap used to be 3 to stay inside Professional's 4 with a
+ * column to spare, which meant a five-theme system could never ship more than
+ * one and a half of its themes even on a plan that could hold them.
+ *
+ * Choosing what to publish and discovering what your plan holds are two
+ * different questions, and the plugin already answers the second one honestly:
+ * `ensureNamedModes` and the semantics import both wrap `addMode` in a
+ * try/catch and log one line naming every column that was skipped and why
+ * ("your Figma plan's mode-per-collection limit was reached"). So an
+ * over-cap selection imports the columns that fit, in order, and says which
+ * ones didn't — rather than the picker deciding on the user's behalf that
+ * they are on Professional.
+ *
+ * The ORDER of `syncModes` is therefore load-bearing on a limited plan: it is
+ * the order columns are created in, so whatever the user checked first is what
+ * survives the cut.
+ */
+export const FIGMA_SYNC_MODE_CAP = 10
 
 /** One Figma Color Semantics column: a library theme × Light or Dark. */
 export type FigmaSyncMode = {

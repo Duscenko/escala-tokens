@@ -65,6 +65,22 @@ export function resolveActiveTheme(themeNames: string[], hint = activeThemeHint)
   return own[own.length - 1] ?? themeNames[0] ?? 'light'
 }
 
+/** Column the plugin's Overview / Cover / mode pin should open on.
+ *  Sync flattens library keys to `theme::appearance`; `activeTheme` has to
+ *  be one of those keys or the plugin's exact match misses and falls through
+ *  to the last column. */
+function resolvePublishedActiveTheme(
+  themeNames: string[],
+  columnOrder: string[],
+  preferredAppearance: ThemeAppearance,
+): string {
+  const library = resolveActiveTheme(themeNames)
+  if (columnOrder.includes(library)) return library
+  const preferred = figmaSyncModeId({ theme: library, appearance: preferredAppearance })
+  if (columnOrder.includes(preferred)) return preferred
+  return columnOrder.find((id) => id.startsWith(`${library}::`)) ?? columnOrder[0] ?? library
+}
+
 // Flatten a numeric color scale into prefixed string keys, e.g. accent-1 … accent-12
 // (or accent-50 … accent-1000 under the "hundreds" naming scheme).
 export function flattenScale(
@@ -95,7 +111,8 @@ export type GenerateTokenOptions = {
   /** Ship these library themes (families + themeModes). Figma columns
    *  come from `modes` when that is also set. */
   themes?: string[] | null
-  /** Figma Color Semantics columns — theme × Light/Dark, max 3. Flattens
+  /** Figma Color Semantics columns — theme × Light/Dark, capped at
+   *  `FIGMA_SYNC_MODE_CAP`. Flattens
    *  `themeOrder` / `themes` / `themeLabels` to `theme::appearance` so the
    *  plugin creates one mode per selected appearance. `themeModes` stays
    *  keyed by the real library theme. */
@@ -539,6 +556,12 @@ export function generateTokenJSON(
     exportOrder,
   )
 
+  const activeLibrary = resolveActiveTheme(themeNames)
+  const activeAppearance: ThemeAppearance =
+    (exportKinds[activeLibrary] ?? store.themeKinds[activeLibrary] ?? 'light') === 'dark'
+      ? 'dark'
+      : 'light'
+
   return {
     // Contract version the Figma plugin checks on import. Bump only on a
     // breaking change to the payload shape; the plugin warns on a mismatch.
@@ -564,7 +587,9 @@ export function generateTokenJSON(
       themeOrder: exportOrder,
       // Which library theme Overview / Cover should read as "the" brand
       // ramp. Additive — an older plugin ignores it and keeps themeOrder[0].
-      activeTheme: resolveActiveTheme(themeNames),
+      // When Sync flattened Light/Dark into columns this is the matching
+      // `theme::appearance` key, so the plugin's exact lookup hits a real mode.
+      activeTheme: resolvePublishedActiveTheme(themeNames, exportOrder, activeAppearance),
       // Which primitive family each shipped theme reads per slot — the plugin
       // groups Color Primitives (Accents / Neutrals / States/<theme>) from this,
       // so a leftover global `error` cannot sit beside `glass-error` unlabeled.

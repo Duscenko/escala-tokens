@@ -72,6 +72,15 @@ const WEIGHT_LOADERS: Record<PhosphorWeight, () => Promise<{ default: Record<str
 
 const bodyCache = new Map<PhosphorWeight, Record<string, string>>()
 
+/** Sync read of a weight already in memory. `regular` is always ready
+ *  (`PHOSPHOR_CORE_BODIES`); every other weight is `undefined` until the
+ *  first `loadPhosphorWeight` resolves. Specimens use this so a reset onto
+ *  a cached weight doesn't flash the regular bodies for a frame. */
+export function peekPhosphorWeight(weight: PhosphorWeight): Record<string, string> | undefined {
+  if (weight === 'regular') return PHOSPHOR_CORE_BODIES
+  return bodyCache.get(weight)
+}
+
 /** Load (and cache) every glyph body for one weight. */
 export async function loadPhosphorWeight(weight: PhosphorWeight): Promise<Record<string, string>> {
   const cached = bodyCache.get(weight)

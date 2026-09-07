@@ -8,7 +8,7 @@
 // retunes Docs, Components, and Preview together — inline styles by design
 // (see CLAUDE.md conventions).
 
-import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
@@ -16,7 +16,7 @@ import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, padd
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
-import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
+import { PHOSPHOR_CORE_BODIES, loadPhosphorWeight, peekPhosphorWeight, phosphorCoreBody, phosphorIconMaskUrl, type PhosphorWeight } from '../../../lib/phosphorIcons'
 import { useI18n } from '../../../lib/i18n'
 import { useInspectorActive } from '../../preview/artefacts/TokenInspector'
 import { FigmaGlyph, GitHubGlyph } from '../../ui/icons'
@@ -349,14 +349,19 @@ export interface IconOpts {
 const PhosphorWeightContext = createContext<Record<string, string>>(PHOSPHOR_CORE_BODIES)
 
 function usePhosphorWeightBodies(weight: PhosphorWeight): Record<string, string> {
-  const [bodies, setBodies] = useState<Record<string, string>>(PHOSPHOR_CORE_BODIES)
-  useEffect(() => {
-    if (weight === 'regular') { setBodies(PHOSPHOR_CORE_BODIES); return }
+  const [bodies, setBodies] = useState(() => peekPhosphorWeight(weight) ?? PHOSPHOR_CORE_BODIES)
+  useLayoutEffect(() => {
+    const ready = peekPhosphorWeight(weight)
+    if (ready) { setBodies(ready); return }
     let live = true
     loadPhosphorWeight(weight).then((map) => { if (live) setBodies(map) })
     return () => { live = false }
   }, [weight])
-  return bodies
+  // Prefer the cache on THIS render so a reset onto a weight we already
+  // loaded never paints the regular fallback for a frame. While a new
+  // weight is in flight, keep the previous bodies — swapping to regular
+  // mid-reset is the icon pop the collage was showing.
+  return peekPhosphorWeight(weight) ?? bodies
 }
 
 export function PhosphorWeightProvider({ weight, children }: { weight: PhosphorWeight | undefined; children: ReactNode }) {
@@ -2252,6 +2257,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
             {on && (
               <motion.span
                 layoutId={pillId}
+                layoutDependency={active}
                 aria-hidden
                 style={{
                   position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'control'),
@@ -2306,6 +2312,7 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         {opts.current && (
           <motion.span
             layoutId={pillId}
+            layoutDependency={page}
             aria-hidden
             style={{
               position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'action'),
@@ -2392,6 +2399,11 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
 // segmented control — and while it slides you can see the brand tint travel
 // across the neutral text, so the two tokens are judged against each other.
 // Tween, not spring: this is a tool, and bounce reads as toy here.
+//
+// `layoutDependency` is the selection index, not the box. A token reset
+// resizes the track (type, padding, radius) and would otherwise play the
+// same slide — inside the collage's `transform: scale()` that projection
+// jumps. Clicking a tab still animates; Random / Reset must not.
 function TabMenuSpecimen({ t, w }: SpecimenProps) {
   const items = ['All', 'Drafts', 'Published']
   const [active, setActive] = useState(0)
@@ -2465,6 +2477,7 @@ function TabMenuSpecimen({ t, w }: SpecimenProps) {
             {on && (
               <motion.span
                 layoutId={pillId}
+                layoutDependency={active}
                 aria-hidden
                 style={{
                   position: 'absolute', inset: 0, borderRadius: 999,
@@ -2525,6 +2538,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
             {on && (
               <motion.span
                 layoutId={pillId}
+                layoutDependency={active}
                 aria-hidden
                 style={{
                   position: 'absolute', inset: 0, borderRadius: radiusRoleOf(t, 'control'),

@@ -39,7 +39,7 @@ interface FigmaSyncViewProps {
    *  Defaults to the first theme. Does not rename the editor project. */
   fileName: string
   onFileNameChange: (name: string) => void
-  /** Selected Figma columns — theme × Light/Dark, max 3. */
+  /** Selected Figma columns — theme × Light/Dark, capped at `FIGMA_SYNC_MODE_CAP`. */
   syncModes: FigmaSyncMode[]
   onSyncModesChange: (modes: FigmaSyncMode[]) => void
   /** Workspace section id for this window (`workspaceLink.ts`). Drives the
@@ -397,7 +397,7 @@ export default function FigmaSyncView({
               <p className="text-caption text-fg-faint leading-relaxed">
                 {cannotSync
                   ? t('Add a System style or create a theme. Trying one on does not add it.')
-                  : t('Figma gets Light and Dark as columns for each selected theme. Pick up to 3 modes.')}
+                  : t('Figma gets Light and Dark as columns for each selected theme. Pick up to {max} modes.', { max: String(FIGMA_SYNC_MODE_CAP) })}
               </p>
               {cannotSync ? (
                 <p className="text-body font-medium text-fg-muted">{t('Nothing in My themes yet.')}</p>
@@ -450,7 +450,7 @@ export default function FigmaSyncView({
                               type="button"
                               aria-pressed={on}
                               disabled={blocked}
-                              title={blocked ? t('Maximum 3 modes') : t(appearance === 'light' ? 'Light' : 'Dark')}
+                              title={blocked ? t('Maximum {max} modes', { max: String(FIGMA_SYNC_MODE_CAP) }) : t(appearance === 'light' ? 'Light' : 'Dark')}
                               aria-label={`${name} ${appearance === 'light' ? t('Light') : t('Dark')}`}
                               onClick={() => {
                                 onSyncModesChange(toggleFigmaSyncAppearance(syncModes, key, appearance))
