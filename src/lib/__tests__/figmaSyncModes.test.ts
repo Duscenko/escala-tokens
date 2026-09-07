@@ -6,6 +6,7 @@ import {
   figmaSyncModeId,
   figmaSyncModeLabel,
   hasFigmaSyncMode,
+  sameFigmaSyncModes,
   toggleFigmaSyncAppearance,
   toggleFigmaSyncTheme,
   uniqueThemesFromModes,
@@ -103,5 +104,20 @@ describe('figma sync modes', () => {
       { theme: 'nature', appearance: 'dark' },
       { theme: 'core', appearance: 'light' },
     ])).toEqual(['nature', 'core'])
+  })
+
+  it('compares selections by column and order', () => {
+    const a = defaultFigmaSyncModes(['core', 'nature'], { core: 'light', nature: 'dark' })
+    expect(sameFigmaSyncModes(a, [...a])).toBe(true)
+    expect(sameFigmaSyncModes(a, a.slice(0, 3))).toBe(false)
+    // Order is the order Figma creates columns in, so it is part of identity:
+    // on a plan that runs out of modes it decides which ones survive.
+    expect(sameFigmaSyncModes(a, [a[1], a[0], ...a.slice(2)])).toBe(false)
+    expect(
+      sameFigmaSyncModes(
+        [{ theme: 'core', appearance: 'light' }],
+        [{ theme: 'core', appearance: 'dark' }],
+      ),
+    ).toBe(false)
   })
 })

@@ -5,7 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
-import { defaultFigmaSyncModes, type FigmaSyncMode } from '../lib/figmaSyncModes'
+import { defaultFigmaSyncModes, sameFigmaSyncModes, type FigmaSyncMode } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { type GitHubPushState } from '../lib/github'
@@ -811,6 +811,14 @@ export default function Configurator() {
   const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() =>
     defaultFigmaSyncModes(syncThemes, themeKinds),
   )
+  // Whether the user has picked columns themselves. Same signal as
+  // `figmaFileNameDirty` above, for the same reason: everything below may
+  // re-derive a DEFAULT, and nothing may re-derive a CHOICE.
+  const [figmaSyncModesDirty, setFigmaSyncModesDirty] = useState(false)
+  const chooseFigmaSyncModes = useCallback((modes: FigmaSyncMode[]) => {
+    setFigmaSyncModesDirty(true)
+    setFigmaSyncModes(modes)
+  }, [])
   const syncThemeKey = syncThemes.join('|')
   useEffect(() => {
     if (!figmaFileNameDirty) {
@@ -824,17 +832,24 @@ export default function Configurator() {
   useEffect(() => {
     setFigmaSyncModes((current) => {
       const valid = current.filter((mode) => syncThemes.includes(mode.theme))
-      const all = defaultFigmaSyncModes(syncThemes, themeKinds)
-      if (!valid.length) return all
-      // The old default was first-theme × Light/Dark. That left a 5-theme
-      // library publishing 2 columns, which read as "the plugin only
-      // imports two modes". Expand that leftover once more themes exist.
-      // A deliberate one-theme pick of a LATER row is left alone.
-      const onlyFirst = Boolean(syncThemes[0] && valid.every((mode) => mode.theme === syncThemes[0]))
-      if (onlyFirst && syncThemes.length > 1 && valid.length <= 2) return all
-      return valid
+      const next =
+        // Every theme the selection named is gone (deleted, renamed, or a
+        // different system loaded), so there is no choice left to respect.
+        !valid.length ? defaultFigmaSyncModes(syncThemes, themeKinds)
+        // A choice is never re-derived — only pruned of themes that no longer
+        // exist. This effect reruns on any semantic edit (`syncThemes` is
+        // rebuilt from `themes`), so anything else here overwrites the user's
+        // own picks mid-session.
+        : figmaSyncModesDirty ? valid
+        // Untouched: keep tracking the default, which grows with the library.
+        // Otherwise a session that started as one theme stays pinned to two
+        // columns after four more are added.
+        : defaultFigmaSyncModes(syncThemes, themeKinds)
+      // Preserve identity when nothing moved: this array feeds the auto-sync
+      // publish payload.
+      return sameFigmaSyncModes(next, current) ? current : next
     })
-  }, [syncThemeKey, syncThemes, themeKinds])
+  }, [syncThemeKey, syncThemes, themeKinds, figmaSyncModesDirty])
   const figmaPublishBase = useMemo(() => ({
     theme: previewTheme,
     modes: figmaSyncModes,
@@ -1130,7 +1145,7 @@ export default function Configurator() {
    */
   const syncFigmaForTheme = (key: string) => {
     changePreviewTheme(key)
-    setFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds))
+    chooseFigmaSyncModes(defaultFigmaSyncModes([key], themeKinds))
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }
@@ -1339,7 +1354,7 @@ export default function Configurator() {
             setFigmaFileName(name)
           }}
           syncModes={figmaSyncModes}
-          onSyncModesChange={setFigmaSyncModes}
+          onSyncModesChange={chooseFigmaSyncModes}
           section={workspaceSection}
         />
       </div>
@@ -1797,7 +1812,7 @@ export default function Configurator() {
                       setFigmaFileName(name)
                     }}
                     figmaSyncModes={figmaSyncModes}
-                    onFigmaSyncModesChange={setFigmaSyncModes}
+                    onFigmaSyncModesChange={chooseFigmaSyncModes}
                     githubPushState={githubPushState}
                     onGithubPushStateChange={handleGithubPushState}
                     docsExits={{

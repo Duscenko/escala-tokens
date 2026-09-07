@@ -76,6 +76,20 @@ export function defaultFigmaSyncModes(
   return next
 }
 
+/** Same columns, same order. Lets a caller keep its existing array identity
+ *  when a recompute produced an equal selection — `figmaSyncModes` feeds the
+ *  auto-sync publish payload, so a fresh array on every render would republish
+ *  a system nobody edited. */
+export function sameFigmaSyncModes(
+  a: readonly FigmaSyncMode[],
+  b: readonly FigmaSyncMode[],
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every((mode, i) => mode.theme === b[i].theme && mode.appearance === b[i].appearance)
+  )
+}
+
 export function appearanceTitle(appearance: ThemeAppearance): 'Light' | 'Dark' {
   return appearance === 'dark' ? 'Dark' : 'Light'
 }
