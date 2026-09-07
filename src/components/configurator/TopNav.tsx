@@ -151,7 +151,9 @@ const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounde
 
 // Appearance is one action, not a two-choice segment. The glyph shows the
 // destination: sun while dark is active, moon while light is active.
-function AppearanceToggle({
+// Exported: `AboutScaffold` (the mobile notice and `/about`) needs the same
+// control, and those surfaces render outside this nav.
+export function AppearanceToggle({
   value, onChange,
 }: {
   value: 'light' | 'dark'
@@ -170,6 +172,72 @@ function AppearanceToggle({
     >
       {isDark ? <SunIcon /> : <MoonIcon />}
     </button>
+  )
+}
+
+/**
+ * Locale picker. Owns its open state and dismissal so it can be dropped
+ * anywhere — this nav, and `AboutScaffold`, which renders outside the shell
+ * entirely (the mobile notice, the `/about` page). The locale label stays
+ * visible inside the menu; the trigger is icon-only so it keeps the same 32px
+ * footprint as the other global controls.
+ */
+export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void; align?: 'left' | 'right' }) {
+  const { locale, setLocale, t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => { onOpen?.(); setOpen((value) => !value) }}
+        aria-label={t('Select language')}
+        title={t('Language')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`${GLOBAL_ICON_ACTION} ${open ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''}`}
+      >
+        <MaskGlyph src="/icons/settings/languages.svg" className="h-4 w-4" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label={t('Select language')}
+          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} top-full z-[80] mt-2 w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl`}
+        >
+          {LOCALES.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              role="menuitemradio"
+              aria-checked={locale === option.key}
+              onClick={() => { setLocale(option.key); setOpen(false) }}
+              className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+            >
+              <span>{option.label}</span>
+              <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -205,10 +273,8 @@ export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
 }: TopNavProps) {
-  const { locale, setLocale, t } = useI18n()
-  const [languageOpen, setLanguageOpen] = useState(false)
+  const { locale, t } = useI18n()
   const [docsMenuOpen, setDocsMenuOpen] = useState(false)
-  const languageRootRef = useRef<HTMLDivElement>(null)
   const docsRootRef = useRef<HTMLDivElement>(null)
   const brandContentRef = useRef<HTMLDivElement>(null)
   const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_CONTENT_BRAND_W)
@@ -226,22 +292,6 @@ export default function TopNav({
     const w = inner.getBoundingClientRect().width + padX
     if (w > 0) setNavAnchorBrandW(w)
   }, [brandWidth, railCollapsed, locale])
-
-  useEffect(() => {
-    if (!languageOpen) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!languageRootRef.current?.contains(event.target as Node)) setLanguageOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setLanguageOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [languageOpen])
 
   useEffect(() => {
     if (!docsMenuOpen) return
@@ -366,38 +416,7 @@ export default function TopNav({
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center gap-2 pl-2 pr-3 xl:pr-4">
         <div className="pointer-events-auto flex min-w-0 items-center gap-2">
           {search}
-          {/* Locale stays visible inside the menu; the trigger is icon-only so
-              it has the same 32px footprint as the other global controls. */}
-          <div ref={languageRootRef} className="relative flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => { onOpenLanguages?.(); setLanguageOpen((open) => !open) }}
-              aria-label={t('Select language')}
-              title={t('Language')}
-              aria-haspopup="menu"
-              aria-expanded={languageOpen}
-              className={`${GLOBAL_ICON_ACTION} ${languageOpen ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''}`}
-            >
-              <MaskGlyph src="/icons/settings/languages.svg" className="h-4 w-4" />
-            </button>
-            {languageOpen && (
-              <div role="menu" aria-label={t('Select language')} className="absolute right-0 top-full z-[80] mt-2 w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl">
-                {LOCALES.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={locale === option.key}
-                    onClick={() => { setLocale(option.key); setLanguageOpen(false) }}
-                    className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
-                  >
-                    <span>{option.label}</span>
-                    <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <LanguageMenu onOpen={onOpenLanguages} />
 
           <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
           {exportAction}

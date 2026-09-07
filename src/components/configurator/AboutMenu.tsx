@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import { motion, useReducedMotion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
 import { useI18n } from '../../lib/i18n'
+import { setTheme, useTheme } from '../../lib/theme'
 import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
 import { FIGMA_PLUGIN_ZIP, cn } from '../../lib/utils'
-import { BrandMark, FigmaGlyph, TOP_NAV_H } from './TopNav'
+import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
 import { BentoGrid } from '../ui/bento-grid'
@@ -891,10 +892,22 @@ export function AboutScaffold({
 }) {
   const { t } = useI18n()
   const [section, setSection] = useState<AboutSection | null>(null)
+  const theme = useTheme()
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
-      <header className="flex flex-col items-center gap-4 px-6 pt-12 pb-8 text-center">
+      {/* Appearance and language, the two chrome preferences that mean
+          something on a screen with no workspace. They live in `TopNav` for
+          everyone else, and `TopNav` is inside the desktop shell — so on a
+          phone (and on `/about`) they had no door at all. Same components, not
+          copies: `onChromeAppearanceChange` in the shell is literally
+          `setTheme`, so this is the identical wiring. */}
+      <div className="flex items-center justify-end gap-2 px-4 pt-4">
+        <LanguageMenu />
+        <AppearanceToggle value={theme} onChange={setTheme} />
+      </div>
+
+      <header className="flex flex-col items-center gap-4 px-6 pt-6 pb-8 text-center">
         <BrandMark />
         <div className="flex flex-col gap-1.5 max-w-[420px]">
           <h1 className="text-[15px] font-semibold text-fg">{heading}</h1>
