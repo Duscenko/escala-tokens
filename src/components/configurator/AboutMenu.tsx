@@ -712,25 +712,8 @@ export function AboutHome({
           </motion.div>
         </motion.div>
 
-        {/* Workspace demo. NOT 16:9 despite 1280x720 pixel dimensions — the
-            file carries a non-square sample aspect ratio (display_aspect_ratio
-            762:539, measured via ffprobe and confirmed by the browser's own
-            videoWidth/videoHeight, 1280x905), so the frame is sized to that
-            real ratio rather than the placeholder's old 16:9 guess. Autoplay
-            requires muted + playsInline (Safari/iOS policy); no native
-            controls — this reads as a passive hero demo, not something a
-            visitor operates. */}
         <div className="px-6">
-          <video
-            src="/video/escala-tokens-demo-lr.mp4"
-            className="w-full h-auto rounded-2xl object-cover mb-14"
-            style={{ aspectRatio: '762 / 539' }}
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label={t('Escala Tokens workspace demo')}
-          />
+          <DemoVideo className="mb-14" />
         </div>
 
         {/* ── Stats — real counts, not marketing round numbers ── */}
@@ -850,6 +833,50 @@ export function AboutHome({
  *  layout to fall back to) and the `/about` route (a real, shareable,
  *  crawlable URL — the drawer has neither). One scaffold, one content array;
  *  only the lead text and outer visibility differ per caller. */
+/**
+ * The workspace demo clip. Shared by the About tab's hero and `AboutScaffold`
+ * (the mobile notice + the `/about` route) so the ratio below is stated once.
+ *
+ * NOT 16:9 despite 1280x720 pixel dimensions — the file carries a non-square
+ * sample aspect ratio (display_aspect_ratio 762:539, measured via ffprobe and
+ * confirmed by the browser's own videoWidth/videoHeight, 1280x905), so the
+ * frame is sized to that real ratio rather than the placeholder's old 16:9
+ * guess. Autoplay requires muted + playsInline (Safari/iOS policy).
+ *
+ * `tapToPlay` is what `AboutScaffold` needs, and NOT a style preference:
+ * that screen is `md:hidden`, which is `display: none`, not an unmount — so
+ * on a desktop it sits in the DOM behind the real app. Measured: an
+ * autoplaying copy there fetched and decoded the whole 2.1 MB clip on every
+ * desktop load, for a screen nobody sees. `preload="none"` means the file is
+ * not touched until someone presses play, so the cost lands only on the
+ * visitor who asked for it. It also sidesteps iOS Low Power Mode, which
+ * refuses muted autoplay and would otherwise leave a phone — the one device
+ * that cannot run the app — staring at a frozen frame with no way to start
+ * it. The poster is a real frame of the workspace, so the placeholder shows
+ * the product rather than a black box.
+ *
+ * The desktop hero keeps autoplay and no controls: it is a passive backdrop
+ * on a screen where the app itself is one click away.
+ */
+export function DemoVideo({ className, tapToPlay }: { className?: string; tapToPlay?: boolean }) {
+  const { t } = useI18n()
+  return (
+    <video
+      src="/video/escala-tokens-demo-lr.mp4"
+      className={cn('w-full h-auto rounded-2xl object-cover', className)}
+      style={{ aspectRatio: '762 / 539' }}
+      poster={tapToPlay ? '/video/escala-tokens-demo-poster.jpg' : undefined}
+      preload={tapToPlay ? 'none' : undefined}
+      autoPlay={!tapToPlay}
+      controls={tapToPlay}
+      muted
+      loop
+      playsInline
+      aria-label={t('Escala Tokens workspace demo')}
+    />
+  )
+}
+
 export function AboutScaffold({
   heading, subheading, wrapperClassName, ctaHref, ctaLabel,
 }: {
@@ -885,6 +912,20 @@ export function AboutScaffold({
           </a>
         )}
       </header>
+
+      {/* The workspace itself, since neither caller can open it: this screen
+          is shown to a phone (no app below `md`) and to `/about` (a page, not
+          the shell). A still screenshot would undersell the one thing worth
+          showing — foundations repainting the whole system live. */}
+      <div className="px-5 pb-10">
+        {/* Capped and centred: this scaffold also backs `/about`, which is a
+            full-width page on a desktop, and an uncapped clip rendered ~1400px
+            wide there. 560px is the reading column the rest of the About copy
+            already uses; a phone is narrower than the cap either way. */}
+        <div className="mx-auto w-full max-w-[560px]">
+          <DemoVideo tapToPlay />
+        </div>
+      </div>
 
       <div className="border-t border-line">
         <div className="px-5 pt-5 pb-1">
