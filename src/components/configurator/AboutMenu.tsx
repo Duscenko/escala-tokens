@@ -838,16 +838,14 @@ export function AboutHome({
  * The workspace demo clip. Shared by the About tab's hero and `AboutScaffold`
  * (the mobile notice + the `/about` route) so the ratio below is stated once.
  *
- * NOT 16:9 despite 1280x720 pixel dimensions — the file carries a non-square
- * sample aspect ratio (display_aspect_ratio 762:539, measured via ffprobe and
- * confirmed by the browser's own videoWidth/videoHeight, 1280x905), so the
- * frame is sized to that real ratio rather than the placeholder's old 16:9
+ * The frame is sized to the clip's real ratio (1878x1078, square pixels,
+ * display_aspect_ratio 939:539, measured via ffprobe) rather than a 16:9
  * guess. Autoplay requires muted + playsInline (Safari/iOS policy).
  *
  * `tapToPlay` is what `AboutScaffold` needs, and NOT a style preference:
  * that screen is `md:hidden`, which is `display: none`, not an unmount — so
  * on a desktop it sits in the DOM behind the real app. Measured: an
- * autoplaying copy there fetched and decoded the whole 2.1 MB clip on every
+ * autoplaying copy there fetched and decoded the whole 4.5 MB clip on every
  * desktop load, for a screen nobody sees. `preload="none"` means the file is
  * not touched until someone presses play, so the cost lands only on the
  * visitor who asked for it. It also sidesteps iOS Low Power Mode, which
@@ -863,10 +861,10 @@ export function DemoVideo({ className, tapToPlay }: { className?: string; tapToP
   const { t } = useI18n()
   return (
     <video
-      src="/video/escala-tokens-demo-lr.mp4"
+      src="/video/video-realise-lr.mp4"
       className={cn('w-full h-auto rounded-2xl object-cover', className)}
-      style={{ aspectRatio: '762 / 539' }}
-      poster={tapToPlay ? '/video/escala-tokens-demo-poster.jpg' : undefined}
+      style={{ aspectRatio: '939 / 539' }}
+      poster={tapToPlay ? '/video/video-realise-poster.jpg' : undefined}
       preload={tapToPlay ? 'none' : undefined}
       autoPlay={!tapToPlay}
       controls={tapToPlay}
@@ -875,6 +873,85 @@ export function DemoVideo({ className, tapToPlay }: { className?: string; tapToP
       playsInline
       aria-label={t('Escala Tokens workspace demo')}
     />
+  )
+}
+
+/**
+ * "Open it on a laptop" said as a picture: a dim phone, a wave of chevrons
+ * travelling right, a lit laptop. It exists because the two callers of
+ * `AboutScaffold` are in opposite situations — `/about` HAS a workspace to
+ * send you to and renders the `ctaHref` link, while the mobile notice has
+ * nowhere to go (that's the whole point of the screen) and had nothing in
+ * that slot at all. A dead button would be worse than the gap; a direction
+ * is the honest thing to put there.
+ *
+ * No visible label, deliberately: the paragraph directly above already says
+ * "Open it there to configure and export your system", and a caption under
+ * the glyph would be that sentence a second time in smaller type. The words
+ * live in `aria-label` instead, so the meaning still reaches a screen reader
+ * that gets nothing from a moving chevron.
+ *
+ * The accent is spent on the DESTINATION only — the phone you're holding is
+ * `fg-faint`, the laptop is `accent-ui` — so the colour itself points. Motion
+ * is a fade wave rather than a slide: no layout to measure, nothing to
+ * reflow, and it reads as direction at 14px where a travelling arrow just
+ * reads as a flicker. Honours `useReducedMotion` (the chevrons settle at a
+ * static ramp, which still reads left-to-right).
+ */
+function DesktopHandoffHint() {
+  const { t } = useI18n()
+  const reduce = useReducedMotion()
+  const stroke = {
+    fill: 'none', stroke: 'currentColor', strokeWidth: 1.6,
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  }
+
+  return (
+    <div
+      className="mt-1 flex items-center gap-2.5"
+      role="img"
+      aria-label={t('Open Escala Tokens on a laptop or desktop')}
+    >
+      {/* the device you're on */}
+      <svg width="15" height="15" viewBox="0 0 24 24" className="text-fg-faint" aria-hidden>
+        <rect x="7" y="2.5" width="10" height="19" rx="2.5" {...stroke} />
+        <path d="M10.75 18.25h2.5" {...stroke} />
+      </svg>
+
+      {/* the direction */}
+      <span className="flex items-center gap-[3px] text-accent-ui" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <motion.svg
+            key={i}
+            width="7" height="10" viewBox="0 0 7 10"
+            style={reduce ? { opacity: 0.35 + i * 0.25 } : undefined}
+            animate={reduce ? undefined : { opacity: [0.18, 1, 0.18] }}
+            transition={reduce ? undefined : {
+              duration: 1.5, repeat: Infinity, repeatDelay: 0.35,
+              delay: i * 0.16, ease: 'easeInOut',
+            }}
+          >
+            <path d="M1.6 1.4 5.1 5l-3.5 3.6" {...stroke} />
+          </motion.svg>
+        ))}
+      </span>
+
+      {/* where it opens */}
+      <span className="relative flex items-center justify-center text-accent-ui">
+        {!reduce && (
+          <motion.span
+            className="absolute h-7 w-7 rounded-full bg-accent-ui blur-md"
+            aria-hidden
+            animate={{ opacity: [0, 0.3, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.35, delay: 0.55, ease: 'easeInOut' }}
+          />
+        )}
+        <svg width="22" height="22" viewBox="0 0 24 24" className="relative" aria-hidden>
+          <rect x="3.25" y="4.5" width="17.5" height="12" rx="2" {...stroke} />
+          <path d="M1.75 19.5h20.5" {...stroke} />
+        </svg>
+      </span>
+    </div>
   )
 }
 
@@ -913,7 +990,10 @@ export function AboutScaffold({
           <h1 className="text-[15px] font-semibold text-fg">{heading}</h1>
           <p className="text-ui leading-relaxed text-fg-muted">{subheading}</p>
         </div>
-        {ctaHref && (
+        {/* Mutually exclusive by construction: either there IS a way into the
+            workspace from here (`/about` on a desktop) or there isn't (the
+            phone notice), and the slot says which. */}
+        {ctaHref ? (
           <a
             href={ctaHref}
             className="inline-flex items-center gap-1.5 mt-1 text-body font-semibold text-accent-ui hover:underline"
@@ -923,6 +1003,8 @@ export function AboutScaffold({
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
+        ) : (
+          <DesktopHandoffHint />
         )}
       </header>
 
