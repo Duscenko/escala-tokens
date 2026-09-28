@@ -219,14 +219,78 @@ describe('My themes sync scope', () => {
     expect(scoped.colors.themeLabels[`${adoptedGlass.key}::dark`]).toMatch(/Dark$/)
     expect(scoped.colors.themeLabels[`${adoptedGlass.key}::light`]).not.toContain('::')
     expect(scoped.colors.themeModes).toHaveProperty(adoptedGlass.key)
-    expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('light')
-    expect(scoped.colors.themeModes[adoptedGlass.key]).toHaveProperty('dark')
+    expect(Object.keys(scoped.colors.themeModes[adoptedGlass.key]).sort()).toEqual(['dark', 'light'])
+    // Neo's Light was not in the selection. themeModes must not keep it —
+    // that map is what a consumer would expand into a sixth column.
+    expect(Object.keys(scoped.colors.themeModes[adoptedNeo.key]).sort()).toEqual(['dark'])
     expect(scoped.colors.themes).not.toHaveProperty(adoptedNeo.key)
+    expect(scoped.colors.themes).not.toHaveProperty(`${adoptedNeo.key}::light`)
+    expect(Object.keys(scoped.colors.themes)).toEqual(scoped.colors.themeOrder)
+    // Light and Dark of the same theme are different readings, not a
+    // duplicated column. A page role that matches across both means the
+    // appearance never reached the payload.
+    const glassLight = scoped.colors.themes[`${adoptedGlass.key}::light`]
+    const glassDark = scoped.colors.themes[`${adoptedGlass.key}::dark`]
+    const differing = Object.keys(glassLight).filter((role) => glassLight[role] && glassDark[role] && glassLight[role] !== glassDark[role])
+    expect(differing.length).toBeGreaterThan(0)
+    const page = (scoped.colors.architecture as {
+      tokens: { surface: { page: Record<string, string> } }
+    }).tokens.surface.page
+    expect(page[`${adoptedGlass.key}::light`]).not.toBe(page[`${adoptedGlass.key}::dark`])
+    expect(page).not.toHaveProperty(`${adoptedNeo.key}::light`)
+    expect(Object.keys(page)).toEqual(scoped.colors.themeOrder)
     // Last adopted theme is dark-kind and in the selection — the plugin
     // looks up this key exactly in themeOrder, so it must be flattened.
     expect(scoped.colors.activeTheme).toBe(`${adoptedNeo.key}::dark`)
     expect(scoped.colors.themeOrder).toContain(scoped.colors.activeTheme)
     expect(useDesignStore.getState().projectName).not.toBe('Nature / Organic')
+  })
+
+  it('a four-column File & modes selection does not ship the two appearances that were off', async () => {
+    const { adoptPreset } = await import('../adoptPreset')
+    const nature = THEME_STYLE_PRESETS.find((item) => item.id === 'nature-organic')!
+    const terminal = THEME_STYLE_PRESETS.find((item) => item.id === 'terminal-mono')!
+    const material = THEME_STYLE_PRESETS.find((item) => item.id === 'material-elevation')!
+    const adoptedNature = adoptPreset(nature, 'light')
+    const adoptedTerminal = adoptPreset(terminal, 'dark')
+    const adoptedMaterial = adoptPreset(material, 'light')
+    expect('error' in adoptedNature).toBe(false)
+    expect('error' in adoptedTerminal).toBe(false)
+    expect('error' in adoptedMaterial).toBe(false)
+    if ('error' in adoptedNature || 'error' in adoptedTerminal || 'error' in adoptedMaterial) return
+
+    // Nature Light, Terminal Dark, Material Light + Dark. The other two
+    // appearances stay in the library and must not become columns.
+    const scoped = generateTokenJSON(undefined, {
+      modes: [
+        { theme: adoptedNature.key, appearance: 'light' },
+        { theme: adoptedTerminal.key, appearance: 'dark' },
+        { theme: adoptedMaterial.key, appearance: 'light' },
+        { theme: adoptedMaterial.key, appearance: 'dark' },
+      ],
+    })
+    const columns = [
+      `${adoptedNature.key}::light`,
+      `${adoptedTerminal.key}::dark`,
+      `${adoptedMaterial.key}::light`,
+      `${adoptedMaterial.key}::dark`,
+    ]
+    expect(scoped.colors.themeOrder).toEqual(columns)
+    expect(Object.keys(scoped.colors.themes)).toEqual(columns)
+    expect(scoped.colors.themes).not.toHaveProperty(`${adoptedNature.key}::dark`)
+    expect(scoped.colors.themes).not.toHaveProperty(`${adoptedTerminal.key}::light`)
+    expect(scoped.colors.themes).not.toHaveProperty(adoptedNature.key)
+    const page = (scoped.colors.architecture as {
+      tokens: { surface: { page: Record<string, string> } }
+    }).tokens.surface.page
+    expect(Object.keys(page)).toEqual(columns)
+    expect(page).not.toHaveProperty(`${adoptedNature.key}::dark`)
+    expect(page).not.toHaveProperty(`${adoptedTerminal.key}::light`)
+    expect(Object.keys(scoped.foundationsByTheme ?? {})).toEqual(columns)
+    expect(Object.keys(scoped.gradientsByTheme ?? {})).toEqual(columns)
+    expect(Object.keys(scoped.colors.themeModes[adoptedNature.key]).sort()).toEqual(['light'])
+    expect(Object.keys(scoped.colors.themeModes[adoptedTerminal.key]).sort()).toEqual(['dark'])
+    expect(Object.keys(scoped.colors.themeModes[adoptedMaterial.key]).sort()).toEqual(['dark', 'light'])
   })
 
   it('ships ten flattened columns the plugin iterates with no leftover cap of 3', async () => {

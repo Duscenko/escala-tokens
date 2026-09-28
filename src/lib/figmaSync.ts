@@ -118,6 +118,9 @@ export interface PublishResult {
   ok: boolean
   reason?: PublishFailureReason
   status?: number
+  /** A newer publish was queued before this one reached the network.
+   *  Callers must not treat it as the publish that landed. */
+  superseded?: boolean
 }
 
 /**
@@ -141,11 +144,33 @@ function publishOptions(
   return { theme: themeOrOpts, section }
 }
 
+// One publish in flight. A slow POST of the previous File & modes list
+// (all six appearances) used to finish after the narrowed one and leave
+// the blob — the thing the plugin fetches — on the selection the user
+// had already turned off.
+let publishTail: Promise<void> = Promise.resolve()
+let publishSerial = 0
+
 export async function publishTokens(
   themeOrOpts?: string | PublishTokensInput,
   section?: string,
 ): Promise<PublishResult> {
   const opts = publishOptions(themeOrOpts, section)
+  const mine = ++publishSerial
+  let release: () => void = () => {}
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  const prev = publishTail
+  publishTail = gate
+  await prev
+  try {
+    if (mine !== publishSerial) return { ok: true, superseded: true }
+    return await postPublishedTokens(opts)
+  } finally {
+    release()
+  }
+}
+
+async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishResult> {
   if (opts.theme) setActiveThemeHint(opts.theme)
   // Mint on the FIRST publish, never earlier: `makeDesignDefaults()` runs at
   // module load and on every reset, and minting there would burn a fresh
@@ -293,7 +318,12 @@ export function useAutoFigmaSync(
       timer = setTimeout(() => {
         lastSig = sig
         onStateChange?.('publishing')
-        void publishTokens(publishOpts).then((result) => onStateChange?.(result.ok ? 'done' : 'error', result.reason))
+        void publishTokens(publishOpts).then((result) => {
+          // A superseded call never wrote the blob — leave "publishing"
+          // for the newer request that is still in the queue.
+          if (result.superseded) return
+          onStateChange?.(result.ok ? 'done' : 'error', result.reason)
+        })
       }, 1500)
     }
 

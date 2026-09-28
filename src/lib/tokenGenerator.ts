@@ -115,7 +115,8 @@ export type GenerateTokenOptions = {
    *  `FIGMA_SYNC_MODE_CAP`. Flattens
    *  `themeOrder` / `themes` / `themeLabels` to `theme::appearance` so the
    *  plugin creates one mode per selected appearance. `themeModes` stays
-   *  keyed by the real library theme. */
+   *  keyed by the real library theme, and only the selected appearances
+   *  are present — an unchecked Light or Dark is not in the payload. */
   modes?: FigmaSyncMode[] | null
   /** Plugin file display name (`tokens.project`). Does not change the
    *  `/api/tokens?project=` slug, which still comes from `projectName`. */
@@ -363,6 +364,25 @@ function flattenThemesForSyncModes<TFoundation>(
   }
 }
 
+/** `themeModes` is keyed by the library theme. With a File & modes
+ *  selection, each theme keeps only the appearances that were checked.
+ *  Shipping both would hand a consumer six columns when four were picked. */
+function themeModesForSync(
+  orderedThemeModes: Record<string, Record<ThemeAppearance, Record<string, string>>>,
+  modes: FigmaSyncMode[] | null,
+): Record<string, Partial<Record<ThemeAppearance, Record<string, string>>>> {
+  if (!modes) return orderedThemeModes
+  const out: Record<string, Partial<Record<ThemeAppearance, Record<string, string>>>> = {}
+  for (const mode of modes) {
+    const values = orderedThemeModes[mode.theme]?.[mode.appearance]
+    if (!values || !Object.keys(values).length) continue
+    const slot = out[mode.theme] ?? {}
+    slot[mode.appearance] = values
+    out[mode.theme] = slot
+  }
+  return out
+}
+
 /** Copy a theme-keyed override onto each selected `theme::appearance` so
  *  `applyArchTokenOverrides` can see the slot it already projected. */
 function remapOverridesForSyncModes(overrides: ArchOverrides, modes: FigmaSyncMode[]): ArchOverrides {
@@ -580,10 +600,11 @@ export function generateTokenJSON(
       semantic: orderedThemeModes[themeNames[0]]?.light ?? orderedThemes.light ?? store.themes.light ?? {},
       semanticDark: orderedThemeModes[themeNames[0]]?.dark ?? orderedThemes.dark ?? store.themes.dark ?? {},
       themes: exportThemes,
-      // Additive canonical shape: a library theme owns both appearances.
-      // `themes` above is the Figma column slice (preferred appearance, or
-      // `theme::appearance` when Sync picked Light/Dark modes).
-      themeModes: orderedThemeModes,
+      // Additive canonical shape: a library theme owns its appearances.
+      // Whole-system export ships both. A File & modes publish ships only
+      // the checked ones, so an unchecked Dark cannot be re-expanded into
+      // a Figma column.
+      themeModes: themeModesForSync(orderedThemeModes, syncModes),
       themeOrder: exportOrder,
       // Which library theme Overview / Cover should read as "the" brand
       // ramp. Additive — an older plugin ignores it and keeps themeOrder[0].
