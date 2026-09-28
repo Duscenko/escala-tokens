@@ -16,6 +16,7 @@ import {
   skillInstallPath,
 } from '../../../lib/agentInstall'
 import { publishOrigin, syncProjectId, syncUrl } from '../../../lib/figmaSync'
+import { FIGMA_PLUGIN_COMMUNITY } from '../../../lib/utils'
 import { AIContextButton } from '../../ui/AIContextButton'
 import AgentInstallPanel from '../AgentInstallPanel'
 import {
@@ -60,9 +61,10 @@ function guideMarkdown(key: string, project: string, origin: string, slug: strin
       '',
       'Install the Escala plugin once. Keep Sync on so Figma reads the same JSON the configurator publishes.',
       '',
-      '1. Top bar → Figma mark → Download plugin. Unzip. Figma desktop → Plugins → Development → Import plugin from manifest…',
-      '2. Same menu → Sync. Paste the live endpoint. Auto-sync on.',
-      '3. Optional file: Export → Escala JSON (the exact payload the plugin imports).',
+      `1. Install Escala Tokens from Figma Community: ${FIGMA_PLUGIN_COMMUNITY}`,
+      '2. In the Figma desktop app, run Plugins → Escala Tokens.',
+      '3. In the plugin, open Sync. Paste the live endpoint. Auto-sync on.',
+      '4. Optional file: Export → Escala JSON (the exact payload the plugin imports).',
       '',
       `Sync URL: \`${syncUrl()}\``,
     ].join('\n')
@@ -201,11 +203,17 @@ function FigmaGuide({ exits }: { exits: DocsExits }) {
         description={t('One-time. Figma desktop, not the browser. After that you never import a JSON by hand unless you want a snapshot.')}
       >
         <ol className="list-decimal pl-4 text-ui text-fg-muted leading-relaxed flex flex-col gap-1 mb-3">
-          <li>{t('Download the plugin zip from the Figma menu in the top bar.')}</li>
-          <li>{t('Unzip. In Figma:')} <span className="text-fg">Plugins → Development → Import plugin from manifest…</span></li>
-          <li>{t('Run')} <span className="text-fg">Plugins → Development → Escala DS</span>.</li>
+          <li>{t('Install Escala Tokens from Figma Community.')}</li>
+          <li>{t('In the Figma desktop app, run')} <span className="text-fg">Plugins → Escala Tokens</span>.</li>
         </ol>
-        <ExitButton onClick={exits.onOpenFigmaDownload}>{t('Open plugin install')}</ExitButton>
+        <a
+          href={FIGMA_PLUGIN_COMMUNITY}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="self-start text-body font-medium text-fg border border-line-strong rounded-lg px-3 py-1.5 hover:bg-elevated/60 transition-colors"
+        >
+          {t('Open in Figma Community')}
+        </a>
       </DocSection>
 
       <DocSection

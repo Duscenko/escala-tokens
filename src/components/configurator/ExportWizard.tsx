@@ -7,7 +7,7 @@ import {
   type WizardCollection, type WizardDestination, type WizardFormat, type WizardStructure, type WizardSelection,
 } from '../../lib/exportWizard'
 import { type ColorFormat } from '../../lib/sectionExport'
-import { slugify, FIGMA_PLUGIN_ZIP } from '../../lib/utils'
+import { slugify, FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import { COMPONENTS, CATEGORIES, COMPONENT_KEYS, isInFigmaSample } from '../../lib/componentCatalogue'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
@@ -765,16 +765,16 @@ export default function ExportWizard({
                               the same JSON Sync already publishes.
                             </p>
                             <a
-                              href={FIGMA_PLUGIN_ZIP}
-                              download
+                              href={FIGMA_PLUGIN_COMMUNITY}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 self-start text-caption font-semibold text-accent-ui hover:underline"
                             >
-                              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
-                                <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+                              Open Escala Tokens on Figma Community
+                              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M4.5 2.5 8 6l-3.5 3.5" />
                               </svg>
-                              Download the Escala plugin for Figma (.zip)
                             </a>
                           </div>
                         )}

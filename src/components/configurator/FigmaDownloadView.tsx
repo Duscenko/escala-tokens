@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
-import { FIGMA_PLUGIN_ZIP as PLUGIN_ZIP } from '../../lib/utils'
+import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { FigmaLogo, Step, BackToEditor } from './figmaShared'
 
@@ -12,10 +12,8 @@ interface FigmaDownloadViewProps {
   onOpenSync?: () => void
 }
 
-// ─── Download + install — a ONE-TIME procedure, unchanged from what
-// `FigmaConnectView` (retired, see figmaShared.tsx) used to call Steps 1–2.
-// No auto-publish here on purpose: downloading a file has no reason to hit
-// /api/tokens — that only happens on FigmaSyncView, which IS the sync screen. ──
+// Install is the Figma Community listing. No auto-publish here: opening
+// Community has no reason to hit /api/tokens. That only happens on FigmaSyncView.
 export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownloadViewProps = {}) {
   const { projectName, selectedComponents, pluginBuildSeen, setPluginBuildSeen } = useDesignStore()
   const synced = ['Colors', 'Typography', 'Spacing', 'Radius', 'Icons', `${selectedComponents.length} components`]
@@ -52,40 +50,32 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
         </div>
       </div>
 
-      {/* ── Step 1 — Download ── */}
-      <Step n={1} title="Download the plugin">
-        <p className="text-xs text-fg-faint leading-relaxed">
-          A small package with the plugin&apos;s <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code> and build output.
-        </p>
+      <Step n={1} title="Install from Figma Community">
         {updateAvailable ? (
           <p className="text-xs leading-relaxed text-accent-ui bg-accent-ui/10 border border-accent-ui/20 rounded-lg px-3 py-2">
-            A newer plugin build is available (<span className="font-semibold">v{PLUGIN_VERSION}</span>). Re-download below and re-import it in Figma to pick up the latest changes.
+            A newer plugin build is on Figma Community (<span className="font-semibold">v{PLUGIN_VERSION}</span>). Open the listing to install it.
           </p>
         ) : (
           <p className="text-caption text-fg-faint">Current version: <span className="font-medium text-fg-muted">v{PLUGIN_VERSION}</span></p>
         )}
         <a
-          href={PLUGIN_ZIP}
-          download
+          href={FIGMA_PLUGIN_COMMUNITY}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={() => setPluginBuildSeen(PLUGIN_BUILD)}
           className="self-start mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-app bg-fg hover:opacity-90 shadow-sm transition-all"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
-            <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+          Open in Figma Community
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4.5 2.5 8 6l-3.5 3.5" />
           </svg>
-          Download plugin (.zip)
         </a>
       </Step>
 
-      {/* ── Step 2 — Import ── */}
-      <Step n={2} title="Import it into Figma">
-        <ol className="flex flex-col gap-1.5 text-xs text-fg-faint leading-relaxed list-decimal pl-4">
-          <li>Unzip the download.</li>
-          <li>In the Figma desktop app: <span className="text-fg-muted">Plugins → Development → Import plugin from manifest…</span></li>
-          <li>Select the unzipped <code className="text-caption px-1 py-0.5 rounded bg-elevated text-fg-muted">manifest.json</code>.</li>
-          <li>Run it from <span className="text-fg-muted">Plugins → Development → Escala DS</span>.</li>
-        </ol>
+      <Step n={2} title="Run it on a file">
+        <p className="text-xs text-fg-faint leading-relaxed">
+          In the Figma desktop app, open the file and run <span className="text-fg-muted">Plugins → Escala Tokens</span>.
+        </p>
       </Step>
 
       {onOpenSync && (

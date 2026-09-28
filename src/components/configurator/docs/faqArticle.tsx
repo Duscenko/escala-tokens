@@ -82,7 +82,7 @@ const FAQ_ITEMS: {
     id: 'plugin-updates',
     q: 'Do I need to keep the Figma plugin updated?',
     paras: [
-      'Yes. The plugin ships frequent updates, often alongside changes to the token format. The `Sync` button in the top bar shows a dot when a newer plugin build is available. When you see it, re-download the plugin from Sync, then Download plugin, and re-import it in Figma. An out-of-date plugin can silently skip parts of a newer payload.',
+      'Yes. The plugin ships frequent updates, often alongside changes to the token format. Install it from Figma Community and Figma delivers those updates in the desktop app. An out-of-date plugin can silently skip parts of a newer payload.',
     ],
   },
   {

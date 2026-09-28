@@ -7,7 +7,8 @@ import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
-import { FIGMA_PLUGIN_ZIP, cn } from '../../lib/utils'
+import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
+import PluginCommunityBanner from './PluginCommunityBanner'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
@@ -195,24 +196,23 @@ export function useAboutSections(): {
           {t(') and builds real Figma Variable collections: Color Primitives, Color Semantics with a mode per theme, Typography, Spacing, Radius, and a Components collection whose variables alias the semantic roles.')}
         </P>
         <ol className="flex flex-col gap-1.5 text-body leading-relaxed text-fg-muted list-decimal pl-4">
-          <li>{t('Download the plugin and unzip it.')}</li>
-          <li>{t('Figma desktop →')} <span className="text-fg">{t('Plugins → Development → Import plugin from manifest…')}</span></li>
-          <li>{t('Pick the unzipped')} <C>manifest.json</C>, {t('then run')} <span className="text-fg">Escala DS</span>.</li>
+          <li>{t('Install Escala Tokens from Figma Community.')}</li>
+          <li>{t('In the Figma desktop app, run')} <span className="text-fg">Plugins → Escala Tokens</span>.</li>
           <li>{t('Choose what to import: variables, styles, components, documentation.')}</li>
         </ol>
         <P>
           {t("It can also pull live: the plugin's Live Sync tab polls this project's endpoint, so publishing from here updates Figma without re-importing a file. Each design system publishes to its own scoped URL, so systems never overwrite each other.")}
         </P>
         <a
-          href={FIGMA_PLUGIN_ZIP}
-          download
+          href={FIGMA_PLUGIN_COMMUNITY}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 self-start text-body font-semibold text-accent-ui hover:underline"
         >
-          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
-            <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+          {t('Open in Figma Community')}
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4.5 2.5 8 6l-3.5 3.5" />
           </svg>
-          {t('Download the plugin (.zip)')}
         </a>
       </div>
     ),
@@ -973,6 +973,7 @@ export function AboutScaffold({
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
+      <PluginCommunityBanner />
       {/* Appearance and language, the two chrome preferences that mean
           something on a screen with no workspace. They live in `TopNav` for
           everyone else, and `TopNav` is inside the desktop shell — so on a

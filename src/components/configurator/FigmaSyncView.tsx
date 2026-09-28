@@ -378,7 +378,6 @@ export default function FigmaSyncView({
         <PluginInstallPromo
           version={PLUGIN_VERSION}
           updateAvailable={pluginUpdateAvailable}
-          onOpenInstall={onOpenDownload}
         />
       ) : null}
 

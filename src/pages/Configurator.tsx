@@ -23,6 +23,7 @@ import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_H
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
@@ -1263,7 +1264,10 @@ export default function Configurator() {
     commitVisit()
     if (!isLiveEnvironment() || figmaPublishState === 'publishing' || !figmaSyncModes.length) return
     handleFigmaPublishState('publishing')
-    void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason))
+    void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => {
+      if (result.superseded) return
+      handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
+    })
   }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
@@ -1659,6 +1663,8 @@ export default function Configurator() {
       <ChromeTabDefs />
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
+
+      <PluginCommunityBanner />
 
       {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav

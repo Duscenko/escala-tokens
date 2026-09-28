@@ -10,6 +10,10 @@ export function cn(...inputs: ClassValue[]) {
  *  place that offers the download, so the path can't drift between them. */
 export const FIGMA_PLUGIN_ZIP = '/escala-figma-plugin.zip'
 
+/** Figma Community listing. Every install link on the site points here. */
+export const FIGMA_PLUGIN_COMMUNITY =
+  'https://www.figma.com/community/plugin/1678705529144062964/escala-tokens'
+
 // Token namespace slug from a human project name: "Apollo UI" → "apollo-ui".
 export function slugify(name: string): string {
   return name

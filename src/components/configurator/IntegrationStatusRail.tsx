@@ -219,7 +219,6 @@ export default function IntegrationStatusRail({
                   layout="stacked"
                   version={PLUGIN_VERSION}
                   updateAvailable={pluginUpdateAvailable}
-                  onOpenInstall={onOpenPluginDownload}
                   info="Paste ID to plugin in Live Sync — that is the key. This page holds the themes in this window. File and modes travel in the published payload."
                 />
                 </div>

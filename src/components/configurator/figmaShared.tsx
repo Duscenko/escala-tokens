@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 
 // ── Shared between FigmaSyncView and FigmaDownloadView ──────────────────────
 
@@ -150,13 +151,11 @@ function ClickInfo({ label, children }: { label: string; children: ReactNode }) 
 export function PluginInstallPromo({
   version,
   updateAvailable,
-  onOpenInstall,
   layout = 'inline',
   info,
 }: {
   version: string
   updateAvailable: boolean
-  onOpenInstall: () => void
   /** `stacked` fits the integration rail; `inline` stays in wide hero rows. */
   layout?: 'inline' | 'stacked'
   /** Click-info copy for the mark on the name/version row. */
@@ -177,7 +176,7 @@ export function PluginInstallPromo({
   return (
     <div
       className={rootClass}
-      title={updateAvailable ? `v${version} — download and re-import in Figma desktop.` : undefined}
+      title={updateAvailable ? `v${version} — open Figma Community to update.` : undefined}
     >
       <span className={`flex min-w-0 items-center gap-2 ${layout === 'stacked' ? 'w-full' : ''}`}>
         <img
@@ -206,18 +205,18 @@ export function PluginInstallPromo({
           </span>
         ) : null}
       </span>
-      <button
-        type="button"
-        onClick={onOpenInstall}
-        aria-label={updateAvailable ? 'Download plugin update and open install steps' : 'Download plugin and open install steps'}
+      <a
+        href={FIGMA_PLUGIN_COMMUNITY}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open Escala Tokens on Figma Community"
         className={buttonClass}
       >
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M7 1.5v8M3.5 6.5 7 10l3.5-3.5" />
-          <path d="M1.5 10.5v1.5a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1.5" />
+        Community
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M4.5 2.5 8 6l-3.5 3.5" />
         </svg>
-        {updateAvailable ? 'Download update' : 'Download'}
-      </button>
+      </a>
     </div>
   )
 }
