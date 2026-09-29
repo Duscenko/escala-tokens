@@ -14,9 +14,9 @@
   --elevated: #e5e6e8; /* surface.layer-2 ← neutral.3 */
   --fg: #33353a; /* content.primary ← neutral.12 */
   --fg-muted: #686c76; /* content.secondary ← neutral.11 */
-  --line-alpha: #0000000d; /* tracks --line */
-  --line: #0000000d; /* border.subtle ← black-a.1 */
-  --line-strong: #0000001a; /* border.default ← black-a.2 */
+  --line-alpha: #0000001a; /* tracks --line */
+  --line: #0000001a; /* border.subtle ← black-a.2 */
+  --line-strong: #00000026; /* border.default ← black-a.3 */
 }
 
 .dark {
@@ -25,7 +25,7 @@
   --elevated: #1b1b1c; /* surface.layer-2 ← neutral-dark.3 */
   --fg: #e3e4e7; /* content.primary ← neutral-dark.12 */
   --fg-muted: #c9ccd1; /* content.secondary ← neutral-dark.11 */
-  --line-alpha: #ffffff0d; /* tracks --line */
-  --line: #ffffff0d; /* border.subtle ← white-a.1 */
-  --line-strong: #ffffff1a; /* border.default ← white-a.2 */
+  --line-alpha: #ffffff1a; /* tracks --line */
+  --line: #ffffff1a; /* border.subtle ← white-a.2 */
+  --line-strong: #ffffff26; /* border.default ← white-a.3 */
 }

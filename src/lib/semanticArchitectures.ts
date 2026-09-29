@@ -877,9 +877,12 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // Styles was ALSO overriding these three with alpha for exactly this reason;
   // the default now agrees with them, so those overrides get deleted.
   //
-  // The decorative rungs are `black-a` / `white-a` steps 2 and 4 (subtle is 1),
-  // spanning the near-page band the solid ramp used to skip. No contrast floor.
-  { group: 'border', key: 'default',  light: '{black-a.2}', dark: '{white-a.2}' },
+  // The decorative rungs are `black-a` / `white-a` steps 3 and 4 (subtle is 2).
+  // One step up from 1 / 2 / 4: step 1 composited on the dark page measured
+  // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
+  // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
+  // while staying decoration — still under `border.control` (step 7 / 8).
+  { group: 'border', key: 'default',  light: '{black-a.3}', dark: '{white-a.3}' },
   // Emphasis rung — the heaviest stroke that is still DECORATION. Reserve for a
   // grouping that needs to outrank a plain control boundary (a selected card's
   // own edge). NOT where a resting input points — that's `control`, below.
@@ -906,7 +909,7 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // wrong for state.
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
   // Lightest decorative rung — a hairline divider, a quiet grouping edge.
-  { group: 'border', key: 'subtle',   light: '{black-a.1}', dark: '{white-a.1}' },
+  { group: 'border', key: 'subtle',   light: '{black-a.2}', dark: '{white-a.2}' },
   // Focus ring — SOLVED, not pinned. `{ui:accent.9}` (resolved in
   // `curatedRefs` via `uiBoundaryRef`, below) walks the accent ramp up from
   // tone 9 until a tone clears WCAG ≥3:1 AND APCA Lc ≥45 against the page,
@@ -1039,8 +1042,8 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.warning.border-strong': '[ROLE: Warning Control Boundary] Affects form fields in a warning state. {warning.11} — the minimum tone clearing WCAG in light (tone 9 = 2.35, tone 10 = 2.74, both fail). Same step as warning.content / warning.surface-solid on every seed measured; the jobs stay distinct even when the hex does not.',
   'status.success.border-strong': '[ROLE: Success Control Boundary] Affects validated / success-state form fields. {success.10} — one step lighter than warning/critical; this ramp clears both metrics a full step earlier (3.32:1/Lc60 light, 8.21:1/Lc56 dark).',
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
-  'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.1} in light, {white-a.1} in dark (the FIXED alpha ladder, so it composites correctly on any surface). DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
-  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.2} / {white-a.2}. DECORATION, no contrast floor. The alpha ladder spans the near-page band the solid neutral ramp used to skip between a hairline and the boundary.',
+  'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
+  'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.',
   'border.strong': '[ROLE: Decorative Border 3/3] Affects a grouping that needs to read before its neighbours (a selected card\'s own edge). Heaviest stroke that is still decoration — {black-a.4} / {white-a.4}. Anything that says "this control is selected / focused / active" conveys state and falls under WCAG 1.4.11: use border.focus or border.control-hover.',
   'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED on the alpha ladder ({ui-a:…} composites each step over the page before measuring): {black-a.7} in light (4.00:1/Lc67), {white-a.8} in dark (7.29:1/Lc50). The ladder is not accent-tinted, so this lands on the same step for essentially every system.',
   'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover / emphasis state of a control\'s resting border. One step past whatever border.control RESOLVED to ({ui+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.9} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',

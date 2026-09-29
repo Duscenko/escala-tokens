@@ -306,8 +306,7 @@ const filledBorders: ThemeStyleSemantics = {
   'surface.input': { light: '{neutral.3}', dark: '{neutral-dark.4}' },
   'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
-  // `border.subtle` override dropped — identical to the default schema now
-  // (audit F4 moved the neutral ladder onto {black-a}/{white-a}).
+  // `border.subtle` follows the schema (black-a.2 / white-a.2). No override.
 }
 
 /**

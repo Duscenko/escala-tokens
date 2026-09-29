@@ -973,7 +973,7 @@ export function AboutScaffold({
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
-      <PluginCommunityBanner />
+      <PluginCommunityBanner centerInViewport />
       {/* Appearance and language, the two chrome preferences that mean
           something on a screen with no workspace. They live in `TopNav` for
           everyone else, and `TopNav` is inside the desktop shell — so on a

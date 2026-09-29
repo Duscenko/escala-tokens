@@ -22,7 +22,7 @@ import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
-import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+import TopNav, { TOP_NAV_LOCKUP_FALLBACK_W, type TopNavKey } from '../components/configurator/TopNav'
 import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
@@ -637,6 +637,7 @@ export default function Configurator() {
   // (About as the landing tab, the Themes Library collapsed to just
   // "Create your theme") must hold for the whole session.
   const [firstRun] = useState(() => !hasOnboarded())
+  const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_LOCKUP_FALLBACK_W)
   // App deep-link (`?project=&section=`). Per-window, not Zustand — two
   // windows can sit on two sections of the same system. A shared section
   // wins over the first-visit About landing.
@@ -1664,12 +1665,13 @@ export default function Configurator() {
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 
-      <PluginCommunityBanner />
+      <PluginCommunityBanner navAnchorBrandW={navAnchorBrandW} />
 
       {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav
         nav={navActive}
         onNav={handleNav}
+        onNavAnchorBrandWChange={setNavAnchorBrandW}
         exportAction={(
           <ExportPill
             onExport={openSectionExport}

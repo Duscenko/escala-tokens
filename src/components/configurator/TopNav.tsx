@@ -83,6 +83,8 @@ interface TopNavProps {
   search?: ReactNode
   /** Guided export — transversal, same wizard as elsewhere in the shell. */
   exportAction?: ReactNode
+  /** Measured brand lockup width — keeps `PluginCommunityBanner` aligned with section nav. */
+  onNavAnchorBrandWChange?: (width: number) => void
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -247,7 +249,8 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
 export const TOP_NAV_H = 52
 
 /** Fallback until the live lockup is measured — mark + wordmark + Beta + `px-3`. */
-const TOP_NAV_CONTENT_BRAND_W = 196
+export const TOP_NAV_LOCKUP_FALLBACK_W = 196
+const TOP_NAV_CONTENT_BRAND_W = TOP_NAV_LOCKUP_FALLBACK_W
 
 // Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
 // #18181B) so the lockup inverts with the theme instead of going invisible on
@@ -272,6 +275,7 @@ export function BrandMark({ size = 32 }: { size?: number } = {}) {
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
+  onNavAnchorBrandWChange,
 }: TopNavProps) {
   const { locale, t } = useI18n()
   const [docsMenuOpen, setDocsMenuOpen] = useState(false)
@@ -290,8 +294,11 @@ export default function TopNav({
       (parseFloat(getComputedStyle(outer).paddingLeft) || 0)
       + (parseFloat(getComputedStyle(outer).paddingRight) || 0)
     const w = inner.getBoundingClientRect().width + padX
-    if (w > 0) setNavAnchorBrandW(w)
-  }, [brandWidth, railCollapsed, locale])
+    if (w > 0) {
+      setNavAnchorBrandW(w)
+      onNavAnchorBrandWChange?.(w)
+    }
+  }, [brandWidth, railCollapsed, locale, onNavAnchorBrandWChange])
 
   useEffect(() => {
     if (!docsMenuOpen) return
