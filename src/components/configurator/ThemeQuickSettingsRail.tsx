@@ -1508,7 +1508,7 @@ export default function ThemeQuickSettingsRail({
   return (
     <aside
       aria-label={t('Quick settings')}
-      className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line pt-3 ${WORKSPACE_CHROME}`}
+      className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
       <div className="flex-shrink-0">

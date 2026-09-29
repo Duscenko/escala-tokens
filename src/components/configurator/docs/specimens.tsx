@@ -328,7 +328,16 @@ function SlidingSelection({
     measure()
   }, [selection, measure, reduce])
 
-  useLayoutEffect(() => {
+  // The track ref sits on the parent host. This child's layout effect can run
+  // before that ref is attached, and a miss used to stick: the mark never
+  // mounted, so the current item kept `content.on-action` (ink solved for the
+  // solid fill) sitting on the track instead. `useEffect` runs after every
+  // ref in the commit, so the mark still lands on the first paint.
+  useEffect(() => {
+    measure()
+  }, [selection, measure])
+
+  useEffect(() => {
     const track = trackRef.current
     if (!track) return
     const ro = new ResizeObserver(() => measure())
@@ -600,6 +609,14 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
         // rides with it: the playground's button hugs its label, so left-aligned
         // content is right there and wrong the moment the button spans a column.
         width: w, justifyContent: w == null ? undefined : 'center',
+        // A fluid button stays one line. Wrapping inside a fixed height paints
+        // the second line outside the control; the collage frame is sized so
+        // the label fits, and a near-miss clips inside the button.
+        whiteSpace: 'nowrap',
+        minWidth: w != null ? 0 : undefined,
+        maxWidth: w != null ? '100%' : undefined,
+        overflow: w != null ? 'hidden' : undefined,
+        textOverflow: w != null ? 'ellipsis' : undefined,
         height: sizeOf(t, sz.sizeKey, sz.h), padding: `0 ${sz.padX}px`,
         borderRadius: radiusRoleOf(t, 'action'),
         background: bg, color: fg,
@@ -1292,6 +1309,11 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
         ...baseFont(t),
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         width: w ?? (large ? 320 : 280),
+        maxWidth: w != null ? '100%' : undefined,
+        minWidth: w != null ? 0 : undefined,
+        boxSizing: 'border-box',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
         height: large ? sizeOf(t, 'lg', 48) : sizeOf(t, 'md', 40) + 2,
         borderRadius: radiusRoleOf(t, 'action'),
         background: raisedBg(t), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer',
@@ -1299,8 +1321,8 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
         ...typeOf(t, 'button'),
       }}
     >
-      <ProviderMark provider={provider} color={mark.color} />
-      {translate('Continue with {provider}', { provider })}
+      <span style={{ flexShrink: 0, display: 'inline-flex' }}><ProviderMark provider={provider} color={mark.color} /></span>
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{translate('Continue with {provider}', { provider })}</span>
     </button>
   )
 }

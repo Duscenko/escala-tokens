@@ -10,7 +10,7 @@ import ThemePanel from './ThemePanel'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
-import { SHELL_CHROME, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 import {
@@ -509,15 +509,15 @@ function CreateThemeButton({
       transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1], delay: 0.06 }}
       whileHover={reduceMotion || disabled ? undefined : { scale: 1.015 }}
       whileTap={reduceMotion || disabled ? undefined : { scale: 0.985 }}
-      className="group/cta relative flex items-center gap-2 rounded-xl border border-dashed border-line-strong bg-app p-1.5 text-left transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-app"
+      className={`group/cta relative flex items-center gap-2 rounded-xl border border-black/10 p-1.5 text-left text-fg shadow-[0_1px_2px_rgba(0,0,0,0.12)] transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated dark:border-white/28 dark:shadow-[0_1px_2px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-nav disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-tab-bar ${WORKSPACE_CHROME}`}
     >
       <span
         aria-hidden
-        className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-dashed border-line-strong text-fg-faint transition-colors group-hover/cta:border-accent-ui/60 group-hover/cta:text-accent-ui group-disabled/cta:group-hover/cta:border-line-strong group-disabled/cta:group-hover/cta:text-fg-faint"
+        className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-black/10 text-fg dark:border-white/22"
       >
         <PlusIcon />
       </span>
-      <span className="min-w-0 flex-1 truncate text-body font-medium text-fg-muted transition-colors group-hover/cta:text-fg group-disabled/cta:group-hover/cta:text-fg-muted">
+      <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">
         {t('Create your theme')}
       </span>
     </motion.button>

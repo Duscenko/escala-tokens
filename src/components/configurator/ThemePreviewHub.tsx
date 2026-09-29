@@ -193,28 +193,25 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
   const { t } = useI18n()
   const label = t('Inspect tokens')
-  const [hover, setHover] = useState(false)
   return (
     <div
       className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
-        active ? 'border-accent-ui/50' : 'border-line'
+        active ? 'border-accent-ui/50' : 'border-line hover:border-line-strong'
       }`}
     >
       <button
         type="button"
         onClick={() => onChange(!active)}
-        onPointerEnter={() => setHover(true)}
-        onPointerLeave={() => setHover(false)}
         aria-pressed={active}
         aria-label={label}
         title={`${label} — ${t('point at a component or the page to see the roles that paint it')}`}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
             ? 'bg-accent-solid text-accent-ink'
-            : `text-fg-faint ${CHROME_CONTROL_HOVER}`
+            : `text-fg ${CHROME_CONTROL_HOVER}`
         }`}
       >
-        <InspectGlyph size={16} hint={!active} paused={hover} />
+        <InspectGlyph size={16} hint={!active} />
         {label}
       </button>
     </div>
@@ -240,10 +237,9 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
  * that fills its full height, so matching the square glyph's number would read
  * visibly taller. 14 is the size `SyncTrack` already uses.
  *
- * Rest ink is `text-fg` on `bg-tab-bar`, not Inspect's idle `text-fg-faint`.
- * This is a destination, not an unarmed mode — faint ink on a dark board
- * (the header sits inside the previewed appearance) made the Figma door
- * disappear. Same shell as Inspect; the fill matches `ThemeViewSwitcher`.
+ * Rest ink is `text-fg` on `bg-tab-bar`. Inspect's idle label matches —
+ * faint ink on a dark board (the header sits inside the previewed appearance)
+ * read as disabled. Same shell as Inspect; the fill matches `ThemeViewSwitcher`.
  * Hover is `CHROME_CONTROL_HOVER` (inset wash), not `hover:bg-surface` — same
  * as the Community banner and session chips on workspace gray.
  */
@@ -1124,14 +1120,17 @@ export default function ThemePreviewHub({
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {hubSurface ? (
-          // Same `--nav` as TopNav + footer — the shell well. The board
-          // inside paints `surface.page`, so the gutter is what separates
-          // chrome from the previewed theme.
-          <div className={`min-h-0 flex-1 ${SHELL_CHROME} p-3`}>
+          // The column IS the theme page (`surface.page`). A `--nav` gutter
+          // around a rounded board put workspace gray beside the theme, so
+          // the page never owned the surface. The empty state still sits in
+          // the shell well — there is no page color to show yet.
+          <div
+            className={`min-h-0 flex-1 ${needsMyTheme ? `${SHELL_CHROME} p-3` : effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
+            style={needsMyTheme ? undefined : { background: pageCanvasColor }}
+          >
             <section
               aria-label={needsMyTheme ? t('Theme preview') : `${themeName} preview canvas`}
-              className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line ${needsMyTheme ? 'bg-app' : effectiveBoardAppearance === 'dark' ? 'dark' : 'light'}`}
-              style={needsMyTheme ? undefined : { background: pageCanvasColor }}
+              className={`flex h-full min-h-0 flex-col overflow-hidden ${needsMyTheme ? 'rounded-xl border border-line bg-app' : ''}`}
             >
               {/* One header band for every hub view — the active view's NAME
                   sits top-left; page actions (Copy page…), the view switcher and

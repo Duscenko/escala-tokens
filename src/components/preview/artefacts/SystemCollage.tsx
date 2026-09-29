@@ -1,10 +1,11 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
 import { TokenInspector, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
   shadowOf,
+  sizeOf,
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
@@ -69,21 +70,75 @@ function InspectableLive(p: Parameters<typeof Live>[0]) {
 }
 
 /**
- * Specimens lay out at a real mobile card width (Input 260, SocialLogin 280
- * with `w="100%"`). Never re-flow that type into the thumbnail column.
+ * Floor for the photograph. Specimens lay out at this width first, then
+ * scale down — never re-flow type into the thumbnail. A roomier theme
+ * (larger button type, larger surface inset) grows past the floor via
+ * `collageFrame`, or a 260px card clips "Continue with Google" and the
+ * stats row.
  */
 const MODULE_SOURCE = 260
 /**
- * Thumbnail column. Small on purpose: the canvas is an impression of many
- * modules at once, not three stretched desktop tiles. 156 packs 5–7 across a
- * typical Themes canvas; CSS columns cannot do this (unconstrained height
- * fills one stack).
+ * Thumbnail column at the floor width. The scale stays this ratio when the
+ * source grows, so a wider card is a larger photo, not a smaller type scale.
+ * CSS columns cannot do this (unconstrained height fills one stack).
  */
 const MODULE_DISPLAY = 156
+/** Semibold Latin at this size. Generous on purpose — a short estimate clips. */
+const LABEL_EM = 0.62
+
+function fontPx(t: PreviewTokens, role: string, fallback: number): number {
+  const raw = typeStyleOf(t, role).fontSize
+  const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''))
+  return Number.isFinite(n) && n > 0 ? n : fallback
+}
+
+function labelPx(font: number, text: string): number {
+  return Math.ceil(font * LABEL_EM * Math.max(text.length, 1))
+}
+
+/**
+ * One masonry column, wide enough for the compositions that must stay on
+ * one line: the social label, a pair of icon buttons, the OTP cells, the
+ * segmented track, and the profile stats. Display keeps the floor scale.
+ */
+function collageFrame(t: PreviewTokens, copy: {
+  social: string
+  pair: string
+  followers: string
+  following: string
+  credits: string
+  upgrade: string
+}): { source: number; display: number } {
+  const pad = px(spacingRoleOf(t, 'inset-surface', '20px'))
+  const border = px(strokeRoleOf(t, 'control', '1px'))
+  const button = fontPx(t, 'button', 14)
+  const heading = fontPx(t, 'heading-sm', 16)
+  const helper = fontPx(t, 'helper', 12)
+  const body = fontPx(t, 'body-sm', 14)
+  const gapC = px(spacingRoleOf(t, 'gap-control', '8px')) || 8
+  const gapT = px(spacingRoleOf(t, 'gap-tight', '4px')) || 4
+  const smPx = sizeOf(t, 'sm', 32)
+  // SM button: pad 14, icon 14, gap 6 — the specimen's own chrome, not a token.
+  const pairCell = 14 * 2 + 14 + 6 + labelPx(button, copy.pair)
+  const inner = Math.max(
+    MODULE_SOURCE - pad * 2 - border * 2,
+    labelPx(button, copy.social) + 16 + 10,
+    pairCell * 2 + gapC,
+    smPx * 6 + gapT * 5,
+    labelPx(button, 'List') + labelPx(button, 'Board') + labelPx(button, 'Timeline') + 20 * 3 + 10,
+    labelPx(heading, '12.4K') + 6 + labelPx(helper, copy.followers) + gapC + labelPx(heading, '4') + 6 + labelPx(helper, copy.following),
+    labelPx(body, copy.credits) + gapC + 14 * 2 + labelPx(button, copy.upgrade),
+  )
+  const source = Math.ceil(inner + pad * 2 + border * 2)
+  const display = Math.max(MODULE_DISPLAY, Math.round(source * (MODULE_DISPLAY / MODULE_SOURCE)))
+  return { source, display }
+}
 /** Sub-row unit for the masonry `grid-row: span` trick. */
 const MASONRY_ROW = 4
 
 const gap = (t: PreviewTokens, role: string, fb: string) => spacingRoleOf(t, role, fb)
+
+const CollageFrameContext = createContext({ source: MODULE_SOURCE, display: MODULE_DISPLAY })
 
 /** Same icon library + slot contract as Theme Preview · Components. */
 function catalogueIcons(t: PreviewTokens, leadingConcept?: IconOpts['leadingConcept']): IconOpts {
@@ -127,7 +182,7 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY,
 }: {
   t: PreviewTokens
   appearance?: ThemeAppearance
@@ -139,6 +194,8 @@ function ScaledModule({
   elev?: string | false
   style?: CSSProperties
   sourceWidth?: number
+  /** Painted column. Grows with `sourceWidth` so the scale stays put. */
+  frameWidth?: number
 }) {
   const innerRef = useRef<HTMLDivElement>(null)
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null)
@@ -148,7 +205,10 @@ function ScaledModule({
   // and the badge derives its name and its members from what's inside rather
   // than from a label passed down here.
   const inspecting = useInspectorActive()
-  const scale = MODULE_DISPLAY / sourceWidth
+  const frame = useContext(CollageFrameContext)
+  const resolvedSource = sourceWidth === MODULE_SOURCE ? frame.source : sourceWidth
+  const resolvedFrame = frameWidth === MODULE_DISPLAY ? frame.display : frameWidth
+  const scale = resolvedFrame / resolvedSource
   const frameRadius = (parseFloat(radiusRoleOf(t, 'container', '16px')) || 0) * scale
   const displayHeight = naturalHeight != null ? naturalHeight * scale : 0
   const gutter = px(gap(t, 'gap-control', '8px')) || 8
@@ -178,9 +238,9 @@ function ScaledModule({
       data-collage-appearance={appearance}
       {...inspectGroupAttrs(inspecting)}
       style={{
-        width: MODULE_DISPLAY,
-        minWidth: MODULE_DISPLAY,
-        maxWidth: MODULE_DISPLAY,
+        width: resolvedFrame,
+        minWidth: resolvedFrame,
+        maxWidth: resolvedFrame,
         height: displayHeight || undefined,
         gridRowEnd: `span ${span}`,
         opacity: naturalHeight != null ? 1 : 0,
@@ -195,7 +255,7 @@ function ScaledModule({
         ref={innerRef}
         className={clip ? 'absolute left-0 top-0 overflow-hidden' : 'absolute left-0 top-0'}
         style={{
-          width: sourceWidth,
+          width: resolvedSource,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
           borderRadius: chrome && clip ? radiusRoleOf(t, 'container', '16px') : undefined,
@@ -269,9 +329,18 @@ export function SystemCollage({
   const gutter = gap(tile(2), 'gap-control', '8px')
   const wellLg = sizeRoleOf(tile(2), 'control', '40px')
   const wellSm = sizeRoleOf(tile(2), 'compact', '32px')
+  const frame = collageFrame(tokensByAppearance.light, {
+    social: translate('Continue with Google'),
+    pair: [translate('Critical'), translate('Success')].sort((a, b) => b.length - a.length)[0] ?? 'Critical',
+    followers: translate('Followers'),
+    following: translate('Following'),
+    credits: translate('You have 2 credits left'),
+    upgrade: translate('Upgrade'),
+  })
 
   return (
     <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
+    <CollageFrameContext.Provider value={{ source: frame.source, display: frame.display }}>
     <div
       className="w-full"
       style={{
@@ -280,7 +349,7 @@ export function SystemCollage({
         padding: 10,
         margin: -10,
         display: 'grid',
-        gridTemplateColumns: `repeat(auto-fill, ${MODULE_DISPLAY}px)`,
+        gridTemplateColumns: `repeat(auto-fill, ${frame.display}px)`,
         gridAutoRows: MASONRY_ROW,
         gap: gutter,
         alignItems: 'start',
@@ -315,8 +384,9 @@ export function SystemCollage({
           ))}
         </div>
         <div
-          className="grid w-full grid-cols-2"
+          className="grid w-full min-w-0"
           style={{
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: gap(tile(3), 'gap-control', '8px'),
             paddingTop: gap(tile(3), 'gap-group', '16px'),
             borderTop: `${strokeRoleOf(tile(3), 'divider', '1px')} solid ${tile(3).borderDefault || tile(3).border}`,
@@ -349,7 +419,7 @@ export function SystemCollage({
         style={{ gap: gap(tile(4), 'gap-group', '16px') }}
       >
         <div
-          className="grid w-full grid-cols-2 justify-items-center"
+          className="grid w-full min-w-0 grid-cols-2 justify-items-center"
           style={{ gap: gap(tile(4), 'gap-control', '8px') }}
         >
           <Badge t={tile(4)} v={{ Style: 'Soft', Color: 'Error', Size: 'SM' }}>{translate('Critical')}</Badge>
@@ -401,7 +471,7 @@ export function SystemCollage({
       </ScaledModule>
 
       <ScaledModule t={tile(7)} appearance={appearanceAt(7)}>
-        <div className="grid grid-cols-2" style={{ gap: gap(tile(7), 'gap-control', '8px') }}>
+        <div className="grid min-w-0 grid-cols-2" style={{ gap: gap(tile(7), 'gap-control', '8px'), gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
           <InspectableLive c="Button" t={tile(7)} v={{ Style: 'Outline', Size: 'SM' }} icons={catalogueIcons(tile(7), 'chat')} w="100%">{translate('Chats')}</InspectableLive>
           <InspectableLive c="Button" t={tile(7)} v={{ Style: 'Outline', Size: 'SM' }} icons={catalogueIcons(tile(7), 'mail')} w="100%">{translate('Emails')}</InspectableLive>
         </div>
@@ -437,7 +507,7 @@ export function SystemCollage({
           </p>
         </TokenInspector>
         <TokenInspector component="Badge">
-          <div className="flex" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
+          <div className="flex min-w-0 flex-wrap" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
             <div>
               <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
               <span style={{ marginLeft: 6, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
@@ -471,8 +541,8 @@ export function SystemCollage({
         </ScaledModule>
       ))}
 
-      <ScaledModule t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText }}>{translate('You have 2 credits left')}</span>
+      <ScaledModule t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: gap(tile(12), 'gap-control', '8px') }}>
+        <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText, flex: '1 1 8em', minWidth: 0 }}>{translate('You have 2 credits left')}</span>
         <InspectableLive c="Button" t={tile(12)} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
       </ScaledModule>
 
@@ -552,6 +622,7 @@ export function SystemCollage({
         <Spinner t={tile(23)} v={{ Size: 'MD' }} />
       </ScaledModule>
     </div>
+    </CollageFrameContext.Provider>
     </PhosphorWeightProvider>
   )
 }
