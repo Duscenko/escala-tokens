@@ -23,7 +23,7 @@ import {
   CodeBlock, DocHeader, DocSection, DocTitle, Pager, type TocEntry,
 } from './blocks'
 import {
-  GET_STARTED_KEY, GUIDE_MCP_KEY, GUIDE_FIGMA_KEY,
+  GET_STARTED_KEY, GUIDE_MCP_KEY, GUIDE_FIGMA_KEY, GUIDE_PAGE_COPY,
   introPager, type DocsExits,
 } from './getStarted'
 
@@ -258,21 +258,6 @@ function McpGuide() {
   )
 }
 
-const TITLE: Record<string, { title: string; lead: string }> = {
-  [GET_STARTED_KEY]: {
-    title: 'Get started',
-    lead: 'Foundations are set. This page is where the system goes — into Figma, or into your product repo — not a menu of file formats.',
-  },
-  [GUIDE_FIGMA_KEY]: {
-    title: 'Use in Figma',
-    lead: 'Install the Escala plugin once. Keep Sync on. The plugin reads the same JSON the configurator publishes — you do not maintain a second set of variables by hand.',
-  },
-  [GUIDE_MCP_KEY]: {
-    title: 'MCP',
-    lead: 'Connect your agent to Escala’s live token server so it can resolve the published system instead of guessing values.',
-  },
-}
-
 export function GetStartedArticle({
   pageKey, onOpen, exits, showPager = true,
 }: {
@@ -283,7 +268,7 @@ export function GetStartedArticle({
 }) {
   const { t } = useI18n()
   const projectName = useDesignStore((s) => s.projectName) || 'Escala'
-  const meta = TITLE[pageKey] ?? TITLE[GET_STARTED_KEY]
+  const meta = GUIDE_PAGE_COPY[pageKey] ?? GUIDE_PAGE_COPY[GET_STARTED_KEY]
   const pager = introPager(pageKey)
   const origin = publishOrigin()
   const slug = syncProjectId()

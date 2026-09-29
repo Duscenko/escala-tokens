@@ -204,7 +204,9 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
         onClick={() => onChange(!active)}
         aria-pressed={active}
         aria-label={label}
-        title={`${label} — ${t('point at a component or the page to see the roles that paint it')}`}
+        title={active
+          ? `${label} — ${t('Click to turn Inspect tokens off')}`
+          : `${label} — ${t('point at a component or the page to see the roles that paint it')}`}
         className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
             ? 'bg-accent-solid text-accent-ink'
@@ -929,10 +931,11 @@ export default function ThemePreviewHub({
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
   const [quickEditOpen, setQuickEditOpen] = useState(false)
-  // Inspector mode. Deliberately NOT persisted and NOT part of `DesignSnapshot`
-  // — it's a way of LOOKING at the canvas for a minute, like `previewCollapsed`,
-  // not a property of the system being designed.
-  const [inspecting, setInspecting] = useState(false)
+  // Inspector mode starts ON so pointing at a component names the roles that
+  // paint it. The header toggle is the exit — click it again and hover goes
+  // back to ordinary interaction. Not persisted and not part of
+  // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
+  const [inspecting, setInspecting] = useState(true)
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
   /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */

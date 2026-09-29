@@ -8,6 +8,8 @@ import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
 import { defaultFigmaSyncModes, sameFigmaSyncModes, type FigmaSyncMode } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
+import { applyDocumentHead } from '../lib/documentHead'
+import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
 import { useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
@@ -1257,6 +1259,18 @@ export default function Configurator() {
   useEffect(() => {
     syncWorkspaceSearch({ project: syncProjectId(figmaFileName), section: workspaceSection })
   }, [workspaceSection, store.projectName, figmaFileName])
+  // Titles and canonicals only. The address bar stays on the effect above,
+  // which is what Figma's "edit on the web" reads back from `editor.section`.
+  useEffect(() => {
+    const head = workspaceDocumentHead(workspaceSection)
+    const titleCore = head.translateTitle ? t(head.title) : head.title
+    applyDocumentHead({
+      title: head.titleIsFull ? titleCore : `${titleCore} — Escala Tokens`,
+      description: t(head.description, head.descriptionVars),
+      canonicalPath: head.path,
+      robots: head.robots,
+    })
+  }, [workspaceSection, t])
   useAutoFigmaSync(handleFigmaPublishState, { ...figmaPublishBase, section: workspaceSection })
   useEffect(() => {
     setActiveThemeHint(previewTheme)

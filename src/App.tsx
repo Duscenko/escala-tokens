@@ -2,7 +2,10 @@ import { useEffect } from 'react'
 import { useI18n } from './lib/i18n'
 import Configurator from './pages/Configurator'
 import { AboutScaffold } from './components/configurator/AboutMenu'
+import { PublicReadingPage } from './components/public/PublicReadingPage'
 import { ToastHost } from './components/ui/Toast'
+import { applyDocumentHead } from './lib/documentHead'
+import { ABOUT_DESCRIPTION, ABOUT_TITLE, matchPublicPath } from './lib/publicSeo'
 
 // Escala is a dense token-editing workspace built for a laptop/desktop
 // keyboard-and-mouse session — not a responsive site (see CLAUDE.md's
@@ -45,18 +48,12 @@ function AboutPage() {
   // effect, so `prevTitle` still captures the document's real original title
   // on a locale switch rather than the one this effect just wrote.
   useEffect(() => {
-    const prevTitle = document.title
-    document.title = t('Escala Tokens: Define your foundations before you prompt')
-    const meta = document.querySelector('meta[name="description"]')
-    const prevDescription = meta?.getAttribute('content') ?? null
-    meta?.setAttribute(
-      'content',
-      t('Define your palette, type scale, spacing and radius once, then hand them to Figma, your code and any AI agent as one contract, before you start prompting.'),
-    )
-    return () => {
-      document.title = prevTitle
-      if (meta && prevDescription !== null) meta.setAttribute('content', prevDescription)
-    }
+    applyDocumentHead({
+      title: t(ABOUT_TITLE),
+      description: t(ABOUT_DESCRIPTION),
+      canonicalPath: '/about',
+      robots: 'index, follow',
+    })
   }, [t])
 
   return (
@@ -73,14 +70,26 @@ function App() {
   // Read once per load, not reactively — this app has no client router, and
   // a real navigation (typed URL, shared link, back button) already triggers
   // a fresh document load. Matches the SPA catch-all in vercel.json.
-  const isAboutRoute = window.location.pathname.replace(/\/$/, '') === '/about'
+  // Public reading paths (`/components`, `/docs/mcp`, …) never mount the
+  // configurator, so they cannot rewrite `/?project=&section=` or publish.
+  const path = window.location.pathname.replace(/\/$/, '') || '/'
+  const publicPage = path === '/about' ? null : matchPublicPath(path)
 
-  if (isAboutRoute) {
+  if (path === '/about') {
     return (
       <>
         <main className="min-h-screen bg-app text-fg">
           <AboutPage />
         </main>
+        <ToastHost />
+      </>
+    )
+  }
+
+  if (publicPage) {
+    return (
+      <>
+        <PublicReadingPage page={publicPage} />
         <ToastHost />
       </>
     )

@@ -17,6 +17,9 @@ import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHRO
 //     reachable from their own surfaces now (SaveSidePanel, and the Figma /
 //     GitHub pills in the theme-workspace tab strip), and the one thing it
 //     owned that IS global chrome — the appearance toggle — moved out here.
+//   • Below 860px the centred section nav hides; a compact ☰ menu (md+ only)
+//     carries About · Generator · Components · Docs shortcuts, Language, and
+//     Appearance. Export stays in the right cluster beside the menu trigger.
 //
 // The token search sat in the Themes-workspace tab strip for a while (the
 // argument being "per-workspace tool, not global chrome"), then came back up
@@ -128,6 +131,14 @@ function MoonIcon() {
   )
 }
 
+function MenuIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden>
+      <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+    </svg>
+  )
+}
+
 function ChevronDownIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -147,6 +158,16 @@ function ClockIcon() {
 function HelpIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="8" cy="8" r="5.5" /><path d="M6.45 6.35a1.7 1.7 0 0 1 3.3.56c0 1.45-1.7 1.65-1.7 2.8M8 11.7h.01" /></svg>
 }
+
+const DOCS_MENU_PAGES: { key: DocsMenuPage; label: string; icon: ReactNode }[] = [
+  { key: 'mcp', label: 'MCP', icon: <MaskGlyph src="/icons/settings/mcp.svg" className="h-4 w-4" /> },
+  { key: 'figma', label: 'Use in Figma', icon: <FigmaGlyph className="h-3.5 w-3.5" /> },
+  { key: 'changelog', label: 'Changelog', icon: <ClockIcon /> },
+  { key: 'faq', label: 'FAQ', icon: <HelpIcon /> },
+]
+
+const COMPACT_MENU_ITEM =
+  'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
 // Global icon actions — same gray shell as `ThemeViewSwitcher`.
 const GLOBAL_ICON_ACTION = `grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg text-fg-muted transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 focus-visible:ring-offset-2 focus-visible:ring-offset-app`
@@ -247,6 +268,141 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
  *  other row-2 header (`CenterHeader`, PreviewPanel, Theme library). Drawers
  *  that dock under TopNav add another 52 for their top fallback. */
 export const TOP_NAV_H = 52
+
+/** Below `min-[860px]` the centred section nav is hidden; this menu carries
+ *  the same destinations plus Language and Appearance. Export stays outside. */
+function TopNavCompactMenu({
+  nav,
+  onNav,
+  onOpenDocsPage,
+  onOpenLanguages,
+  chromeAppearance,
+  onChromeAppearanceChange,
+}: {
+  nav: TopNavKey | null
+  onNav: (key: TopNavKey) => void
+  onOpenDocsPage?: (page: DocsMenuPage) => void
+  onOpenLanguages?: () => void
+  chromeAppearance: 'light' | 'dark'
+  onChromeAppearanceChange: (appearance: 'light' | 'dark') => void
+}) {
+  const { locale, setLocale, t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  const close = () => setOpen(false)
+
+  return (
+    <div ref={rootRef} className="relative hidden max-[859px]:flex flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label={t('Open menu')}
+        title={t('Open menu')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`${GLOBAL_ICON_ACTION} ${open ? `${CHROME_CONTROL_ACTIVE} text-fg` : ''}`}
+      >
+        <MenuIcon />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label={t('Navigation menu')}
+          className="absolute right-0 top-full z-[80] mt-2 w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+          style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
+        >
+          {NAV_ITEMS.filter(({ key }) => key !== 'docs').map(({ key, label }) => {
+            const on = nav === key
+            return (
+              <button
+                key={key}
+                type="button"
+                role="menuitem"
+                aria-current={on ? 'page' : undefined}
+                onClick={() => { onNav(key); close() }}
+                className={`${COMPACT_MENU_ITEM} ${on ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+              >
+                {t(label)}
+              </button>
+            )
+          })}
+          <div className="mt-1 border-t border-line pt-1" role="group" aria-label={t('Docs')}>
+            <p className="px-2.5 py-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Docs')}</p>
+            {DOCS_MENU_PAGES.map((page, index) => (
+              <div key={page.key} className={index === 2 ? 'mt-0.5 border-t border-line pt-0.5' : ''}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { onOpenDocsPage?.(page.key); close() }}
+                  className={`${COMPACT_MENU_ITEM} text-fg-muted hover:bg-elevated hover:text-fg`}
+                >
+                  <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+                  {t(page.label)}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 border-t border-line pt-1" role="group" aria-label={t('Language')}>
+            <p className="px-2.5 py-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Language')}</p>
+            {LOCALES.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                role="menuitemradio"
+                aria-checked={locale === option.key}
+                onClick={() => { onOpenLanguages?.(); setLocale(option.key); close() }}
+                className={`${COMPACT_MENU_ITEM} justify-between ${locale === option.key ? 'bg-elevated font-semibold text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+              >
+                <span>{option.label}</span>
+                <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-1 border-t border-line pt-1.5 pb-0.5" role="group" aria-label={t('Appearance')}>
+            <p className="px-2.5 pb-1 text-micro font-semibold uppercase tracking-widest text-fg-faint">{t('Appearance')}</p>
+            <div className="grid grid-cols-2 gap-1 px-0.5">
+              {(['light', 'dark'] as const).map((appearance) => {
+                const selected = chromeAppearance === appearance
+                return (
+                  <button
+                    key={appearance}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={selected}
+                    onClick={() => { onChromeAppearanceChange(appearance); close() }}
+                    className={`flex h-8 items-center justify-center gap-1.5 rounded-md text-caption font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+                      selected ? `${CHROME_CONTROL_ACTIVE} font-semibold text-fg` : `text-fg-muted ${CHROME_CONTROL_HOVER} hover:text-fg`
+                    }`}
+                  >
+                    {appearance === 'light' ? <SunIcon /> : <MoonIcon />}
+                    {t(appearance === 'light' ? 'Light' : 'Dark')}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** Fallback until the live lockup is measured — mark + wordmark + Beta + `px-3`. */
 export const TOP_NAV_LOCKUP_FALLBACK_W = 196
@@ -356,12 +512,6 @@ export default function TopNav({
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {
-              const pages: { key: DocsMenuPage; label: string; icon: ReactNode }[] = [
-                { key: 'mcp', label: 'MCP', icon: <MaskGlyph src="/icons/settings/mcp.svg" className="h-4 w-4" /> },
-                { key: 'figma', label: 'Use in Figma', icon: <FigmaGlyph className="h-3.5 w-3.5" /> },
-                { key: 'changelog', label: 'Changelog', icon: <ClockIcon /> },
-                { key: 'faq', label: 'FAQ', icon: <HelpIcon /> },
-              ]
               return (
                 <div
                   key={key}
@@ -385,7 +535,7 @@ export default function TopNav({
                   </button>
                   {docsMenuOpen && (
                     <div role="menu" aria-label={t('Docs')} className="absolute left-1/2 top-full z-[80] mt-1.5 w-40 -translate-x-1/2 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl">
-                      {pages.map((page, index) => (
+                      {DOCS_MENU_PAGES.map((page, index) => (
                         <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
                           <button
                             type="button"
@@ -423,9 +573,18 @@ export default function TopNav({
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center gap-2 pl-2 pr-3 xl:pr-4">
         <div className="pointer-events-auto flex min-w-0 items-center gap-2">
           {search}
-          <LanguageMenu onOpen={onOpenLanguages} />
-
-          <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+          <TopNavCompactMenu
+            nav={nav}
+            onNav={onNav}
+            onOpenDocsPage={onOpenDocsPage}
+            onOpenLanguages={onOpenLanguages}
+            chromeAppearance={chromeAppearance}
+            onChromeAppearanceChange={onChromeAppearanceChange}
+          />
+          <div className="hidden min-[860px]:flex items-center gap-2">
+            <LanguageMenu onOpen={onOpenLanguages} />
+            <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+          </div>
           {exportAction}
         </div>
       </div>

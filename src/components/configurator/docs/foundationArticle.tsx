@@ -157,6 +157,10 @@ export function FoundationArticle({
 /** The whole-system reference sheet — every foundation's sections in one
  *  column. This is what the old Design Rules page was, kept intact for the
  *  hand-off/print case the per-foundation pages don't cover. */
+export const SYSTEM_REFERENCE_TITLE = 'System reference'
+
+export const SYSTEM_REFERENCE_LEAD = 'The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.'
+
 export function OverviewArticle({
   system, onOpen, title, hubMode,
 }: {
@@ -172,14 +176,14 @@ export function OverviewArticle({
   const { t } = useI18n()
   const total = FOUNDATION_DOCS.reduce((n, f) => n + f.tokenCount(system), 0)
   const intro = introPager(OVERVIEW_KEY)
-  const heading = title?.trim() || t('System reference')
+  const heading = title?.trim() || t(SYSTEM_REFERENCE_TITLE)
   // Two whole sentences rather than one with a `{subject}` slot: Spanish and
   // French inflect around "this theme" / "this system" differently enough
   // (de este tema / de ce thème, and the article that precedes them) that a
   // single template would force an ungrammatical translation.
   const lead = title?.trim()
     ? t('The full specification of this theme, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
-    : t('The full specification of this system, generated from your own tokens — every foundation in one column, for hand-off and print. Each section links to its own page for the why and the usage.')
+    : t(SYSTEM_REFERENCE_LEAD)
   const headerActions = useMemo(() => <DownloadSkillButton />, [])
   useThemeHubHeaderActions(hubMode ? headerActions : null)
 

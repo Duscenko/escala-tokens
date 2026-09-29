@@ -18,6 +18,8 @@ import { useI18n } from '../../../lib/i18n'
 
 export const FAQ_KEY = '__faq'
 
+export const FAQ_LEAD = "Escala Tokens is an independent, one-person project, and it's in beta. Here's what that means before you build a system on it."
+
 /** The X handle from `CONTACT.x` (`https://x.com/duscenko` -> `duscenko`). */
 const X_HANDLE = (CONTACT.x ?? '').replace(/\/+$/, '').split('/').pop() ?? ''
 
@@ -176,7 +178,7 @@ export function FaqArticle() {
       <DocTitle
         title={t('FAQ')}
         eyebrow={t('About')}
-        lead={t("Escala Tokens is an independent, one-person project, and it's in beta. Here's what that means before you build a system on it.")}
+        lead={t(FAQ_LEAD)}
       />
 
       <Accordion type="single" collapsible value={open} onValueChange={setOpen} className="max-w-2xl -mx-3">

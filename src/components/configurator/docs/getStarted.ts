@@ -10,6 +10,21 @@ export const GET_STARTED_KEY = '__get-started'
 export const GUIDE_FIGMA_KEY = '__guide-figma'
 export const GUIDE_MCP_KEY = '__guide-mcp'
 
+export const GUIDE_PAGE_COPY: Record<string, { title: string; lead: string }> = {
+  [GET_STARTED_KEY]: {
+    title: 'Get started',
+    lead: 'Foundations are set. This page is where the system goes — into Figma, or into your product repo — not a menu of file formats.',
+  },
+  [GUIDE_FIGMA_KEY]: {
+    title: 'Use in Figma',
+    lead: 'Install the Escala plugin once. Keep Sync on. The plugin reads the same JSON the configurator publishes — you do not maintain a second set of variables by hand.',
+  },
+  [GUIDE_MCP_KEY]: {
+    title: 'MCP',
+    lead: 'Connect your agent to Escala’s live token server so it can resolve the published system instead of guessing values.',
+  },
+}
+
 /**
  * Docs now exposes only the destinations that need their own operating
  * instructions: Figma and the live MCP connection. Code formats stay in the

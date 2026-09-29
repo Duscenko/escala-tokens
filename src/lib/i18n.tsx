@@ -13,6 +13,8 @@ const STORAGE_KEY = 'escala-language'
 const es: Record<string, string> = {
   'Token generator': 'Generador de tokens',
   'Sections': 'Secciones',
+  'Open menu': 'Abrir menú',
+  'Navigation menu': 'Menú de navegación',
   'About': 'Acerca de',
   'Themes': 'Temas',
   'Generator': 'Generador',
@@ -184,6 +186,7 @@ const es: Record<string, string> = {
   'Border': 'Borde',
   'Reset theme': 'Restablecer tema',
   'Inspect tokens': 'Inspeccionar tokens',
+  'Click to turn Inspect tokens off': 'Clic para desactivar Inspeccionar tokens',
   'point at a component or the page to see the roles that paint it': 'apunte a un componente o a la página para ver los roles que lo pintan',
   'Undo reset': 'Deshacer restablecimiento',
   'System defaults': 'Valores predeterminados del sistema',
@@ -540,6 +543,8 @@ const es: Record<string, string> = {
 const fr: Record<string, string> = {
   'Token generator': 'Générateur de tokens',
   'Sections': 'Sections',
+  'Open menu': 'Ouvrir le menu',
+  'Navigation menu': 'Menu de navigation',
   'About': 'À propos',
   'Themes': 'Thèmes',
   'Generator': 'Générateur',
@@ -711,6 +716,7 @@ const fr: Record<string, string> = {
   'Border': 'Bordure',
   'Reset theme': 'Réinitialiser le thème',
   'Inspect tokens': 'Inspecter les tokens',
+  'Click to turn Inspect tokens off': 'Cliquez pour désactiver Inspecter les tokens',
   'point at a component or the page to see the roles that paint it': 'pointez un composant ou la page pour voir les rôles qui le peignent',
   'Undo reset': 'Annuler la réinitialisation',
   'System defaults': 'Valeurs par défaut du système',

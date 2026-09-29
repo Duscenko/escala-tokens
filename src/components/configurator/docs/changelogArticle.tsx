@@ -22,6 +22,8 @@ import { DocHeader, DocTitle, Prose, type TocEntry } from './blocks'
 
 export const CHANGELOG_KEY = '__changelog'
 
+export const CHANGELOG_LEAD = "What shipped, and when — release dates from the project's own history."
+
 type Translate = (source: string, vars?: Record<string, string | number>) => string
 
 export function changelogToc(t: Translate = (source) => source): TocEntry[] {
@@ -114,7 +116,7 @@ export function ChangelogArticle() {
       <DocTitle
         title={t('Changelog')}
         eyebrow={t('Reference')}
-        lead={t("What shipped, and when — release dates from the project's own history.")}
+        lead={t(CHANGELOG_LEAD)}
       />
       <div className="flex flex-col max-w-2xl">
         {ENTRIES.map((entry, i) => (
