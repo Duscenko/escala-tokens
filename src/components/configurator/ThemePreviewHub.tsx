@@ -20,7 +20,7 @@ import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { type DocsRailRow } from './DocsRail'
 import { FOUNDATION_DOCS } from './docs/foundationDocs'
 import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_SHELL, SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
@@ -93,7 +93,7 @@ function ThemeViewSwitcher({ view, onChange }: {
       }} className="flex h-8 items-center gap-0.5 rounded-lg p-0.5 border border-line bg-tab-bar">
         {HUB_VIEWS.map((item) => {
           const active = item.key === view
-          return <button key={item.key} type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} aria-label={t(item.label)} title={t(item.label)} onClick={() => onChange(item.key)} className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-inverse-action text-inverse-action-ink shadow-sm' : 'text-fg-faint hover:bg-surface hover:text-fg'}`}><ViewIcon view={item.key} /></button>
+          return <button key={item.key} type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} aria-label={t(item.label)} title={t(item.label)} onClick={() => onChange(item.key)} className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-inverse-action text-inverse-action-ink shadow-sm' : `text-fg-faint ${CHROME_CONTROL_HOVER}`}`}><ViewIcon view={item.key} /></button>
         })}
     </div>
   )
@@ -128,7 +128,7 @@ function PreviewAppearanceButton({ value, onChange }: {
         onClick={() => onChange(next)}
         aria-label={t('Preview in {appearance}', { appearance: t(next) })}
         title={t('Preview in {appearance}', { appearance: t(next) })}
-        className="grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 text-fg-faint hover:bg-surface hover:text-fg"
+        className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 text-fg-faint ${CHROME_CONTROL_HOVER}`}
       >
         <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
       </button>
@@ -178,10 +178,10 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
 
 /**
  * Inspector mode toggle — Figma `41:1544` / `41:1545` (Button - Inspect tokens).
- * Same outline shell as `ThemeResetButton` (`41:1550`, now rendered only by
- * Variables · Semantics): border is the boundary,
- * no `bg-tab-bar` fill. The view switcher beside them keeps the filled track
- * because it is a segmented control, not an outline action.
+ * Outline shell — dashed `border-line` (same vocabulary as the Token Inspector
+ * overlay and dashed add-rows), no `bg-tab-bar` fill. Sync beside it uses a
+ * solid filled track so the two read as mode vs destination. The view switcher
+ * keeps the filled track because it is a segmented control, not an outline action.
  *
  * It's a TOGGLE, not a momentary key: reading a role, going to the rail and
  * coming back for the next one is a sequence, and a mode that dropped every
@@ -195,7 +195,11 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
   const label = t('Inspect tokens')
   const [hover, setHover] = useState(false)
   return (
-    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
+    <div
+      className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
+        active ? 'border-accent-ui/50' : 'border-line'
+      }`}
+    >
       <button
         type="button"
         onClick={() => onChange(!active)}
@@ -204,10 +208,10 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
         aria-pressed={active}
         aria-label={label}
         title={`${label} — ${t('point at a component or the page to see the roles that paint it')}`}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
             ? 'bg-accent-solid text-accent-ink'
-            : 'text-fg-faint hover:bg-surface hover:text-fg'
+            : `text-fg-faint ${CHROME_CONTROL_HOVER}`
         }`}
       >
         <InspectGlyph size={16} hint={!active} paused={hover} />
@@ -222,9 +226,8 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
  *
  * The only door to the Figma page was the `SyncTrack` pinned to the bottom of
  * the Themes library rail: the least-looked-at corner of the workspace, for the
- * handoff this product is largely about. Same outline shell as
- * `InspectorToggle`, so it joins the action cluster rather than inventing a
- * second button language beside it.
+ * handoff this product is largely about. Solid `bg-tab-bar` track (not Inspect's
+ * dashed outline) so it joins the action cluster without inventing a third shell.
  *
  * Deliberately NOT a second status readout. The footer track and the Figma page
  * itself both report publish state; a third would be the "two doors to the same
@@ -236,17 +239,24 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
  * The mark renders at 14 against Inspect's 16: `FigmaGlyph` is a 38×57 mark
  * that fills its full height, so matching the square glyph's number would read
  * visibly taller. 14 is the size `SyncTrack` already uses.
+ *
+ * Rest ink is `text-fg` on `bg-tab-bar`, not Inspect's idle `text-fg-faint`.
+ * This is a destination, not an unarmed mode — faint ink on a dark board
+ * (the header sits inside the previewed appearance) made the Figma door
+ * disappear. Same shell as Inspect; the fill matches `ThemeViewSwitcher`.
+ * Hover is `CHROME_CONTROL_HOVER` (inset wash), not `hover:bg-surface` — same
+ * as the Community banner and session chips on workspace gray.
  */
 function FigmaSyncButton({ onOpen }: { onOpen: () => void }) {
   const { t } = useI18n()
   return (
-    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
+    <div className="flex h-8 items-center rounded-lg border border-line bg-tab-bar p-0.5">
       <button
         type="button"
         onClick={onOpen}
         aria-label={t('Sync with Figma')}
         title={t('Sync with Figma')}
-        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg-faint transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] ${CHROME_CONTROL_HOVER} active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
         <FigmaGlyph size={14} />
         {t('Sync')}
