@@ -1190,6 +1190,7 @@ export default function Configurator() {
   }
   const changeThemeWorkspaceTab = (next: ThemeWorkspaceTabStrip) => {
     setThemeWorkspaceTab(next)
+    if (next !== 'preview') setThemesLibraryOpen(false)
     // GitHub and Figma are detail surfaces inside Theme Preview, not a new
     // workspace tab. Clicking the already-selected Theme preview tab must
     // therefore behave like Home: restore the original artefacts canvas and
@@ -1831,11 +1832,7 @@ export default function Configurator() {
               search={tokenSearchField}
               leading={(
                 <>
-                  <ThemesLibraryToggle
-                    open={themesLibraryOpen}
-                    onToggle={() => setThemesLibraryOpen((open) => !open)}
-                  />
-                  <div className="flex h-full flex-shrink-0 items-center pl-2.5 mr-[12px]">
+                  <div className="flex h-full flex-shrink-0 items-center pl-2.5 mr-[10px]">
                     <ThemeSwitcher
                       previewTheme={previewTheme}
                       onPreviewThemeChange={changePreviewTheme}
@@ -1866,6 +1863,13 @@ export default function Configurator() {
             <FoundationIconRail
               orientation="vertical"
               ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
+              header={themeWorkspaceTab === 'preview' ? (
+                <ThemesLibraryToggle
+                  open={themesLibraryOpen}
+                  onToggle={() => setThemesLibraryOpen((open) => !open)}
+                  placement="icon-rail"
+                />
+              ) : undefined}
               active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
@@ -1874,7 +1878,7 @@ export default function Configurator() {
               ].filter((group) => group.items.length > 0)}
             />
           )}
-          {themeWorkspaceRailVisible && themesLibraryOpen && (
+          {themeWorkspaceRailVisible && themeWorkspaceTab === 'preview' && themesLibraryOpen && (
             <ThemeLibraryRail
               previewTheme={previewTheme}
               onPreviewThemeChange={changePreviewTheme}

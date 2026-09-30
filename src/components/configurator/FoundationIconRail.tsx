@@ -43,13 +43,15 @@ export const FOUNDATION_ICON_RAIL_WIDTH = 64
 // SectionRail; this component doesn't apply there.
 
 export default function FoundationIconRail({
-  groups, active, onSelect, orientation = 'horizontal', footer, ariaLabel = 'Variable foundations',
+  groups, active, onSelect, orientation = 'horizontal', header, footer, ariaLabel = 'Variable foundations',
 }: {
   groups: RailGroup[]
   /** Highlighted entry key. */
   active: string | null
   onSelect: (key: string) => void
   orientation?: 'horizontal' | 'vertical'
+  /** Theme library folder — pinned above foundation icons on Theme preview. */
+  header?: ReactNode
   /** Sync destinations (GitHub · Figma) — pinned to the foot of the vertical rail. */
   footer?: ReactNode
   ariaLabel?: string
@@ -65,6 +67,11 @@ export default function FoundationIconRail({
         : 'flex items-center gap-4'}
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >
+      {vertical && header ? (
+        <div className="flex w-full flex-col items-center pb-3">
+          {header}
+        </div>
+      ) : null}
       <div className={vertical ? 'flex w-full flex-col items-center' : 'contents'}>
         {groups.map((group, gi) => (
           <div

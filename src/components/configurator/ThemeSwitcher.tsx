@@ -36,12 +36,15 @@ const ITEM =
 export function ThemesLibraryToggle({
   open,
   onToggle,
+  placement = 'tab-bar',
 }: {
   open: boolean
   onToggle: () => void
+  placement?: 'tab-bar' | 'icon-rail'
 }) {
   const { t } = useI18n()
   const label = open ? t('Hide themes library') : t('Show themes library')
+  const iconRail = placement === 'icon-rail'
   return (
     <button
       type="button"
@@ -51,10 +54,18 @@ export function ThemesLibraryToggle({
       aria-label={label}
       title={label}
       onClick={onToggle}
-      className={`flex h-full flex-shrink-0 items-center justify-center border-r border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-        open ? 'bg-app text-fg' : `text-fg-muted ${CHROME_CONTROL_HOVER}`
-      }`}
-      style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
+      className={
+        iconRail
+          ? `flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+              open
+                ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
+                : `text-fg-muted ${CHROME_CONTROL_HOVER}`
+            }`
+          : `flex h-full flex-shrink-0 items-center justify-center border-r border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+              open ? 'bg-app text-fg' : `text-fg-muted ${CHROME_CONTROL_HOVER}`
+            }`
+      }
+      style={iconRail ? undefined : { width: FOUNDATION_ICON_RAIL_WIDTH }}
     >
       <FolderIcon size={16} />
     </button>
