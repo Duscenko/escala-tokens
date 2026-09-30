@@ -6,9 +6,8 @@ import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 // One workbench band (family heading + icon rail) for every Variables
 // Generator section. Mounted by Configurator OUTSIDE the keyed page motion,
 // so Color → Font fades the table, not the switcher. Collapse width is
-// shared by Color primitives and every Semantics family. The + on Gradients
-// lives in that tab's own nav, not here — this chrome is identical across
-// foundations.
+// shared by Color primitives (including its Gradients group) and every
+// Semantics family.
 
 export default function FoundationWorkbench({
   railCollapsed = false,

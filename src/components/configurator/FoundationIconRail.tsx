@@ -43,7 +43,7 @@ export const FOUNDATION_ICON_RAIL_WIDTH = 64
 // SectionRail; this component doesn't apply there.
 
 export default function FoundationIconRail({
-  groups, active, onSelect, orientation = 'horizontal', footer,
+  groups, active, onSelect, orientation = 'horizontal', footer, ariaLabel = 'Variable foundations',
 }: {
   groups: RailGroup[]
   /** Highlighted entry key. */
@@ -52,11 +52,12 @@ export default function FoundationIconRail({
   orientation?: 'horizontal' | 'vertical'
   /** Sync destinations (GitHub · Figma) — pinned to the foot of the vertical rail. */
   footer?: ReactNode
+  ariaLabel?: string
 }) {
   const vertical = orientation === 'vertical'
   return (
     <nav
-      aria-label="Variable foundations"
+      aria-label={ariaLabel}
       className={vertical
         // The `ThemeWorkspaceTabs` strip spans the full width above this rail;
         // icons begin near the top with `pt-2`. Group spacing is per-group.

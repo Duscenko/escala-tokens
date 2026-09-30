@@ -38,6 +38,7 @@ import {
   LEGACY_MOSS_GLOW_STOPS,
 } from '../lib/gradients'
 import { slugify } from '../lib/utils'
+import { canAddMyTheme, isScaffoldTheme, myThemeKeys } from '../lib/themeLibrary'
 import { generatePublishId, isPublishId } from '../lib/publishId'
 // Type-only: semanticArchitectures imports semanticRoles (which imports this
 // store's constants), so a value import here would create a runtime cycle.
@@ -100,6 +101,10 @@ export interface ThemeSources {
   warning: string
   success: string
   info: string
+  /** Extra brand palettes — primitive families, NOT semantic slots.
+   *  Buttons/alerts still read `brand`. Optional; additive. */
+  secondary?: string
+  tertiary?: string
 }
 
 export const DEFAULT_THEME_SOURCES: ThemeSources = {
@@ -809,6 +814,9 @@ interface DesignStore {
   setThemeModeToken: (theme: string, appearance: ThemeAppearance, key: string, value: string) => void
   mergeThemeModeTokens: (theme: string, appearance: ThemeAppearance, partial: Record<string, string>) => void
   addTheme: (key: string, kind: 'light' | 'dark', sources: ThemeSources) => void
+  /** Clone a My theme (shared primitives, copied semantics/sources/kind/label).
+   *  Returns the new key, or null when the source isn't a My theme / the cap is full. */
+  duplicateTheme: (sourceKey: string, copyWord?: string) => string | null
   removeTheme: (key: string) => void
   // Reorder the theme columns (drag-to-reorder in the Semantic matrix).
   setThemeOrder: (order: string[]) => void
@@ -824,6 +832,10 @@ interface DesignStore {
   // Updates a custom theme's own palette (no-op for light/dark, which have no
   // palette entry and draw from the global scales instead).
   mergeThemeSources: (key: string, partial: Partial<ThemeSources>) => void
+  /** Point `theme` at a Secondary/Tertiary family, or `null` to clear that rank.
+   *  Seeds `DEFAULT_THEME_SOURCES` when the theme had no sources yet (built-in
+   *  light/dark), so extras can live on the default pair without minting a theme. */
+  setBrandExtra: (theme: string, rank: 'secondary' | 'tertiary', familyKey: string | null) => void
   setThemeFoundations: (key: string, foundations: ThemeFoundationOverride | null) => void
   patchThemeFoundations: (key: string, partial: ThemeFoundationOverride) => void
 
@@ -1082,7 +1094,18 @@ export const useDesignStore = create<DesignStore>()(
             (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === key),
           )
           if (used) return state
-          return { customColors: state.customColors.filter((c) => c.key !== key) }
+          const themeSources = Object.fromEntries(
+            Object.entries(state.themeSources).map(([theme, refs]) => {
+              const next = { ...refs }
+              if (next.secondary === key) delete next.secondary
+              if (next.tertiary === key) delete next.tertiary
+              return [theme, next]
+            }),
+          )
+          return {
+            customColors: state.customColors.filter((c) => c.key !== key),
+            themeSources,
+          }
         }),
 
       setThemeToken: (theme, key, value) =>
@@ -1171,10 +1194,71 @@ export const useDesignStore = create<DesignStore>()(
             themeSources: { ...state.themeSources, [key]: sources },
           }
         }),
+      duplicateTheme: (sourceKey, copyWord = 'Copy') => {
+        const state = get()
+        if (isScaffoldTheme(sourceKey) || !state.themes[sourceKey]) return null
+        const listed = myThemeKeys(state.themeOrder, state.themes)
+        if (!listed.includes(sourceKey) || !canAddMyTheme(listed.length)) return null
+        const sourceLabel = state.themeLabels[sourceKey] ?? sourceKey.replace(/-/g, ' ')
+        const usedLabels = new Set(Object.values(state.themeLabels))
+        let label = `${sourceLabel} ${copyWord}`
+        if (usedLabels.has(label)) {
+          let n = 2
+          while (usedLabels.has(`${sourceLabel} ${copyWord} ${n}`)) n += 1
+          label = `${sourceLabel} ${copyWord} ${n}`
+        }
+        let key = slugify(label) || `${sourceKey}-copy`
+        if (state.themes[key]) {
+          let n = 2
+          while (state.themes[`${key}-${n}`]) n += 1
+          key = `${key}-${n}`
+        }
+        const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+        const architectureOverrides = Object.fromEntries(
+          Object.entries(state.architectureOverrides).map(([arch, tokens]) => [
+            arch,
+            Object.fromEntries(
+              Object.entries(tokens).map(([token, modes]) => {
+                const next = { ...modes }
+                if (sourceKey in modes) next[key] = modes[sourceKey]
+                return [token, next]
+              }),
+            ),
+          ]),
+        )
+        set({
+          themes: { ...state.themes, [key]: clone(state.themes[sourceKey]) },
+          themeSemantics: state.themeSemantics[sourceKey]
+            ? { ...state.themeSemantics, [key]: clone(state.themeSemantics[sourceKey]) }
+            : state.themeSemantics,
+          themeOrder: [...state.themeOrder, key],
+          themeKinds: { ...state.themeKinds, [key]: state.themeKinds[sourceKey] ?? 'light' },
+          themeLabels: { ...state.themeLabels, [key]: label },
+          themeSources: state.themeSources[sourceKey]
+            ? { ...state.themeSources, [key]: clone(state.themeSources[sourceKey]) }
+            : state.themeSources,
+          themeFoundations: state.themeFoundations[sourceKey]
+            ? { ...state.themeFoundations, [key]: clone(state.themeFoundations[sourceKey]) }
+            : state.themeFoundations,
+          themeOrigin: state.themeOrigin?.[sourceKey]
+            ? { ...state.themeOrigin, [key]: state.themeOrigin[sourceKey] }
+            : state.themeOrigin,
+          architectureOverrides,
+        })
+        return key
+      },
       mergeThemeSources: (key, partial) =>
         set((state) => {
           if (!state.themeSources[key]) return state
           return { themeSources: { ...state.themeSources, [key]: { ...state.themeSources[key], ...partial } } }
+        }),
+      setBrandExtra: (theme, rank, familyKey) =>
+        set((state) => {
+          const current = state.themeSources[theme] ?? { ...DEFAULT_THEME_SOURCES }
+          const next = { ...current }
+          if (familyKey) next[rank] = familyKey
+          else delete next[rank]
+          return { themeSources: { ...state.themeSources, [theme]: next } }
         }),
       setThemeOrigin: (key, presetId) =>
         set((state) => {
@@ -1226,7 +1310,9 @@ export const useDesignStore = create<DesignStore>()(
           const deletedSlots = new Set(Object.values(state.themeSources[key] ?? {}).filter(Boolean))
           const stillUsed = (famKey: string) =>
             Object.values(themeSources).some((refs) =>
-              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey),
+              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey)
+              || refs.secondary === famKey
+              || refs.tertiary === famKey,
             )
           const customColors = deletedSlots.size
             ? state.customColors.filter((c) => !deletedSlots.has(c.key) || stillUsed(c.key))
@@ -1331,7 +1417,9 @@ export const useDesignStore = create<DesignStore>()(
           const dropped = [...prevFam].filter((fam) => !nextFam.has(fam))
           const stillUsed = (famKey: string) =>
             Object.values(nextSources).some((refs) =>
-              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey),
+              (['brand', 'gray', 'error', 'warning', 'success', 'info'] as const).some((s) => refs[s] === famKey)
+              || refs.secondary === famKey
+              || refs.tertiary === famKey,
             )
           const customColors = dropped.length
             ? state.customColors.filter((c) => !dropped.includes(c.key) || stillUsed(c.key))

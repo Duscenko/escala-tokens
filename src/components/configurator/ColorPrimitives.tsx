@@ -14,7 +14,7 @@
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
 // never disagree.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
@@ -23,11 +23,11 @@ import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
   neutralFromBrand, recommendStateColors, checkContrast, accessibleSolidTone, readableInk,
-  BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE,
+  BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
 } from '../../lib/colorUtils'
 import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, useEnsureColorScales,
-  resolveThemePages, resolveFamilyPages,
+  resolveThemePages, resolveFamilyPages, addBrandExtra, removeBrandExtra,
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
@@ -36,10 +36,16 @@ import {
 import { ColorPickerPanel } from '../ui/ColorField'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
-import { themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor, type FamilySlot } from '../../lib/themeSources'
+import {
+  themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor,
+  nextBrandExtraRank, brandExtraRankOf, familyDisplayLabel, BRAND_EXTRA_LABEL,
+  BRAND_PRIMARY_LABEL,
+  type FamilySlot, type BrandExtraRank,
+} from '../../lib/themeSources'
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import ThemePanel from './ThemePanel'
 import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
+import { GradientNavList, GradientRailMark } from './StepGradients'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
@@ -51,13 +57,13 @@ import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 // in is DERIVED from `themeSources` — a custom family reads as "Accents"
 // precisely because its theme's `brand` slot points at it (see `homeOf`).
 //
-// There is no "+ Add family" control here: minting a single family meant also
-// deciding which theme slot should reference it (or inventing a theme to hold
-// it), which was too much flow for a nav header. Families are created as a
-// side effect of adding a THEME — the "+ New theme" CTA at the bottom of this
-// nav (and Semantics' "+ Theme"), which asks for the accent/neutral/status
-// colours it needs and files the families it mints under that theme's folder
-// automatically.
+// Accents lists Primary / Secondary / Tertiary (max two extras). States lists
+// Error / Warning / Success / Info. Neutrals lists Neutral. Those names are
+// slots, not the theme or the stored family label — "Core Copy Error" still
+// exports as `core-copy-error-*`. Extras are palettes, not semantic roles:
+// `action.primary` still reads the theme's `brand` slot.
+// "+ Add secondary" lives on the Accents group.
+// Other families are still minted as a side effect of adding a THEME.
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
@@ -167,14 +173,18 @@ function familyUsesNeutralPicker(
   return homeOf(f).group === 'Neutrals'
 }
 
-/** Accent-family picker — global accent OR any custom family slotted as brand. */
+/** Accent-family picker — the brand slot only. Secondary / Tertiary live in
+ *  Accents as extra palettes; they must not inherit Follows-accent or the
+ *  brand curated strip, which would retint them back onto the brand hex. */
 function familyUsesAccentPicker(
   f: Family,
-  homeOf: (family: Family) => { folder: string; group: FamilyGroup },
+  themeSources: Record<string, ThemeSources>,
 ): boolean {
   if (f.isAlpha) return false
   if (f.key === 'accent') return true
-  return homeOf(f).group === 'Accents'
+  const custKey = f.customKey
+  if (!custKey) return false
+  return Object.values(themeSources).some((refs) => refs.brand === custKey)
 }
 
 /** The gray primitive the previewed theme reads — same target as Theme Preview. */
@@ -200,6 +210,66 @@ function curatedPaletteKeyForFamily(
   if (slot === 'brand') return 'accent'
   if (slot) return slot
   return f.key
+}
+
+/** Hue-shifted seed for a new extra — related to the brand, not a copy of it. */
+function extraSeedHex(brandHex: string, rank: BrandExtraRank): string {
+  try {
+    const { hue, position } = readHuePosition(brandHex)
+    return colorAtHue(position, hue + (rank === 'secondary' ? 42 : 84))
+  } catch {
+    return brandHex
+  }
+}
+
+function sortAccentItems(items: Family[], sources: Record<string, ThemeSources>): Family[] {
+  const rankOf = (f: Family) => {
+    if (f.key === 'accent' || f.key === 'accent-alpha') return f.isAlpha ? 1 : 0
+    const k = f.customKey ?? f.alphaOf
+    if (!k) return 10
+    for (const refs of Object.values(sources)) {
+      if (refs.brand === k) return f.isAlpha ? 1 : 0
+      if (refs.secondary === k) return f.isAlpha ? 3 : 2
+      if (refs.tertiary === k) return f.isAlpha ? 5 : 4
+    }
+    return 10
+  }
+  return [...items].sort((a, b) => rankOf(a) - rankOf(b))
+}
+
+/** Neutral (the gray slot) leads, same as Error in States. Black/White Alpha
+ *  are the universal ladders — they stay, but they are not the Neutral. */
+function sortNeutralItems(items: Family[]): Family[] {
+  const rankOf = (f: Family) => {
+    if (f.key === 'black-alpha') return 20
+    if (f.key === 'white-alpha') return 21
+    return f.isAlpha ? 1 : 0
+  }
+  return [...items].sort((a, b) => rankOf(a) - rankOf(b))
+}
+
+function sortGroupItems(
+  label: FamilyGroup,
+  items: Family[],
+  sources: Record<string, ThemeSources>,
+): Family[] {
+  if (label === 'Accents') return sortAccentItems(items, sources)
+  if (label === 'Neutrals') return sortNeutralItems(items)
+  return items
+}
+
+function extraHome(
+  familyKey: string,
+  sources: Record<string, ThemeSources>,
+  previewTheme: string,
+): { theme: string; rank: BrandExtraRank } | null {
+  const previewRank = brandExtraRankOf(familyKey, sources[previewTheme])
+  if (previewRank) return { theme: previewTheme, rank: previewRank }
+  for (const [theme, refs] of Object.entries(sources)) {
+    const rank = brandExtraRankOf(familyKey, refs)
+    if (rank) return { theme, rank }
+  }
+  return null
 }
 
 // Mid interactive step — unmistakably translucent in nav/overview swatches.
@@ -919,6 +989,12 @@ export default function ColorPrimitives({
   query: externalQuery,
   railCollapsed = false,
   managedThemesExternally = false,
+  gradientsOpen = false,
+  selectedGradientId = null,
+  onSelectGradient,
+  onOpenGradients,
+  onLeaveGradients,
+  gradientEditor = null,
 }: {
   previewTheme?: string
   previewAppearance?: ThemeAppearance
@@ -943,8 +1019,15 @@ export default function ColorPrimitives({
   railCollapsed?: boolean
   /** Suppresses duplicate theme lifecycle controls when Themes Library owns them. */
   managedThemesExternally?: boolean
-  /** Opens Gradients, a collection in the System colors rail. */
+  /** The Gradients group is open — the family table yields to `gradientEditor`. */
+  gradientsOpen?: boolean
+  selectedGradientId?: string | null
+  onSelectGradient?: (id: string) => void
+  /** Opens Gradients without leaving the Color primitives collection. */
   onOpenGradients?: () => void
+  /** A family click returns to the primitive table. */
+  onLeaveGradients?: () => void
+  gradientEditor?: ReactNode
 }) {
   const store = useDesignStore()
   const {
@@ -1050,9 +1133,9 @@ export default function ColorPrimitives({
   // EVERY family carries both scales (the Radix two-scale model) — the light
   // column edits the light ramp, the dark column its own dark twin.
   const families: Family[] = useMemo(() => [
-    { key: 'accent',  label: 'Accent',  tokenPrefix: 'accent',  base: primaryColor,  light: primaryScale,   dark: primaryDarkScale, setLight: setPrimaryScale,   setDark: setPrimaryDarkScale },
+    { key: 'accent',  label: familyDisplayLabel('accent', themeSources) ?? BRAND_PRIMARY_LABEL,  tokenPrefix: 'accent',  base: primaryColor,  light: primaryScale,   dark: primaryDarkScale, setLight: setPrimaryScale,   setDark: setPrimaryDarkScale },
     {
-      key: 'accent-alpha', label: 'Accent-Alpha', tokenPrefix: 'accent-a', base: primaryColor,
+      key: 'accent-alpha', label: familyDisplayLabel('accent', themeSources, true) ?? `${BRAND_PRIMARY_LABEL}-Alpha`, tokenPrefix: 'accent-a', base: primaryColor,
       // Solved against each appearance's own page — see colorUtils'
       // alphaColorOver — never independently set, so both scales are derived
       // live rather than stored.
@@ -1061,9 +1144,9 @@ export default function ColorPrimitives({
       setLight: noopSet, setDark: noopSet, isAlpha: true,
       solidLight: primaryScale, solidDark: primaryDarkScale,
     },
-    { key: 'neutral', label: 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,    setLight: setGrayLightScale, setDark: setGrayDarkScale },
+    { key: 'neutral', label: familyDisplayLabel('neutral', themeSources) ?? 'Neutral', tokenPrefix: 'neutral', base: grayBaseColor, light: grayLightScale, dark: grayDarkScale,    setLight: setGrayLightScale, setDark: setGrayDarkScale },
     {
-      key: 'neutral-alpha', label: 'Neutral-Alpha', tokenPrefix: 'neutral-a', base: grayBaseColor,
+      key: 'neutral-alpha', label: familyDisplayLabel('neutral', themeSources, true) ?? 'Neutral-Alpha', tokenPrefix: 'neutral-a', base: grayBaseColor,
       light: generateAlphaScale(grayLightScale, pageBackground, 'light'),
       dark: generateAlphaScale(grayDarkScale, darkBackground, 'dark'),
       setLight: noopSet, setDark: noopSet, isAlpha: true,
@@ -1088,12 +1171,12 @@ export default function ColorPrimitives({
     // (that's the whole point — they work over an unknown backdrop), so
     // `overviewScale`'s `?? family.light` fallback shows the ladder itself.
     {
-      key: 'black-alpha', label: 'Black Alpha', tokenPrefix: 'black-a', base: '#000000',
+      key: 'black-alpha', label: 'Black-Alpha', tokenPrefix: 'black-a', base: '#000000',
       light: BLACK_ALPHA_SCALE, dark: BLACK_ALPHA_SCALE,
       setLight: noopSet, setDark: noopSet, isAlpha: true,
     },
     {
-      key: 'white-alpha', label: 'White Alpha', tokenPrefix: 'white-a', base: '#ffffff',
+      key: 'white-alpha', label: 'White-Alpha', tokenPrefix: 'white-a', base: '#ffffff',
       light: WHITE_ALPHA_SCALE, dark: WHITE_ALPHA_SCALE,
       setLight: noopSet, setDark: noopSet, isAlpha: true,
     },
@@ -1151,7 +1234,7 @@ export default function ColorPrimitives({
     ...customColors.flatMap((c): Family[] => {
       const solid: Family = {
         key: `custom-${c.key}`,
-        label: c.label,
+        label: familyDisplayLabel(c.key, themeSources) ?? c.label,
         tokenPrefix: c.key,
         base: c.base,
         light: c.scale,
@@ -1168,7 +1251,7 @@ export default function ColorPrimitives({
       )
       return [solid, {
         key: `custom-${c.key}-alpha`,
-        label: `${c.label}-Alpha`,
+        label: familyDisplayLabel(c.key, themeSources, true) ?? `${c.label}-Alpha`,
         tokenPrefix: `${c.key}-a`,
         base: c.base,
         light: generateAlphaScale(c.scale, pages.light, 'light'),
@@ -1207,6 +1290,8 @@ export default function ColorPrimitives({
     // another theme's private accent family leak in.
     const refs = themeSources[previewTheme]
     const sources = new Set(FAMILY_SLOTS.map((slot) => refs?.[slot] || GLOBAL_FAMILY[slot]))
+    if (refs?.secondary) sources.add(refs.secondary)
+    if (refs?.tertiary) sources.add(refs.tertiary)
     return families.filter((item) => {
       // Black/White Alpha aren't referenced by any theme slot — no theme's
       // brand/gray/status ever points at them, because they're the universal
@@ -1242,6 +1327,18 @@ export default function ColorPrimitives({
       }
       const custKey = f.customKey ?? f.alphaOf
       if (!custKey) return { folder: BASE_FOLDER, group: 'States' }
+      // Extra brand palettes (Secondary / Tertiary) — same Accents group as
+      // the theme's brand, never a new semantic slot. Built-ins that still
+      // read the global accent file extras under Theme 1 with Accent itself.
+      for (const theme of themeOrder) {
+        const refs = themeSources[theme]
+        if (!refs) continue
+        if (refs.secondary !== custKey && refs.tertiary !== custKey) continue
+        return {
+          folder: !refs.brand || refs.brand === 'accent' ? BASE_FOLDER : theme,
+          group: 'Accents',
+        }
+      }
       // Custom family — homed to the first theme that references it, under the
       // group matching the SLOT it fills there (brand → Accents, gray →
       // Neutrals, any status slot → States).
@@ -1281,10 +1378,16 @@ export default function ColorPrimitives({
           : k === CUSTOM_FOLDER ? 'Custom'
           : k.charAt(0).toUpperCase() + k.slice(1),
         groups: FAMILY_GROUPS
-          .map((label) => ({ label, items: byFolder.get(k)!.get(label) ?? [] }))
+          .map((label) => {
+            const items = byFolder.get(k)!.get(label) ?? []
+            return {
+              label,
+              items: sortGroupItems(label, items, themeSources),
+            }
+          })
           .filter((g) => g.items.length > 0),
       }))
-  }, [families, homeOf, managedThemesExternally, themeOrder])
+  }, [families, homeOf, managedThemesExternally, themeOrder, themeSources])
 
   const visibleNavFolders = useMemo(() => {
     if (!managedThemesExternally) return navFolders
@@ -1292,10 +1395,16 @@ export default function ColorPrimitives({
       key: BASE_FOLDER,
       label: 'System colors',
       groups: FAMILY_GROUPS
-        .map((label) => ({ label, items: activeThemeFamilies.filter((family) => homeOf(family).group === label) }))
+        .map((label) => {
+          const items = activeThemeFamilies.filter((family) => homeOf(family).group === label)
+          return {
+            label,
+            items: sortGroupItems(label, items, themeSources),
+          }
+        })
         .filter((group) => group.items.length > 0),
     }]
-  }, [activeThemeFamilies, homeOf, managedThemesExternally, navFolders])
+  }, [activeThemeFamilies, homeOf, managedThemesExternally, navFolders, themeSources])
 
   /** Groups for the scroll-tail ramp board — the SAME partition the nav uses
    *  (`homeOf`), over whatever families this workspace is showing, so the board
@@ -1303,9 +1412,15 @@ export default function ColorPrimitives({
    *  board is one "System ramps" section, not one per theme folder. */
   const overviewGroups = useMemo(
     () => FAMILY_GROUPS
-      .map((label) => ({ label, items: activeThemeFamilies.filter((f) => homeOf(f).group === label) }))
+      .map((label) => {
+        const items = activeThemeFamilies.filter((f) => homeOf(f).group === label)
+        return {
+          label,
+          items: sortGroupItems(label, items, themeSources),
+        }
+      })
       .filter((g) => g.items.length > 0),
-    [activeThemeFamilies, homeOf],
+    [activeThemeFamilies, homeOf, themeSources],
   )
 
   // Collapsed nav sections. Keys are a whole folder's own key, or
@@ -1334,6 +1449,9 @@ export default function ColorPrimitives({
           collapsed.add(`${folder.key}/${group.label}`)
         }
       })
+      if (folder.key === BASE_FOLDER) {
+        collapsed.add(`${folder.key}/Gradients`)
+      }
     })
     return collapsed
   })
@@ -1509,6 +1627,24 @@ export default function ColorPrimitives({
     return customColors.find((c) => c.key === brandFamily)?.base ?? primaryColor
   }, [previewTheme, themeSources, primaryColor, customColors])
 
+  const addAccentExtra = useCallback(() => {
+    const rank = nextBrandExtraRank(themeSources[previewTheme])
+    if (!rank) return
+    const minted = addBrandExtra(previewTheme, extraSeedHex(pickerThemeAccent, rank))
+    if (!minted) return
+    const familyKey = `custom-${minted.key}`
+    setActiveFamily(familyKey)
+    setExpandedTone(null)
+    setEditFamily(null)
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      visibleNavFolders.forEach((folder) => {
+        next.delete(`${folder.key}/Accents`)
+      })
+      return next
+    })
+  }, [previewTheme, themeSources, pickerThemeAccent, visibleNavFolders])
+
   // The picker is 256px wide but the nav column is 198px AND scrolls
   // (`overflow-y-auto`), with two more `overflow:hidden` wrappers above it from
   // the folder/group collapse animations. An absolutely-positioned popover
@@ -1630,7 +1766,7 @@ export default function ColorPrimitives({
   // shared constants so a collapsed rail can't leave it floating over the strip.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
   const editingUsesNeutralPicker = editingFamily ? familyUsesNeutralPicker(editingFamily, homeOf) : false
-  const editingUsesAccentPicker = editingFamily ? familyUsesAccentPicker(editingFamily, homeOf) : false
+  const editingUsesAccentPicker = editingFamily ? familyUsesAccentPicker(editingFamily, themeSources) : false
   const editingNeutralCoordinated = editingFamily
     ? isPreviewThemeGrayFamily(editingFamily, previewTheme, themeSources)
     : false
@@ -1786,6 +1922,13 @@ export default function ColorPrimitives({
     )
   })() : null
 
+  const pickFamily = (key: string) => {
+    setActiveFamily(key)
+    if (gradientsOpen) onLeaveGradients?.()
+  }
+  const gradientsGroupKey = `${BASE_FOLDER}/Gradients`
+  const gradientsGroupCollapsed = collapsedGroups.has(gradientsGroupKey)
+
   const gridStyle = PRIMITIVE_TABLE_GRID
 
   return (
@@ -1810,16 +1953,17 @@ export default function ColorPrimitives({
           </div>
         ) : null}
         {railCollapsed ? (
-          visibleNavFolders.flatMap((folder) => folder.groups).map((group, gi) => (
+          <>
+          {visibleNavFolders.flatMap((folder) => folder.groups).map((group, gi) => (
             <div key={`${group.label}-${gi}`} className="flex flex-col items-center gap-0.5">
               {gi > 0 && <span className="w-6 h-px bg-line my-1.5 flex-shrink-0" aria-hidden />}
               {group.items.map((f) => {
-                const isActive = family.key === f.key
+                const isActive = !gradientsOpen && family.key === f.key
                 return (
                   <button
                     key={f.key}
                     type="button"
-                    onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
+                    onClick={() => { pickFamily(f.key); setExpandedTone(null) }}
                     aria-current={isActive}
                     title={`${f.label}${f.isAlpha ? '' : ` — ${f.base}`}`}
                     aria-label={f.label}
@@ -1832,7 +1976,21 @@ export default function ColorPrimitives({
                 )
               })}
             </div>
-          ))
+          ))}
+          <span className="w-6 h-px bg-line my-1.5 flex-shrink-0" aria-hidden />
+          <button
+            type="button"
+            onClick={() => onOpenGradients?.()}
+            aria-current={gradientsOpen ? 'page' : undefined}
+            aria-label="Gradients"
+            title="Gradients"
+            className={`${COLLAPSED_RAIL_WELL} rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg ${
+              gradientsOpen ? 'bg-elevated shadow-sm ring-2 ring-accent-ui' : 'hover:bg-elevated/50'
+            }`}
+          >
+            <GradientRailMark previewTheme={previewTheme} />
+          </button>
+          </>
         ) : (
         visibleNavFolders.map((folder) => {
           const folderCollapsed = managedThemesExternally && folder.key === BASE_FOLDER ? false : collapsedGroups.has(folder.key)
@@ -1946,7 +2104,7 @@ export default function ColorPrimitives({
                   style={{ overflow: 'hidden' }}
                 >
             {group.items.map((f) => {
-              const isActive = family.key === f.key
+              const isActive = !gradientsOpen && family.key === f.key
               return (
                 <div key={f.key} className="relative group/fam" ref={editFamily === f.key ? editRef : undefined}>
                   {/* Was one `<button>` wrapping the swatch + label — the swatch
@@ -1964,11 +2122,11 @@ export default function ColorPrimitives({
                     <FamilySwatch
                       family={f}
                       dark={darkPreview}
-                      onClick={() => { setActiveFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
+                      onClick={() => { pickFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
                     />
                     <button
                       type="button"
-                      onClick={() => { setActiveFamily(f.key); setExpandedTone(null) }}
+                      onClick={() => { pickFamily(f.key); setExpandedTone(null) }}
                       className="flex-1 min-w-0 text-left"
                     >
                       <span className="block truncate text-ui font-medium">{f.label}</span>
@@ -1980,7 +2138,7 @@ export default function ColorPrimitives({
                       retint independently. */}
                   {!f.isAlpha && (
                     <button
-                      onClick={() => { setActiveFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
+                      onClick={() => { pickFamily(f.key); setEditFamily((k) => (k === f.key ? null : f.key)) }}
                       aria-haspopup="dialog"
                       aria-expanded={editFamily === f.key}
                       aria-label={`Edit ${f.label} color`}
@@ -1995,23 +2153,28 @@ export default function ColorPrimitives({
                     </button>
                   )}
                   {f.customKey && (() => {
-                    // A theme resolves THROUGH its families, so one in use can't
-                    // be deleted — say so on the control instead of leaving a
-                    // button that silently does nothing.
-                    const usedBy = themesUsingFamily(f.customKey, themeSources)
+                    const extra = extraHome(f.customKey, themeSources, previewTheme)
+                    const usedBy = extra ? [] : themesUsingFamily(f.customKey, themeSources)
                     return (
                       <button
                         onClick={() => {
+                          if (extra) {
+                            removeBrandExtra(extra.theme, extra.rank)
+                            if (isActive) setActiveFamily(themeAccentFamilyKey(extra.theme) ?? 'accent')
+                            return
+                          }
                           if (usedBy.length) return
                           removeCustomColor(f.customKey!)
-                          if (isActive) setActiveFamily('accent')
+                          if (isActive) setActiveFamily(themeAccentFamilyKey(previewTheme) ?? 'accent')
                         }}
                         disabled={usedBy.length > 0}
                         aria-label={usedBy.length ? `${f.label} is used by ${usedBy.join(', ')}` : `Remove ${f.label}`}
                         title={
                           usedBy.length
                             ? `In use by ${usedBy.length === 1 ? 'theme' : 'themes'} ${usedBy.join(', ')} — remove the ${usedBy.length === 1 ? 'theme' : 'themes'} first`
-                            : `Remove ${f.label}`
+                            : extra
+                              ? `Remove ${f.label} — a brand palette, not a semantic role`
+                              : `Remove ${f.label}`
                         }
                         className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-all ${
                           usedBy.length
@@ -2036,12 +2199,90 @@ export default function ColorPrimitives({
                 </div>
               )
             })}
+            {group.label === 'Accents' && (() => {
+              const refs = themeSources[previewTheme]
+              const nextRank = nextBrandExtraRank(refs)
+              const lastRank: BrandExtraRank | null = refs?.tertiary
+                ? 'tertiary'
+                : refs?.secondary
+                  ? 'secondary'
+                  : null
+              if (!nextRank && !lastRank) return null
+              return (
+                <div className="flex items-center gap-3 px-2.5 pt-0.5 pb-1.5">
+                  {nextRank && (
+                    <button
+                      type="button"
+                      onClick={addAccentExtra}
+                      title="Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics."
+                      className="text-caption font-medium text-fg-faint hover:text-fg transition-colors"
+                    >
+                      + Add {BRAND_EXTRA_LABEL[nextRank].toLowerCase()}
+                    </button>
+                  )}
+                  {lastRank && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeBrandExtra(previewTheme, lastRank)
+                        setActiveFamily(themeAccentFamilyKey(previewTheme) ?? 'accent')
+                        setEditFamily(null)
+                      }}
+                      title={`Remove ${BRAND_EXTRA_LABEL[lastRank]} — a brand palette, not a semantic role`}
+                      className="text-caption font-medium text-fg-faint hover:text-status-danger transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
                 </motion.div>
               )}
             </AnimatePresence>
             </div>
           )
         })}
+        {folder.key === BASE_FOLDER && (
+          <div className={`flex flex-col gap-0.5 ${fixedFolder ? '' : 'pl-2'}`}>
+            <button
+              type="button"
+              onClick={() => {
+                if (!gradientsOpen) onOpenGradients?.()
+                if (!gradientsOpen && gradientsGroupCollapsed) toggleGroup(gradientsGroupKey)
+                else if (gradientsOpen) toggleGroup(gradientsGroupKey)
+              }}
+              aria-expanded={!gradientsGroupCollapsed}
+              aria-current={gradientsOpen ? 'page' : undefined}
+              className={`flex items-center gap-1.5 px-2.5 pt-2.5 pb-1 text-caption font-semibold transition-colors ${
+                gradientsOpen ? 'text-accent-ui' : 'text-fg-faint hover:text-fg-muted'
+              }`}
+            >
+              <FolderIcon size={11} />
+              <span className="flex-1 text-left">Gradients</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`flex-shrink-0 transition-transform ${gradientsGroupCollapsed ? '-rotate-90' : ''}`}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <AnimatePresence initial={false}>
+              {!gradientsGroupCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <GradientNavList
+                    previewTheme={previewTheme}
+                    selectedId={gradientsOpen ? selectedGradientId : null}
+                    onSelect={(id) => onSelectGradient?.(id)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -2066,6 +2307,9 @@ export default function ColorPrimitives({
       </VariableCollectionRail>
 
       <div className="flex-1 min-w-0 flex flex-col bg-app min-h-0">
+        {gradientsOpen && gradientEditor ? (
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col">{gradientEditor}</div>
+        ) : (
         <div ref={tableRef} className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[24rem]">
               {/* Column header first — this 52px band is the one that lines
@@ -2141,6 +2385,7 @@ export default function ColorPrimitives({
                 <div className="h-9 flex items-stretch rounded-[10px] border border-line bg-surface overflow-hidden">
                   <div className="flex items-center pl-1.5 pr-0.5">
                     <HexCell
+                      key={family.key}
                       compact
                       value={family.base}
                       onChange={(hex) => changeFamilyBase(family, hex)}
@@ -2246,7 +2491,7 @@ export default function ColorPrimitives({
                   const expanded = expandedTone === tone
                   return (
                     <div
-                      key={tone}
+                      key={`${family.key}-${tone}`}
                       className={tableRowClass(i, 'grid')}
                       style={gridStyle}
                     >
@@ -2323,6 +2568,7 @@ export default function ColorPrimitives({
               <FamilyRampOverview groups={overviewGroups} activeKey={family.key} namingLabels={namingLabels} />
             </div>
         </div>
+        )}
       </div>
       </div>
 

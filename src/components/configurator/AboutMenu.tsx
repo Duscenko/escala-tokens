@@ -618,7 +618,7 @@ const statsItem = {
  *  flex-1/min-h-0 center column like any other tab's body, so it owns its own
  *  scroll region and a read-width column rather than reusing
  *  `AboutScaffold`'s `min-h-screen` page wrapper. Its CTA is an in-app action
- *  (`onStart` → `selectFoundation('color')`), not a link — unlike the mobile
+ *  (`onStart` → Theme preview workspace), not a link — unlike the mobile
  *  screen or `/about`, there's no "back to the app" to link to; this IS the
  *  app. Same `SECTIONS`/`AboutAccordion`/`AboutContact` as every other
  *  surface, so the pitch can't drift between them.

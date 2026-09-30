@@ -1,20 +1,11 @@
 import { useMemo, type ComponentType } from 'react'
-import { useDesignStore } from '../../store/useDesignStore'
-import { COMPONENTS, CATEGORIES, isInFigmaSample, type ComponentDef } from '../../lib/componentCatalogue'
+import { COMPONENTS, CATEGORIES, type ComponentDef } from '../../lib/componentCatalogue'
 import { RAIL_COLLAPSED_WIDTH, RAIL_WIDTH } from './SectionRail'
 import { SHELL_CHROME } from './themeWorkspaceLayout'
 
 /** Same selected chip as Themes library · My themes (`bg-app` on `bg-nav`). */
 const RAIL_ROW_ACTIVE = 'border-line-strong bg-app text-fg font-semibold shadow-[0_2px_12px_-6px_rgba(0,0,0,0.24)]'
 const RAIL_ROW_IDLE = 'border-transparent text-fg-muted hover:bg-elevated hover:text-fg'
-
-function CatalogueCheck() {
-  return (
-    <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden>
-      <path d="M2 5.2 4 7.2 8 2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 function SidebarToggleIcon() {
   return (
@@ -43,8 +34,6 @@ export default function ComponentsRail({
   collapsed: boolean
   onToggleCollapse: () => void
 }) {
-  const selectedComponents = useDesignStore((s) => s.selectedComponents)
-  const toggleComponent = useDesignStore((s) => s.toggleComponent)
   const activeKey = active?.key ?? null
   const activeCategory = active?.category ?? CATEGORIES[0]
 
@@ -137,57 +126,19 @@ export default function ComponentsRail({
 
                   <div className="flex flex-col gap-0.5 pl-2 ml-2 border-l border-line">
                     {items.map((comp) => {
-                      const isSelected = selectedComponents.includes(comp.key)
                       const isActive = comp.key === activeKey
                       return (
-                        <div
+                        <button
                           key={comp.key}
-                          role="button"
-                          tabIndex={0}
+                          type="button"
                           aria-current={isActive ? 'page' : undefined}
                           onClick={() => onSelect(comp)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              onSelect(comp)
-                            }
-                          }}
-                          className={`flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-xl border text-body cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                          className={`flex w-full items-center gap-1.5 px-2 py-1.5 rounded-lg border text-body text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                             isActive ? RAIL_ROW_ACTIVE : RAIL_ROW_IDLE
                           }`}
                         >
-                          <span className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <span className="truncate min-w-0">{comp.label}</span>
-                            {!isInFigmaSample(comp.key) && (
-                              <span
-                                title="No renderiza como componente en el import de Figma hoy — ships como spec para tu agente/código"
-                                className={`flex-shrink-0 text-micro leading-none px-1 py-0.5 rounded border border-line-strong/60 uppercase tracking-wide ${
-                                  isActive ? 'text-fg-muted' : 'text-fg-faint'
-                                }`}
-                              >
-                                Code
-                              </span>
-                            )}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleComponent(comp.key)
-                            }}
-                            className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                              isSelected
-                                ? 'bg-fg text-app'
-                                : isActive
-                                  ? 'bg-nav border border-line-strong'
-                                  : 'bg-app border border-line-strong'
-                            }`}
-                            aria-label={
-                              isSelected ? `Remove ${comp.label} from the system` : `Add ${comp.label} to the system`
-                            }
-                          >
-                            {isSelected && <CatalogueCheck />}
-                          </button>
-                        </div>
+                          <span className="truncate min-w-0">{comp.label}</span>
+                        </button>
                       )
                     })}
                   </div>

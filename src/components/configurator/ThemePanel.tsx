@@ -241,6 +241,14 @@ export function mintTheme(
       })
       refs[slot] = familyKey
     }
+    // Extra brand palettes (Secondary / Tertiary) are not slots mintTheme
+    // assigns — keep them across an edit so "Save changes" can't silently
+    // drop palettes the Accents group still lists.
+    if (editKey) {
+      const prev = s.themeSources[editKey]
+      if (prev?.secondary) refs.secondary = prev.secondary
+      if (prev?.tertiary) refs.tertiary = prev.tertiary
+    }
     if (editKey) {
       const renamed = key !== editKey
       if (renamed) s.renameTheme(editKey, key)
@@ -664,9 +672,9 @@ export default function ThemePanel({
 
   useLayoutEffect(() => {
     if (!open) return
-    const sel = dockToSelector ?? 'nav[aria-label="Color families"]'
+    const sel = dockToSelector === '' ? '' : (dockToSelector ?? 'nav[aria-label="Color families"]')
     const measure = () => {
-      const el = document.querySelector(sel)
+      const el = sel ? document.querySelector(sel) : null
       const r = el?.getBoundingClientRect()
       // Match the reference column's box: same top, same bottom, so the drawer
       // is exactly its height. Fall back to the shell rows / footer inset when
@@ -680,7 +688,7 @@ export default function ThemePanel({
     window.addEventListener('resize', measure)
     // The rail can grow/shrink (theme list length, sync footer) without a
     // resize — observe it so the drawer keeps pace.
-    const el = document.querySelector(sel)
+    const el = sel ? document.querySelector(sel) : null
     const ro = el ? new ResizeObserver(measure) : null
     if (el && ro) ro.observe(el)
     return () => {

@@ -18,7 +18,10 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
-import ThemeLibraryRail, { THEME_LIBRARY_WIDTH, myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
+import ThemePanel from '../components/configurator/ThemePanel'
+import { ThemeSwitcher } from '../components/configurator/ThemeSwitcher'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
@@ -229,8 +232,7 @@ const CATEGORY_ICONS: Record<string, ComponentType> = {
 const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
   color: [
     { key: 'primitives', label: 'Color primitives' },
-    { key: 'semantics', label: 'Color semantics' },
-    { key: 'gradients', label: 'Gradients' },
+    { key: 'semantics', label: 'Color semantics', icon: 'variables' },
   ],
   typography: [
     { key: 'primitives', label: 'Type primitives' },
@@ -285,7 +287,8 @@ const ExportIcon: ComponentType = () => (
 )
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
-type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
+type ThemeWorkspaceTabStrip = 'preview' | 'primitives'
+type ThemeWorkspaceTab = ThemeWorkspaceTabStrip | 'code'
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -377,10 +380,9 @@ function PreviewThemeSwitch({
   )
 }
 
-const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTab; label: string; icon: string }[] = [
+const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTabStrip; label: string; icon: string }[] = [
   { key: 'preview', label: 'Theme preview', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
   { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
-  { key: 'code', label: 'Get code', icon: '/icons/theme-hub-icons/Icon/code.svg' },
 ]
 
 function WorkspaceTabIcon({ source }: { source: string }) {
@@ -392,14 +394,17 @@ function ThemeWorkspaceTabs({
   value,
   onChange,
   search,
+  leading,
 }: {
-  value: ThemeWorkspaceTab
-  onChange: (tab: ThemeWorkspaceTab) => void
+  value: ThemeWorkspaceTabStrip | null
+  onChange: (tab: ThemeWorkspaceTabStrip) => void
   search?: ReactNode
+  leading?: ReactNode
 }) {
   const { t } = useI18n()
   return (
     <div className={`theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line ${WORKSPACE_CHROME} pl-[8px] pr-3 xl:pr-4`}>
+      {leading}
       <div
         role="tablist"
         aria-label={t('Theme workspace')}
@@ -562,6 +567,12 @@ function ExportPill({
             {t('Export')}
           </button>
           <div className="my-1 border-t border-line" />
+          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExportCode)}>
+            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">
+              <ExportMenuGlyph src="/icons/theme-hub-icons/Icon/code.svg" />
+            </span>
+            {t('Get code')}
+          </button>
           <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onSyncFigma)}>
             <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><FigmaGlyph size={14} /></span>
             {t('Sync Figma')}
@@ -569,10 +580,6 @@ function ExportPill({
           <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectGithub)}>
             <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><GitHubGlyph size={14} /></span>
             {t('Connect GitHub')}
-          </button>
-          <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onExportCode)}>
-            <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg"><CodeIcon /></span>
-            {t('Export code')}
           </button>
           <button type="button" role="menuitem" className={itemClass} onClick={() => pick(onConnectMcp)}>
             <span className="grid h-4 w-4 flex-shrink-0 place-items-center text-fg">
@@ -606,8 +613,7 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   const { t } = useI18n()
-  // `selectedComponents`/`toggleComponent` are no longer read here — the
-  // include checkbox moved into ComponentsView along with the master list.
+  // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
   const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, themeSources, projectCreated } = store
   const theme = useTheme()
@@ -661,8 +667,21 @@ export default function Configurator() {
   const [activeFoundation, setActiveFoundation] = useState<string>(() => incomingPlace?.foundation ?? 'color')
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
-  const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => incomingPlace?.workspace ?? 'preview')
-  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => incomingPlace?.surface ?? 'artefacts')
+  const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
+    const w = incomingPlace?.workspace ?? 'preview'
+    return w === 'documentation' ? 'preview' : w
+  })
+  const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
+  const [resetOpen, setResetOpen] = useState(false)
+  const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
+    const surface = incomingPlace?.surface ?? 'artefacts'
+    if (surface === 'documentation' || surface === 'components') return 'artefacts'
+    return surface
+  })
+  const [docsPanelOpen, setDocsPanelOpen] = useState(() => {
+    const place = incomingPlace
+    return place?.surface === 'documentation' || place?.workspace === 'documentation'
+  })
   const [codeScope, setCodeScope] = useState<CodeThemeScope>('')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? COMPONENTS.find((c) => c.key === 'Button') ?? null,
@@ -699,6 +718,11 @@ export default function Configurator() {
     const collection = incomingPlace?.collection
     return foundation && collection ? { [foundation]: collection } : {}
   })
+  // Gradients is a group under States, not a collection. A deep link that
+  // still ends in /gradients opens that group with Color primitives highlighted.
+  const [colorGradientsOpen, setColorGradientsOpen] = useState(
+    () => incomingPlace?.foundation === 'color' && incomingPlace?.collection === 'gradients',
+  )
   const activeFoundationCollections = VARIABLE_COLLECTIONS[activeFoundation] ?? [{ key: 'primitives', label: 'Primitives' }]
   const requestedCollection = collectionByFoundation[activeFoundation] ?? 'primitives'
   const activeCollection = activeFoundationCollections.some(({ key }) => key === requestedCollection)
@@ -706,8 +730,9 @@ export default function Configurator() {
     : 'primitives'
   const setFoundationCollection = (foundation: string, collection: VariableCollectionKey) => {
     setCollectionByFoundation((current) => ({ ...current, [foundation]: collection }))
+    if (foundation === 'color') setColorGradientsOpen(false)
   }
-  const colorTab: ColorTab = activeCollection === 'semantics' ? 'semantics' : activeCollection === 'gradients' ? 'gradients' : 'primary'
+  const colorTab: ColorTab = activeCollection === 'semantics' ? 'semantics' : colorGradientsOpen ? 'gradients' : 'primary'
   // One search field lives in the stable Foundation toolbar. Primitives and
   // Semantics consume the same value, so changing depth does not make search
   // jump to a second, redundant header row.
@@ -1108,21 +1133,19 @@ export default function Configurator() {
     // The quick panel only mounts on the artefacts surface (`ThemePreviewHub`),
     // so picking a foundation from Components or Documentation would otherwise
     // change nothing visible. Choosing a foundation IS "I want to edit it".
-    if (themeWorkspaceTab === 'preview' && themeHubSurface !== 'artefacts') setThemeHubSurface('artefacts')
+    if (themeWorkspaceTab === 'preview' && themeHubSurface !== 'artefacts') {
+      setThemeHubSurface('artefacts')
+    }
   }
-  const changeThemeWorkspaceTab = (next: ThemeWorkspaceTab) => {
+  const changeThemeWorkspaceTab = (next: ThemeWorkspaceTabStrip) => {
     setThemeWorkspaceTab(next)
     // GitHub and Figma are detail surfaces inside Theme Preview, not a new
     // workspace tab. Clicking the already-selected Theme preview tab must
     // therefore behave like Home: restore the original artefacts canvas and
     // its quick-edit rail instead of leaving the integration page in place.
-    if (next === 'preview') setThemeHubSurface('artefacts')
-    // Get code is always one My-theme. Theme preview and this picker must
-    // agree on which theme the file describes. Built-in light/dark are not
-    // listed there — those fall through to the first own theme, or empty.
-    if (next === 'code' && themeWorkspaceTab !== 'code') {
-      const listed = myThemeKeys(themeOrder, themes)
-      setCodeScope(resolveCodeTheme(listed, codeScope, previewTheme))
+    if (next === 'preview') {
+      setThemeHubSurface('artefacts')
+      setDocsPanelOpen(false)
     }
   }
   const openCodeForTheme = (key: string) => {
@@ -1155,9 +1178,6 @@ export default function Configurator() {
   }
   const openThemeLibraryFromCode = () => {
     changeThemeWorkspaceTab('preview')
-    window.requestAnimationFrame(() => {
-      document.getElementById('themes-library')?.focus()
-    })
   }
   /** Docs destination, opened at a specific foundation — the reverse of
    *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
@@ -1249,7 +1269,9 @@ export default function Configurator() {
   const workspaceSection = encodeWorkspaceSection({
     tab,
     workspace: themeWorkspaceTab,
-    surface: themeHubSurface,
+    surface: docsPanelOpen && themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts'
+      ? 'documentation'
+      : themeHubSurface,
     theme: previewTheme,
     foundation: activeFoundation,
     collection: activeCollection,
@@ -1337,11 +1359,6 @@ export default function Configurator() {
     />
   )
 
-  // The rail footer is Reset now. Figma sync moved to the canvas header (and
-  // each theme's options menu); GitHub keeps its doors in the connection rail,
-  // SaveView, the Export wizard and Docs — see `ResetScopeControl`.
-  const themeWorkspaceSyncFooter = <ResetScopeControl previewTheme={previewTheme} />
-
   // ── Resolve center header + body for the current mode ──
   let header: { Icon: ComponentType; title: string; subtitle: string; right?: ReactNode }
   let body: ReactNode
@@ -1418,7 +1435,12 @@ export default function Configurator() {
     header = { Icon: StartIcon, title: 'About', subtitle: '' }
     body = (
       <AboutHome
-        onStart={() => selectFoundation('color')}
+        onStart={() => {
+          commitVisit()
+          setExportMode(null)
+          setTab('foundations')
+          changeThemeWorkspaceTab('preview')
+        }}
         onLearnAI={() => openDocs(GUIDE_MCP_KEY)}
         foundationCount={FOUNDATIONS.length}
       />
@@ -1453,8 +1475,11 @@ export default function Configurator() {
         revealRole={colorReveal}
         revealFamily={colorFamilyReveal}
         managedThemesExternally
-        onOpenGradients={() => setFoundationCollection('color', 'gradients')}
-        onBackToSystemColors={() => setFoundationCollection('color', 'primitives')}
+        onOpenGradients={() => {
+          setFoundationCollection('color', 'primitives')
+          setColorGradientsOpen(true)
+        }}
+        onBackToSystemColors={() => setColorGradientsOpen(false)}
         onOpenPrimitiveFamily={openPrimitiveFamily}
       />
     ) : section.key === 'typography' ? (
@@ -1606,14 +1631,13 @@ export default function Configurator() {
   // outer SectionRail, so `outerRailVisible` above stays false — but the
   // brand block's divider still needs to continue unbroken into that column.
   const themesCanvas = tab === 'foundations' && !exportMode
-  const themeLibraryVisible = themesCanvas
   const groupsColumnVisible = themesCanvas && themeWorkspaceTab !== 'preview'
-  // Color's Groups column can COLLAPSE on Primitives AND Semantics (Gradients
-  // keeps its full width — its rail is the gradient list, whose rows are named
-  // swatches with nothing glyph-sized to collapse to). Other foundations stay
-  // at 198px. Read from `colorControls`' own exported constants rather than
-  // repeating the numbers, since a mismatch here is exactly a broken line.
-  const groupsColumnCollapsed = groupsColumnVisible && groupsRailCollapsed && colorTab !== 'gradients'
+  // Color's Groups column collapses on Primitives, Semantics, and Gradients
+  // (the gradient list lives in that same rail, under States). Other
+  // foundations stay at 198px. Read from `colorControls`' own exported
+  // constants rather than repeating the numbers, since a mismatch here is
+  // exactly a broken line.
+  const groupsColumnCollapsed = groupsColumnVisible && groupsRailCollapsed
 
   // The global TopNav is mounted in EVERY view; this maps the current shell
   // state to its lit section.
@@ -1641,11 +1665,20 @@ export default function Configurator() {
   // aside beside it put the SAME specimen on screen twice and squeezed the
   // token table to ~238px between them (measured at 1266px). One preview.
   const showPreview = exportMode === 'save'
-  const themeWorkspaceRailVisible = themesCanvas && themeWorkspaceTab === 'primitives'
-  /** Foundation icon rail is Variables-only. Theme Preview and Get code both
-   *  already name their destination in the tab strip; a 64px Color/Font/Radius
-   *  switcher beside a CSS pane (or the artefact canvas) is leftover Variables
-   *  chrome. Switching lives on Variables, and it always offers all nine. */
+  // Figma / GitHub already own IntegrationStatusRail. Leaving Color · Font ·
+  // Radius beside that status column is two left rails on a connect screen,
+  // and a click on Color would bounce the surface back to artefacts — hide
+  // the switcher there so neither destination can pick a widget it doesn't
+  // render.
+  const themeHubConnecting = themeWorkspaceTab === 'preview'
+    && (themeHubSurface === 'figma' || themeHubSurface === 'github')
+  const themeWorkspaceRailVisible = themesCanvas
+    && themeWorkspaceTab !== 'code'
+    && !themeHubConnecting
+  /** Foundation icon rail on Theme Preview AND Variables. Preview lights the
+   *  widget that exists (Color → color edition, Font → text edition, …);
+   *  Variables keeps all nine tables. Get code uses its own scope rail.
+   *  Figma / GitHub drop the icon column too. */
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
   const skipCenterHeader = themesCanvas || tab === 'about'
@@ -1695,7 +1728,7 @@ export default function Configurator() {
             onConnectMcp={openMcpPage}
           />
         )}
-        brandWidth={themeLibraryVisible ? THEME_LIBRARY_WIDTH : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
+        brandWidth={themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
         // lockup overflows its own block by ~67px (measured) and the two lines
@@ -1737,45 +1770,48 @@ export default function Configurator() {
             onToggleCollapse={() => setRailCollapsed((v) => !v)}
           />
         )}
-        {themeLibraryVisible && (
-          <ThemeLibraryRail
-            previewTheme={previewTheme}
-            onPreviewThemeChange={changePreviewTheme}
-            onStylePreview={setStylePreview}
-            activeStylePreview={stylePreview}
-            onSyncFigma={syncFigmaForTheme}
-            onOpenInCode={openCodeForTheme}
-            syncFooter={themeWorkspaceSyncFooter}
-          />
-        )}
-
-        {/* ── Layer 1: the content surface, flush under the top bar ──
-            Variables' Groups column IS the outer rail (under the logo), so
-            this wrapper stays transparent there. Components / Docs / export
-            views paint `bg-app` and the hairline from the first column. */}
-        <div className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themeLibraryVisible || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}>
-          {/* On the Themes workspace the tab strip is a FULL-WIDTH row above the
-              icon rail + editor. GitHub and Figma sync live in ThemeLibraryRail. */}
+        <div
+          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+        >
           {themesCanvas && (
             <ThemeWorkspaceTabs
-              value={themeWorkspaceTab}
+              value={themeWorkspaceTab === 'code' ? null : themeWorkspaceTab}
               onChange={changeThemeWorkspaceTab}
               search={tokenSearchField}
+              leading={(
+                <ThemeSwitcher
+                  previewTheme={previewTheme}
+                  onPreviewThemeChange={changePreviewTheme}
+                  onStylePreview={setStylePreview}
+                  activeStylePreview={stylePreview}
+                  onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+                  onDuplicateTheme={() => {
+                    const key = useDesignStore.getState().duplicateTheme(
+                      previewTheme,
+                      t('Copy (duplicated theme suffix)'),
+                    )
+                    if (!key) return
+                    setStylePreview(null)
+                    changePreviewTheme(key)
+                  }}
+                  onOpenReset={() => setResetOpen(true)}
+                />
+              )}
             />
           )}
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
             // Variables only — which token TABLE the centre column shows.
-            // Theme Preview and Get code do not mount this rail: the tab strip
-            // already names those destinations, and a Color/Font/Radius column
-            // beside a CSS pane (or the artefact canvas) is leftover chrome.
+            // Theme Preview: Color / Font / Radius pick the matching widget.
+            // Variables: the same icons pick the token table. Get code is off.
             <FoundationIconRail
               orientation="vertical"
-              active={activeFoundation}
+              ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
+              active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
-                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => !VARIABLE_FOUNDATIONS.includes(foundation)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
             />
           )}
@@ -1811,6 +1847,8 @@ export default function Configurator() {
                   transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <ThemePreviewHub
+                    docsOpen={docsPanelOpen}
+                    onDocsOpenChange={setDocsPanelOpen}
                     surface={themeHubSurface}
                     onSurfaceChange={setThemeHubSurface}
                     previewTheme={previewTheme}
@@ -1819,9 +1857,13 @@ export default function Configurator() {
                     onAdoptStyle={changePreviewTheme}
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
-                    onOpenComponent={selectComponent}
                     onOpenComponents={() => changeTab('components')}
                     onEditFoundation={selectFoundation}
+                    onSyncFoundationFromDoc={(key) => {
+                      commitVisit()
+                      setActiveFoundation(key)
+                    }}
+                    activeFoundation={previewWidgetKey(activeFoundation)}
                     onOpenPrimitiveFamily={openPrimitiveFamily}
                     onOpenInVariables={openTokenInVariables}
                     figmaPublishState={figmaPublishState}
@@ -1868,11 +1910,7 @@ export default function Configurator() {
               ) : foundationCanvas ? (
                 <FoundationWorkbench
                   railCollapsed={groupsColumnCollapsed}
-                  onToggleRail={
-                    colorTab !== 'gradients'
-                      ? () => setGroupsRailCollapsed((collapsed) => !collapsed)
-                      : undefined
-                  }
+                  onToggleRail={() => setGroupsRailCollapsed((collapsed) => !collapsed)}
                   label={section.variablesLabel}
                   gutter={activeFoundation === 'icons'}
                   activeCollection={activeCollection}
@@ -1972,6 +2010,29 @@ export default function Configurator() {
               )}
             </aside>
           ))}
+            {themesCanvas && (
+              <>
+                <ThemePanel
+                  open={themeEditor !== false}
+                  editKey={typeof themeEditor === 'string' && themeEditor !== 'new' ? themeEditor : null}
+                  appearance={themeKinds[previewTheme] ?? 'light'}
+                  onClose={() => setThemeEditor(false)}
+                  onCreated={(key) => { changePreviewTheme(key); setThemeEditor(key) }}
+                  onRenamed={(oldKey, newKey) => {
+                    if (previewTheme === oldKey) changePreviewTheme(newKey)
+                    setThemeEditor(newKey)
+                  }}
+                  dockLeftOverride={0}
+                  dockToSelector=""
+                />
+                <ResetScopeControl
+                  previewTheme={previewTheme}
+                  trigger={false}
+                  open={resetOpen}
+                  onOpenChange={setResetOpen}
+                />
+              </>
+            )}
         </div>
       </div>
       </div>

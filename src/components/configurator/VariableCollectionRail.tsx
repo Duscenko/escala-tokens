@@ -8,6 +8,8 @@ export type VariableCollectionItem = {
   key: VariableCollectionKey
   label: string
   count?: number
+  /** Semantics collections use the variables mark. Everything else stays a folder. */
+  icon?: 'folder' | 'variables'
 }
 
 type CollectionContextValue = {
@@ -39,7 +41,7 @@ export function VariableCollectionProvider({
  * The mask reads only the file's alpha, so one asset serves every state and
  * both themes. Same technique as `ViewIcon` / `EditThemeIcon`.
  */
-export function FolderIcon({ size = 12 }: { size?: number }) {
+function MaskGlyph({ src, size }: { src: string; size: number }) {
   return (
     <span
       aria-hidden
@@ -47,11 +49,21 @@ export function FolderIcon({ size = 12 }: { size?: number }) {
       style={{
         width: size,
         height: size,
-        WebkitMask: "url('/icons/settings/folder.svg') center / contain no-repeat",
-        mask: "url('/icons/settings/folder.svg') center / contain no-repeat",
+        WebkitMask: `url('${src}') center / contain no-repeat`,
+        mask: `url('${src}') center / contain no-repeat`,
       }}
     />
   )
+}
+
+export function FolderIcon({ size = 12 }: { size?: number }) {
+  return <MaskGlyph src="/icons/settings/folder.svg" size={size} />
+}
+
+/** Color semantics is a variable layer, so its collection row uses the same
+ *  variables mark as the workspace tab — mask + currentColor, not a folder. */
+export function VariablesIcon({ size = 12 }: { size?: number }) {
+  return <MaskGlyph src="/icons/theme-hub-icons/Icon/variables.svg" size={size} />
 }
 
 // ─── Groups-section primitives ──────────────────────────────────────────────
@@ -209,7 +221,9 @@ export default function VariableCollectionRail({
                   selected ? 'text-fg bg-elevated/70' : 'text-fg-faint hover:text-fg-muted hover:bg-elevated/40'
                 }`}
               >
-                <span className="flex-shrink-0"><FolderIcon size={collapsed ? 16 : 12} /></span>
+                <span className="flex-shrink-0">{collection.icon === 'variables'
+                  ? <VariablesIcon size={collapsed ? 16 : 12} />
+                  : <FolderIcon size={collapsed ? 16 : 12} />}</span>
                 {!collapsed && <>
                   {/* Verbatim, no `uppercase` — these are names ("Color
                       primitives", "Shadow styles"), and shouting a name in CSS

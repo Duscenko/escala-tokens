@@ -14,7 +14,7 @@
 // playground AND the doc's preview/code block at once, so the snippet you copy
 // is the snippet for the variant on screen — which neither half could claim.
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   COMPONENTS, COMPONENT_KEYS, FIGMA_SAMPLE_KEYS, isInFigmaSample,
   type ComponentDef, type VariantAxis,
@@ -44,7 +44,7 @@ const KEYBOARD_ROWS: { key: string; description: string }[] = [
 
 /** First value of each axis = the plugin's default variant. One definition —
  *  the two merged files each carried their own copy of this expression. */
-function axisDefaults(def: ComponentDef): AxisValues {
+export function axisDefaults(def: ComponentDef): AxisValues {
   return Object.fromEntries(def.axes.map((a) => [a.name, a.values[0]]))
 }
 
@@ -133,8 +133,9 @@ function OptionSwitch({ label, checked, onChange }: { label: string; checked: bo
 // transparent fill, `#be3a2f` ink) while every one of those three consumers
 // kept printing `color="brand" style="solid"`. One shared snippet, computed
 // once by the parent and passed down, is what makes that impossible again.
-function Hero({
+export function ComponentCatalogueHero({
   def, tokens, values, onValuesChange, icons, leadingIcon, onLeadingIconChange, trailingIcon, onTrailingIconChange, snippet,
+  headerTrailing,
 }: {
   def: ComponentDef
   tokens: PreviewTokens
@@ -148,6 +149,9 @@ function Hero({
   /** Computed once by `ComponentArticle` from these same `values`/`icons` —
    *  Hero never recomputes its own copy. */
   snippet: string
+  /** Replaces the default Copy snippet control — e.g. Theme preview's link to
+   *  the full Components destination. */
+  headerTrailing?: ReactNode
 }) {
   const { t } = useI18n()
   const [view, setView] = useState<'preview' | 'code'>('preview')
@@ -185,7 +189,7 @@ function Hero({
             </div>
           }
         >
-          <CopyButton text={snippet} label={t('Copy snippet')} />
+          {headerTrailing ?? <CopyButton text={snippet} label={t('Copy snippet')} />}
         </BlockChrome>
 
         {view === 'preview' ? (
@@ -510,7 +514,7 @@ export function ComponentArticle({
           other piece of this page's state already is: `ComponentsView` keys
           its wrapping `motion.div` on `def.key`, remounting the whole
           article — no separate key needed here any more. */}
-      <Hero
+      <ComponentCatalogueHero
         def={def}
         tokens={tokens}
         values={values}

@@ -62,7 +62,7 @@ export const HUB_SURFACE_KEYS = [
 export type FoundationSectionKey = (typeof FOUNDATION_SECTION_KEYS)[number]
 export type CollectionSectionKey = (typeof COLLECTION_SECTION_KEYS)[number]
 export type HubSurfaceKey = (typeof HUB_SURFACE_KEYS)[number]
-export type WorkspaceTabKey = 'preview' | 'primitives' | 'code'
+export type WorkspaceTabKey = 'preview' | 'primitives' | 'documentation' | 'code'
 export type AppTabKey = 'about' | 'foundations' | 'components' | 'docs'
 
 export type WorkspacePlace = {
@@ -210,7 +210,8 @@ export function decodeWorkspaceSection(section: string | null | undefined): Work
   if (root === 'themes') {
     const [a, b] = rest
     if (isSurface(a) && !b) {
-      return { tab: 'foundations', workspace: 'preview', surface: a }
+      const surface = a
+      return { tab: 'foundations', workspace: 'preview', surface }
     }
     const theme = isSegment(a) ? a : undefined
     const surface = isSurface(b) ? b : 'artefacts'

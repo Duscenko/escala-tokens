@@ -1,25 +1,26 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePreviewTokens, resolvePreviewTokens } from '../../lib/previewTokens'
 import { resolveStylePreviewTokens, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
-import { COMPONENTS, type ComponentDef } from '../../lib/componentCatalogue'
+import { COMPONENTS } from '../../lib/componentCatalogue'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
-import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
-import { Live, PhosphorWeightProvider, TokenIcon, type AxisValues, type IconConcept, type IconOpts } from './docs/specimens'
+import { INSPECT_EXEMPT_ATTR, InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
+import { PhosphorWeightProvider, ICON_SLOTS, snippetFor, type AxisValues } from './docs/specimens'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import { PHOSPHOR_CORE } from '../../lib/iconLibraries'
-import ThemeQuickSettingsRail from './ThemeQuickSettingsRail'
+import { axisDefaults, ComponentCatalogueHero } from './docs/componentArticle'
+import { PHOSPHOR_LIBRARY } from '../../lib/iconLibraries'
+import ThemeQuickSettingsRail, { isQuickPanelFoundation, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
 import FigmaSyncView from './FigmaSyncView'
 import IntegrationStatusRail from './IntegrationStatusRail'
 import DocsView, { OVERVIEW_KEY } from './DocsView'
-import { type DocsRailRow } from './DocsRail'
-import { FOUNDATION_DOCS } from './docs/foundationDocs'
-import { COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH, PANEL_W, RailToggle, THEME_BAND_H } from './colorControls'
+import { FOUNDATION_DOCS, foundationDoc } from './docs/foundationDocs'
+import { PANEL_W, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
@@ -37,71 +38,11 @@ import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
 // screens. Don't re-add it as a fourth icon — route to the tab instead.
-type HubView = 'artefacts' | 'components' | 'documentation'
-export type ThemeHubSurface = HubView | 'github' | 'figma'
-
-const HUB_VIEWS: { key: HubView; label: string }[] = [
-  { key: 'artefacts', label: 'Artefacts' },
-  { key: 'components', label: 'Components' },
-  { key: 'documentation', label: 'Documentation' },
-]
-
-// The overview row + article used to read "System reference" — worded for the
-// top-nav Docs destination, which never actually renders it (`allowReference`
-// is false there). This surface is ALWAYS scoped to the previewed theme, so the
-// row names it as the theme's own whole-system sheet and the article's title is
-// the theme's name (see `overviewTitle` threaded to `DocsView` below).
-const DOC_ROWS: DocsRailRow[] = [
-  { key: OVERVIEW_KEY, label: 'Theme reference', heading: 'Theme doc' },
-  ...FOUNDATION_DOCS.map((doc) => ({ key: doc.key, label: doc.label })),
-]
-
-// `themeDisplayName` is shared from `lib/themeSources` — the rail, this hub and
-// the Export wizard all name a theme the same way.
-
-const HUB_ICON_SOURCES: Record<HubView, string> = {
-  artefacts: '/icons/settings/artefacts.svg',
-  components: '/icons/theme-hub-icons/Icon/components.svg',
-  documentation: '/icons/theme-hub-icons/Icon/doc.svg',
-}
-
-// The glyph is a MASK painted with `currentColor`, not an `<img>` under an
-// `invert` filter. The filter approach only works while every source file is
-// filled the same near-white — a new icon dropped in with a different fill
-// (components.svg ships `fill="white"`) inverts to a different ink than its
-// neighbours, and neither state can follow the button's own colour. Masking
-// makes active (dark ink on the white pill) and inactive (page ink, dimmed)
-// derive from one place, in both chrome themes. Same fix as
-// FoundationIconRail's active glyph.
-function ViewIcon({ view }: { view: HubView }) {
-  const source = `url('${HUB_ICON_SOURCES[view]}') center / contain no-repeat`
-  return <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: source, mask: source }} />
-}
-
-function ThemeViewSwitcher({ view, onChange }: {
-  view: HubView
-  onChange: (view: HubView) => void
-}) {
-  const { t } = useI18n()
-  return (
-    <div role="tablist" aria-label={t('Theme Preview views')} onKeyDown={(event) => {
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-        event.preventDefault()
-        const current = Math.max(0, HUB_VIEWS.findIndex((item) => item.key === view))
-        const next = (current + (event.key === 'ArrowRight' ? 1 : HUB_VIEWS.length - 1)) % HUB_VIEWS.length
-        onChange(HUB_VIEWS[next].key)
-      }} className="flex h-8 items-center gap-0.5 rounded-lg p-0.5 border border-line bg-tab-bar">
-        {HUB_VIEWS.map((item) => {
-          const active = item.key === view
-          return <button key={item.key} type="button" role="tab" aria-selected={active} tabIndex={active ? 0 : -1} aria-label={t(item.label)} title={t(item.label)} onClick={() => onChange(item.key)} className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active ? 'bg-inverse-action text-inverse-action-ink shadow-sm' : `text-fg-faint ${CHROME_CONTROL_HOVER}`}`}><ViewIcon view={item.key} /></button>
-        })}
-    </div>
-  )
-}
+export type ThemeHubSurface = 'artefacts' | 'github' | 'figma'
 
 // Sun / moon assets carry a hardcoded `stroke="white"`, so they're painted as
-// CSS masks to follow the button's ink — same technique as ThemeViewSwitcher's
-// `ViewIcon` and the Themes Library toggle.
+// CSS masks to follow the button's ink — same technique as the Documentation
+// workspace `ViewIcon` rail and the Themes Library toggle.
 const APPEARANCE_ICON: Record<ThemeAppearance, string> = {
   light: '/icons/settings/light-mode.svg',
   dark: '/icons/settings/dark-mode.svg',
@@ -145,12 +86,6 @@ function IntegrationContextBar({ view, onBack }: { view: 'github' | 'figma'; onB
   )
 }
 
-interface HubRailRow<Key extends string> {
-  key: Key
-  label: string
-  icon?: ReactNode
-}
-
 function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => void }) {
   const { t } = useI18n()
   return (
@@ -189,10 +124,12 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
  *
  * Inspect-on fills the inner pill with `--accent-solid` / `--accent-ink` so
  * the mode reads as armed without inventing a second selected-chip language.
+ * The visible label switches — **Inspect tokens** to enter, **Exit inspector**
+ * to leave — so the exit is on the control itself, not only in the tooltip.
  */
 function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
   const { t } = useI18n()
-  const label = t('Inspect tokens')
+  const label = active ? t('Exit inspector') : t('Inspect tokens')
   return (
     <div
       className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
@@ -205,8 +142,8 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
         aria-pressed={active}
         aria-label={label}
         title={active
-          ? `${label} — ${t('Click to turn Inspect tokens off')}`
-          : `${label} — ${t('point at a component or the page to see the roles that paint it')}`}
+          ? t('Return to normal interaction on the canvas')
+          : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`}
         className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
             ? 'bg-accent-solid text-accent-ink'
@@ -245,6 +182,29 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
  * Hover is `CHROME_CONTROL_HOVER` (inset wash), not `hover:bg-surface` — same
  * as the Community banner and session chips on workspace gray.
  */
+function DocsPanelButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  const { t } = useI18n()
+  const mask = `url('/icons/theme-hub-icons/Icon/doc.svg') center / contain no-repeat`
+  return (
+    <div className="flex h-8 items-center rounded-lg border border-line bg-tab-bar p-0.5">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        aria-label={t('Docs')}
+        title={t('Docs')}
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
+          ? 'bg-elevated font-medium text-fg shadow-sm'
+          : `font-normal text-fg ${CHROME_CONTROL_HOVER}`
+        }`}
+      >
+        <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
+        {t('Docs')}
+      </button>
+    </div>
+  )
+}
+
 function FigmaSyncButton({ onOpen }: { onOpen: () => void }) {
   const { t } = useI18n()
   return (
@@ -289,11 +249,13 @@ const DRAWER_GUTTER = 24
 function ArtefactsView({
   previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
   inspecting, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
+  onOpenComponents,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
   accentPreview: string | null
   stylePreview: StylePreview | null
+  onOpenComponents: () => void
   /** One appearance for every tile — the whole board is light or dark. */
   tileAppearances: ThemeAppearance[]
   /** Uniform board appearance — all tiles share light or dark. */
@@ -362,14 +324,22 @@ function ArtefactsView({
       className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
-      <div className="mx-auto w-full" style={inspecting ? { cursor: 'crosshair' } : undefined}>
-        <InspectorModeProvider active={inspecting}>
-          <SystemCollage
-            tokensByAppearance={tokensByAppearance}
-            tileAppearances={tileAppearances}
-            projectName={store.projectName}
-          />
-        </InspectorModeProvider>
+      <div className="mx-auto w-full">
+        <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
+          <InspectorModeProvider active={inspecting}>
+            <SystemCollage
+              tokensByAppearance={tokensByAppearance}
+              tileAppearances={tileAppearances}
+              projectName={store.projectName}
+            />
+          </InspectorModeProvider>
+        </div>
+        <ComponentsButtonTeaser
+          previewTheme={previewTheme}
+          previewAppearance={previewAppearance}
+          stylePreview={stylePreview}
+          onOpenComponents={onOpenComponents}
+        />
       </div>
       <InspectorOverlay
         active={inspecting}
@@ -385,470 +355,65 @@ function ArtefactsView({
 }
 
 
-// ── Component variants — a TASTER, deliberately not the catalogue ───────────
-// This replaced a "Variables" view that re-rendered the semantic / type /
-// layout role previews the Primitives workspace tab already owns: the same
-// tokens, twice, one tab apart. What the hub was actually missing is what
-// those tokens BUILD. Rules that keep it a taster instead of a second
-// catalogue browser:
-//  · **The variants are READ from `COMPONENTS`, never listed here** — the same
-//    rule `Live` follows for its State axis, so a plugin change can't leave a
-//    row advertising a variant the system doesn't ship.
-//  · **Capped at `SHOWCASE_LIMIT` per row, and the row says so** ("+2 more").
-//    A row that quietly truncated would misreport the system's size.
-//  · **Every row is a link.** The full article — all axes, props, a11y, Figma
-//    sets, code — lives on the Components destination, which has the rail,
-//    search and width for it. This view's job is to make you want to go there.
-const SHOWCASE_LIMIT = 4
-
-type ShowcaseRow = {
-  /** Catalogue key — indexes both `SPECIMENS` and the axes read below. */
-  key: string
-  /** Axis whose values become the row. */
-  axis: string
-  /** Axis values held fixed across the row, so only `axis` varies. */
-  base?: AxisValues
-  /** Feed the system's own icon library into the specimen (Button only). */
-  icons?: boolean
-}
-
-// ONE column, so every row gets the full width: a specimen carries its own
-// hardcoded width (Input 260, InlineAlert 320…) and four of those never fit a
-// half-column — they stacked into a ~550px tower that dragged the short section
-// beside it to the same height, mostly dead space (measured: Button 548px for
-// ~120px of content).
-//
-// Button is NOT a row. The All board already leads with Actions (Style × Color).
-// A second "Button" strip under that was the same component twice — the rail
-// said Button, the board said Actions, the cells all read "Button". Actions
-// is the name; the Button article is still one click off the Actions heading.
-const SHOWCASE: ShowcaseRow[] = [
-  { key: 'Badge', axis: 'Color', base: { Style: 'Soft' } },
-  { key: 'Avatar', axis: 'Size' },
-  { key: 'StatusBadge', axis: 'Status' },
-  { key: 'Input', axis: 'Type' },
-  { key: 'InlineAlert', axis: 'Status' },
-  { key: 'Toast', axis: 'Status' },
-]
-
-/** Rail + All-board key for the Style × Color matrix. Not a catalogue key. */
-const ACTIONS_KEY = 'actions'
-
-/** Verb on the Actions matrix — the Color axis already names the intent, so
- *  stamping "Button" on every cell restated the component instead of the act. */
-const ACTION_LABEL: Record<string, string> = {
-  Brand: 'Save',
-  Danger: 'Delete',
-  Success: 'Confirm',
-}
-
-// ── Basic components — the board at the top of the showcase ────────────────
-// The per-component rows below answer "what does ONE component look like across
-// ONE axis". They can't answer "what does this theme look like", because you
-// read them one at a time. This board is the other half: every basic control on
-// screen at once, grouped the way a UI kit's cover page groups them — icons,
-// actions, form controls, indicators — so a theme is judged as a set rather
-// than as seven separate rows.
-//
-// Same rules as `SHOWCASE`, for the same reasons:
-//  · **Every variant is READ from `COMPONENTS`** (`axisValuesOf`), never listed
-//    here — a plugin change can't leave this board advertising a variant the
-//    system doesn't ship.
-//  · **A cell that resolves to nothing renders nothing.** A component dropped
-//    from the catalogue leaves a gap, not a broken tile.
-//  · It is still a TASTER: no axis dropdowns, no props, no code. The article on
-//    the Components destination owns all of that.
-
-/** A component's values for one axis, straight from the catalogue. */
-function axisValuesOf(key: string, axis: string): string[] {
-  return COMPONENTS.find((c) => c.key === key)?.axes.find((a) => a.name === axis)?.values ?? []
-}
-
-/** The icon strip. Concepts, not glyph names — `TokenIcon` resolves each through
- *  the system's own library, so switching Icons repaints the whole row. */
-const BASIC_ICONS = Object.keys(PHOSPHOR_CORE) as IconConcept[]
-
-function boardStroke(tokens: PreviewTokens): string {
-  return tokens.borderDefault || tokens.border || '#eaecf0'
-}
-
-/** One well for the whole kit cover — five nested cards was the disorder.
- *  Sections inside are captions + a hairline, not another box. */
-function BoardSurface({ tokens, children }: { tokens: PreviewTokens; children: ReactNode }) {
-  return (
-    <div
-      className="px-5 py-5"
-      style={{
-        background: tokens.surface,
-        border: `1px solid ${boardStroke(tokens)}`,
-        borderRadius: 14,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function BoardSection({
-  title, note, tokens, children, divided, onTitleClick,
-}: {
-  title: string
-  note?: string
-  tokens: PreviewTokens
-  children: ReactNode
-  /** Hairline above — first section omits it. */
-  divided?: boolean
-  onTitleClick?: () => void
-}) {
-  const headingClass = 'text-caption font-semibold text-fg'
-  return (
-    <section
-      className={`min-w-0 flex flex-col gap-2.5 ${divided ? 'mt-5 pt-5' : ''}`}
-      style={divided ? { borderTop: `1px solid ${boardStroke(tokens)}` } : undefined}
-    >
-      <div className="flex items-baseline justify-between gap-3">
-        {onTitleClick ? (
-          <button
-            type="button"
-            onClick={onTitleClick}
-            className={`${headingClass} hover:text-accent-ui focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded transition-colors`}
-          >
-            {title}
-          </button>
-        ) : (
-          <h4 className={headingClass}>{title}</h4>
-        )}
-        {note && <span className="flex-shrink-0 text-mini uppercase tracking-widest text-fg-faint">{note}</span>}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-/** One labelled cell — the specimen over its variant name. */
-function BoardCell({ label, tokens, children }: { label?: string; tokens: PreviewTokens; children: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col items-start gap-1.5">
-      {children}
-      {label && (
-        <span className="text-micro uppercase tracking-wide" style={{ color: tokens.fgMuted }}>{label}</span>
-      )}
-    </div>
-  )
-}
-
-function ActionsMatrix({ tokens, icons }: { tokens: PreviewTokens; icons: IconOpts }) {
-  const buttonStyles = axisValuesOf('Button', 'Style')
-  const buttonColors = axisValuesOf('Button', 'Color')
-  if (buttonStyles.length === 0) return null
-  return (
-    // The matrix is the one block wide enough to overflow a narrow column
-    // (measured: 4 button columns + the label track need ~452px against a
-    // 409px panel with both rails open), so it scrolls inside its own
-    // container rather than wrapping, which would break the grid the labels
-    // describe.
-    <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
-      <div
-        className="grid items-center gap-x-3 gap-y-3"
-        style={{ gridTemplateColumns: `56px repeat(${buttonStyles.length}, minmax(max-content, 1fr))` }}
-      >
-        <span aria-hidden />
-        {buttonStyles.map((style) => (
-          <span key={style} className="text-micro uppercase tracking-wide" style={{ color: tokens.fgMuted }}>{style}</span>
-        ))}
-        {(buttonColors.length ? buttonColors : ['Brand']).map((color) => (
-          <Fragment key={color}>
-            <span className="text-micro uppercase tracking-wide" style={{ color: tokens.fgMuted }}>{color}</span>
-            {buttonStyles.map((style) => (
-              <span key={style} className="flex">
-                <Live c="Button" t={tokens} v={{ Color: color, Style: style, Size: 'SM' }} icons={icons}>
-                  {ACTION_LABEL[color] ?? color}
-                </Live>
-              </span>
-            ))}
-          </Fragment>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function BasicsBoard({
-  tokens, icons, onOpenActions,
-}: {
-  tokens: PreviewTokens
-  icons: IconOpts
-  onOpenActions?: () => void
-}) {
-  const badgeColors = axisValuesOf('Badge', 'Color')
-  const statuses = axisValuesOf('StatusBadge', 'Status')
-  const avatarSizes = axisValuesOf('Avatar', 'Size')
-  const alertStatuses = axisValuesOf('InlineAlert', 'Status')
-  const toastStatuses = axisValuesOf('Toast', 'Status')
-  const hasActions = axisValuesOf('Button', 'Style').length > 0
-  let section = 0
-
-  return (
-    <BoardSurface tokens={tokens}>
-      {BASIC_ICONS.length > 0 && (
-        <BoardSection title="Icons" note={`${BASIC_ICONS.length} core`} tokens={tokens} divided={section++ > 0}>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5">
-            {BASIC_ICONS.map((concept) => (
-              <TokenIcon key={concept} t={tokens} concept={concept} size={20} color={tokens.neutralText} />
-            ))}
-          </div>
-        </BoardSection>
-      )}
-
-      {hasActions && (
-        <BoardSection title="Actions" note="Style × Color" tokens={tokens} divided={section++ > 0} onTitleClick={onOpenActions}>
-          <ActionsMatrix tokens={tokens} icons={icons} />
-        </BoardSection>
-      )}
-
-      <BoardSection title="Form controls" tokens={tokens} divided={section++ > 0}>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-start gap-x-5 gap-y-4">
-            <Live c="Input" t={tokens} v={{ Type: 'Default' }} />
-            <Live c="Select" t={tokens} v={{}} />
-          </div>
-          <div className="flex flex-wrap items-start gap-x-5 gap-y-4">
-            <BoardCell label="Checkbox" tokens={tokens}><Live c="Checkbox" t={tokens} v={{ Checked: 'True' }} toggle="Checked" /></BoardCell>
-            <BoardCell label="Radio" tokens={tokens}><Live c="Radio" t={tokens} v={{ Checked: 'True' }} toggle="Checked" /></BoardCell>
-            <BoardCell label="Switch" tokens={tokens}><Live c="Toggle" t={tokens} v={{ On: 'True' }} toggle="On" /></BoardCell>
-            <BoardCell label="Slider" tokens={tokens}><Live c="Slider" t={tokens} v={{}} /></BoardCell>
-          </div>
-        </div>
-      </BoardSection>
-
-      <BoardSection title="Indicators" tokens={tokens} divided={section++ > 0}>
-        <div className="flex flex-col gap-3.5">
-          {badgeColors.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
-              {badgeColors.map((color) => (
-                <Live key={color} c="Badge" t={tokens} v={{ Color: color, Style: 'Soft' }} />
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
-            {statuses.map((status) => <Live key={status} c="StatusBadge" t={tokens} v={{ Status: status }} />)}
-            <Live c="Chip" t={tokens} v={{ Selected: 'True' }} />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
-            {avatarSizes.map((size) => <Live key={size} c="Avatar" t={tokens} v={{ Size: size }} />)}
-          </div>
-          <Live c="Progress" t={tokens} v={{}} />
-        </div>
-      </BoardSection>
-
-      {(alertStatuses.length > 0 || toastStatuses.length > 0) && (
-        <BoardSection title="Feedback" note="Status" tokens={tokens} divided={section++ > 0}>
-          <div className="flex flex-col gap-3.5">
-            {alertStatuses.length > 0 && (
-              <div className="flex flex-wrap items-start gap-3">
-                {alertStatuses.map((status) => (
-                  <Live key={status} c="InlineAlert" t={tokens} v={{ Status: status }} />
-                ))}
-              </div>
-            )}
-            {toastStatuses.length > 0 && (
-              <div className="flex flex-wrap items-start gap-3">
-                {toastStatuses.map((status) => (
-                  <Live key={status} c="Toast" t={tokens} v={{ Status: status }} />
-                ))}
-              </div>
-            )}
-          </div>
-        </BoardSection>
-      )}
-    </BoardSurface>
-  )
-}
-
-/** Rail row labels come from the catalogue, so a renamed component renames its
- *  own filter — nothing here restates a label. `All` is the kit cover only
- *  (one board, no repeated rows underneath). `Actions` is the Style × Color
- *  matrix — not a second "Button" row. The other keys zoom one SHOWCASE axis. */
-function showcaseRailRows(): { key: string; label: string }[] {
-  return [
-    { key: 'all', label: 'All' },
-    { key: ACTIONS_KEY, label: 'Actions' },
-    ...SHOWCASE.map((row) => ({
-      key: row.key,
-      label: COMPONENTS.find((component) => component.key === row.key)?.label ?? row.key,
-    })),
-  ]
-}
-
-/** Two-letter mark for the collapsed strip — the same shape `SemanticGroupRail`
- *  falls back to, so a collapsed rail reads the same way across the app. */
-function compactMark(label: string): string {
-  const words = label.trim().split(/\s+/).filter(Boolean)
-  if (words.length > 1) return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase()
-  return label.slice(0, 2).toUpperCase()
-}
-
-// ONE rail for every list-column in this hub — the component showcase's filter
-// AND the System doc's page list. They were two components with two widths
-// (240 / 198), two row treatments (all-caps 10.5px / sentence-case 12px) and
-// only one of them collapsible, sitting in the same slot one view apart, so the
-// column visibly jumped when you switched views. Merged rather than aligned by
-// hand, for the same reason `RailGroupNav` and `RailSelect` were: two copies of
-// one control drift, and this pair already had.
-//
-// It sits beside the framed canvas rather than inside it, so switching views
-// changes the list and canvas together without nesting one rail inside another.
-function HubRail<Key extends string>({
-  title, ariaLabel, noun, rows, active, collapsed, onToggleCollapse, onChange, footer,
-}: {
-  title: string
-  ariaLabel: string
-  /** What the rail lists, for `RailToggle`'s label ("Collapse the …"). */
-  noun: string
-  rows: HubRailRow<Key>[]
-  active: Key
-  collapsed: boolean
-  onToggleCollapse: () => void
-  onChange: (key: Key) => void
-  footer?: ReactNode
-}) {
-  return (
-    <nav
-      aria-label={ariaLabel}
-      className={`flex-shrink-0 h-full flex flex-col border-r border-line ${WORKSPACE_CHROME} overflow-hidden transition-[width] duration-200`}
-      style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
-    >
-      <div className={`h-[54px] flex-shrink-0 flex items-center border-b border-line ${collapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-4 pr-2'}`}>
-        {!collapsed && <span className="min-w-0 truncate text-ui font-semibold text-fg">{title}</span>}
-        <RailToggle
-          collapsed={collapsed}
-          onClick={onToggleCollapse}
-          noun={noun}
-          expandedHint="Collapse sidebar — give the content more width"
-        />
-      </div>
-      <div className={`flex-1 min-h-0 overflow-y-auto flex flex-col gap-0.5 py-3 ${collapsed ? 'px-2 items-center' : 'px-3'}`}>
-        {rows.map((row) => {
-          const selected = row.key === active
-          return (
-            <button
-              key={row.key}
-              type="button"
-              onClick={() => onChange(row.key)}
-              aria-current={selected ? 'page' : undefined}
-              aria-label={row.label}
-              title={collapsed ? row.label : undefined}
-              className={`flex items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${collapsed ? 'w-10 h-8 justify-center' : 'w-full gap-2.5 px-2.5 py-2 text-left'} ${
-                selected ? 'text-fg font-semibold bg-elevated/70' : 'text-fg-muted hover:text-fg hover:bg-elevated/40'
-              }`}
-            >
-              {/* The row prints the label VERBATIM — no `uppercase`. These are
-                  names (a component, a foundation, a theme), and CSS-shouting a
-                  name misreports it: the catalogue says "Status Badge", the rail
-                  said "STATUS BADGE". The all-caps device is reserved for the
-                  eyebrow CAPTION over a group, which labels a set rather than
-                  naming a thing. Collapsed is the one exception — a two-letter
-                  MARK is an abbreviation, not the name. */}
-              {!collapsed && row.icon ? (
-                <span className={`w-4 h-4 flex-shrink-0 grid place-items-center ${selected ? 'opacity-100' : 'opacity-65'}`}>{row.icon}</span>
-              ) : null}
-              <span className={collapsed ? 'text-micro font-semibold uppercase tracking-[0.06em]' : 'min-w-0 flex-1 truncate text-body'}>
-                {collapsed ? compactMark(row.label) : row.label}
-              </span>
-            </button>
-          )
-        })}
-        {footer && <div className={`${collapsed ? 'pt-2' : 'mt-3 border-t border-line pt-3'}`}>{footer}</div>}
-      </div>
-    </nav>
-  )
-}
-
-function ComponentVariantsView({
-  previewTheme, previewAppearance, stylePreview, active, onOpenComponent,
+/** Button playground under the bento — same hero + axis rail as Components →
+ *  Button. Opts out of inspector hit-testing. */
+function ComponentsButtonTeaser({
+  previewTheme, previewAppearance, stylePreview, onOpenComponents,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
   stylePreview: StylePreview | null
-  /** Rail selection — `'all'` or a catalogue key. */
-  active: string
-  onOpenComponent: (component: ComponentDef) => void
+  onOpenComponents: () => void
 }) {
+  const { t } = useI18n()
   const store = useDesignStore()
+  const def = COMPONENTS.find((c) => c.key === 'Button')
   const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
   const previewTokens = useMemo(
     () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
     [stylePreview, store, previewTheme],
   )
   const tokens = previewTokens ?? liveTokens
-  // The system's OWN library, so a Button here repaints when Icons changes —
-  // the same rule the Color collage and the artefacts follow.
-  const icons = { prefix: tokens.iconPrefix ?? 'phosphor', leading: true, trailing: false }
-  // `all` is the kit cover alone. Repeating SHOWCASE rows under it restated
-  // Badge / Avatar / Input / alerts the board already showed, and Button
-  // twice (Actions + a Style strip). A catalogue key zooms one axis; Actions
-  // zooms the matrix.
-  const showBoard = active === 'all'
-  const showActions = active === ACTIONS_KEY
-  const buttonDef = COMPONENTS.find((component) => component.key === 'Button')
-  const rows = SHOWCASE
-    .filter((row) => !showBoard && !showActions && row.key === active)
-    .map((row) => {
-      const def = COMPONENTS.find((component) => component.key === row.key)
-      const values = def?.axes.find((axis) => axis.name === row.axis)?.values ?? []
-      return { ...row, def, values }
-    })
-    .filter((row) => row.def && row.values.length > 0)
+  const [values, setValues] = useState<AxisValues>(() => (def ? axisDefaults(def) : {}))
+  const [leadingIcon, setLeadingIcon] = useState(false)
+  const [trailingIcon, setTrailingIcon] = useState(false)
+  const slots = def ? ICON_SLOTS[def.key] : undefined
+  const icons = slots
+    ? { prefix: tokens.iconPrefix ?? PHOSPHOR_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
+    : undefined
+  const snippet = def ? snippetFor(def, values, icons) : ''
+
+  if (!def) return null
 
   return (
     <PhosphorWeightProvider weight={tokens.iconWeight}>
-    <div className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6">
-      <div className="mx-auto max-w-[1120px]">
-        {showBoard && (
-          <BasicsBoard
-            tokens={tokens}
-            icons={icons}
-            onOpenActions={buttonDef ? () => onOpenComponent(buttonDef) : undefined}
-          />
-        )}
-
-        {showActions && (
-          <BoardSurface tokens={tokens}>
-            <BoardSection
-              title="Actions"
-              note="Style × Color"
-              tokens={tokens}
-              onTitleClick={buttonDef ? () => onOpenComponent(buttonDef) : undefined}
+      <div
+        {...{ [INSPECT_EXEMPT_ATTR]: '' }}
+        className="mx-auto mt-10 w-full max-w-[1120px] border-t border-line/60 pt-8 cursor-default"
+      >
+        <h3 className="mb-5 text-ui font-semibold text-fg">{t('Components')}</h3>
+        <ComponentCatalogueHero
+          def={def}
+          tokens={tokens}
+          values={values}
+          onValuesChange={setValues}
+          icons={icons}
+          leadingIcon={leadingIcon}
+          onLeadingIconChange={setLeadingIcon}
+          trailingIcon={trailingIcon}
+          onTrailingIconChange={setTrailingIcon}
+          snippet={snippet}
+          headerTrailing={
+            <button
+              type="button"
+              onClick={onOpenComponents}
+              className="flex items-center gap-1.5 text-caption text-fg-muted hover:text-fg transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded"
             >
-              <ActionsMatrix tokens={tokens} icons={icons} />
-            </BoardSection>
-          </BoardSurface>
-        )}
-
-        {rows.map(({ key, axis, base, icons: withIcons, def, values }) => {
-          const shown = values.slice(0, SHOWCASE_LIMIT)
-          const hidden = values.length - shown.length
-          return (
-            <BoardSurface key={key} tokens={tokens}>
-              <BoardSection
-                title={def?.label ?? key}
-                note={`${axis}${hidden > 0 ? ` · +${hidden} more` : ''}`}
-                tokens={tokens}
-                onTitleClick={def ? () => onOpenComponent(def) : undefined}
-              >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-                  {shown.map((value) => (
-                    <BoardCell key={value} label={value} tokens={tokens}>
-                      <Live c={key} t={tokens} v={{ ...base, [axis]: value }} icons={withIcons ? icons : undefined} />
-                    </BoardCell>
-                  ))}
-                </div>
-              </BoardSection>
-            </BoardSurface>
-          )
-        })}
+              {t('Catalogue')} · {COMPONENTS.length} →
+            </button>
+          }
+        />
       </div>
-    </div>
     </PhosphorWeightProvider>
   )
 }
@@ -883,13 +448,17 @@ function DocumentationView({ onEditFoundation, exits, active, onChange, overview
 }
 
 export default function ThemePreviewHub({
+  docsOpen,
+  onDocsOpenChange,
   surface, onSurfaceChange,
   previewTheme, previewAppearance, stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange,
-  onOpenComponent, onOpenComponents,
-  onEditFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
+  onOpenComponents,
+  onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange,
   githubPushState, onGithubPushStateChange, docsExits,
 }: {
+  docsOpen: boolean
+  onDocsOpenChange: (open: boolean) => void
   surface: ThemeHubSurface
   onSurfaceChange: (surface: ThemeHubSurface) => void
   previewTheme: string
@@ -901,11 +470,13 @@ export default function ThemePreviewHub({
   onAdoptStyle: (themeKey: string) => void
   onSelectTheme: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
-  /** Open one component's full article on the Components destination. */
-  onOpenComponent: (component: ComponentDef) => void
-  /** Open the Components destination itself — the showcase's whole payoff. */
+  /** Open the Components destination — catalogue link in the Button teaser header. */
   onOpenComponents: () => void
   onEditFoundation: (key: string) => void
+  /** Keep the Variables icon rail in sync when the reader jumps foundations in-doc. */
+  onSyncFoundationFromDoc: (foundationKey: string) => void
+  /** Foundation the workspace icon rail has selected — drives the contextual doc. */
+  activeFoundation?: QuickPanelFoundation
   /** Jump to a family's ramp in Color · Primitives from the Semantics
    *  Token Details drawer (family vocabulary name). */
   onOpenPrimitiveFamily: (family: string) => void
@@ -936,6 +507,7 @@ export default function ThemePreviewHub({
   // back to ordinary interaction. Not persisted and not part of
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
   const [inspecting, setInspecting] = useState(true)
+  const [contrastOpen, setContrastOpen] = useState(false)
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
   /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */
@@ -991,19 +563,28 @@ export default function ThemePreviewHub({
       return next
     })
   }
-  const [showcase, setShowcase] = useState('all')
-  const [docPage, setDocPage] = useState<string>(OVERVIEW_KEY)
-  // ONE collapse preference for the whole hub, not one per view: it's the same
-  // 240px slot in every view, so collapsing it on Components and finding it
-  // expanded again on System doc would read as two different columns — the
-  // exact confusion merging them into `HubRail` exists to remove.
-  const [railCollapsed, setRailCollapsed] = useState(false)
   const [hubDocActions, setHubDocActions] = useState<ReactNode>(null)
+  const [docPageOverride, setDocPageOverride] = useState<string | null>(null)
+  const contextDocKey = useMemo(() => {
+    const f = activeFoundation ?? 'color'
+    return isQuickPanelFoundation(f) ? f : 'color'
+  }, [activeFoundation])
+  useEffect(() => { setDocPageOverride(null) }, [contextDocKey])
+  useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
+  useEffect(() => { if (docsOpen) setContrastOpen(false) }, [docsOpen])
+  const activeDocKey = docPageOverride ?? contextDocKey
+  const handleDocNavigate = (key: string) => {
+    setDocPageOverride(key)
+    if (foundationDoc(key)) onSyncFoundationFromDoc(key)
+  }
   const hubRootRef = useRef<HTMLElement>(null)
-  const hubSurface: HubView | null = surface === 'artefacts' || surface === 'components' || surface === 'documentation'
-    ? surface
-    : null
-  const hubViewLabel = HUB_VIEWS.find((v) => v.key === hubSurface)?.label ?? ''
+  const hubViewLabel = contrastOpen && surface === 'artefacts' && !docsOpen
+    ? t('Contrast grid')
+    : docsOpen
+      ? (activeDocKey === OVERVIEW_KEY
+        ? t('Theme reference')
+        : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? t('Docs')))
+      : t('Artefacts')
   // Flip the PREVIEW's appearance (the board on the right), not the workspace
   // chrome — same contract the Color-edition card's toggle had before it moved
   // up here. Clearing `accentPreview` mirrors the rail's own wrapper so an
@@ -1015,6 +596,9 @@ export default function ThemePreviewHub({
   }
   useEffect(() => { setRandomBoardAppearance(null) }, [previewTheme])
   useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
+  useEffect(() => {
+    if (activeFoundation !== 'color' || surface !== 'artefacts') setContrastOpen(false)
+  }, [activeFoundation, surface])
   // Random paints a view-only light/dark on the board. Reset restores the
   // theme's tokens but used to leave that overlay on, so the canvas stayed
   // on the random appearance while everything else snapped back.
@@ -1056,46 +640,12 @@ export default function ThemePreviewHub({
   // and collapse state cannot disturb the preview surface.
   return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
     <div className="flex-1 min-h-0 flex">
-      {surface === 'components' && !needsMyTheme && (
-        <HubRail
-          title={t('Components')}
-          ariaLabel={t('Component showcase')}
-          noun="component list"
-          rows={showcaseRailRows()}
-          active={showcase}
-          collapsed={railCollapsed}
-          onToggleCollapse={() => setRailCollapsed((collapsed) => !collapsed)}
-          onChange={setShowcase}
-          footer={
-            <button
-              type="button"
-              onClick={onOpenComponents}
-              aria-label={`Open the catalogue — ${COMPONENTS.length} components`}
-              title={railCollapsed ? `Catalogue · ${COMPONENTS.length}` : undefined}
-              className={`flex h-8 w-full items-center justify-center rounded-lg border border-line bg-surface text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${railCollapsed ? 'px-1' : 'px-2.5'}`}
-            >
-              {railCollapsed ? String(COMPONENTS.length) : <>Catalogue · {COMPONENTS.length} →</>}
-            </button>
-          }
-        />
-      )}
-      {surface === 'documentation' && !needsMyTheme && (
-        <HubRail
-          title="Theme doc"
-          ariaLabel="Documentation pages"
-          noun="page list"
-          rows={DOC_ROWS}
-          active={docPage}
-          collapsed={railCollapsed}
-          onToggleCollapse={() => setRailCollapsed((collapsed) => !collapsed)}
-          onChange={setDocPage}
-        />
-      )}
-      {surface === 'artefacts' && !needsMyTheme && (
+      {surface === 'artefacts' && !needsMyTheme && !docsOpen && (
         <ThemeQuickSettingsRail
           key={previewTheme}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
+          activePanel={activeFoundation ?? 'color'}
           // "Go to advanced edition" IS `selectFoundation` — the shell handler
           // that switches to the Variables tab on a given foundation. Passing
           // it straight through is what makes the button land on the very
@@ -1107,6 +657,8 @@ export default function ThemePreviewHub({
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
           onRandomBoardAppearance={setRandomBoardAppearance}
+          contrastOpen={contrastOpen}
+          onContrastOpenChange={setContrastOpen}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
@@ -1122,7 +674,7 @@ export default function ThemePreviewHub({
         />
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {hubSurface ? (
+        {surface === 'artefacts' ? (
           // The column IS the theme page (`surface.page`). A `--nav` gutter
           // around a rounded board put workspace gray beside the theme, so
           // the page never owned the surface. The empty state still sits in
@@ -1136,23 +688,23 @@ export default function ThemePreviewHub({
               className={`flex h-full min-h-0 flex-col overflow-hidden ${needsMyTheme ? 'rounded-xl border border-line bg-app' : ''}`}
             >
               {/* One header band for every hub view — the active view's NAME
-                  sits top-left; page actions (Copy page…), the view switcher and
-                  the preview appearance toggle stay pinned on the right when you
-                  move between Artefacts · Components · Documentation. The
-                  sun/moon toggle flips ONLY the board on the right, not the
-                  workspace chrome — it used to live in the Color-edition card. */}
+                  sits top-left; page actions (Copy page…), Figma sync and the
+                  preview appearance toggle stay pinned on the right. The three
+                  hub views switch from the Documentation workspace's left rail,
+                  not from icon pills in this header. The sun/moon toggle flips
+                  ONLY the board on the right, not the workspace chrome. */}
               <div className="flex flex-shrink-0 items-center justify-between gap-3 px-3" style={{ height: THEME_BAND_H }}>
                 <span className="min-w-0 flex flex-col">
                   <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
                   <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
                 </span>
                 <div className="flex flex-shrink-0 items-center gap-2">
-                  {surface === 'documentation' && hubDocActions}
-                  {surface === 'artefacts' && !needsMyTheme && (
+                  {docsOpen && hubDocActions}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && (
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
                   <FigmaSyncButton onOpen={() => onSurfaceChange('figma')} />
-                  <ThemeViewSwitcher view={hubSurface} onChange={onSurfaceChange} />
+                  <DocsPanelButton active={docsOpen} onClick={() => onDocsOpenChange(!docsOpen)} />
                   <PreviewAppearanceButton value={effectiveBoardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
@@ -1162,9 +714,36 @@ export default function ThemePreviewHub({
                   <NeedMyThemeEmpty />
                 ) : (
                   <>
-                {surface === 'artefacts' ? <ArtefactsView previewTheme={previewTheme} previewAppearance={previewAppearance} accentPreview={accentPreview} stylePreview={paintedPreview} drawerOpen={quickEditOpen} editingRole={editingToken != null} inspecting={inspecting} tileAppearances={effectiveTileAppearances} boardAppearance={effectiveBoardAppearance} onPickRole={pickRole} onOpenRoleInVariables={onOpenInVariables} /> : null}
-                {surface === 'components' ? <ComponentVariantsView previewTheme={previewTheme} previewAppearance={previewAppearance} stylePreview={paintedPreview} active={showcase} onOpenComponent={onOpenComponent} /> : null}
-                {surface === 'documentation' ? <DocumentationView active={docPage} onChange={setDocPage} onEditFoundation={onEditFoundation} overviewTitle={themeName} previewTheme={previewTheme} stylePreview={paintedPreview} exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }} /> : null}
+                {contrastOpen ? (
+                  <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
+                ) : null}
+                {!contrastOpen && docsOpen ? (
+                  <DocumentationView
+                    active={activeDocKey}
+                    onChange={handleDocNavigate}
+                    onEditFoundation={onEditFoundation}
+                    overviewTitle={themeName}
+                    previewTheme={previewTheme}
+                    stylePreview={paintedPreview}
+                    exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }}
+                  />
+                ) : null}
+                {!contrastOpen && !docsOpen ? (
+                  <ArtefactsView
+                    previewTheme={previewTheme}
+                    previewAppearance={previewAppearance}
+                    accentPreview={accentPreview}
+                    stylePreview={paintedPreview}
+                    drawerOpen={quickEditOpen}
+                    editingRole={editingToken != null}
+                    inspecting={inspecting}
+                    tileAppearances={effectiveTileAppearances}
+                    boardAppearance={effectiveBoardAppearance}
+                    onPickRole={pickRole}
+                    onOpenRoleInVariables={onOpenInVariables}
+                    onOpenComponents={onOpenComponents}
+                  />
+                ) : null}
                   </>
                 )}
               </div>

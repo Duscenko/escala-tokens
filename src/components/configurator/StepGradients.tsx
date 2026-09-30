@@ -44,6 +44,89 @@ const TYPE_OPTIONS: { key: GradientType; label: string }[] = [
   { key: 'radial', label: 'Radial' },
 ]
 
+/** Named gradients under the Color primitives Gradients group. The editor
+ *  and this list share `selectedId` so picking a row opens that gradient. */
+export function GradientNavList({
+  previewTheme,
+  selectedId,
+  onSelect,
+}: {
+  previewTheme: string
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
+  const store = useDesignStore()
+  const { gradients, themeKinds, themeSources, primaryScale, primaryDarkScale, addGradient, removeGradient } = store
+  const appearance: GradientAppearance = (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light'
+  const ramp = themeBrandRamp(previewTheme, themeSources, themeKinds, store, appearance)
+    ?? (appearance === 'dark' ? primaryDarkScale : primaryScale)
+  const cssOf = (g: GradientDef) => gradientToCss(g, appearance, ramp)
+
+  function create() {
+    const g = makeGradient()
+    addGradient(g)
+    onSelect(g.id)
+  }
+
+  return (
+    <div role="group" aria-label="Gradients" className="space-y-0.5">
+      {gradients.map((g) => {
+        const active = g.id === selectedId
+        return (
+          <div key={g.id} className="group relative flex items-center">
+            <button
+              type="button"
+              onClick={() => onSelect(g.id)}
+              aria-current={active ? 'page' : undefined}
+              className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
+              }`}
+            >
+              <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: cssOf(g) }} aria-hidden />
+              <span className="flex-1 min-w-0 truncate text-ui font-medium">{g.name}</span>
+            </button>
+            {gradients.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedId === g.id) onSelect(gradients.find((x) => x.id !== g.id)?.id ?? g.id)
+                  removeGradient(g.id)
+                }}
+                aria-label={`Delete ${g.name}`}
+                title={`Delete ${g.name}`}
+                className="absolute right-1.5 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-status-danger opacity-0 group-hover:opacity-100 transition-opacity bg-elevated"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
+              </button>
+            )}
+          </div>
+        )
+      })}
+      <button type="button" onClick={create} className="mt-1 flex w-full items-center gap-2 rounded-lg border border-dashed border-line-strong px-2.5 py-2 text-ui text-fg-faint hover:border-fg-faint hover:text-fg transition-colors">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
+        New gradient
+      </button>
+    </div>
+  )
+}
+
+/** Collapsed-rail mark for the Gradients group — the first gradient's own paint. */
+export function GradientRailMark({ previewTheme }: { previewTheme: string }) {
+  const store = useDesignStore()
+  const { gradients, themeKinds, themeSources, primaryScale, primaryDarkScale } = store
+  const appearance: GradientAppearance = (themeKinds[previewTheme] ?? 'light') === 'dark' ? 'dark' : 'light'
+  const ramp = themeBrandRamp(previewTheme, themeSources, themeKinds, store, appearance)
+    ?? (appearance === 'dark' ? primaryDarkScale : primaryScale)
+  const g = gradients[0]
+  return (
+    <span
+      className="h-4 w-4 rounded-sm ring-1 ring-black/10"
+      style={{ background: g ? gradientToCss(g, appearance, ramp) : 'var(--accent-ui)' }}
+      aria-hidden
+    />
+  )
+}
+
 function AssignSelect({ label, value, onChange, gradients, appearance, ramp }: {
   label: string
   value: string | null
@@ -77,18 +160,20 @@ function AssignSelect({ label, value, onChange, gradients, appearance, ramp }: {
 }
 
 export default function StepGradients({
-  previewTheme = 'light', onPreviewThemeChange,
+  previewTheme = 'light', onPreviewThemeChange, embedded = false, selectedId: selectedIdProp, onSelectedIdChange,
 }: {
   previewTheme?: string
   onPreviewThemeChange?: (theme: string) => void
-  /** Returns to the System colors family collection without leaving Color. */
-  onBackToSystemColors?: () => void
+  /** The primitives rail already lists gradients. Skip this view's own rail. */
+  embedded?: boolean
+  selectedId?: string | null
+  onSelectedIdChange?: (id: string | null) => void
 } = {}) {
   const store = useDesignStore()
   const {
     gradients, gradientAssignments, primaryColor, primaryScale, primaryDarkScale,
     colorNaming, themeKinds, themeSources,
-    addGradient, updateGradient, removeGradient, setGradientAssignment,
+    updateGradient, setGradientAssignment,
   } = store
 
   // A gradient has exactly TWO appearances, but `previewTheme` is a THEME key
@@ -118,7 +203,12 @@ export default function StepGradients({
    *  exported-name rule the Primitives table follows. */
   const rampPrefix = themeSources[previewTheme]?.brand ?? 'accent'
 
-  const [selectedId, setSelectedId] = useState<string | null>(gradients[0]?.id ?? null)
+  const [selectedIdState, setSelectedIdState] = useState<string | null>(gradients[0]?.id ?? null)
+  const selectedId = selectedIdProp !== undefined ? selectedIdProp : selectedIdState
+  const setSelectedId = (id: string | null) => {
+    if (selectedIdProp === undefined) setSelectedIdState(id)
+    onSelectedIdChange?.(id)
+  }
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsPlace = usePopoverPlacement(settingsRef, settingsOpen, { prefer: 360, max: 520 })
@@ -135,12 +225,6 @@ export default function StepGradients({
       document.removeEventListener('keydown', onKey)
     }
   }, [settingsOpen])
-
-  function create() {
-    const g = makeGradient()
-    addGradient(g)
-    setSelectedId(g.id)
-  }
 
   function patch(updates: Partial<Omit<GradientDef, 'id'>>) {
     if (selected) updateGradient(selected.id, updates)
@@ -229,46 +313,14 @@ export default function StepGradients({
     'grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_2.75rem] @min-[32rem]:grid-cols-[minmax(7rem,1fr)_minmax(10rem,1.6fr)_minmax(8rem,1fr)] @min-[40rem]:grid-cols-[minmax(9rem,1fr)_minmax(12rem,1.6fr)_minmax(10rem,1fr)]'
 
   return (
-    <div className="relative h-full flex items-stretch">
-      <VariableCollectionRail ariaLabel="Color collections and gradient groups">
-        <div role="navigation" aria-label="Gradient groups" className="space-y-0.5">
-          {gradients.map((g) => {
-            const active = g.id === selectedId
-            return (
-              <div key={g.id} className="group relative flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(g.id)}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
-                    active ? 'bg-elevated text-accent-ui shadow-sm' : 'text-fg-muted hover:bg-elevated/50 hover:text-fg'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded flex-shrink-0 ring-1 ring-black/10" style={{ background: cssOf(g) }} aria-hidden />
-                  <span className="flex-1 min-w-0 truncate text-ui font-medium">{g.name}</span>
-                </button>
-                {gradients.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => { if (selectedId === g.id) setSelectedId(gradients.find((x) => x.id !== g.id)?.id ?? null); removeGradient(g.id) }}
-                    aria-label={`Delete ${g.name}`}
-                    title={`Delete ${g.name}`}
-                    className="absolute right-1.5 w-5 h-5 flex items-center justify-center rounded text-fg-faint hover:text-status-danger opacity-0 group-hover:opacity-100 transition-opacity bg-elevated"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M18 6 6 18M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-        <button type="button" onClick={create} className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-line-strong px-3 py-2 text-ui text-fg-faint hover:border-fg-faint hover:text-fg transition-colors">
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
-          New gradient
-        </button>
-      </VariableCollectionRail>
+    <div className="relative h-full min-h-0 flex items-stretch">
+      {!embedded && (
+        <VariableCollectionRail ariaLabel="Color collections and gradient groups">
+          <GradientNavList previewTheme={previewTheme} selectedId={selectedId} onSelect={setSelectedId} />
+        </VariableCollectionRail>
+      )}
 
-      <div className="@container flex-1 min-w-0 flex flex-col bg-app">
+      <div className="@container flex-1 min-w-0 min-h-0 flex flex-col bg-app">
       {/* ── Gradient type + the live bar it produces. Groups | icon-rail is
           FoundationWorkbench. `border-line` since this sits between Groups
           above and the nav + table below. ── */}

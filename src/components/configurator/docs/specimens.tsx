@@ -547,9 +547,11 @@ export interface SpecimenProps {
    * `transform: scale`).
    *
    * It is a token REFERENCE, never a value — `shadowOf` resolves it against the
-   * system's own ramp, so an artefact still cannot invent an elevation.
+   system's own ramp, so an artefact still cannot invent an elevation.
    */
   elev?: string | false
+  /** Omit the helper line under fields — dense collage / sign-up modules. */
+  hideHint?: boolean
 }
 
 // ── Button (Color × Style × State) ────────────────────────────────────────────
@@ -671,10 +673,12 @@ const INPUT_HTML_TYPE: Record<string, string> = {
 
 function inputSeed(type: string | undefined, state: string | undefined): string {
   if (state !== 'Filled') return ''
-  return type === 'E-Mail' ? 'maya@escala.ds' : 'Maya Duscenko'
+  if (type === 'E-Mail') return 'maya@escala.ds'
+  if (type === 'Password') return '••••••••'
+  return 'Maya Duscenko'
 }
 
-function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
+function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
   const { t: translate } = useI18n()
   const meta = INPUT_META[v.Type ?? 'Default'] ?? INPUT_META.Default
   const h = INPUT_HEIGHTS[v.Size ?? 'MD'] ?? 40
@@ -702,6 +706,9 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
   const accent = error ? (t.borderCritical ?? borderCriticalOf(t)) : focusBorderOf(t)
   const border = fieldStroke(t, state, error)
 
+  const size = v.Size ?? 'MD'
+  const fieldType = typeOf(t, size === 'SM' ? 'body-sm' : 'placeholder')
+
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spacingRoleOf(t, 'gap-tight', '4px'), width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>
@@ -727,7 +734,9 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
             placeholder tier. The plugin paints this slot as `textTertiary`
             (the same job). Sharing `placeholderText` with the value made
             the @ and the typed text one token. */}
-        {!icons?.leading && meta.lead && <span style={{ ...typeOf(t, 'placeholder'), color: disabled ? t.disabledText : (t.fgMuted ?? t.placeholderText) }}>{meta.lead}</span>}
+        {!icons?.leading && meta.lead && (
+          <span style={{ ...fieldType, color: disabled ? t.disabledText : (t.fgMuted ?? t.placeholderText) }}>{meta.lead}</span>
+        )}
         <input
           ref={inputRef}
           type={INPUT_HTML_TYPE[v.Type ?? 'Default'] ?? 'text'}
@@ -741,7 +750,7 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
           onFocus={() => setFocus(true)}
           onBlur={() => setFocus(false)}
           style={{
-            ...typeOf(t, 'placeholder'),
+            ...fieldType,
             flex: 1, minWidth: 0, width: '100%',
             border: 'none', outline: 'none', background: 'transparent', padding: 0,
             color: disabled ? t.disabledText : value ? t.neutralText : t.placeholderText,
@@ -752,9 +761,11 @@ function InputSpecimen({ t, v, icons, w }: SpecimenProps) {
         {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={16} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
       </div>
-      <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
-        {translate(error ? 'This field is required.' : 'This is a hint text.')}
-      </span>
+      {!hideHint && (
+        <span style={{ ...typeOf(t, 'helper'), color: error ? errorInkOf(t) : t.fgMuted }}>
+          {translate(error ? 'This field is required.' : 'This is a hint text.')}
+        </span>
+      )}
     </div>
   )
 }

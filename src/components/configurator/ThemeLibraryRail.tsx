@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -6,7 +6,6 @@ import { useTheme } from '../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { generateColorScale } from '../../lib/colorUtils'
 import type { ColorScale } from '../../types/tokens'
-import ThemePanel from './ThemePanel'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
@@ -91,10 +90,12 @@ function ThemeLibraryOptionsPopover({
   hasOwnThemes,
   onResetSuggestedStyles,
   onDeleteMyThemes,
+  onReset,
 }: {
   hasOwnThemes: boolean
   onResetSuggestedStyles: () => void
   onDeleteMyThemes: () => void
+  onReset?: () => void
 }) {
   const { t } = useI18n()
   return (
@@ -104,6 +105,17 @@ function ThemeLibraryOptionsPopover({
       className="absolute inset-x-0 top-full z-[60] mt-1.5 origin-top overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
       role="menu" aria-label={t('Theme library options')}
     >
+          {onReset && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onReset}
+              className="flex h-9 w-full items-center gap-2 rounded-md px-2.5 text-left text-fg-muted transition-colors hover:text-fg hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            >
+              <ResetStyleIcon />
+              <span className="text-caption font-medium">{t('Reset')}</span>
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -217,7 +229,7 @@ const PRESET_AVATAR_RAMPS: Record<string, ColorScale> = Object.fromEntries(
  * rather than a baked light/dark asset. This keeps the library honest when a
  * theme points at a custom family or its primitives are retinted.
  */
-function ThemeAvatar({ ramp, appearance, fallback }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string }) {
+export function ThemeAvatar({ ramp, appearance, fallback }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string }) {
   const base = ramp?.[5] ?? fallback
   const middle = ramp?.[7] ?? base
   const highlight = ramp?.[9] ?? middle
@@ -531,7 +543,9 @@ export default function ThemeLibraryRail({
   activeStylePreview,
   onSyncFigma,
   onOpenInCode,
-  syncFooter,
+  onCreateTheme,
+  onEditTheme,
+  onOpenReset,
 }: {
   previewTheme: string
   onPreviewThemeChange: (theme: string) => void
@@ -549,14 +563,16 @@ export default function ThemeLibraryRail({
   /** Preview a theme and open the Figma page with it. */
   onSyncFigma?: (theme: string) => void
   onOpenInCode?: (theme: string) => void
-  /** GitHub · Figma sync destinations — pinned above the app footer. */
-  syncFooter?: ReactNode
+  onCreateTheme?: () => void
+  onEditTheme?: (key: string) => void
+  onOpenReset?: () => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
   const { themeOrder, themeKinds, themeLabels, themeSources, themes, removeTheme } = store
   const chromeTheme = useTheme()
-  const [editor, setEditor] = useState<false | 'new' | string>(false)
+  const openCreate = () => onCreateTheme?.()
+  const openEdit = (key: string) => onEditTheme?.(key)
   const [deleteKey, setDeleteKey] = useState<string | null>(null)
   const [rowMenuKey, setRowMenuKey] = useState<string | null>(null)
   const [optionsOpen, setOptionsOpen] = useState(false)
@@ -664,7 +680,6 @@ export default function ThemeLibraryRail({
     if (ownThemeKeys.includes(previewTheme) && fallback) onPreviewThemeChange(fallback)
     ownThemeKeys.forEach((key) => removeTheme(key))
     if (corePreset) previewPreset(corePreset, chromeTheme)
-    setEditor(false)
     setDeleteKey(null)
     setConfirmDeleteOwnThemes(false)
     setAllOpen(false)
@@ -693,7 +708,7 @@ export default function ThemeLibraryRail({
     <aside
       id="themes-library"
       tabIndex={-1}
-      className={`flex-shrink-0 flex flex-col min-h-0 ${SHELL_CHROME} outline-none`}
+      className={`flex h-full w-full min-h-0 flex-col ${SHELL_CHROME} outline-none`}
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
@@ -722,6 +737,7 @@ export default function ThemeLibraryRail({
                 setOptionsOpen(false)
               }}
               onDeleteMyThemes={() => { setOptionsOpen(false); setConfirmDeleteOwnThemes(true) }}
+              onReset={onOpenReset ? () => { setOptionsOpen(false); onOpenReset() } : undefined}
             />
           )}
         </AnimatePresence>
@@ -792,7 +808,7 @@ export default function ThemeLibraryRail({
               deleteOpen={deleteKey === key}
               isLast={availableThemes.length <= 1}
               onPreview={() => { clearStylePreview(); onPreviewThemeChange(key) }}
-              onEdit={() => { clearStylePreview(); onPreviewThemeChange(key); setEditor(key) }}
+              onEdit={() => { clearStylePreview(); onPreviewThemeChange(key); openEdit(key) }}
               onToggleMenu={() => setRowMenuKey((open) => (open === key ? null : key))}
               onCloseMenu={() => setRowMenuKey(null)}
               onSyncFigma={() => { setRowMenuKey(null); onSyncFigma?.(key) }}
@@ -804,7 +820,7 @@ export default function ThemeLibraryRail({
           ))}
           <CreateThemeButton
             disabled={!canAdd}
-            onClick={() => { if (!canAdd) return; clearStylePreview(); setEditor('new') }}
+            onClick={() => { if (!canAdd) return; clearStylePreview(); openCreate() }}
           />
           {!allOpen && listedThemes.length > MY_THEME_RAIL_LIMIT && (
             <button
@@ -884,27 +900,6 @@ export default function ThemeLibraryRail({
           </div>
         </div>}
       </nav>
-
-      {syncFooter && (
-        <div className="flex-shrink-0 border-t border-line px-[9px] pb-[11px] pt-[9px]">
-          {syncFooter}
-        </div>
-      )}
-
-      <ThemePanel
-        open={editor !== false}
-        editKey={editor && editor !== 'new' ? editor : null}
-        appearance={themeKinds[previewTheme] ?? 'light'}
-        onClose={() => setEditor(false)}
-        onCreated={(key) => { onPreviewThemeChange(key); setEditor(key) }}
-        onRenamed={(oldKey, newKey) => {
-          if (previewTheme === oldKey) onPreviewThemeChange(newKey)
-          setEditor(newKey)
-        }}
-        dockLeftOverride={THEME_LIBRARY_WIDTH}
-        dockToSelector={'aside[aria-label="Themes library"]'}
-      />
-
     </aside>
   )
 }

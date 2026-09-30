@@ -441,29 +441,55 @@ export function SystemCollage({
         </div>
       </ScaledModule>
 
-      <ScaledModule t={tile(5)} appearance={appearanceAt(5)}>
-        <div className="flex justify-end">
+      <ScaledModule
+        t={tile(5)}
+        appearance={appearanceAt(5)}
+        style={{ gap: gap(tile(5), 'gap-group', '16px') }}
+      >
+        <div className="flex justify-end" style={{ marginTop: -2 }}>
           <InspectableLive c="CloseButton" t={tile(5)} v={{ Size: 'SM' }} />
         </div>
-        <div className="flex flex-col items-center text-center" style={{ gap: gap(tile(5), 'gap-tight', '4px') }}>
+        <div
+          className="flex flex-col items-center text-center"
+          style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: 2 }}
+        >
           <GradientAvatar t={tile(5)} size={wellLg} />
-          <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>{translate('Create an account')}</p>
-          <p style={{ margin: 0, ...typeStyleOf(tile(5), 'body-sm', { leading: true }), color: muted(5) }}>
+          <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
+            {translate('Create an account')}
+          </p>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: '92%',
+              ...typeStyleOf(tile(5), 'body-sm', { leading: true }),
+              color: muted(5),
+            }}
+          >
             {translate('Sign in to continue to your workspace.')}
           </p>
         </div>
-        <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-group', '16px') }}>
-          <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled', Size: 'SM' }} w="100%" />
-          <Input t={tile(5)} v={{ Type: 'Password', Size: 'SM' }} w="100%" />
+        <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-group', '12px') }}>
+          <Input t={tile(5)} v={{ Type: 'E-Mail', State: 'Filled', Size: 'SM' }} w="100%" hideHint />
+          <Input t={tile(5)} v={{ Type: 'Password', State: 'Filled', Size: 'SM' }} w="100%" hideHint />
         </div>
-        <InspectableLive c="Button" t={tile(5)} v={{ Style: 'Solid', Size: 'MD' }} w="100%">{translate('Get Started')}</InspectableLive>
+        <InspectableLive
+          c="Button"
+          t={tile(5)}
+          v={{ Style: 'Solid', Size: 'MD' }}
+          icons={catalogueIcons(tile(5), 'star')}
+          w="100%"
+        >
+          {translate('Get Started')}
+        </InspectableLive>
         <div className="flex items-center" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
           <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
           <span style={{ ...typeStyleOf(tile(5), 'caption'), color: muted(5) }}>{translate('or')}</span>
           <span style={{ flex: 1, height: 1, background: tile(5).borderDefault || tile(5).border }} />
         </div>
-        <SocialLogin t={tile(5)} v={{ Provider: 'Google' }} w="100%" />
-        <SocialLogin t={tile(5)} v={{ Provider: 'Apple' }} w="100%" />
+        <div className="flex w-full min-w-0 flex-col" style={{ gap: gap(tile(5), 'gap-control', '8px') }}>
+          <SocialLogin t={tile(5)} v={{ Provider: 'Google' }} w="100%" />
+          <SocialLogin t={tile(5)} v={{ Provider: 'Apple' }} w="100%" />
+        </div>
       </ScaledModule>
 
       <ScaledModule t={tile(6)} appearance={appearanceAt(6)}>

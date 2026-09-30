@@ -9,14 +9,17 @@
 // a swatch click visibly updates what's on screen.
 
 import { useCallback, useEffect, useRef } from 'react'
-import { useDesignStore, type CustomColor, type ThemeSources } from '../store/useDesignStore'
+import { useDesignStore, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type CustomColor, type ThemeSources } from '../store/useDesignStore'
 import {
   generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
   recommendStateColors, neutralFromBrand, type ColorAlgorithm, type NeutralTint,
 } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { linkedStopsFor } from './gradients'
-import { FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
+import {
+  FAMILY_SLOTS, GLOBAL_FAMILY, BRAND_EXTRA_LABEL, BRAND_EXTRA_RANKS,
+  nextBrandExtraRank, type BrandExtraRank,
+} from './themeSources'
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
@@ -127,7 +130,11 @@ export function resolveFamilyPages(
   }
   for (const [themeKey, refs] of Object.entries(s.themeSources)) {
     if (!refs) continue
-    if (FAMILY_SLOTS.some((slot) => slot !== 'gray' && refs[slot] === familyKey)) {
+    if (
+      FAMILY_SLOTS.some((slot) => slot !== 'gray' && refs[slot] === familyKey)
+      || refs.secondary === familyKey
+      || refs.tertiary === familyKey
+    ) {
       return { ...resolveThemePages(s, themeKey), isGray: false }
     }
   }
@@ -141,6 +148,10 @@ function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<s
     if (!refs) continue
     for (const slot of FAMILY_SLOTS) {
       if (refs[slot] && !global.has(refs[slot])) keys.add(refs[slot])
+    }
+    for (const rank of BRAND_EXTRA_RANKS) {
+      const extra = refs[rank]
+      if (extra && !global.has(extra)) keys.add(extra)
     }
   }
   return keys
@@ -194,6 +205,16 @@ export function applyScopedAccentColor(hex: string, linked: boolean, themeKey: s
     const fam = s.customColors.find((c) => c.key === key)
     if (!fam) continue
     s.updateCustomColor(key, customScalePair(fam.base, s, pages, slot === 'gray'))
+  }
+  // Extra brand palettes sit on the same paper. Rebuild their ramps, never
+  // their bases — they are independent hues, not a reading of the new accent.
+  const latest = useDesignStore.getState()
+  for (const rank of BRAND_EXTRA_RANKS) {
+    const key = refs[rank]
+    if (!key) continue
+    const fam = latest.customColors.find((c) => c.key === key)
+    if (!fam) continue
+    s.updateCustomColor(key, customScalePair(fam.base, s, pages, false))
   }
   return true
 }
@@ -642,4 +663,70 @@ export function useApplyStateColor() {
       /* invalid hex — ignore */
     }
   }, [])
+}
+
+function uniqueFamilyKey(wanted: string, taken: Set<string>): string {
+  const base = wanted || 'accent-extra'
+  let key = base
+  let n = 2
+  while (taken.has(key) || RESERVED_COLOR_KEYS.includes(key)) key = `${base}-${n++}`
+  return key
+}
+
+/**
+ * Mint a Secondary or Tertiary brand palette for `themeKey`.
+ *
+ * These are primitive families filed under Accents. They do NOT occupy the
+ * `brand` slot and do NOT re-point `action.primary` / `content.accent`. The
+ * picker opens on the new row so the user can replace the hue-shifted seed.
+ */
+export function addBrandExtra(themeKey: string, hex: string): { key: string; rank: BrandExtraRank } | null {
+  const s = useDesignStore.getState()
+  const current = s.themeSources[themeKey] ?? { ...DEFAULT_THEME_SOURCES }
+  const rank = nextBrandExtraRank(current)
+  if (!rank) return null
+  try {
+    const pages = resolveThemePages(s, themeKey)
+    const scales = customScalePair(hex, s, pages, false)
+    const taken = new Set(s.customColors.map((c) => c.key))
+    const familyKey = uniqueFamilyKey(rank, taken)
+    s.addCustomColor({
+      key: familyKey,
+      label: BRAND_EXTRA_LABEL[rank],
+      base: hex,
+      ...scales,
+    })
+    s.setBrandExtra(themeKey, rank, familyKey)
+    return { key: familyKey, rank }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Drop a Secondary / Tertiary palette. Removing Secondary while Tertiary
+ * exists PROMOTES Tertiary into Secondary so the Accents list never has a
+ * hole (Primary · Tertiary).
+ */
+export function removeBrandExtra(themeKey: string, rank: BrandExtraRank): void {
+  const s = useDesignStore.getState()
+  const refs = s.themeSources[themeKey]
+  if (!refs) return
+  const target = refs[rank]
+  if (!target) return
+
+  if (rank === 'secondary' && refs.tertiary) {
+    const promoted = refs.tertiary
+    s.setBrandExtra(themeKey, 'secondary', promoted)
+    s.setBrandExtra(themeKey, 'tertiary', null)
+    const fam = useDesignStore.getState().customColors.find((c) => c.key === promoted)
+    if (fam && fam.label === BRAND_EXTRA_LABEL.tertiary) {
+      s.updateCustomColor(promoted, { label: BRAND_EXTRA_LABEL.secondary })
+    }
+    s.removeCustomColor(target)
+    return
+  }
+
+  s.setBrandExtra(themeKey, rank, null)
+  s.removeCustomColor(target)
 }

@@ -10,6 +10,164 @@ import type { ThemePalette, ThemeSources } from '../store/useDesignStore'
 export const FAMILY_SLOTS = ['brand', 'gray', 'error', 'warning', 'success', 'info'] as const
 export type FamilySlot = (typeof FAMILY_SLOTS)[number]
 
+/** Extra brand palettes a theme may carry besides its `brand` slot. These are
+ *  primitive families filed under Accents — they do NOT feed Categorical
+ *  roles. Sequential: tertiary only exists once secondary does. */
+export const BRAND_EXTRA_RANKS = ['secondary', 'tertiary'] as const
+export type BrandExtraRank = (typeof BRAND_EXTRA_RANKS)[number]
+
+export const BRAND_EXTRA_LABEL: Record<BrandExtraRank, string> = {
+  secondary: 'Secondary',
+  tertiary: 'Tertiary',
+}
+
+/** Accents nav ranks — Primary is the brand slot, extras are optional palettes.
+ *  Display names stay rank-based so a theme called "Core Copy" does not rename
+ *  the row to "Core Copy Accent". Token prefixes (`accent`, `core-copy-brand`)
+ *  are unchanged. */
+export const BRAND_PRIMARY_LABEL = 'Primary'
+export type BrandRank = 'primary' | BrandExtraRank
+
+export const BRAND_RANK_LABEL: Record<BrandRank, string> = {
+  primary: BRAND_PRIMARY_LABEL,
+  ...BRAND_EXTRA_LABEL,
+}
+
+/** Slot names in the Variables rail — never the theme name. Export keys stay
+ *  the unique family prefix (`core-copy-error`); only the label is a slot. */
+export const SLOT_DISPLAY_LABEL: Record<FamilySlot, string> = {
+  brand: BRAND_PRIMARY_LABEL,
+  gray: 'Neutral',
+  error: 'Error',
+  warning: 'Warning',
+  success: 'Success',
+  info: 'Info',
+}
+
+/** Every family key a theme points at — semantic slots PLUS extra brand palettes. */
+export function allThemeFamilyKeys(refs: ThemeSources): string[] {
+  const keys = FAMILY_SLOTS.map((slot) => refs[slot]).filter(Boolean)
+  for (const rank of BRAND_EXTRA_RANKS) {
+    const extra = refs[rank]
+    if (extra) keys.push(extra)
+  }
+  return keys
+}
+
+export function themePointsAtFamily(refs: ThemeSources, familyKey: string): boolean {
+  return allThemeFamilyKeys(refs).includes(familyKey)
+}
+
+export function nextBrandExtraRank(refs: ThemeSources | undefined): BrandExtraRank | null {
+  if (!refs?.secondary) return 'secondary'
+  if (!refs.tertiary) return 'tertiary'
+  return null
+}
+
+export function brandExtraRankOf(
+  familyKey: string,
+  refs: ThemeSources | undefined,
+): BrandExtraRank | null {
+  if (!refs) return null
+  for (const rank of BRAND_EXTRA_RANKS) {
+    if (refs[rank] === familyKey) return rank
+  }
+  return null
+}
+
+/** Which Accents rank a family occupies. `accent` is always Primary; a custom
+ *  family is Primary only while some theme's `brand` slot points at it. */
+export function brandRankOf(
+  familyKey: string,
+  sources: Record<string, ThemeSources>,
+): BrandRank | null {
+  if (familyKey === 'accent') return 'primary'
+  for (const refs of Object.values(sources)) {
+    if (refs.brand === familyKey) return 'primary'
+    const extra = brandExtraRankOf(familyKey, refs)
+    if (extra) return extra
+  }
+  return null
+}
+
+export function brandRankLabel(
+  familyKey: string,
+  sources: Record<string, ThemeSources>,
+  isAlpha = false,
+): string | null {
+  const rank = brandRankOf(familyKey, sources)
+  if (!rank) return null
+  const base = BRAND_RANK_LABEL[rank]
+  return isAlpha ? `${base}-Alpha` : base
+}
+
+/** Rail / table label for a family: Primary · Neutral · Error · … regardless
+ *  of the theme that minted it. null = not a slot family (a free-standing
+ *  custom stays on its stored name). Export keys are NOT this string. */
+export function familyDisplayLabel(
+  familyKey: string,
+  sources: Record<string, ThemeSources>,
+  isAlpha = false,
+): string | null {
+  const branded = brandRankLabel(familyKey, sources, isAlpha)
+  if (branded) return branded
+  for (const slot of FAMILY_SLOTS) {
+    if (GLOBAL_FAMILY[slot] === familyKey) {
+      const base = SLOT_DISPLAY_LABEL[slot]
+      return isAlpha ? `${base}-Alpha` : base
+    }
+  }
+  const slot = familySlotFor(familyKey, sources)
+  if (!slot) return null
+  const base = SLOT_DISPLAY_LABEL[slot]
+  return isAlpha ? `${base}-Alpha` : base
+}
+
+/** Themes whose sources point at this family — slots AND extra palettes. */
+export function themesPointingAtFamily(
+  familyKey: string,
+  themeSources: Record<string, ThemeSources>,
+): string[] {
+  return Object.entries(themeSources)
+    .filter(([, refs]) => allThemeFamilyKeys(refs).includes(familyKey))
+    .map(([theme]) => theme)
+}
+
+/**
+ * Export-wizard family chip. Same slot names as the rail, but when TWO
+ * exported prefixes collapse onto one slot (Core Copy Error + Glass Error)
+ * the theme name is appended so the checklist cannot offer two "Error"s.
+ * A single theme, or two themes sharing one family, stays just "Error".
+ */
+export function primitiveDisplayLabel(
+  familyKey: string,
+  sources: Record<string, ThemeSources>,
+  themeLabels: Record<string, string>,
+  exportFamilyKeys: readonly string[],
+  storedLabel?: string,
+): string {
+  const isAlpha = familyKey.endsWith('-a')
+  const solidKey = isAlpha ? familyKey.slice(0, -2) : familyKey
+  const slotLabel = familyDisplayLabel(solidKey, sources, isAlpha)
+  const fallback = storedLabel ?? familyKey.charAt(0).toUpperCase() + familyKey.slice(1)
+  const base = slotLabel ?? fallback
+  const slotOf = (key: string) => {
+    const solid = key.endsWith('-a') ? key.slice(0, -2) : key
+    return familyDisplayLabel(solid, sources, false)
+  }
+  const thisSlot = slotOf(familyKey)
+  if (!thisSlot) return base
+  const colliding = exportFamilyKeys.filter((key) => {
+    if (key.endsWith('-a') !== isAlpha) return false
+    return slotOf(key) === thisSlot
+  })
+  if (colliding.length <= 1) return base
+  const owner = themesPointingAtFamily(solidKey, sources)
+    .map((theme) => themeDisplayName(theme, themeLabels))
+    .join(', ')
+  return owner ? `${base} · ${owner}` : base
+}
+
 /** The family key each slot falls back to — the global ramps. */
 export const GLOBAL_FAMILY: Record<FamilySlot, string> = {
   brand: 'accent', gray: 'neutral', error: 'error',

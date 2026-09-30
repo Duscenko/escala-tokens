@@ -16,6 +16,8 @@ describe('workspace deep-link protocol', () => {
       { tab: 'foundations' as const, workspace: 'primitives' as const, surface: 'artefacts' as const, theme: 'core', foundation: 'color', collection: 'semantics' },
       { tab: 'foundations' as const, workspace: 'primitives' as const, surface: 'artefacts' as const, theme: 'sky', foundation: 'radius', collection: 'primitives' },
       { tab: 'foundations' as const, workspace: 'code' as const, surface: 'artefacts' as const, theme: 'core' },
+      { tab: 'foundations' as const, workspace: 'preview' as const, surface: 'components' as const, theme: 'core' },
+      { tab: 'foundations' as const, workspace: 'preview' as const, surface: 'documentation' as const, theme: 'sky' },
       { tab: 'components' as const, workspace: 'preview' as const, surface: 'artefacts' as const, component: 'Button' },
       { tab: 'docs' as const, workspace: 'preview' as const, surface: 'artefacts' as const, doc: '__guide-mcp' },
       { tab: 'about' as const, workspace: 'preview' as const, surface: 'artefacts' as const },

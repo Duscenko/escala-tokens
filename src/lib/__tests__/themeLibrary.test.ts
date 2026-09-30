@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import {
   MY_THEME_HARD_CAP,
   MY_THEME_RAIL_LIMIT,
@@ -10,6 +10,7 @@ import {
   resolveListedTheme,
   visibleMyThemes,
 } from '../themeLibrary'
+import { DEFAULT_THEME_SOURCES, makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 
 describe('myThemeKeys', () => {
   it('drops the built-in light/dark scaffolding', () => {
@@ -61,5 +62,37 @@ describe('myThemeRoom', () => {
     expect(myThemeRoom(MY_THEME_HARD_CAP)).toBe('full')
     expect(canAddMyTheme(MY_THEME_RAIL_LIMIT)).toBe(true)
     expect(canAddMyTheme(MY_THEME_HARD_CAP)).toBe(false)
+  })
+})
+
+describe('duplicateTheme', () => {
+  beforeEach(() => {
+    useDesignStore.setState(makeDesignDefaults())
+  })
+
+  it('clones a My theme without copying primitives', () => {
+    const s = useDesignStore.getState()
+    s.addTheme('aurora', 'dark', { ...DEFAULT_THEME_SOURCES, brand: 'accent' })
+    s.setThemeLabel('aurora', 'Aurora')
+    s.setThemeOrigin('aurora', 'core-minimal')
+    s.setArchitectureOverride('categorical', 'action.primary.default', 'aurora', '{accent.9}')
+    const customs = s.customColors.length
+
+    const key = useDesignStore.getState().duplicateTheme('aurora', 'Copy')
+    expect(key).toBe('aurora-copy')
+    const next = useDesignStore.getState()
+    expect(next.themeLabels[key!]).toBe('Aurora Copy')
+    expect(next.themeKinds[key!]).toBe('dark')
+    expect(next.themeSources[key!]?.brand).toBe('accent')
+    expect(next.themeOrigin[key!]).toBe('core-minimal')
+    expect(next.architectureOverrides.categorical['action.primary.default'][key!]).toBe('{accent.9}')
+    expect(next.customColors.length).toBe(customs)
+    expect(next.themes[key!]).toEqual(next.themes.aurora)
+  })
+
+  it('refuses scaffolding and a missing source', () => {
+    expect(useDesignStore.getState().duplicateTheme('light')).toBeNull()
+    useDesignStore.getState().addTheme('only', 'light', DEFAULT_THEME_SOURCES)
+    expect(useDesignStore.getState().duplicateTheme('missing')).toBeNull()
   })
 })

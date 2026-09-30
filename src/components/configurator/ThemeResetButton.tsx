@@ -97,12 +97,28 @@ const RESET_UNDO_MS = 9000
 
 type ResetScope = 'theme' | 'system'
 
-export function ResetScopeControl({ previewTheme }: { previewTheme: string }) {
+export function ResetScopeControl({
+  previewTheme,
+  trigger = true,
+  open: openProp,
+  onOpenChange,
+}: {
+  previewTheme: string
+  /** Footer button. False when Reset lives in a menu — only the dialog + undo remain. */
+  trigger?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
   const { t } = useI18n()
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const reduceMotion = useReducedMotion()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next)
+    if (openProp === undefined) setInternalOpen(next)
+  }
   const [undo, setUndo] = useState<{ snapshot: DesignSnapshot; scope: ResetScope } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const firstOptionRef = useRef<HTMLButtonElement>(null)
@@ -137,99 +153,105 @@ export function ResetScopeControl({ previewTheme }: { previewTheme: string }) {
     if (timer.current) clearTimeout(timer.current)
   }
 
-  if (undo) {
-    return (
-      <div className="flex h-9 w-full items-center justify-between gap-2 rounded-xl bg-app px-2.5">
+  const dialog = createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[80] grid place-items-center bg-black/50 p-4"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-scope-title"
+            className="w-full max-w-[380px] rounded-xl border border-line-strong bg-app p-4 shadow-xl"
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h2 id="reset-scope-title" className="text-ui font-semibold text-fg">{t('Reset')}</h2>
+            <p className="mt-1 text-caption text-fg-muted">{t('Both can be undone for 9 seconds.')}</p>
+
+            <div className="mt-3 flex flex-col gap-1.5">
+              <button
+                ref={firstOptionRef}
+                type="button"
+                onClick={() => run('theme')}
+                disabled={!themeEdited}
+                className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:enabled:border-line-strong hover:enabled:bg-elevated disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+              >
+                <span className="text-caption font-medium text-fg">{t('This theme')}</span>
+                <span className="text-caption text-fg-muted">
+                  {themeEdited
+                    ? `${t('Back to')} ${themeTarget}. ${t('The rest of the system is untouched.')}`
+                    : t('No edits to reset.')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => run('system')}
+                className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:border-status-danger/40 hover:bg-status-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50"
+              >
+                <span className="text-caption font-medium text-status-danger">{t('Whole system')}</span>
+                <span className="text-caption text-fg-muted">
+                  {t('Every theme and foundation back to defaults.')}
+                </span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="mt-3 h-8 w-full rounded-lg border border-line text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              {t('Cancel')}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  )
+
+  const undoBar = undo
+    ? createPortal(
+      <div className="fixed bottom-10 left-1/2 z-[70] flex h-9 -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-line-strong bg-elevated px-3 shadow-lg">
         <span className="min-w-0 truncate text-caption text-fg-muted">
           {undo.scope === 'theme' ? t('Theme reset') : t('System reset')}
         </span>
         <button
           type="button"
           onClick={revert}
-          className="flex-shrink-0 rounded-md px-2 py-1 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          className="flex-shrink-0 rounded-md px-2 py-1 text-caption font-medium text-fg-muted transition-colors hover:bg-app hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           {t('Undo')}
         </button>
-      </div>
+      </div>,
+      document.body,
     )
-  }
+    : null
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-app text-caption tracking-[0.18px] text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-      >
-        <ResetGlyph />
-        {t('Reset')}
-      </button>
-      {createPortal(
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              className="fixed inset-0 z-[80] grid place-items-center bg-black/50 p-4"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
-            >
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="reset-scope-title"
-                className="w-full max-w-[380px] rounded-xl border border-line-strong bg-app p-4 shadow-xl"
-                initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={reduceMotion ? undefined : { opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <h2 id="reset-scope-title" className="text-ui font-semibold text-fg">{t('Reset')}</h2>
-                <p className="mt-1 text-caption text-fg-muted">{t('Both can be undone for 9 seconds.')}</p>
-
-                <div className="mt-3 flex flex-col gap-1.5">
-                  <button
-                    ref={firstOptionRef}
-                    type="button"
-                    onClick={() => run('theme')}
-                    disabled={!themeEdited}
-                    className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:enabled:border-line-strong hover:enabled:bg-elevated disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                  >
-                    <span className="text-caption font-medium text-fg">{t('This theme')}</span>
-                    <span className="text-caption text-fg-muted">
-                      {themeEdited
-                        ? `${t('Back to')} ${themeTarget}. ${t('The rest of the system is untouched.')}`
-                        : t('No edits to reset.')}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => run('system')}
-                    className="flex flex-col items-start gap-0.5 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:border-status-danger/40 hover:bg-status-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger/50"
-                  >
-                    <span className="text-caption font-medium text-status-danger">{t('Whole system')}</span>
-                    <span className="text-caption text-fg-muted">
-                      {t('Every theme and foundation back to defaults.')}
-                    </span>
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="mt-3 h-8 w-full rounded-lg border border-line text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                >
-                  {t('Cancel')}
-                </button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
+      {trigger && !undo && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-app text-caption tracking-[0.18px] text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        >
+          <ResetGlyph />
+          {t('Reset')}
+        </button>
       )}
+      {dialog}
+      {undoBar}
     </>
   )
 }

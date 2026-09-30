@@ -113,6 +113,14 @@ export function inspectGroupAttrs(active: boolean): Record<string, string> {
   return active ? { 'data-inspect-group': '' } : {}
 }
 
+/** Canvas regions that mirror catalogue UI but must not participate in
+ *  inspector hit-testing (crosshair, page badge, click-to-pin). */
+export const INSPECT_EXEMPT_ATTR = 'data-inspect-exempt'
+
+function isInspectExempt(node: Element | null): boolean {
+  return !!node?.closest?.(`[${INSPECT_EXEMPT_ATTR}]`)
+}
+
 /** Whether inspector mode is on — for a container reaching for
  *  `inspectGroupAttrs`. */
 export function useInspectorActive(): boolean {
@@ -338,6 +346,10 @@ export function InspectorOverlay({
 
     const onMove = (e: PointerEvent) => {
       if (overBadge.current) return
+      if (isInspectExempt(e.target as Element)) {
+        if (!pinRef.current) setHover(null)
+        return
+      }
       const { leaf, group } = markers(e.target as Element | null)
       const pinned = pinRef.current
 
@@ -370,11 +382,13 @@ export function InspectorOverlay({
     // the Slider drags from `pointerdown` and the TabMenu switches on `click`,
     // and neither should happen while you are pointing at them to read a token.
     const swallow = (e: Event) => {
+      if (isInspectExempt(e.target as Element)) return
       const { leaf, group } = markers(e.target as Element | null)
       if (leaf || group) e.stopPropagation()
     }
 
     const onClick = (e: MouseEvent) => {
+      if (isInspectExempt(e.target as Element)) return
       const { leaf, group } = markers(e.target as Element | null)
       if (!root.contains(e.target as Node)) { clearAll(); return }
       e.preventDefault()

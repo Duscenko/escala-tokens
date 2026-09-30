@@ -1,13 +1,11 @@
-// Theme Preview's left rail — every quick-edit card stacked in one column.
+// Theme Preview's left rail — one foundation's quick-edit card at a time.
 //
-// Color edition sits at the top (accent hue + neutral tint + Random theme).
-// Figma `working` 40:1336: Advanced is the header sliders chip; Random is
-// the footer wand. Random borrows a System Style's geometry/borders and
-// swaps accent, type
-// and density — one recipe, one Undo. Text, Radius,
-// Shadow, Size and Stroke follow. The foundation icon rail used to switch
-// between these one at a time; inspector mode made the color-role groups
-// redundant, which freed the column to carry every foundation at once.
+// The 64px `FoundationIconRail` beside this column picks the widget: Color
+// (accent hue + neutral tint + state chips + Add secondary + Contrast grid),
+// Text, Radius, Shadow, Size, Stroke, Icons (status action + weight). Stacking every card at once made the
+// artefacts board compete with a scroll of controls; the icon rail is the
+// same switcher Variables already uses, so Color / Font / Radius mean the
+// same thing one tab apart.
 //
 // Deliberately NOT here: a "Theme recipe" preset, a Radius Form axis, and the
 // Noise effect toggle. Shadows are included because they are a real,
@@ -16,9 +14,9 @@
 import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { captureSnapshot, DEFAULT_THEME_SOURCES, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
-import { useApplyAccentColor, useApplyGrayColor, resolveThemePages } from '../../lib/colorActions'
-import { backgroundFromBase, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, type NeutralTint } from '../../lib/colorUtils'
+import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
+import { useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra, resolveThemePages, type StateRole } from '../../lib/colorActions'
+import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
@@ -43,17 +41,21 @@ import {
   applyRadiusGroup,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
+import {
+  BRAND_EXTRA_LABEL, GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, nextBrandExtraRank,
+  type BrandExtraRank,
+} from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
-import { presetHarmony } from '../../lib/themePresets'
+import { presetHarmony, presetStates } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import type { StatusAction } from '../../lib/themePresets'
-import { COLOR_RAIL_WIDTH, ColorPickerPopover, THEME_BAND_H } from './colorControls'
+import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
@@ -74,6 +76,9 @@ export const QUICK_SETTINGS_WIDTH = COLOR_RAIL_WIDTH
 /** One vertical rhythm for edition cards and semantic accordion rows. */
 /** Card-to-card gap, shared with the integration rail. */
 export const QUICK_RAIL_STACK_GAP = 'gap-3'
+
+/** Edition cards + Name field — `rounded-lg` (action/control radius in chrome). */
+export const RAIL_SURFACE_RADIUS = 'rounded-lg'
 
 /**
  * The rail's vertical rhythm, in ONE place — six foundations are stacked in
@@ -165,7 +170,7 @@ export function ThemeIdentityBand({
   if (tryOnLabel) {
     return (
       <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
-        <div className="flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-dashed border-line bg-transparent pl-3 pr-3">
+        <div className={`flex h-9 w-full min-w-0 items-center gap-2 border border-dashed border-line bg-transparent pl-3 pr-3 ${RAIL_SURFACE_RADIUS}`}>
           <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
           <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">{tryOnLabel}</span>
         </div>
@@ -175,7 +180,7 @@ export function ThemeIdentityBand({
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
       <label
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border bg-input-bg pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${nameError ? 'border-status-danger/70' : 'border-line'}`}
+        className={`group flex h-9 w-full min-w-0 items-center gap-2 border bg-input-bg pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${RAIL_SURFACE_RADIUS} ${nameError ? 'border-status-danger/70' : 'border-line'}`}
         title={t('Rename theme')}
       >
           <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
@@ -389,20 +394,42 @@ function InfoHint({ children }: { children: string }) {
 function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(label)} className="min-w-0 divide-y divide-line overflow-visible rounded-xl bg-app">
+    <section aria-label={t(label)} className={`min-w-0 divide-y divide-line overflow-visible bg-app ${RAIL_SURFACE_RADIUS}`}>
       {children}
     </section>
   )
 }
 
 /**
- * The stacked edition cards in this rail, in paint order. `spacing`, `grid`
- * and `icons` are absent because they have no quick control at all — they stay
- * fully editable on the Variables tab.
- *
- * Adding a panel below means adding its key here, and nowhere else.
+ * Foundations that have a Theme Preview widget. `spacing` and `grid` stay
+ * Variables-only — they have no quick control here. `icons` is Style edition
+ * (icon weight + status action). Adding a panel means adding its key here
+ * and a matching `EditionCard` below, nowhere else.
  */
-export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'shadow', 'sizes', 'stroke'] as const
+export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'stroke', 'shadow', 'icons'] as const
+export type QuickPanelFoundation = (typeof QUICK_PANEL_FOUNDATIONS)[number]
+
+export function isQuickPanelFoundation(key: string): key is QuickPanelFoundation {
+  return (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(key)
+}
+
+/** Widget the Preview rail should light — Color when the Variables table has no twin. */
+export function previewWidgetKey(key: string): QuickPanelFoundation {
+  return isQuickPanelFoundation(key) ? key : 'color'
+}
+
+const STATE_ROLES: StateRole[] = ['error', 'warning', 'success', 'info']
+
+function extraSeedHex(brandHex: string, rank: BrandExtraRank): string {
+  try {
+    const { hue, position } = readHuePosition(brandHex)
+    return colorAtHue(position, hue + (rank === 'secondary' ? 42 : 84))
+  } catch {
+    return brandHex
+  }
+}
+
+type ColorChipId = 'accent' | 'neutral' | StateRole | BrandExtraRank
 
 /**
  * One foundation's quick panel: a titled card, its controls, and the single
@@ -434,7 +461,7 @@ export function RailCard({ title, trailing, footer, flush, children }: {
 }) {
   const { t } = useI18n()
   return (
-    <section aria-label={t(title)} className="min-w-0 overflow-visible rounded-xl bg-app">
+    <section aria-label={t(title)} className={`min-w-0 overflow-visible bg-app ${RAIL_SURFACE_RADIUS}`}>
       {/* Explicit top AND bottom padding: with `pt` alone the title's air came
           from `min-h`'s leftover, which centred it 18px below the card edge and
           6px above the first row — top-heavy, and the gap the eye reads as
@@ -1120,6 +1147,7 @@ function TintSlider({
 export default function ThemeQuickSettingsRail({
   previewTheme,
   previewAppearance,
+  activePanel = 'color',
   onOpenAdvanced,
   onAccentPreview,
   stylePreview,
@@ -1127,9 +1155,13 @@ export default function ThemeQuickSettingsRail({
   onQuickEditOpenChange,
   containedDrawerRootRef,
   onRandomBoardAppearance,
+  contrastOpen = false,
+  onContrastOpenChange,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
+  /** Which edition card the foundation icon rail asked for. */
+  activePanel?: QuickPanelFoundation
   /** Opens the Variables tab on a foundation — ONE handler where there used to
    *  be five `onOpen*` props plus a per-`SettingItem` `advancedLabel`, and
    *  where `stroke` had none of its own (it borrowed Sizes'). Each panel now
@@ -1151,19 +1183,23 @@ export default function ThemeQuickSettingsRail({
   containedDrawerRootRef?: RefObject<HTMLElement | null>
   /** Flip the whole artefacts board light or dark — fired with Random. */
   onRandomBoardAppearance?: (appearance: ThemeAppearance) => void
+  /** Contrast grid occupies the artefacts canvas while Color edition is open. */
+  contrastOpen?: boolean
+  onContrastOpenChange?: (open: boolean) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
+  const applyState = useApplyStateColor()
   const [undo, setUndo] = useState<{ snapshot: DesignSnapshot; label: string } | null>(null)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
-  const [accentPickerOpen, setAccentPickerOpen] = useState(false)
-  const [neutralPickerOpen, setNeutralPickerOpen] = useState(false)
+  const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
   const [adoptError, setAdoptError] = useState<string | null>(null)
+  const chipRefs = useRef<Partial<Record<ColorChipId, HTMLDivElement | null>>>({})
   const accentSwatchRef = useRef<HTMLDivElement>(null)
   const neutralSwatchRef = useRef<HTMLDivElement>(null)
   const lastRandomScaffold = useRef<string | undefined>(undefined)
@@ -1173,6 +1209,7 @@ export default function ThemeQuickSettingsRail({
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
   const {
     themeSources, customColors, primaryColor, grayBaseColor, neutralTint, linkNeutralToAccent,
+    errorColor, warningColor, successColor, infoColor,
     patchThemeFoundations, setNeutralTint,
   } = store
   // While a style is being tried on, every readout comes from the PRESET — the
@@ -1415,6 +1452,49 @@ export default function ThemeQuickSettingsRail({
     })
   }
 
+  const writeState = (themeKey: string, role: StateRole, hex: string) => {
+    const s = useDesignStore.getState()
+    const family = s.themeSources[themeKey]?.[role] ?? GLOBAL_FAMILY[role]
+    const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.[role] ?? GLOBAL_FAMILY[role]) === family)
+    const isGlobal = family === GLOBAL_FAMILY[role]
+    if (!isGlobal && affected.length <= 1) {
+      applyState(role, hex, false, themeKey)
+      return
+    }
+    const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
+    const baseKey = slugify(`${labelRoot}-${role}`) || `${themeKey}-${role}`
+    let familyKey = baseKey
+    let suffix = 2
+    while (s.customColors.some((color) => color.key === familyKey) || RESERVED_COLOR_KEYS.includes(familyKey)) {
+      familyKey = `${baseKey}-${suffix++}`
+    }
+    const pages = resolveThemePages(s, themeKey)
+    s.addCustomColor({
+      key: familyKey,
+      label: `${labelRoot} ${SLOT_DISPLAY_LABEL[role]}`,
+      base: hex,
+      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
+      darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+    })
+    s.updateTheme(themeKey, s.themeKinds[themeKey] ?? 'light', {
+      ...DEFAULT_THEME_SOURCES,
+      ...s.themeSources[themeKey],
+      [role]: familyKey,
+    })
+  }
+
+  const writeExtra = (themeKey: string, rank: BrandExtraRank, hex: string) => {
+    const s = useDesignStore.getState()
+    const key = s.themeSources[themeKey]?.[rank]
+    if (!key) return
+    const pages = resolveThemePages(s, themeKey)
+    s.updateCustomColor(key, {
+      base: hex,
+      scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
+      darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+    })
+  }
+
   const applyAccentScoped = (value: string) => {
     commit('Accent updated', (themeKey) => writeAccent(themeKey, value))
   }
@@ -1445,6 +1525,32 @@ export default function ThemeQuickSettingsRail({
     : neutral
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
+  const themeRefs = themeSources[previewTheme]
+  const tryOnStates = tryOn ? presetStates(tryOn.preset) : null
+  const globalState: Record<StateRole, string> = {
+    error: errorColor, warning: warningColor, success: successColor, info: infoColor,
+  }
+  const stateHex = (role: StateRole) => {
+    if (tryOnStates) return tryOnStates[role]
+    const family = themeRefs?.[role] ?? GLOBAL_FAMILY[role]
+    if (family === GLOBAL_FAMILY[role]) return globalState[role]
+    return customColors.find((color) => color.key === family)?.base ?? globalState[role]
+  }
+  const extraHex = (rank: BrandExtraRank) => {
+    const key = themeRefs?.[rank]
+    if (!key) return null
+    return customColors.find((color) => color.key === key)?.base ?? null
+  }
+  const nextExtra = nextBrandExtraRank(themeRefs)
+  const lastExtra: BrandExtraRank | null = themeRefs?.tertiary
+    ? 'tertiary'
+    : themeRefs?.secondary
+      ? 'secondary'
+      : null
+  const toggleChip = (id: ColorChipId) => setOpenChip((current) => current === id ? null : id)
+  const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
+    current: chipRefs.current[id] ?? null,
+  })
 
   const applyRandomTheme = () => {
     const headingFamily = typography.headingFontFamily ?? typography.fontFamily
@@ -1499,11 +1605,16 @@ export default function ThemeQuickSettingsRail({
   // does exactly what editing anything else does, and the adopt announces
   // itself (`announceAdopted`) so the new row in My themes isn't a surprise.
   const drawerContained = Boolean(containedDrawerRootRef)
-  const colorPickerOpen = accentPickerOpen || neutralPickerOpen
+  const colorPickerOpen = openChip != null
 
   useEffect(() => {
     onQuickEditOpenChange?.(colorPickerOpen)
   }, [colorPickerOpen, onQuickEditOpenChange])
+
+  useEffect(() => {
+    setOpenChip(null)
+    if (activePanel !== 'color') onContrastOpenChange?.(false)
+  }, [activePanel, onContrastOpenChange])
 
   return (
     <aside
@@ -1556,7 +1667,7 @@ export default function ThemeQuickSettingsRail({
       <div className="flex flex-1 min-h-0 flex-col">
       <ThemeRailScrollRegion>
       <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
-        <EditionCard
+        {activePanel === 'color' && <EditionCard
           title="Color edition"
           foundationKey="color"
           flush
@@ -1600,20 +1711,17 @@ export default function ThemeQuickSettingsRail({
               <div ref={accentSwatchRef} className="flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setNeutralPickerOpen(false)
-                    setAccentPickerOpen((open) => !open)
-                  }}
+                  onClick={() => toggleChip('accent')}
                   aria-haspopup="dialog"
-                  aria-expanded={accentPickerOpen}
+                  aria-expanded={openChip === 'accent'}
                   aria-label={`${t('Accent')} — ${liveAccent} — open picker`}
                   className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
                   style={{ background: liveAccent }}
                 />
               </div>
               <ColorPickerPopover
-                open={accentPickerOpen}
-                onClose={() => setAccentPickerOpen(false)}
+                open={openChip === 'accent'}
+                onClose={() => setOpenChip(null)}
                 anchor={accentSwatchRef}
                 label="Accent"
                 value={accent}
@@ -1656,20 +1764,17 @@ export default function ThemeQuickSettingsRail({
               <div ref={neutralSwatchRef} className="flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setAccentPickerOpen(false)
-                    setNeutralPickerOpen((open) => !open)
-                  }}
+                  onClick={() => toggleChip('neutral')}
                   aria-haspopup="dialog"
-                  aria-expanded={neutralPickerOpen}
+                  aria-expanded={openChip === 'neutral'}
                   aria-label={`${t('Neutral tint')} — ${neutralChip} — open picker`}
                   className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
                   style={{ background: neutralChip }}
                 />
               </div>
               <ColorPickerPopover
-                open={neutralPickerOpen}
-                onClose={() => setNeutralPickerOpen(false)}
+                open={openChip === 'neutral'}
+                onClose={() => setOpenChip(null)}
                 anchor={neutralSwatchRef}
                 label="Neutral"
                 value={liveNeutral}
@@ -1682,10 +1787,138 @@ export default function ThemeQuickSettingsRail({
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
-          </div>
-        </EditionCard>
 
-        {(() => {
+            <div className="px-3 pt-1">
+              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('States')}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {STATE_ROLES.map((role) => {
+                  const hex = stateHex(role)
+                  return (
+                    <div key={role} className="min-w-0">
+                      <div
+                        ref={(node) => { chipRefs.current[role] = node }}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleChip(role)}
+                          aria-haspopup="dialog"
+                          aria-expanded={openChip === role}
+                          aria-label={`${t(SLOT_DISPLAY_LABEL[role])} — ${hex} — open picker`}
+                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                          style={{ background: hex }}
+                        />
+                        <span className="max-w-full truncate text-micro text-fg-faint">{t(SLOT_DISPLAY_LABEL[role])}</span>
+                      </div>
+                      <ColorPickerPopover
+                        open={openChip === role}
+                        onClose={() => setOpenChip(null)}
+                        anchor={chipAnchor(role)}
+                        label={SLOT_DISPLAY_LABEL[role]}
+                        value={hex}
+                        onChange={(next) => commit(`${SLOT_DISPLAY_LABEL[role]} updated`, (themeKey) => writeState(themeKey, role, next))}
+                        palette={STATE_PRESETS[role]}
+                        appearance={previewAppearance}
+                        contained={drawerContained}
+                        containedRootRef={containedDrawerRootRef}
+                        containedDockLeft={COLOR_RAIL_WIDTH}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="px-3 pt-1">
+              <div className="flex items-center gap-2">
+                {(['secondary', 'tertiary'] as const).map((rank) => {
+                  const hex = extraHex(rank)
+                  if (!hex) return null
+                  return (
+                    <div key={rank} className="min-w-0">
+                      <div
+                        ref={(node) => { chipRefs.current[rank] = node }}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleChip(rank)}
+                          aria-haspopup="dialog"
+                          aria-expanded={openChip === rank}
+                          aria-label={`${t(BRAND_EXTRA_LABEL[rank])} — ${hex} — open picker`}
+                          className="block h-6 w-6 rounded-full border border-line transition-[transform,border-color] duration-75 hover:border-fg-faint active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                          style={{ background: hex }}
+                        />
+                        <span className="max-w-[4rem] truncate text-micro text-fg-faint">{t(BRAND_EXTRA_LABEL[rank])}</span>
+                      </div>
+                      <ColorPickerPopover
+                        open={openChip === rank}
+                        onClose={() => setOpenChip(null)}
+                        anchor={chipAnchor(rank)}
+                        label={BRAND_EXTRA_LABEL[rank]}
+                        value={hex}
+                        onChange={(next) => commit(`${BRAND_EXTRA_LABEL[rank]} updated`, (themeKey) => writeExtra(themeKey, rank, next))}
+                        dynamicAccentPalette
+                        accentHueFrom={hex}
+                        appearance={previewAppearance}
+                        contained={drawerContained}
+                        containedRootRef={containedDrawerRootRef}
+                        containedDockLeft={COLOR_RAIL_WIDTH}
+                      />
+                    </div>
+                  )
+                })}
+                {nextExtra && (
+                  <button
+                    type="button"
+                    onClick={() => commit(`${BRAND_EXTRA_LABEL[nextExtra]} added`, (themeKey) => {
+                      const s = useDesignStore.getState()
+                      const brandFamily = s.themeSources[themeKey]?.brand ?? 'accent'
+                      const brandHex = brandFamily === 'accent'
+                        ? s.primaryColor
+                        : s.customColors.find((color) => color.key === brandFamily)?.base ?? s.primaryColor
+                      addBrandExtra(themeKey, extraSeedHex(brandHex, nextExtra))
+                    })}
+                    title={t('Adds a brand palette. Buttons and alerts still use Accent until you assign this in Semantics.')}
+                    className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-fg-faint transition-colors hover:text-fg"
+                  >
+                    <span aria-hidden className="text-ui leading-none">+</span>
+                    {t('Add {rank}', { rank: t(BRAND_EXTRA_LABEL[nextExtra]).toLowerCase() })}
+                  </button>
+                )}
+                {lastExtra && (
+                  <button
+                    type="button"
+                    onClick={() => commit(`${BRAND_EXTRA_LABEL[lastExtra]} removed`, (themeKey) => {
+                      removeBrandExtra(themeKey, lastExtra)
+                    })}
+                    className="text-caption font-medium text-fg-faint transition-colors hover:text-status-danger"
+                  >
+                    {t('Remove')}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="px-3 pt-2">
+              <button
+                type="button"
+                onClick={() => onContrastOpenChange?.(!contrastOpen)}
+                aria-pressed={contrastOpen}
+                className={`flex h-8 w-full items-center justify-between rounded-lg border px-2.5 text-caption font-medium transition-colors ${
+                  contrastOpen
+                    ? 'border-transparent bg-accent-solid text-accent-ink'
+                    : 'border-line bg-surface text-fg-muted hover:border-line-strong hover:text-fg'
+                }`}
+              >
+                <span>{t('Contrast grid')}</span>
+                <span className="text-micro opacity-80">{contrastOpen ? t('Hide') : t('Show')}</span>
+              </button>
+            </div>
+          </div>
+        </EditionCard>}
+
+        {activePanel === 'typography' && (() => {
           // The SAME two families Variables · Type ships (`font-family-body` /
           // `font-family-heading`) — the quick card showed only the body one,
           // so a theme with a distinct heading face (Nature's Fraunces over DM
@@ -1737,6 +1970,7 @@ export default function ThemeQuickSettingsRail({
           )
         })()}
 
+        {activePanel === 'radius' && (
         <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Radius" hint="Boxes, fields and selectors round independently. Regrade the underlying scale in Variables.">
             <RadiusCard
@@ -1746,7 +1980,9 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
+        )}
 
+        {activePanel === 'shadow' && (
         <EditionCard title="Shadow edition" foundationKey="shadow" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Shadow" hint="Grades the complete elevation ramp used by cards, menus, modals, and toasts.">
             <ShadowCard
@@ -1755,7 +1991,9 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
+        )}
 
+        {activePanel === 'sizes' && (
         <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
             <BaseUnitCard
@@ -1793,8 +2031,10 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
+        )}
 
-        <EditionCard title="Style edition" foundationKey="color" onOpenAdvanced={onOpenAdvanced}>
+        {activePanel === 'icons' && (
+        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Status action" hint="How destructive and confirming buttons paint — a solid fill or a soft wash. System styles set this; it is a real axis, not a preset-only secret.">
             <Menu
               ariaLabel="Status action style"
@@ -1818,7 +2058,9 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
         </EditionCard>
+        )}
 
+        {activePanel === 'stroke' && (
         <EditionCard title="Stroke edition" foundationKey="stroke" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
             <div>
@@ -1846,8 +2088,9 @@ export default function ThemeQuickSettingsRail({
             </div>
           </SettingItem>
         </EditionCard>
+        )}
 
-        {(
+        {activePanel === 'sizes' && (
           inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
           inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
           (spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP) !== PADDING_DEFAULT_STEP

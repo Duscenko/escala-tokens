@@ -17,6 +17,7 @@
 // themes pre-normalized onto their source ramps.
 
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
+import { primitiveDisplayLabel } from './themeSources'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
 import { buildAgentProductExport, buildSkillExport } from './skillExport'
@@ -168,11 +169,19 @@ export function primitiveFamilyMeta(full: TokenJSON = generateTokenJSON()): Prim
     const key = primitiveFamilyOf(name)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
-  const labels = new Map(useDesignStore.getState().customColors.map((c) => [c.key, c.label]))
-  return [...counts].map(([key, count]) => ({
+  const state = useDesignStore.getState()
+  const stored = new Map(state.customColors.map((c) => [c.key, c.label]))
+  const keys = [...counts.keys()]
+  return keys.map((key) => ({
     key,
-    label: labels.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1),
-    count,
+    label: primitiveDisplayLabel(
+      key,
+      state.themeSources,
+      state.themeLabels,
+      keys,
+      stored.get(key),
+    ),
+    count: counts.get(key) ?? 0,
   }))
 }
 
