@@ -11,7 +11,7 @@ import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } fro
 import { applyDocumentHead } from '../lib/documentHead'
 import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
-import { useLoadActiveFonts } from '../lib/fonts'
+import { loadGoogleFont, useLoadActiveFonts } from '../lib/fonts'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
@@ -25,6 +25,7 @@ import { ThemeSwitcher, ThemesLibraryToggle } from '../components/configurator/T
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
+import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { TOP_NAV_LOCKUP_FALLBACK_W, type TopNavKey } from '../components/configurator/TopNav'
@@ -940,11 +941,26 @@ export default function Configurator() {
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
   // any real theme change and whenever the preview surface isn't on screen.
   //
-  // The Themes Library seeds Core as a try-on when My themes is empty, so the
-  // artefact board is painted on first view. That overlay never writes the
-  // store — Core is SELECTED, not added. Variables still cannot hold a try-on:
-  // an empty My themes shows NeedMyThemeEmpty there until something is added.
+  // Core is tried on whenever My themes is empty, so Theme Preview is never a
+  // blank board. The seed lives HERE, not on ThemeLibraryRail: that rail is
+  // closed by default, and an unmount used to clear the overlay. The overlay
+  // never writes the store — Core is SHOWN, not added. Variables still cannot
+  // hold a try-on: an empty My themes shows NeedMyThemeEmpty there until
+  // something is added.
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
+  useEffect(() => {
+    if (myThemeKeys(themeOrder, themes).length > 0) return
+    if (themeEditor !== false) return
+    if (stylePreview) return
+    const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
+    if (!core) return
+    loadGoogleFont(core.foundations.typography?.fontFamily ?? '')
+    loadGoogleFont(core.foundations.typography?.headingFontFamily ?? '')
+    setStylePreview({
+      preset: core,
+      appearance: theme === 'dark' ? 'dark' : 'light',
+    })
+  }, [themeOrder, themes, themeEditor, stylePreview, theme])
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
     // Read the LIVE store, never this render's `themeKinds`. A theme that
@@ -1512,7 +1528,10 @@ export default function Configurator() {
     // My themes those ramps are not a theme the user added — empty tables,
     // not the purple file.
     body = myThemeKeys(themeOrder, themes).length === 0 ? (
-      <NeedMyThemeEmpty />
+      <NeedMyThemeEmpty
+        onSeePreview={() => changeThemeWorkspaceTab('preview')}
+        onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+      />
     ) : section.key === 'color' ? (
       <ColorHub
         mode={colorTab}

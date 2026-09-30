@@ -595,11 +595,7 @@ export default function ThemeLibraryRail({
     : listedThemes
   const corePreset = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
 
-  // Any exit from the preset — picking a real theme, opening the editor, or the
-  // rail unmounting on a tab switch — drops the try-on so the preview snaps back
-  // to the live system.
   const clearStylePreview = () => onStylePreview?.(null)
-  useEffect(() => () => onStylePreview?.(null), [onStylePreview])
   useEffect(() => {
     if (!optionsOpen) return
     const onPointerDown = (event: PointerEvent) => {
@@ -619,21 +615,9 @@ export default function ThemeLibraryRail({
     onStylePreview?.({ preset, appearance })
   }
 
-  // With no theme of their own yet, the workspace lands with Core already tried
-  // on — a real, opinionated system on screen instead of an empty canvas, its
-  // row expanded and "Add to system" one click away. Nothing is committed: the
-  // try-on is an overlay, so Core is SHOWN, not added to My themes.
-  //
-  // Gated on `hasOwnTheme` alone, never on a first-visit flag. Tying it to the
-  // first browser visit meant the default only ever appeared once: a reload
-  // landed the same user, still without a theme, back on an empty board — which
-  // is the state this seed exists to avoid. Mount-only (`[]`), so closing the
-  // try-on stays closed for the session; it re-seeds on a rail remount (a tab
-  // round-trip) and stops for good the moment a theme is committed.
-  useEffect(() => {
-    if (!hasOwnTheme) previewPreset(corePreset, chromeTheme)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Core try-on is seeded by Configurator while My themes is empty. This rail
+  // used to own that seed, but it is closed by default — mounting it here left
+  // Theme Preview blank, and unmounting it (folder close) wiped a live try-on.
 
   // Adopting a style is the quick-settings rail's job now — `adoptPreset` is
   // called there, from the "Add to system" button under the Name field and from
