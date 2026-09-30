@@ -8,6 +8,7 @@ import {
   ColorSelect, ScaleRow, InfoDot, LinkToggle, neutralFromBrand, STATE_PRESETS,
   BRAND_GROUPS, NEUTRAL_GROUPS, BACKGROUND_GROUPS, darkBackgroundGroups, type OptionGroup,
   usePopoverPlacement,
+  PANEL_W, THEME_BAND_H, COLOR_RAIL_WIDTH,
 } from './colorControls'
 import {
   INDUSTRY_GROUP_LABEL, INDUSTRY_GROUP_ORDER, hexEq, industryFromHex, packById, packsInGroup,
@@ -460,20 +461,40 @@ export function ScaleSettingsModal({
   onClose,
   children,
   anchorRef,
+  placement = 'below',
+  contained = false,
+  containedRootRef,
+  containedDockLeft = COLOR_RAIL_WIDTH,
 }: {
   open: boolean
   onClose: () => void
   children: ReactNode
   anchorRef: RefObject<HTMLElement | null>
+  /** `end` docks to the right of the trigger — Color edition's rail is already
+   *  the left column, so "below" would cover the hue slider. */
+  placement?: 'below' | 'end'
+  /** Theme Preview: same contained dock + slide-out as `ColorPickerPopover`. */
+  contained?: boolean
+  containedRootRef?: RefObject<HTMLElement | null>
+  containedDockLeft?: number
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
-  const place = usePopoverPlacement(anchorRef, open, { prefer: 480, max: 640 })
+  const place = usePopoverPlacement(anchorRef, open && !contained, { prefer: 480, max: 640 })
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
 
   useLayoutEffect(() => {
-    if (!open) return
+    if (!contained || !open) {
+      setPortalRoot(null)
+      return
+    }
+    setPortalRoot(containedRootRef?.current ?? null)
+  }, [contained, open, containedRootRef])
+
+  useLayoutEffect(() => {
+    if (!open || contained) return
     const measure = (e?: Event) => {
       // The panel's own overflow scroll is not the anchor moving — re-pinning
       // on every wheel tick inside Color Agent made the dialog jump under
@@ -489,10 +510,10 @@ export function ScaleSettingsModal({
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
     }
-  }, [open, anchorRef])
+  }, [open, anchorRef, contained])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || contained) return
     function isInside(e: Event) {
       const path = e.composedPath()
       const panel = panelRef.current
@@ -516,9 +537,87 @@ export function ScaleSettingsModal({
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, anchorRef])
+  }, [open, anchorRef, contained])
+
+  useEffect(() => {
+    if (!open || !contained) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      onCloseRef.current()
+    }
+    document.addEventListener('keydown', onKey, true)
+    return () => document.removeEventListener('keydown', onKey, true)
+  }, [open, contained])
 
   if (typeof document === 'undefined') return null
+
+  const body = (
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-4 pb-4 flex flex-col gap-6">
+      {children}
+    </div>
+  )
+
+  if (contained) {
+    if (!open || !portalRoot) return null
+    return createPortal(
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onMouseDown={onClose}
+          className="absolute z-[60]"
+          style={{ left: containedDockLeft, top: 0, right: 0, bottom: 0 }}
+        >
+          <motion.div
+            key="color-agent"
+            ref={panelRef}
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Color Agent"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `min(${PANEL_W}px, calc(100% - 16px))`,
+            }}
+            className="relative flex flex-col overflow-hidden rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)]"
+          >
+            <div
+              className="flex flex-shrink-0 items-center gap-2 border-b border-line px-3 pr-10"
+              style={{ height: THEME_BAND_H }}
+            >
+              <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center text-fg">
+                <SparkleCircleIcon size={14} />
+              </span>
+              <h2 className="min-w-0 flex-1 truncate text-body font-semibold text-fg">Color Agent</h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute right-3 flex h-7 w-7 items-center justify-center rounded-lg text-fg-faint transition-colors hover:bg-elevated/60 hover:text-fg"
+              style={{ top: (THEME_BAND_H - 28) / 2 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+            {body}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>,
+      portalRoot,
+    )
+  }
 
   const panel = open && rect
     ? (
@@ -535,8 +634,15 @@ export function ScaleSettingsModal({
           onMouseDown={(e) => e.stopPropagation()}
           style={{
             position: 'fixed',
-            left: Math.min(Math.max(8, rect.right - SCALE_SETTINGS_W), window.innerWidth - SCALE_SETTINGS_W - 8),
-            ...(place.up ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+            ...(placement === 'end'
+              ? {
+                  left: Math.min(rect.right + 8, window.innerWidth - SCALE_SETTINGS_W - 8),
+                  top: Math.max(8, Math.min(rect.top, window.innerHeight - 8 - Math.min(place.max, 560))),
+                }
+              : {
+                  left: Math.min(Math.max(8, rect.right - SCALE_SETTINGS_W), window.innerWidth - SCALE_SETTINGS_W - 8),
+                  ...(place.up ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
+                }),
             maxHeight: place.max,
             width: SCALE_SETTINGS_W,
           }}

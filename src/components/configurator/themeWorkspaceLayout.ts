@@ -21,9 +21,10 @@ export const SHELL_CHROME = 'bg-nav'
 export const WORKSPACE_CHROME = 'bg-tab-bar'
 
 /**
- * Workspace tabs — Figma `11:5128` (Tablist - Theme workspace).
- * Clear strip (no track fill), active = `bg-app` pill (#f5f5f5 in light),
- * inactive = transparent + muted type, hairline dividers between tabs.
+ * Workspace destination tabs (Theme preview · Variables) use the shared
+ * Chrome tab silhouette (`ChromeTabBackground` + `.color-hub-tab`), not
+ * these chips. The chips remain for other workspace controls (e.g. code
+ * format scope).
  */
 export const WORKSPACE_TAB_TRACK = 'inline-flex min-w-0 items-center gap-[14px] p-[4.5px]'
 export const WORKSPACE_CHIP_REST = 'bg-transparent text-fg-muted'
@@ -36,5 +37,8 @@ export const WORKSPACE_CHIP_ACTIVE = 'bg-app text-fg dark:bg-chip-rest'
  *  `hover:bg-surface` washed controls out). Dark chrome lifts slightly instead. */
 export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
 export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:hover:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] hover:text-fg'
+
+/** Theme switcher chip — fixed so the chrome tab strip does not shift per label. */
+export const THEME_SWITCHER_WIDTH_CLASS = 'w-[11rem]'
 export const CHROME_CONTROL_ACTIVE = 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.08)] text-fg dark:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.09)]'
 export const CHROME_CONTROL_FOCUS = 'focus-within:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:focus-within:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] focus-within:text-fg'

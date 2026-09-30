@@ -498,6 +498,29 @@ export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewToke
   return <PreviewIcon concept={concept} size={size} color={color} />
 }
 
+/** Representative glyphs for the Theme Preview icon-style rail — same weight the canvas uses. */
+const ICON_STYLE_OVERVIEW: IconConcept[] = [
+  'search', 'home', 'mail', 'user', 'settings', 'warning', 'check', 'plus',
+]
+
+export function IconStyleOverview({ weight = 'regular', ariaLabel = 'Phosphor icon style preview' }: { weight?: PhosphorWeight; ariaLabel?: string }) {
+  return (
+    <PhosphorWeightProvider weight={weight}>
+      <div
+        role="img"
+        aria-label={ariaLabel}
+        className="mb-1 grid grid-cols-4 gap-2 rounded-lg border border-line bg-surface px-2 py-2.5"
+      >
+        {ICON_STYLE_OVERVIEW.map((concept) => (
+          <span key={concept} className="flex h-9 items-center justify-center text-fg-muted">
+            <PreviewIcon concept={concept} size={20} />
+          </span>
+        ))}
+      </div>
+    </PhosphorWeightProvider>
+  )
+}
+
 /**
  * `w` overrides a specimen's own width.
  *
@@ -815,8 +838,8 @@ function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
   const disabled = state === 'Disabled'
   const small = (v.Size ?? 'MD') === 'SM'
   const box = selectorGlyph(t, small)
-  const fill = disabled ? t.disabledBg : checked ? t.brandSolid : t.inputSurface ?? inputSurfaceOf(t)
-  const line = disabled ? t.disabledBg : checked ? t.brandSolid : state === 'Hover' ? t.brandSolid : (t.border ?? '#d0d5dd')
+  const fill = disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t)
+  const line = disabled ? t.disabledBg : checked || state === 'Hover' ? t.brandSolid : (t.border ?? '#d0d5dd')
   return (
     <label style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: hitGap(t, box, small ? 8 : 10), cursor: disabled ? 'not-allowed' : 'pointer' }}>
       <HitArea t={t} box={box}>
@@ -830,7 +853,9 @@ function CheckboxSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
           }}
         >
           {checked && (
-            <PreviewIcon concept="check" size={Math.round(box * 0.61)} color={disabled ? t.disabledText : t.onBrand} />
+            <PhosphorWeightProvider weight="bold">
+              <PreviewIcon concept="check" size={Math.round(box * 0.72)} color={disabled ? t.disabledText : t.brandSolid} />
+            </PhosphorWeightProvider>
           )}
         </span>
       </HitArea>
@@ -878,8 +903,7 @@ function ToggleSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
             style={{
               position: 'absolute', top: 2, left: on ? trackW - knob - 2 : 2, width: knob, height: knob,
               // ON: the knob sits on `brandSolid`, so it takes the ink solved
-              // against that fill — the same `content.on-action` the Checkbox's
-              // tick and the Button's label already use. It was literal white,
+              // against that fill (`content.on-action`). It was literal white,
               // which is right for a dark accent and invisible for a pale one:
               // `solidInkPair` flips a pale brand's ink to near-black precisely
               // because white fails on it, and the knob was ignoring that.
@@ -1598,12 +1622,16 @@ function CheckRow({ t, checked, onToggle, children }: { t: PreviewTokens; checke
         style={{
           width: 18, height: 18, padding: 0, border: `${strokeControl(t)} solid ${checked ? t.brandSolid : (t.border ?? '#d0d5dd')}`,
           borderRadius: radiusRoleOf(t, 'control'),
-          background: checked ? t.brandSolid : t.inputSurface ?? inputSurfaceOf(t),
+          background: t.inputSurface ?? inputSurfaceOf(t),
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', transition: STATE_TRANSITION,
         }}
       >
-        {checked && <PreviewIcon concept="check" size={11} color={t.onBrand} />}
+        {checked && (
+          <PhosphorWeightProvider weight="bold">
+            <PreviewIcon concept="check" size={13} color={t.brandSolid} />
+          </PhosphorWeightProvider>
+        )}
       </button>
       <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{children}</span>
     </label>

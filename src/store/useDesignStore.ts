@@ -56,8 +56,10 @@ interface ColorScale {
 export interface CustomColor {
   key: string // slug — unique, used as the token prefix (e.g. "teal" → teal-1…12)
   label: string // display name
-  base: string // hex the scale derives from (tone 6)
+  base: string // hex the scale derives from (tone 9 — the solid anchor)
   scale: ColorScale
+  /** When set, the dark ramp's anchor differs from `base` (light anchor). */
+  darkBase?: string
   /** Dark-appearance twin, anchored to `darkBackground` (Radix ships every
    *  colour as two scales). Optional only for forward-compat with pre-v40
    *  snapshots — `useEnsureColorScales` backfills it. */

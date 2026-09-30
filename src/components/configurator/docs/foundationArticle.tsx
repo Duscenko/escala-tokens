@@ -27,7 +27,7 @@ import { GET_STARTED_KEY, colorPrev, introPager, overviewNext } from './getStart
 /** "Edit in Variables Generator" — the link that makes this a documentation OF
  *  the editor rather than a parallel description of it. It opens the very
  *  foundation the page documents. */
-function EditPill({ label, onEdit }: { label: string; onEdit: () => void }) {
+export function EditTokensPill({ label, onEdit }: { label: string; onEdit: () => void }) {
   const { t } = useI18n()
   return (
     <button
@@ -90,9 +90,9 @@ export function FoundationArticle({
         scope="variable"
         markdown={() => withAgentEnvelope('variable', doc.label, foundationMarkdown(doc, system))}
       />
-      <EditPill label={doc.label} onEdit={() => onEdit(doc.key)} />
+      {!hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : null}
     </>
-  ), [doc, system, onEdit])
+  ), [doc, system, onEdit, hubMode])
   useThemeHubHeaderActions(hubMode ? headerActions : null)
 
   return (
@@ -121,7 +121,10 @@ export function FoundationArticle({
           any conceptual copy — you can't act on a page until you know how to
           consume what it documents. */}
       <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
-        <UseItBlock useIt={useItForFoundation(doc)} />
+        <UseItBlock
+          useIt={useItForFoundation(doc)}
+          trailingActions={hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : undefined}
+        />
       </DocSection>
 
       <DocSection

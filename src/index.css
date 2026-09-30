@@ -801,3 +801,72 @@ button:focus-visible > .random-theme-border {
   font-size: 12px;
   padding-inline: 8px;
 }
+
+/* Theme workspace destinations — same Chrome silhouette as Color hub /
+   PreviewPanel, hug-content (two named destinations beside ThemeSwitcher,
+   not equal-flex cells). The 52px bar is `--tab-bar` (`WORKSPACE_CHROME`)
+   like the left rails. Active fill is `--nav` (TopNav / About · Generator),
+   not `--app` — that layer-0 recess is for Color hub tabs that merge into
+   the canvas; here the tab must stay inside the strip. Overflow clips the
+   SVG's bottom toes so they cannot puncture `border-b`. ThemeSwitcher
+   keeps its own chip. Do not paint the strip `bg-app` or the chip/tab vanish. */
+.theme-workspace-tab-bar {
+  overflow: hidden;
+  /* Folder toggle is flush with the 64px Variables icon column. Tab↔tab
+     gap is separate so chrome shoulders don't eat into each other. */
+  --theme-workspace-tab-gap: 12px;
+  --theme-workspace-leading-gap: 0px;
+  gap: var(--theme-workspace-leading-gap);
+  padding-left: 0;
+}
+.theme-workspace-tab-strip.color-hub-tab-strip {
+  position: relative;
+  flex: 0 1 auto;
+  width: auto;
+  /* Color-hub tabs sit flush so Chrome shoulders nest. These two
+     destinations hug their labels — a gap keeps the silhouettes from
+     eating into each other. */
+  gap: var(--theme-workspace-tab-gap, 12px);
+}
+.theme-workspace-chrome-tab.color-hub-tab {
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding-inline: 22px;
+  transition: color 220ms var(--ease-out-quint);
+}
+.theme-workspace-chrome-tab.color-hub-tab:not(.color-hub-tab-active) {
+  color: var(--fg-faint);
+  font-weight: 500;
+}
+.theme-workspace-chrome-tab.color-hub-tab:not(.color-hub-tab-active):hover {
+  color: var(--fg-muted);
+}
+.theme-workspace-chrome-tab.color-hub-tab-active {
+  color: var(--fg);
+  font-weight: 600;
+}
+.theme-workspace-chrome-tab.color-hub-tab::before {
+  content: none;
+}
+/* Crop the SVG's 1px bottom toe (`H0v-2` in chrome-tabs) so a sharp
+   corner cannot sit on — or poke through — the bar's hairline. */
+.theme-workspace-chrome-tab .color-hub-tab-bg,
+.theme-workspace-tab-indicator .color-hub-tab-bg {
+  bottom: 1px;
+}
+/* Active destination = TopNav (`--nav`), not canvas `--app`. */
+.theme-workspace-tab-indicator .color-hub-tab-geometry {
+  fill: var(--nav);
+}
+/* One silhouette travels between destinations (measured in the strip).
+   Always painted — hover fills stay on the inactive buttons. */
+.theme-workspace-tab-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.theme-workspace-tab-indicator .color-hub-tab-bg {
+  opacity: 1;
+}

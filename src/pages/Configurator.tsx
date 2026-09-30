@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, Fragment, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type ComponentType, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
@@ -18,13 +18,13 @@ import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
-import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
-import { ThemeSwitcher } from '../components/configurator/ThemeSwitcher'
+import { ThemeSwitcher, ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
-import { SHELL_CHROME, WORKSPACE_CHROME, WORKSPACE_CHIP_ACTIVE, WORKSPACE_CHIP_HOVER, WORKSPACE_CHIP_REST, WORKSPACE_TAB_TRACK } from '../components/configurator/themeWorkspaceLayout'
+import { SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import TopNav, { TOP_NAV_LOCKUP_FALLBACK_W, type TopNavKey } from '../components/configurator/TopNav'
@@ -34,7 +34,7 @@ import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
-import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
+import { ChromeTabBackground, ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
 import { usePopoverPlacement } from '../components/configurator/colorControls'
@@ -390,6 +390,8 @@ function WorkspaceTabIcon({ source }: { source: string }) {
   return <span aria-hidden className="size-[15.75px] bg-current" style={{ WebkitMask: mask, mask }} />
 }
 
+const WORKSPACE_TAB_PILL = { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
+
 function ThemeWorkspaceTabs({
   value,
   onChange,
@@ -402,13 +404,59 @@ function ThemeWorkspaceTabs({
   leading?: ReactNode
 }) {
   const { t } = useI18n()
+  const reduce = useReducedMotion()
+  const stripRef = useRef<HTMLDivElement>(null)
+  const prevTab = useRef(value)
+  const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [slide, setSlide] = useState(false)
+
+  const measurePill = useCallback(() => {
+    const track = stripRef.current
+    const item = track?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+    if (!track || !item) {
+      setPill(null)
+      return
+    }
+    const next = { x: item.offsetLeft, y: item.offsetTop, w: item.offsetWidth, h: item.offsetHeight }
+    setPill((prev) =>
+      prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h
+        ? prev
+        : next,
+    )
+  }, [])
+
+  useLayoutEffect(() => {
+    const moved = prevTab.current !== value && prevTab.current != null && value != null
+    prevTab.current = value
+    setSlide(Boolean(moved && !reduce))
+    measurePill()
+  }, [value, measurePill, reduce])
+
+  useEffect(() => {
+    measurePill()
+  }, [value, measurePill])
+
+  useEffect(() => {
+    const track = stripRef.current
+    if (!track) return
+    const ro = new ResizeObserver(() => measurePill())
+    ro.observe(track)
+    for (const child of track.children) {
+      if (child instanceof HTMLElement && child.getAttribute('aria-hidden') !== 'true') {
+        ro.observe(child)
+      }
+    }
+    return () => ro.disconnect()
+  }, [measurePill])
+
   return (
-    <div className={`theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center gap-3 border-b border-line ${WORKSPACE_CHROME} pl-[8px] pr-3 xl:pr-4`}>
+    <div className={`theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center border-b border-line ${WORKSPACE_CHROME} pr-3 xl:pr-4`}>
       {leading}
       <div
+        ref={stripRef}
         role="tablist"
         aria-label={t('Theme workspace')}
-        className={`theme-workspace-tab-strip ${WORKSPACE_TAB_TRACK}`}
+        className="theme-workspace-tab-strip color-hub-tab-strip flex h-full min-w-0 items-end"
         onKeyDown={(event) => {
           const current = THEME_WORKSPACE_TABS.findIndex((item) => item.key === value)
           let next = current
@@ -423,34 +471,36 @@ function ThemeWorkspaceTabs({
           requestAnimationFrame(() => tabs[next]?.focus())
         }}
       >
-        {THEME_WORKSPACE_TABS.map((item, index) => {
+        {pill && (
+          <motion.span
+            aria-hidden
+            className="theme-workspace-tab-indicator"
+            initial={false}
+            animate={{ x: pill.x, y: pill.y, width: pill.w, height: pill.h }}
+            transition={slide ? WORKSPACE_TAB_PILL : { duration: 0 }}
+          >
+            <ChromeTabBackground />
+          </motion.span>
+        )}
+        {THEME_WORKSPACE_TABS.map((item) => {
           const active = item.key === value
           return (
-            <Fragment key={item.key}>
-              {index > 0 && (
-                <span aria-hidden className="h-[26.5px] w-px flex-shrink-0 bg-line" />
-              )}
-              <button
-                type="button"
-                role="tab"
-                aria-selected={active}
-                tabIndex={active ? 0 : -1}
-                onClick={() => onChange(item.key)}
-                title={t(item.label)}
-                className={`theme-workspace-tab group flex h-9 min-w-0 items-center gap-[9px] rounded-[9px] py-[4.5px] pl-[4.5px] pr-[9px] text-caption tracking-[0.18px] transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
-                  ? `${WORKSPACE_CHIP_ACTIVE} font-bold`
-                  : `font-normal ${WORKSPACE_CHIP_REST} ${WORKSPACE_CHIP_HOVER}`
-                }`}
-              >
-                <span className={`grid size-[27px] flex-shrink-0 place-items-center rounded-[6.75px] transition-colors ${active
-                  ? 'bg-inverse-action text-inverse-action-ink'
-                  : 'bg-black/[0.04] text-fg-faint dark:bg-white/[0.06] group-hover:text-fg-muted'
-                }`}>
-                  <WorkspaceTabIcon source={item.icon} />
-                </span>
-                <span className="truncate px-[2.25px]">{t(item.label)}</span>
-              </button>
-            </Fragment>
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              tabIndex={active ? 0 : -1}
+              onClick={() => onChange(item.key)}
+              title={t(item.label)}
+              className={`color-hub-tab theme-workspace-chrome-tab ${active ? 'color-hub-tab-active' : ''}`}
+            >
+              {!active && <ChromeTabBackground />}
+              <span className="relative flex min-w-0 items-center gap-2">
+                <WorkspaceTabIcon source={item.icon} />
+                <span className="truncate tracking-[0.18px]">{t(item.label)}</span>
+              </span>
+            </button>
           )
         })}
       </div>
@@ -672,6 +722,7 @@ export default function Configurator() {
     return w === 'documentation' ? 'preview' : w
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
+  const [themesLibraryOpen, setThemesLibraryOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
@@ -1707,7 +1758,7 @@ export default function Configurator() {
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
-          (Color/Type/Layout hub tabs, PreviewPanel's Preview/Artefacts/.MD). */}
+          (Theme workspace destinations, Color/Type/Layout hub, PreviewPanel). */}
       <ChromeTabDefs />
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
@@ -1779,23 +1830,31 @@ export default function Configurator() {
               onChange={changeThemeWorkspaceTab}
               search={tokenSearchField}
               leading={(
-                <ThemeSwitcher
-                  previewTheme={previewTheme}
-                  onPreviewThemeChange={changePreviewTheme}
-                  onStylePreview={setStylePreview}
-                  activeStylePreview={stylePreview}
-                  onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
-                  onDuplicateTheme={() => {
-                    const key = useDesignStore.getState().duplicateTheme(
-                      previewTheme,
-                      t('Copy (duplicated theme suffix)'),
-                    )
-                    if (!key) return
-                    setStylePreview(null)
-                    changePreviewTheme(key)
-                  }}
-                  onOpenReset={() => setResetOpen(true)}
-                />
+                <>
+                  <ThemesLibraryToggle
+                    open={themesLibraryOpen}
+                    onToggle={() => setThemesLibraryOpen((open) => !open)}
+                  />
+                  <div className="flex h-full flex-shrink-0 items-center pl-2.5 mr-[12px]">
+                    <ThemeSwitcher
+                      previewTheme={previewTheme}
+                      onPreviewThemeChange={changePreviewTheme}
+                      onStylePreview={setStylePreview}
+                      activeStylePreview={stylePreview}
+                      onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+                      onDuplicateTheme={() => {
+                        const key = useDesignStore.getState().duplicateTheme(
+                          previewTheme,
+                          t('Copy (duplicated theme suffix)'),
+                        )
+                        if (!key) return
+                        setStylePreview(null)
+                        changePreviewTheme(key)
+                      }}
+                      onOpenReset={() => setResetOpen(true)}
+                    />
+                  </div>
+                </>
               )}
             />
           )}
@@ -1813,6 +1872,19 @@ export default function Configurator() {
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
                 { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
+            />
+          )}
+          {themeWorkspaceRailVisible && themesLibraryOpen && (
+            <ThemeLibraryRail
+              previewTheme={previewTheme}
+              onPreviewThemeChange={changePreviewTheme}
+              onStylePreview={setStylePreview}
+              activeStylePreview={stylePreview}
+              onSyncFigma={syncFigmaForTheme}
+              onOpenInCode={openCodeForTheme}
+              onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+              onEditTheme={(key) => { setStylePreview(null); setThemeEditor(key) }}
+              onOpenReset={() => setResetOpen(true)}
             />
           )}
           {/* Center editor */}

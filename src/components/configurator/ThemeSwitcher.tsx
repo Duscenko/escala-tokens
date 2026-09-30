@@ -10,9 +10,11 @@ import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, THEME_SWITCHER_WIDTH_CLASS } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { ThemeAvatar } from './ThemeLibraryRail'
+import { FOUNDATION_ICON_RAIL_WIDTH } from './FoundationIconRail'
+import { FolderIcon } from './VariableCollectionRail'
 
 const MENU_W = 260
 
@@ -27,6 +29,37 @@ const PRESET_AVATAR_RAMPS = Object.fromEntries(
 
 const ITEM =
   'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
+
+/** Same 64px as the Variables icon column under the tab bar. Opens My themes
+ *  in the column after that rail — the list is scannable past the 5-row
+ *  dropdown cap (`MY_THEME_RAIL_LIMIT`). */
+export function ThemesLibraryToggle({
+  open,
+  onToggle,
+}: {
+  open: boolean
+  onToggle: () => void
+}) {
+  const { t } = useI18n()
+  const label = open ? t('Hide themes library') : t('Show themes library')
+  return (
+    <button
+      type="button"
+      aria-pressed={open}
+      aria-expanded={open}
+      aria-controls="themes-library"
+      aria-label={label}
+      title={label}
+      onClick={onToggle}
+      className={`flex h-full flex-shrink-0 items-center justify-center border-r border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+        open ? 'bg-app text-fg' : `text-fg-muted ${CHROME_CONTROL_HOVER}`
+      }`}
+      style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
+    >
+      <FolderIcon size={16} />
+    </button>
+  )
+}
 
 export function ThemeSwitcher({
   previewTheme,
@@ -120,10 +153,10 @@ export function ThemeSwitcher({
         aria-label={t('Switch theme')}
         title={chipName}
         onClick={() => setOpen((v) => !v)}
-        className={`flex h-8 max-w-[11rem] items-center gap-1.5 rounded-lg px-1.5 text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+        className={`flex h-8 ${THEME_SWITCHER_WIDTH_CLASS} min-w-0 items-center gap-1.5 rounded-lg px-1.5 text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
         <ThemeAvatar ramp={chipRamp} appearance={chipKind} fallback={chipFallback} />
-        <span className="min-w-0 truncate">{chipName}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{chipName}</span>
         <ChevronDown />
       </button>
       {createPortal(

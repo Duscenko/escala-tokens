@@ -269,7 +269,7 @@ export function ExampleCell({ label, children }: { label: string; children: Reac
  *  as the same object as every other code block on the page. The tab strip
  *  mirrors `AgentInstallPanel`'s (aria-pressed + `bg-elevated` active) so the
  *  product's two "how do I install this" surfaces don't drift apart. */
-export function UseItBlock({ useIt }: { useIt: UseIt }) {
+export function UseItBlock({ useIt, trailingActions }: { useIt: UseIt; trailingActions?: ReactNode }) {
   const { t } = useI18n()
   const [active, setActive] = useState<UseItDestId>('code')
   // Falls back to the first destination rather than rendering an empty pane if
@@ -298,7 +298,10 @@ export function UseItBlock({ useIt }: { useIt: UseIt }) {
           </div>
         }
       >
-        <CopyButton text={dest.code} />
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {trailingActions}
+          <CopyButton text={dest.code} />
+        </div>
       </BlockChrome>
       <CodePane code={dest.code} minH={0} />
       {dest.note && (

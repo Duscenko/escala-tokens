@@ -40,43 +40,6 @@ import NeedMyThemeEmpty from './NeedMyThemeEmpty'
 // screens. Don't re-add it as a fourth icon — route to the tab instead.
 export type ThemeHubSurface = 'artefacts' | 'github' | 'figma'
 
-// Sun / moon assets carry a hardcoded `stroke="white"`, so they're painted as
-// CSS masks to follow the button's ink — same technique as the Documentation
-// workspace `ViewIcon` rail and the Themes Library toggle.
-const APPEARANCE_ICON: Record<ThemeAppearance, string> = {
-  light: '/icons/settings/light-mode.svg',
-  dark: '/icons/settings/dark-mode.svg',
-}
-
-/**
- * ONE-icon toggle for the board's appearance: a dark board shows the sun (click
- * to go light), a light board shows the moon — the icon is the action, not the
- * current state. Sized to match `ThemeViewSwitcher` beside it (same `h-8`
- * pill, same `h-7 min-w-7` button). Flips the PREVIEW only, never the workspace
- * chrome.
- */
-function PreviewAppearanceButton({ value, onChange }: {
-  value: ThemeAppearance
-  onChange: (appearance: ThemeAppearance) => void
-}) {
-  const { t } = useI18n()
-  const next: ThemeAppearance = value === 'dark' ? 'light' : 'dark'
-  const mask = `url("${APPEARANCE_ICON[next]}") center center / contain no-repeat`
-  return (
-    <div className="flex h-8 items-center rounded-lg p-0.5 border border-line bg-tab-bar">
-      <button
-        type="button"
-        onClick={() => onChange(next)}
-        aria-label={t('Preview in {appearance}', { appearance: t(next) })}
-        title={t('Preview in {appearance}', { appearance: t(next) })}
-        className={`grid h-7 min-w-7 place-items-center rounded-md px-1.5 transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 text-fg-faint ${CHROME_CONTROL_HOVER}`}
-      >
-        <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
-      </button>
-    </div>
-  )
-}
-
 function IntegrationContextBar({ view, onBack }: { view: 'github' | 'figma'; onBack: () => void }) {
   const { t } = useI18n()
   return (
@@ -248,7 +211,7 @@ const DRAWER_GUTTER = 24
 
 function ArtefactsView({
   previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
-  inspecting, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
+  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
   onOpenComponents,
 }: {
   previewTheme: string
@@ -264,6 +227,7 @@ function ArtefactsView({
    *  in the hub (the toggle is in the canvas header, a sibling of this view),
    *  never local here. */
   inspecting: boolean
+  onInspectingChange: (active: boolean) => void
   onPickRole: (roleId: string, css: string, appearance: ThemeAppearance) => void
   /** A role picked here is open in Token Details — the overlay holds its pin
    *  for the duration and drops it when the drawer closes. */
@@ -349,6 +313,7 @@ function ArtefactsView({
         onPick={onPickRole}
         onOpenTable={onOpenRoleInVariables}
         editing={editingRole}
+        onExitMode={() => onInspectingChange(false)}
       />
     </div>
   )
@@ -585,10 +550,9 @@ export default function ThemePreviewHub({
         ? t('Theme reference')
         : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? t('Docs')))
       : t('Artefacts')
-  // Flip the PREVIEW's appearance (the board on the right), not the workspace
-  // chrome — same contract the Color-edition card's toggle had before it moved
-  // up here. Clearing `accentPreview` mirrors the rail's own wrapper so an
-  // optimistic hue paint doesn't linger across the swap.
+  // Flip the PREVIEW's appearance (the board), not the workspace chrome.
+  // Color edition's Light/Dark is the control. Clearing `accentPreview`
+  // mirrors the rail's own wrapper so an optimistic hue paint doesn't linger.
   const handleAppearanceChange = (appearance: ThemeAppearance) => {
     setAccentPreview(null)
     setRandomBoardAppearance(null)
@@ -613,8 +577,8 @@ export default function ThemePreviewHub({
     setInspectedAppearance(appearance ?? null)
   }
   // What the BOARD is showing: a live try-on renders from `stylePreview.appearance`,
-  // a committed theme from `previewAppearance`. The header sun/moon reads and
-  // writes this, so it works for both.
+  // a committed theme from `previewAppearance`. Color edition's Light/Dark
+  // switch reads and writes this, so it works for both.
   const boardAppearance: ThemeAppearance = stylePreview?.appearance ?? previewAppearance
   const effectiveBoardAppearance: ThemeAppearance = randomBoardAppearance ?? boardAppearance
   const effectiveTileAppearances = useMemo(
@@ -645,6 +609,8 @@ export default function ThemePreviewHub({
           key={previewTheme}
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
+          colorAppearance={effectiveBoardAppearance}
+          onColorAppearanceChange={handleAppearanceChange}
           activePanel={activeFoundation ?? 'color'}
           // "Go to advanced edition" IS `selectFoundation` — the shell handler
           // that switches to the Variables tab on a given foundation. Passing
@@ -688,16 +654,23 @@ export default function ThemePreviewHub({
               className={`flex h-full min-h-0 flex-col overflow-hidden ${needsMyTheme ? 'rounded-xl border border-line bg-app' : ''}`}
             >
               {/* One header band for every hub view — the active view's NAME
-                  sits top-left; page actions (Copy page…), Figma sync and the
-                  preview appearance toggle stay pinned on the right. The three
-                  hub views switch from the Documentation workspace's left rail,
-                  not from icon pills in this header. The sun/moon toggle flips
-                  ONLY the board on the right, not the workspace chrome. */}
+                  sits top-left; Inspect, Figma sync and Docs stay on the right.
+                  Light/Dark lives on Color edition's header so the ramps and
+                  the board cannot disagree. */}
               <div className="flex flex-shrink-0 items-center justify-between gap-3 px-3" style={{ height: THEME_BAND_H }}>
-                <span className="min-w-0 flex flex-col">
-                  <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
-                  <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
-                </span>
+                {contrastOpen ? (
+                  <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
+                ) : docsOpen ? (
+                  <HubBreadcrumb
+                    section={activeDocKey === OVERVIEW_KEY ? hubViewLabel : t(hubViewLabel)}
+                    onBack={() => onDocsOpenChange(false)}
+                  />
+                ) : (
+                  <span className="min-w-0 flex flex-col">
+                    <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
+                    <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
+                  </span>
+                )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
@@ -705,7 +678,6 @@ export default function ThemePreviewHub({
                   )}
                   <FigmaSyncButton onOpen={() => onSurfaceChange('figma')} />
                   <DocsPanelButton active={docsOpen} onClick={() => onDocsOpenChange(!docsOpen)} />
-                  <PreviewAppearanceButton value={effectiveBoardAppearance} onChange={handleAppearanceChange} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>
@@ -731,12 +703,13 @@ export default function ThemePreviewHub({
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView
                     previewTheme={previewTheme}
-                    previewAppearance={previewAppearance}
+                    previewAppearance={effectiveBoardAppearance}
                     accentPreview={accentPreview}
                     stylePreview={paintedPreview}
                     drawerOpen={quickEditOpen}
                     editingRole={editingToken != null}
                     inspecting={inspecting}
+                    onInspectingChange={setInspecting}
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
                     onPickRole={pickRole}

@@ -1,4 +1,6 @@
-// Theme Preview's left rail — one foundation's quick-edit card at a time.
+// Theme Preview's left rail — one foundation's quick-edit panel at a time.
+// Edition sits on `WORKSPACE_CHROME` (no inner `--app` card). `RailCard` is
+// the integration-rail card (Connection / Protocol), not this column.
 //
 // The 64px `FoundationIconRail` beside this column picks the widget: Color
 // (accent hue + neutral tint + state chips + Add secondary + Contrast grid),
@@ -11,12 +13,15 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
-import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
-import { useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra, resolveThemePages, type StateRole } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
+import {
+  useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
+  resolveThemePages, stateColorAnchor, type StateRole,
+} from '../../lib/colorActions'
+import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, recommendStateColors, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
@@ -42,21 +47,25 @@ import {
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import {
-  BRAND_EXTRA_LABEL, GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, nextBrandExtraRank,
+  BRAND_EXTRA_LABEL, GLOBAL_FAMILY, SLOT_DISPLAY_LABEL, nextBrandExtraRank, scaleForFamily,
   type BrandExtraRank,
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { resetThemeSemantics, type StylePreview } from '../../lib/stylePreviewOverlay'
+import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
-import { presetHarmony, presetStates } from '../../lib/themePresets'
+import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
+import { IconStyleOverview } from './docs/specimens'
 import type { StatusAction } from '../../lib/themePresets'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
+import { ColorAgentButton } from '../ui/shimmer-button'
+import { SparkleCircleIcon } from '../ui/icons'
+import { CHROME_CONTROL_SHELL, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -180,7 +189,7 @@ export function ThemeIdentityBand({
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
       <label
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 border bg-input-bg pl-3 pr-2 transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] ${RAIL_SURFACE_RADIUS} ${nameError ? 'border-status-danger/70' : 'border-line'}`}
+        className={`group flex h-9 w-full min-w-0 items-center gap-2 border bg-transparent pl-3 pr-2 transition-[color,border-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 ${RAIL_SURFACE_RADIUS} ${nameError ? 'border-status-danger/70' : 'border-line'}`}
         title={t('Rename theme')}
       >
           <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
@@ -291,6 +300,37 @@ function AdvancedIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden><path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1" /><circle cx="10" cy="4" r="1.4" /><circle cx="6" cy="8" r="1.4" /><circle cx="11" cy="12" r="1.4" /></svg>
 }
 
+/** Light / Dark for the preview board — Color edition header, replacing the
+ *  Advanced sliders chip. Same appearance the artefacts resolve against. */
+function ColorAppearanceSwitch({ value, onChange }: {
+  value: ThemeAppearance
+  onChange: (appearance: ThemeAppearance) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <div
+      className={`flex h-6 flex-shrink-0 items-center rounded-md p-0.5 ${CHROME_CONTROL_SHELL}`}
+      role="group"
+      aria-label={t('Preview appearance')}
+      title={t('Choose which appearance of this theme the artefacts display.')}
+    >
+      {(['light', 'dark'] as const).map((mode) => (
+        <button
+          key={mode}
+          type="button"
+          aria-pressed={value === mode}
+          onClick={() => onChange(mode)}
+          className={`rounded px-1.5 py-0.5 text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            value === mode ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg-muted'
+          }`}
+        >
+          {t(mode === 'light' ? 'Light' : 'Dark')}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function RailTooltip({ children, label, tooltipId, clickOnly = false }: { children: React.ReactNode; label: string; tooltipId: string; clickOnly?: boolean }) {
   const anchor = useRef<HTMLSpanElement>(null)
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
@@ -391,15 +431,6 @@ function InfoHint({ children }: { children: string }) {
   )
 }
 
-function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
-  const { t } = useI18n()
-  return (
-    <section aria-label={t(label)} className={`min-w-0 divide-y divide-line overflow-visible bg-app ${RAIL_SURFACE_RADIUS}`}>
-      {children}
-    </section>
-  )
-}
-
 /**
  * Foundations that have a Theme Preview widget. `spacing` and `grid` stay
  * Variables-only — they have no quick control here. `icons` is Style edition
@@ -432,40 +463,21 @@ function extraSeedHex(brandHex: string, rank: BrandExtraRank): string {
 type ColorChipId = 'accent' | 'neutral' | StateRole | BrandExtraRank
 
 /**
- * One foundation's quick panel: a titled card, its controls, and the single
- * door to the full token table.
- *
- * The "Go to advanced edition" button is `selectFoundation` in disguise —
- * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
- * lands on the very foundation you were adjusting. Color edition moves that
- * door to the header sliders chip (Figma 40:1373) and replaces this footer
- * with Random.
- */
-/**
- * The card shell every Theme-workspace rail uses — `EditionCard` here and the
- * integration rail's Connection / Protocol blocks. Extracted when the second
- * rail needed it: two hand-rolled copies of one card is the drift this project
- * keeps paying for (`RailGroupNav`, `RailSelect`, `TokenDetailsModal`).
- *
- * `bg-app` on the rail's own `WORKSPACE_CHROME` is what makes it read as a
- * card — there is no border; the fill is the boundary.
+ * Integration-rail card — Connection / Protocol. `bg-app` on `WORKSPACE_CHROME`
+ * is the boundary (no extra border). Theme Preview edition does not use this.
  */
 export function RailCard({ title, trailing, footer, flush, children }: {
   title: string
-  /** Header slot — Color edition puts the Advanced sliders chip here. */
+  /** Header slot — unused by Theme Preview edition. */
   trailing?: React.ReactNode
   footer?: React.ReactNode
-  /** No row rules, Regular title — Color edition is one stacked block. */
+  /** No row rules, Regular title. */
   flush?: boolean
   children: React.ReactNode
 }) {
   const { t } = useI18n()
   return (
     <section aria-label={t(title)} className={`min-w-0 overflow-visible bg-app ${RAIL_SURFACE_RADIUS}`}>
-      {/* Explicit top AND bottom padding: with `pt` alone the title's air came
-          from `min-h`'s leftover, which centred it 18px below the card edge and
-          6px above the first row — top-heavy, and the gap the eye reads as
-          "title belongs to this card" was the smaller of the two. */}
       <div className="flex min-h-8 items-center justify-between gap-2 px-3 pt-2 pb-1.5">
         <span className={`min-w-0 truncate text-caption text-fg ${flush ? 'font-normal' : 'font-semibold'}`}>{t(title)}</span>
         {trailing}
@@ -476,39 +488,51 @@ export function RailCard({ title, trailing, footer, flush, children }: {
   )
 }
 
+/**
+ * One foundation's quick panel: title, widgets, and the door to Variables.
+ *
+ * The "Go to advanced edition" button is `selectFoundation` in disguise —
+ * `setActiveFoundation(key)` + switch to the Variables tab — so arriving there
+ * lands on the very foundation you were adjusting. Color edition puts Light/
+ * Dark in that header slot (the board + ramps share one appearance) and
+ * replaces the footer with Random.
+ *
+ * Sits on `WORKSPACE_CHROME`. Do not wrap this in `RailCard` — that `--app`
+ * fill is for the integration rail's Connection / Protocol blocks.
+ */
 function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdvanced, children }: {
   title: string
   foundationKey: string
-  /** Header slot — Color edition puts the Advanced sliders chip here. */
+  /** Header slot — Color edition puts Light/Dark here. */
   trailing?: React.ReactNode
   /** Replaces the default Advanced footer. Color edition puts Random here. */
   footer?: React.ReactNode
-  /** No row rules, Regular title — Color edition is one stacked block. */
+  /** No row rules — Color edition groups with its own hairlines. */
   flush?: boolean
   onOpenAdvanced: (foundationKey: string) => void
   children: React.ReactNode
 }) {
   const { t } = useI18n()
   return (
-    <RailCard
-      title={title}
-      trailing={trailing}
-      flush={flush}
-      footer={footer ?? (
-        <div className="px-3 pb-2.5 pt-2">
+    <section aria-label={t(title)} className="min-w-0 overflow-visible">
+      <div className="flex min-h-8 items-center justify-between gap-2 border-b border-line px-3 pb-2">
+        <span className={`min-w-0 truncate text-caption text-fg ${flush ? 'font-normal' : 'font-semibold'}`}>{t(title)}</span>
+        {trailing}
+      </div>
+      <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
+      {footer ?? (
+        <div className="border-t border-line px-3 pb-2.5 pt-2">
           <button
             type="button"
             onClick={() => onOpenAdvanced(foundationKey)}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-app px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            className={`flex h-8 w-full items-center justify-center gap-1.5 border border-line bg-input-bg px-2 text-mini font-medium text-fg-muted transition-colors hover:border-line-strong hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${RAIL_SURFACE_RADIUS}`}
           >
             <AdvancedIcon />
             {t('Go to advanced edition')}
           </button>
         </div>
       )}
-    >
-      {children}
-    </RailCard>
+    </section>
   )
 }
 
@@ -518,6 +542,29 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
  * as a comet (`.random-theme-border` in index.css) so the button reads as
  * the one generative action without a static rainbow sitting on every row.
  */
+const CONTRAST_THUMB_STEPS = [3, 9, 12] as const
+
+function ContrastGridThumb({ tones }: { tones: readonly string[] }) {
+  return (
+    <span
+      aria-hidden
+      className="grid size-7 flex-shrink-0 grid-cols-3 gap-px overflow-hidden rounded-[5px] bg-line"
+    >
+      {tones.flatMap((bg, col) =>
+        tones.map((fg, row) => (
+          <span
+            key={`${row}-${col}`}
+            className="min-h-0 min-w-0"
+            style={{
+              background: `linear-gradient(${fg}, ${fg}) center / 45% 45% no-repeat, ${bg}`,
+            }}
+          />
+        )),
+      )}
+    </span>
+  )
+}
+
 function RandomThemeButton({ onClick }: { onClick: () => void }) {
   const { t } = useI18n()
   return (
@@ -1147,6 +1194,8 @@ function TintSlider({
 export default function ThemeQuickSettingsRail({
   previewTheme,
   previewAppearance,
+  colorAppearance,
+  onColorAppearanceChange,
   activePanel = 'color',
   onOpenAdvanced,
   onAccentPreview,
@@ -1160,6 +1209,9 @@ export default function ThemeQuickSettingsRail({
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
+  /** Light/Dark currently on the artefacts board — Color edition reads and writes this ramp. */
+  colorAppearance?: ThemeAppearance
+  onColorAppearanceChange?: (appearance: ThemeAppearance) => void
   /** Which edition card the foundation icon rail asked for. */
   activePanel?: QuickPanelFoundation
   /** Opens the Variables tab on a foundation — ONE handler where there used to
@@ -1195,6 +1247,9 @@ export default function ThemeQuickSettingsRail({
   const [undo, setUndo] = useState<{ snapshot: DesignSnapshot; label: string } | null>(null)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
+  const [agentOpen, setAgentOpen] = useState(false)
+  const agentAnchorRef = useRef<HTMLDivElement>(null)
+  const rampAppearance = colorAppearance ?? previewAppearance
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
   // toast: a failure the user has to act on shouldn't time out.
@@ -1209,8 +1264,9 @@ export default function ThemeQuickSettingsRail({
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
   const {
     themeSources, customColors, primaryColor, grayBaseColor, neutralTint, linkNeutralToAccent,
-    errorColor, warningColor, successColor, infoColor,
-    patchThemeFoundations, setNeutralTint,
+    linkStatesToAccent, setLinkNeutralToAccent, setLinkStatesToAccent,
+    contrastShift, setContrastShift, setNeutralTint,
+    patchThemeFoundations,
   } = store
   // While a style is being tried on, every readout comes from the PRESET — the
   // same source `resolveStylePreviewTokens` paints the artefacts from, so the
@@ -1452,13 +1508,13 @@ export default function ThemeQuickSettingsRail({
     })
   }
 
-  const writeState = (themeKey: string, role: StateRole, hex: string) => {
+  const writeState = (themeKey: string, role: StateRole, hex: string, appearance: ThemeAppearance) => {
     const s = useDesignStore.getState()
     const family = s.themeSources[themeKey]?.[role] ?? GLOBAL_FAMILY[role]
     const affected = s.themeOrder.filter((theme) => (s.themeSources[theme]?.[role] ?? GLOBAL_FAMILY[role]) === family)
     const isGlobal = family === GLOBAL_FAMILY[role]
     if (!isGlobal && affected.length <= 1) {
-      applyState(role, hex, false, themeKey)
+      applyState(role, hex, false, themeKey, appearance)
       return
     }
     const labelRoot = s.themeLabels[themeKey] || themeKey.replace(/-/g, ' ')
@@ -1473,6 +1529,7 @@ export default function ThemeQuickSettingsRail({
       key: familyKey,
       label: `${labelRoot} ${SLOT_DISPLAY_LABEL[role]}`,
       base: hex,
+      darkBase: hex,
       scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light),
       darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
     })
@@ -1520,22 +1577,31 @@ export default function ThemeQuickSettingsRail({
   // left the tint track one gesture behind the Accent row until pointer-up.
   // A detached neutral remains stable, as expected.
   const liveAccent = accentPreview ?? accent
+  const stateRecommendation = useMemo(() => recommendStateColors(liveAccent), [liveAccent])
   const liveNeutral = linkNeutralToAccent
     ? neutralFromBrand(liveAccent, activeTint)
     : neutral
   // The chip is the base shown by the track, not a second derivation of it.
   const neutralChip = liveNeutral
   const themeRefs = themeSources[previewTheme]
-  const tryOnStates = tryOn ? presetStates(tryOn.preset) : null
-  const globalState: Record<StateRole, string> = {
-    error: errorColor, warning: warningColor, success: successColor, info: infoColor,
-  }
-  const stateHex = (role: StateRole) => {
-    if (tryOnStates) return tryOnStates[role]
-    const family = themeRefs?.[role] ?? GLOBAL_FAMILY[role]
-    if (family === GLOBAL_FAMILY[role]) return globalState[role]
-    return customColors.find((color) => color.key === family)?.base ?? globalState[role]
-  }
+  const colorReadStore = tryOn ? stylePreviewStore(store, tryOn, previewTheme) : store
+  const brandScale = scaleForFamily(
+    colorReadStore.themeSources[previewTheme]?.brand ?? GLOBAL_FAMILY.brand,
+    rampAppearance,
+    colorReadStore,
+  )
+  const fromRamp = CONTRAST_THUMB_STEPS
+    .map((step) => brandScale?.[step])
+    .filter((hex): hex is string => Boolean(hex))
+  const contrastThumbTones = fromRamp.length === CONTRAST_THUMB_STEPS.length
+    ? fromRamp
+    : [
+        liveAccent,
+        liveNeutral,
+        stateColorAnchor(colorReadStore, 'error', rampAppearance, tryOn ? undefined : previewTheme),
+      ]
+  const stateHex = (role: StateRole, appearance: ThemeAppearance) =>
+    stateColorAnchor(colorReadStore, role, appearance, tryOn ? undefined : previewTheme)
   const extraHex = (rank: BrandExtraRank) => {
     const key = themeRefs?.[rank]
     if (!key) return null
@@ -1547,7 +1613,12 @@ export default function ThemeQuickSettingsRail({
     : themeRefs?.secondary
       ? 'secondary'
       : null
-  const toggleChip = (id: ColorChipId) => setOpenChip((current) => current === id ? null : id)
+  const toggleChip = (id: ColorChipId) => {
+    setAgentOpen(false)
+    setOpenChip((current) => current === id ? null : id)
+  }
+  useEffect(() => { setOpenChip(null); setAgentOpen(false) }, [rampAppearance])
+  useEffect(() => { if (activePanel !== 'color') setAgentOpen(false) }, [activePanel])
   const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
     current: chipRefs.current[id] ?? null,
   })
@@ -1606,10 +1677,11 @@ export default function ThemeQuickSettingsRail({
   // itself (`announceAdopted`) so the new row in My themes isn't a surprise.
   const drawerContained = Boolean(containedDrawerRootRef)
   const colorPickerOpen = openChip != null
+  const quickEditOpen = colorPickerOpen || agentOpen
 
   useEffect(() => {
-    onQuickEditOpenChange?.(colorPickerOpen)
-  }, [colorPickerOpen, onQuickEditOpenChange])
+    onQuickEditOpenChange?.(quickEditOpen)
+  }, [quickEditOpen, onQuickEditOpenChange])
 
   useEffect(() => {
     setOpenChip(null)
@@ -1665,7 +1737,7 @@ export default function ThemeQuickSettingsRail({
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className="flex flex-1 min-h-0 flex-col">
-      <ThemeRailScrollRegion>
+      <ThemeRailScrollRegion padClass="py-3">
       <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
         {activePanel === 'color' && <EditionCard
           title="Color edition"
@@ -1673,24 +1745,90 @@ export default function ThemeQuickSettingsRail({
           flush
           onOpenAdvanced={onOpenAdvanced}
           trailing={
-            <button
-              type="button"
-              onClick={() => onOpenAdvanced('color')}
-              aria-label={t('Go to advanced edition')}
-              title={t('Go to advanced edition')}
-              className="grid h-6 w-6 place-items-center rounded-md bg-line text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55"
-            >
-              <AdvancedIcon />
-            </button>
+            <ColorAppearanceSwitch
+              value={rampAppearance}
+              onChange={(next) => onColorAppearanceChange?.(next)}
+            />
           }
           footer={(
-            <div className="px-3 pb-2.5">
+            <div className="border-t border-line px-3 pb-2.5 pt-2">
               <RandomThemeButton onClick={applyRandomTheme} />
             </div>
           )}
         >
-          <div className="flex flex-col gap-2 pb-4">
-            <div className="flex items-start gap-2 px-3 py-2">
+          <div className="divide-y divide-line">
+            <div className="px-3 py-2.5">
+              <div ref={agentAnchorRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenChip(null)
+                    setAgentOpen((open) => !open)
+                  }}
+                  aria-haspopup="dialog"
+                  aria-expanded={agentOpen}
+                  aria-label={t('Color Agent')}
+                  title={t('Color Agent')}
+                  className={`group flex h-9 w-full min-w-0 items-stretch gap-2 overflow-hidden border bg-input-bg p-1 pr-3 text-left transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/15 ${RAIL_SURFACE_RADIUS} ${agentOpen ? 'border-accent-ui/70 ring-2 ring-accent-ui/15' : 'border-line'}`}
+                >
+                  <ColorAgentButton
+                    asChild
+                    nested
+                    active={agentOpen}
+                    className="aspect-square h-full w-auto shrink-0"
+                  >
+                    <span className="flex items-center justify-center">
+                      <SparkleCircleIcon size={14} />
+                    </span>
+                  </ColorAgentButton>
+                  <span className="min-w-0 flex-1 self-center truncate text-body font-semibold text-fg">{t('Color Agent')}</span>
+                </button>
+              </div>
+              <ScaleSettingsModal
+                open={agentOpen}
+                onClose={() => setAgentOpen(false)}
+                anchorRef={agentAnchorRef}
+                placement="end"
+                contained={drawerContained}
+                containedRootRef={containedDrawerRootRef}
+                containedDockLeft={COLOR_RAIL_WIDTH}
+              >
+                <ColorControls
+                  contrastShift={contrastShift}
+                  onShift={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
+                  accentHex={liveAccent}
+                  appearance={rampAppearance}
+                  onPickAccent={(hex) => {
+                    setLinkNeutralToAccent(true)
+                    setLinkStatesToAccent(true)
+                    commitAccent(hex)
+                  }}
+                  linkNeutral={linkNeutralToAccent}
+                  onLinkNeutral={(v) => {
+                    setLinkNeutralToAccent(v)
+                    if (v) commit('Neutral follows accent', (themeKey) => applyNeutral(neutralFromBrand(liveAccent, activeTint), themeKey, true))
+                  }}
+                  linkedNeutralPreview={neutralFromBrand(liveAccent, activeTint)}
+                  linkStates={linkStatesToAccent}
+                  onLinkStates={(v) => {
+                    setLinkStatesToAccent(v)
+                    if (v) {
+                      commit('States follow accent', (themeKey) => {
+                        applyState('error', stateRecommendation.error, true, themeKey)
+                        applyState('warning', stateRecommendation.warning, true, themeKey)
+                        applyState('success', stateRecommendation.success, true, themeKey)
+                        applyState('info', stateRecommendation.info, true, themeKey)
+                      })
+                    }
+                  }}
+                  linkedStatesPreview={stateRecommendation}
+                />
+              </ScaleSettingsModal>
+            </div>
+            <div className="flex flex-col px-3 py-2.5">
+              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Brand accent')}</p>
+              <div className="flex flex-col gap-2">
+              <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <SpectrumSlider
                   value={accent}
@@ -1728,14 +1866,14 @@ export default function ThemeQuickSettingsRail({
                 onChange={commitAccent}
                 dynamicAccentPalette
                 accentHueFrom={liveAccent}
-                appearance={previewAppearance}
+                appearance={rampAppearance}
                 contained={drawerContained}
                 containedRootRef={containedDrawerRootRef}
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
-            </div>
+              </div>
 
-            <div className="flex items-start gap-2 px-3">
+              <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <TintSlider
                   hueHex={liveNeutral}
@@ -1781,18 +1919,20 @@ export default function ThemeQuickSettingsRail({
                 onChange={(hex) => commit('Neutral updated', (themeKey) => applyNeutral(hex, themeKey))}
                 dynamicNeutralPalette
                 neutralRampFrom={liveAccent}
-                appearance={previewAppearance}
+                appearance={rampAppearance}
                 contained={drawerContained}
                 containedRootRef={containedDrawerRootRef}
                 containedDockLeft={COLOR_RAIL_WIDTH}
               />
             </div>
+              </div>
+            </div>
 
-            <div className="px-3 pt-1">
+            <div className="px-3 py-2.5">
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('States')}</p>
               <div className="grid grid-cols-4 gap-1.5">
                 {STATE_ROLES.map((role) => {
-                  const hex = stateHex(role)
+                  const hex = stateHex(role, rampAppearance)
                   return (
                     <div key={role} className="min-w-0">
                       <div
@@ -1816,9 +1956,9 @@ export default function ThemeQuickSettingsRail({
                         anchor={chipAnchor(role)}
                         label={SLOT_DISPLAY_LABEL[role]}
                         value={hex}
-                        onChange={(next) => commit(`${SLOT_DISPLAY_LABEL[role]} updated`, (themeKey) => writeState(themeKey, role, next))}
+                        onChange={(next) => commit(`${SLOT_DISPLAY_LABEL[role]} updated`, (themeKey) => writeState(themeKey, role, next, rampAppearance))}
                         palette={STATE_PRESETS[role]}
-                        appearance={previewAppearance}
+                        appearance={rampAppearance}
                         contained={drawerContained}
                         containedRootRef={containedDrawerRootRef}
                         containedDockLeft={COLOR_RAIL_WIDTH}
@@ -1827,10 +1967,7 @@ export default function ThemeQuickSettingsRail({
                   )
                 })}
               </div>
-            </div>
-
-            <div className="px-3 pt-1">
-              <div className="flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-2">
                 {(['secondary', 'tertiary'] as const).map((rank) => {
                   const hex = extraHex(rank)
                   if (!hex) return null
@@ -1860,7 +1997,7 @@ export default function ThemeQuickSettingsRail({
                         onChange={(next) => commit(`${BRAND_EXTRA_LABEL[rank]} updated`, (themeKey) => writeExtra(themeKey, rank, next))}
                         dynamicAccentPalette
                         accentHueFrom={hex}
-                        appearance={previewAppearance}
+                        appearance={rampAppearance}
                         contained={drawerContained}
                         containedRootRef={containedDrawerRootRef}
                         containedDockLeft={COLOR_RAIL_WIDTH}
@@ -1900,19 +2037,24 @@ export default function ThemeQuickSettingsRail({
               </div>
             </div>
 
-            <div className="px-3 pt-2">
+            <div className="px-3 py-2">
               <button
                 type="button"
                 onClick={() => onContrastOpenChange?.(!contrastOpen)}
                 aria-pressed={contrastOpen}
-                className={`flex h-8 w-full items-center justify-between rounded-lg border px-2.5 text-caption font-medium transition-colors ${
-                  contrastOpen
-                    ? 'border-transparent bg-accent-solid text-accent-ink'
-                    : 'border-line bg-surface text-fg-muted hover:border-line-strong hover:text-fg'
-                }`}
+                className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
               >
-                <span>{t('Contrast grid')}</span>
-                <span className="text-micro opacity-80">{contrastOpen ? t('Hide') : t('Show')}</span>
+                <ContrastGridThumb tones={contrastThumbTones} />
+                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
+                <span
+                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
+                    contrastOpen
+                      ? 'border border-line text-fg-muted group-hover:text-fg'
+                      : 'bg-elevated text-fg ring-1 ring-line-strong'
+                  }`}
+                >
+                  {contrastOpen ? t('Hide') : t('Show')}
+                </span>
               </button>
             </div>
           </div>
@@ -2035,6 +2177,10 @@ export default function ThemeQuickSettingsRail({
 
         {activePanel === 'icons' && (
         <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced}>
+          <div className="px-3 pt-1 pb-2">
+            <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
+            <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
+          </div>
           <SettingItem label="Status action" hint="How destructive and confirming buttons paint — a solid fill or a soft wash. System styles set this; it is a real axis, not a preset-only secret.">
             <Menu
               ariaLabel="Status action style"

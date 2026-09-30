@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useDesignStore, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type CustomColor, type ThemeSources } from '../store/useDesignStore'
 import {
   generateColorScale, generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
-  recommendStateColors, neutralFromBrand, type ColorAlgorithm, type NeutralTint,
+  recommendStateColors, neutralFromBrand, BASE_TONE, type ColorAlgorithm, type NeutralTint,
 } from './colorUtils'
 import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { linkedStopsFor } from './gradients'
@@ -20,6 +20,7 @@ import {
   FAMILY_SLOTS, GLOBAL_FAMILY, BRAND_EXTRA_LABEL, BRAND_EXTRA_RANKS,
   nextBrandExtraRank, type BrandExtraRank,
 } from './themeSources'
+import type { ThemeAppearance } from './themeModes'
 
 const BRAND_ROLES = ALL_ROLES.filter((r) => r.scale === 'brand')
 
@@ -636,13 +637,123 @@ export function useApplyDarkBackground() {
 // swatch means the same thing in both.
 export type StateRole = 'error' | 'warning' | 'success' | 'info'
 
+function setGlobalStateRole(
+  s: ReturnType<typeof useDesignStore.getState>,
+  role: StateRole,
+  patch: { color?: string; scale?: Record<number, string>; darkScale?: Record<number, string> },
+) {
+  if (role === 'error') {
+    if (patch.color !== undefined) s.setErrorColor(patch.color)
+    if (patch.scale !== undefined) s.setErrorScale(patch.scale)
+    if (patch.darkScale !== undefined) s.setErrorDarkScale(patch.darkScale)
+  } else if (role === 'warning') {
+    if (patch.color !== undefined) s.setWarningColor(patch.color)
+    if (patch.scale !== undefined) s.setWarningScale(patch.scale)
+    if (patch.darkScale !== undefined) s.setWarningDarkScale(patch.darkScale)
+  } else if (role === 'success') {
+    if (patch.color !== undefined) s.setSuccessColor(patch.color)
+    if (patch.scale !== undefined) s.setSuccessScale(patch.scale)
+    if (patch.darkScale !== undefined) s.setSuccessDarkScale(patch.darkScale)
+  } else {
+    if (patch.color !== undefined) s.setInfoColor(patch.color)
+    if (patch.scale !== undefined) s.setInfoScale(patch.scale)
+    if (patch.darkScale !== undefined) s.setInfoDarkScale(patch.darkScale)
+  }
+}
+
+/** Read the anchor hex shown for a state in one appearance (tone 9 by default). */
+export function stateColorAnchor(
+  s: ReturnType<typeof useDesignStore.getState>,
+  role: StateRole,
+  appearance: ThemeAppearance,
+  themeKey?: string,
+): string {
+  const refs = themeKey ? s.themeSources[themeKey] : undefined
+  const familyKey = refs?.[role]
+  const globalColor = role === 'error' ? s.errorColor
+    : role === 'warning' ? s.warningColor
+      : role === 'success' ? s.successColor
+        : s.infoColor
+  const lightScale = role === 'error' ? s.errorScale
+    : role === 'warning' ? s.warningScale
+      : role === 'success' ? s.successScale
+        : s.infoScale
+  const darkScale = role === 'error' ? s.errorDarkScale
+    : role === 'warning' ? s.warningDarkScale
+      : role === 'success' ? s.successDarkScale
+        : s.infoDarkScale
+
+  if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
+    const fam = s.customColors.find((c) => c.key === familyKey)
+    if (!fam) return globalColor
+    if (appearance === 'light') return fam.scale[BASE_TONE] ?? fam.base
+    return fam.darkScale?.[BASE_TONE] ?? fam.darkBase ?? fam.base
+  }
+  const scale = appearance === 'light' ? lightScale : darkScale
+  return scale[BASE_TONE] ?? globalColor
+}
+
+/**
+ * Apply a state colour for ONE appearance. Light edits the light ramp anchor;
+ * dark edits only the dark twin — curated dark seeds no longer force the same
+ * hex onto a light page.
+ */
+export function applyStateColorForAppearance(
+  role: StateRole,
+  hex: string,
+  appearance: ThemeAppearance,
+  fromLink = false,
+  themeKey?: string,
+): void {
+  const s = useDesignStore.getState()
+  try {
+    if (!fromLink && s.linkStatesToAccent) s.setLinkStatesToAccent(false)
+    const refs = themeKey ? s.themeSources[themeKey] : undefined
+    const familyKey = refs?.[role]
+    if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
+      const pages = resolveThemePages(s, themeKey!)
+      if (appearance === 'light') {
+        s.updateCustomColor(familyKey, { base: hex, scale: generateColorScale(hex, s.colorAlgorithm, s.contrastShift, pages.light) })
+      } else {
+        s.updateCustomColor(familyKey, {
+          darkBase: hex,
+          darkScale: generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, pages.dark),
+        })
+      }
+      return
+    }
+    if (appearance === 'light') {
+      const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
+      setGlobalStateRole(s, role, { color: hex, scale })
+      return
+    }
+    const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
+    setGlobalStateRole(s, role, { darkScale: dark })
+  } catch {
+    /* invalid hex — ignore */
+  }
+}
+
 export function useApplyStateColor() {
   /** `fromLink` marks the ONE caller that isn't a user edit: the accent
    *  applier re-deriving this state because `linkStatesToAccent` is on — same
    *  contract as `useApplyGrayColor`'s `fromLink`. Every other path is a
    *  person setting the state by hand, which unlinks it, so their choice is
-   *  never silently overwritten on the next accent change. */
-  return useCallback((role: StateRole, hex: string, fromLink = false, themeKey?: string) => {
+   *  never silently overwritten on the next accent change.
+   *
+   *  Pass `appearance` to retint only the light or dark ramp; omit it to set
+   *  both anchors from one hex (Primitives / linked-states path). */
+  return useCallback((
+    role: StateRole,
+    hex: string,
+    fromLink = false,
+    themeKey?: string,
+    appearance?: ThemeAppearance,
+  ) => {
+    if (appearance) {
+      applyStateColorForAppearance(role, hex, appearance, fromLink, themeKey)
+      return
+    }
     const s = useDesignStore.getState()
     try {
       if (!fromLink && s.linkStatesToAccent) s.setLinkStatesToAccent(false)
@@ -650,15 +761,12 @@ export function useApplyStateColor() {
       const familyKey = refs?.[role]
       if (familyKey && familyKey !== GLOBAL_FAMILY[role]) {
         const pages = resolveThemePages(s, themeKey!)
-        s.updateCustomColor(familyKey, { base: hex, ...customScalePair(hex, s, pages, false) })
+        s.updateCustomColor(familyKey, { base: hex, darkBase: hex, ...customScalePair(hex, s, pages, false) })
         return
       }
       const scale = generateColorScale(hex, s.colorAlgorithm, s.contrastShift, s.pageBackground)
       const dark = generateFamilyDarkScale(hex, s.colorAlgorithm, s.contrastShift, s.darkBackground)
-      if (role === 'error')        { s.setErrorColor(hex);   s.setErrorScale(scale); s.setErrorDarkScale(dark) }
-      else if (role === 'warning') { s.setWarningColor(hex); s.setWarningScale(scale); s.setWarningDarkScale(dark) }
-      else if (role === 'success') { s.setSuccessColor(hex); s.setSuccessScale(scale); s.setSuccessDarkScale(dark) }
-      else                         { s.setInfoColor(hex);    s.setInfoScale(scale); s.setInfoDarkScale(dark) }
+      setGlobalStateRole(s, role, { color: hex, scale, darkScale: dark })
     } catch {
       /* invalid hex — ignore */
     }

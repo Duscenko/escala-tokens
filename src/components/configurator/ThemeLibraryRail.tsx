@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
-import { generateColorScale } from '../../lib/colorUtils'
 import type { ColorScale } from '../../types/tokens'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
@@ -207,22 +206,6 @@ export function DeleteThemeConfirmation({
     </motion.div>
   )
 }
-
-/**
- * A system style wears the SAME avatar as a saved theme (`ThemeAvatar`
- * below), built from the preset's accent ramp — so both sections of the library
- * read as one system. Keyed by `id:appearance` because a preset is previewable
- * in EITHER appearance (see `AppearanceToggle`) and the chip has to show the one
- * you'd actually get. Presets are static, so both ramps are derived once.
- */
-const PRESET_AVATAR_RAMPS: Record<string, ColorScale> = Object.fromEntries(
-  THEME_STYLE_PRESETS.flatMap((preset) =>
-    (['light', 'dark'] as const).map((appearance) => [
-      `${preset.id}:${appearance}`,
-      generateColorScale(preset.accent, 'radix', 0, undefined, appearance),
-    ]),
-  ),
-)
 
 /**
  * A theme avatar is a compact rendering of the theme's resolved brand ramp,
@@ -578,14 +561,11 @@ export default function ThemeLibraryRail({
   const [optionsOpen, setOptionsOpen] = useState(false)
   const optionsRootRef = useRef<HTMLDivElement>(null)
   const [confirmDeleteOwnThemes, setConfirmDeleteOwnThemes] = useState(false)
-  const [allOpen, setAllOpen] = useState(false)
+  const [allOpen, setAllOpen] = useState(() => {
+    const { themeOrder: order, themes: map } = useDesignStore.getState()
+    return myThemeKeys(order, map).length > MY_THEME_RAIL_LIMIT
+  })
   const [themeQuery, setThemeQuery] = useState('')
-  // Per-preset appearance choice. Sparse on purpose — an entry only exists once
-  // the user has explicitly picked a side; until then a preset previews in
-  // whichever appearance the WORKSPACE is in (`chromeTheme`), so a dark session
-  // shows dark styles and a light one shows light. `preferredAppearance` is
-  // authored metadata, not a default — it never overrides the current chrome.
-  const [presetKind, setPresetKind] = useState<Record<string, 'light' | 'dark'>>({})
   const availableThemes = themeOrder.filter((key) => themes[key])
   // "Has the user made a theme of their own yet?" — anything beyond the two
   // built-ins the store ships. Renaming Light/Dark doesn't count as creating
@@ -613,13 +593,11 @@ export default function ThemeLibraryRail({
   const filteredAll = themeQuery.trim()
     ? listedThemes.filter((key) => labelForTheme(key, themeLabels).toLowerCase().includes(themeQuery.trim().toLowerCase()))
     : listedThemes
-  const kindOf = (preset: ThemeStylePreset) => presetKind[preset.id] ?? chromeTheme
   const corePreset = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
 
   // Any exit from the preset — picking a real theme, opening the editor, or the
   // rail unmounting on a tab switch — drops the try-on so the preview snaps back
   // to the live system.
-  const selectedPreset = activeStylePreview?.preset.id ?? null
   const clearStylePreview = () => onStylePreview?.(null)
   useEffect(() => () => onStylePreview?.(null), [onStylePreview])
   useEffect(() => {
@@ -708,7 +686,7 @@ export default function ThemeLibraryRail({
     <aside
       id="themes-library"
       tabIndex={-1}
-      className={`flex h-full w-full min-h-0 flex-col ${SHELL_CHROME} outline-none`}
+      className={`flex h-full w-full min-h-0 flex-col border-r border-line ${SHELL_CHROME} outline-none`}
       style={{ width: THEME_LIBRARY_WIDTH }}
       aria-label={t('Themes library')}
     >
@@ -732,7 +710,6 @@ export default function ThemeLibraryRail({
             <ThemeLibraryOptionsPopover
               hasOwnThemes={hasOwnTheme}
               onResetSuggestedStyles={() => {
-                setPresetKind({})
                 if (corePreset) previewPreset(corePreset, chromeTheme)
                 setOptionsOpen(false)
               }}
@@ -833,72 +810,6 @@ export default function ThemeLibraryRail({
             </button>
           )}
         </div>
-
-        {!allOpen && <div className="mt-4 border-t border-line pt-3">
-          <div className="flex items-center justify-between gap-2 pl-2 pr-1.5 pb-1.5">
-            <span className="text-caption font-semibold text-fg-muted">{t('System styles')}</span>
-            <span className={THEME_RAIL_COUNT_BADGE} title={t('{count} system styles', { count: THEME_STYLE_PRESETS.length })}>
-              {THEME_STYLE_PRESETS.length}
-            </span>
-          </div>
-          <div className="flex flex-col gap-1">
-            {THEME_STYLE_PRESETS.map((preset) => {
-              const expanded = selectedPreset === preset.id
-              const kind = kindOf(preset)
-              // An open row's avatar follows the LIVE try-on appearance (the
-              // board's sun/moon now owns that choice); a resting row shows the
-              // chrome's.
-              const previewKind = expanded && activeStylePreview?.preset.id === preset.id
-                ? activeStylePreview.appearance
-                : kind
-              return (
-                <div key={preset.id} className={`rounded-xl border transition-colors ${expanded ? 'border-line bg-surface' : THEME_RAIL_ROW_IDLE}`}>
-                  <div className="flex items-center gap-1.5 p-1.5">
-                    <button
-                      type="button"
-                      onClick={() => (expanded ? clearStylePreview() : previewPreset(preset, kind))}
-                      aria-expanded={expanded}
-                      title={`${preset.label} — ${preset.description} ${preset.detail}${preset.accessibilityNote ? ` ${preset.accessibilityNote}` : ''}`}
-                      className="flex flex-1 min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
-                    >
-                      <ThemeAvatar ramp={PRESET_AVATAR_RAMPS[`${preset.id}:${previewKind}`]} appearance={previewKind} fallback={preset.accent} />
-                      <span className="min-w-0 flex-1 truncate text-body font-medium text-fg">{preset.shortLabel}</span>
-                    </button>
-                    {/* The light/dark choice for an open try-on moved to the
-                        board's own sun/moon icon (Theme Preview header) — one
-                        appearance control per screen, and it's beside what it
-                        actually repaints. */}
-                  </div>
-                  {expanded && (
-                    <div className="px-2 pb-2">
-                      <div className="grid grid-cols-2 gap-1 border-t border-line pt-2 text-micro text-fg-muted">
-                        <span className="truncate">{preset.foundations.typography?.fontFamily}</span>
-                        {/* Appearance is NOT listed here any more — the toggle
-                            above states it, and a readout beside a control that
-                            sets the same thing is one of them lying eventually. */}
-                        <span className="text-right capitalize">{preset.neutralTint} tint</span>
-                        <span>{preset.foundations.radius?.md} radius</span>
-                        <span className="text-right">{preset.foundations.stroke?.sm} border</span>
-                      </div>
-                      {/* No "Add to system" / "Add and customize" pair here any
-                          more. Both MOVED to the quick-settings rail, under the
-                          Name field (see its own note): committing a style and
-                          editing it are one intent, and splitting them across
-                          two columns meant the button that unlocked the editor
-                          lived nowhere near the editor it unlocked. An expanded
-                          row now does one thing — try the style on — and the
-                          canvas plus that rail carry the decision.
-
-                          "Add and customize" is gone rather than relocated: with
-                          the rail editable during a try-on, "add it and open the
-                          editor" is what simply editing already does. */}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>}
       </nav>
     </aside>
   )

@@ -235,7 +235,7 @@ function InspectRing({ rect, variant }: { rect: DOMRect; variant: 'component' | 
 }
 
 export function InspectorOverlay({
-  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing,
+  active, rootRef, tokensByAppearance, defaultAppearance, onPick, onOpenTable, editing, onExitMode,
 }: {
   active: boolean
   /** The scroll container the canvas paints into — hit-testing is scoped to it
@@ -257,6 +257,8 @@ export function InspectorOverlay({
    *  dead afterwards, since a pin deliberately ignores `pointermove` and the
    *  next component you point at never lights up. */
   editing?: boolean
+  /** Last Escape step — leaves inspector mode (same as "Exit inspector"). */
+  onExitMode?: () => void
 }) {
   const [hover, setHover] = useState<Target | null>(null)
   const [pin, setPin] = useState<Target | null>(null)
@@ -479,22 +481,38 @@ export function InspectorOverlay({
     return () => cancelAnimationFrame(frame)
   }, [pin])
 
-  // Escape unwinds one layer at a time — the held control, then the pin, then
-  // the hover — the same "dismiss the transient thing first" order every other
-  // overlay here follows. The mode itself is never left from here.
+  // Escape unwinds one layer at a time — held control, pin, hover — then exits
+  // inspector mode (keyboard parity with the header toggle; works on Esc / iOS
+  // hardware keyboards too).
   const target = pin ?? hover
   useEffect(() => {
-    if (!target) return
+    if (!active) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if (focusHeld.current) { focusHeld.current = false; setFocus(null); return }
-      if (pinRef.current) { setPin(null); setFocus(null); return }
-      overBadge.current = false
-      setHover(null)
+      if (focusHeld.current) {
+        focusHeld.current = false
+        setFocus(null)
+        e.preventDefault()
+        return
+      }
+      if (pinRef.current) {
+        setPin(null)
+        setFocus(null)
+        e.preventDefault()
+        return
+      }
+      if (hover) {
+        overBadge.current = false
+        setHover(null)
+        e.preventDefault()
+        return
+      }
+      onExitMode?.()
+      e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [target])
+  }, [active, hover, onExitMode])
 
   if (!active || !target) return null
 

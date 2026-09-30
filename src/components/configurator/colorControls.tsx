@@ -827,7 +827,7 @@ export function ColorPickerPopover({
               bottom: 0,
               width: `min(${PANEL_W}px, calc(100% - 16px))`,
             }}
-            className="relative flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden"
+            className="relative flex flex-col overflow-hidden rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)]"
           >
             <div
               className="flex flex-shrink-0 items-center gap-2 border-b border-line px-3 pr-10"
@@ -1381,11 +1381,10 @@ export const APPEARANCE_ICON_SRC: Record<'light' | 'dark', string> = {
   dark: '/icons/settings/dark-mode.svg',
 }
 
-/** Sun / moon glyph that FOLLOWS its container's ink — the form used by the
- *  Themes Library rail, the quick-settings appearance toggle and the Export
- *  wizard's theme chips, so the same asset reads identically in all three.
- *  `KindIcon` below is the tinted variant, only for the Token Details section
- *  headers where the amber/indigo colour does real parsing work. */
+/** Sun / moon glyph that FOLLOWS its container's ink — Themes Library rail
+ *  and Export wizard theme chips. `KindIcon` below is the tinted variant, only
+ *  for Token Details section headers where the amber/indigo colour does real
+ *  parsing work. */
 export function AppearanceGlyph({ kind, size = 14 }: { kind: 'light' | 'dark'; size?: number }) {
   const mask = `url('${APPEARANCE_ICON_SRC[kind]}') center / contain no-repeat`
   return (

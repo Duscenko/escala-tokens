@@ -3,7 +3,7 @@
 // token row with editable light/dark values, eye toggles on the theme
 // columns and a per-row picker. The family nav on the left doubles as the
 // promoted DEFINE surface Picker Color used to own — a quick-edit strip under
-// the column header (hex field, scale, algorithm settings) edits
+// the column header (hex field + scale) edits
 // whichever family is active, so palette definition and usage now live on one
 // screen. The nav groups families under a THEME folder (see BASE_FOLDER). A
 // "+ New theme" CTA below the folder list opens the SAME `ThemePanel`
@@ -22,7 +22,7 @@ import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
-  neutralFromBrand, recommendStateColors, checkContrast, accessibleSolidTone, readableInk,
+  neutralFromBrand, checkContrast, accessibleSolidTone, readableInk,
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
 } from '../../lib/colorUtils'
 import {
@@ -34,21 +34,18 @@ import {
   curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL,
 } from './colorControls'
 import { ColorPickerPanel } from '../ui/ColorField'
-import { ColorAgentButton } from '../ui/shimmer-button'
-import { SlidersIcon, SparkleCircleIcon, PaletteIcon } from '../ui/icons'
+import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import {
   themesUsingFamily, FAMILY_SLOTS, GLOBAL_FAMILY, familySlotFor,
   nextBrandExtraRank, brandExtraRankOf, familyDisplayLabel, BRAND_EXTRA_LABEL,
   BRAND_PRIMARY_LABEL,
   type FamilySlot, type BrandExtraRank,
 } from '../../lib/themeSources'
-import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import ThemePanel from './ThemePanel'
 import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
 import { GradientNavList, GradientRailMark } from './StepGradients'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
-import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { TOP_NAV_H } from './TopNav'
 import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 
@@ -67,10 +64,8 @@ import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
-/** The family-edit drawer docks exactly like `ThemePanel` — these mirror its
- *  private `PANEL_W` (360) and `SHELL_ROWS` (`TOP_NAV_H` + 52px toolbar), used
- *  only as the width cap and the top fallback when the family `<nav>` hasn't
- *  been measured yet. */
+/** Family-edit drawer width — same 360 as `ThemePanel`'s `PANEL_W`. Top
+ *  fallback is the shell's two rows when the family `<nav>` isn't measured. */
 const DOCK_W = 360
 const DOCK_TOP_FALLBACK = TOP_NAV_H + 52
 /** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
@@ -312,8 +307,8 @@ const PRIMITIVE_TABLE_GRID: CSSProperties = {
   gridTemplateColumns: 'minmax(12rem,1.15fr) repeat(2, minmax(10rem,1fr)) 2.75rem',
 }
 
-/** Quick-edit strip: Color Agent is `size-icon` (36px). Hex + ramp match that,
- *  with 12px padding above/below so the row isn't flush to the chrome. */
+/** Quick-edit strip: hex + ramp share a 36px row, with 12px padding above/below
+ *  so the strip isn't flush to the chrome. */
 const STRIP_CONTROL_HEIGHT = 36
 const QUICK_EDIT_STRIP_PAD = 12
 const QUICK_EDIT_STRIP_HEIGHT = STRIP_CONTROL_HEIGHT + QUICK_EDIT_STRIP_PAD * 2
@@ -1042,9 +1037,7 @@ export default function ColorPrimitives({
     removeTheme,
     pageBackground, darkBackground, themeKinds, themeSources, themeOrder,
     colorAlgorithm, colorNaming, contrastShift, neutralTint,
-    linkNeutralToAccent, setLinkNeutralToAccent,
-    linkStatesToAccent, setLinkStatesToAccent,
-    setContrastShift, setNeutralTint,
+    linkNeutralToAccent,
   } = store
   const applyAccentColor = useApplyAccentColor()
   const applyGrayColor = useApplyGrayColor()
@@ -1062,26 +1055,13 @@ export default function ColorPrimitives({
   const namingLabels = (NAMING_SCHEMES.find((s) => s.key === colorNaming) ?? NAMING_SCHEMES[0]).labels
 
   // Retinting Accent cascades to Neutral only while the link is on — the flag
-  // now lives in the STORE (`linkNeutralToAccent`), not as local state in a
-  // popover. This used to be hardcoded `false` with a comment pointing at
-  // Picker Color as the place "move both together" lives; Picker Color was
-  // retired and the behaviour went with it, so the neutral silently stopped
-  // tracking the accent everywhere. The toggle is in the scale-settings gear,
-  // beside Neutral tint — the setting that decides how much accent hue the
-  // linked neutral even carries.
+  // lives in the store (`linkNeutralToAccent`). Color Agent in Theme Preview's
+  // Color edition is where the designer turns the link on or off.
   const changeAccent = (hex: string) => {
     const linked = useDesignStore.getState().linkNeutralToAccent
     applyAccentColor(hex, linked, previewTheme)
   }
 
-  // Harmonize the four state colours with the accent. `recommendStateColors`
-  // blends only CHROMA — each state keeps its canonical lightness and hue,
-  // because the hue IS the semantics (a red that drifts toward a green accent
-  // stops reading as an error). So this makes the set share the accent's
-  // saturation character without touching what any of them mean. Used both for
-  // the toggle's swatch preview and to actually apply the link — same value,
-  // so the preview can never promise something the click doesn't deliver.
-  const stateRecommendation = useMemo(() => recommendStateColors(primaryColor), [primaryColor])
   const changeNeutral = (hex: string) => applyGrayColor(hex, previewTheme)
 
   // ── Families table state ──
@@ -1098,10 +1078,6 @@ export default function ColorPrimitives({
   /** The tones table's scroll container — the Token Details dialog's anchor. */
   const tableRef = useRef<HTMLDivElement>(null)
 
-  // Scale-settings gear (algorithm/naming/contrast shift) — promoted from
-  // Picker Color into the quick-edit strip below.
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const settingsAnchorRef = useRef<HTMLDivElement>(null)
   // Theme folder pending deletion. The rail's per-family trash is LOCKED while
   // a theme references that family ("remove the theme first") — and until now
   // the only place to remove a theme was Semantics' column header, which is a
@@ -1753,17 +1729,10 @@ export default function ColorPrimitives({
   }
 
   // Built here rather than inline in the nav so it renders ONCE, outside every
-  // clipping ancestor — and it DOCKS exactly like `ThemePanel` (the "New/Edit
-  // theme" drawer): flush against the Color Variables column, top-aligned with
-  // it, full height to an 8px bottom gap. Same portal, same `rounded-r-2xl
-  // border-l-0` shell, same shadow, same 52px header with a close button, same
-  // left-slide in/out. Editing a family's base colour and minting a theme are
-  // the same KIND of action on the same column, so they read as the same
-  // drawer — this used to be a small `w-64` floater beside the rail (and the
-  // quick-edit strip opened its own separate anchored popover), which made one
-  // job look like three different controls. `DOCK_W` mirrors `ThemePanel`'s
-  // `PANEL_W`; `dockLeft` follows the rail's collapsed/expanded width off the
-  // shared constants so a collapsed rail can't leave it floating over the strip.
+  // clipping ancestor. It is the same 52px-header drawer as ThemePanel, but it
+  // slides in from the RIGHT viewport edge: docking flush to the families rail
+  // covered the column you just clicked and made the drawer hard to dismiss
+  // from the left. Top/bottom still track the Color Variables column.
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
   const editingUsesNeutralPicker = editingFamily ? familyUsesNeutralPicker(editingFamily, homeOf) : false
   const editingUsesAccentPicker = editingFamily ? familyUsesAccentPicker(editingFamily, themeSources) : false
@@ -1774,30 +1743,26 @@ export default function ColorPrimitives({
     ? neutralFromBrand(pickerThemeAccent, neutralTint)
     : editingFamily?.base ?? ''
   const editingPickerAppearance = editingNeutralCoordinated ? activeAppearance : editAppearance
-  // In Themes Library mode this drawer belongs to the library boundary, not
-  // the nested Color families rail. It therefore opens exactly where “New
-  // theme” opens: immediately to the right of the extreme-left library.
-  const dockLeft = managedThemesExternally ? THEME_LIBRARY_WIDTH : (railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH)
   const editPortal = editingFamily && navRect
     ? createPortal(
         <AnimatePresence>
           <motion.div
             ref={editPopRef}
             key={editingFamily.key}
-            initial={{ opacity: 0, x: -16 }}
+            initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
+            exit={{ opacity: 0, x: 16 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             role="dialog"
             aria-label={`Edit ${editingFamily.label} color`}
             style={{
               position: 'fixed',
-              left: dockLeft,
+              right: 0,
               top: managedThemesExternally ? TOP_NAV_H : (navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK),
               bottom: DOCK_BOTTOM,
-              width: Math.min(DOCK_W, Math.max(280, window.innerWidth - dockLeft - 16)),
+              width: Math.min(DOCK_W, Math.max(280, window.innerWidth - 16)),
             }}
-            className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
+            className="z-50 rounded-l-2xl border border-r-0 border-line bg-app shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
           >
             <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
               <span className={SWATCH} style={{ backgroundColor: editingFamilyPickerValue }} />
@@ -2315,8 +2280,7 @@ export default function ColorPrimitives({
               {/* Column header first — this 52px band is the one that lines
                   up with “Color variables” in the rail, same as Radius's
                   TOKEN NAME row. Sticky at top-0 so scrolling the tones
-                  never hides the eye toggles, per-column export, or the
-                  settings gear. */}
+                  never hides the eye toggles or per-column export. */}
               <div
                 className={tableHeaderClass('grid')}
                 style={gridStyle}
@@ -2431,55 +2395,6 @@ export default function ColorPrimitives({
               checkerboard={family.isAlpha}
               checkerAppearance={darkPreview ? 'dark' : 'light'}
             />
-          </div>
-          <div ref={settingsAnchorRef} className="relative flex-shrink-0">
-            <ColorAgentButton
-              active={settingsOpen}
-              onClick={() => setSettingsOpen((o) => !o)}
-              aria-haspopup="dialog"
-              aria-expanded={settingsOpen}
-              aria-label="Color Agent"
-              title="Color Agent"
-              className="h-9 w-9"
-            >
-              <SparkleCircleIcon />
-            </ColorAgentButton>
-            <ScaleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} anchorRef={settingsAnchorRef}>
-              <ColorControls
-                contrastShift={contrastShift}
-                onShift={setContrastShift}
-                accentHex={primaryColor}
-                appearance={darkPreview ? 'dark' : 'light'}
-                onPickAccent={(hex) => {
-                  setLinkNeutralToAccent(true)
-                  setLinkStatesToAccent(true)
-                  applyAccentColor(hex, true, previewTheme)
-                }}
-                neutralTint={neutralTint}
-                onTint={(t) => {
-                  setNeutralTint(t)
-                  applyGrayColor(linkNeutralToAccent ? neutralFromBrand(primaryColor, t) : grayBaseColor, previewTheme, true)
-                }}
-                tintPreview={(t) => backgroundFromBase(grayBaseColor, darkPreview ? 'dark' : 'light', t)}
-                linkNeutral={linkNeutralToAccent}
-                onLinkNeutral={(v) => {
-                  setLinkNeutralToAccent(v)
-                  if (v) applyGrayColor(neutralFromBrand(primaryColor, neutralTint), previewTheme, true)
-                }}
-                linkedNeutralPreview={neutralFromBrand(primaryColor, neutralTint)}
-                linkStates={linkStatesToAccent}
-                onLinkStates={(v) => {
-                  setLinkStatesToAccent(v)
-                  if (v) {
-                    applyStateColor('error', stateRecommendation.error, true, previewTheme)
-                    applyStateColor('warning', stateRecommendation.warning, true, previewTheme)
-                    applyStateColor('success', stateRecommendation.success, true, previewTheme)
-                    applyStateColor('info', stateRecommendation.info, true, previewTheme)
-                  }
-                }}
-                linkedStatesPreview={stateRecommendation}
-              />
-            </ScaleSettingsModal>
           </div>
               </div>
 
