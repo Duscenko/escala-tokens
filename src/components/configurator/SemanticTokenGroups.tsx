@@ -5,10 +5,9 @@
 // and the role is already named — so the groups went, and this file is now
 // only the drawer they opened.
 //
-// It docks exactly like `ThemePanel` (New theme): flush to the Themes Library
-// column, measuring the same `aside[aria-label="Themes library"]` box, so the
-// two drawers never occupy two different slots. `contained` (fly-out beside
-// the quick rail) was the old groups-column language and does not apply here.
+// It covers Color edition (`#theme-quick-settings`): the library column is
+// optional now, and docking to it left Token Details slicing through the
+// edition rail. Sitting on that panel is one slot, not two overlapping ones.
 
 import { AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useMemo } from 'react'
@@ -16,7 +15,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { useArchitectureTokens } from './architectureTokens'
 import { ArchModeEditor, parseRef } from './Step3_SemanticTokens'
 import { TokenDetailsModal } from './colorControls'
-import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { QUICK_SETTINGS_ID } from './ThemeQuickSettingsRail'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 
@@ -75,8 +74,8 @@ export default function SemanticTokenDrawer({
           name={token.id}
           cssVarName={token.id.replace(/\./g, '-')}
           description={token.description}
-          dockLeft={THEME_LIBRARY_WIDTH}
-          dockToSelector={'aside[aria-label="Themes library"]'}
+          dockToSelector={`#${QUICK_SETTINGS_ID}`}
+          coverAnchor
           onOpenInTable={onOpenInVariables ? () => onOpenInVariables(token.id) : undefined}
           onReset={() => {
             if (stylePreview && onTryOnEdit) {

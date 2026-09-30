@@ -1477,6 +1477,7 @@ export function TokenDetailsModal({
   containedRootRef,
   containedDockLeft = COLOR_RAIL_WIDTH,
   dockToSelector,
+  coverAnchor = false,
 }: {
   name: string
   /** The Figma mock doesn't show this, but the inline editor it replaces did
@@ -1529,6 +1530,9 @@ export function TokenDetailsModal({
    *  families"]`; falls back to `THEME_DRAWER_TOP` / `_BOTTOM` when it isn't
    *  mounted (Semantics / Gradients). */
   dockToSelector?: string
+  /** Sit ON the measured column instead of to its right (`dockLeft`). Theme
+   *  Preview Token Details covers Color edition so the two cannot mix. */
+  coverAnchor?: boolean
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -1539,8 +1543,8 @@ export function TokenDetailsModal({
   // Match `ThemePanel`'s measured docking exactly: same reference column, same
   // fallbacks. Without this the drawer sat at a hardcoded top (72) while its
   // "New theme" twin aligned to the rail, so the two never lined up.
-  const [dockV, setDockV] = useState<{ top: number; bottom: number }>({
-    top: THEME_DRAWER_TOP, bottom: THEME_DRAWER_BOTTOM,
+  const [dockV, setDockV] = useState<{ top: number; bottom: number; left: number | null }>({
+    top: THEME_DRAWER_TOP, bottom: THEME_DRAWER_BOTTOM, left: null,
   })
   useLayoutEffect(() => {
     if (contained) return
@@ -1550,6 +1554,7 @@ export function TokenDetailsModal({
       setDockV({
         top: r && r.top > 0 ? r.top : THEME_DRAWER_TOP,
         bottom: r && r.bottom > 0 ? Math.max(0, window.innerHeight - r.bottom) : THEME_DRAWER_BOTTOM,
+        left: coverAnchor && r && r.left >= 0 ? r.left : null,
       })
     }
     measure()
@@ -1561,7 +1566,7 @@ export function TokenDetailsModal({
       window.removeEventListener('resize', measure)
       ro?.disconnect()
     }
-  }, [contained, dockToSelector])
+  }, [contained, coverAnchor, dockToSelector])
 
   // Only the FIRST mode opens by default. A system with light + dark + two
   // custom themes stacked four full ramp grids into one dialog, so the mode
@@ -1593,7 +1598,7 @@ export function TokenDetailsModal({
       // language beside “New theme” and “Edit family color”. `contained`
       // scopes both the overlay and the panel to ThemePreviewHub's own box
       // instead of the viewport — see the prop's doc comment above.
-      className={contained ? 'absolute z-50' : 'fixed inset-0 z-50'}
+      className={contained ? 'absolute z-50' : coverAnchor ? 'fixed inset-0 z-[60]' : 'fixed inset-0 z-50'}
       style={contained ? { left: containedDockLeft, top: 0, right: 0, bottom: 0 } : undefined}
       role="dialog"
       aria-modal="true"
@@ -1608,10 +1613,10 @@ export function TokenDetailsModal({
           width: `min(${PANEL_W}px, calc(100% - 16px))`,
         } : {
           position: 'fixed',
-          left: dockLeft,
+          left: dockV.left ?? dockLeft,
           top: dockV.top,
           bottom: dockV.bottom,
-          width: `min(${PANEL_W}px, calc(100vw - ${dockLeft + 16}px))`,
+          width: `min(${PANEL_W}px, calc(100vw - ${(dockV.left ?? dockLeft) + 16}px))`,
         }}
         initial={{ opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}

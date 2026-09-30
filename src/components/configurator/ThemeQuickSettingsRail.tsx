@@ -81,6 +81,8 @@ import { useI18n } from '../../lib/i18n'
  * fourth number invented here.
  */
 export const QUICK_SETTINGS_WIDTH = COLOR_RAIL_WIDTH
+/** Stable hook for Token Details — `aria-label` is translated, this is not. */
+export const QUICK_SETTINGS_ID = 'theme-quick-settings'
 
 /** One vertical rhythm for edition cards and semantic accordion rows. */
 /** Card-to-card gap, shared with the integration rail. */
@@ -1690,6 +1692,7 @@ export default function ThemeQuickSettingsRail({
 
   return (
     <aside
+      id={QUICK_SETTINGS_ID}
       aria-label={t('Quick settings')}
       className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: QUICK_SETTINGS_WIDTH }}

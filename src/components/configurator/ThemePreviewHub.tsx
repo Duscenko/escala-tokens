@@ -12,7 +12,7 @@ import { PhosphorWeightProvider, ICON_SLOTS, snippetFor, type AxisValues } from 
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { axisDefaults, ComponentCatalogueHero } from './docs/componentArticle'
 import { PHOSPHOR_LIBRARY } from '../../lib/iconLibraries'
-import ThemeQuickSettingsRail, { isQuickPanelFoundation, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeQuickSettingsRail, { isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
@@ -21,7 +21,7 @@ import IntegrationStatusRail from './IntegrationStatusRail'
 import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { FOUNDATION_DOCS, foundationDoc } from './docs/foundationDocs'
 import { PANEL_W, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
@@ -249,36 +249,30 @@ function ArtefactsView({
     dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark'), accentPreview),
   }), [overlayStore, previewTheme, accentPreview])
   const canvasRef = useRef<HTMLDivElement | null>(null)
-  // Token Details docks to the THEMES LIBRARY's edge, not the canvas's — the
-  // library column and the foundation icon rail sit between the two, so the
-  // canvas already begins well to the right of where the drawer starts.
-  // Ceding `PANEL_W` here therefore over-reserves by exactly that offset:
-  // measured at a 1385px viewport, the drawer spans 196→556 while the canvas
-  // begins at 451, so 360px was reserved to clear 106px and left 245px of dead
-  // gutter — more than the 164px a collage column occupies, which is why a
-  // column that would have fit didn't appear. Cede the real OVERLAP instead.
+  // Token Details sits ON Color edition, not beside Themes library. The
+  // canvas only needs to cede whatever of the 360px drawer actually crosses
+  // its left edge — typically ~120px, never a full extra column.
   const [dockInset, setDockInset] = useState(0)
   useEffect(() => {
     if (!editingRole) { setDockInset(0); return }
     const measure = () => {
       const el = canvasRef.current
       if (!el) return
-      // Measured, not derived from the rail's own widths: the library can be
-      // collapsed and the icon rail is its own column, so the canvas's left
-      // edge is the only honest input. `paddingLeft` moves the CONTENT box,
-      // never this border-box edge, so re-measuring cannot feed back on itself.
-      const overlap = THEME_LIBRARY_WIDTH + PANEL_W - el.getBoundingClientRect().left
+      const rail = document.getElementById(QUICK_SETTINGS_ID)?.getBoundingClientRect()
+      const drawerLeft = rail && rail.left >= 0 ? rail.left : 0
+      const overlap = drawerLeft + PANEL_W - el.getBoundingClientRect().left
       setDockInset(overlap > 0 ? Math.round(overlap) + DRAWER_GUTTER : 0)
     }
     measure()
-    // A ResizeObserver on the canvas, not a window listener: the canvas also
-    // moves when a sibling column changes (the Themes Library collapsing), and
-    // that fires no resize event. Observing its own box covers both. It cannot
-    // feed back — the value is read from the border-box edge, which the
-    // `paddingLeft` this sets never moves.
     const ro = new ResizeObserver(measure)
     if (canvasRef.current) ro.observe(canvasRef.current)
-    return () => ro.disconnect()
+    const railEl = document.getElementById(QUICK_SETTINGS_ID)
+    if (railEl) ro.observe(railEl)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [editingRole])
   // Both can be open at once; the wider claim wins.
   const padLeft = Math.max(drawerOpen ? PANEL_W : 0, dockInset)
