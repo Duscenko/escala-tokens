@@ -344,6 +344,7 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         })
         ;(roleNode as Record<string, W3CNode>)[key] = {
           desktop: pack(modes.desktop),
+          tablet: pack(modes.tablet ?? modes.desktop),
           mobile: pack(modes.mobile),
         }
       }

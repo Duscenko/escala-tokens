@@ -5,7 +5,7 @@ import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts
 import VariableCollectionRail from './VariableCollectionRail'
 import {
   TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
-  tableHeaderClass, tableRowClass,
+  tableHeaderClass, tableMatchClass, tableRowClass,
 } from './tableChrome'
 import {
   TYPE_SCALE_KEYS,
@@ -198,19 +198,14 @@ function GroupLabel({ label, count }: { label: string; count: number }) {
   )
 }
 
-// ── Row wrapper (zebra + hover, matches Semantic) ───────────────────────────
+// ── Row wrapper (zebra + hover + platform mark, same as VariablesTable) ─────
 
-const rowClass = (index: number, match: boolean | null = null) => {
-  const base = tableRowClass(index, GRID)
-  if (match === null) return base
-  return match
-    ? `${base} bg-accent-ui/[0.10] hover:bg-accent-ui/[0.16]`
-    : `${base} opacity-[0.38]`
-}
+const rowClass = (index: number, match: boolean | null = null) =>
+  `${tableRowClass(index, GRID)} ${tableMatchClass(match)}`
 
-const nameCell = `flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
-const valueCell = `flex items-center px-3 py-2 ${TABLE_CELL_DIVIDER}`
-const previewCell = `flex items-center px-3 py-2 overflow-hidden ${TABLE_CELL_DIVIDER}`
+const nameCell = `flex items-center py-2.5 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
+const valueCell = `flex items-center px-2.5 py-1.5 ${TABLE_CELL_DIVIDER}`
+const previewCell = `flex items-center px-3 py-1.5 overflow-hidden ${TABLE_CELL_DIVIDER}`
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
@@ -327,7 +322,16 @@ export default function Step4_Typography({
               </div>
               <div className={valueCell}>
                 {r.italic ? (
-                  <span className="text-ui font-mono text-fg-faint px-2">{n} · italic</span>
+                  // Read-only: an italic shares its upright weight. Laid out on
+                  // the editable field's own geometry (handle slot + px-2) so
+                  // its number lines up with the inputs above and below, and
+                  // kept to ONE line. "400 · italic" used to wrap to two lines
+                  // in the 8rem column, which made every italic row taller.
+                  <div className="flex items-center gap-1 w-full min-w-0" title={`Follows ${r.base} (${n})`}>
+                    <span className="w-3.5 flex-shrink-0" aria-hidden />
+                    <span className="px-1.5 py-1 text-body font-mono text-fg-muted tabular-nums">{n}</span>
+                    <span className="text-caption text-fg-faint truncate">italic</span>
+                  </div>
                 ) : (
                   <ValueInput value={String(n)} onChange={(v) => { const p = parseInt(v, 10); if (!Number.isNaN(p)) setWeight(r.base, p) }} />
                 )}

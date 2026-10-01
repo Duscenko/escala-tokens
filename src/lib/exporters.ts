@@ -124,7 +124,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   Object.entries(typography.sizes).forEach(([k, v]) => lines.push(`  --font-size-${k}: ${v};`))
   Object.entries(typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
   Object.entries(typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
-  lines.push('\n  /* Text roles — alias the primitive scale. Desktop, plus `-mobile`. */')
+  lines.push('\n  /* Text roles — alias the primitive scale. Desktop, plus `-tablet` and `-mobile`. */')
   typeRoleCssVars(typography.roles).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Spacing */')
@@ -372,12 +372,12 @@ ${Object.entries(typography.weights).map(([k,v])=>`| \`--font-weight-${k}\` | \`
 
 ### Text roles
 
-| Role | Desktop | Mobile |
-|------|---------|--------|
+| Role | Desktop | Tablet | Mobile |
+|------|---------|--------|--------|
 ${TYPE_ROLES.map((r) => {
   const m = mergeTypeRoles(typography.roles)[r.key]
   const fmt = (a: { family: string; size: string; weight: string }) => `${a.size} · ${a.weight} · ${a.family}`
-  return `| \`text-${r.key}\` | \`${fmt(m.desktop)}\` | \`${fmt(m.mobile)}\` |`
+  return `| \`text-${r.key}\` | \`${fmt(m.desktop)}\` | \`${fmt(m.tablet)}\` | \`${fmt(m.mobile)}\` |`
 }).join('\n')}
 
 ---

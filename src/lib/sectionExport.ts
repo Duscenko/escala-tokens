@@ -585,15 +585,15 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
       table(['Token', 'Weight'], Object.entries(t.weights).map(([k, v]) => [`\`${k}\``, `\`${v}\``])),
       '\n### Text roles (semantics)\n',
       table(
-        ['Role', 'Desktop', 'Mobile'],
+        ['Role', 'Desktop', 'Tablet', 'Mobile'],
         TYPE_ROLES.map((r) => {
           const m = mergeTypeRoles(t.roles)[r.key]
           const fmt = (a: { family: string; size: string; weight: string }) =>
             `\`${a.size}\` · ${a.weight} · ${a.family}`
-          return [`\`text-${r.key}\``, fmt(m.desktop), fmt(m.mobile)]
+          return [`\`text-${r.key}\``, fmt(m.desktop), fmt(m.tablet), fmt(m.mobile)]
         }),
       ),
-      '\nDesktop CSS: `var(--text-label-font-size)`. Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives (`var(--font-size-text-sm)`).',
+      '\nDesktop CSS: `var(--text-label-font-size)`. Tablet: `var(--text-label-font-size-tablet)` in the tablet range (the same media query as the grid\'s tablet frame). Mobile: `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. All three alias primitives (`var(--font-size-text-sm)`). Only Display and headings step; body and control text keep one size.',
     ].join('\n')
   }
   if (section === 'icons') {

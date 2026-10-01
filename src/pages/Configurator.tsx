@@ -39,7 +39,7 @@ import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabBackground, ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
-import { usePopoverPlacement } from '../components/configurator/colorControls'
+import { COLOR_RAIL_WIDTH, usePopoverPlacement } from '../components/configurator/colorControls'
 import type { ThemeAppearance } from '../lib/themeModes'
 import type { GridFrameAlias, GridViewport } from '../lib/layoutTokens'
 
@@ -239,27 +239,27 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
   ],
   typography: [
     { key: 'primitives', label: 'Type primitives' },
-    { key: 'semantics', label: 'Text semantics' },
+    { key: 'semantics', label: 'Text semantics', icon: 'variables' },
   ],
   radius: [
     { key: 'primitives', label: 'Radius primitives' },
-    { key: 'semantics', label: 'Radius semantics' },
+    { key: 'semantics', label: 'Radius semantics', icon: 'variables' },
   ],
   spacing: [
     { key: 'primitives', label: 'Spacing primitives' },
-    { key: 'semantics', label: 'Spacing semantics' },
+    { key: 'semantics', label: 'Spacing semantics', icon: 'variables' },
   ],
   grid: [
     { key: 'primitives', label: 'Grid primitives' },
-    { key: 'semantics', label: 'Grid semantics' },
+    { key: 'semantics', label: 'Grid semantics', icon: 'variables' },
   ],
   sizes: [
     { key: 'primitives', label: 'Size primitives' },
-    { key: 'semantics', label: 'Size semantics' },
+    { key: 'semantics', label: 'Size semantics', icon: 'variables' },
   ],
   stroke: [
     { key: 'primitives', label: 'Stroke primitives' },
-    { key: 'semantics', label: 'Stroke semantics' },
+    { key: 'semantics', label: 'Stroke semantics', icon: 'variables' },
   ],
   shadow: [{ key: 'primitives', label: 'Shadow styles' }],
   icons: [{ key: 'primitives', label: 'Icon library' }],
@@ -725,7 +725,6 @@ export default function Configurator() {
     return w === 'documentation' ? 'preview' : w
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
-  const [themesLibraryOpen, setThemesLibraryOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
@@ -1212,6 +1211,13 @@ export default function Configurator() {
   const selectWorkspaceFoundation = (key: string) => {
     commitVisit()
     setActiveFoundation(key)
+    // From the Themes library page, a foundation icon means "edit this", which
+    // lives in Theme preview's widget panel.
+    if (themeWorkspaceTab === 'code') {
+      setThemeWorkspaceTab('preview')
+      setThemeHubSurface('artefacts')
+      return
+    }
     // The quick panel only mounts on the artefacts surface (`ThemePreviewHub`),
     // so picking a foundation from Components or Documentation would otherwise
     // change nothing visible. Choosing a foundation IS "I want to edit it".
@@ -1221,7 +1227,6 @@ export default function Configurator() {
   }
   const changeThemeWorkspaceTab = (next: ThemeWorkspaceTabStrip) => {
     setThemeWorkspaceTab(next)
-    if (next !== 'preview') setThemesLibraryOpen(false)
     // GitHub and Figma are detail surfaces inside Theme Preview, not a new
     // workspace tab. Clicking the already-selected Theme preview tab must
     // therefore behave like Home: restore the original artefacts canvas and
@@ -1761,8 +1766,10 @@ export default function Configurator() {
   // render.
   const themeHubConnecting = themeWorkspaceTab === 'preview'
     && (themeHubSurface === 'figma' || themeHubSurface === 'github')
+  // The library page ('code') keeps the icon column: the folder that opens it
+  // sits on top of that column, and the column stays the one way back into a
+  // foundation's widget.
   const themeWorkspaceRailVisible = themesCanvas
-    && themeWorkspaceTab !== 'code'
     && !themeHubConnecting
   /** Foundation icon rail on Theme Preview AND Variables. Preview lights the
    *  widget that exists (Color → color edition, Font → text edition, …);
@@ -1869,6 +1876,18 @@ export default function Configurator() {
               search={tokenSearchField}
               leading={(
                 <>
+                  {/* Transversal: the library is the same list on Theme preview
+                      and Variables, so its door lives in the row both tabs share,
+                      not in the Preview-only icon rail. `tab-bar` placement is
+                      exactly the icon rail's width, so its border-r continues
+                      the rail's divider up through this row. */}
+                  {themeWorkspaceRailVisible && (
+                    <ThemesLibraryToggle
+                      open={themeWorkspaceTab === 'code'}
+                      onToggle={() => (themeWorkspaceTab === 'code' ? changeThemeWorkspaceTab('preview') : openGetCodePage())}
+                      placement="tab-bar"
+                    />
+                  )}
                   <div className="flex h-full flex-shrink-0 items-center gap-2 pl-2.5">
                     <ThemeSwitcher
                       previewTheme={previewTheme}
@@ -1900,25 +1919,21 @@ export default function Configurator() {
             <FoundationIconRail
               orientation="vertical"
               ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
-              header={themeWorkspaceTab === 'preview' ? (
-                <ThemesLibraryToggle
-                  open={themesLibraryOpen}
-                  onToggle={() => setThemesLibraryOpen((open) => !open)}
-                  placement="icon-rail"
-                />
-              ) : undefined}
-              active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
+              active={themeWorkspaceTab === 'code' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
-                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
-                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab !== 'preview' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
             />
           )}
-          {themeWorkspaceRailVisible && themeWorkspaceTab === 'preview' && themesLibraryOpen && (
+          {/* Themes library page: the library docks in the widget panel's
+              slot (same 240px), the canvas shows the selected theme's export. */}
+          {themesCanvas && themeWorkspaceTab === 'code' && (
             <ThemeLibraryRail
+              width={COLOR_RAIL_WIDTH}
               previewTheme={previewTheme}
-              onPreviewThemeChange={changePreviewTheme}
+              onPreviewThemeChange={(key) => { setCodeScope(key); changePreviewTheme(key) }}
               onStylePreview={setStylePreview}
               activeStylePreview={stylePreview}
               onSyncFigma={syncFigmaForTheme}
@@ -2020,6 +2035,8 @@ export default function Configurator() {
                     }}
                     onPreviewThemeChange={changePreviewTheme}
                     onBack={openThemeLibraryFromCode}
+                    showScopeRail={false}
+                    onEditTheme={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                   />
                 </motion.div>
               ) : foundationCanvas ? (

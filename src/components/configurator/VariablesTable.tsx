@@ -3,7 +3,7 @@ import ScrubInput, { isScrubbable } from '../ui/ScrubInput'
 import VariableCollectionRail, { RailNoGroups } from './VariableCollectionRail'
 import {
   TABLE_CELL_DIVIDER, TABLE_GROUP_LABEL, TABLE_HEAD_CELL,
-  tableHeaderClass, tableRowClass,
+  tableHeaderClass, tableMatchClass, tableRowClass,
 } from './tableChrome'
 
 // Flush, filterable variables table shared by every token foundation (Radius ·
@@ -199,17 +199,13 @@ export default function VariablesTable({
         {g.rows.map((r, i) => (
           <div
             key={r.name}
-            className={`${tableRowClass(i, grid)}${
-              r.match === true ? ' bg-accent-ui/[0.10] hover:bg-accent-ui/[0.16]'
-              : r.match === false ? ' opacity-[0.38]'
-              : ''
-            }`}
+            className={`${tableRowClass(i, grid)} ${tableMatchClass(r.match)}`}
           >
-            <div className={`flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`}>
+            <div className={`flex items-center py-2.5 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`}>
               <code className="font-mono text-body text-fg-muted truncate">{r.name}</code>
               {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
             </div>
-            <div className={`flex items-center px-3 py-2 ${TABLE_CELL_DIVIDER}`}>
+            <div className={`flex items-center px-2.5 py-1.5 ${TABLE_CELL_DIVIDER}`}>
               {/* Reserved per GROUP, not per row: a group whose rows are all
                   numeric (spacing, radius, sizes, grid) gets the slot on every
                   row so the inputs stay on one x, and a group with none
@@ -222,7 +218,7 @@ export default function VariablesTable({
                 reserveHandle={g.scrubbable}
               />
             </div>
-            <div className={`flex items-center px-3 py-2 overflow-hidden ${TABLE_CELL_DIVIDER}`}>{r.preview}</div>
+            <div className={`flex items-center px-3 py-1.5 overflow-hidden ${TABLE_CELL_DIVIDER}`}>{r.preview}</div>
             <button
               onClick={r.onReset}
               disabled={!r.modified}

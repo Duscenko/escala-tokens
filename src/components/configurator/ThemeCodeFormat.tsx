@@ -286,6 +286,79 @@ function CodeLine({ value, number, format }: { value: string; number: number; fo
  * Read-only companion to Export. Inspect/copy the same CSS, documentation and
  * agent contract that the existing export flow ships.
  */
+/** What a theme's export carries, counted off the SAME `generateTokenJSON`
+ *  call the files are built from, so the numbers can't disagree with them. */
+type ExportFacts = { primitives: number; tokens: number; modes: number; cssBytes: number }
+
+function exportFacts(json: ReturnType<typeof generateTokenJSON>, css: string): ExportFacts {
+  const colors = (json as { colors?: Record<string, unknown> }).colors ?? {}
+  const count = (value: unknown) => (value && typeof value === 'object' ? Object.keys(value).length : 0)
+  const primitives = count(colors.primitive) + count(colors.primitiveAlpha)
+  const groups = ((colors.architecture as { tokens?: Record<string, Record<string, Record<string, string>>> } | undefined)?.tokens) ?? {}
+  let tokens = 0
+  const modeKeys = new Set<string>()
+  for (const group of Object.values(groups)) {
+    for (const modes of Object.values(group)) {
+      tokens += 1
+      Object.keys(modes ?? {}).forEach((key) => modeKeys.add(key))
+    }
+  }
+  return { primitives, tokens, modes: modeKeys.size, cssBytes: new Blob([css]).size }
+}
+
+function compactCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k`
+  return String(n)
+}
+
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9.5 2.5 11.5 4.5 5 11H3V9l6.5-6.5Z" />
+    </svg>
+  )
+}
+
+/** The library page's theme header: which theme, what its export holds, and
+ *  the way back into editing it. The facts read like the reference's stat row
+ *  (number over an uppercase caption), the house eyebrow treatment. */
+function ThemeExportHeader({ name, facts, onEdit }: { name: string; facts: ExportFacts | null; onEdit: () => void }) {
+  const { t } = useI18n()
+  const items = facts
+    ? [
+        { value: compactCount(facts.primitives), label: t('Primitives') },
+        { value: compactCount(facts.tokens), label: t('Tokens') },
+        { value: String(facts.modes), label: t('Modes') },
+        { value: compactCount(facts.cssBytes), label: 'CSS' },
+      ]
+    : []
+  return (
+    <header className="flex flex-shrink-0 flex-wrap items-end justify-between gap-x-8 gap-y-4 px-5 pt-5 pb-4">
+      <div className="min-w-0">
+        <h2 className="truncate text-heading font-semibold text-fg">{name}</h2>
+        {items.length ? (
+          <dl className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
+            {items.map((item) => (
+              <div key={item.label} className="flex flex-col-reverse">
+                <dt className="mt-0.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{item.label}</dt>
+                <dd className="text-title font-semibold tabular-nums text-fg">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+      >
+        <EditIcon />
+        {t('Edit theme')}
+      </button>
+    </header>
+  )
+}
+
 export default function ThemeCodeFormat({
   previewTheme,
   scope = '',
@@ -293,6 +366,8 @@ export default function ThemeCodeFormat({
   onPreviewThemeChange,
   onBack,
   showBreadcrumb = false,
+  showScopeRail = true,
+  onEditTheme,
 }: {
   previewTheme: string
   scope?: CodeThemeScope
@@ -300,6 +375,13 @@ export default function ThemeCodeFormat({
   onPreviewThemeChange: (theme: string) => void
   onBack: () => void
   showBreadcrumb?: boolean
+  /** The library page lists the themes in its own rail (the Themes library,
+   *  docked in the widget panel's slot), so it hides this page's radio list.
+   *  Default true keeps the standalone Get code page unchanged. */
+  showScopeRail?: boolean
+  /** When set, a theme header with the export's facts and an Edit button sits
+   *  above the code. Edit opens the theme where it is edited (Theme preview). */
+  onEditTheme?: (theme: string) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -314,7 +396,7 @@ export default function ThemeCodeFormat({
     effectiveScope ? captureCodeSnapshot(store, effectiveScope) : null
   ), [store, effectiveScope])
   const artifacts = useMemo(() => {
-    if (!source) return { css: '', markdown: '', tokensMd: '', skillMd: '' }
+    if (!source) return { css: '', markdown: '', tokensMd: '', skillMd: '', facts: null }
     const json = generateTokenJSON(source)
     const { files } = buildAgentSkillFiles(json, {
       projectFallback: source.projectName,
@@ -325,6 +407,7 @@ export default function ThemeCodeFormat({
       markdown: buildMarkdown(source as ReturnType<typeof useDesignStore.getState>),
       tokensMd: files.find((file) => file.path === 'references/tokens.md')?.text ?? '',
       skillMd: files.find((file) => file.path === 'SKILL.md')?.text ?? '',
+      facts: exportFacts(json, buildCSS(source as ReturnType<typeof useDesignStore.getState>)),
     }
   }, [source])
   const content = format === 'css' ? artifacts.css : format === 'markdown' ? artifacts.markdown : artifacts.tokensMd
@@ -351,14 +434,23 @@ export default function ThemeCodeFormat({
 
   return (
     <section className="h-full min-h-0 flex bg-app" aria-label="Code format">
-      <ThemeCodeScopeRail
-        scope={effectiveScope}
-        previewTheme={previewTheme}
-        onScopeChange={onScopeChange}
-        onPreviewThemeChange={onPreviewThemeChange}
-        onBack={onBack}
-      />
+      {showScopeRail && (
+        <ThemeCodeScopeRail
+          scope={effectiveScope}
+          previewTheme={previewTheme}
+          onScopeChange={onScopeChange}
+          onPreviewThemeChange={onPreviewThemeChange}
+          onBack={onBack}
+        />
+      )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {onEditTheme && effectiveScope ? (
+          <ThemeExportHeader
+            name={scopedLabel}
+            facts={artifacts.facts}
+            onEdit={() => onEditTheme(effectiveScope)}
+          />
+        ) : null}
         {showBreadcrumb ? (
           <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint">
@@ -367,7 +459,7 @@ export default function ThemeCodeFormat({
             </nav>
           </header>
         ) : null}
-        <div className="flex min-h-0 flex-1 p-3">
+        <div className={`flex min-h-0 flex-1 p-3 ${onEditTheme ? 'pt-0' : ''}`}>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line-strong bg-surface shadow-sm">
             <header className="flex min-h-[54px] flex-shrink-0 items-center gap-4 border-b border-line px-3 foundation-layer-bar">
               <div

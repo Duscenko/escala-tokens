@@ -19,6 +19,7 @@ import {
   type TypeFamilyRole,
   type TypeRoleGroupId,
   type TypeRoleModes,
+  type TypeViewport,
   type TypeWeightKey,
 } from '../../lib/typeRoles'
 import SemanticGroupRail from './SemanticGroupRail'
@@ -32,7 +33,12 @@ import { useI18n } from '../../lib/i18n'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
 
-const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(18rem,1.8fr)_minmax(8rem,1fr)_2.5rem]'
+// The wrapper's `min-w` below is the SUM of these minimums (10 + 19 + 9.5 + 2.5).
+// It was 28rem against 38.5rem of columns, so the grid overflowed its own
+// wrapper and every row's rules and zebra stopped short of the content: the
+// "cut off" table. Keep the two in step.
+const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(19rem,1.9fr)_minmax(9.5rem,1fr)_2.5rem]'
+const GRID_MIN = 'min-w-[41rem]'
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -51,18 +57,23 @@ function AliasSelect<T extends string>({
   options,
   onChange,
   ariaLabel,
+  grow = 1,
 }: {
   value: T
   options: { value: T; label: string }[]
   onChange: (v: T) => void
   ariaLabel: string
+  /** Share of the cell. Size labels (`display-2xl`) are the longest, so they
+   *  get the largest share; weight and family are short words. */
+  grow?: number
 }) {
   return (
     <select
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="min-w-0 h-7 px-2 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+      style={{ flex: `${grow} 1 0%` }}
+      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted text-ellipsis hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -78,19 +89,21 @@ function ViewportCell({
   onChange,
 }: {
   roleKey: string
-  viewport: 'desktop' | 'mobile'
+  viewport: TypeViewport
   alias: TypeAlias
   onChange: (next: TypeAlias) => void
 }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
+    <div className="flex items-center gap-1 px-2.5 py-2 border-r border-line min-w-0">
       <AliasSelect
+        grow={1.35}
         value={alias.size}
         options={SIZE_OPTIONS}
         onChange={(size) => onChange({ ...alias, size })}
         ariaLabel={`${roleKey} ${viewport} size`}
       />
       <AliasSelect
+        grow={1.1}
         value={alias.weight}
         options={WEIGHT_OPTIONS}
         onChange={(weight) => onChange({ ...alias, weight })}
@@ -174,7 +187,7 @@ export default function TypeSemantics({
     }
   }, [revealRole?.key, revealRole?.seq, controlled])
 
-  function patchRole(key: string, viewport: 'desktop' | 'mobile', alias: TypeAlias) {
+  function patchRole(key: string, viewport: TypeViewport, alias: TypeAlias) {
     const current = roles[key]
     const next: TypeRoleModes = { ...current, [viewport]: alias }
     setTypography({ ...typography, roles: { ...roles, [key]: next } })
@@ -253,7 +266,7 @@ export default function TypeSemantics({
 
           <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[28rem]">
+            <div className={GRID_MIN}>
               <div className={tableHeaderClass(GRID)}>
                 <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
                 <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
@@ -291,7 +304,7 @@ export default function TypeSemantics({
                         className="text-fg truncate leading-none"
                         style={{
                           fontFamily: fontStack(style.family),
-                          fontSize: Math.min(parseInt(style.size, 10) || 16, 28),
+                          fontSize: Math.min(parseInt(style.size, 10) || 16, 22),
                           fontWeight: style.weight,
                         }}
                       >

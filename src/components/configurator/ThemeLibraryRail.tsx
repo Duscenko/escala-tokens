@@ -529,9 +529,13 @@ export default function ThemeLibraryRail({
   onCreateTheme,
   onEditTheme,
   onOpenReset,
+  width = THEME_LIBRARY_WIDTH,
 }: {
   previewTheme: string
   onPreviewThemeChange: (theme: string) => void
+  /** The library page docks this rail in the widget panel's slot, so it takes
+   *  that panel's width (`COLOR_RAIL_WIDTH`) instead of its own 196px. */
+  width?: number
   /** Ephemeral try-on: fired with a preset + the appearance to read it in while
    *  its row is open, `null` when it closes or the rail unmounts. Never mutates
    *  the system. */
@@ -671,7 +675,7 @@ export default function ThemeLibraryRail({
       id="themes-library"
       tabIndex={-1}
       className={`flex h-full w-full min-h-0 flex-col border-r border-line ${SHELL_CHROME} outline-none`}
-      style={{ width: THEME_LIBRARY_WIDTH }}
+      style={{ width }}
       aria-label={t('Themes library')}
     >
       <div ref={optionsRootRef} className="relative h-[52px] flex-shrink-0 flex items-center justify-between gap-2 pl-4 pr-3.5 border-b border-line">

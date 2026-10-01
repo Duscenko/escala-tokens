@@ -1,13 +1,25 @@
 // Text semantic roles — the Typography twin of Color's ROLE_GROUPS.
 // Primitives (family / size / weight / line-height) are the raw scale.
 // A role is an ALIAS: label, placeholder, heading, … each pointing at those
-// primitives, with a Desktop and a Mobile mapping (Color's light/dark analogue).
+// primitives, with a Desktop, Tablet and Mobile mapping (Color's light/dark
+// analogue, with a third column).
 // Line-height always follows the chosen size step — the same pairing
 // typographyStandard already enforces on the primitive ramp.
 //
 // Display and headings STEP on a narrow viewport. Body and control roles do
 // NOT: shrinking reading text between breakpoints breaks 45–75 characters per
 // line. Mobile aliases for those groups equal desktop.
+//
+// THREE CUTS, and how far each one steps (v75):
+// - Tablet steps only the two sizes that overflow a ~768px column (Display,
+//   Heading XL) by one rung. Smaller headings already fit, so they hold their
+//   desktop size. Tablet was a copy of desktop before (no third column), so
+//   picking it in the Platform switch changed nothing anywhere.
+// - Mobile steps Display and Heading XL by TWO rungs and the rest of the
+//   headings by one. One rung was too little at the top: Display resolved to
+//   ~51px on a 375px phone, where Untitled UI / Material land around 36–48px.
+//   Two rungs puts it at ~38px on the comfortable scale.
+// Weights never change across cuts; no reference system does that.
 
 import {
   FONT_WEIGHT_BASES,
@@ -24,8 +36,12 @@ export interface TypeAlias {
   weight: TypeWeightKey
 }
 
+export const TYPE_VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
+export type TypeViewport = (typeof TYPE_VIEWPORTS)[number]
+
 export interface TypeRoleModes {
   desktop: TypeAlias
+  tablet: TypeAlias
   mobile: TypeAlias
 }
 
@@ -37,6 +53,7 @@ export interface TypeRole {
   description: string
   group: TypeRoleGroupId
   desktop: TypeAlias
+  tablet: TypeAlias
   mobile: TypeAlias
 }
 
@@ -61,7 +78,8 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Hero and page titles.',
     group: 'display',
     desktop: a('display', 'display-xl', 'bold'),
-    mobile: a('display', 'display-lg', 'bold'),
+    tablet: a('display', 'display-lg', 'bold'),
+    mobile: a('display', 'display-md', 'bold'),
   },
   {
     key: 'heading-xl',
@@ -69,7 +87,8 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Largest section title.',
     group: 'heading',
     desktop: a('display', 'display-lg', 'semibold'),
-    mobile: a('display', 'display-md', 'semibold'),
+    tablet: a('display', 'display-md', 'semibold'),
+    mobile: a('display', 'display-sm', 'semibold'),
   },
   {
     key: 'heading-lg',
@@ -77,6 +96,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Primary section heading.',
     group: 'heading',
     desktop: a('display', 'display-md', 'semibold'),
+    tablet: a('display', 'display-md', 'semibold'),
     mobile: a('display', 'display-sm', 'semibold'),
   },
   {
@@ -85,6 +105,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Card and panel titles.',
     group: 'heading',
     desktop: a('display', 'display-sm', 'semibold'),
+    tablet: a('display', 'display-sm', 'semibold'),
     mobile: a('display', 'display-xs', 'semibold'),
   },
   {
@@ -93,6 +114,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Nested headings and list titles.',
     group: 'heading',
     desktop: a('display', 'display-xs', 'semibold'),
+    tablet: a('display', 'display-xs', 'semibold'),
     mobile: a('display', 'text-xl', 'semibold'),
   },
   {
@@ -101,6 +123,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Overline-scale titles still read as headings.',
     group: 'heading',
     desktop: a('display', 'text-xl', 'semibold'),
+    tablet: a('display', 'text-xl', 'semibold'),
     mobile: a('display', 'text-lg', 'semibold'),
   },
   {
@@ -109,6 +132,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Lead paragraphs.',
     group: 'body',
     desktop: a('body', 'text-lg', 'regular'),
+    tablet: a('body', 'text-lg', 'regular'),
     mobile: a('body', 'text-lg', 'regular'),
   },
   {
@@ -117,6 +141,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Default reading size.',
     group: 'body',
     desktop: a('body', 'text-md', 'regular'),
+    tablet: a('body', 'text-md', 'regular'),
     mobile: a('body', 'text-md', 'regular'),
   },
   {
@@ -125,6 +150,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Dense supporting copy.',
     group: 'body',
     desktop: a('body', 'text-sm', 'regular'),
+    tablet: a('body', 'text-sm', 'regular'),
     mobile: a('body', 'text-sm', 'regular'),
   },
   {
@@ -133,6 +159,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Form labels and field names.',
     group: 'control',
     desktop: a('body', 'text-sm', 'medium'),
+    tablet: a('body', 'text-sm', 'medium'),
     mobile: a('body', 'text-sm', 'medium'),
   },
   {
@@ -141,6 +168,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Input placeholder and empty-field hint.',
     group: 'control',
     desktop: a('body', 'text-md', 'regular'),
+    tablet: a('body', 'text-md', 'regular'),
     mobile: a('body', 'text-md', 'regular'),
   },
   {
@@ -149,6 +177,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Image captions and metadata.',
     group: 'control',
     desktop: a('body', 'text-xs', 'regular'),
+    tablet: a('body', 'text-xs', 'regular'),
     mobile: a('body', 'text-xs', 'regular'),
   },
   {
@@ -171,6 +200,7 @@ export const TYPE_ROLES: TypeRole[] = [
     // ALIAS keeps one value in both. Body and control stay the same size on
     // mobile — only display/heading step.
     desktop: a('body', 'text-sm', 'semibold'),
+    tablet: a('body', 'text-sm', 'semibold'),
     mobile: a('body', 'text-sm', 'semibold'),
   },
   {
@@ -179,6 +209,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Field help, validation, footnotes.',
     group: 'control',
     desktop: a('body', 'text-xs', 'regular'),
+    tablet: a('body', 'text-xs', 'regular'),
     mobile: a('body', 'text-xs', 'regular'),
   },
 ]
@@ -205,14 +236,22 @@ function isAlias(v: unknown): v is TypeAlias {
   )
 }
 
-function isModes(v: unknown): v is TypeRoleModes {
+/** Desktop + mobile are required; tablet is optional so a pre-v75 map (two
+ *  columns) still counts as stored edits rather than being thrown away. */
+function isModes(v: unknown): v is Omit<TypeRoleModes, 'tablet'> & { tablet?: unknown } {
   if (!v || typeof v !== 'object') return false
   const m = v as TypeRoleModes
   return isAlias(m.desktop) && isAlias(m.mobile)
 }
 
 /** Seed or repair a stored map so every catalogue role is present. User edits
- *  on a known role are kept; unknown keys are dropped. */
+ *  on a known role are kept; unknown keys are dropped.
+ *
+ *  A stored role with no TABLET alias (anything saved before v75) gets one by
+ *  detection, not assumption: if its desktop is still the catalogue default,
+ *  it takes the catalogue tablet step; if someone picked their own desktop
+ *  size, tablet copies THAT, which is exactly what tablet rendered before
+ *  (it read the desktop alias). Nobody's hand-picked heading moves. */
 export function mergeTypeRoles(
   stored?: object | null,
 ): Record<string, TypeRoleModes> {
@@ -220,20 +259,24 @@ export function mergeTypeRoles(
   const out: Record<string, TypeRoleModes> = {}
   for (const role of TYPE_ROLES) {
     const hit = bag[role.key]
-    out[role.key] = isModes(hit)
-      ? { desktop: { ...hit.desktop }, mobile: { ...hit.mobile } }
-      : { desktop: { ...role.desktop }, mobile: { ...role.mobile } }
+    if (isModes(hit)) {
+      const tablet = isAlias(hit.tablet)
+        ? hit.tablet
+        : aliasesEqual(hit.desktop, role.desktop) ? role.tablet : hit.desktop
+      out[role.key] = { desktop: { ...hit.desktop }, tablet: { ...tablet }, mobile: { ...hit.mobile } }
+    } else {
+      out[role.key] = { desktop: { ...role.desktop }, tablet: { ...role.tablet }, mobile: { ...role.mobile } }
+    }
   }
   return out
 }
 
-export function asTypeViewport(viewport?: string): 'desktop' | 'mobile' {
-  return viewport === 'mobile' ? 'mobile' : 'desktop'
+export function asTypeViewport(viewport?: string): TypeViewport {
+  return viewport === 'mobile' ? 'mobile' : viewport === 'tablet' ? 'tablet' : 'desktop'
 }
 
 /** Primitive family / size / weight steps a platform cut actually aliases.
- *  Font primitives stay one ramp; this is which rungs Desktop vs Mobile use.
- *  Tablet maps onto desktop (type has no third column). */
+ *  Font primitives stay one ramp; this is which rungs each cut uses. */
 export function typePrimitivesForViewport(
   stored: object | null | undefined,
   viewport: string,
@@ -259,7 +302,34 @@ export function aliasesEqual(a: TypeAlias, b: TypeAlias): boolean {
 export function roleIsDefault(key: string, modes: TypeRoleModes): boolean {
   const spec = TYPE_ROLE_BY_KEY[key]
   if (!spec) return true
-  return aliasesEqual(modes.desktop, spec.desktop) && aliasesEqual(modes.mobile, spec.mobile)
+  return aliasesEqual(modes.desktop, spec.desktop)
+    && aliasesEqual(modes.tablet, spec.tablet)
+    && aliasesEqual(modes.mobile, spec.mobile)
+}
+
+/** Pre-v75 mobile aliases for the two roles that now step TWO rungs on a
+ *  phone. Display/Heading XL used to step only one. */
+const LEGACY_LARGE_MOBILE: Record<string, TypeAlias> = {
+  display: a('display', 'display-lg', 'bold'),
+  'heading-xl': a('display', 'display-md', 'semibold'),
+}
+
+/** v75: move Display / Heading XL to their new two-rung mobile step when the
+ *  stored pair is still the pre-v75 catalogue default, and seed tablet. A
+ *  hand-picked mobile size is left alone (detect, don't assume). */
+export function stepLargeTypeOnMobile(
+  stored?: object | null,
+): Record<string, TypeRoleModes> {
+  const map = mergeTypeRoles(stored)
+  for (const role of TYPE_ROLES) {
+    const legacy = LEGACY_LARGE_MOBILE[role.key]
+    if (!legacy) continue
+    const hit = map[role.key]
+    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
+      map[role.key] = { ...hit, mobile: { ...role.mobile } }
+    }
+  }
+  return map
 }
 
 /** Pre-v73 mobile aliases that shrunk body/control one step. Display/heading
@@ -284,7 +354,7 @@ export function promoteReadingTypeIdentity(
     if (!legacy) continue
     const hit = map[role.key]
     if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
-      map[role.key] = { desktop: { ...hit.desktop }, mobile: { ...hit.desktop } }
+      map[role.key] = { ...hit, mobile: { ...hit.desktop } }
     }
   }
   return map
@@ -347,15 +417,16 @@ export function typeStyleCss(
 
 export type TypeFacet = 'family' | 'size' | 'weight' | 'leading'
 
-/** CSS custom property stem — `text-label` → `--text-label-font-size`. */
-export function typeRoleVar(key: string, facet: TypeFacet, viewport: 'desktop' | 'mobile' = 'desktop'): string {
+/** CSS custom property stem — `text-label` → `--text-label-font-size`,
+ *  `-tablet` / `-mobile` suffixed for the other two cuts. */
+export function typeRoleVar(key: string, facet: TypeFacet, viewport: TypeViewport = 'desktop'): string {
   const suffix =
     facet === 'family' ? 'font-family'
     : facet === 'size' ? 'font-size'
     : facet === 'weight' ? 'font-weight'
     : 'line-height'
   const base = `--text-${key}-${suffix}`
-  return viewport === 'mobile' ? `${base}-mobile` : base
+  return viewport === 'desktop' ? base : `${base}-${viewport}`
 }
 
 export function primitiveVar(alias: TypeAlias, facet: TypeFacet): string {
@@ -367,7 +438,7 @@ export function primitiveVar(alias: TypeAlias, facet: TypeFacet): string {
 
 const FACETS: TypeFacet[] = ['family', 'size', 'weight', 'leading']
 
-/** Desktop + `-mobile` alias declarations. Safe inside `:root`. */
+/** Desktop + `-tablet` + `-mobile` alias declarations. Safe inside `:root`. */
 export function typeRoleCssVars(roles?: object | null): string[] {
   const map = mergeTypeRoles(roles)
   const lines: string[] = []
@@ -375,6 +446,7 @@ export function typeRoleCssVars(roles?: object | null): string[] {
     const m = map[role.key]
     for (const facet of FACETS) {
       lines.push(`${typeRoleVar(role.key, facet)}: ${primitiveVar(m.desktop, facet)};`)
+      lines.push(`${typeRoleVar(role.key, facet, 'tablet')}: ${primitiveVar(m.tablet, facet)};`)
       lines.push(`${typeRoleVar(role.key, facet, 'mobile')}: ${primitiveVar(m.mobile, facet)};`)
     }
   }

@@ -444,8 +444,8 @@ export function extractBreakpoints(grid: Record<string, string> | undefined): Re
 // Container aliases a breakpoint step, or `none` (no max-width).
 //
 // Three WINDOW recetas, not OS platforms: compact phone · tablet · desktop.
-// Type roles stay desktop/mobile (tablet reads the desktop aliases). Grid
-// is the axis that actually needs the middle recipe (4 / 8 / 12 columns).
+// Type roles have the same three columns since v75 (only Display and
+// headings step; see typeRoles.ts). Grid's middle recipe is 4 / 8 / 12 columns.
 
 export const GRID_VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
 export type GridViewport = (typeof GRID_VIEWPORTS)[number]

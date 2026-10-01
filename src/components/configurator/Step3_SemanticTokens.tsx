@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { tableRowClass } from './tableChrome'
+import { TABLE_LAST_ROW, tableRowClass } from './tableChrome'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, type ThemePalette } from '../../store/useDesignStore'
 import {
@@ -506,7 +506,7 @@ function MatrixRow({
   return (
     <div
       id={`color-role-${role.key}`}
-      className={flash ? COLOR_FLASH : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}
+      className={`${TABLE_LAST_ROW} ${flash ? COLOR_FLASH : expanded ? 'bg-blue-50/40 dark:bg-blue-950/10' : isEven ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}`}
     >
       <div className={tableRowClass(index, 'grid', { zebra: false })} style={gridStyle}>
         {/* Name only — description + copyable var move into the expanded editor
@@ -1464,7 +1464,7 @@ export default function Step3_SemanticTokens({
                   <div
                     key={t.id}
                     id={`color-role-${t.id}`}
-                    className={flash ? COLOR_FLASH : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}
+                    className={`${TABLE_LAST_ROW} ${flash ? COLOR_FLASH : isOpen ? 'bg-blue-50/40 dark:bg-blue-950/10' : idx % 2 === 1 ? 'bg-black/[0.018] dark:bg-white/[0.02]' : ''}`}
                   >
                     <div
                       // `group` so the pinned name cell can re-paint this row's

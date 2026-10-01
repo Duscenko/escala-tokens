@@ -86,7 +86,36 @@ export function tableRowClass(index: number, grid: string, opts: { zebra?: boole
     index === 0 ? '' : TABLE_ROW_DIVIDER,
     TABLE_HOVER,
     zebra && index % 2 === 1 ? TABLE_ZEBRA : '',
+    zebra ? TABLE_LAST_ROW : '',
   ].filter(Boolean).join(' ')
+}
+
+/**
+ * Platform-cut marking (Desktop / Tablet / Mobile) on a token row.
+ *
+ * It used to be a full-row `bg-accent-ui/[0.10]` wash on rows IN the cut and
+ * `opacity-[0.38]` on the whole row OUT of it. Users read that as a broken
+ * zebra: navy rows alternating with near-invisible ones (in Type, every
+ * italic weight is out of every cut, so the weight table striped
+ * navy · faded · navy · faded), a second stripe pattern laid over the real
+ * one, with the out-of-cut rows' controls looking disabled while they still
+ * edit.
+ *
+ * Now the row keeps the table's own surface in both states, so there is one
+ * row treatment per table, the same one Color's tables use:
+ * - **In the cut**: no decoration at all, it reads as a normal row. A 2px
+ *   accent edge was tried and read as stray blue lines that no other table
+ *   draws, the same complaint in a smaller form.
+ * - **Out of the cut**: its CELLS recede to 55%. The row background and
+ *   lattice stay at full weight so the grid doesn't break up, and hover or
+ *   focus brings the cells back so the row is still fully editable.
+ * - `null` / `undefined`: no platform context, no marking.
+ */
+export function tableMatchClass(match: boolean | null | undefined) {
+  if (match === false) {
+    return '[&>*]:opacity-55 [&>*]:transition-opacity hover:[&>*]:opacity-100 focus-within:[&>*]:opacity-100'
+  }
+  return ''
 }
 
 /**
@@ -123,6 +152,22 @@ export function tableHeaderClass(
 
 /** A cell in that header. */
 export const TABLE_HEAD_CELL = `flex items-center ${TABLE_CELL_DIVIDER}`
+
+/**
+ * The closing edge of a table: the LAST row draws a bottom rule.
+ *
+ * Rows only draw a TOP rule (row 0 skips it, see `tableRowClass`), so the last
+ * row of a table had no bottom edge. Wherever a table ended (a single group,
+ * the last group, or the end of a group running into the next group's label
+ * band) the lattice stopped mid-air with its column rules hanging open.
+ * `last:` keys off the DOM, so it is right however many rows a filter leaves.
+ *
+ * `tableRowClass` adds it to every self-zebra row. Semantics wraps each row in
+ * its own zebra/expand wrapper, so the row is always its wrapper's last child;
+ * those tables put this on the WRAPPER instead, or every row would draw a
+ * double rule against the next one's top.
+ */
+export const TABLE_LAST_ROW = `last:border-b ${TABLE_DIVIDER}`
 
 /** The sticky group label above a header in the "All" view. */
 export const TABLE_GROUP_LABEL = `flex items-center gap-2 px-4 py-2.5 bg-app ${TABLE_HEADER_DIVIDER} sticky top-0 z-20`

@@ -10,6 +10,8 @@ import {
   primitiveVar,
   resolveTypeStyle,
   roleIsDefault,
+  stepLargeTypeOnMobile,
+  typeRoleCssVars,
   typeRoleVar,
   typeStyleCss,
 } from '../typeRoles'
@@ -200,5 +202,75 @@ describe('type-scale modes', () => {
       const stdRatio = parseFloat(LINE_HEIGHT_STANDARD['text-md']) / parseFloat(FONT_SIZE_STANDARD['text-md'])
       expect(ratio).toBeCloseTo(stdRatio, 1)
     }
+  })
+})
+
+describe('three platform cuts (v75)', () => {
+  const rank = (size: string) => TYPE_SCALE_KEYS.indexOf(size as (typeof TYPE_SCALE_KEYS)[number])
+
+  it('Display and Heading XL give three distinct sizes: tablet one rung down, mobile two', () => {
+    for (const key of ['display', 'heading-xl']) {
+      const role = TYPE_ROLES.find((r) => r.key === key)!
+      expect(rank(role.desktop.size) - rank(role.tablet.size)).toBe(1)
+      expect(rank(role.desktop.size) - rank(role.mobile.size)).toBe(2)
+    }
+  })
+
+  it('smaller headings hold their desktop size on tablet and step one rung on mobile', () => {
+    for (const role of TYPE_ROLES.filter((r) => r.group === 'heading' && r.key !== 'heading-xl')) {
+      expect(aliasesEqual(role.tablet, role.desktop)).toBe(true)
+      expect(rank(role.desktop.size) - rank(role.mobile.size)).toBe(1)
+    }
+  })
+
+  it('body and control text keep ONE size on every cut', () => {
+    for (const role of TYPE_ROLES.filter((r) => r.group === 'body' || r.group === 'control')) {
+      expect(aliasesEqual(role.tablet, role.desktop)).toBe(true)
+      expect(aliasesEqual(role.mobile, role.desktop)).toBe(true)
+    }
+  })
+
+  it('weights never change across cuts', () => {
+    for (const role of TYPE_ROLES) {
+      expect(role.tablet.weight).toBe(role.desktop.weight)
+      expect(role.mobile.weight).toBe(role.desktop.weight)
+    }
+  })
+
+  it('tablet now resolves differently from desktop where it should', () => {
+    const desk = typePrimitivesForViewport(null, 'desktop').sizes
+    const tab = typePrimitivesForViewport(null, 'tablet').sizes
+    expect([...desk].sort()).not.toEqual([...tab].sort())
+  })
+
+  it('a pre-v75 map (no tablet) seeds tablet by detection', () => {
+    const legacy = {
+      display: { desktop: { family: 'display', size: 'display-xl', weight: 'bold' }, mobile: { family: 'display', size: 'display-lg', weight: 'bold' } },
+      'heading-xl': { desktop: { family: 'display', size: 'display-2xl', weight: 'semibold' }, mobile: { family: 'display', size: 'display-md', weight: 'semibold' } },
+    }
+    const map = mergeTypeRoles(legacy)
+    // Default desktop → the catalogue tablet step.
+    expect(map.display.tablet.size).toBe('display-lg')
+    // Hand-picked desktop → tablet copies it (what tablet rendered before).
+    expect(map['heading-xl'].tablet.size).toBe('display-2xl')
+  })
+
+  it('v75 moves the large mobile steps only where the pair is still the old default', () => {
+    const legacy = {
+      display: { desktop: { family: 'display', size: 'display-xl', weight: 'bold' }, mobile: { family: 'display', size: 'display-lg', weight: 'bold' } },
+      'heading-xl': { desktop: { family: 'display', size: 'display-lg', weight: 'semibold' }, mobile: { family: 'display', size: 'display-lg', weight: 'semibold' } },
+    }
+    const map = stepLargeTypeOnMobile(legacy)
+    expect(map.display.mobile.size).toBe('display-md')
+    // A hand-picked mobile size is left alone.
+    expect(map['heading-xl'].mobile.size).toBe('display-lg')
+    expect(roleIsDefault('display', map.display)).toBe(true)
+  })
+
+  it('emits -tablet CSS vars beside desktop and -mobile', () => {
+    const lines = typeRoleCssVars(null)
+    expect(typeRoleVar('display', 'size', 'tablet')).toBe('--text-display-font-size-tablet')
+    expect(lines).toContain('--text-display-font-size-tablet: var(--font-size-display-lg);')
+    expect(lines).toContain('--text-display-font-size-mobile: var(--font-size-display-md);')
   })
 })

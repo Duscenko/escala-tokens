@@ -849,7 +849,7 @@ color:      var(--color-content-on-action);
   {
     key: 'typography',
     label: 'Typography',
-    lead: 'Two layers, same idea as Color. Primitives are the scale — display/body families, eleven sizes with matching line-heights, four weights. Semantics are named text styles (label, placeholder, heading, body, button) that alias those primitives, with a Desktop mapping and a Mobile mapping. Components reference the role; the role points at the scale.',
+    lead: 'Two layers, same idea as Color. Primitives are the scale — display/body families, eleven sizes with matching line-heights, four weights. Semantics are named text styles (label, placeholder, heading, body, button) that alias those primitives, with a Desktop, Tablet and Mobile mapping. Components reference the role; the role points at the scale.',
     why: 'A 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes size a CHOICE FROM A SET. Pairing each size with its line-height keeps vertical rhythm. Roles — `text-label`, `text-placeholder` — are the decision you can re-point once. Display and headings step down on a narrow viewport; body, labels and buttons keep the same reading size so line length stays 45–75 characters.',
     usage: 'Reach for a text role first (`text-label`, `text-body-md`, `text-heading-lg`). Use a primitive (`text-sm`, `semibold`) only when defining a new role. Desktop CSS is `var(--text-label-font-size)`; mobile is `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives — never a raw px.',
     usageCode: `/* semantic — what it is FOR */
@@ -956,7 +956,7 @@ line-height: var(--text-label-line-height);
       {
         id: 'roles',
         title: 'Text roles',
-        description: 'Semantic styles alias the primitive scale. Desktop and Mobile are two mappings of the same role — Color’s light/dark, for type.',
+        description: 'Semantic styles alias the primitive scale. Desktop, Tablet and Mobile are three mappings of the same role — Color’s light/dark, for type. Only Display and headings step down; body and control text keep one size everywhere.',
         render: (c) => {
           const roles = mergeTypeRoles(c.typography.roles)
           return (

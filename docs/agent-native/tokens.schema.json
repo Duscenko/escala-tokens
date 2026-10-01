@@ -123,10 +123,11 @@
             "required": ["desktop", "mobile"],
             "properties": {
               "desktop": { "$ref": "#/$defs/typeAlias" },
+              "tablet": { "$ref": "#/$defs/typeAlias" },
               "mobile": { "$ref": "#/$defs/typeAlias" }
             }
           },
-          "description": "v6 additive. Semantic type roles alias primitives; they do not store a second px."
+          "description": "v6 additive. Semantic type roles alias primitives; they do not store a second px. `tablet` is additive (optional): only display and headings step there."
         }
       }
     },

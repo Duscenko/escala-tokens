@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
-import { mergeTypeRoles, promoteReadingTypeIdentity, type TypeRoleModes } from '../lib/typeRoles'
+import { mergeTypeRoles, promoteReadingTypeIdentity, stepLargeTypeOnMobile, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -1705,7 +1705,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 74,
+      version: 75,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2954,6 +2954,31 @@ export const useDesignStore = create<DesignStore>()(
           seedTablet(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) seedTablet(sys?.snapshot)
+          }
+        }
+        if (version < 75) {
+          // v74→v75: type roles gain a TABLET column, and Display / Heading XL
+          // step two rungs on mobile instead of one. Detect-don't-assume, same
+          // as v73: tablet is seeded from the catalogue only where desktop is
+          // still the default (otherwise it copies desktop, which is what
+          // tablet rendered before), and the mobile step moves only where the
+          // stored pair is still the pre-v75 default.
+          const stepType = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (state.typography && typeof state.typography === 'object') {
+              state.typography.roles = stepLargeTypeOnMobile(state.typography.roles)
+            }
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const ty = foundations[key]?.typography
+                if (ty && typeof ty === 'object') ty.roles = stepLargeTypeOnMobile(ty.roles)
+              }
+            }
+          }
+          stepType(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) stepType(sys?.snapshot)
           }
         }
         return persisted

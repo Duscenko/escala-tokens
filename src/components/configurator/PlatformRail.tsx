@@ -90,15 +90,17 @@ export function PlatformSwitch({
             title={label}
             onClick={() => onChange(id)}
             className={`flex h-7 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-              fill ? 'min-w-0 flex-1 gap-1 px-1' : 'w-7'
+              fill ? 'min-w-0 flex-1' : 'w-7'
             } ${
               on
-                ? 'bg-app text-fg font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.22)] ring-1 ring-line-strong'
+                ? 'bg-app text-fg shadow-[0_1px_3px_rgba(0,0,0,0.22)] ring-1 ring-line-strong'
                 : `text-fg-faint ${CHROME_CONTROL_HOVER}`
             }`}
           >
             <Icon />
-            {fill && <span className="truncate text-caption font-medium">{label}</span>}
+            {/* Icon only, the name rides in `title` / `aria-label`. At the
+                rail's width "Desktop" truncated to "Deskt…" beside two
+                full words, which read as broken rather than compact. */}
           </button>
         )
       })}
