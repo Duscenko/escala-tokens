@@ -35,6 +35,9 @@ export const WORKSPACE_CHIP_ACTIVE = 'bg-app text-fg dark:bg-chip-rest'
  *  Hover is a VERY subtle dark wash via inset overlay — keeps the chip fill and
  *  never swaps to `--surface` (lighter than `--chip-rest` in light, so the old
  *  `hover:bg-surface` washed controls out). Dark chrome lifts slightly instead. */
+/** Portaled shell menus (TopNav, token search) — above workspace drawers (≤60) and in-header overlays. */
+export const CHROME_MENU_Z = 200
+
 export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
 export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:hover:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] hover:text-fg'
 
@@ -42,3 +45,35 @@ export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0
 export const THEME_SWITCHER_WIDTH_CLASS = 'w-[11rem]'
 export const CHROME_CONTROL_ACTIVE = 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.08)] text-fg dark:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.09)]'
 export const CHROME_CONTROL_FOCUS = 'focus-within:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:focus-within:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] focus-within:text-fg'
+
+/** TopNav + workspace tab row when the live strip isn't mounted yet. */
+export const SHELL_DRAWER_TOP_FALLBACK = 52 + 52
+
+/** Attribution footer (`h-7`) + gap when `footer` isn't in the DOM. */
+export const SHELL_DRAWER_BOTTOM_FALLBACK = 28 + 8
+
+export type ShellDrawerInsets = { top: number; bottom: number }
+
+/**
+ * Vertical insets for a right-docked drawer that should fill the workspace
+ * column: from the bottom of the Themes tab strip down to the top of the
+ * shell footer (plugin banner height is included automatically via the tab
+ * strip's box).
+ */
+export function measureShellDrawerInsets(): ShellDrawerInsets {
+  const tabRect = document.querySelector('.theme-workspace-tab-bar')?.getBoundingClientRect()
+  let top = SHELL_DRAWER_TOP_FALLBACK
+  if (tabRect && tabRect.bottom > 0) top = tabRect.bottom
+  else {
+    const layerRect = document.querySelector('.foundation-layer-bar')?.getBoundingClientRect()
+    if (layerRect && layerRect.bottom > 0) top = layerRect.bottom
+  }
+
+  const footerRect = document.querySelector('footer')?.getBoundingClientRect()
+  const bottom =
+    footerRect && footerRect.top > 0 && footerRect.top <= window.innerHeight
+      ? Math.max(0, window.innerHeight - footerRect.top)
+      : SHELL_DRAWER_BOTTOM_FALLBACK
+
+  return { top, bottom }
+}

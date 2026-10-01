@@ -861,9 +861,9 @@ export function DemoVideo({ className, tapToPlay }: { className?: string; tapToP
   const { t } = useI18n()
   return (
     <video
-      src="/video/video-realise-lr.mp4"
+      src="/video/inspector-lr.mp4"
       className={cn('w-full h-auto rounded-2xl object-cover', className)}
-      style={{ aspectRatio: '939 / 539' }}
+      style={{ aspectRatio: '1920 / 928' }}
       poster={tapToPlay ? '/video/video-realise-poster.jpg' : undefined}
       preload={tapToPlay ? 'none' : undefined}
       autoPlay={!tapToPlay}

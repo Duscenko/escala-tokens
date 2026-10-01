@@ -14,7 +14,7 @@
 // warning/info/<slug>), so the table, the semantic sources and tokens.json
 // never disagree.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore, makeDesignDefaults, type ThemeSources } from '../../store/useDesignStore'
@@ -46,8 +46,13 @@ import VariableCollectionRail, { FolderIcon } from './VariableCollectionRail'
 import { GradientNavList, GradientRailMark } from './StepGradients'
 import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY_FORMAT_OPTIONS, type WizardFormat, type WizardFile } from '../../lib/exportWizard'
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
-import { TOP_NAV_H } from './TopNav'
 import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
+import {
+  measureShellDrawerInsets,
+  SHELL_DRAWER_BOTTOM_FALLBACK,
+  SHELL_DRAWER_TOP_FALLBACK,
+  type ShellDrawerInsets,
+} from './themeWorkspaceLayout'
 
 // ── Family groups ───────────────────────────────────────────────────────────
 // The second nav level, inside each theme folder. Which group a family lands
@@ -64,15 +69,8 @@ import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 export const FAMILY_GROUPS = ['Accents', 'Neutrals', 'States', 'Custom'] as const
 export type FamilyGroup = (typeof FAMILY_GROUPS)[number]
 
-/** Family-edit drawer width — same 360 as `ThemePanel`'s `PANEL_W`. Top
- *  fallback is the shell's two rows when the family `<nav>` isn't measured. */
+/** Family-edit drawer width — same 360 as `ThemePanel`'s `PANEL_W`. */
 const DOCK_W = 360
-const DOCK_TOP_FALLBACK = TOP_NAV_H + 52
-/** Bottom inset — clears the shell's 28px attribution footer (`h-7`) plus the
- *  same 8px breathing gap the panel keeps everywhere else, so the drawer stops
- *  ABOVE the "Built by…" line instead of overlapping it. `ThemePanel` uses the
- *  identical value. */
-const DOCK_BOTTOM = 28 + 8
 
 // ── Small icons (mirroring the Alias table's visual language) ────────────────
 
@@ -1640,21 +1638,28 @@ export default function ColorPrimitives({
   // and it's beside the column rather than over it, so the family list stays
   // readable while you edit — the same "dock the picker next to the column,
   // not on top of it" move the quick-edit strip's popover makes.
-  // Re-measured on scroll (capture phase, so an ancestor's scroll counts) and
-  // on resize.
-  const [navRect, setNavRect] = useState<DOMRect | null>(null)
-  useEffect(() => {
-    if (!editFamily) { setNavRect(null); return }
-    const measure = () => {
-      const r = navRef.current?.getBoundingClientRect()
-      if (r) setNavRect(r)
-    }
+  // Vertical bounds: workspace tab strip → shell footer (`measureShellDrawerInsets`).
+  const [drawerInsets, setDrawerInsets] = useState<ShellDrawerInsets>({
+    top: SHELL_DRAWER_TOP_FALLBACK,
+    bottom: SHELL_DRAWER_BOTTOM_FALLBACK,
+  })
+  useLayoutEffect(() => {
+    if (!editFamily) return
+    const measure = () => setDrawerInsets(measureShellDrawerInsets())
     measure()
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
+    const observed: Element[] = []
+    const tabBar = document.querySelector('.theme-workspace-tab-bar')
+    const footer = document.querySelector('footer')
+    if (tabBar) observed.push(tabBar)
+    if (footer) observed.push(footer)
+    const ro = new ResizeObserver(measure)
+    observed.forEach((el) => ro.observe(el))
     return () => {
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
+      ro.disconnect()
     }
   }, [editFamily])
 
@@ -1732,7 +1737,7 @@ export default function ColorPrimitives({
   // clipping ancestor. It is the same 52px-header drawer as ThemePanel, but it
   // slides in from the RIGHT viewport edge: docking flush to the families rail
   // covered the column you just clicked and made the drawer hard to dismiss
-  // from the left. Top/bottom still track the Color Variables column.
+  // from the left. Top/bottom track the workspace shell (tab strip → footer).
   const editingFamily = editFamily ? families.find((f) => f.key === editFamily) ?? null : null
   const editingUsesNeutralPicker = editingFamily ? familyUsesNeutralPicker(editingFamily, homeOf) : false
   const editingUsesAccentPicker = editingFamily ? familyUsesAccentPicker(editingFamily, themeSources) : false
@@ -1743,7 +1748,7 @@ export default function ColorPrimitives({
     ? neutralFromBrand(pickerThemeAccent, neutralTint)
     : editingFamily?.base ?? ''
   const editingPickerAppearance = editingNeutralCoordinated ? activeAppearance : editAppearance
-  const editPortal = editingFamily && navRect
+  const editPortal = editingFamily
     ? createPortal(
         <AnimatePresence>
           <motion.div
@@ -1758,8 +1763,8 @@ export default function ColorPrimitives({
             style={{
               position: 'fixed',
               right: 0,
-              top: managedThemesExternally ? TOP_NAV_H : (navRect.top > 0 ? navRect.top : DOCK_TOP_FALLBACK),
-              bottom: DOCK_BOTTOM,
+              top: drawerInsets.top,
+              bottom: drawerInsets.bottom,
               width: Math.min(DOCK_W, Math.max(280, window.innerWidth - 16)),
             }}
             className="z-50 rounded-l-2xl border border-r-0 border-line bg-app shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
@@ -1802,7 +1807,7 @@ export default function ColorPrimitives({
                 </svg>
               </button>
             </header>
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always px-4 pt-5 pb-4">
               <ColorPickerPanel
                 value={editingFamilyPickerValue}
                 onChange={(hex) => changeFamilyBase(editingFamily, hex)}

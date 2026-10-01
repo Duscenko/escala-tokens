@@ -18,7 +18,7 @@ import {
 } from '../../lib/industryPacks'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SparkleCircleIcon } from '../ui/icons'
-import { HarmonyFollows } from './HarmonyFollows'
+import { HarmonyFollows, PageAppearancePreview } from './HarmonyFollows'
 
 // ── Scale settings — Contrast shift ─────────────────────────────────────────
 // Drives how far every 1–12 ramp travels from the page; changing it regenerates
@@ -112,21 +112,17 @@ export function ColorControls({
             type="button"
             onClick={() => onLinkNeutral(!linkNeutral)}
             aria-pressed={linkNeutral}
-            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border text-left transition-colors ${
+            className={`flex flex-col gap-2 px-2.5 py-2.5 rounded-lg border text-left transition-colors ${
               linkNeutral ? 'border-accent-ui bg-accent-ui/[0.07]' : 'border-line hover:border-line-strong'
             }`}
           >
-            <span aria-hidden className="flex items-center gap-px flex-shrink-0">
-              <span
-                className={`w-4 h-4 rounded-l ring-1 ring-black/10 ${appearance === 'light' ? 'ring-2 ring-fg z-[1]' : ''}`}
-                style={{ background: derived?.pageLight ?? linkedNeutralPreview ?? 'transparent' }}
-              />
-              <span
-                className={`w-4 h-4 rounded-r ring-1 ring-black/10 ${appearance === 'dark' ? 'ring-2 ring-fg z-[1]' : ''}`}
-                style={{ background: derived?.pageDark ?? 'transparent' }}
-              />
-            </span>
-            <span className="min-w-0 flex-1">
+            <PageAppearancePreview
+              compact
+              appearance={appearance}
+              pageLight={derived?.pageLight ?? linkedNeutralPreview ?? '#ffffff'}
+              pageDark={derived?.pageDark ?? '#0c0e12'}
+            />
+            <span className="min-w-0">
               <span className="block text-body text-fg">Neutral follows the accent</span>
               <span className="block text-caption text-fg-faint leading-snug">
                 {linkNeutral
@@ -553,7 +549,7 @@ export function ScaleSettingsModal({
   if (typeof document === 'undefined') return null
 
   const body = (
-    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-4 pb-4 flex flex-col gap-6">
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-4 pt-5 pb-4 flex flex-col gap-6">
       {children}
     </div>
   )
@@ -664,7 +660,7 @@ export function ScaleSettingsModal({
               </svg>
             </button>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-5 pb-5 flex flex-col gap-6">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-5 pt-5 pb-5 flex flex-col gap-6">
             {children}
           </div>
         </motion.div>

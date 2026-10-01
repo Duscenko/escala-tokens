@@ -12,6 +12,9 @@ import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { CHECKER } from './checker'
+
+export { CHECKER } from './checker'
 
 // ── Gray flavor options for the neutral scale ──────────────────────────────
 // Radix's six neutral families at step 9 — same anchor role, subtle undertone
@@ -781,7 +784,7 @@ export function ColorPickerPopover({
   if (!open) return null
 
   const body = (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-4 pt-5 pb-4">
       <ColorPickerPanel
         value={value}
         onChange={onChange}
@@ -1162,13 +1165,6 @@ export function ScaleRow({
     </div>
   )
 }
-
-// Same checkerboard used by Foundations · Opacity's "Opacity Scale" strip
-// (`Step6_Opacity.tsx`) — reused verbatim so a translucent swatch reads as
-// transparent everywhere in the app, not just on one page.
-export const CHECKER = {
-  backgroundImage: 'repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)',
-} as const
 
 /** The brand ramp's alpha twin, rendered as a labeled strip over a checkerboard
  *  — Picker Color's mirror of Opacity's own "Opacity Scale" strip, so the same

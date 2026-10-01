@@ -1,6 +1,111 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
+
+type ChromeMenuAlign = 'left' | 'right' | 'center'
+
+/** Fixed + portaled so header `z-30` cannot trap menus under workspace drawers/modals. */
+function ChromeAnchoredDropdown({
+  open,
+  onClose,
+  anchorRef,
+  align,
+  gap = 8,
+  className,
+  style,
+  children,
+  menuAriaLabel,
+}: {
+  open: boolean
+  onClose: () => void
+  anchorRef: RefObject<HTMLElement | null>
+  align: ChromeMenuAlign
+  gap?: number
+  className?: string
+  style?: CSSProperties
+  children: ReactNode
+  menuAriaLabel?: string
+}) {
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [fixedStyle, setFixedStyle] = useState<CSSProperties | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setFixedStyle(null)
+      return
+    }
+    const measure = () => {
+      const r = anchorRef.current?.getBoundingClientRect()
+      if (!r) return
+      const top = r.bottom + gap
+      if (align === 'right') {
+        setFixedStyle({
+          position: 'fixed',
+          top,
+          right: window.innerWidth - r.right,
+          left: 'auto',
+          zIndex: CHROME_MENU_Z,
+        })
+      } else if (align === 'center') {
+        setFixedStyle({
+          position: 'fixed',
+          top,
+          left: r.left + r.width / 2,
+          transform: 'translateX(-50%)',
+          zIndex: CHROME_MENU_Z,
+        })
+      } else {
+        setFixedStyle({
+          position: 'fixed',
+          top,
+          left: r.left,
+          zIndex: CHROME_MENU_Z,
+        })
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [open, align, gap, anchorRef])
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (anchorRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      onClose()
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open, onClose, anchorRef])
+
+  if (!open || !fixedStyle) return null
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      role="menu"
+      aria-label={menuAriaLabel}
+      className={className}
+      style={{ ...fixedStyle, ...style }}
+    >
+      {children}
+    </div>,
+    document.body,
+  )
+}
 
 // ── The global top bar (row 1 of the shell) ──────────────────────────────────
 // Section switching lives HERE — there is no left icon rail. The bar is split
@@ -208,27 +313,12 @@ export function AppearanceToggle({
 export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void; align?: 'left' | 'right' }) {
   const { locale, setLocale, t } = useI18n()
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   return (
-    <div ref={rootRef} className="relative flex-shrink-0">
+    <div className="relative flex-shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => { onOpen?.(); setOpen((value) => !value) }}
         aria-label={t('Select language')}
@@ -239,27 +329,28 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
       >
         <MaskGlyph src="/icons/settings/languages.svg" className="h-4 w-4" />
       </button>
-      {open && (
-        <div
-          role="menu"
-          aria-label={t('Select language')}
-          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} top-full z-[80] mt-2 w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl`}
-        >
-          {LOCALES.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              role="menuitemradio"
-              aria-checked={locale === option.key}
-              onClick={() => { setLocale(option.key); setOpen(false) }}
-              className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
-            >
-              <span>{option.label}</span>
-              <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={triggerRef}
+        align={align}
+        menuAriaLabel={t('Select language')}
+        className="w-36 overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+      >
+        {LOCALES.map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            role="menuitemradio"
+            aria-checked={locale === option.key}
+            onClick={() => { setLocale(option.key); setOpen(false) }}
+            className={`flex h-8 w-full items-center justify-between rounded-md px-2.5 text-left text-caption font-medium transition-colors ${locale === option.key ? 'bg-elevated text-fg' : 'text-fg-muted hover:bg-elevated/60 hover:text-fg'}`}
+          >
+            <span>{option.label}</span>
+            <span className="text-micro font-semibold text-fg-faint">{option.shortLabel}</span>
+          </button>
+        ))}
+      </ChromeAnchoredDropdown>
     </div>
   )
 }
@@ -288,29 +379,14 @@ function TopNavCompactMenu({
 }) {
   const { locale, setLocale, t } = useI18n()
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   const close = () => setOpen(false)
 
   return (
-    <div ref={rootRef} className="relative hidden max-[859px]:flex flex-shrink-0">
+    <div className="relative hidden max-[859px]:flex flex-shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={t('Open menu')}
@@ -321,13 +397,15 @@ function TopNavCompactMenu({
       >
         <MenuIcon />
       </button>
-      {open && (
-        <div
-          role="menu"
-          aria-label={t('Navigation menu')}
-          className="absolute right-0 top-full z-[80] mt-2 w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
-          style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
-        >
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={close}
+        anchorRef={triggerRef}
+        align="right"
+        menuAriaLabel={t('Navigation menu')}
+        className="w-56 overflow-y-auto rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+        style={{ maxHeight: `calc(100dvh - ${TOP_NAV_H + 24}px)` }}
+      >
           {NAV_ITEMS.filter(({ key }) => key !== 'docs').map(({ key, label }) => {
             const on = nav === key
             return (
@@ -398,8 +476,7 @@ function TopNavCompactMenu({
               })}
             </div>
           </div>
-        </div>
-      )}
+      </ChromeAnchoredDropdown>
     </div>
   )
 }
@@ -435,7 +512,7 @@ export default function TopNav({
 }: TopNavProps) {
   const { locale, t } = useI18n()
   const [docsMenuOpen, setDocsMenuOpen] = useState(false)
-  const docsRootRef = useRef<HTMLDivElement>(null)
+  const docsTriggerRef = useRef<HTMLButtonElement>(null)
   const brandContentRef = useRef<HTMLDivElement>(null)
   const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_CONTENT_BRAND_W)
 
@@ -455,22 +532,6 @@ export default function TopNav({
       onNavAnchorBrandWChange?.(w)
     }
   }, [brandWidth, railCollapsed, locale, onNavAnchorBrandWChange])
-
-  useEffect(() => {
-    if (!docsMenuOpen) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!docsRootRef.current?.contains(event.target as Node)) setDocsMenuOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setDocsMenuOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [docsMenuOpen])
 
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
@@ -515,10 +576,10 @@ export default function TopNav({
               return (
                 <div
                   key={key}
-                  ref={docsRootRef}
                   className="relative"
                 >
                   <button
+                    ref={docsTriggerRef}
                     type="button"
                     onClick={() => {
                       setDocsMenuOpen((open) => !open)
@@ -533,23 +594,29 @@ export default function TopNav({
                     {t(label)}
                     <ChevronDownIcon open={docsMenuOpen} />
                   </button>
-                  {docsMenuOpen && (
-                    <div role="menu" aria-label={t('Docs')} className="absolute left-1/2 top-full z-[80] mt-1.5 w-40 -translate-x-1/2 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl">
-                      {DOCS_MENU_PAGES.map((page, index) => (
-                        <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => { setDocsMenuOpen(false); onOpenDocsPage?.(page.key) }}
-                            className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-                          >
-                            <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
-                            {t(page.label)}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <ChromeAnchoredDropdown
+                    open={docsMenuOpen}
+                    onClose={() => setDocsMenuOpen(false)}
+                    anchorRef={docsTriggerRef}
+                    align="center"
+                    gap={6}
+                    menuAriaLabel={t('Docs')}
+                    className="w-40 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+                  >
+                    {DOCS_MENU_PAGES.map((page, index) => (
+                      <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => { setDocsMenuOpen(false); onOpenDocsPage?.(page.key) }}
+                          className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+                        >
+                          <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+                          {t(page.label)}
+                        </button>
+                      </div>
+                    ))}
+                  </ChromeAnchoredDropdown>
                 </div>
               )
             }
