@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import type { GridViewport } from '../../lib/layoutTokens'
 import { type PreviewTokens } from './ButtonPreview'
 import { SPECIMENS, Live, PhosphorWeightProvider } from '../configurator/docs/specimens'
 import { CopyButton } from '../configurator/docs/blocks'
@@ -300,7 +301,7 @@ function ArtefactsPane({ tokens }: { tokens: PreviewTokens }) {
   const inner = (() => {
   if (expanded) {
     return (
-      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-4 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 min-w-0 overflow-auto p-4 flex flex-col gap-3">
         <button
           onClick={() => setExpanded(null)}
           className="self-start flex-shrink-0 flex items-center gap-1.5 text-caption text-fg-faint hover:text-fg transition-colors"
@@ -340,6 +341,7 @@ export default function PreviewPanel({
   mdWholeSystem = false,
   previewTheme = 'light',
   previewAppearance,
+  previewPlatform = 'desktop',
   iconLibraryKey = null,
   onCollapse,
   onEditTypeRole,
@@ -364,6 +366,8 @@ export default function PreviewPanel({
   previewTheme?: string
   /** Light/Dark appearance inside the selected library theme. */
   previewAppearance?: ThemeAppearance
+  /** Workspace desktop / mobile cut — Type roles and Grid frames follow this. */
+  previewPlatform?: GridViewport
   /** When set (Icons foundation), the panel previews that library's glyphs. */
   iconLibraryKey?: string | null
   /** When set, shows a header button to collapse the panel. */
@@ -379,7 +383,7 @@ export default function PreviewPanel({
   /** Promotes the existing artefacts/specimens into the central Themes canvas. */
   workspace?: boolean
 }) {
-  const tokens = usePreviewTokens(previewTheme, previewAppearance)
+  const tokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
   const specimen = focus && focus !== 'all' ? focus : null
 
   // Tab state is LOCAL, deliberately: nothing outside this panel reads it (the

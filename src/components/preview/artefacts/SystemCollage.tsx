@@ -15,6 +15,8 @@ import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
 import { COMPONENTS } from '../../../lib/componentCatalogue'
+import { extractBreakpoints, resolveGridFrame, type GridViewport } from '../../../lib/layoutTokens'
+import { artefactSourceWidth, ScaledDeviceFrame } from './DeviceFrame'
 
 export { COLLAGE_TILE_COUNT } from '../../../lib/randomTheme'
 
@@ -83,6 +85,8 @@ const MODULE_SOURCE = 260
  * CSS columns cannot do this (unconstrained height fills one stack).
  */
 const MODULE_DISPLAY = 156
+/** Photograph width of each Theme Preview phone. Two fit in ~540px with a peek. */
+const PHONE_DISPLAY = 236
 /** Semibold Latin at this size. Generous on purpose — a short estimate clips. */
 const LABEL_EM = 0.62
 
@@ -310,16 +314,37 @@ function Well({
   )
 }
 
+function CollagePack({
+  phones, t, gap, children,
+}: {
+  phones: boolean
+  t: PreviewTokens
+  gap: string
+  children: ReactNode
+}) {
+  if (!phones) return <>{children}</>
+  return (
+    <div className="snap-center flex-shrink-0">
+      <ScaledDeviceFrame t={t} targetWidth={PHONE_DISPLAY}>
+        <div className="flex w-full flex-col items-stretch" style={{ gap }}>{children}</div>
+      </ScaledDeviceFrame>
+    </div>
+  )
+}
+
 /**
- * Packed wall of mobile-sized catalogue modules — the Theme Preview impression
- * of the system as a set, not as three stretched desktop tiles.
+ * Packed wall of catalogue modules — the Theme Preview impression of the
+ * system as a set. Theme Preview ships the phone carousel only; the masonry
+ * board layout remains for tests or a future entry point.
  */
 export function SystemCollage({
-  tokensByAppearance, tileAppearances, projectName,
+  tokensByAppearance, tileAppearances, projectName, layout = 'phones', frameTokens,
 }: {
   tokensByAppearance: Record<ThemeAppearance, PreviewTokens>
   tileAppearances: ThemeAppearance[]
   projectName: string
+  layout?: 'board' | 'phones'
+  frameTokens?: PreviewTokens
 }) {
   const { t: translate } = useI18n()
   const tile = (index: number) => tokensByAppearance[tileAppearances[index] === 'dark' ? 'dark' : 'light']
@@ -337,25 +362,43 @@ export function SystemCollage({
     credits: translate('You have 2 credits left'),
     upgrade: translate('Upgrade'),
   })
+  const phones = layout === 'phones'
+  const board = frameTokens ?? tokensByAppearance.light
+  const collageCut: GridViewport = board.previewPlatform ?? 'desktop'
+  const liveGrid = resolveGridFrame(collageCut, board.gridFrame, board.spacing, extractBreakpoints(board.grid))
+  const marginPx = parseFloat(liveGrid.margin) || 16
+  const sourceW = artefactSourceWidth({ ...board, previewPlatform: collageCut })
+  const phoneInner = Math.max(160, sourceW - marginPx * 2)
+  const display = phones ? phoneInner : frame.display
+  const pack = { phones, t: board, gap: gutter }
+  const platformCaption =
+    collageCut === 'mobile' ? translate('Mobile')
+    : collageCut === 'tablet' ? translate('Tablet')
+    : translate('Desktop')
 
   return (
     <PhosphorWeightProvider weight={tokensByAppearance.light.iconWeight}>
-    <CollageFrameContext.Provider value={{ source: frame.source, display: frame.display }}>
+    <CollageFrameContext.Provider value={{ source: frame.source, display }}>
+    <div className={phones ? 'flex min-w-0 flex-col gap-2' : undefined}>
     <div
-      className="w-full"
-      style={{
+      className={phones
+        ? 'flex min-w-0 items-start gap-3 overflow-x-auto snap-x snap-mandatory pb-1'
+        : 'w-full'}
+      style={phones ? undefined : {
         // Room for unscaled elevation to paint into the scrollport padding —
         // without it Strong's blur reads clipped against the canvas edge.
         padding: 10,
         margin: -10,
         display: 'grid',
-        gridTemplateColumns: `repeat(auto-fill, ${frame.display}px)`,
+        gridTemplateColumns: `repeat(auto-fill, ${display}px)`,
         gridAutoRows: MASONRY_ROW,
         gap: gutter,
         alignItems: 'start',
         justifyContent: 'center',
       }}
+      aria-label={phones ? platformCaption : undefined}
     >
+      <CollagePack {...pack}>
       <ScaledModule t={tile(2)} appearance={appearanceAt(2)}>
         <span style={{ ...typeStyleOf(tile(2), 'heading-sm'), color: tile(2).neutralText }}>{translate('Verify account')}</span>
         <InputOTP t={tile(2)} v={{ State: 'Filled', Size: 'SM' }} />
@@ -364,7 +407,6 @@ export function SystemCollage({
           <TextLink t={tile(2)} v={{}}>{translate('Resend')}</TextLink>
         </span>
       </ScaledModule>
-
       <ScaledModule
         t={tile(3)}
         appearance={appearanceAt(3)}
@@ -412,7 +454,6 @@ export function SystemCollage({
           </InspectableLive>
         </div>
       </ScaledModule>
-
       <ScaledModule
         t={tile(4)}
         appearance={appearanceAt(4)}
@@ -440,7 +481,9 @@ export function SystemCollage({
           <InspectableLive c="Chip" t={tile(4)} v={{ Selected: 'True' }} toggle="Selected" />
         </div>
       </ScaledModule>
+      </CollagePack>
 
+      <CollagePack {...pack}>
       <ScaledModule
         t={tile(5)}
         appearance={appearanceAt(5)}
@@ -491,7 +534,9 @@ export function SystemCollage({
           <SocialLogin t={tile(5)} v={{ Provider: 'Apple' }} w="100%" />
         </div>
       </ScaledModule>
+      </CollagePack>
 
+      <CollagePack {...pack}>
       <ScaledModule t={tile(6)} appearance={appearanceAt(6)}>
         <Segmented t={tile(6)} v={{ Size: 'SM' }} />
       </ScaledModule>
@@ -566,7 +611,9 @@ export function SystemCollage({
           </Card>
         </ScaledModule>
       ))}
+      </CollagePack>
 
+      <CollagePack {...pack}>
       <ScaledModule t={tile(12)} appearance={appearanceAt(12)} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: gap(tile(12), 'gap-control', '8px') }}>
         <span style={{ ...typeStyleOf(tile(12), 'body-sm'), color: tile(12).neutralText, flex: '1 1 8em', minWidth: 0 }}>{translate('You have 2 credits left')}</span>
         <InspectableLive c="Button" t={tile(12)} v={{ Style: 'Soft', Size: 'SM' }}>{translate('Upgrade')}</InspectableLive>
@@ -610,7 +657,9 @@ export function SystemCollage({
         <TabMenu t={tile(16)} v={{}} w="100%" />
         <Progress t={tile(16)} v={{}} w="100%" />
       </ScaledModule>
+      </CollagePack>
 
+      <CollagePack {...pack}>
       <ScaledModule t={tile(18)} appearance={appearanceAt(18)} chrome={false} elev="sm">
         <Sidebar t={tile(18)} v={{}} w="100%" />
       </ScaledModule>
@@ -647,6 +696,13 @@ export function SystemCollage({
       <ScaledModule t={tile(23)} appearance={appearanceAt(23)} style={{ alignItems: 'center', justifyContent: 'center', minHeight: 72 }}>
         <Spinner t={tile(23)} v={{ Size: 'MD' }} />
       </ScaledModule>
+      </CollagePack>
+    </div>
+    {phones && (
+      <p className="text-mini text-fg-faint text-center tabular-nums">
+        {platformCaption} · {liveGrid.columns} col · page margin {liveGrid.margin} from Grid
+      </p>
+    )}
     </div>
     </CollageFrameContext.Provider>
     </PhosphorWeightProvider>

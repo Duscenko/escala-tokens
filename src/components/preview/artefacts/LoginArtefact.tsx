@@ -120,7 +120,7 @@ function LoginScreen({ t, compact }: ArtefactProps) {
 export const LOGIN_ARTEFACT = {
   key: 'login',
   label: 'Login',
-  hint: 'A sign-in screen composed from the catalogue, on the system’s mobile grid.',
+  hint: 'A sign-in screen composed from the catalogue, on the system’s layout grid.',
   viewport: 'mobile' as const,
   render: (p: ArtefactProps) => <LoginScreen {...p} />,
 }

@@ -4,6 +4,10 @@
 // primitives, with a Desktop and a Mobile mapping (Color's light/dark analogue).
 // Line-height always follows the chosen size step — the same pairing
 // typographyStandard already enforces on the primitive ramp.
+//
+// Display and headings STEP on a narrow viewport. Body and control roles do
+// NOT: shrinking reading text between breakpoints breaks 45–75 characters per
+// line. Mobile aliases for those groups equal desktop.
 
 import {
   FONT_WEIGHT_BASES,
@@ -105,7 +109,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Lead paragraphs.',
     group: 'body',
     desktop: a('body', 'text-lg', 'regular'),
-    mobile: a('body', 'text-md', 'regular'),
+    mobile: a('body', 'text-lg', 'regular'),
   },
   {
     key: 'body-md',
@@ -113,7 +117,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Default reading size.',
     group: 'body',
     desktop: a('body', 'text-md', 'regular'),
-    mobile: a('body', 'text-sm', 'regular'),
+    mobile: a('body', 'text-md', 'regular'),
   },
   {
     key: 'body-sm',
@@ -121,7 +125,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Dense supporting copy.',
     group: 'body',
     desktop: a('body', 'text-sm', 'regular'),
-    mobile: a('body', 'text-xs', 'regular'),
+    mobile: a('body', 'text-sm', 'regular'),
   },
   {
     key: 'label',
@@ -129,7 +133,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Form labels and field names.',
     group: 'control',
     desktop: a('body', 'text-sm', 'medium'),
-    mobile: a('body', 'text-xs', 'medium'),
+    mobile: a('body', 'text-sm', 'medium'),
   },
   {
     key: 'placeholder',
@@ -137,7 +141,7 @@ export const TYPE_ROLES: TypeRole[] = [
     description: 'Input placeholder and empty-field hint.',
     group: 'control',
     desktop: a('body', 'text-md', 'regular'),
-    mobile: a('body', 'text-sm', 'regular'),
+    mobile: a('body', 'text-md', 'regular'),
   },
   {
     key: 'caption',
@@ -164,8 +168,8 @@ export const TYPE_ROLES: TypeRole[] = [
     // export emits `var(--font-size-text-md)` for this role, so a numeric clamp
     // would show 16px in the preview and ship 17px, which is exactly the kind
     // of preview/export drift this file's aliases exist to prevent. Moving the
-    // ALIAS keeps one value in both. Desktop now also agrees with mobile, which
-    // already used `text-sm`.
+    // ALIAS keeps one value in both. Body and control stay the same size on
+    // mobile — only display/heading step.
     desktop: a('body', 'text-sm', 'semibold'),
     mobile: a('body', 'text-sm', 'semibold'),
   },
@@ -223,6 +227,31 @@ export function mergeTypeRoles(
   return out
 }
 
+export function asTypeViewport(viewport?: string): 'desktop' | 'mobile' {
+  return viewport === 'mobile' ? 'mobile' : 'desktop'
+}
+
+/** Primitive family / size / weight steps a platform cut actually aliases.
+ *  Font primitives stay one ramp; this is which rungs Desktop vs Mobile use.
+ *  Tablet maps onto desktop (type has no third column). */
+export function typePrimitivesForViewport(
+  stored: object | null | undefined,
+  viewport: string,
+): { families: Set<TypeFamilyRole>; sizes: Set<TypeScaleKey>; weights: Set<TypeWeightKey> } {
+  const cut = asTypeViewport(viewport)
+  const roles = mergeTypeRoles(stored)
+  const families = new Set<TypeFamilyRole>()
+  const sizes = new Set<TypeScaleKey>()
+  const weights = new Set<TypeWeightKey>()
+  for (const role of TYPE_ROLES) {
+    const alias = roles[role.key]?.[cut] ?? role[cut]
+    families.add(alias.family)
+    sizes.add(alias.size)
+    weights.add(alias.weight)
+  }
+  return { families, sizes, weights }
+}
+
 export function aliasesEqual(a: TypeAlias, b: TypeAlias): boolean {
   return a.family === b.family && a.size === b.size && a.weight === b.weight
 }
@@ -231,6 +260,34 @@ export function roleIsDefault(key: string, modes: TypeRoleModes): boolean {
   const spec = TYPE_ROLE_BY_KEY[key]
   if (!spec) return true
   return aliasesEqual(modes.desktop, spec.desktop) && aliasesEqual(modes.mobile, spec.mobile)
+}
+
+/** Pre-v73 mobile aliases that shrunk body/control one step. Display/heading
+ *  never used this path — they still step. */
+const LEGACY_READING_MOBILE: Record<string, TypeAlias> = {
+  'body-lg': a('body', 'text-md', 'regular'),
+  'body-md': a('body', 'text-sm', 'regular'),
+  'body-sm': a('body', 'text-xs', 'regular'),
+  label: a('body', 'text-xs', 'medium'),
+  placeholder: a('body', 'text-sm', 'regular'),
+}
+
+/** Lift stored body/control mobile aliases onto desktop when they still match
+ *  the pre-v73 shrink. A hand-picked mobile size is left alone. */
+export function promoteReadingTypeIdentity(
+  stored?: object | null,
+): Record<string, TypeRoleModes> {
+  const map = mergeTypeRoles(stored)
+  for (const role of TYPE_ROLES) {
+    if (role.group !== 'body' && role.group !== 'control') continue
+    const legacy = LEGACY_READING_MOBILE[role.key]
+    if (!legacy) continue
+    const hit = map[role.key]
+    if (aliasesEqual(hit.desktop, role.desktop) && aliasesEqual(hit.mobile, legacy)) {
+      map[role.key] = { desktop: { ...hit.desktop }, mobile: { ...hit.desktop } }
+    }
+  }
+  return map
 }
 
 export interface TypePrimitives {
@@ -272,9 +329,9 @@ export function typeStyleCss(
   primitives: TypePrimitives,
   storedRoles: object | null | undefined,
   role: string,
-  opts: { viewport?: 'desktop' | 'mobile'; leading?: boolean } = {},
+  opts: { viewport?: string; leading?: boolean } = {},
 ): { family: string; size: string; weight: number; lineHeight?: string } {
-  const viewport = opts.viewport ?? 'desktop'
+  const viewport = asTypeViewport(opts.viewport)
   const roles = mergeTypeRoles(storedRoles)
   const spec = TYPE_ROLE_BY_KEY[role]
   const alias = roles[role]?.[viewport] ?? spec?.[viewport]

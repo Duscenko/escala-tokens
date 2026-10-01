@@ -22,6 +22,7 @@ import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeL
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { ThemeSwitcher, ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
+import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
@@ -40,6 +41,7 @@ import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
 import { usePopoverPlacement } from '../components/configurator/colorControls'
 import type { ThemeAppearance } from '../lib/themeModes'
+import type { GridFrameAlias, GridViewport } from '../lib/layoutTokens'
 
 // Four tabs, matching the four top-nav destinations: read "what this is"
 // ('about' — the landing surface for new visitors, see `hasOnboarded()`
@@ -849,6 +851,19 @@ export default function Configurator() {
     theme: string
     appearance: ThemeAppearance
   }>(() => ({ theme: initialTheme, appearance: themeKinds[initialTheme] ?? theme }))
+  const [previewPlatform, setPreviewPlatform] = useState<GridViewport>('desktop')
+  const openPlatformTypeRole = (key: string) => {
+    setThemeWorkspaceTab('primitives')
+    setActiveFoundation('typography')
+    setFoundationCollection('typography', 'semantics')
+    setTypeReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
+  }
+  const openPlatformGridField = (key: keyof GridFrameAlias) => {
+    setThemeWorkspaceTab('primitives')
+    setActiveFoundation('grid')
+    setFoundationCollection('grid', 'semantics')
+    setLayoutReveal((prev) => ({ key, seq: (prev?.seq ?? 0) + 1 }))
+  }
   // CLAMPED to a theme the current system actually has. `previewThemeRaw` can
   // point at a theme that no longer exists, and nothing used to notice:
   //
@@ -1561,6 +1576,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
+        previewPlatform={previewPlatform}
         query={colorQuery}
       />
     ) : section.key === 'icons' ? (
@@ -1576,6 +1592,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
+        previewPlatform={previewPlatform}
         query={colorQuery}
       />
     ) : section.key === 'grid' ? (
@@ -1588,6 +1605,7 @@ export default function Configurator() {
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
         previewAppearance={previewAppearance}
+        previewPlatform={previewPlatform}
         query={colorQuery}
       />
     ) : section.key === 'shadow' ? (
@@ -1851,7 +1869,7 @@ export default function Configurator() {
               search={tokenSearchField}
               leading={(
                 <>
-                  <div className="flex h-full flex-shrink-0 items-center pl-2.5 mr-[10px]">
+                  <div className="flex h-full flex-shrink-0 items-center gap-2 pl-2.5">
                     <ThemeSwitcher
                       previewTheme={previewTheme}
                       onPreviewThemeChange={changePreviewTheme}
@@ -1948,6 +1966,8 @@ export default function Configurator() {
                     onSurfaceChange={setThemeHubSurface}
                     previewTheme={previewTheme}
                     previewAppearance={previewAppearance}
+                    previewPlatform={previewPlatform}
+                    onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
                     onSelectTheme={changePreviewTheme}
@@ -2003,6 +2023,15 @@ export default function Configurator() {
                   />
                 </motion.div>
               ) : foundationCanvas ? (
+                <PreviewPlatformProvider
+                  value={{
+                    previewPlatform,
+                    previewTheme,
+                    setPreviewPlatform,
+                    onOpenTypeRole: openPlatformTypeRole,
+                    onOpenGridField: openPlatformGridField,
+                  }}
+                >
                 <FoundationWorkbench
                   railCollapsed={groupsColumnCollapsed}
                   onToggleRail={() => setGroupsRailCollapsed((collapsed) => !collapsed)}
@@ -2011,6 +2040,13 @@ export default function Configurator() {
                   activeCollection={activeCollection}
                   collections={activeFoundationCollections}
                   onCollectionChange={(collection) => setFoundationCollection(activeFoundation, collection)}
+                  showPlatform={activeFoundation === 'typography' || activeFoundation === 'grid' || activeFoundation === 'spacing'}
+                  platformGuide={
+                    activeFoundation === 'grid' ? 'grid'
+                    : activeFoundation === 'typography' ? 'type'
+                    : activeFoundation === 'spacing' ? 'spacing'
+                    : undefined
+                  }
                 >
                   <motion.div
                     key={centerKey}
@@ -2022,6 +2058,7 @@ export default function Configurator() {
                     {body}
                   </motion.div>
                 </FoundationWorkbench>
+                </PreviewPlatformProvider>
               ) : (
                 <motion.div
                   key={centerKey}
@@ -2084,6 +2121,7 @@ export default function Configurator() {
                   }
                   previewTheme={previewTheme}
                   previewAppearance={previewAppearance}
+                  previewPlatform={previewPlatform}
                   iconLibraryKey={!exportMode && tab === 'foundations' && activeFoundation === 'icons' ? iconLibrary : null}
                   onCollapse={() => setPreviewCollapsed(true)}
                   onEditTypeRole={(key) => {

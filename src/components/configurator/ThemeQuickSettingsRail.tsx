@@ -34,16 +34,21 @@ import {
   STROKE_SM_STOPS,
   buildSelectorsFromBase,
   buildSizesFromBase,
+  extractBreakpoints,
+  GRID_FRAME_FIELDS,
   inferSelectorBase,
   inferSizeBase,
   INSET_SURFACE_ROLE,
   PADDING_DEFAULT_STEP,
   insetSurfaceStepIndex,
   insetSurfacePadding,
+  mergeGridFrame,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
   radiusGroupStep,
   applyRadiusGroup,
+  resolveGridFrame,
+  type GridViewport,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
 import {
@@ -57,6 +62,8 @@ import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
+import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, typePrimitivesForViewport, asTypeViewport } from '../../lib/typeRoles'
+import { PlatformSwitch } from './PlatformRail'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconStyleOverview } from './docs/specimens'
@@ -302,8 +309,54 @@ function AdvancedIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden><path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1" /><circle cx="10" cy="4" r="1.4" /><circle cx="6" cy="8" r="1.4" /><circle cx="11" cy="12" r="1.4" /></svg>
 }
 
-/** Light / Dark for the preview board — Color edition header, replacing the
- *  Advanced sliders chip. Same appearance the artefacts resolve against. */
+/** Desktop / Mobile for Type, Size and Grid edition — same session cut
+ *  Variables' Platform rail writes. Compact fill so it fits the card header
+ *  the way Color's Light/Dark does. */
+function PlatformCutSwitch({ value, onChange }: {
+  value: GridViewport
+  onChange: (platform: GridViewport) => void
+}) {
+  return <PlatformSwitch value={value} onChange={onChange} layout="compact" />
+}
+
+function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
+  const { t } = useI18n()
+  return (
+    <ul className="flex flex-col gap-0.5">
+      {rows.map((row) => (
+        <li key={row.label} className="flex items-baseline justify-between gap-2">
+          <span className="min-w-0 truncate text-caption text-fg">{t(row.label)}</span>
+          <span className="flex-shrink-0 font-mono text-mini tabular-nums text-fg-muted">{row.value}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function GridCutCard({
+  columns, gutter, margin, container,
+}: {
+  columns: number
+  gutter: string
+  margin: string
+  container: string
+}) {
+  const n = Math.max(1, columns)
+  const values = { columns: String(columns), gutter, margin, container: container === 'none' ? 'fluid' : container }
+  return (
+    <div>
+      <div className="flex h-9 gap-px" aria-hidden>
+        {Array.from({ length: n }, (_, i) => (
+          <span key={i} className="min-w-0 flex-1 rounded-[2px] bg-accent-ui/40" />
+        ))}
+      </div>
+      <div className="mt-2">
+        <CutFacts rows={GRID_FRAME_FIELDS.map((field) => ({ label: field.label, value: values[field.key] }))} />
+      </div>
+    </div>
+  )
+}
+
 function ColorAppearanceSwitch({ value, onChange }: {
   value: ThemeAppearance
   onChange: (appearance: ThemeAppearance) => void
@@ -434,13 +487,19 @@ function InfoHint({ children }: { children: string }) {
 }
 
 /**
- * Foundations that have a Theme Preview widget. `spacing` and `grid` stay
- * Variables-only — they have no quick control here. `icons` is Style edition
+ * Foundations that have a Theme Preview widget. `spacing` stays Variables-only.
+ * Grid is the frame cut (columns / gutter / margin) — Desktop vs Mobile, same
+ * session `previewPlatform` Type and Size read. `icons` is Style edition
  * (icon weight + status action). Adding a panel means adding its key here
  * and a matching `EditionCard` below, nowhere else.
  */
-export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'stroke', 'shadow', 'icons'] as const
+export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'grid', 'stroke', 'shadow', 'icons'] as const
 export type QuickPanelFoundation = (typeof QUICK_PANEL_FOUNDATIONS)[number]
+
+/** Widgets whose values actually change with Desktop / Mobile. Color / radius
+ *  / shadow keep the artefacts board on desktop so a platform cut is not a
+ *  second appearance toggle sitting on every panel. */
+export const PLATFORM_QUICK_PANELS: ReadonlySet<QuickPanelFoundation> = new Set(['typography', 'sizes', 'grid'])
 
 export function isQuickPanelFoundation(key: string): key is QuickPanelFoundation {
   return (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(key)
@@ -782,7 +841,7 @@ function Menu<T extends string>({
  * for fields and actual square selectors. This keeps the ramp legible without
  * borrowing the generic analytics-bar language used by component libraries. */
 function BaseUnitCard({
-  steps, values, base, kind, onChange, onScrubStart, onScrubEnd, ariaLabel,
+  steps, values, base, kind, onChange, onScrubStart, onScrubEnd, ariaLabel, usedStep,
 }: {
   steps: readonly string[]
   values: Record<string, string>
@@ -792,6 +851,8 @@ function BaseUnitCard({
   onScrubStart?: () => void
   onScrubEnd?: () => void
   ariaLabel: string
+  /** Primitive this platform cut actually aliases (`md` Control / `lg` Touch). */
+  usedStep?: string
 }) {
   const px = steps.map((step) => parseFloat(values[step] ?? '0') || 0)
   const peak = Math.max(...px, 1)
@@ -801,16 +862,17 @@ function BaseUnitCard({
         <div role="img" aria-label={`${kind === 'selector' ? 'Selector' : 'Field'} size scale preview`} className={`flex ${ROW_PREVIEW_H} min-w-0 flex-1 items-center justify-between gap-1`}>
           {px.map((value, index) => {
             const ratio = value / peak
+            const used = !usedStep || usedStep === steps[index]
             return kind === 'selector' ? (
               <span
                 key={steps[index]}
-                className="flex-shrink-0 rounded-[3px] border border-fg/55 bg-fg/10"
+                className={`flex-shrink-0 rounded-[3px] border border-fg/55 bg-fg/10 ${used ? '' : 'opacity-[0.38]'}`}
                 style={{ width: 8 + ratio * 10, height: 8 + ratio * 10 }}
               />
             ) : (
               <span
                 key={steps[index]}
-                className="flex-shrink-0 rounded-[3px] border border-fg/45 bg-fg/10"
+                className={`flex-shrink-0 rounded-[3px] border border-fg/45 bg-fg/10 ${used ? '' : 'opacity-[0.38]'}`}
                 style={{ width: 10 + ratio * 12, height: 7 + ratio * 7 }}
               />
             )
@@ -826,8 +888,12 @@ function BaseUnitCard({
         </div>
       </div>
       <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
-        {steps.map((step) => <span key={step} className="text-micro font-medium uppercase text-fg-faint">{step}</span>)}
-        {steps.map((step) => <span key={step} className="text-mini tabular-nums text-fg-muted">{px[steps.indexOf(step)]}</span>)}
+        {steps.map((step) => (
+          <span key={step} className={`text-micro font-medium uppercase ${!usedStep || usedStep === step ? 'text-fg-faint' : 'text-fg-faint/40'}`}>{step}</span>
+        ))}
+        {steps.map((step) => (
+          <span key={step} className={`text-mini tabular-nums ${!usedStep || usedStep === step ? 'text-fg-muted' : 'text-fg-faint/50'}`}>{px[steps.indexOf(step)]}</span>
+        ))}
       </div>
       <RangeInput
         min={BASE_UNIT_RANGE.min}
@@ -919,12 +985,13 @@ const TYPE_READOUT_KEYS = TYPE_SCALE_KEYS.slice(0, 5)
  * a curated scale.
  */
 function TypeScaleCard({
-  sizes, onScrub, onScrubStart, onScrubEnd,
+  sizes, onScrub, onScrubStart, onScrubEnd, usedKeys,
 }: {
   sizes: Record<string, string>
   onScrub: (modeIndex: number) => void
   onScrubStart?: () => void
   onScrubEnd?: () => void
+  usedKeys?: ReadonlySet<string>
 }) {
   const mode = inferTypeScaleMode(sizes)
   const index = mode ? TYPE_SCALE_MODES.findIndex((m) => m.key === mode) : 2
@@ -936,7 +1003,7 @@ function TypeScaleCard({
           {px.map((value, i) => (
             <span
               key={TYPE_READOUT_KEYS[i]}
-              className="font-semibold leading-none text-fg/70"
+              className={`font-semibold leading-none text-fg/70 ${usedKeys && !usedKeys.has(TYPE_READOUT_KEYS[i]) ? 'opacity-[0.38]' : ''}`}
               style={{ fontSize: Math.max(9, Math.min(17, value * 0.72)) }}
             >
               Aa
@@ -953,8 +1020,12 @@ function TypeScaleCard({
         </div>
       </div>
       <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_KEYS.length}, minmax(0, 1fr))` }}>
-        {TYPE_READOUT_KEYS.map((k) => <span key={k} className="text-micro font-medium uppercase text-fg-faint">{k.replace('text-', '')}</span>)}
-        {TYPE_READOUT_KEYS.map((k, i) => <span key={k} className="text-mini tabular-nums text-fg-muted">{px[i]}</span>)}
+        {TYPE_READOUT_KEYS.map((k) => (
+          <span key={k} className={`text-micro font-medium uppercase ${!usedKeys || usedKeys.has(k) ? 'text-fg-faint' : 'text-fg-faint/40'}`}>{k.replace('text-', '')}</span>
+        ))}
+        {TYPE_READOUT_KEYS.map((k, i) => (
+          <span key={k} className={`text-mini tabular-nums ${!usedKeys || usedKeys.has(k) ? 'text-fg-muted' : 'text-fg-faint/50'}`}>{px[i]}</span>
+        ))}
       </div>
       <RangeInput
         min={0}
@@ -1208,6 +1279,8 @@ export default function ThemeQuickSettingsRail({
   onRandomBoardAppearance,
   contrastOpen = false,
   onContrastOpenChange,
+  previewPlatform = 'desktop',
+  onPreviewPlatformChange,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1240,6 +1313,9 @@ export default function ThemeQuickSettingsRail({
   /** Contrast grid occupies the artefacts canvas while Color edition is open. */
   contrastOpen?: boolean
   onContrastOpenChange?: (open: boolean) => void
+  /** Session desktop / mobile cut — Type, Grid and Size edition resolve against this. */
+  previewPlatform?: GridViewport
+  onPreviewPlatformChange?: (platform: GridViewport) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -1280,6 +1356,26 @@ export default function ThemeQuickSettingsRail({
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
   const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, statusAction, iconWeight } = foundations
+  const platformSwitch = onPreviewPlatformChange ? (
+    <PlatformCutSwitch value={previewPlatform} onChange={onPreviewPlatformChange} />
+  ) : undefined
+  const typeUsedSizes = typePrimitivesForViewport(typography.roles, previewPlatform).sizes
+  const typeCutRows = (['heading-lg', 'body-md', 'button'] as const).flatMap((key) => {
+    const spec = TYPE_ROLE_BY_KEY[key]
+    const alias = mergeTypeRoles(typography.roles)[key]?.[asTypeViewport(previewPlatform)] ?? spec?.[asTypeViewport(previewPlatform)]
+    if (!spec || !alias) return []
+    const style = resolveTypeStyle(alias, typography)
+    return [{ label: spec.label, value: style.size || alias.size }]
+  })
+  const gridCut = resolveGridFrame(
+    previewPlatform,
+    foundations.gridFrame,
+    foundations.spacing,
+    extractBreakpoints(foundations.grid),
+  )
+  const sizeUsedStep = previewPlatform === 'mobile'
+    ? (foundations.sizeRoles?.touch ?? 'lg')
+    : (foundations.sizeRoles?.control ?? 'md')
   const setStatusAction = (key: string, value: StatusAction) =>
     patchThemeFoundations(key, { statusAction: value })
   const setIconWeight = (key: string, value: PhosphorWeight) =>
@@ -2079,7 +2175,10 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Text edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced}>
+        <EditionCard title="Text edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+          <SettingItem>
+            <CutFacts rows={typeCutRows} />
+          </SettingItem>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2103,6 +2202,7 @@ export default function ThemeQuickSettingsRail({
           <SettingItem label="Text scale" hint="Grades every label, body style, and heading together. Values match Variables · Type · Font size for this theme.">
             <TypeScaleCard
               sizes={typography.sizes ?? {}}
+              usedKeys={typeUsedSizes}
               onScrubStart={() => beginScrub('Type scale updated')}
               onScrubEnd={endScrub}
               onScrub={(i) => applyScrub('Type scale updated', (themeKey) => {
@@ -2139,13 +2239,19 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'sizes' && (
-        <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced}>
+        <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+          <SettingItem>
+            <CutFacts rows={[
+              { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
+            ]} />
+          </SettingItem>
           <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
             <BaseUnitCard
               ariaLabel="Fields base size in pixels"
               kind="field"
               steps={SIZE_STEPS}
               values={sizes}
+              usedStep={sizeUsedStep}
               base={inferSizeBase(sizes) ?? null}
               onScrubStart={() => beginScrub('Field sizes updated')}
               onScrubEnd={endScrub}
@@ -2173,6 +2279,19 @@ export default function ThemeQuickSettingsRail({
               onScrubStart={() => beginScrub('Container padding updated')}
               onScrubEnd={endScrub}
               onChange={(index) => applyScrub('Container padding updated', (themeKey) => setContainerInset(themeKey, index))}
+            />
+          </SettingItem>
+        </EditionCard>
+        )}
+
+        {activePanel === 'grid' && (
+        <EditionCard title="Grid edition" foundationKey="grid" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+          <SettingItem label="Frame" hint="Columns, gutter and margin for this platform. The recipes live in Variables · Grid.">
+            <GridCutCard
+              columns={gridCut.columns}
+              gutter={gridCut.gutter}
+              margin={gridCut.margin}
+              container={gridCut.container}
             />
           </SettingItem>
         </EditionCard>

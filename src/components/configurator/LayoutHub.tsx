@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import LayoutSemantics from './LayoutSemantics'
-import type { LayoutFamily } from '../../lib/layoutTokens'
+import type { LayoutFamily, GridViewport } from '../../lib/layoutTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 
 export type LayoutTab = 'primary' | 'semantics'
@@ -27,16 +27,18 @@ export default function LayoutHub({
   railCollapsed = false,
   previewTheme,
   previewAppearance,
+  previewPlatform,
   query,
 }: {
   family: LayoutFamily
   mode: LayoutTab
   Primitives: ComponentType<{ tabBar?: ReactNode; query?: string; previewTheme?: string }>
-  Semantics?: ComponentType<{ family?: LayoutFamily; tabBar?: ReactNode; query?: string; revealRole?: { key: string; seq: number } | null; railCollapsed?: boolean; previewTheme?: string; previewAppearance?: ThemeAppearance }>
+  Semantics?: ComponentType<{ family?: LayoutFamily; tabBar?: ReactNode; query?: string; revealRole?: { key: string; seq: number } | null; railCollapsed?: boolean; previewTheme?: string; previewAppearance?: ThemeAppearance; previewPlatform?: GridViewport }>
   revealRole?: { key: string; seq: number } | null
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
+  previewPlatform?: GridViewport
   /** Workspace "Search tokens" string — threaded down so the primitive table
    *  and the semantic list drop their own search + heading bar (see
    *  `VariablesTable`'s `query` prop). */
@@ -53,7 +55,7 @@ export default function LayoutHub({
         </div>
       ) : (
         <div className="flex-1 min-h-0">
-          <Sem family={family} tabBar={heading} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} />
+          <Sem family={family} tabBar={heading} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
         </div>
       )}
     </div>

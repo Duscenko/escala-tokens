@@ -18,10 +18,12 @@ const GAP = 16
  *  choice nobody has is the same over-explaining `KitsPopover`'s one-theme
  *  case already argues against. With one artefact this is just a centred card. */
 export function CompactCarousel({
-  tokens, onExpand,
+  tokens, onExpand, layout = 'pane',
 }: {
   tokens: PreviewTokens
   onExpand: (artefact: Artefact) => void
+  /** `pane` fills a PreviewPanel tab. `strip` sits above the Theme Preview collage. */
+  layout?: 'pane' | 'strip'
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
@@ -40,14 +42,14 @@ export function CompactCarousel({
   }
 
   return (
-    <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-5 flex flex-col">
+    <div className={layout === 'strip' ? 'min-w-0 flex flex-col' : 'flex-1 min-h-0 min-w-0 overflow-y-auto p-5 flex flex-col'}>
       {/* Same centering fix as the expanded view's frame: on a tall window the
           strip used to sit at the top with a large dead area below it. This
           wrapper takes the remaining room and centers the strip+dots group
           inside it; `min-h-0` lets it shrink below the group's height on a
           short window instead of forcing overflow, and the OUTER
           `overflow-y-auto` still scrolls the whole column if it can't. */}
-      <div className="flex-1 min-h-0 flex flex-col justify-center gap-1">
+      <div className={layout === 'strip' ? 'flex flex-col gap-1' : 'flex-1 min-h-0 flex flex-col justify-center gap-1'}>
         <div
           ref={scrollRef}
           onScroll={multi ? handleScroll : undefined}

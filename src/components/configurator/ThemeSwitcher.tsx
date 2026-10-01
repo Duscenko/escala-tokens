@@ -321,3 +321,5 @@ function CheckMark() {
     </svg>
   )
 }
+
+export { PlatformSwitch } from './PlatformRail'

@@ -34,6 +34,8 @@ export interface VariableRow {
   onChange: (v: string) => void
   onReset: () => void
   preview?: ReactNode
+  /** When set, the row is in (true) or out (false) of the previewed platform cut. */
+  match?: boolean
 }
 
 export interface VariableGroup {
@@ -195,7 +197,14 @@ export default function VariablesTable({
         {stacked && g.label && <GroupLabel label={g.label} count={g.rows.length} />}
         <TableHeader valueLabel={g.valueLabel ?? 'Value'} stacked={stacked} grid={grid} />
         {g.rows.map((r, i) => (
-          <div key={r.name} className={tableRowClass(i, grid)}>
+          <div
+            key={r.name}
+            className={`${tableRowClass(i, grid)}${
+              r.match === true ? ' bg-accent-ui/[0.10] hover:bg-accent-ui/[0.16]'
+              : r.match === false ? ' opacity-[0.38]'
+              : ''
+            }`}
+          >
             <div className={`flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`}>
               <code className="font-mono text-body text-fg-muted truncate">{r.name}</code>
               {r.modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}

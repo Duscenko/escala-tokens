@@ -24,8 +24,9 @@ import {
   extractBreakpoints,
   BREAKPOINT_STEPS,
   gridFrameRootCss,
-  gridFrameMobileCss,
+  gridFrameMediaCss,
   breakpointMobileMax,
+  breakpointTabletMax,
   mergeGridFrame,
   type LayoutFamily,
 } from './layoutTokens'
@@ -356,10 +357,7 @@ function wrapRoot(lines: string[]): string {
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   const root = wrapRoot(cssLines(section, store, cf, opts))
   if (section !== 'grid') return root
-  const bps = extractBreakpoints(store.grid)
-  const max = breakpointMobileMax(store.breakpointRoles, bps)
-  const inner = gridFrameMobileCss(store.gridFrame).map((l) => `    ${l}`).join('\n')
-  return `${root}\n\n@media (max-width: ${max}) {\n  :root {\n${inner}\n  }\n}`
+  return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame)}`
 }
 
 // ── Tailwind (theme.extend snippet) ──────────────────────────────────────────
@@ -635,6 +633,7 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
     const cuts = mergeLayoutRoles('breakpoint', store.breakpointRoles)
+    const tabletMax = breakpointTabletMax(store.breakpointRoles, bps)
     const max = breakpointMobileMax(store.breakpointRoles, bps)
     const f = mergeGridFrame(store.gridFrame)
     const fmt = (k: 'columns' | 'gutter' | 'margin' | 'container', step: string) =>
@@ -648,16 +647,18 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
         ['Role', 'Aliases', 'Query'],
         [
           [`\`--breakpoint-desktop\``, `\`var(--breakpoint-${cuts.desktop})\``, `min-width: ${bps[cuts.desktop]}`],
+          [`\`--breakpoint-tablet\``, `\`var(--breakpoint-${cuts.tablet})\``, `max-width: ${tabletMax}`],
           [`\`--breakpoint-mobile\``, `\`calc(var(--breakpoint-${cuts.mobile}) - 1px)\``, `max-width: ${max}`],
         ],
       ),
-      '\nType mobile styles apply at `max-width: var(--breakpoint-mobile)`. `@media` itself must use the resolved px (`' + max + '`), because custom properties are not valid there.\n',
+      '\nType mobile styles apply at `max-width: var(--breakpoint-mobile)`. `@media` itself must use the resolved px (`' + max + '`), because custom properties are not valid there. Tablet (8-col) overrides at `' + tabletMax + '`.\n',
       '\n### Frame\n',
       table(
-        ['Token', 'Desktop', 'Mobile'],
+        ['Token', 'Desktop', 'Tablet', 'Mobile'],
         (['columns', 'gutter', 'margin', 'container'] as const).map((k) => [
           `\`--grid-${k}\``,
           `\`${fmt(k, f.desktop[k])}\``,
+          `\`${fmt(k, f.tablet[k])}\``,
           `\`${fmt(k, f.mobile[k])}\``,
         ]),
       ),
@@ -733,10 +734,7 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      const bps = extractBreakpoints(store.grid)
-      const max = breakpointMobileMax(store.breakpointRoles, bps)
-      const inner = gridFrameMobileCss(store.gridFrame).map((l) => `    ${l}`).join('\n')
-      return `${wrapRoot(lines)}\n\n@media (max-width: ${max}) {\n  :root {\n${inner}\n  }\n}`
+      return `${wrapRoot(lines)}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame)}`
     }
     case 'tailwind':
       return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))

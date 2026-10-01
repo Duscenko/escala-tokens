@@ -12,7 +12,7 @@ import { PhosphorWeightProvider, ICON_SLOTS, snippetFor, type AxisValues } from 
 import type { PreviewTokens } from '../preview/ButtonPreview'
 import { axisDefaults, ComponentCatalogueHero } from './docs/componentArticle'
 import { PHOSPHOR_LIBRARY } from '../../lib/iconLibraries'
-import ThemeQuickSettingsRail, { isQuickPanelFoundation, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeQuickSettingsRail, { isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
@@ -26,6 +26,7 @@ import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
+import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
@@ -210,12 +211,13 @@ function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null):
 const DRAWER_GUTTER = 24
 
 function ArtefactsView({
-  previewTheme, previewAppearance, accentPreview, stylePreview, drawerOpen,
+  previewTheme, previewAppearance, previewPlatform, accentPreview, stylePreview, drawerOpen,
   inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
   onOpenComponents,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
+  previewPlatform: GridViewport
   accentPreview: string | null
   stylePreview: StylePreview | null
   onOpenComponents: () => void
@@ -244,11 +246,15 @@ function ArtefactsView({
     () => (stylePreview ? stylePreviewStore(store, stylePreview, previewTheme) : store),
     [stylePreview, store, previewTheme],
   )
+  // Artefacts follow the platform switch: desktop = masonry board at the
+  // 12-col recipe; tablet/mobile = phone photographs at their frame.
+  const collagePlatform = previewPlatform
   const tokensByAppearance = useMemo(() => ({
-    light: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'light'), accentPreview),
-    dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark'), accentPreview),
-  }), [overlayStore, previewTheme, accentPreview])
+    light: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'light', collagePlatform), accentPreview),
+    dark: withAccentPreview(resolvePreviewTokens(overlayStore, previewTheme, 'dark', collagePlatform), accentPreview),
+  }), [overlayStore, previewTheme, accentPreview, collagePlatform])
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const stageTokens = tokensByAppearance[boardAppearance]
   // Token Details sits ON Color edition, not beside Themes library. The
   // canvas only needs to cede whatever of the 360px drawer actually crosses
   // its left edge — typically ~120px, never a full extra column.
@@ -286,6 +292,8 @@ function ArtefactsView({
         <div style={inspecting ? { cursor: 'crosshair' } : undefined}>
           <InspectorModeProvider active={inspecting}>
             <SystemCollage
+              layout={previewPlatform === 'desktop' ? 'board' : 'phones'}
+              frameTokens={stageTokens}
               tokensByAppearance={tokensByAppearance}
               tileAppearances={tileAppearances}
               projectName={store.projectName}
@@ -295,6 +303,7 @@ function ArtefactsView({
         <ComponentsButtonTeaser
           previewTheme={previewTheme}
           previewAppearance={previewAppearance}
+          previewPlatform={previewPlatform}
           stylePreview={stylePreview}
           onOpenComponents={onOpenComponents}
         />
@@ -317,20 +326,21 @@ function ArtefactsView({
 /** Button playground under the bento — same hero + axis rail as Components →
  *  Button. Opts out of inspector hit-testing. */
 function ComponentsButtonTeaser({
-  previewTheme, previewAppearance, stylePreview, onOpenComponents,
+  previewTheme, previewAppearance, previewPlatform, stylePreview, onOpenComponents,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
+  previewPlatform: GridViewport
   stylePreview: StylePreview | null
   onOpenComponents: () => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
   const def = COMPONENTS.find((c) => c.key === 'Button')
-  const liveTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const liveTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
   const previewTokens = useMemo(
-    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme) : null),
-    [stylePreview, store, previewTheme],
+    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme, previewPlatform) : null),
+    [stylePreview, store, previewTheme, previewPlatform],
   )
   const tokens = previewTokens ?? liveTokens
   const [values, setValues] = useState<AxisValues>(() => (def ? axisDefaults(def) : {}))
@@ -410,7 +420,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onOpenComponents,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange,
@@ -422,6 +432,9 @@ export default function ThemePreviewHub({
   onSurfaceChange: (surface: ThemeHubSurface) => void
   previewTheme: string
   previewAppearance: ThemeAppearance
+  /** Workspace desktop / mobile cut — Type roles and Grid frames follow this. */
+  previewPlatform?: GridViewport
+  onPreviewPlatformChange?: (platform: GridViewport) => void
   /** Ephemeral System Style try-on from the Themes Library; store-free. */
   stylePreview: StylePreview | null
   /** A tried-on style was adopted into the system — re-point the preview at it
@@ -528,6 +541,7 @@ export default function ThemePreviewHub({
     const f = activeFoundation ?? 'color'
     return isQuickPanelFoundation(f) ? f : 'color'
   }, [activeFoundation])
+  const boardPlatform: GridViewport = PLATFORM_QUICK_PANELS.has(contextDocKey) ? previewPlatform : 'desktop'
   useEffect(() => { setDocPageOverride(null) }, [contextDocKey])
   useEffect(() => { if (!docsOpen) setDocPageOverride(null) }, [docsOpen])
   useEffect(() => { if (docsOpen) setContrastOpen(false) }, [docsOpen])
@@ -584,10 +598,10 @@ export default function ThemePreviewHub({
       ? stylePreviewStore(store, paintedPreview, previewTheme)
       : store
     return withAccentPreview(
-      resolvePreviewTokens(overlay, previewTheme, effectiveBoardAppearance),
+      resolvePreviewTokens(overlay, previewTheme, effectiveBoardAppearance, boardPlatform),
       accentPreview,
     )
-  }, [store, previewTheme, effectiveBoardAppearance, paintedPreview, accentPreview])
+  }, [store, previewTheme, effectiveBoardAppearance, paintedPreview, accentPreview, boardPlatform])
   // The canvas is the theme's PAGE (`surface.page` / `background-primary`), not
   // workspace chrome (`--app` / `--surface`) — otherwise artefacts float on a
   // fill that isn't the background they ship on.
@@ -619,6 +633,8 @@ export default function ThemePreviewHub({
           onRandomBoardAppearance={setRandomBoardAppearance}
           contrastOpen={contrastOpen}
           onContrastOpenChange={setContrastOpen}
+          previewPlatform={previewPlatform}
+          onPreviewPlatformChange={onPreviewPlatformChange}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
@@ -698,6 +714,7 @@ export default function ThemePreviewHub({
                   <ArtefactsView
                     previewTheme={previewTheme}
                     previewAppearance={effectiveBoardAppearance}
+                    previewPlatform={boardPlatform}
                     accentPreview={accentPreview}
                     stylePreview={paintedPreview}
                     drawerOpen={quickEditOpen}

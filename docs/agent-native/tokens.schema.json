@@ -163,16 +163,17 @@
     "gridFrame": {
       "type": "object",
       "additionalProperties": true,
-      "description": "v6 additive. Desktop/mobile aliases into spacing + breakpoint primitives.",
+      "description": "v6 additive. Desktop/tablet/mobile aliases into spacing + breakpoint primitives.",
       "properties": {
         "desktop": { "$ref": "#/$defs/gridFrameAlias" },
+        "tablet": { "$ref": "#/$defs/gridFrameAlias" },
         "mobile": { "$ref": "#/$defs/gridFrameAlias" }
       }
     },
     "breakpointRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. desktop | mobile → breakpoint step."
+      "description": "v6 additive. desktop | tablet | mobile → breakpoint step."
     },
     "sizes": { "type": "object", "additionalProperties": { "type": "string" } },
     "sizeRoles": {

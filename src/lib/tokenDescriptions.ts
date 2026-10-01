@@ -3,7 +3,7 @@
 // plugin can set Variable.description on sync (additive; older plugins ignore).
 import { ALL_ROLES } from './semanticRoles'
 import { CATEGORICAL_ROLE_COMMENTS } from './semanticArchitectures'
-import { LAYOUT_ROLES, type LayoutFamily } from './layoutTokens'
+import { LAYOUT_ROLES, GRID_FRAME_FIELDS, type LayoutFamily } from './layoutTokens'
 import { TYPE_ROLES } from './typeRoles'
 import { figmaSemanticName } from './agentBundle/names'
 
@@ -61,11 +61,17 @@ export function buildVariableDescriptions(): VariableDescriptions {
     }
   }
 
-  // Type roles: same copy on size / weight / family aliases.
+  // Type roles: same copy on size / weight / family aliases, plus the mobile size.
   for (const role of TYPE_ROLES) {
     for (const part of ['size', 'weight', 'family'] as const) {
       put(COLL.typography, `role/${role.key}/${part}`, role.description)
     }
+    put(COLL.typography, `role/${role.key}/size-mobile`, `${role.description} Mobile size.`)
+  }
+
+  for (const field of GRID_FRAME_FIELDS) {
+    put(COLL.grid, `desktop/${field.key}`, `Desktop frame — ${field.description}`)
+    put(COLL.grid, `mobile/${field.key}`, `Mobile frame — ${field.description}`)
   }
 
   return out

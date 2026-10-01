@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { tableHeaderClass, tableRowClass } from './tableChrome'
+import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
   BREAKPOINT_ROLES,
@@ -23,10 +23,13 @@ import VariablesPreviewPane from './VariablesPreviewPane'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { GridPreview } from '../preview/atoms/GridPreview'
+import { useI18n } from '../../lib/i18n'
 
-const GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_2.5rem]'
+const VIEWPORT_GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_2.5rem]'
+const FRAME_GRID = 'grid grid-cols-[minmax(9rem,1.2fr)_minmax(12rem,1.5fr)_2.5rem]'
+const GRID = FRAME_GRID
 
-const rowClass = (index: number) => tableRowClass(index, GRID)
+const rowClass = (index: number, template = GRID) => tableRowClass(index, template)
 
 function ResetIcon() {
   return (
@@ -65,6 +68,7 @@ export default function GridSemantics({
   railCollapsed = false,
   previewTheme = 'light',
   previewAppearance,
+  previewPlatform = 'desktop',
 }: {
   family?: unknown
   tabBar?: ReactNode
@@ -75,6 +79,7 @@ export default function GridSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
+  previewPlatform?: GridViewport
 } = {}) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
   const { grid, spacing, breakpointRoles, gridFrame } = foundations
@@ -85,9 +90,13 @@ export default function GridSemantics({
   const frame = mergeGridFrame(gridFrame)
   const [group, setGroup] = useState<'all' | 'viewport' | 'frame'>('all')
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
+  const { t } = useI18n()
+  const platformLabel =
+    previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
 
   const mobileMax = breakpointMobileMax(cuts, bps)
+  const tabletMin = bps[cuts.tablet] ?? '640px'
   const desktopMin = bps[cuts.desktop] ?? '768px'
 
   useEffect(() => {
@@ -143,6 +152,10 @@ export default function GridSemantics({
     return resolved[key]
   }
 
+  // One platform at a time — the switch picks which viewport cut and frame
+  // recipe the table edits. Showing all three at once made the choice feel
+  // like three parallel systems instead of one focused cut.
+  const viewportRoles = BREAKPOINT_ROLES.filter((role) => role.key === previewPlatform)
   const showViewport = group === 'all' || group === 'viewport'
   const showFrame = group === 'all' || group === 'frame'
   const revealFromPreview = (key: string) => {
@@ -165,8 +178,8 @@ export default function GridSemantics({
           collapsed={railCollapsed}
           onChange={setGroup}
           items={[
-            { id: 'all' as const, label: 'All', n: BREAKPOINT_ROLES.length + GRID_FRAME_FIELDS.length },
-            { id: 'viewport' as const, label: 'Viewport', n: BREAKPOINT_ROLES.length },
+            { id: 'all' as const, label: 'All', n: viewportRoles.length + GRID_FRAME_FIELDS.length },
+            { id: 'viewport' as const, label: 'Viewport', n: viewportRoles.length },
             { id: 'frame' as const, label: 'Frame', n: GRID_FRAME_FIELDS.length },
           ].map((item) => ({ key: item.id, label: item.label, count: item.n, shortLabel: item.id === 'all' ? 'ALL' : undefined }))}
         />
@@ -180,26 +193,28 @@ export default function GridSemantics({
 
           <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[40rem]">
+            <div className="min-w-[28rem]">
               {showViewport && (
                 <>
-                  <div className={tableHeaderClass(GRID)}>
+                  <div className={tableHeaderClass(VIEWPORT_GRID)}>
                     <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Viewport</div>
-                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Aliases</div>
+                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{platformLabel}</div>
                     <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Query</div>
                     <div />
                   </div>
-                  {BREAKPOINT_ROLES.map((role, i) => {
+                  {viewportRoles.map((role, i) => {
                     const step = cuts[role.key]
                     const modified = !layoutRoleIsDefault('breakpoint', role.key, step)
-                    const query = role.key === 'desktop'
+                    const mediaQuery = role.key === 'desktop'
                       ? `min-width: ${desktopMin}`
-                      : `max-width: ${mobileMax}`
+                      : role.key === 'tablet'
+                        ? `min-width: ${tabletMin}`
+                        : `max-width: ${mobileMax}`
                     return (
                       <div
                         key={role.key}
                         id={`layout-role-breakpoint-${role.key}`}
-                        className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                        className={`${rowClass(i, VIEWPORT_GRID)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                       >
                         <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                           <span className="flex items-center gap-2 min-w-0">
@@ -217,7 +232,7 @@ export default function GridSemantics({
                           />
                         </div>
                         <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
-                          <span className="text-caption font-mono text-fg-faint tabular-nums truncate">{query}</span>
+                          <span className="text-caption font-mono text-fg-faint tabular-nums truncate">{mediaQuery}</span>
                         </div>
                         <button
                           type="button"
@@ -237,21 +252,19 @@ export default function GridSemantics({
 
               {showFrame && (
                 <>
-                  <div className={`${tableHeaderClass(GRID)} ${showViewport ? 'mt-6' : ''}`}>
-                    <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Frame</div>
-                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Desktop</div>
-                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Mobile</div>
-                    <div />
+                  <div className={`${tableHeaderClass(FRAME_GRID)} ${showViewport ? 'mt-6' : ''}`}>
+                    <span className={`${TABLE_HEAD_CELL} pl-4`}>Frame</span>
+                    <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
+                    <span aria-hidden />
                   </div>
                   {GRID_FRAME_FIELDS.map((field, i) => {
-                    const d = frame.desktop[field.key]
-                    const m = frame.mobile[field.key]
-                    const modified = d !== GRID_FRAME_STANDARD.desktop[field.key] || m !== GRID_FRAME_STANDARD.mobile[field.key]
+                    const value = frame[previewPlatform][field.key]
+                    const modified = value !== GRID_FRAME_STANDARD[previewPlatform][field.key]
                     return (
                       <div
                         key={field.key}
                         id={`layout-role-grid-${field.key}`}
-                        className={`${rowClass(i)} ${flashKey === field.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                        className={`${rowClass(i, FRAME_GRID)} ${flashKey === field.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                       >
                         <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                           <span className="flex items-center gap-2 min-w-0">
@@ -262,28 +275,21 @@ export default function GridSemantics({
                         </div>
                         <div className="flex flex-col justify-center gap-0.5 px-3 py-2 border-r border-line min-w-0">
                           <Select
-                            label={`desktop ${field.key}`}
-                            value={d}
-                            onChange={(v) => patchFrame('desktop', field.key, v)}
+                            label={`${previewPlatform} ${field.key}`}
+                            value={value}
+                            onChange={(v) => patchFrame(previewPlatform, field.key, v)}
                             options={optionsFor(field.key)}
                           />
-                          <span className="text-mini font-mono text-fg-faint">{live('desktop', field.key)}</span>
-                        </div>
-                        <div className="flex flex-col justify-center gap-0.5 px-3 py-2 border-r border-line min-w-0">
-                          <Select
-                            label={`mobile ${field.key}`}
-                            value={m}
-                            onChange={(v) => patchFrame('mobile', field.key, v)}
-                            options={optionsFor(field.key)}
-                          />
-                          <span className="text-mini font-mono text-fg-faint">{live('mobile', field.key)}</span>
+                          <span className="text-mini font-mono text-fg-faint">{live(previewPlatform, field.key)}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setGridFrame({
                             ...frame,
-                            desktop: { ...frame.desktop, [field.key]: GRID_FRAME_STANDARD.desktop[field.key] },
-                            mobile: { ...frame.mobile, [field.key]: GRID_FRAME_STANDARD.mobile[field.key] },
+                            [previewPlatform]: {
+                              ...frame[previewPlatform],
+                              [field.key]: GRID_FRAME_STANDARD[previewPlatform][field.key],
+                            },
                           })}
                           disabled={!modified}
                           title="Reset to standard"
@@ -299,7 +305,7 @@ export default function GridSemantics({
               )}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`} scope={group}>
+          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
             <GridPreview tokens={previewTokens} onEditRole={revealFromPreview} />
           </VariablesPreviewPane>
           </div>

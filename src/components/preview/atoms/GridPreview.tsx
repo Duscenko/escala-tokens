@@ -37,7 +37,7 @@ function breakpointsOf(grid: Record<string, string>): Breakpoint[] {
 }
 
 function Frame({
-  t, label, viewportPx, frame, widest, onEdit,
+  t, label, viewportPx, frame, widest, onEdit, active,
 }: {
   t: PreviewTokens
   label: string
@@ -45,6 +45,7 @@ function Frame({
   frame: ResolvedGridFrame
   widest: number
   onEdit?: () => void
+  active?: boolean
 }) {
   const accent = t.brandSolid
   const gutter = num(frame.gutter, 16)
@@ -70,7 +71,7 @@ function Frame({
   return (
     <div className="flex flex-col gap-1 min-w-0" style={{ width: `${(viewportPx / widest) * 100}%` }}>
       <div className="flex items-baseline gap-2 min-w-0">
-        <span style={{ fontFamily: MONO, fontSize: 10.5, color: accent }} className="flex-shrink-0">
+        <span style={{ fontFamily: MONO, fontSize: 10.5, color: active ? accent : t.fgMuted }} className="flex-shrink-0">
           {label}
         </span>
         {onEdit && (
@@ -106,7 +107,7 @@ function Frame({
         className="relative"
         style={{
           background: t.surface,
-          border: `1px solid ${t.borderDefault || t.border || '#eaecf0'}`,
+          border: `1px solid ${active ? accent : (t.borderDefault || t.border || '#eaecf0')}`,
           borderRadius: frameRadius,
           overflow: 'hidden',
           // Vertical-only breathing room: the columns are a fixed 40px strip
@@ -129,7 +130,7 @@ function Frame({
               display: 'grid',
               gridTemplateColumns: `repeat(${frame.columns}, 1fr)`,
               columnGap: `${gapPct}%`,
-              height: 40,
+              height: 56,
             }}
           >
             {Array.from({ length: frame.columns }).map((_, i) => (
@@ -160,7 +161,14 @@ function Frame({
   )
 }
 
-function Ranges({ t, bps, desktopMin }: { t: PreviewTokens; bps: Breakpoint[]; desktopMin: number }) {
+function Ranges({
+  t, bps, activeMin,
+}: {
+  t: PreviewTokens
+  bps: Breakpoint[]
+  /** Min-width of the platform cut currently selected — accent-filled bar. */
+  activeMin: number
+}) {
   const accent = t.brandSolid
   const axis = bps[bps.length - 1].min * 1.2
 
@@ -169,10 +177,10 @@ function Ranges({ t, bps, desktopMin }: { t: PreviewTokens; bps: Breakpoint[]; d
       {bps.map((b, i) => {
         const next = bps[i + 1]?.min ?? axis
         const last = i === bps.length - 1
-        const isDesktopCut = b.min === desktopMin
+        const active = b.min === activeMin
         return (
           <div key={b.key} className="flex items-center gap-2 min-w-0">
-            <span style={{ fontFamily: MONO, fontSize: 10.5, color: accent, width: 26 }} className="flex-shrink-0">
+            <span style={{ fontFamily: MONO, fontSize: 10.5, color: active ? accent : t.fgMuted, width: 26 }} className="flex-shrink-0">
               {b.label}
             </span>
             <span
@@ -185,7 +193,7 @@ function Ranges({ t, bps, desktopMin }: { t: PreviewTokens; bps: Breakpoint[]; d
                 style={{
                   left: `${(b.min / axis) * 100}%`,
                   width: `${((next - b.min) / axis) * 100}%`,
-                  background: isDesktopCut ? accent : withAlpha(accent, 0.55),
+                  background: active ? accent : withAlpha(accent, 0.35),
                 }}
               />
             </span>
@@ -239,20 +247,37 @@ export function GridPreview({
   const desktopStep = t.breakpointRoles?.desktop ?? 'md'
   const desktopMin = num(bpsMap[desktopStep], 768)
   const mobileMax = num(breakpointMobileMax(t.breakpointRoles, bpsMap), desktopMin - 1)
-  const mobileFrame = frameOf(t, 'mobile')
-  const desktopFrame = frameOf(t, 'desktop')
-  const widest = Math.max(desktopMin, found[found.length - 1]?.min ?? desktopMin, 375)
+  const platform = t.previewPlatform ?? 'desktop'
+  const tabletMin = num(bpsMap[t.breakpointRoles?.tablet ?? 'sm'], 640)
+  const liveFrame = frameOf(t, platform)
+  const viewportPx = platform === 'mobile'
+    ? Math.min(375, mobileMax)
+    : platform === 'tablet'
+      ? Math.min(768, Math.max(tabletMin, 640))
+      : desktopMin
+  const activeMin = platform === 'mobile'
+    ? -1
+    : platform === 'tablet'
+      ? tabletMin
+      : desktopMin
 
   return (
     <>
-      <Block t={t} title="Layout · mobile / desktop">
-        <Frame t={t} label="mobile" viewportPx={Math.min(375, mobileMax)} frame={mobileFrame} widest={widest} onEdit={onEditRole ? () => onEditRole('mobile') : undefined} />
-        <Frame t={t} label="desktop" viewportPx={desktopMin} frame={desktopFrame} widest={widest} onEdit={onEditRole ? () => onEditRole('desktop') : undefined} />
+      <Block t={t} title={`Layout · ${platform}`}>
+        <Frame
+          t={t}
+          label={platform}
+          viewportPx={viewportPx}
+          frame={liveFrame}
+          widest={viewportPx}
+          active
+          onEdit={onEditRole ? () => onEditRole(platform) : undefined}
+        />
       </Block>
 
       {found.length > 0 && (
         <Block t={t} title="Breakpoint primitives">
-          <Ranges t={t} bps={found} desktopMin={desktopMin} />
+          <Ranges t={t} bps={found} activeMin={activeMin} />
         </Block>
       )}
     </>

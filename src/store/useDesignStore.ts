@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
-import { mergeTypeRoles, type TypeRoleModes } from '../lib/typeRoles'
+import { mergeTypeRoles, promoteReadingTypeIdentity, type TypeRoleModes } from '../lib/typeRoles'
 import {
   PADDING_STANDARD,
   RADIUS_STANDARD,
@@ -1705,7 +1705,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 72,
+      version: 74,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2900,6 +2900,61 @@ export const useDesignStore = create<DesignStore>()(
         seedPublishId(persisted)
         if (Array.isArray(persisted.savedSystems)) {
           for (const sys of persisted.savedSystems) seedPublishId(sys?.snapshot)
+        }
+        if (version < 73) {
+          // v72→v73: body and control type roles no longer shrink one step on
+          // mobile. Display/heading still step. Detect-don't-assume: only a
+          // role whose desktop+mobile pair is the pre-v73 catalogue default
+          // is rewritten; a hand-picked mobile size stays.
+          const promoteType = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            if (state.typography && typeof state.typography === 'object') {
+              state.typography.roles = promoteReadingTypeIdentity(state.typography.roles)
+            }
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const ty = foundations[key]?.typography
+                if (ty && typeof ty === 'object') {
+                  ty.roles = promoteReadingTypeIdentity(ty.roles)
+                }
+              }
+            }
+          }
+          promoteType(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) promoteType(sys?.snapshot)
+          }
+        }
+        if (version < 74) {
+          const seedTablet = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            state.gridFrame = mergeGridFrame(state.gridFrame)
+            const br = state.breakpointRoles
+            if (br && typeof br === 'object') {
+              if (typeof br.tablet !== 'string') br.tablet = 'sm'
+              if (br.mobile === 'md' && (br.desktop === 'md' || !br.desktop)) br.mobile = 'sm'
+            } else {
+              state.breakpointRoles = defaultLayoutRoles('breakpoint')
+            }
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const slot = foundations[key]
+                if (!slot || typeof slot !== 'object') continue
+                slot.gridFrame = mergeGridFrame(slot.gridFrame)
+                const fbr = slot.breakpointRoles
+                if (fbr && typeof fbr === 'object') {
+                  if (typeof fbr.tablet !== 'string') fbr.tablet = 'sm'
+                  if (fbr.mobile === 'md' && (fbr.desktop === 'md' || !fbr.desktop)) fbr.mobile = 'sm'
+                }
+              }
+            }
+          }
+          seedTablet(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seedTablet(sys?.snapshot)
+          }
         }
         return persisted
       },

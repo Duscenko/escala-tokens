@@ -14,7 +14,7 @@ import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { typeStyleCss } from './typeRoles'
-import { resolveLayoutRole, extractBreakpoints, hairlineSafe, nestedRadius, type LayoutFamily } from './layoutTokens'
+import { resolveLayoutRole, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 
@@ -132,6 +132,7 @@ export function resolvePreviewTokens(
   store: StoreState,
   themeKey = 'light',
   appearance: ThemeAppearance = store.themeKinds?.[themeKey] ?? 'light',
+  previewPlatform: GridViewport = 'desktop',
 ): PreviewTokens {
   const foundations = resolveThemeFoundations(store, themeKey)
   const { primaryColor, grayLightScale, errorColor, warningColor, successColor, infoColor } = store
@@ -284,6 +285,7 @@ export function resolvePreviewTokens(
     selectorRoles: foundations.selectorRoles,
     strokeRoles: foundations.strokeRoles,
     breakpointRoles: foundations.breakpointRoles,
+    previewPlatform,
     gridFrame: foundations.gridFrame,
     // Shadows are the one foundation that can't ship a single value for both
     // appearances: the ramp's near-black shadow colour IS the dark page, so in
@@ -369,9 +371,15 @@ export function resolvePreviewTokens(
 export function usePreviewTokens(
   themeKey = 'light',
   appearance?: ThemeAppearance,
+  previewPlatform: GridViewport = 'desktop',
 ): PreviewTokens {
   const store = useDesignStore()
-  const tokens = resolvePreviewTokens(store, themeKey, appearance ?? store.themeKinds?.[themeKey] ?? 'light')
+  const tokens = resolvePreviewTokens(
+    store,
+    themeKey,
+    appearance ?? store.themeKinds?.[themeKey] ?? 'light',
+    previewPlatform,
+  )
   useEffect(() => {
     loadGoogleFont(tokens.typography.fontFamily)
     loadGoogleFont(tokens.typography.headingFontFamily ?? tokens.typography.fontFamily)
@@ -500,8 +508,9 @@ export function weightOf(t: PreviewTokens, key: string, fallback: number): numbe
 export function typeStyleOf(
   t: PreviewTokens,
   role: string,
-  opts: { viewport?: 'desktop' | 'mobile'; leading?: boolean } = {},
+  opts: { viewport?: string; leading?: boolean } = {},
 ): CSSProperties {
+  const viewport = opts.viewport ?? t.previewPlatform ?? 'desktop'
   const s = typeStyleCss(
     {
       fontFamily: t.typography?.fontFamily ?? 'Inter',
@@ -512,7 +521,7 @@ export function typeStyleOf(
     },
     t.typography?.roles,
     role,
-    opts,
+    { ...opts, viewport },
   )
   const css: CSSProperties = {
     fontFamily: fontStack(s.family),

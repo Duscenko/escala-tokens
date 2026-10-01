@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import ScrubInput from '../ui/ScrubInput'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import { fontStack, loadGoogleFont, POPULAR_GOOGLE_FONTS } from '../../lib/fonts'
@@ -17,6 +17,8 @@ import {
   TYPO_CATEGORIES,
   type TypoCategory,
 } from '../../lib/typographyStandard'
+import { typePrimitivesForViewport, type TypeWeightKey } from '../../lib/typeRoles'
+import { usePreviewPlatform } from './PlatformRail'
 
 const GRID = 'grid grid-cols-[minmax(10rem,1fr)_8rem_minmax(8rem,1.6fr)_3rem]'
 const PREVIEW = 'Ag — Sphinx of black quartz'
@@ -198,7 +200,13 @@ function GroupLabel({ label, count }: { label: string; count: number }) {
 
 // ── Row wrapper (zebra + hover, matches Semantic) ───────────────────────────
 
-const rowClass = (index: number) => tableRowClass(index, GRID)
+const rowClass = (index: number, match: boolean | null = null) => {
+  const base = tableRowClass(index, GRID)
+  if (match === null) return base
+  return match
+    ? `${base} bg-accent-ui/[0.10] hover:bg-accent-ui/[0.16]`
+    : `${base} opacity-[0.38]`
+}
 
 const nameCell = `flex items-center py-3 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
 const valueCell = `flex items-center px-3 py-2 ${TABLE_CELL_DIVIDER}`
@@ -242,8 +250,14 @@ export default function Step4_Typography({
   const setLineHeight = (key: string, v: string) => setTypography({ ...typography, lineHeights: { ...lineHeights, [key]: v } })
   const setWeight = (base: string, n: number) => setTypography({ ...typography, weights: { ...weights, [base]: n } })
 
+  const platform = usePreviewPlatform()
+  const used = useMemo(
+    () => (platform ? typePrimitivesForViewport(typography.roles, platform.previewPlatform) : null),
+    [platform, typography.roles],
+  )
   const q = query.trim().toLowerCase()
   const match = (name: string) => !q || name.toLowerCase().includes(q)
+  const hit = (on: boolean) => (used ? on : null)
 
 
   // ── per-category tables ──
@@ -261,7 +275,7 @@ export default function Step4_Typography({
           const family = r.role === 'display' ? displayFont : bodyFont
           const modified = family !== 'Inter'
           return (
-            <div key={r.key} className={rowClass(i)}>
+            <div key={r.key} className={rowClass(i, hit(used ? used.families.has(r.role) : false))}>
               <div className={nameCell}>
                 <code className="font-mono text-body text-fg-muted truncate">{r.label}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
@@ -306,7 +320,7 @@ export default function Step4_Typography({
           const n = weights[r.base] ?? FONT_WEIGHT_STANDARD[r.base]
           const modified = !r.italic && n !== FONT_WEIGHT_STANDARD[r.base]
           return (
-            <div key={r.name} className={rowClass(i)}>
+            <div key={r.name} className={rowClass(i, hit(used ? !r.italic && used.weights.has(r.base as TypeWeightKey) : false))}>
               <div className={nameCell}>
                 <code className="font-mono text-body text-fg-muted truncate">{r.name}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
@@ -346,7 +360,7 @@ export default function Step4_Typography({
           const modified = val !== FONT_SIZE_STANDARD[key]
           const px = Math.min(parseInt(val, 10) || 16, 44)
           return (
-            <div key={key} className={rowClass(i)}>
+            <div key={key} className={rowClass(i, hit(used ? used.sizes.has(key) : false))}>
               <div className={nameCell}>
                 <code className="font-mono text-body text-fg-muted truncate">{key}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
@@ -376,7 +390,7 @@ export default function Step4_Typography({
           const val = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
           const modified = val !== LINE_HEIGHT_STANDARD[key]
           return (
-            <div key={key} className={rowClass(i)}>
+            <div key={key} className={rowClass(i, hit(used ? used.sizes.has(key) : false))}>
               <div className={nameCell}>
                 <code className="font-mono text-body text-fg-muted truncate">{key}</code>
                 {modified && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}

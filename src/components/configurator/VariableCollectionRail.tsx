@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { PlatformRail } from './PlatformRail'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients'
 
@@ -17,6 +18,9 @@ type CollectionContextValue = {
   collections: VariableCollectionItem[]
   onChange: (collection: VariableCollectionKey) => void
   header?: ReactNode
+  /** Desktop / Mobile recipes. Only Type and Grid resolve against this cut. */
+  showPlatform?: boolean
+  platformGuide?: 'type' | 'grid' | 'spacing'
 }
 
 const CollectionContext = createContext<CollectionContextValue | null>(null)
@@ -26,9 +30,11 @@ export function VariableCollectionProvider({
   collections,
   onChange,
   header,
+  showPlatform = false,
+  platformGuide,
   children,
 }: CollectionContextValue & { children: ReactNode }) {
-  return <CollectionContext.Provider value={{ active, collections, onChange, header }}>{children}</CollectionContext.Provider>
+  return <CollectionContext.Provider value={{ active, collections, onChange, header, showPlatform, platformGuide }}>{children}</CollectionContext.Provider>
 }
 
 /**
@@ -204,6 +210,12 @@ export default function VariableCollectionRail({
     >
       {context.header}
       <div className={collapsed ? 'px-[8px] py-2' : 'px-3 py-3'}>
+      {context.showPlatform && (
+        <>
+          <PlatformRail collapsed={collapsed} guide={context.platformGuide} />
+          <div className={collapsed ? 'mb-2 h-px bg-line' : 'mb-3 h-px bg-line'} aria-hidden />
+        </>
+      )}
       <section aria-labelledby="variable-collections-heading">
         {!collapsed && <h2 id="variable-collections-heading" className="px-1 pb-2 text-ui font-semibold text-fg">Collections</h2>}
         <div className={`flex flex-col gap-0.5 ${collapsed ? 'items-center' : ''}`}>

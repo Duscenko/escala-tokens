@@ -22,7 +22,7 @@ import type { ColorScale } from '../../types/tokens'
 import {
   NAMING_SCHEMES, BASE_TONE, generateColorScale, generateAlphaScale,
   generateDarkColorScale, generateFamilyDarkScale, backgroundFromBase,
-  neutralFromBrand, checkContrast, accessibleSolidTone, readableInk,
+  neutralFromBrand, readableInk,
   BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, readHuePosition, colorAtHue,
 } from '../../lib/colorUtils'
 import {
@@ -87,18 +87,7 @@ function EyeIcon({ active }: { active: boolean }) {
   )
 }
 
-// ── Radix role bands — which tones (1-12) serve which purpose. Shown once at
-// the bottom of the families table after the token rows; the Color Agent already
-// knows these groupings, so repeating them as row captions added noise. ───────
-const TONE_BANDS: { max: number; label: string }[] = [
-  { max: 2, label: 'Backgrounds' },
-  { max: 5, label: 'Interactive components' },
-  { max: 8, label: 'Borders' },
-  { max: 10, label: 'Solid colors' },
-  { max: 12, label: 'Accessible text' },
-]
-
-// What a step is FOR — mirrored in the table footer and the Token Details dialog.
+// What a step is FOR — Token Details dialog (Docs carries the full scale guide).
 const TONE_DESCRIPTIONS: { max: number; text: string }[] = [
   { max: 2,  text: 'App background. Step 1 is the page itself; step 2 is a subtle surface on top of it.' },
   { max: 5,  text: 'Interactive component fills — 3 at rest, 4 on hover, 5 while active.' },
@@ -110,51 +99,6 @@ const TONE_DESCRIPTIONS: { max: number; text: string }[] = [
 function toneDescription(tone: number): string {
   return TONE_DESCRIPTIONS.find((b) => tone <= b.max)?.text ?? ''
 }
-
-function toneRangeLabel(max: number, index: number): string {
-  const min = index === 0 ? 1 : TONE_BANDS[index - 1].max + 1
-  return min === max ? `${min}` : `${min}–${max}`
-}
-
-/** WCAG badge — AA/AAA for text pairs, LG when only large text passes. */
-function WcagBadge({ fg, bg }: { fg: string; bg: string }) {
-  const r = checkContrast(fg, bg)
-  const cls =
-    r >= 4.5
-      ? 'text-status-success bg-status-success/10'
-      : r >= 3
-      ? 'text-status-warning bg-status-warning/10'
-      : 'text-status-danger bg-status-danger/10'
-  const tag = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'LG' : '✕'
-  return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-mini font-semibold tabular-nums ${cls}`}>
-      {r.toFixed(2)}:1 {tag}
-    </span>
-  )
-}
-
-function WcagPairChip({ label, fg, bg }: { label: string; fg: string; bg: string }) {
-  return (
-    <div className="flex items-center gap-2.5 min-w-0">
-      <span
-        className="w-9 h-7 rounded-md flex items-center justify-center text-body font-semibold flex-shrink-0 ring-1 ring-black/10 dark:ring-white/10"
-        style={{ backgroundColor: bg, color: fg }}
-        aria-hidden
-      >
-        Aa
-      </span>
-      <span className="flex flex-col min-w-0 gap-0.5">
-        <span className="font-mono text-mini text-fg-muted truncate" title={label}>{label}</span>
-        <WcagBadge fg={fg} bg={bg} />
-      </span>
-    </div>
-  )
-}
-
-/** Which groups render as full-height rows; the rest go `compact`. Accents and
- *  Neutrals are the two a designer actually reads tone by tone, and that split
- *  is what the board already did when it hardcoded `core` vs `states`. */
-const OVERVIEW_FULL_GROUPS: readonly FamilyGroup[] = ['Accents', 'Neutrals']
 
 /** Neutral-family picker — global neutral OR any custom family slotted as gray. */
 function familyUsesNeutralPicker(
@@ -265,42 +209,10 @@ function extraHome(
   return null
 }
 
-// Mid interactive step — unmistakably translucent in nav/overview swatches.
+// Mid interactive step — unmistakably translucent in nav swatches.
 const ALPHA_NAV_TONE = 5
 
-function overviewScale(family: Family, appearance: 'light' | 'dark') {
-  if (family.isAlpha) {
-    return appearance === 'light'
-      ? (family.solidLight ?? family.light)
-      : (family.solidDark ?? family.dark)
-  }
-  return appearance === 'light' ? family.light : family.dark
-}
-
-function OverviewSwatch({ family }: { family: Family }) {
-  if (family.isAlpha) {
-    const value = family.light[ALPHA_NAV_TONE] ?? family.base
-    return (
-      // `light` — this chip reads the LIGHT ramp, so its damero has to stand in
-      // for the light page or the two disagree (see ScaleRow's checkerAppearance).
-      <span
-        className={`${SWATCH} relative overflow-hidden flex-shrink-0 light`}
-        style={{ ...CHECKER, backgroundSize: '5px 5px' }}
-        aria-hidden
-      >
-        <span className="absolute inset-0" style={{ backgroundColor: value }} />
-      </span>
-    )
-  }
-  return <span className={`${SWATCH} flex-shrink-0`} style={{ backgroundColor: family.base }} aria-hidden />
-}
-
-// Overview footer — one chrome recipe so borders never stack two grays.
-const overviewPanel = 'rounded-xl border border-line bg-surface overflow-hidden'
-const overviewDivide = 'divide-y divide-line'
-
-/** Same column tracks as the tone table + sticky header — overview ramps must
- *  use this or the light/dark headers drift over the swatches when scrolling. */
+/** Same column tracks as the tone table + sticky header. */
 const PRIMITIVE_TABLE_GRID: CSSProperties = {
   gridTemplateColumns: 'minmax(12rem,1.15fr) repeat(2, minmax(10rem,1fr)) 2.75rem',
 }
@@ -310,187 +222,6 @@ const PRIMITIVE_TABLE_GRID: CSSProperties = {
 const STRIP_CONTROL_HEIGHT = 36
 const QUICK_EDIT_STRIP_PAD = 12
 const QUICK_EDIT_STRIP_HEIGHT = STRIP_CONTROL_HEIGHT + QUICK_EDIT_STRIP_PAD * 2
-
-// The tone table's column header is the 52px band that lines up with
-// “Color variables” in the rail — same row as Radius's TOKEN NAME. The
-// quick-edit strip sits UNDER it, not above: putting the strip first is
-// what used to drop TOKEN NAME 60px below the title.
-
-function RampPreviewBlock({
-  family,
-  namingLabels,
-  active,
-  compact = false,
-  embedded = false,
-}: {
-  family: Family
-  namingLabels: string[]
-  active?: boolean
-  compact?: boolean
-  /** Inside the shared ramp panel — no nested border/background. */
-  embedded?: boolean
-}) {
-  const light = family.isAlpha ? family.light : overviewScale(family, 'light')
-  const dark = family.isAlpha ? family.dark : overviewScale(family, 'dark')
-  const rowProps = {
-    labels: namingLabels,
-    joined: true as const,
-    numbersInside: true as const,
-    showNumbers: false as const,
-    size: compact ? ('thin' as const) : ('default' as const),
-    checkerboard: family.isAlpha,
-  }
-
-  const rampCell = 'flex items-center px-2.5 py-1.5 border-r border-line min-w-0'
-
-  return (
-    <div
-      className={`grid items-stretch transition-colors ${
-        embedded ? '' : `${overviewPanel} p-4`
-      } ${active ? 'bg-accent-ui/[0.06]' : ''}`}
-      style={PRIMITIVE_TABLE_GRID}
-    >
-      <div className="flex items-center gap-2 py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
-        <OverviewSwatch family={family} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-ui font-semibold text-fg truncate">{family.label}</span>
-            {active ? (
-              <span className="text-micro font-semibold uppercase tracking-widest text-accent-ui flex-shrink-0">Editing</span>
-            ) : null}
-          </div>
-          {family.isAlpha ? (
-            <p className="text-mini text-fg-faint mt-0.5">Translucent ramp · checkerboard shows alpha</p>
-          ) : (
-            <p className="text-mini font-mono text-fg-faint mt-0.5 truncate">{family.base.toUpperCase()}</p>
-          )}
-        </div>
-      </div>
-      <div className={rampCell}>
-        <ScaleRow scale={light} ariaLabel={`${family.label} light scale`} {...rowProps} checkerAppearance="light" />
-      </div>
-      <div className={rampCell}>
-        <ScaleRow scale={dark} ariaLabel={`${family.label} dark scale`} {...rowProps} checkerAppearance="dark" />
-      </div>
-      <span className="flex items-center justify-center text-fg-faint/40" aria-hidden>
-        <SlidersIcon />
-      </span>
-    </div>
-  )
-}
-
-/** Scroll tail — scale roles, full system ramp board, WCAG pairs for accent. */
-function FamilyRampOverview({
-  groups,
-  activeKey,
-  namingLabels,
-}: {
-  /** The SAME `{ label, items }` groups the family nav renders — not a second
-   *  enumeration of family keys. The board used to hardcode
-   *  `['accent','accent-alpha','neutral']` + the four solid states, which broke
-   *  twice over: every alpha twin but Accent's was missing (`neutral-a`,
-   *  `black-a`/`white-a`, all four `*-a` statuses), and in the Themes workspace
-   *  the hardcoded GLOBAL keys resolve to nothing at all for a theme whose
-   *  slots point at custom families (`core-copy-error`, …) — so the board went
-   *  nearly empty exactly where the theme's own ramps live. Deriving it from
-   *  the nav's groups means the board and the rail can't disagree about which
-   *  ramps this system has. */
-  groups: { label: FamilyGroup; items: Family[] }[]
-  activeKey: string
-  namingLabels: string[]
-}) {
-  const inGroup = (label: FamilyGroup) => groups.find((g) => g.label === label)?.items ?? []
-  // The WCAG pairs need A representative accent and neutral, whatever they're
-  // called — `byKey('accent')` found nothing once a theme's brand was a custom
-  // family. First solid of each group is that theme's own.
-  const accent = inGroup('Accents').find((f) => !f.isAlpha)
-  const neutral = inGroup('Neutrals').find((f) => !f.isAlpha)
-
-  const accentLight = accent ? overviewScale(accent, 'light') : null
-  const accentDark = accent ? overviewScale(accent, 'dark') : null
-  const neutralLight = neutral ? overviewScale(neutral, 'light') : null
-  const neutralDark = neutral ? overviewScale(neutral, 'dark') : null
-
-  const solidLight = accentLight ? (accentLight[accessibleSolidTone(accentLight)] ?? accent!.base) : '#000'
-  const solidDark = accentDark ? (accentDark[accessibleSolidTone(accentDark)] ?? accent!.base) : '#000'
-
-  return (
-    <section className="border-t border-line bg-app">
-      <div className="px-4 py-6">
-        <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint mb-1">Scale guide</h3>
-        <p className="text-caption text-fg-faint mb-3">Radix 1–12 — same meaning in every family below.</p>
-        <ul className="flex flex-col gap-2.5">
-          {TONE_BANDS.map((band, i) => (
-            <li key={band.max} className="flex gap-3 min-w-0">
-              <span className="w-9 flex-shrink-0 font-mono text-caption tabular-nums text-fg-faint pt-px">
-                {toneRangeLabel(band.max, i)}
-              </span>
-              <span className="text-body leading-snug text-fg-muted min-w-0">
-                <span className="font-medium text-fg">{band.label}</span>
-                {' — '}
-                {TONE_DESCRIPTIONS.find((d) => d.max === band.max)?.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="border-t border-line">
-        <div className="px-4 pt-6 pb-3">
-          <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">System ramps</h3>
-          <p className="text-caption text-fg-faint mt-1">Every ramp — each solid beside its alpha twin, plus the fixed black/white ladders. Light and dark.</p>
-        </div>
-        <div className={`border-t border-line ${overviewDivide}`}>
-          {groups.map((group) => {
-            const alphaCount = group.items.filter((f) => f.isAlpha).length
-            return (
-              <div key={group.label} className={overviewDivide}>
-                <div className="grid items-center bg-elevated/20" style={PRIMITIVE_TABLE_GRID}>
-                  <div className="col-span-4 px-4 py-2.5">
-                    <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{group.label}</span>
-                    <p className="text-mini text-fg-faint mt-0.5">
-                      {group.items.filter((f) => !f.isAlpha).map((f) => f.label).join(' · ') || '—'}
-                      {alphaCount > 0 && ` · ${alphaCount} alpha ${alphaCount === 1 ? 'ramp' : 'ramps'}`}
-                    </p>
-                  </div>
-                </div>
-                {group.items.map((f) => (
-                  <RampPreviewBlock
-                    key={f.key}
-                    embedded
-                    compact={!OVERVIEW_FULL_GROUPS.includes(group.label)}
-                    family={f}
-                    namingLabels={namingLabels}
-                    active={f.key === activeKey}
-                  />
-                ))}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {accentLight && accentDark ? (
-        <div className="border-t border-line px-4 py-6 flex flex-col gap-3">
-          <h3 className="text-mini font-semibold uppercase tracking-widest text-fg-faint">WCAG contrast</h3>
-          <p className="text-caption text-fg-faint">Live pairs from accent and neutral ramps.</p>
-          <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-            <WcagPairChip label="Accent text · light" fg={accentLight[12] ?? '#000'} bg={accentLight[1] ?? '#fff'} />
-            <WcagPairChip label="Accent text · dark" fg={accentDark[12] ?? '#fff'} bg={accentDark[1] ?? '#000'} />
-            <WcagPairChip label="Accent ink · solid light" fg={readableInk(solidLight)} bg={solidLight} />
-            <WcagPairChip label="Accent ink · solid dark" fg={readableInk(solidDark)} bg={solidDark} />
-            {neutralLight && neutralDark ? (
-              <>
-                <WcagPairChip label="Neutral text · light" fg={neutralLight[12] ?? '#000'} bg={neutralLight[1] ?? '#fff'} />
-                <WcagPairChip label="Neutral text · dark" fg={neutralDark[12] ?? '#fff'} bg={neutralDark[1] ?? '#000'} />
-              </>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-    </section>
-  )
-}
 
 // The alpha tone the family NAV previews. Not the anchor (step 9 composites to
 // a near-opaque overlay, so it reads as a plain solid chip and defeats the
@@ -1379,23 +1110,6 @@ export default function ColorPrimitives({
         .filter((group) => group.items.length > 0),
     }]
   }, [activeThemeFamilies, homeOf, managedThemesExternally, navFolders, themeSources])
-
-  /** Groups for the scroll-tail ramp board — the SAME partition the nav uses
-   *  (`homeOf`), over whatever families this workspace is showing, so the board
-   *  and the rail can't list different ramps. Folder-agnostic on purpose: the
-   *  board is one "System ramps" section, not one per theme folder. */
-  const overviewGroups = useMemo(
-    () => FAMILY_GROUPS
-      .map((label) => {
-        const items = activeThemeFamilies.filter((f) => homeOf(f).group === label)
-        return {
-          label,
-          items: sortGroupItems(label, items, themeSources),
-        }
-      })
-      .filter((g) => g.items.length > 0),
-    [activeThemeFamilies, homeOf, themeSources],
-  )
 
   // Collapsed nav sections. Keys are a whole folder's own key, or
   // `<folder>/<group>` for one of its Accents/Neutrals/States groups, so the
@@ -2331,9 +2045,7 @@ export default function ColorPrimitives({
               </div>
               {/* Quick-edit strip sits UNDER the column header, still inside
                   the scroll surface so it pins below TOKEN NAME (`top` =
-                  the 52px header) rather than covering it. Isolate keeps
-                  the tone-9 anchor ring from painting over the header
-                  when overview ramps scroll underneath. */}
+                  the 52px header) rather than covering it. */}
               <div
                 className="sticky z-20 flex items-center gap-2.5 pl-4 pr-3 border-b border-line bg-app isolate"
                 style={{ height: QUICK_EDIT_STRIP_HEIGHT, top: TABLE_HEADER_PX, paddingTop: QUICK_EDIT_STRIP_PAD, paddingBottom: QUICK_EDIT_STRIP_PAD }}
@@ -2485,7 +2197,6 @@ export default function ColorPrimitives({
                 })
               )}
 
-              <FamilyRampOverview groups={overviewGroups} activeKey={family.key} namingLabels={namingLabels} />
             </div>
         </div>
         )}

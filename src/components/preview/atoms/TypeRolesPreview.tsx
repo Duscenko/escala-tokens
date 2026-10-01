@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { PreviewTokens } from '../ButtonPreview'
 import { fontStack } from '../../../lib/fonts'
 import {
@@ -6,6 +5,7 @@ import {
   mergeTypeRoles,
   resolveTypeStyle,
   typeRolesInGroup,
+  asTypeViewport,
   type TypeRoleGroupId,
 } from '../../../lib/typeRoles'
 
@@ -28,7 +28,7 @@ export function TypeRolesPreview({
   /** Jump the Variables table to this role's row. */
   onEditRole?: (key: string) => void
 }) {
-  const [viewport, setViewport] = useState<'desktop' | 'mobile'>('desktop')
+  const viewport = tokens.previewPlatform ?? 'desktop'
   const ty = tokens.typography
   const roles = mergeTypeRoles(ty.roles)
   const groups = focus === 'all' ? TYPE_ROLE_GROUPS : TYPE_ROLE_GROUPS.filter((g) => g.id === focus)
@@ -37,21 +37,7 @@ export function TypeRolesPreview({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Text roles</span>
-        <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line">
-          {(['desktop', 'mobile'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setViewport(v)}
-              aria-pressed={viewport === v}
-              className={`px-2 py-0.5 rounded text-caption font-medium capitalize transition-colors ${
-                viewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
+        <span className="text-mini font-medium capitalize text-fg-muted">{viewport}</span>
       </div>
       {groups.map((g) => (
         <div key={g.id} className="flex flex-col gap-1.5">
@@ -59,7 +45,7 @@ export function TypeRolesPreview({
             <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">{g.label}</span>
           )}
           {typeRolesInGroup(g.id).map((role) => {
-            const style = resolveTypeStyle(roles[role.key][viewport], ty)
+            const style = resolveTypeStyle(roles[role.key][asTypeViewport(viewport)], ty)
             const editable = Boolean(onEditRole)
             const Card = editable ? 'button' : 'div'
             return (

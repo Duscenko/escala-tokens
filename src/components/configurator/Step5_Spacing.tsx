@@ -3,6 +3,7 @@ import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import VariablesTable from './VariablesTable'
 import RailSelect from '../ui/RailSelect'
 import { RailControl, RailDivider, RailGroupNav } from './VariableCollectionRail'
+import { usePreviewPlatform } from './PlatformRail'
 import {
   PADDING_SIDES,
   PADDING_STANDARD,
@@ -11,6 +12,7 @@ import {
   SPACING_STANDARD,
   SPACING_STEPS,
   buildSpacingFromBase,
+  mergeGridFrame,
 } from '../../lib/layoutTokens'
 
 export const BASE_PRESETS: { label: string; value: number }[] = SPACING_BASE_PRESETS.map((p) => ({ label: p.label, value: p.value }))
@@ -72,6 +74,14 @@ export default function Step5_Spacing({ tabBar, query, previewTheme }: { tabBar?
     setPadding({ top: inset, right: inset, bottom: inset, left: inset })
   }
 
+  const platform = usePreviewPlatform()
+  const usedSteps = platform
+    ? (() => {
+        const alias = mergeGridFrame(foundations.gridFrame)[platform.previewPlatform]
+        return new Set([alias.gutter, alias.margin])
+      })()
+    : null
+
   const scaleRows = SPACING_STEPS.map((step) => {
     const value = valueOf(step)
     const standard = SPACING_STANDARD[step]
@@ -90,6 +100,7 @@ export default function Step5_Spacing({ tabBar, query, previewTheme }: { tabBar?
           />
         </div>
       ),
+      match: usedSteps ? usedSteps.has(step) : undefined,
     }
   })
 

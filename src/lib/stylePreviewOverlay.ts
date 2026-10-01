@@ -17,6 +17,7 @@ import {
   generateFamilyDarkScale,
 } from './colorUtils'
 import { resolvePreviewTokens } from './previewTokens'
+import type { GridViewport } from './layoutTokens'
 import { presetHarmony, presetStates, type ThemeStylePreset, type ThemeStyleSemantics } from './themePresets'
 import { themeModeKey, type ThemeAppearance } from './themeModes'
 import type { useDesignStore } from '../store/useDesignStore'
@@ -248,6 +249,7 @@ export function resolveStylePreviewTokens(
   store: StoreState,
   preview: StylePreview,
   themeKey: string,
+  previewPlatform?: GridViewport,
 ): PreviewTokens {
-  return resolvePreviewTokens(stylePreviewStore(store, preview, themeKey), themeKey, preview.appearance)
+  return resolvePreviewTokens(stylePreviewStore(store, preview, themeKey), themeKey, preview.appearance, previewPlatform)
 }

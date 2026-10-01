@@ -5,6 +5,8 @@ import {
   TYPE_ROLE_GROUPS,
   aliasesEqual,
   mergeTypeRoles,
+  promoteReadingTypeIdentity,
+  typePrimitivesForViewport,
   primitiveVar,
   resolveTypeStyle,
   roleIsDefault,
@@ -35,6 +37,27 @@ describe('type roles', () => {
     expect(TYPE_ROLES.some((r) => r.key === 'placeholder')).toBe(true)
   })
 
+  it('body and control aliases are the same on desktop and mobile; display and headings step', () => {
+    for (const role of TYPE_ROLES) {
+      if (role.group === 'display' || role.group === 'heading') {
+        expect(aliasesEqual(role.desktop, role.mobile)).toBe(false)
+      } else {
+        expect(aliasesEqual(role.desktop, role.mobile)).toBe(true)
+      }
+    }
+  })
+
+  it('lists the primitive size steps each platform cut actually aliases', () => {
+    const desktop = typePrimitivesForViewport(undefined, 'desktop')
+    const mobile = typePrimitivesForViewport(undefined, 'mobile')
+    expect(desktop.sizes.has('display-xl')).toBe(true)
+    expect(mobile.sizes.has('display-xl')).toBe(false)
+    expect(desktop.sizes.has('display-2xl')).toBe(false)
+    expect(mobile.sizes.has('display-2xl')).toBe(false)
+    expect(desktop.families.has('display') && desktop.families.has('body')).toBe(true)
+    expect(desktop.weights.has('semibold')).toBe(true)
+  })
+
   it('seeds missing roles and keeps a user edit', () => {
     const stored = mergeTypeRoles({
       label: {
@@ -56,6 +79,23 @@ describe('type roles', () => {
     expect(stored.madeUp).toBeUndefined()
     expect(stored.label.desktop.size).toBe('text-sm')
     expect(roleIsDefault('label', stored.label)).toBe(true)
+  })
+
+  it('promotes the pre-v73 body/control shrink and leaves a hand-picked mobile size', () => {
+    const promoted = promoteReadingTypeIdentity({
+      'body-md': {
+        desktop: { family: 'body', size: 'text-md', weight: 'regular' },
+        mobile: { family: 'body', size: 'text-sm', weight: 'regular' },
+      },
+      label: {
+        desktop: { family: 'body', size: 'text-sm', weight: 'medium' },
+        mobile: { family: 'body', size: 'text-xs', weight: 'bold' },
+      },
+    })
+    expect(promoted['body-md'].mobile.size).toBe('text-md')
+    expect(promoted.label.mobile.size).toBe('text-xs')
+    expect(promoted.label.mobile.weight).toBe('bold')
+    expect(roleIsDefault('body-md', promoted['body-md'])).toBe(true)
   })
 
   it('resolves an alias through the primitive ramp', () => {

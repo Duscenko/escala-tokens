@@ -9,7 +9,7 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMobileCss, breakpointMobileMax } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -168,7 +168,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push(`  --grid-${breakpointKey(step)}: var(--breakpoint-${step});`)
   })
 
-  lines.push('\n  /* Grid frame — desktop aliases. Mobile overrides below. */')
+  lines.push('\n  /* Grid frame — desktop aliases. Tablet / mobile override below. */')
   gridFrameRootCss(gridFrame).forEach((l) => lines.push(`  ${l}`))
 
   if (gradients.length) {
@@ -195,12 +195,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push('}')
   }
 
-  const mobileMax = breakpointMobileMax(breakpointRoles, bps)
-  lines.push(`\n@media (max-width: ${mobileMax}) {`)
-  lines.push('  :root {')
-  gridFrameMobileCss(gridFrame).forEach((l) => lines.push(`    ${l}`))
-  lines.push('  }')
-  lines.push('}')
+  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame)}`)
 
   // Theme blocks contain semantics plus any complete foundation override.
   // Dark keeps the `.dark` convention; extra themes use data-theme.

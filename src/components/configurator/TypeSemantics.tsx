@@ -12,8 +12,9 @@ import {
   TYPE_ROLES,
   mergeTypeRoles,
   resolveTypeStyle,
-  roleIsDefault,
+  aliasesEqual,
   typeRolesInGroup,
+  asTypeViewport,
   type TypeAlias,
   type TypeFamilyRole,
   type TypeRoleGroupId,
@@ -24,11 +25,14 @@ import SemanticGroupRail from './SemanticGroupRail'
 import VariablesPreviewPane from './VariablesPreviewPane'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import type { GridViewport } from '../../lib/layoutTokens'
 import { TypeRolesPreview } from '../preview/atoms/TypeRolesPreview'
+import { PlatformBoard } from '../preview/artefacts/DeviceFrame'
+import { useI18n } from '../../lib/i18n'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
 
-const GRID = 'grid grid-cols-[minmax(8.5rem,1fr)_minmax(13rem,1.35fr)_minmax(13rem,1.35fr)_minmax(10rem,1.15fr)_2.5rem]'
+const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(18rem,1.8fr)_minmax(8rem,1fr)_2.5rem]'
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -58,7 +62,7 @@ function AliasSelect<T extends string>({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+      className="min-w-0 h-7 px-2 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -79,7 +83,7 @@ function ViewportCell({
   onChange: (next: TypeAlias) => void
 }) {
   return (
-    <div className="flex items-center gap-1 px-2 py-2 border-r border-line min-w-0">
+    <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
       <AliasSelect
         value={alias.size}
         options={SIZE_OPTIONS}
@@ -118,6 +122,7 @@ export default function TypeSemantics({
   railCollapsed = false,
   previewTheme = 'light',
   previewAppearance,
+  previewPlatform = 'desktop',
 }: {
   tabBar?: ReactNode
   /** Workspace search. When passed, the inner 52px bar (heading + search)
@@ -129,6 +134,7 @@ export default function TypeSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
+  previewPlatform?: GridViewport
 }) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
   const typography = foundations.typography
@@ -136,9 +142,12 @@ export default function TypeSemantics({
   const roles = mergeTypeRoles(typography.roles)
   const [group, setGroup] = useState<TypeFocus>('all')
   const [localQuery, setLocalQuery] = useState('')
-  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
+  const { t } = useI18n()
+  const typeViewport = asTypeViewport(previewPlatform)
+  const platformLabel =
+    previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
   const controlled = externalQuery !== undefined
   const query = controlled ? externalQuery : localQuery
 
@@ -174,9 +183,10 @@ export default function TypeSemantics({
   function resetRole(key: string) {
     const spec = TYPE_ROLES.find((r) => r.key === key)
     if (!spec) return
+    const current = roles[key]
     setTypography({
       ...typography,
-      roles: { ...roles, [key]: { desktop: { ...spec.desktop }, mobile: { ...spec.mobile } } },
+      roles: { ...roles, [key]: { ...current, [typeViewport]: { ...spec[typeViewport] } } },
     })
   }
 
@@ -243,38 +253,20 @@ export default function TypeSemantics({
 
           <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
-            <div className="min-w-[42rem]">
+            <div className="min-w-[28rem]">
               <div className={tableHeaderClass(GRID)}>
                 <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
-                <span className={`${TABLE_HEAD_CELL} px-3`}>Desktop</span>
-                <span className={`${TABLE_HEAD_CELL} px-3`}>Mobile</span>
-                <span className={`${TABLE_HEAD_CELL} px-2 gap-1.5 min-w-0`}>
-                  <span className="truncate">Preview</span>
-                  <span className="ml-auto flex items-center gap-0.5 p-0.5 rounded-md bg-elevated border border-line normal-case tracking-normal font-medium flex-shrink-0">
-                    {(['desktop', 'mobile'] as const).map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setPreviewViewport(v)}
-                        aria-pressed={previewViewport === v}
-                        title={v === 'desktop' ? 'Preview desktop type' : 'Preview mobile type'}
-                        className={`px-1.5 py-0.5 rounded text-mini capitalize transition-colors ${
-                          previewViewport === v ? 'bg-app text-fg shadow-sm' : 'text-fg-faint hover:text-fg-muted'
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </span>
-                </span>
+                <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
+                <span className={`${TABLE_HEAD_CELL} px-3`}>Preview</span>
                 <span aria-hidden />
               </div>
               {rows.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{query}”.</div>
               ) : rows.map((role, i) => {
                 const modes = roles[role.key]
-                const modified = !roleIsDefault(role.key, modes)
-                const style = resolveTypeStyle(modes[previewViewport], typography)
+                const alias = modes[typeViewport]
+                const modified = !aliasesEqual(alias, role[typeViewport])
+                const style = resolveTypeStyle(alias, typography)
                 return (
                   <div
                     key={role.key}
@@ -290,15 +282,9 @@ export default function TypeSemantics({
                     </div>
                     <ViewportCell
                       roleKey={role.key}
-                      viewport="desktop"
-                      alias={modes.desktop}
-                      onChange={(alias) => patchRole(role.key, 'desktop', alias)}
-                    />
-                    <ViewportCell
-                      roleKey={role.key}
-                      viewport="mobile"
-                      alias={modes.mobile}
-                      onChange={(alias) => patchRole(role.key, 'mobile', alias)}
+                      viewport={typeViewport}
+                      alias={alias}
+                      onChange={(next) => patchRole(role.key, typeViewport, next)}
                     />
                     <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
                       <span
@@ -327,8 +313,10 @@ export default function TypeSemantics({
               })}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}`} scope={group}>
-            <TypeRolesPreview tokens={previewTokens} focus={group} onEditRole={revealFromPreview} />
+          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
+            <PlatformBoard t={previewTokens} fit="fill">
+              <TypeRolesPreview tokens={previewTokens} focus={group} onEditRole={revealFromPreview} />
+            </PlatformBoard>
           </VariablesPreviewPane>
           </div>
         </div>

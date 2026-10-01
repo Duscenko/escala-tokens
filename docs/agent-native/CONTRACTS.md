@@ -81,7 +81,7 @@ Skill script `/.claude/skills/color-science-core/scripts/contrast.mjs` must stay
 |---|---|---|
 | Catalogue / JSON architecture | `action.primary.default` | Dots |
 | CSS | `var(--color-action-primary-default)` | Hyphens, `var()` wrapper required for Figma Dev Mode |
-| Figma variable | `Action/primary/default` | Slashes. A dot in a Figma name throws and aborts import |
+| Figma variable | `Action/primary/default` | Slashes. A dot in a Figma name throws and aborts import. Type mobile size is `role/{key}/size-mobile`. Grid keeps `columns` as desktop and adds `desktop/*` / `mobile/*`. |
 | Collections | `Color Primitives`, `Color Semantics`, `Typography`, `Spacing`, `Radius`, `Size`, `Selector`, `Grid` | Exact strings. Semantics groups: Content · Action · Surface · Status · Border. `Border` is the stroke-width collection. |
 
 Primitives: `scopes = []` (hidden from property pickers). Semantics: `ALL_SCOPES` (“Show in all supported properties”) so mapped roles appear wherever designers paint.

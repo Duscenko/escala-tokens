@@ -28,7 +28,9 @@ import {
   mergeLayoutRoles,
   nearestSpacingStep,
   breakpointMobileMax,
+  breakpointTabletMax,
   resolveGridFrame,
+  desktopArtefactWidthPx,
   resolveLayoutRole,
   scaleRadiusFromLg,
   completeRadiusScale,
@@ -281,8 +283,9 @@ describe('layout semantics', () => {
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')
     expect(css).toContain('--breakpoint-desktop: var(--breakpoint-md);')
-    expect(css).toContain('--breakpoint-mobile: calc(var(--breakpoint-md) - 1px);')
-    expect(css).not.toMatch(/--breakpoint-mobile:\s*767/)
+    expect(css).toContain('--breakpoint-tablet: var(--breakpoint-sm);')
+    expect(css).toContain('--breakpoint-mobile: calc(var(--breakpoint-sm) - 1px);')
+    expect(css).not.toMatch(/--breakpoint-mobile:\s*639/)
     expect(css).not.toMatch(/--radius-action:\s*\d/)
   })
 
@@ -294,24 +297,45 @@ describe('layout semantics', () => {
 })
 
 describe('breakpoint + grid frame', () => {
-  it('desktop aliases md; mobile max is 767 on the standard ramp', () => {
+  it('desktop aliases md; tablet sm; mobile max is 639 on the standard ramp', () => {
     expect(BREAKPOINT_STEPS).toEqual(['sm', 'md', 'lg', 'xl', '2xl'])
     expect(BREAKPOINT_STANDARD.md).toBe('768px')
+    expect(BREAKPOINT_STANDARD.sm).toBe('640px')
     expect(defaultLayoutRoles('breakpoint').desktop).toBe('md')
-    expect(defaultLayoutRoles('breakpoint').mobile).toBe('md')
-    expect(breakpointMobileMax(defaultLayoutRoles('breakpoint'), BREAKPOINT_STANDARD)).toBe('767px')
+    expect(defaultLayoutRoles('breakpoint').tablet).toBe('sm')
+    expect(defaultLayoutRoles('breakpoint').mobile).toBe('sm')
+    expect(breakpointTabletMax(defaultLayoutRoles('breakpoint'), BREAKPOINT_STANDARD)).toBe('767px')
+    expect(breakpointMobileMax(defaultLayoutRoles('breakpoint'), BREAKPOINT_STANDARD)).toBe('639px')
   })
 
-  it('desktop frame matches the previous global grid; mobile is 4-col', () => {
+  it('desktop frame matches the previous global grid; tablet is 8-col; mobile is 4-col', () => {
     expect(GRID_STANDARD.columns).toBe('12')
     expect(GRID_STANDARD.gutter).toBe('24px')
     expect(GRID_STANDARD.margin).toBe('32px')
     expect(GRID_STANDARD.container).toBe('1280px')
+    const tablet = resolveGridFrame('tablet', GRID_FRAME_STANDARD, SPACING_STANDARD, BREAKPOINT_STANDARD)
+    expect(tablet.columns).toBe(8)
+    expect(tablet.gutter).toBe('24px')
+    expect(tablet.margin).toBe('24px')
+    expect(tablet.container).toBe('none')
     const mobile = resolveGridFrame('mobile', GRID_FRAME_STANDARD, SPACING_STANDARD, BREAKPOINT_STANDARD)
     expect(mobile.columns).toBe(4)
     expect(mobile.gutter).toBe('16px')
     expect(mobile.margin).toBe('16px')
     expect(mobile.container).toBe('none')
+  })
+
+  it('desktop artefact width is the grid container, else the desktop breakpoint', () => {
+    const desktop = resolveGridFrame('desktop', GRID_FRAME_STANDARD, SPACING_STANDARD, BREAKPOINT_STANDARD)
+    expect(desktopArtefactWidthPx(desktop, BREAKPOINT_STANDARD)).toBe(1280)
+    const uncapped = resolveGridFrame(
+      'desktop',
+      { ...GRID_FRAME_STANDARD, desktop: { ...GRID_FRAME_STANDARD.desktop, container: 'none' } },
+      SPACING_STANDARD,
+      BREAKPOINT_STANDARD,
+    )
+    expect(uncapped.container).toBe('none')
+    expect(desktopArtefactWidthPx(uncapped, BREAKPOINT_STANDARD, 'md')).toBe(768)
   })
 
   it('merge repairs a stale container step', () => {

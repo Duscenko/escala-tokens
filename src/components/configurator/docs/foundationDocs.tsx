@@ -850,7 +850,7 @@ color:      var(--color-content-on-action);
     key: 'typography',
     label: 'Typography',
     lead: 'Two layers, same idea as Color. Primitives are the scale — display/body families, eleven sizes with matching line-heights, four weights. Semantics are named text styles (label, placeholder, heading, body, button) that alias those primitives, with a Desktop mapping and a Mobile mapping. Components reference the role; the role points at the scale.',
-    why: 'A 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes size a CHOICE FROM A SET. Pairing each size with its line-height keeps vertical rhythm. Roles — `text-label`, `text-placeholder` — are the decision you can re-point once: mobile is one step down, not a second hardcoded px in every component.',
+    why: 'A 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes size a CHOICE FROM A SET. Pairing each size with its line-height keeps vertical rhythm. Roles — `text-label`, `text-placeholder` — are the decision you can re-point once. Display and headings step down on a narrow viewport; body, labels and buttons keep the same reading size so line length stays 45–75 characters.',
     usage: 'Reach for a text role first (`text-label`, `text-body-md`, `text-heading-lg`). Use a primitive (`text-sm`, `semibold`) only when defining a new role. Desktop CSS is `var(--text-label-font-size)`; mobile is `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives — never a raw px.',
     usageCode: `/* semantic — what it is FOR */
 font-family: var(--text-label-font-family);
@@ -868,7 +868,7 @@ line-height: var(--text-label-line-height);
     ships: {
       json: 'typography.fontFamily · .sizes · .weights · .roles (desktop/mobile aliases)',
       css: '--text-{role}-font-size  ·  --text-{role}-font-size-mobile  ·  --font-size-*',
-      figma: 'Text styles {project}/Type/{role} with Desktop · Mobile + a Typography variable collection',
+      figma: 'Type/{role} (desktop bindings) · Type/{role} (Mobile) · Typography role/{role}/size-mobile',
     },
     tokenCount: (c) => TYPE_SCALE_KEYS.length * 2 + FONT_WEIGHT_BASES.length + 2 + TYPE_ROLES.length,
     sections: [
@@ -1168,8 +1168,8 @@ padding: var(--spacing-inset-surface);
   {
     key: 'grid',
     label: 'Grid',
-    lead: 'Two layers, same idea as Type. Primitives are the Tailwind min-width ramp (sm–2xl). Semantics name the cut desktop and mobile share, plus a layout frame recipe per viewport — 12-col desktop, 4-col mobile. Components bind `--grid-*` and `--breakpoint-desktop` / `--breakpoint-mobile`; they never invent a 767.',
-    why: 'A grid is the contract that lets two people lay out two different screens and have them line up. Tokenising the cut as well as the frame means Type mobile and the 4-col recipe switch at the same width — not a hardcoded 767 in type and a 768 in the plugin.',
+    lead: 'Two layers, same idea as Type. Primitives are the Tailwind min-width ramp (sm–2xl). Semantics name three window recipes — 12-col desktop, 8-col tablet, 4-col mobile — not OS platforms. Components bind `--grid-*` and `--breakpoint-desktop` / `--breakpoint-tablet` / `--breakpoint-mobile`; they never invent a 767.',
+    why: 'A grid is the contract that lets two people lay out two different screens and have them line up. Tokenising the cut as well as the frame means Type mobile and the 4-col recipe switch at the same width — not a hardcoded 767 in type and a 768 in the plugin. Tablet is the missing middle recipe (8 columns), nested between desktop and mobile in CSS.',
     usage: 'Lay out against `--grid-columns`, `--grid-gutter`, `--grid-margin`, `--grid-container`. Query the viewport with `--breakpoint-desktop` (min-width) and `--breakpoint-mobile` (max-width = primitive − 1px). `@media` itself must use the resolved px — custom properties are not valid there.',
     usageCode: `max-width: var(--grid-container);
 padding-inline: var(--grid-margin);
@@ -1180,7 +1180,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
     ships: {
       json: 'grid · breakpointRoles · gridFrame',
       css: '--breakpoint-*  ·  --breakpoint-desktop/mobile  ·  --grid-*',
-      figma: 'Layout grid styles + number variables',
+      figma: 'Grid/{n} columns + Grid/Mobile styles · columns/gutter/… plus desktop/* and mobile/* variables',
     },
     tokenCount: (c) => BREAKPOINT_STEPS.length + LAYOUT_ROLES.breakpoint.length + GRID_FRAME_FIELDS.length * 2,
     sections: [

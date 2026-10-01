@@ -11,6 +11,7 @@ import {
   mergeLayoutRoles,
   resolveLayoutRole,
   type LayoutFamily,
+  type GridViewport,
 } from '../../lib/layoutTokens'
 import SemanticGroupRail from './SemanticGroupRail'
 import VariablesPreviewPane from './VariablesPreviewPane'
@@ -18,6 +19,7 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { RadiusRolesPreview } from '../preview/atoms/RadiusRolesPreview'
 import { LayoutRolesPreview } from '../preview/atoms/LayoutRolesPreview'
+import { PlatformBoard } from '../preview/artefacts/DeviceFrame'
 
 const GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,0.9fr)_minmax(8rem,1.2fr)_2.5rem]'
 
@@ -84,6 +86,7 @@ export default function LayoutSemantics({
   railCollapsed = false,
   previewTheme = 'light',
   previewAppearance,
+  previewPlatform,
 }: {
   family: LayoutFamily
   tabBar?: ReactNode
@@ -94,6 +97,7 @@ export default function LayoutSemantics({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
+  previewPlatform?: GridViewport
 }) {
   const { store, foundations, patch } = useThemeFoundations(previewTheme)
   const {
@@ -108,7 +112,7 @@ export default function LayoutSemantics({
   const setQuery = setInnerQuery
   const activeQuery = controlledQuery ? query : innerQuery
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance)
+  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
 
   // Sizes owns two families (heights + selector glyphs). The primitive table
   // already splits them; semantics used to hand LayoutSemantics only `size`,
@@ -315,8 +319,8 @@ export default function LayoutSemantics({
               })}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${family}/${group}/${previewTheme}/${previewAppearance}`} scope={group}>
-            {preview}
+          <VariablesPreviewPane watch={`${family}/${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
+            {preview ? <PlatformBoard t={previewTokens} fit="fill">{preview}</PlatformBoard> : preview}
           </VariablesPreviewPane>
           </div>
         </div>

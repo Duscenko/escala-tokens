@@ -1,16 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { radiusRoleOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
+import { artefactSourceWidth } from './DeviceFrame'
 import type { Artefact } from './types'
-
-/**
- * The width the artefact is rendered at BEFORE it's photographed down to
- * `targetWidth` — a fixed reference (a real phone width), independent of
- * whatever the panel happens to measure today. That's what makes the
- * thumbnail read as "a phone, shrunk" at any panel width, rather than
- * something whose proportions shift with the aside.
- */
-const SOURCE_WIDTH = 375
 
 /**
  * One compact card in the carousel — the SAME artefact `DeviceFrame` renders
@@ -18,11 +10,12 @@ const SOURCE_WIDTH = 375
  * than re-flowed. `DeviceFrame`'s own doc comment has the full case for why
  * that distinction matters; this is the one caller that takes it.
  *
- * The scale factor is fixed (`targetWidth / SOURCE_WIDTH`); what's NOT fixed
- * is the artefact's height — it depends on live tokens (type scale, spacing,
- * how many chars a hex value takes), so it's measured with a `ResizeObserver`
- * rather than assumed. Until that first measurement lands the card renders at
- * 0 opacity instead of a guessed height, so nothing ever shows an empty or
+ * The scale factor is `targetWidth / artefactSourceWidth` — mobile photographs
+ * a phone, desktop photographs the grid container. What's NOT fixed is the
+ * artefact's height — it depends on live tokens (type scale, spacing, how many
+ * chars a hex value takes), so it's measured with a `ResizeObserver` rather
+ * than assumed. Until that first measurement lands the card renders at 0
+ * opacity instead of a guessed height, so nothing ever shows an empty or
  * clipped frame while it settles.
  */
 export function ScaledArtefactCard({
@@ -36,7 +29,8 @@ export function ScaledArtefactCard({
 }) {
   const measureRef = useRef<HTMLDivElement>(null)
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null)
-  const scale = targetWidth / SOURCE_WIDTH
+  const sourceWidth = artefactSourceWidth(t)
+  const scale = targetWidth / sourceWidth
   // The wrapper only exists to CROP the phantom overflow of the unscaled inner
   // div (transform doesn't shrink layout). Its clip must match the artefact
   // frame's OWN corner — the same `radius.container` role `DeviceFrame` resolves
@@ -45,6 +39,7 @@ export function ScaledArtefactCard({
   const frameRadius = (parseFloat(radiusRoleOf(t, 'container', '16px')) || 0) * scale
 
   useLayoutEffect(() => {
+    setNaturalHeight(null)
     const el = measureRef.current
     if (!el) return
     const ro = new ResizeObserver((entries) => {
@@ -53,7 +48,7 @@ export function ScaledArtefactCard({
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [sourceWidth])
 
   return (
     <div
@@ -65,15 +60,15 @@ export function ScaledArtefactCard({
         borderRadius: frameRadius,
       }}
     >
-      {/* The measured element renders at SOURCE_WIDTH — its true, unscaled
-          layout — and the transform shrinks the whole thing visually without
-          touching that layout. The outer frame's fixed height + `overflow:
-          hidden` is what turns "shrunk but still SOURCE_WIDTH tall in the
-          document" into "a card exactly `targetWidth × naturalHeight*scale`". */}
+      {/* The measured element renders at the platform's true layout width —
+          and the transform shrinks the whole thing visually without touching
+          that layout. The outer frame's fixed height + `overflow: hidden` is
+          what turns "shrunk but still source-width tall in the document" into
+          "a card exactly `targetWidth × naturalHeight*scale`". */}
       <div
         ref={measureRef}
         aria-hidden="true"
-        style={{ width: SOURCE_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+        style={{ width: sourceWidth, transform: `scale(${scale})`, transformOrigin: 'top left' }}
         className="pointer-events-none"
       >
         {artefact.render({ t, compact: true })}

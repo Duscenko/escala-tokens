@@ -10,6 +10,7 @@
 
 import type { SemanticArchitecture } from '../../lib/semanticArchitectures'
 import type { PhosphorWeight } from '../../lib/phosphorIcons'
+import type { GridFrameModes, GridViewport } from '../../lib/layoutTokens'
 
 export interface PreviewTokens {
   surface: string // light canvas the buttons sit on (bg-primary ‖ #fff)
@@ -88,7 +89,9 @@ export interface PreviewTokens {
   selectorRoles?: Record<string, string>
   strokeRoles?: Record<string, string>
   breakpointRoles?: Record<string, string>
-  gridFrame?: { desktop: { columns: string; gutter: string; margin: string; container: string }; mobile: { columns: string; gutter: string; margin: string; container: string } }
+  /** Workspace platform the preview is resolving Type / Grid recipes against. */
+  previewPlatform?: GridViewport
+  gridFrame?: GridFrameModes
   // Elevation ramp from Foundations · Shadow (xs–2xl CSS box-shadows).
   shadows?: Record<string, string>
   // Layout grid from Foundations · Grid — `columns`/`gutter`/`margin`/

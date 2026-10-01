@@ -1,6 +1,7 @@
 import Step4_Typography from './Step4_Typography'
 import TypeSemantics, { type TypeFocus } from './TypeSemantics'
 import type { ThemeAppearance } from '../../lib/themeModes'
+import type { GridViewport } from '../../lib/layoutTokens'
 
 export type TypeTab = 'primary' | 'semantics'
 
@@ -13,6 +14,7 @@ export default function TypeHub({
   railCollapsed = false,
   previewTheme,
   previewAppearance,
+  previewPlatform,
   query,
 }: {
   mode: TypeTab
@@ -21,6 +23,7 @@ export default function TypeHub({
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
+  previewPlatform?: GridViewport
   query?: string
 }) {
   const heading = <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{mode === 'semantics' ? 'Type semantics' : 'Typography primitives'}</span>
@@ -33,7 +36,7 @@ export default function TypeHub({
         </div>
       ) : (
         <div className="flex-1 min-h-0">
-          <TypeSemantics tabBar={heading} query={query} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} />
+          <TypeSemantics tabBar={heading} query={query} onFocusChange={onFocusChange} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
         </div>
       )}
     </div>

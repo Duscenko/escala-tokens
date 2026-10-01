@@ -5,7 +5,7 @@
 // Naming (CSS / Figma / JSON), one convention:
 //   primitive  `{family}-{step}`     --radius-2xl, --spacing-5, --breakpoint-md
 //   semantic   `{family}-{intent}`   --radius-action: var(--radius-2xl)
-//                                   --breakpoint-mobile: calc(var(--breakpoint-md) - 1px)
+//                                   --breakpoint-mobile: calc(var(--breakpoint-sm) - 1px)
 // Family prefixes stay identical so a consumer never has to guess `space-` vs
 // `spacing-`. Steps are the public scale names (xs/sm/md… and 0/1/2/3/4/5…).
 
@@ -439,17 +439,22 @@ export function extractBreakpoints(grid: Record<string, string> | undefined): Re
   return out
 }
 
-// ── Grid frame (desktop / mobile recipes) ───────────────────────────────────
+// ── Grid frame (desktop / tablet / mobile recipes) ──────────────────────────
 // Columns are counts on a 12-col system. Gutter/margin alias spacing steps.
 // Container aliases a breakpoint step, or `none` (no max-width).
+//
+// Three WINDOW recetas, not OS platforms: compact phone · tablet · desktop.
+// Type roles stay desktop/mobile (tablet reads the desktop aliases). Grid
+// is the axis that actually needs the middle recipe (4 / 8 / 12 columns).
+
+export const GRID_VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
+export type GridViewport = (typeof GRID_VIEWPORTS)[number]
 
 export const GRID_COLUMN_STEPS = ['2', '4', '8', '12'] as const
 export type GridColumnStep = (typeof GRID_COLUMN_STEPS)[number]
 
 export const GRID_CONTAINER_STEPS = ['none', ...BREAKPOINT_STEPS] as const
 export type GridContainerStep = (typeof GRID_CONTAINER_STEPS)[number]
-
-export type GridViewport = 'desktop' | 'mobile'
 
 export interface GridFrameAlias {
   columns: string
@@ -467,9 +472,11 @@ export const GRID_FRAME_FIELDS: { key: keyof GridFrameAlias; label: string; desc
   { key: 'container', label: 'Container', description: 'Max content width — a breakpoint step, or none.' },
 ]
 
-/** Desktop matches the previous global grid. Mobile is the missing 4-col recipe. */
+/** Desktop matches the previous global grid. Tablet is the 8-col middle
+ *  recipe. Mobile is the 4-col phone. */
 export const GRID_FRAME_STANDARD: GridFrameModes = {
   desktop: { columns: '12', gutter: '6', margin: '8', container: 'xl' },
+  tablet: { columns: '8', gutter: '6', margin: '6', container: 'none' },
   mobile: { columns: '4', gutter: '4', margin: '4', container: 'none' },
 }
 
@@ -483,6 +490,7 @@ export function mergeGridFrame(stored?: GridFrameModes | null): GridFrameModes {
   }
   return {
     desktop: one(stored?.desktop, GRID_FRAME_STANDARD.desktop),
+    tablet: one(stored?.tablet, GRID_FRAME_STANDARD.tablet),
     mobile: one(stored?.mobile, GRID_FRAME_STANDARD.mobile),
   }
 }
@@ -510,6 +518,28 @@ export function resolveGridFrame(
     margin: spacing[alias.margin] || SPACING_STANDARD[alias.margin as SpacingStep] || '32px',
     container,
   }
+}
+
+/** Type roles only have desktop/mobile maps. Tablet uses the desktop aliases
+ *  so body/control stay identity on the 8-col recipe too. */
+export function typeViewportOf(platform: GridViewport | undefined): 'desktop' | 'mobile' {
+  return platform === 'mobile' ? 'mobile' : 'desktop'
+}
+
+/** CSS px a desktop artefact frame lays out at — the grid container, or the
+ *  desktop breakpoint when the container is `none`. Callers must not invent a
+ *  laptop width; this is the same pair Grid Preview already names. */
+export function desktopArtefactWidthPx(
+  frame: ResolvedGridFrame,
+  breakpoints: Record<string, string>,
+  desktopStep = 'md',
+): number {
+  const container = parseFloat(frame.container)
+  if (Number.isFinite(container) && container > 0) return container
+  const min = parseFloat(
+    breakpoints[desktopStep] || BREAKPOINT_STANDARD[desktopStep as BreakpointStep] || '768',
+  )
+  return Number.isFinite(min) && min > 0 ? min : 768
 }
 
 /** Store `grid` object: desktop-resolved frame + breakpoint primitives. */
@@ -771,8 +801,9 @@ export const STROKE_ROLES: LayoutRole[] = [
 ]
 
 export const BREAKPOINT_ROLES: LayoutRole[] = [
-  { key: 'desktop', label: 'Desktop', description: 'Min-width where desktop type and 12-col grid start.', group: 'viewport', primitive: 'md' },
-  { key: 'mobile', label: 'Mobile', description: 'Max-width cut: calc(primitive − 1px). Default type and 4-col grid.', group: 'viewport', primitive: 'md' },
+  { key: 'desktop', label: 'Desktop', description: 'Min-width where the 12-col grid starts.', group: 'viewport', primitive: 'md' },
+  { key: 'tablet', label: 'Tablet', description: 'Min-width where the 8-col grid starts.', group: 'viewport', primitive: 'sm' },
+  { key: 'mobile', label: 'Mobile', description: 'Max-width of the 4-col grid (one step below Tablet).', group: 'viewport', primitive: 'sm' },
 ]
 
 export const LAYOUT_ROLES: Record<LayoutFamily, LayoutRole[]> = {
@@ -863,6 +894,9 @@ export function layoutRoleCssVars(
     if (family === 'breakpoint' && role.key === 'mobile') {
       return `--breakpoint-mobile: calc(var(--breakpoint-${map.mobile}) - 1px);`
     }
+    if (family === 'breakpoint' && role.key === 'tablet') {
+      return `--breakpoint-tablet: var(--breakpoint-${map.tablet});`
+    }
     if (family === 'breakpoint' && role.key === 'desktop') {
       return `--breakpoint-desktop: var(--breakpoint-${map.desktop});`
     }
@@ -888,36 +922,78 @@ export function allLayoutRoleCssVars(roles: {
   ]
 }
 
+function breakpointStepPx(
+  roles: Record<string, string> | undefined,
+  breakpoints: Record<string, string>,
+  key: string,
+  fallback: string,
+): number {
+  const map = mergeLayoutRoles('breakpoint', roles)
+  const step = map[key] ?? fallback
+  return parseFloat(breakpoints[step] || BREAKPOINT_STANDARD[step as BreakpointStep] || '768')
+}
+
+/** Resolved `max-width` for the tablet (8-col) `@media` — one px below desktop. */
+export function breakpointTabletMax(
+  roles: Record<string, string> | undefined,
+  breakpoints: Record<string, string>,
+): string {
+  const min = breakpointStepPx(roles, breakpoints, 'desktop', 'md')
+  return `${Math.max(0, Math.round(min) - 1)}px`
+}
+
 /** Resolved max-width for `@media` — custom properties are not valid there. */
 export function breakpointMobileMax(
   roles: Record<string, string> | undefined,
   breakpoints: Record<string, string>,
 ): string {
-  const step = mergeLayoutRoles('breakpoint', roles).mobile
-  const min = parseFloat(breakpoints[step] || BREAKPOINT_STANDARD[step as BreakpointStep] || '768')
+  const min = breakpointStepPx(roles, breakpoints, 'mobile', 'sm')
   return `${Math.max(0, Math.round(min) - 1)}px`
 }
 
-export function gridFrameRootCss(frame?: GridFrameModes | null): string[] {
-  const d = mergeGridFrame(frame).desktop
-  const container = d.container === 'none' ? 'none' : `var(--breakpoint-${d.container})`
+function gridFrameAliasCss(alias: GridFrameAlias): string[] {
+  const container = alias.container === 'none' ? 'none' : `var(--breakpoint-${alias.container})`
   return [
-    `--grid-columns: ${d.columns};`,
-    `--grid-gutter: var(--spacing-${d.gutter});`,
-    `--grid-margin: var(--spacing-${d.margin});`,
+    `--grid-columns: ${alias.columns};`,
+    `--grid-gutter: var(--spacing-${alias.gutter});`,
+    `--grid-margin: var(--spacing-${alias.margin});`,
     `--grid-container: ${container};`,
   ]
 }
 
+export function gridFrameRootCss(frame?: GridFrameModes | null): string[] {
+  return gridFrameAliasCss(mergeGridFrame(frame).desktop)
+}
+
+export function gridFrameTabletCss(frame?: GridFrameModes | null): string[] {
+  return gridFrameAliasCss(mergeGridFrame(frame).tablet)
+}
+
 export function gridFrameMobileCss(frame?: GridFrameModes | null): string[] {
-  const m = mergeGridFrame(frame).mobile
-  const container = m.container === 'none' ? 'none' : `var(--breakpoint-${m.container})`
+  return gridFrameAliasCss(mergeGridFrame(frame).mobile)
+}
+
+/** Nested tablet then mobile overrides. Desktop lives on `:root`. */
+export function gridFrameMediaCss(
+  roles: Record<string, string> | undefined,
+  grid: Record<string, string> | undefined,
+  frame?: GridFrameModes | null,
+): string {
+  const bps = extractBreakpoints(grid)
+  const indent = (lines: string[]) => lines.map((l) => `    ${l}`).join('\n')
   return [
-    `--grid-columns: ${m.columns};`,
-    `--grid-gutter: var(--spacing-${m.gutter});`,
-    `--grid-margin: var(--spacing-${m.margin});`,
-    `--grid-container: ${container};`,
-  ]
+    `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
+    '  :root {',
+    indent(gridFrameTabletCss(frame)),
+    '  }',
+    '}',
+    '',
+    `@media (max-width: ${breakpointMobileMax(roles, bps)}) {`,
+    '  :root {',
+    indent(gridFrameMobileCss(frame)),
+    '  }',
+    '}',
+  ].join('\n')
 }
 
 /** Nearest spacing step for a raw px (migrations, OTP recipes). */

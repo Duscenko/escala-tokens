@@ -18,6 +18,8 @@ export default function FoundationWorkbench({
   activeCollection,
   collections,
   onCollectionChange,
+  showPlatform = false,
+  platformGuide,
   children,
 }: {
   railCollapsed?: boolean
@@ -31,6 +33,8 @@ export default function FoundationWorkbench({
   activeCollection: VariableCollectionKey
   collections: VariableCollectionItem[]
   onCollectionChange: (collection: VariableCollectionKey) => void
+  showPlatform?: boolean
+  platformGuide?: 'type' | 'grid' | 'spacing'
   children: ReactNode
 }) {
   const embeddedRailHeader = (
@@ -48,7 +52,7 @@ export default function FoundationWorkbench({
   return (
     <div className="h-full flex flex-col min-h-0">
       {gutter ? (
-        <VariableCollectionProvider active={activeCollection} collections={collections} onChange={onCollectionChange} header={embeddedRailHeader}>
+        <VariableCollectionProvider active={activeCollection} collections={collections} onChange={onCollectionChange} header={embeddedRailHeader} showPlatform={showPlatform} platformGuide={platformGuide}>
           <div className="flex flex-1 min-h-0 items-stretch">
             <VariableCollectionRail collapsed={railCollapsed}>
               {!railCollapsed && <RailNoGroups />}
@@ -60,7 +64,7 @@ export default function FoundationWorkbench({
         </VariableCollectionProvider>
       ) : (
         <div className="flex-1 min-h-0 bg-app">
-          <VariableCollectionProvider active={activeCollection} collections={collections} onChange={onCollectionChange} header={embeddedRailHeader}>
+          <VariableCollectionProvider active={activeCollection} collections={collections} onChange={onCollectionChange} header={embeddedRailHeader} showPlatform={showPlatform} platformGuide={platformGuide}>
             {children}
           </VariableCollectionProvider>
         </div>
