@@ -1881,13 +1881,15 @@ export default function Configurator() {
                       not in the Preview-only icon rail. `tab-bar` placement is
                       exactly the icon rail's width, so its border-r continues
                       the rail's divider up through this row. */}
-                  {themeWorkspaceRailVisible && (
-                    <ThemesLibraryToggle
-                      open={themeWorkspaceTab === 'code'}
-                      onToggle={() => (themeWorkspaceTab === 'code' ? changeThemeWorkspaceTab('preview') : openGetCodePage())}
-                      placement="tab-bar"
-                    />
-                  )}
+                  {/* Always mounted on the Themes canvas — also on the Figma /
+                      GitHub pages, where the icon rail is hidden. It is the
+                      library's door, not part of the rail, so it must not
+                      vanish with it. */}
+                  <ThemesLibraryToggle
+                    open={themeWorkspaceTab === 'code'}
+                    onToggle={() => (themeWorkspaceTab === 'code' ? changeThemeWorkspaceTab('preview') : openGetCodePage())}
+                    placement="tab-bar"
+                  />
                   <div className="flex h-full flex-shrink-0 items-center gap-2 pl-2.5">
                     <ThemeSwitcher
                       previewTheme={previewTheme}

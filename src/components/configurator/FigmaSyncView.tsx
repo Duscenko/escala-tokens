@@ -413,10 +413,10 @@ export default function FigmaSyncView({
                   return (
                     <div
                       key={key}
-                      className={`flex min-w-0 items-center gap-2.5 border px-3 ${SYNC_CONTROL} ${
-                        selected
-                          ? 'border-fg bg-fg/8 text-fg'
-                          : 'border-line text-fg-muted'
+                      className={`flex min-w-0 items-center gap-2.5 border border-line px-3 ${SYNC_CONTROL} ${
+                        // Selection is the fill + the checkbox. A full-strength
+                        // `border-fg` outline on top read as too loud.
+                        selected ? 'bg-fg/8 text-fg' : 'text-fg-muted'
                       }`}
                     >
                       <button
