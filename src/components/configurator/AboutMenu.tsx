@@ -264,6 +264,11 @@ export function useAboutSections(): {
           <span className="text-fg">{t("What we measure:")}</span>{' '}
           {t("anonymous, cookieless usage statistics through Vercel Web Analytics \u2014 pages visited, country, device and browser type, the referring site, and counts of actions such as exports or Figma syncs. No cookies, no advertising, no personal identifiers, nothing you type. Published tokens are readable by anyone who has the system's ID, so treat that ID like a link you share. Our host keeps short-lived request logs (including IP addresses) for security and abuse prevention.")}
         </P>
+        <P>
+          <a href="/privacy" className="text-fg underline underline-offset-2">{t('Read the privacy policy')}</a>
+          {' · '}
+          <a href="/legal" className="text-fg underline underline-offset-2">{t('Legal notice')}</a>
+        </P>
         {/* Material Design and Apple HIG were dropped from this disclaimer
             with the architectures that referenced them — a trademark notice
             should name what the project actually leans on, and after v57 that

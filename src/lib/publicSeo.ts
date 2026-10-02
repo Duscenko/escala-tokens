@@ -208,7 +208,7 @@ export function composeTitle(source: Pick<HeadSource, 'title' | 'titleIsFull'>):
 
 /** Paths a crawler should fetch. No `project`, no `section`, no `/api/`. */
 export function sitemapPaths(): string[] {
-  const paths = ['/', '/about', '/components']
+  const paths = ['/', '/about', '/legal', '/privacy', '/components']
   for (const component of COMPONENTS) paths.push(`/components/${component.key}`)
   paths.push('/docs', '/docs/figma', '/docs/mcp', '/docs/changelog', '/docs/faq', '/docs/system')
   for (const doc of FOUNDATION_DOCS) paths.push(`/docs/${doc.key}`)
