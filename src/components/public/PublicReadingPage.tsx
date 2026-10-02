@@ -51,25 +51,10 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
 
   return (
     <div className="min-h-screen bg-app text-fg flex flex-col">
-      <header className="flex h-[52px] flex-shrink-0 items-center gap-4 border-b border-line px-4">
-        <a href="/" className="flex items-center gap-2 text-fg">
-          <BrandMark size={28} />
-          <span className="text-ui font-medium">Escala Tokens</span>
-        </a>
-        <nav aria-label={t('Navigation menu')} className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto text-body text-fg-muted">
-          <a href="/about" className="hover:text-fg">{t('About')}</a>
-          <a href="/components" className="hover:text-fg" aria-current={page.kind === 'components-index' || page.kind === 'component' ? 'page' : undefined}>{t('Components')}</a>
-          <a href="/docs" className="hover:text-fg" aria-current={page.kind === 'doc' ? 'page' : undefined}>{t('Docs')}</a>
-          <a href="/docs/mcp" className="hover:text-fg" aria-current={page.kind === 'doc' && page.docKey === GUIDE_MCP_KEY ? 'page' : undefined}>{t('MCP')}</a>
-          <a href="/docs/figma" className="hover:text-fg" aria-current={page.kind === 'doc' && page.docKey === GUIDE_FIGMA_KEY ? 'page' : undefined}>{t('Use in Figma')}</a>
-        </nav>
-        <a
-          href={openEditor}
-          className="ml-auto flex-shrink-0 text-body font-medium text-fg border border-line-strong rounded-lg px-3 py-1.5 hover:bg-elevated/60"
-        >
-          {t('Open the configurator')}
-        </a>
-      </header>
+      <PublicHeader
+        current={page.kind === 'doc' ? (page.docKey === GUIDE_MCP_KEY ? 'mcp' : page.docKey === GUIDE_FIGMA_KEY ? 'figma' : 'docs') : 'components'}
+        openEditor={openEditor}
+      />
       <div className="flex-1 min-h-0 h-[calc(100dvh-52px)]">
         {page.kind === 'components-index' ? (
           <ComponentsIndex />
@@ -102,6 +87,40 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
         )}
       </div>
     </div>
+  )
+}
+
+type PublicNavKey = 'about' | 'components' | 'docs' | 'mcp' | 'figma' | 'legal'
+
+/** The one header every crawlable reading page shares — Components, Docs,
+ *  and the legal pages — so they read as one site, not three. */
+export function PublicHeader({ current, openEditor = '/' }: { current?: PublicNavKey; openEditor?: string }) {
+  const { t } = useI18n()
+  const links: { key: PublicNavKey; href: string; label: string }[] = [
+    { key: 'about', href: '/about', label: t('About') },
+    { key: 'components', href: '/components', label: t('Components') },
+    { key: 'docs', href: '/docs', label: t('Docs') },
+    { key: 'mcp', href: '/docs/mcp', label: t('MCP') },
+    { key: 'figma', href: '/docs/figma', label: t('Use in Figma') },
+  ]
+  return (
+    <header className="flex h-[52px] flex-shrink-0 items-center gap-4 border-b border-line px-4">
+      <a href="/" className="flex items-center gap-2 text-fg">
+        <BrandMark size={28} />
+        <span className="text-ui font-medium">Escala Tokens</span>
+      </a>
+      <nav aria-label={t('Navigation menu')} className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto text-body text-fg-muted">
+        {links.map((l) => (
+          <a key={l.key} href={l.href} className="hover:text-fg aria-[current=page]:text-fg" aria-current={current === l.key ? 'page' : undefined}>{l.label}</a>
+        ))}
+      </nav>
+      <a
+        href={openEditor}
+        className="ml-auto flex-shrink-0 text-body font-medium text-fg border border-line-strong rounded-lg px-3 py-1.5 hover:bg-elevated/60"
+      >
+        {t('Open the configurator')}
+      </a>
+    </header>
   )
 }
 

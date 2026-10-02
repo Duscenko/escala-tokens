@@ -13,9 +13,11 @@ export const LEGAL = {
   siret: null as string | null,
   /** Postal address — null until a professional activity (use a domiciliation). */
   address: null as string | null,
-  /** Legal contact. Its own value (not About's CONTACT) so it can move to a
-   *  dedicated alias like legal@escalatokens.com without touching About. */
-  email: 'duscenko@gmail.com',
+  /** How people reach the publisher. Deliberately NOT a personal email: a
+   *  public legal page is scraped for addresses. If an email is ever needed
+   *  (RGPD requests are easier by mail), use a forwarding alias on the
+   *  escalatokens.com domain, never the personal inbox. */
+  contact: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/cesar-durango/' },
   host: {
     name: 'Vercel Inc.',
     address: '440 N Barranca Ave #4133, Covina, CA 91723, United States',

@@ -46,7 +46,6 @@ export type AboutSection = 'platform' | 'tokens' | 'plugin' | 'docs' | 'legal'
  *  target for Docs' FAQ "report a bug" CTA (a prefilled mail draft), not shown
  *  as a raw address anywhere. Any of these set to null just drops its row. */
 export const CONTACT = {
-  email: 'duscenko@gmail.com',
   site: 'duscenko.com',
   linkedin: 'https://www.linkedin.com/in/cesar-durango/' as string | null,
   x: 'https://x.com/duscenko' as string | null,
