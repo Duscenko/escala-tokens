@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { put, head } from '@vercel/blob'
+import { put } from '@vercel/blob'
 import {
   claimBlobKey,
   originAllowed,
@@ -9,6 +9,7 @@ import {
   PROJECT_REQUIRED,
   tokenBlobKey,
 } from '../src/lib/publishTrust.js'
+import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 // Vercel compiles this to ESM (`package.json` "type": "module"). Node then
 // loads `/var/task/api/tokens.js` and requires a `.js` specifier for every
@@ -22,11 +23,13 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-function slugifyProject(raw: unknown): string | null {
-  if (typeof raw !== 'string') return null
-  const slug = raw.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-  return slug || null
-}
+/** A full system serialises to a few hundred KB; anything far past that is
+ *  not a token payload. */
+const MAX_BODY_BYTES = 2 * 1024 * 1024
+/** Plugin live sync polls at most every 10s (6/min); leave room for "Update now". */
+const GET_LIMIT_PER_MIN = 60
+// Auto-sync republishes ~1.5s after edits stop, so bursts are real.
+const POST_LIMIT_PER_MIN = 60
 
 function readProject(req: VercelRequest): string | null {
   const q = req.query?.project
@@ -52,29 +55,26 @@ function requestOrigins(req: VercelRequest): string[] {
 
 type ClaimRecord = { hash: string }
 
+/** THROWS when the claim can't be read. It used to return `null` on any
+ *  error, and `null` means "unclaimed" — so a Blob outage (or an exhausted
+ *  quota) let anyone overwrite any system and take its slug. */
 async function readClaim(project: string): Promise<ClaimRecord | null> {
-  try {
-    const url = (await head(claimBlobKey(project))).url
-    if (!url) return null
-    const raw = await fetch(url)
-    if (!raw.ok) return null
-    const parsed = (await raw.json()) as { hash?: unknown }
-    return typeof parsed.hash === 'string' ? { hash: parsed.hash } : null
-  } catch {
-    return null
-  }
+  const parsed = await readJsonBlob<{ hash?: unknown }>(claimBlobKey(project), { fresh: true })
+  return parsed && typeof parsed.hash === 'string' ? { hash: parsed.hash } : null
 }
 
 async function writeClaim(project: string, hash: string): Promise<void> {
   // Same public put as the token payload. The stored value is a SHA-256 hash,
   // not the claim itself — private Blob access was crashing this store and
   // turning a successful publish into HTTP 500 (plugin + Figma sync UI).
-  await put(claimBlobKey(project), JSON.stringify({ hash } satisfies ClaimRecord), {
+  const key = claimBlobKey(project)
+  const out = await put(key, JSON.stringify({ hash } satisfies ClaimRecord), {
     access: 'public',
     addRandomSuffix: false,
     contentType: 'application/json',
     allowOverwrite: true,
   })
+  learnBlobBase(out.url, key)
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -102,17 +102,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: PROJECT_REQUIRED })
     }
 
-    try {
-      const url = (await head(tokenBlobKey(project))).url
-      if (!url) return res.status(404).json({ error: 'No tokens published yet.' })
-      const raw = await fetch(url)
-      const data = await raw.json()
-      res.setHeader('Content-Type', 'application/json')
+    if (rateLimited(clientIp(req.headers), GET_LIMIT_PER_MIN)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+
+    const data = await readJsonBlob<unknown>(tokenBlobKey(project))
+    if (data === null) {
       res.setHeader('Cache-Control', 'no-store')
-      return res.status(200).json(data)
-    } catch {
       return res.status(404).json({ error: 'No tokens published yet.' })
     }
+    res.setHeader('Content-Type', 'application/json')
+    // Short edge cache: many plugins polling one system collapse into one
+    // function run per window. 10s is the plugin's fastest interval, so a
+    // fresh publish is never staler than one poll.
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=30')
+    return res.status(200).json(data)
   }
 
   // ── POST /api/tokens[?project=<id>] ──────────────────────────────────────────
@@ -121,8 +126,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Publish only from this app.' })
     }
 
+    if (rateLimited(clientIp(req.headers), POST_LIMIT_PER_MIN)) {
+      res.setHeader('Retry-After', '60')
+      return res.status(429).json({ error: 'Too many requests.' })
+    }
+
     const body = req.body
-    if (!body || typeof body !== 'object') {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return res.status(400).json({ error: 'Invalid body — expected JSON object.' })
     }
     if (!(body as Record<string, unknown>).colors) {
@@ -132,7 +142,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: PROJECT_REQUIRED })
     }
 
-    const existing = await readClaim(project)
+    const key = tokenBlobKey(project)
+    const json = JSON.stringify(body)
+    if (json.length > MAX_BODY_BYTES) {
+      return res.status(413).json({ error: 'Payload too large.' })
+    }
+
+    let existing: ClaimRecord | null
+    try {
+      existing = await readClaim(project)
+    } catch {
+      res.setHeader('Retry-After', '30')
+      return res.status(503).json({ error: 'Could not verify the publish claim. Try again shortly.' })
+    }
     const presented = parseBearer(req.headers.authorization)
 
     if (existing) {
@@ -143,14 +165,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const key = tokenBlobKey(project)
-    const json = JSON.stringify(body)
-    await put(key, json, {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'application/json',
-      allowOverwrite: true,
-    })
+    let stored
+    try {
+      stored = await put(key, json, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'application/json',
+        allowOverwrite: true,
+      })
+    } catch {
+      return res.status(503).json({ error: 'Storage unavailable. Try again shortly.' })
+    }
+    learnBlobBase(stored.url, key)
+    forgetBlob(key)
 
     let claim: string | undefined
     if (!existing) {

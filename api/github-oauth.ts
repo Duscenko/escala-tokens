@@ -29,12 +29,26 @@ function html(body: string): string {
 }
 
 /** `window.opener.postMessage(...)` + `window.close()`, inlined as the page's
- *  only script. `payload` is JSON-serialised server-side and re-parsed as a
- *  JS object literal client-side — safe here (no user-controlled string
- *  reaches this unescaped except `code`/`state`, which only ever flow into
- *  `JSON.stringify`, never into the HTML around it). */
+ *  only script. `payload` carries query params (`error`, `state`) straight
+ *  from the URL, and `JSON.stringify` does NOT escape `<` — so a raw
+ *  `?error=</script><script>…` closed this script tag and ran attacker code on
+ *  our origin (reflected XSS). Escaping `<`, `>`, `&` and the two JS line
+ *  separators as `\uXXXX` keeps the literal identical once parsed while making
+ *  it impossible to break out of the `<script>` element. */
+const LINE_SEP = new RegExp(String.fromCharCode(0x2028), 'g')
+const PARA_SEP = new RegExp(String.fromCharCode(0x2029), 'g')
+
+function scriptSafeJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(LINE_SEP, '\\u2028')
+    .replace(PARA_SEP, '\\u2029')
+}
+
 function closeWith(payload: Record<string, string>): string {
-  const data = JSON.stringify({ source: MESSAGE_SOURCE, ...payload })
+  const data = scriptSafeJson({ source: MESSAGE_SOURCE, ...payload })
   return html(
     `Connecting to GitHub…</p><script>` +
     `window.opener && window.opener.postMessage(${data}, window.location.origin);` +
