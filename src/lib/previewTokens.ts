@@ -63,7 +63,7 @@ export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   // can name `surface.input`.
   inputSurface: 'surface.input',
   // Persistent selection fill — a selected tab, a selected row. Distinct
-  // from the ghost-hover wash (`action.ghost.brand.hover`, one step lighter)
+  // from the ghost-hover wash (`action.ghost.hover`, a neutral wash)
   // and from `soft(brandSolid)`, which is a specimen-local tint the inspector
   // cannot name. TabMenu reads THIS field so Inspect tokens can report
   // `surface.selected` instead of dropping the pill.
@@ -72,26 +72,24 @@ export const CATEGORICAL_FIELD_ROLE: Record<string, string> = {
   linkHover: 'content.link.hover',
   borderHover: 'border.control-hover',
   borderCritical: 'status.critical.border-strong',
-  ghostNeutralHover: 'action.ghost.neutral.hover',
-  ghostNeutralPressed: 'action.ghost.neutral.pressed',
-  ghostBrandHover: 'action.ghost.brand.hover',
-  ghostBrandPressed: 'action.ghost.brand.pressed',
+  ghostNeutralHover: 'action.ghost.hover',
+  ghostNeutralPressed: 'action.ghost.pressed',
   brandSolid: 'action.primary.default',
   onBrand: 'content.on-action',
   brandText: 'content.accent',
   neutralText: 'content.primary',
   fgMuted: 'content.secondary',
   placeholderText: 'content.subtle',
-  disabledBg: 'action.disabled',
+  disabledBg: 'action.disabled.default',
   disabledText: 'content.disabled',
   // `PreviewTokens.border` is the component stroke (inputs, selects), so
   // it takes the CONTROL BOUNDARY — the role carrying WCAG 1.4.11 + APCA
-  // Lc 45. That role is `border.control` since phase 1 of
+  // Lc 45. That role is `border.strong` (formerly `border.control`) since phase 1 of
   // design-plans/foundations-geometry-and-strokes.md split the neutral
   // strokes by JOB; it was `border.default`, and before that
   // `border.strong`. The value is unchanged across all three renames —
   // only the name moved, so nothing here restyles.
-  border: 'border.control',
+  border: 'border.strong',
   // `PreviewTokens.borderDefault` is the DECORATIVE outline (card edges,
   // panel boundaries). It STAYS on `border.subtle` even though phase 1
   // added a middle rung that is arguably the better match (tone 4, ΔL

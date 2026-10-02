@@ -378,16 +378,15 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const primaryHover = s('background-brand-solid-hover', ['action.primary.hover', 'accent.solid'], t.brandSolid)
   const primaryPressed = s('background-brand-solid-hover', ['action.primary.pressed', 'accent.solid'], t.brandSolid)
   const neutral = s('background-secondary', ['action.secondary.default', 'action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
-  const secondary = s('background-brand-primary', ['action.secondary.accent', 'action.secondary', 'accent.muted'], t.neutralFill)
-  const disabled = s('action-disabled', ['action.disabled', 'background.muted', 'muted.fill'], t.disabledBg)
+  const secondary = s('background-brand-primary', ['surface.selected', 'accent.muted'], t.neutralFill)
+  const disabled = s('action-disabled', ['action.disabled.default', 'background.muted', 'muted.fill'], t.disabledBg)
   // No flat-catalogue equivalent — these only exist in Categorical (see
   // design-plans/alpha-primitives.md), so the flatKey is a label only, never
   // actually looked up while `t.archTokens` is populated (always, in
   // practice — see CLAUDE.md's About-tab/architecture notes). Shown one per
   // INTENT rather than all six: hover carries the colour difference that
   // matters here, and six near-identical washes would read as noise.
-  const ghostNeutral = s('action-ghost-neutral', ['action.ghost.neutral.hover'], t.neutralFill)
-  const ghostBrand = s('action-ghost-brand', ['action.ghost.brand.hover'], t.neutralFill)
+  const ghostNeutral = s('action-ghost-neutral', ['action.ghost.hover'], t.neutralFill)
   // The danger ghost wash IS the error banner tint — no separate `action` role
   // any more (audit F2/F3). Falls back to the old key for a pre-migration payload.
   const ghostDanger = s('action-ghost-danger', ['status.critical.surface', 'action.ghost.danger.hover'], t.neutralFill)
@@ -425,11 +424,8 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
           <Row t={t} slot={primary} onEdit={onEditToken}>
             <Btn bg={primary.css} fg={onAction.css}>Primary</Btn>
           </Row>
-          <Row t={t} slot={secondary} onEdit={onEditToken}>
-            <Btn bg={secondary.css} fg={labelInk.css}>Secondary</Btn>
-          </Row>
           <Row t={t} slot={neutral} onEdit={onEditToken}>
-            <Btn bg={neutral.css} fg={labelInk.css}>Neutral</Btn>
+            <Btn bg={neutral.css} fg={labelInk.css}>Secondary</Btn>
           </Row>
           <Row t={t} slot={stroke} onEdit={onEditToken}>
             <Btn bg="transparent" fg={labelInk.css} bd={stroke.css}>Outline</Btn>
@@ -439,9 +435,6 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
               intent, all at hover, so the three read as a set. */}
           <Row t={t} slot={ghostNeutral} onEdit={onEditToken}>
             <Btn bg={ghostNeutral.css} fg={labelInk.css}>Ghost neutral</Btn>
-          </Row>
-          <Row t={t} slot={ghostBrand} onEdit={onEditToken}>
-            <Btn bg={ghostBrand.css} fg={labelInk.css}>Ghost brand</Btn>
           </Row>
           <Row t={t} slot={ghostDanger} onEdit={onEditToken}>
             <Btn bg={ghostDanger.css} fg={labelInk.css}>Ghost danger</Btn>
@@ -728,7 +721,7 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   // candidate list so a payload predating the phase-1 split still resolves to
   // the roles that used to carry this job — the value is identical either way,
   // only the name moved.
-  const control = s('border-primary', ['border.control', 'border.default'], t.border || '#d0d5dd')
+  const control = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
   const controlHover = s('border-primary', ['border.control-hover', 'border.strong', 'border.emphasized'], t.border || '#d0d5dd')
   // The DECORATIVE ladder, three ascending rungs. `default` and `strong` mean
   // decoration now; before the split there was only `subtle` here.

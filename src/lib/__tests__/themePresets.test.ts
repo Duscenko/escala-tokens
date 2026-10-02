@@ -57,7 +57,7 @@ function resolve(preset: typeof THEME_STYLE_PRESETS[number]) {
 
 describe('system style presets', () => {
   // The whole reason `ThemeStyleSemantics` exists. A style may soften its
-  // border, but `border.control` is what identifies a text field, so it still
+  // border, but `border.strong` is what identifies a text field, so it still
   // owes WCAG 1.4.11's 3:1 — measured against `surface.input`, NOT the page,
   // because a style that adds an input fill moves the surface the border sits
   // on. That exact mistake shipped once: keeping the page-solved border after
@@ -77,13 +77,13 @@ describe('system style presets', () => {
       const get = resolve(preset)
       for (const mode of ['light', 'dark'] as const) {
         const input = get('surface', 'input', mode)
-        const raw = get('border', 'control', mode)
+        const raw = get('border', 'strong', mode)
         expect(input, `${preset.id} ${mode} surface.input`).toBeTruthy()
-        expect(raw, `${preset.id} ${mode} border.control`).toBeTruthy()
+        expect(raw, `${preset.id} ${mode} border.strong`).toBeTruthy()
         const border = raw.length > 7 ? over(raw, input) : raw
         expect(
           checkContrast(border, input),
-          `${preset.id} · ${mode}: border.control ${raw} on surface.input ${input}`,
+          `${preset.id} · ${mode}: border.strong ${raw} on surface.input ${input}`,
         ).toBeGreaterThanOrEqual(3)
       }
     }
@@ -98,7 +98,7 @@ describe('system style presets', () => {
       if (preset.id === 'neo-brutalism') continue
       const get = resolve(preset)
       const input = get('surface', 'input', 'dark')
-      const raw = get('border', 'control', 'dark')
+      const raw = get('border', 'strong', 'dark')
       const border = raw.length > 7 ? over(raw, input) : raw
       expect(
         okL(border) - okL(input),

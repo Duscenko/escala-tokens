@@ -7,7 +7,7 @@ describe('resolveVariantRoles', () => {
     'action.primary.default': '#22c55e',
     'content.on-action': '#e1e7dc',
     'action.secondary.default': '#1a1a1f',
-    'action.secondary.accent': '#14532d',
+    'surface.selected': '#14532d',
     'content.primary': '#f5f5f5',
     'content.inverse': '#e1e7dc',
     'content.accent': '#86efac',
@@ -214,9 +214,9 @@ describe('pairButtonScopes', () => {
     'action.primary.default': '#22c55e',
     'action.primary.hover': '#16a34a',
     'action.primary.pressed': '#15803d',
-    'action.secondary.accent': '#14532d',
-    'action.ghost.brand.hover': '#22c55e1a',
-    'action.ghost.brand.pressed': '#22c55e33',
+    'surface.selected': '#14532d',
+    'action.ghost.hover': '#ffffff1a',
+    'action.ghost.pressed': '#ffffff33',
     'content.on-action': '#e1e7dc',
     'content.accent': '#86efac',
     'content.primary': '#f5f5f5',
@@ -249,7 +249,7 @@ describe('pairButtonScopes', () => {
     ]
     const matched = rolesForPaints(arch, ['content.accent', 'content.primary', 'action.primary.default'], paints)
     expect(pairButtonScopes(arch, matched, paints).map((r) => r.id)).toEqual([
-      'action.ghost.brand.hover',
+      'action.ghost.hover',
       'content.accent',
     ])
   })
@@ -260,7 +260,7 @@ describe('pairButtonScopes', () => {
       { css: '#86efac', where: 'ink' as const },
     ]
     expect(pairButtonScopes(arch, rolesForPaints(arch, ['content.accent'], paints), paints).map((r) => r.id)).toEqual([
-      'action.ghost.brand.pressed',
+      'action.ghost.pressed',
       'content.accent',
     ])
   })

@@ -9,15 +9,15 @@ const SPECIMEN_ARCH_IDS = [
   'content.primary', 'content.secondary', 'content.subtle', 'content.accent', 'content.disabled',
   'content.on-action', 'content.link.default', 'content.link.hover',
   'action.primary.default', 'action.primary.hover', 'action.primary.pressed',
-  'action.secondary.default', 'action.secondary.accent', 'action.disabled',
-  'action.ghost.neutral.hover', 'action.ghost.brand.hover',
+  'action.secondary.default', 'action.disabled.default',
+  'action.ghost.hover',
   'border.ring.default',
   'surface.page', 'surface.layer-1', 'surface.layer-2', 'surface.input', 'surface.selected',
   'surface.accent', 'surface.inverse', 'surface.overlay',
   'status.critical.surface', 'status.critical.content', 'status.critical.surface-solid', 'status.critical.on-solid',
   'status.critical.border', 'status.critical.border-strong',
   'status.warning.surface', 'status.warning.content', 'status.success.surface', 'status.success.content',
-  'border.control', 'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
+  'border.control-hover', 'border.default', 'border.subtle', 'border.strong',
   'border.focus', 'border.accent',
   'icon.primary', 'icon.secondary', 'icon.disabled', 'icon.accent',
 ]
@@ -81,15 +81,15 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   expect(tokens.surface).toBe(arch['surface.page'])
   expect(tokens.neutralFill).toBe(arch['surface.layer-1'])
   // `PreviewTokens.border` is the component stroke (inputs, selects), so it
-  // takes the CONTROL BOUNDARY. That role is `border.control` since phase 1
+  // takes the CONTROL BOUNDARY. That role is `border.strong` (formerly `border.control`) since phase 1
   // split the neutral strokes by JOB; it was `border.default`, and before that
   // `border.strong`. The resolved value never moved across either rename.
-  expect(tokens.border).toBe(arch['border.control'])
+  expect(tokens.border).toBe(arch['border.strong'])
   // The decorative outline stays on the ladder's lightest rung — see the note
   // in previewTokens.ts for why it did NOT move up to `border.default`.
   expect(tokens.borderDefault).toBe(arch['border.subtle'])
   // The two jobs must resolve to DIFFERENT values, or the split bought nothing.
-  expect(arch['border.control']).not.toBe(arch['border.default'])
+  expect(arch['border.strong']).not.toBe(arch['border.default'])
   expect(tokens.inputSurface).toBe(arch['surface.input'])
   expect(inputSurfaceOf(tokens)).toBe(arch['surface.input'])
   expect(tokens.selectedSurface).toBe(arch['surface.selected'])
@@ -97,8 +97,7 @@ function assertCollageFieldMapping(tokens: PreviewTokens) {
   expect(tokens.linkHover).toBe(arch['content.link.hover'])
   expect(tokens.borderHover).toBe(arch['border.control-hover'])
   expect(tokens.borderCritical).toBe(arch['status.critical.border-strong'])
-  expect(tokens.ghostNeutralHover).toBe(arch['action.ghost.neutral.hover'])
-  expect(tokens.ghostBrandHover).toBe(arch['action.ghost.brand.hover'])
+  expect(tokens.ghostNeutralHover).toBe(arch['action.ghost.hover'])
   expect(focusBorderOf(tokens)).toBe(arch['border.focus'])
   expect(statusSoftFillOf(tokens, 'Error', tokens.errorColor)).toBe(arch['status.critical.surface'])
   expect(statusSoftFillOf(tokens, 'Success', tokens.successColor!)).toBe(arch['status.success.surface'])

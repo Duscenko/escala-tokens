@@ -558,17 +558,17 @@ function projectCurated(
 const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: string }[] = [
   // Content — text & icon ink
   { group: 'content', key: 'primary',   light: '{neutral.12}', dark: '{neutral-dark.12}' },
-  // Sits on action.primary, so its ink is SOLVED against that fill per theme
-  // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
-  { group: 'content', key: 'on-action', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
   { group: 'content', key: 'secondary', light: '{neutral.11}', dark: '{neutral-dark.11}' },
   // DE-EMPHASIS tier, not a third readable level. `primary` (12) and
   // `secondary` (11) are the two perceivable text levels this system can
   // deliver; in dark mode step 9 measures Lc 21 against the page. Use it for
   // placeholders and watermarks, never for information.
   { group: 'content', key: 'subtle',    light: '{neutral.9}',  dark: '{neutral-dark.9}' },
-  { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
   { group: 'content', key: 'accent',    light: '{accent.11}',  dark: '{accent.11}' },
+  // Sits on action.primary, so its ink is SOLVED against that fill per theme
+  // (see curatedRefs) — never assumed white. Ships as {neutral.1} or {neutral.12}.
+  { group: 'content', key: 'on-action', light: '{on:accent.solid}', dark: '{on:accent.solid}' },
+  { group: 'content', key: 'inverse',   light: '{neutral.1}',  dark: '{neutral-dark.1}' }, // ink on surface.inverse
   // Disabled ink — tone 7. Categorical used to have no disabled ink at all and
   // the preview panel fell back to another scheme's value for the slot;
   // adopting the tone natively means that fallback is no longer needed.
@@ -581,20 +581,6 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   { group: 'content', key: 'link.hover',   light: '{accent.12}', dark: '{accent.12}' },
   // Action — interactive fills ('{accent.solid}' resolves to accessibleSolidTone)
   { group: 'action', key: 'primary.default', light: '{accent.solid}', dark: '{accent.solid}' },
-  // `{neutral.4}`, not `{neutral.3}` (audit D2). Tone 3 IS `surface.layer-2` —
-  // a resting secondary button was pixel-identical to a floating popover. A
-  // control you click reads one step heavier than a passive surface; tone 4 is
-  // otherwise unreferenced by any neutral role, so this introduces no new
-  // collision. Label stays `content.primary` and its contrast only improves.
-  { group: 'action', key: 'secondary.default', light: '{neutral.4}',    dark: '{neutral-dark.4}' },
-  { group: 'action', key: 'secondary.accent', light: '{accent.3}',     dark: '{accent.3}' },
-  // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
-  // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
-  // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
-  // and it composites over whatever's behind (page OR card) so it reads as
-  // "muted, wherever it sits". Flips black/white per appearance like the ghost
-  // washes. No contrast floor — it communicates inactivity, not legibility.
-  { group: 'action', key: 'disabled',  light: '{black-a.3}',    dark: '{white-a.3}' },
   // Hover/pressed on the primary fill — SOLVED `n` steps past the RESOLVED
   // solid (`{step:accent+n}`), not pinned. This used to be fixed one/two steps
   // past tone 9, on the stated assumption that the solid always lands there —
@@ -617,11 +603,36 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // pin it replaces, which wasn't a state at all for those hues.
   { group: 'action', key: 'primary.hover',   light: '{step:accent+1}', dark: '{step:accent+1}' },
   { group: 'action', key: 'primary.pressed', light: '{step:accent+2}', dark: '{step:accent+2}' },
+  // `{neutral.4}`, not `{neutral.3}` (audit D2). Tone 3 IS `surface.layer-2` —
+  // a resting secondary button was pixel-identical to a floating popover. A
+  // control you click reads one step heavier than a passive surface; tone 4 is
+  // otherwise unreferenced by any neutral role, so this introduces no new
+  // collision. Label stays `content.primary` and its contrast only improves.
+  { group: 'action', key: 'secondary.default', light: '{neutral.4}',    dark: '{neutral-dark.4}' },
+  // Hover/pressed walk the same ramp one step each — the SAME shape as
+  // `action.primary.default → .hover → .pressed`, so a button tier always reads
+  // default / hover / pressed whatever its intent. Tones 5 and 6 were referenced
+  // by no fill role, so neither collides with a surface; the label stays
+  // `content.primary` (tone 12), which only gains contrast on a deeper fill.
+  { group: 'action', key: 'secondary.hover',   light: '{neutral.5}', dark: '{neutral-dark.5}' },
+  // Light pressed stops at tone 5 (shared with hover): the contrast audit
+  // measured tone 6 under the action-label APCA floor (Lc 55–59 against Lc 60)
+  // on every seed, while dark tone 6 clears it. Same shape as primary's
+  // documented residual — hover and pressed can share a tone and still be a
+  // real, legible state; a pressed fill that fails the label floor is not.
+  { group: 'action', key: 'secondary.pressed', light: '{neutral.5}', dark: '{neutral-dark.6}' },
+  // ALPHA wash, not `{neutral.2}` (audit D2). Tone 2 IS `surface.layer-1` — a
+  // disabled button was pixel-identical to a card, the exact adjacency CLAUDE.md
+  // warns about. "Disabled" means "barely a fill", which is what a 15% wash is,
+  // and it composites over whatever's behind (page OR card) so it reads as
+  // "muted, wherever it sits". Flips black/white per appearance like the ghost
+  // washes. No contrast floor — it communicates inactivity, not legibility.
+  { group: 'action', key: 'disabled.default',  light: '{black-a.3}',    dark: '{white-a.3}' },
   // Ghost / tertiary fill — a borderless button's hover/pressed wash. This is
   // the first role backed by a COLOURED alpha primitive (`{accent-a.N}`,
   // resolved by `scaleLookup` against the real page/dark background — see
   // design-plans/alpha-primitives.md). A solid tint (`{accent.3}`, what
-  // `action.secondary.accent` uses) is the wrong tool here: a ghost button
+  // `surface.selected` uses) is the wrong tool here: a ghost button
   // has no fill of its own, so its hover/pressed state has to be a WASH over
   // whatever it's sitting on, which the alpha twin is the one thing in this
   // system built to do correctly regardless of backdrop. Two steps, same
@@ -642,14 +653,18 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // the `status` role instead of duplicating it under `action`. This also
   // restores the group's own scope: `ghost` is the intents of a BUTTON, not
   // the severities of a MESSAGE.
-  { group: 'action', key: 'ghost.neutral.hover',   light: '{black-a.1}', dark: '{white-a.1}' },
-  { group: 'action', key: 'ghost.neutral.pressed', light: '{black-a.2}', dark: '{white-a.2}' },
-  // hover was `{accent-a.3}` — byte-identical to `surface.selected` (audit F1,
-  // decision D2). A transient hover should sit UNDER a persistent selection, so
-  // it drops one step to `{accent-a.2}`; pressed stays at 5 (a decisive step,
-  // and nothing else reads that tone).
-  { group: 'action', key: 'ghost.brand.hover',     light: '{accent-a.2}', dark: '{accent-a.2}' },
-  { group: 'action', key: 'ghost.brand.pressed',   light: '{accent-a.5}', dark: '{accent-a.5}' },
+  // Rest state of a ghost button: fully transparent — `{neutral-a.1}`, whose
+  // alpha-ladder step 1 is 0%. A real role (not "no
+  // fill") so the tier reads default / hover / pressed like primary and
+  // secondary, and so Figma has a variable to bind the resting fill to.
+  { group: 'action', key: 'ghost.default', light: '{neutral-a.1}', dark: '{neutral-a.1}' },
+  { group: 'action', key: 'ghost.hover',   light: '{black-a.1}', dark: '{white-a.1}' },
+  { group: 'action', key: 'ghost.pressed', light: '{black-a.2}', dark: '{white-a.2}' },
+  // There is NO `ghost.brand`. A brand-tinted wash was a second ghost tier that
+  // only differed from this one by hue; the brand intent already has its tier
+  // (`action.primary.*` for the fill, `surface.selected` for the tint),
+  // and a transparent button's hover reads the same neutral wash whatever its
+  // label colour is. Removed so each tier is exactly one decision.
   // Surface — elevation levels
   { group: 'surface', key: 'page',    light: '{neutral.1}',  dark: '{neutral-dark.1}' },
   { group: 'surface', key: 'layer-1', light: '{neutral.2}',  dark: '{neutral-dark.2}' },
@@ -881,12 +896,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // One step up from 1 / 2 / 4: step 1 composited on the dark page measured
   // APCA Lc 0 (below the algorithm's noise floor) via `check_contrast`.
   // Step 2 is the smallest lift that leaves that floor in light (Lc ~12)
-  // while staying decoration — still under `border.control` (step 7 / 8).
+  // while staying decoration — still under `border.strong` (step 7 / 8).
   { group: 'border', key: 'default',  light: '{black-a.3}', dark: '{white-a.3}' },
-  // Emphasis rung — the heaviest stroke that is still DECORATION. Reserve for a
-  // grouping that needs to outrank a plain control boundary (a selected card's
-  // own edge). NOT where a resting input points — that's `control`, below.
-  { group: 'border', key: 'strong',   light: '{black-a.4}', dark: '{white-a.4}' },
+  // Lightest decorative rung — a hairline divider, a quiet grouping edge.
+  { group: 'border', key: 'subtle',   light: '{black-a.2}', dark: '{white-a.2}' },
   // ── The control boundary — SOLVED on the alpha ladder (`{ui-a:…}` composites
   // each step over the page before measuring), not pinned. Measured: `black-a`
   // clears WCAG 1.4.11 + APCA Lc 45 against a light page at step 7, `white-a`
@@ -898,7 +911,10 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // to, so it can't collapse onto rest. It's not a nicety: the Figma plugin
   // draws every control's hover stroke from this concept (20+ call sites), so a
   // hover that resolved lighter than rest would be the stroke RECEDING on hover.
-  { group: 'border', key: 'control',       light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
+  // `strong` IS the control boundary now (there is no separate `border.control`):
+  // the stroke of an input, select, checkbox, unfilled button, and the edge of a
+  // selected/emphasised grouping. Same SOLVED value `control` had.
+  { group: 'border', key: 'strong',        light: '{ui-a:black-a.5}',  dark: '{ui-a:white-a.5}' },
   { group: 'border', key: 'control-hover', light: '{ui+a:black-a.5}', dark: '{ui+a:white-a.5}' },
   // DECORATIVE brand emphasis — a tinted card edge or a grouping stroke. It is
   // NOT a state indicator: anything that says "this control is selected /
@@ -908,8 +924,6 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // at {accent.8} reads 1.97:1 in dark, which is correct for emphasis and
   // wrong for state.
   { group: 'border', key: 'accent',   light: '{accent.8}',  dark: '{accent.8}' },
-  // Lightest decorative rung — a hairline divider, a quiet grouping edge.
-  { group: 'border', key: 'subtle',   light: '{black-a.2}', dark: '{white-a.2}' },
   // Focus ring — SOLVED, not pinned. `{ui:accent.9}` (resolved in
   // `curatedRefs` via `uiBoundaryRef`, below) walks the accent ramp up from
   // tone 9 until a tone clears WCAG ≥3:1 AND APCA Lc ≥45 against the page,
@@ -963,6 +977,24 @@ const CATEGORICAL_ROLES: { group: string; key: string; light: string; dark: stri
   // above `status.critical.border-strong`.
 ]
 
+// Status roles are DEFINED where their rationale lives (scattered, with long
+// notes), but READ per severity: one block per severity, the same seven slots
+// in the same order, so critical / warning / success / info line up row for row
+// in the table, the export and Figma. Stable in-place sort — nothing else in the
+// array moves.
+const STATUS_SEVERITY_ORDER = ['critical', 'success', 'warning', 'info']
+const STATUS_SLOT_ORDER = ['surface', 'surface-pressed', 'surface-solid', 'on-solid', 'content', 'border', 'border-strong']
+{
+  const idx = (r: { group: string; key: string }) => {
+    const [sev, ...slot] = r.key.split('.')
+    return STATUS_SEVERITY_ORDER.indexOf(sev) * 100 + STATUS_SLOT_ORDER.indexOf(slot.join('.'))
+  }
+  const first = CATEGORICAL_ROLES.findIndex((r) => r.group === 'status')
+  const status = CATEGORICAL_ROLES.filter((r) => r.group === 'status').sort((a, b) => idx(a) - idx(b))
+  const rest = CATEGORICAL_ROLES.filter((r) => r.group !== 'status')
+  CATEGORICAL_ROLES.splice(0, CATEGORICAL_ROLES.length, ...rest.slice(0, first), ...status, ...rest.slice(first))
+}
+
 /**
  * Categorical resolved across every theme in `themeOrder`: group → token →
  * themeKey → ref. The schema is theme-count-independent — "surface.page is
@@ -1008,12 +1040,12 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'action.primary.hover': '[ROLE: Primary CTA Hover] Affects the hover state of the primary button fill. SOLVED ({step:accent+1}) — one tone past whatever action.primary.default RESOLVED to, re-verified for label contrast, never a fixed step. (History: a pinned {accent.10} measured as low as 1.78:1 WCAG for any hue whose solid resolves above tone 9.)',
   'action.primary.pressed': '[ROLE: Primary CTA Pressed] Affects the pressed / active state of the primary button fill. SOLVED ({step:accent+2}) — two tones past the resolved default, same reasoning as hover. (History: a fixed dark {accent.6} measured APCA Lc 0-24, illegible, once the solid resolves above tone 9.)',
   'action.secondary.default': '[ROLE: Secondary CTA Default] Affects the resting fill of neutral / secondary buttons. {neutral.4} — one step heavier than surface.layer-2 so a control reads with more presence than a passive surface. Label text must be content.primary, not content.on-action.',
-  'action.secondary.accent': '[ROLE: Secondary Accent Fill] Affects the resting fill of accent-tinted secondary buttons. {accent.3}. Pair with content.primary for the label.',
-  'action.disabled': '[ROLE: Disabled Action Fill] Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.3} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
-  'action.ghost.neutral.hover': '[ROLE: Ghost Neutral Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
-  'action.ghost.neutral.pressed': '[ROLE: Ghost Neutral Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',
-  'action.ghost.brand.hover': '[ROLE: Ghost Brand Hover] Affects tertiary / borderless buttons carrying brand intent. Hover wash. An ALPHA primitive, not a solid tint — a ghost button has no fill of its own, so its hover has to composite over whatever surface it sits on. {accent-a.2}, one step below surface.selected so a transient hover reads as lighter than a persistent selection.',
-  'action.ghost.brand.pressed': '[ROLE: Ghost Brand Pressed] Affects tertiary / borderless brand buttons. Pressed wash — {accent-a.5}, deeper than the hover on the same alpha ramp.',
+  'action.secondary.hover': '[ROLE: Secondary CTA Hover] Affects the hover state of the neutral / secondary button fill. {neutral.5} — one step past action.secondary.default, the same default → hover → pressed shape action.primary follows. Label stays content.primary.',
+  'action.secondary.pressed': '[ROLE: Secondary CTA Pressed] Affects the pressed / active state of the neutral / secondary button fill. {neutral.5} in light (tone 6 fails the Lc 60 label floor there), {neutral-dark.6} in dark — so light pressed shares the hover tone. Label stays content.primary.',
+  'action.disabled.default': '[ROLE: Disabled Default]  Affects the fill of disabled buttons and controls. An ALPHA wash — {black-a.3} in light, {white-a.3} in dark — so it reads as "muted" over the page or over a card alike, and never collides with an opaque surface. No contrast floor: it communicates inactivity, not legibility.',
+  'action.ghost.default': '[ROLE: Ghost Default] Resting fill of a borderless button — fully transparent (`{neutral-a.1}` — alpha-ladder step 1 is 0%, an existing primitive, so it still aliases in Figma), so the ghost tier reads default / hover / pressed like primary and secondary.',
+  'action.ghost.hover': '[ROLE: Ghost Hover] Hover wash for a borderless button with no brand intent (toolbar icons, close buttons, menu items). Flips ink per appearance — {black-a.1} in light, {white-a.1} in dark — because a neutral wash has to darken a light page and lighten a dark one.',
+  'action.ghost.pressed': '[ROLE: Ghost Pressed] Pressed wash for a neutral borderless button. One step deeper than the hover, same black/white flip.',
   'status.critical.surface': "[ROLE: Feedback Background Subtle] Affects error alerts, banners, toasts, destructive row-menu items. Tinted background. Pair with status.critical.content — never a fixed ink on the bg alone.",
   'status.critical.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed destructive borderless action (a held-down Delete in a row menu), a "dismiss" on an error banner. {error-a.5} — two steps deeper than status.critical.surface. Absorbed from the old action.ghost.danger.pressed.',
   'status.warning.surface-pressed': '[ROLE: Feedback Background Pressed] Affects a pressed warning-tinted interactive surface. {warning-a.5}.',
@@ -1044,13 +1076,12 @@ export const CATEGORICAL_ROLE_COMMENTS: Record<string, string> = {
   'status.info.border-strong': '[ROLE: Info Control Boundary] Affects informational-state form fields. Light {info.9} = 3.24:1/Lc59. Dark {info.10} = 7.15:1/Lc49 — info.9 fails APCA in dark (Lc 42), one step earlier than error needs.',
   'border.subtle': '[ROLE: Decorative Border 1/3] Affects hairline dividers, table rules, the edge of a quiet grouping. Lightest neutral stroke — {black-a.2} in light, {white-a.2} in dark (the FIXED alpha ladder, so it composites correctly on any surface). One step above the 5% rung: that step measured APCA Lc 0 on the dark page. DECORATION: separates regions, carries no state, no contrast floor. If the stroke is the only thing telling the user a control is there, that is border.control.',
   'border.default': '[ROLE: Decorative Border 2/3] Affects a card edge, a panel boundary, a grouping box. {black-a.3} / {white-a.3}. DECORATION, no contrast floor. One step above border.subtle so a panel edge still outranks a hairline.',
-  'border.strong': '[ROLE: Decorative Border 3/3] Affects a grouping that needs to read before its neighbours (a selected card\'s own edge). Heaviest stroke that is still decoration — {black-a.4} / {white-a.4}. Anything that says "this control is selected / focused / active" conveys state and falls under WCAG 1.4.11: use border.focus or border.control-hover.',
-  'border.control': '[ROLE: Control Boundary] Affects the resting border of inputs, selects, checkboxes, unfilled buttons — anywhere the stroke is the only sign of a control. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED on the alpha ladder ({ui-a:…} composites each step over the page before measuring): {black-a.7} in light (4.00:1/Lc67), {white-a.8} in dark (7.29:1/Lc50). The ladder is not accent-tinted, so this lands on the same step for essentially every system.',
-  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover / emphasis state of a control\'s resting border. One step past whatever border.control RESOLVED to ({ui+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.9} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
+  'border.strong': '[ROLE: Strong Border / Control Boundary] Affects the resting border of inputs, selects, checkboxes and unfilled buttons — anywhere the stroke is the only sign of a control — and the edge of a grouping that must read before its neighbours. WCAG 1.4.11 + APCA Lc 45 against the page. SOLVED on the alpha ladder ({ui-a:…}): {black-a.7} in light, {white-a.8} in dark for the default system.',
+  'border.control-hover': '[ROLE: Control Boundary Hover] Affects the hover state of a control\'s resting (border.strong) border. One step past whatever border.strong RESOLVED to ({ui+a:…}), never a fixed step — pinning it would collapse it onto rest. {black-a.8} / {white-a.9} for the default system. The Figma plugin draws every control\'s hover stroke from this concept.',
   'border.focus': '[ROLE: A11y Focus Ring] Affects the keyboard focus-visible ring on every interactive element. SOLVED per theme ({ui:accent.9}), not pinned — the ring is always the user\'s own accent hue, so a fixed tone cannot promise a floor. Walks the accent ramp from tone 9 until WCAG 1.4.11 + APCA Lc 45 both clear: light lands on 9-11 depending on hue, dark on 11 for the seeds tested. Deliberate scope: this is the ONLY focus ring, incl. on an invalid/critical field — focus wins over the error colour rather than a separate border.focus.critical, keeping one ring token instead of one per severity. That covers the solid BOUNDARY only — the translucent halo is border.ring.*.',
   'border.ring.default': '[ROLE: Focus Halo] Translucent glow outside border.focus. Decoration, NOT a boundary — never measured for WCAG 1.4.11; border.focus is the contrast-bearing part. Replaces a hardcoded 40% alpha in the preview specimens. A field in an error/success state reuses status.<sev>.border for its halo — there is no separate per-severity ring role.',
   'border.rim-highlight': '[ROLE: Elevation Rim] 1px light rim along the top of an elevated surface in dark mode. Below a near-black page only ~5% of the luminance range is left to spend downward, so elevation has to be bought with light, not shadow — this is the token for the rim darkShadow() already paints.',
-  'border.accent': '[ROLE: Decorative Brand Border] Brand-tinted grouping stroke. NOT a state indicator — use border.focus for focus/selected/active.',
+  'border.accent': '[ROLE: Accent Border] Border painted in the brand accent — a selected card, a toggled button, any element that needs its stroke to read as the primary accent. For keyboard focus use border.focus.',
 }
 
 /** Flat role id → nested export path segments. `content.link.default` → ['content','link','default']. */
@@ -1066,7 +1097,10 @@ export const CATEGORICAL_ROLE_RENAME: Record<string, string> = {
   'action.primary-hover': 'action.primary.hover',
   'action.primary-pressed': 'action.primary.pressed',
   'action.neutral': 'action.secondary.default',
-  'action.secondary': 'action.secondary.accent',
+  'action.disabled': 'action.disabled.default',
+  'border.control': 'border.strong',
+  'action.ghost.neutral.hover': 'action.ghost.hover',
+  'action.ghost.neutral.pressed': 'action.ghost.pressed',
   'status.critical-bg': 'status.critical.surface',
   'status.critical-fg': 'status.critical.content',
   'status.critical-surface-solid': 'status.critical.surface-solid',
@@ -1325,29 +1359,16 @@ export function buildArchitectureView(
       status: ['Status', 'Feedback fg/bg pairs per severity'],
       border: ['Border', 'Strokes, focus and severity borders'],
     }
-    // DISPLAY ORDER ONLY. `CATEGORICAL_ROLES` lists the `status` group
-    // slot-first (every `*.surface`, then every `*.border`, …), which reads as
-    // eight severities in the table. Regroup it severity-first — all of
-    // critical's slots, then success, warning, info — so the table matches how
-    // the Figma plugin already renders it ("Status / critical" …). Stable
-    // within a severity, so the slot order the file documents is preserved.
-    // `CATEGORICAL_ROLES` and the export are untouched.
-    const SEVERITY_ORDER = ['critical', 'success', 'warning', 'info']
-    const orderStatus = (entries: [string, Record<string, string>][]) =>
-      entries
-        .map((e, i) => [e, i] as const)
-        .sort(([[ka], ia], [[kb], ib]) => {
-          const d = SEVERITY_ORDER.indexOf(ka.split('.')[0]) - SEVERITY_ORDER.indexOf(kb.split('.')[0])
-          return d !== 0 ? d : ia - ib
-        })
-        .map(([e]) => e)
+    // Status needs no display-only sort: `CATEGORICAL_ROLES` is already
+    // severity-first (see STATUS_SEVERITY_ORDER), so the table, tokens.json and
+    // Figma all read one order.
     const categories = Object.entries(tokens).map(([key, group]) => {
       const entries = Object.entries(group)
       return {
         key,
         label: META[key]?.[0] ?? key,
         description: META[key]?.[1] ?? '',
-        tokens: (key === 'status' ? orderStatus(entries) : entries).map(([k, byTheme]) => ({
+        tokens: entries.map(([k, byTheme]) => ({
           key: k,
           modes: Object.fromEntries(
             themeOrder.map((t) => [t, refToView(byTheme[t] ?? '', lookByTheme[t])]),

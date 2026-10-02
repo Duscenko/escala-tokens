@@ -614,11 +614,11 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
 
   if (state === 'Hover') {
     if (style === 'Solid') bg = darken(color, 0.4)
-    else if (style === 'Ghost' && intent === 'Brand') bg = t.ghostBrandHover ?? archTokenOf(t, 'action.ghost.brand.hover', soft(t, color))
+    else if (style === 'Ghost') bg = t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.hover', soft(t, color))
     else bg = style === 'Soft' ? color + '2b' : soft(t, color)
   } else if (state === 'Pressed') {
     if (style === 'Solid') bg = darken(color, 0.8)
-    else if (style === 'Ghost' && intent === 'Brand') bg = t.ghostBrandPressed ?? archTokenOf(t, 'action.ghost.brand.pressed', pressed(t, color))
+    else if (style === 'Ghost') bg = t.ghostNeutralPressed ?? archTokenOf(t, 'action.ghost.pressed', pressed(t, color))
     else bg = pressed(t, color)
   }
   if (disabled) { bg = style === 'Ghost' ? 'transparent' : t.disabledBg; fg = t.disabledText; border = style === 'Outline' ? t.disabledBg : 'transparent' }
@@ -1278,8 +1278,8 @@ function CloseButtonSpecimen({ t, v }: SpecimenProps) {
         // Rest has no ghost token (the catalogue only ships hover/pressed), so
         // the faint wash stays a local tint — a bare X on a card reads lost.
         // Hover / pressed are the roles named for close buttons.
-        background: state === 'Hover' ? (t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.neutral.hover', tintOf(t, t.neutralText, '20', 0.16)))
-          : state === 'Pressed' ? (t.ghostNeutralPressed ?? archTokenOf(t, 'action.ghost.neutral.pressed', tintOf(t, t.neutralText, '20', 0.22)))
+        background: state === 'Hover' ? (t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.hover', tintOf(t, t.neutralText, '20', 0.16)))
+          : state === 'Pressed' ? (t.ghostNeutralPressed ?? archTokenOf(t, 'action.ghost.pressed', tintOf(t, t.neutralText, '20', 0.22)))
           : soft(t, t.neutralText),
         color: t.fgMuted, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: state === 'Focused' ? focusRing(t, t.brandSolid) : undefined,
@@ -2256,10 +2256,10 @@ function MenuPanel({
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
               padding: '7px 10px', borderRadius: rowRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
-              // `action.ghost.neutral.hover` — the role named for menu items
+              // `action.ghost.hover` — the role named for menu items
               // and close buttons. `surface.selected` is persistent selection
               // (a tab, a table row), not a transient hover.
-              background: item.hover ? (t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.neutral.hover', darken(floatingBg(t), 0.25))) : 'transparent',
+              background: item.hover ? (t.ghostNeutralHover ?? archTokenOf(t, 'action.ghost.hover', darken(floatingBg(t), 0.25))) : 'transparent',
               color: item.danger ? errorInkOf(t) : t.neutralText,
             }}
           >

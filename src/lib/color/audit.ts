@@ -179,6 +179,9 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // for the measurement that forced the distinction — auditing a button as
     // body copy is what pushed every dark-theme solid onto a near-white pastel.
     { fg: 'content.on-action', bg: 'action.primary.default',  intent: 'action-label' },
+    { fg: 'content.primary', bg: 'action.secondary.default', intent: 'action-label' },
+    { fg: 'content.primary', bg: 'action.secondary.hover',   intent: 'action-label' },
+    { fg: 'content.primary', bg: 'action.secondary.pressed', intent: 'action-label' },
     { fg: 'content.primary',   bg: 'surface.layer-1', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.layer-2', intent: 'body-text' },
     { fg: 'content.primary',   bg: 'surface.input',   intent: 'body-text' },
@@ -193,7 +196,7 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // the surface it's drawn on. Resolves to {black-a.7} = 4.00/Lc67 light,
     // {white-a.8} = 7.29/Lc50 dark for the default system. The ladder is not
     // accent-tinted, so this holds across every seed rather than drifting.
-    { fg: 'border.control',       bg: 'surface.page', intent: 'ui-component' },
+    { fg: 'border.strong',        bg: 'surface.page', intent: 'ui-component' },
     // Hover/emphasis, one step past the boundary — audited as `ui-component`
     // too, since anything heavier than a passing boundary passes by
     // construction.
@@ -210,7 +213,6 @@ export const CURATED_PAIRINGS: Partial<Record<SemanticArchitecture, Pairing[]>> 
     // boundary is exactly what the report exists to surface.
     { fg: 'border.subtle',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'border.default',    bg: 'surface.page',    intent: 'decorative' },
-    { fg: 'border.strong',     bg: 'surface.page',    intent: 'decorative' },
     { fg: 'status.critical.border-strong', bg: 'surface.input', intent: 'ui-component' },
     { fg: 'status.warning.border-strong',  bg: 'surface.input', intent: 'ui-component' },
     { fg: 'status.success.border-strong',  bg: 'surface.input', intent: 'ui-component' },

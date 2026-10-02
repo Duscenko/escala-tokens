@@ -340,7 +340,7 @@ export function resolveVariantRoles(
     if (style === 'Soft') {
       if (intent === 'Brand') {
         const roles = [
-          roleAt(arch, paints, 'action.ghost.brand.hover', 'fill'),
+          roleAt(arch, paints, 'surface.selected', 'fill'),
           roleAt(arch, paints, 'content.accent', 'ink'),
         ].filter((r): r is InspectedRole => !!r)
         return roles.length ? roles : null
@@ -610,12 +610,12 @@ export function pairSolidRoles(
  *
  * The wash still has a role. Translucent brand ink → the ghost ladder
  * (`hover` at ~10 %, `pressed` deeper); opaque `content.accent` → the
- * secondary accent fill Soft is. Solid on-ink → `action.primary.default`
+ * selected tint Soft is. Solid on-ink → `action.primary.default`
  * unless the pixel already is hover/pressed.
  */
 const INK_SURFACE: Record<string, string> = {
   'content.on-action': 'action.primary.default',
-  'content.accent': 'action.secondary.accent',
+  'content.accent': 'surface.selected',
   'content.primary': 'action.secondary.default',
   'status.critical.on-solid': 'status.critical.surface-solid',
   'status.warning.on-solid': 'status.warning.surface-solid',
@@ -643,8 +643,8 @@ function surfaceForInk(
   }
   if (inkId === 'content.accent') {
     const a = paintAlpha(fillCss)
-    if (a > 0 && a < 0.99) return a > 0.15 ? 'action.ghost.brand.pressed' : 'action.ghost.brand.hover'
-    return 'action.secondary.accent'
+    if (a > 0 && a < 0.99) return a > 0.15 ? 'action.ghost.pressed' : 'action.ghost.hover'
+    return 'surface.selected'
   }
   return INK_SURFACE[inkId]
 }
@@ -686,7 +686,7 @@ export function pairButtonScopes(
       (id) => id.startsWith('action.') || id.includes('.surface'),
     )
     const inferred = ink ? surfaceForInk(arch, ink.id, fillPaint.css) : undefined
-    const fillId = [matched, inferred, 'action.secondary.accent', 'action.primary.default']
+    const fillId = [matched, inferred, 'surface.selected', 'action.primary.default']
       .find((id): id is string => !!id && !!arch[id])
     if (fillId) fill = { id: fillId, css: fillPaint.css, where: 'fill' }
   }

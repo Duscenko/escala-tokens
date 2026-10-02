@@ -43,7 +43,7 @@ const amberView = buildArchitectureView('categorical', {
 } as never, amberSystem.errorSeed)!
 
 describe('the categorical catalogue is complete', () => {
-  it('ships 64 roles across five groups', () => {
+  it('ships 63 roles across five groups', () => {
     // Base 51 + 10 (phase 0) + 2 (phase 1 stroke split) = 63; then the
     // semantic-border audit re-homed the severity strokes:
     //
@@ -54,9 +54,10 @@ describe('the categorical catalogue is complete', () => {
     //  F2/F3 pass 2 — action group: -2 (`action.ghost.danger.hover` was
     //  byte-identical to `status.critical.surface`; `.pressed` had no twin),
     //  +4 (`status.<sev>.surface-pressed`, absorbing the pressed wash for all
-    //  four severities). Net +2 → 64. `action.ghost` is now neutral+brand only,
+    //  four severities). Net +2 → 64; then `border.control` was folded into
+    //  `border.strong` (one boundary role, not two) → 63. `action.ghost` is now neutral+brand only,
     //  which is the correct scope: intents of a BUTTON, not severities of a MESSAGE.
-    expect(roleIds).toHaveLength(64)
+    expect(roleIds).toHaveLength(63)
     for (const group of ['content', 'action', 'surface', 'status', 'border']) {
       expect(view.categories.some((c) => c.key === group), group).toBe(true)
     }
@@ -139,10 +140,10 @@ describe('the categorical catalogue is complete', () => {
   it('no two background fills collapse onto one primitive', () => {
     const isFill = (id: string) =>
       /^surface\.(page|input|layer-1|layer-2|accent|selected)$/.test(id) ||
-      /^action\.(primary\.default|secondary\.default|secondary\.accent|disabled)$/.test(id) ||
-      /^action\.ghost\.\w+\.(hover|pressed)$/.test(id) ||
+      /^action\.(primary\.default|secondary\.(default|hover|pressed)|disabled\.default)$/.test(id) ||
+      /^action\.ghost\.(hover|pressed)$/.test(id) ||
       /^status\.\w+\.surface(-pressed)?$/.test(id)
-    const ALLOWED = new Set(['surface.input|surface.page'])
+    const ALLOWED = new Set(['surface.input|surface.page', 'action.secondary.hover|action.secondary.pressed'])
     const bySig = new Map<string, string[]>()
     for (const cat of view.categories) {
       for (const tok of cat.tokens) {
@@ -223,11 +224,11 @@ describe('the categorical catalogue is complete', () => {
   // still SOLVED (`{ui-a:…}` composites each translucent step over the page
   // before measuring WCAG 1.4.11 + APCA Lc 45), it just walks the alpha ladder
   // now: light clears at step 7, dark at 8. `control-hover` is one step past.
-  it('border.control/-hover are solved on the alpha ladder', () => {
+  it('border.strong/control-hover are solved on the alpha ladder', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
-    expect(label('control')?.light.label).toBe('black-a.7')
-    expect(label('control')?.dark.label).toBe('white-a.8')
+    expect(label('strong')?.light.label).toBe('black-a.7')
+    expect(label('strong')?.dark.label).toBe('white-a.8')
     expect(label('control-hover')?.light.label).toBe('black-a.8')
     expect(label('control-hover')?.dark.label).toBe('white-a.9')
   })
@@ -235,21 +236,19 @@ describe('the categorical catalogue is complete', () => {
   // The decorative ladder is `black-a`/`white-a` steps 2, 3, 4. Step 1
   // composited on the dark page measured APCA Lc 0. Asserting the rungs are
   // DISTINCT and ASCENDING stops a later edit from collapsing the ladder back.
-  it('gives the decorative ladder three distinct, ascending rungs', () => {
+  it('gives the decorative ladder two distinct rungs, both lighter than the strong boundary', () => {
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'border')?.tokens.find((t) => t.key === key)?.modes
     expect(label('subtle')?.light.label).toBe('black-a.2')
     expect(label('default')?.light.label).toBe('black-a.3')
-    expect(label('strong')?.light.label).toBe('black-a.4')
     expect(label('subtle')?.dark.label).toBe('white-a.2')
     expect(label('default')?.dark.label).toBe('white-a.3')
-    expect(label('strong')?.dark.label).toBe('white-a.4')
     // And every decorative rung stays lighter (lower alpha step) than the
     // control boundary — a decorative stroke that outweighs the boundary is
     // the bug this split was made to remove, just pointing the other way.
     for (const mode of ['light', 'dark'] as const) {
       const tone = (key: string) => Number(label(key)?.[mode].label.split('.')[1])
-      expect(tone('strong'), mode).toBeLessThan(tone('control'))
+      expect(tone('default'), mode).toBeLessThan(tone('strong'))
     }
   })
 
@@ -294,22 +293,29 @@ describe('the categorical catalogue is complete', () => {
 
   // The danger ghost wash was byte-identical to status.critical.surface; it's
   // gone, and the pressed wash it needed is now a status role for every severity.
-  it('action.ghost is neutral+brand only; the danger wash moved to status.<sev>.surface-pressed', () => {
+  it('action.ghost is default/hover/pressed; the danger wash moved to status.<sev>.surface-pressed', () => {
     const action = view.categories.find((c) => c.key === 'action')!
     const ghostKeys = action.tokens.map((t) => t.key).filter((k) => k.startsWith('ghost.'))
     expect(ghostKeys.sort()).toEqual(
-      ['ghost.brand.hover', 'ghost.brand.pressed', 'ghost.neutral.hover', 'ghost.neutral.pressed'],
+      ['ghost.default', 'ghost.hover', 'ghost.pressed'],
     )
     const label = (key: string) =>
       view.categories.find((c) => c.key === 'status')?.tokens.find((t) => t.key === key)?.modes
     for (const sev of ['critical', 'warning', 'success', 'info']) {
       expect(label(`${sev}.surface-pressed`)?.light.label, sev).toBe(`${sev === 'critical' ? 'error' : sev}-a.5`)
     }
-    // The retuned brand-ghost hover no longer collides with surface.selected.
-    const ghostBrandHover = action.tokens.find((t) => t.key === 'ghost.brand.hover')?.modes.light.label
-    const selected = view.categories.find((c) => c.key === 'surface')?.tokens.find((t) => t.key === 'selected')?.modes.light.label
-    expect(ghostBrandHover).toBe('accent-a.2')
-    expect(selected).toBe('accent-a.3')
+  })
+
+  // Every button tier reads default / hover / pressed, the shape primary set.
+  it('action.primary and action.secondary share the default/hover/pressed shape', () => {
+    const action = view.categories.find((c) => c.key === 'action')!
+    for (const tier of ['primary', 'secondary']) {
+      for (const state of ['default', 'hover', 'pressed']) {
+        expect(action.tokens.find((t) => t.key === `${tier}.${state}`), `${tier}.${state}`).toBeDefined()
+      }
+    }
+    const label = (k: string) => action.tokens.find((t) => t.key === k)?.modes.light.label
+    expect([label('secondary.default'), label('secondary.hover'), label('secondary.pressed')]).toEqual(['neutral.4', 'neutral.5', 'neutral.5'])
   })
 })
 

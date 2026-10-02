@@ -234,7 +234,7 @@ const A_STRONG_D = '{white-a.8}'
 const softBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  'border.strong': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
@@ -248,7 +248,7 @@ const softBorders: ThemeStyleSemantics = {
  * control edge (same call as Core / Glass).
  */
 const natureSemantics: ThemeStyleSemantics = {
-  'border.control': { light: '{neutral-a.5}', dark: '{accent-a.4}' },
+  'border.strong': { light: '{neutral-a.5}', dark: '{accent-a.4}' },
   'border.subtle': { dark: '{accent-a.2}' },
   'content.primary': { light: '{accent.12}' },
   'surface.input': { light: '{white-a.6}' },
@@ -269,7 +269,7 @@ const natureSemantics: ThemeStyleSemantics = {
 const coreSemantics: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.control': { light: '{neutral.5}', dark: '{white-a.3}' },
+  'border.strong': { light: '{neutral.5}', dark: '{white-a.3}' },
   'border.control-hover': { light: '{neutral.7}', dark: '{white-a.5}' },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.1}' },
   'content.primary': { dark: '{accent.12}' },
@@ -285,7 +285,7 @@ const coreSemantics: ThemeStyleSemantics = {
 const glassSemantics: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{black-a.2}' },
-  'border.control': { light: '{accent-a.4}', dark: '{accent-a.3}' },
+  'border.strong': { light: '{accent-a.4}', dark: '{accent-a.3}' },
   'border.control-hover': { light: '{black-a.9}', dark: '{white-a.8}' },
   'border.subtle': { light: '{accent-a.3}', dark: '{accent-a.2}' },
   'border.rim-highlight': { light: '{white-a.9}', dark: '{white-a.4}' },
@@ -304,7 +304,7 @@ const filledBorders: ThemeStyleSemantics = {
   // Dark input goes to 4, not 3: `DARK_DEPTH` just moved the card to 3, and a
   // filled field that matches its own card is not a filled field.
   'surface.input': { light: '{neutral.3}', dark: '{neutral-dark.4}' },
-  'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+  'border.strong': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
   'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
   // `border.subtle` follows the schema (black-a.2 / white-a.2). No override.
 }
@@ -318,7 +318,7 @@ const filledBorders: ThemeStyleSemantics = {
 const retroSemantics: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.control': { light: '{neutral.9}', dark: '{accent.4}' },
+  'border.strong': { light: '{neutral.9}', dark: '{accent.4}' },
   'border.control-hover': { light: '{accent.12}', dark: '{accent.11}' },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
@@ -328,7 +328,7 @@ const retroSemantics: ThemeStyleSemantics = {
 const inkBorders: ThemeStyleSemantics = {
   ...DARK_DEPTH,
   'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-  'border.control': { light: '{accent.10}', dark: '{accent.8}' },
+  'border.strong': { light: '{accent.10}', dark: '{accent.8}' },
   'border.control-hover': { light: '{accent.12}', dark: '{accent.11}' },
   'border.subtle': { light: '{black-a.3}', dark: '{white-a.3}' },
 }
@@ -675,7 +675,6 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // other style softens the control boundary and leaves the decorative
       // ladder on the schema; here the decorative ladder is the point, so all
       // five rungs go to the ramp's text tone.
-      'border.control': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.control-hover': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.default': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
       'border.strong': { light: '{neutral.12}', dark: '{neutral-dark.12}' },
@@ -733,7 +732,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: {
       ...DARK_DEPTH,
       'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-      'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      'border.strong': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
     },
   },
@@ -813,7 +812,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: {
       ...DARK_DEPTH,
       'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.3}' },
-      'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      'border.strong': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
     },
   },
@@ -843,7 +842,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     semantics: {
       ...DARK_DEPTH,
       'surface.input': { light: '{neutral.2}', dark: '{neutral-dark.2}' },
-      'border.control': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
+      'border.strong': { light: A_DEFAULT_L, dark: A_DEFAULT_D },
       'border.control-hover': { light: A_STRONG_L, dark: A_STRONG_D },
     },
   },

@@ -35,10 +35,8 @@ export interface PreviewTokens {
   linkHover?: string // link hover ink — `content.link.hover`
   borderHover?: string // hovered control stroke — `border.control-hover`
   borderCritical?: string // invalid-field stroke — `status.critical.border-strong`
-  ghostNeutralHover?: string // close / menu-item hover wash — `action.ghost.neutral.hover`
-  ghostNeutralPressed?: string // close / menu-item pressed wash — `action.ghost.neutral.pressed`
-  ghostBrandHover?: string // ghost brand hover wash — `action.ghost.brand.hover`
-  ghostBrandPressed?: string // ghost brand pressed wash — `action.ghost.brand.pressed`
+  ghostNeutralHover?: string // close / menu-item hover wash — `action.ghost.hover`
+  ghostNeutralPressed?: string // close / menu-item pressed wash — `action.ghost.pressed`
   successColor?: string
   warningColor?: string
   infoColor?: string
