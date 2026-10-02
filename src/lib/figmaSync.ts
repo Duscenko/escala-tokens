@@ -5,6 +5,7 @@ import { DEFAULT_PUBLISH_ORIGIN, mcpOrigin } from './agentInstall'
 import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 import { isPublishId } from './publishId'
+import { trackEvent } from './analytics'
 
 /** Ephemeral UI feedback for an explicit user-initiated Figma publish. This
  * deliberately does not live in the persisted design-system store: a spinner
@@ -198,6 +199,8 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
   }
 
   const res = await postTo(slug)
+  // Throttled: auto-sync republishes after every edit burst.
+  trackEvent({ name: 'figma_publish', props: { result: res?.ok ? 'ok' : 'error' } }, { throttle: true })
   if (!res) return { ok: false, reason: 'network' }
 
   if (res.ok) {

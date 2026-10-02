@@ -259,6 +259,11 @@ export function useAboutSections(): {
           <span className="text-fg">{t('Where your work lives:')}</span>{' '}
           {t("your system is stored in your own browser (localStorage); there are no accounts and no server-side profile. Tokens leave the browser only when you ask: publishing for Figma live-sync uploads the token payload to this project's endpoint, and connecting GitHub pushes files to the repo you pick. A GitHub token you provide stays in your browser and is never sent anywhere but GitHub.")}
         </P>
+        {/* Mirrors the privacy contract in lib/analytics.ts — change both together. */}
+        <P>
+          <span className="text-fg">{t("What we measure:")}</span>{' '}
+          {t("anonymous, cookieless usage statistics through Vercel Web Analytics \u2014 pages visited, country, device and browser type, the referring site, and counts of actions such as exports or Figma syncs. No cookies, no advertising, no personal identifiers, nothing you type. Published tokens are readable by anyone who has the system's ID, so treat that ID like a link you share. Our host keeps short-lived request logs (including IP addresses) for security and abuse prevention.")}
+        </P>
         {/* Material Design and Apple HIG were dropped from this disclaimer
             with the architectures that referenced them — a trademark notice
             should name what the project actually leans on, and after v57 that

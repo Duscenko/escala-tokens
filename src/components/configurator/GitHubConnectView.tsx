@@ -13,6 +13,7 @@ import {
 } from '../../lib/github'
 import { startGithubOAuth, isGithubOAuthConfigured } from '../../lib/githubOAuth'
 import { GitHubGlyph } from '../ui/icons'
+import { trackEvent } from '../../lib/analytics'
 
 interface GitHubConnectViewProps {
   onClose?: () => void
@@ -248,7 +249,9 @@ export default function GitHubConnectView({ onClose, embedded = false, onPushSta
       })
       setPushState('done')
       onPushStateChange?.('done')
+      trackEvent({ name: 'github_push', props: { result: 'ok' } })
     } catch (e) {
+      trackEvent({ name: 'github_push', props: { result: 'error' } })
       setPushError(e instanceof Error ? e.message : 'Push failed.')
       setPushState('error')
       onPushStateChange?.('error')

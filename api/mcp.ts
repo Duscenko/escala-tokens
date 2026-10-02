@@ -21,6 +21,19 @@ async function loadTokens(project?: string | null): Promise<TokenJSON | null> {
   return readJsonBlob<TokenJSON>(tokenBlobKey(slug))
 }
 
+/** One structured line per tool call → Vercel Logs (searchable `"evt":"mcp"`).
+ *  Tool name only: never the project, the arguments, or the caller's IP —
+ *  this is usage counting, not a profile of anyone. */
+function logUsage(body: unknown) {
+  const calls = Array.isArray(body) ? body : [body]
+  for (const c of calls) {
+    const msg = c as { method?: unknown; params?: { name?: unknown } } | null
+    if (msg?.method !== 'tools/call') continue
+    const tool = typeof msg.params?.name === 'string' ? msg.params.name.slice(0, 40) : 'unknown'
+    console.info(JSON.stringify({ evt: 'mcp', tool }))
+  }
+}
+
 function applyCors(res: VercelResponse) {
   Object.entries(CORS_HEADERS).forEach(([k, v]) => res.setHeader(k, v))
 }
@@ -81,6 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(413).json({ error: `Batch too large (max ${MAX_BATCH}).` })
   }
 
+  logUsage(body)
   const result = await handleMcpMessage(body, loadTokens)
   if (result === null) {
     res.status(202).end()

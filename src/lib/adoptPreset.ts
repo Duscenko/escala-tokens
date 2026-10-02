@@ -18,6 +18,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { loadGoogleFont } from './fonts'
 import { resetThemeSemantics, withStyleSemantics } from './stylePreviewOverlay'
 import { slugify } from './utils'
+import { trackEvent } from './analytics'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from './themeLibrary'
 import { presetHarmony, presetStates, themeStylePreset, type ThemeStylePreset } from './themePresets'
 import type { ThemeAppearance } from './themeModes'
@@ -103,6 +104,8 @@ export function adoptPreset(
   next.setThemeOrigin(result.key, preset.id)
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
+  // `preset.id` is a curated constant (core, neo…), never user-typed text.
+  trackEvent({ name: 'style_adopt', props: { style: preset.id } })
   return { key: result.key, name: label }
 }
 

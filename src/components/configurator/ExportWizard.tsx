@@ -13,6 +13,7 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { AppearanceGlyph } from './colorControls'
 import AgentInstallPanel from './AgentInstallPanel'
+import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
 
 // ── Guided export (Source → Where → Export) ────────────────────────────────
@@ -243,6 +244,7 @@ export default function ExportWizard({
   function handleSaveSystem() {
     if (themeScope) saveCurrentSystemAsTheme(themeScope, snapshotName)
     else saveCurrentSystem()
+    trackEvent({ name: 'system_save', props: { scope: themeScope ? 'theme' : 'system' } })
     setJustSaved(true)
     setTimeout(() => setJustSaved(false), 2200)
   }
@@ -306,9 +308,11 @@ export default function ExportWizard({
 
   function runExport() {
     if (isGitHubDestination) {
+      trackEvent({ name: 'github_handoff' })
       onConnectGithub?.()
       return
     }
+    trackEvent({ name: 'export', props: { destination: format } })
     files.forEach((f, i) => setTimeout(() => download(f), i * 120))
     setDone(true)
   }

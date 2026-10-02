@@ -3,6 +3,7 @@ import { useDesignStore } from '../../store/useDesignStore'
 import { FIGMA_PLUGIN_COMMUNITY } from '../../lib/utils'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { FigmaLogo, Step, BackToEditor } from './figmaShared'
+import { trackEvent } from '../../lib/analytics'
 
 interface FigmaDownloadViewProps {
   onClose?: () => void
@@ -62,7 +63,10 @@ export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownload
           href={FIGMA_PLUGIN_COMMUNITY}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => setPluginBuildSeen(PLUGIN_BUILD)}
+          onClick={() => {
+            trackEvent({ name: 'plugin_open', props: { update: updateAvailable ? 'yes' : 'no' } })
+            setPluginBuildSeen(PLUGIN_BUILD)
+          }}
           className="self-start mt-1 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-app bg-fg hover:opacity-90 shadow-sm transition-all"
         >
           Open in Figma Community
