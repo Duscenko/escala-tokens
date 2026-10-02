@@ -268,7 +268,7 @@ export function LegalPage({ kind }: { kind: LegalKind }) {
 
   return (
     <div className="h-screen bg-app text-fg flex flex-col">
-      <PublicHeader current="legal" />
+      <PublicHeader />
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <div ref={articleRef} className="@container flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain">
           <article className="w-full min-w-0 max-w-4xl mx-auto px-5 @min-[760px]:px-8 py-7 flex flex-col gap-8">

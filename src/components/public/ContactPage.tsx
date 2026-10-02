@@ -182,7 +182,7 @@ export function ContactPage() {
 
   return (
     <div className="h-screen bg-app text-fg flex flex-col">
-      <PublicHeader current="legal" />
+      <PublicHeader />
       <div className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain">
         <article className="w-full min-w-0 max-w-4xl mx-auto px-5 @min-[760px]:px-8 py-7 flex flex-col gap-8">
           <DocHeader section={t('About')} kind={t('Legal & data')} title={c.title} actions={null} />

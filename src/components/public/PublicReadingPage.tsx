@@ -4,7 +4,7 @@
 // sends — and the configurator attaches `project` after that load.
 
 import { useEffect, useState } from 'react'
-import { BrandMark } from '../configurator/TopNav'
+import TopNav, { type DocsMenuPage, type TopNavKey } from '../configurator/TopNav'
 import ComponentsView from '../configurator/ComponentsView'
 import DocsView from '../configurator/DocsView'
 import { CATEGORIES, COMPONENTS } from '../../lib/componentCatalogue'
@@ -20,7 +20,7 @@ import {
   type PublicPage,
 } from '../../lib/publicSeo'
 import { encodeWorkspaceSection } from '../../lib/workspaceLink'
-import { getTheme } from '../../lib/theme'
+import { getTheme, setTheme, useTheme } from '../../lib/theme'
 import { GUIDE_FIGMA_KEY, GUIDE_MCP_KEY } from '../configurator/docs/getStarted'
 
 function go(href: string) {
@@ -51,10 +51,7 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
 
   return (
     <div className="min-h-screen bg-app text-fg flex flex-col">
-      <PublicHeader
-        current={page.kind === 'doc' ? (page.docKey === GUIDE_MCP_KEY ? 'mcp' : page.docKey === GUIDE_FIGMA_KEY ? 'figma' : 'docs') : 'components'}
-        openEditor={openEditor}
-      />
+      <PublicHeader current={page.kind === 'doc' ? 'docs' : 'components'} openEditor={openEditor} />
       <div className="flex-1 min-h-0 h-[calc(100dvh-52px)]">
         {page.kind === 'components-index' ? (
           <ComponentsIndex />
@@ -90,37 +87,46 @@ export function PublicReadingPage({ page }: { page: PublicPage }) {
   )
 }
 
-type PublicNavKey = 'about' | 'components' | 'docs' | 'mcp' | 'figma' | 'legal'
+const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
+  mcp: '/docs/mcp',
+  figma: '/docs/figma',
+  changelog: '/docs/changelog',
+  faq: '/docs/faq',
+}
+
+const NAV_PATH: Record<TopNavKey, string | null> = {
+  about: '/about',
+  variables: null, // the configurator itself — `openEditor`
+  components: '/components',
+  docs: '/docs',
+}
 
 /** The one header every crawlable reading page shares — Components, Docs,
- *  and the legal pages — so they read as one site, not three. */
-export function PublicHeader({ current, openEditor = '/' }: { current?: PublicNavKey; openEditor?: string }) {
+ *  Contact and the legal pages. It IS the workspace's `TopNav`, not a look-
+ *  alike: same lockup, same centred section nav and Docs menu, same Language
+ *  and Appearance controls, so leaving the configurator for a reading page
+ *  never changes the frame around it. The Export pill's slot holds the way
+ *  back into the configurator instead. `current` null lights nothing, the
+ *  same as the workspace's export/connect views. */
+export function PublicHeader({ current = null, openEditor = '/' }: { current?: TopNavKey | null; openEditor?: string }) {
   const { t } = useI18n()
-  const links: { key: PublicNavKey; href: string; label: string }[] = [
-    { key: 'about', href: '/about', label: t('About') },
-    { key: 'components', href: '/components', label: t('Components') },
-    { key: 'docs', href: '/docs', label: t('Docs') },
-    { key: 'mcp', href: '/docs/mcp', label: t('MCP') },
-    { key: 'figma', href: '/docs/figma', label: t('Use in Figma') },
-  ]
+  const theme = useTheme()
   return (
-    <header className="flex h-[52px] flex-shrink-0 items-center gap-4 border-b border-line px-4">
-      <a href="/" className="flex items-center gap-2 text-fg">
-        <BrandMark size={28} />
-        <span className="text-ui font-medium">Escala Tokens</span>
-      </a>
-      <nav aria-label={t('Navigation menu')} className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto text-body text-fg-muted">
-        {links.map((l) => (
-          <a key={l.key} href={l.href} className="hover:text-fg aria-[current=page]:text-fg" aria-current={current === l.key ? 'page' : undefined}>{l.label}</a>
-        ))}
-      </nav>
-      <a
-        href={openEditor}
-        className="ml-auto flex-shrink-0 text-body font-medium text-fg border border-line-strong rounded-lg px-3 py-1.5 hover:bg-elevated/60"
-      >
-        {t('Open the configurator')}
-      </a>
-    </header>
+    <TopNav
+      nav={current}
+      onNav={(key) => go(NAV_PATH[key] ?? openEditor)}
+      onOpenDocsPage={(page) => go(DOCS_PAGE_PATH[page])}
+      chromeAppearance={theme}
+      onChromeAppearanceChange={setTheme}
+      exportAction={(
+        <a
+          href={openEditor}
+          className="inline-flex h-8 flex-shrink-0 items-center rounded-lg bg-white px-2.5 text-caption font-medium text-black transition-shadow hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40"
+        >
+          {t('Open the configurator')}
+        </a>
+      )}
+    />
   )
 }
 
