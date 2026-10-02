@@ -321,8 +321,8 @@ function ContactRow({ icon, label, href }: { icon: ReactNode; label: string; hre
   return (
     <a
       href={href}
-      target={href.startsWith('mailto:') ? undefined : '_blank'}
-      rel={href.startsWith('mailto:') ? undefined : 'noreferrer'}
+      target={href.startsWith('mailto:') || href.startsWith('/') ? undefined : '_blank'}
+      rel={href.startsWith('mailto:') || href.startsWith('/') ? undefined : 'noreferrer'}
       className="flex items-center gap-2.5 px-2 h-8 -mx-2 rounded-lg text-body text-fg-muted hover:text-fg hover:bg-elevated/60 transition-colors"
     >
       <span className="text-fg-faint flex-shrink-0">{icon}</span>
@@ -459,6 +459,7 @@ export function AboutContact({ pad = 'px-5', card = false }: { pad?: string; car
         {t('design systems and design engineering.')}
       </P>
       <div className="flex flex-col mt-0.5">
+        <ContactRow icon={<MailIcon />} label={t('Contact form')} href="/contact" />
         {CONTACT.linkedin && (
           <ContactRow icon={<LinkedInIcon />} label="LinkedIn" href={CONTACT.linkedin} />
         )}

@@ -15,6 +15,7 @@
 //   - analytics: src/lib/analytics.ts (cookieless, enum-only events, URL scrub)
 //   - published tokens + claims: api/tokens.ts (public Blob, hashed claim)
 //   - MCP usage log: api/mcp.ts (tool name only)
+//   - contact form: api/contact.ts (relayed by Resend, nothing stored)
 //   - security: vercel.json headers, Vercel Firewall rate limit
 //   - Google Fonts: src/lib/fonts.ts (loaded on demand from Google's CDN)
 
@@ -23,7 +24,7 @@ import { DocHeader, DocSection, DocTitle, OnThisPage, type TocEntry } from '../c
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { LEGAL, LEGAL_PATH, PRIVACY_PATH } from '../../lib/legal'
+import { CONTACT_PATH, LEGAL, LEGAL_PATH, PRIVACY_PATH } from '../../lib/legal'
 
 export type LegalKind = 'legal' | 'privacy'
 
@@ -58,7 +59,8 @@ function Ul({ items }: { items: ReactNode[] }) {
   )
 }
 
-const contact = <A href={LEGAL.contact.href} external>{LEGAL.contact.label}</A>
+/** The contact channel is the form: no inbox is published anywhere. */
+const contactLink = (l: Locale) => <A href={CONTACT_PATH}>{{ fr: 'formulaire de contact', en: 'contact form', es: 'formulario de contacto' }[l]}</A>
 const hostLink = <A href={LEGAL.host.site} external>{LEGAL.host.site.replace('https://', '')}</A>
 const cnil = <A href="https://www.cnil.fr/fr/plaintes" external>cnil.fr</A>
 
@@ -70,7 +72,7 @@ function identity(l: Locale): ReactNode[] {
   const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {status}</>]
   if (LEGAL.siret) lines.push(<>SIRET{colon(l)} {LEGAL.siret}</>)
   if (LEGAL.address) lines.push(<>{LEGAL.address}</>)
-  lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contact}</>)
+  lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactLink(l)}</>)
   return lines
 }
 
@@ -148,14 +150,18 @@ function privacyDoc(l: Locale): Doc {
       </> },
       { id: 'journaux', h: '5. Journaux techniques et sécurité', body: <P>Comme tout hébergeur, Vercel enregistre les requêtes (adresse IP, navigateur, page demandée, date) pour assurer le fonctionnement du service, la protection contre les attaques et la limitation des abus (pare-feu, limite de requêtes). Base légale : intérêt légitime à sécuriser le service (art. 6.1.f RGPD). Ces journaux sont conservés au maximum 30 jours.</P> },
       { id: 'polices', h: '6. Polices Google Fonts', body: <P>Lorsque vous choisissez une police ou prévisualisez un style, votre navigateur télécharge la police depuis les serveurs de Google (fonts.googleapis.com), qui reçoivent alors votre adresse IP. Google indique ne pas utiliser ces données pour la publicité.</P> },
+      { id: 'formulaire', h: '7. Formulaire de contact', body: <>
+        <P>Lorsque vous nous écrivez via le {contactLink('fr')}, nous recevons votre adresse e-mail, votre message, le sujet choisi et, si vous les indiquez, votre nom et l’identifiant de votre système. Ces données servent uniquement à vous répondre.</P>
+        <Ul items={['Base légale : intérêt légitime à répondre à votre demande (art. 6.1.f RGPD) ; obligation légale pour les demandes d’exercice de droits (art. 6.1.c).', 'Aucun stockage sur nos serveurs : le message est transmis une seule fois par e-mail via Resend, puis conservé dans la messagerie de l’éditeur le temps de traiter la demande, et au maximum 3 ans après le dernier échange.', 'Protection anti-spam sans cookie ni CAPTCHA : champ invisible, délai minimal de saisie et limite de messages par adresse IP.']} />
+      </> },
       { id: 'cookies', h: 'Cookies et stockage local', body: <P>Le site ne dépose aucun cookie. Il utilise le stockage local de votre navigateur uniquement pour des fonctions que vous demandez : votre système de design, la langue, le thème clair/sombre, votre clé de publication et, si vous le fournissez, votre jeton GitHub. Ces usages sont strictement nécessaires au service demandé et ne requièrent pas de consentement (art. 82 de la loi Informatique et Libertés, directive ePrivacy).</P> },
       { id: 'profilage', h: 'Absence de profilage', body: <P>Aucune décision automatisée ni aucun profilage au sens de l’article 22 du RGPD. Aucune donnée n’est vendue, louée ni utilisée à des fins publicitaires.</P> },
       { id: 'transferts', h: 'Sous-traitants et transferts hors UE', body: <>
-        <Ul items={['Vercel Inc. (États-Unis) — hébergement, stockage des tokens publiés, mesure d’audience, journaux.', 'Google LLC (États-Unis) — polices Google Fonts.', 'GitHub, Inc. (États-Unis) — uniquement si vous connectez GitHub.']} />
+        <Ul items={['Vercel Inc. (États-Unis) — hébergement, stockage des tokens publiés, mesure d’audience, journaux.', 'Google LLC (États-Unis) — polices Google Fonts.', 'GitHub, Inc. (États-Unis) — uniquement si vous connectez GitHub.', 'Resend, Inc. (États-Unis) — acheminement des messages du formulaire de contact.']} />
         <P>Ces transferts hors de l’Union européenne reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework, décision d’adéquation de la Commission européenne) et/ou les clauses contractuelles types de la Commission (art. 45 et 46 RGPD).</P>
       </> },
       { id: 'securite', h: 'Sécurité', body: <P>Connexions chiffrées (HTTPS imposé par HSTS), clés de publication stockées uniquement sous forme d’empreinte, limitation du nombre de requêtes et pare-feu applicatif. En cas de violation de données susceptible d’engendrer un risque pour vos droits, nous la notifierons à la CNIL dans les 72 heures et vous en informerons si nécessaire (art. 33 et 34 RGPD).</P> },
-      { id: 'droits', h: 'Vos droits', body: <P>Vous disposez d’un droit d’accès, de rectification, d’effacement, de limitation, d’opposition et de portabilité de vos données, ainsi que du droit de définir des directives relatives à leur sort après votre décès (loi Informatique et Libertés). Pour supprimer un système publié ou exercer vos droits, contactez-nous via {contact} en indiquant l’identifiant du système concerné. Nous répondons dans un délai d’un mois. Vous pouvez aussi introduire une réclamation auprès de la CNIL ({cnil}).</P> },
+      { id: 'droits', h: 'Vos droits', body: <P>Vous disposez d’un droit d’accès, de rectification, d’effacement, de limitation, d’opposition et de portabilité de vos données, ainsi que du droit de définir des directives relatives à leur sort après votre décès (loi Informatique et Libertés). Pour supprimer un système publié ou exercer vos droits, écrivez-nous via le {contactLink('fr')} en indiquant l’identifiant du système concerné. Nous répondons dans un délai d’un mois. Vous pouvez aussi introduire une réclamation auprès de la CNIL ({cnil}).</P> },
     ],
   }
   if (l === 'es') return {
@@ -182,14 +188,18 @@ function privacyDoc(l: Locale): Doc {
       </> },
       { id: 'journaux', h: '5. Registros técnicos y seguridad', body: <P>Como cualquier proveedor de alojamiento, Vercel registra las solicitudes (dirección IP, navegador, página solicitada, fecha) para el funcionamiento del servicio, la protección frente a ataques y la limitación de abusos (cortafuegos, límite de solicitudes). Base legal: interés legítimo en la seguridad del servicio (art. 6.1.f RGPD). Se conservan como máximo 30 días.</P> },
       { id: 'polices', h: '6. Fuentes de Google Fonts', body: <P>Cuando elige una fuente o previsualiza un estilo, su navegador descarga la fuente desde los servidores de Google (fonts.googleapis.com), que reciben su dirección IP. Google indica que no usa estos datos para publicidad.</P> },
+      { id: 'formulaire', h: '7. Formulario de contacto', body: <>
+        <P>Cuando nos escribe mediante el {contactLink('es')}, recibimos su dirección de correo, su mensaje, el tema elegido y, si los indica, su nombre y el identificador de su sistema. Estos datos solo sirven para responderle.</P>
+        <Ul items={['Base legal: interés legítimo en responder a su solicitud (art. 6.1.f RGPD); obligación legal para las solicitudes de ejercicio de derechos (art. 6.1.c).', 'Sin almacenamiento en nuestros servidores: el mensaje se transmite una sola vez por correo mediante Resend y se conserva en el buzón del editor mientras se atiende la solicitud, y como máximo 3 años tras el último intercambio.', 'Protección anti-spam sin cookies ni CAPTCHA: campo invisible, tiempo mínimo de escritura y límite de mensajes por dirección IP.']} />
+      </> },
       { id: 'cookies', h: 'Cookies y almacenamiento local', body: <P>El sitio no instala cookies. Usa el almacenamiento local de su navegador solo para funciones que usted solicita: su sistema de diseño, el idioma, el tema claro/oscuro, su clave de publicación y, si lo proporciona, su token de GitHub. Son usos estrictamente necesarios para el servicio solicitado y no requieren consentimiento (art. 82 de la ley Informatique et Libertés, directiva ePrivacy).</P> },
       { id: 'profilage', h: 'Sin perfiles', body: <P>No hay decisiones automatizadas ni elaboración de perfiles en el sentido del artículo 22 del RGPD. Ningún dato se vende, se alquila ni se usa con fines publicitarios.</P> },
       { id: 'transferts', h: 'Encargados y transferencias fuera de la UE', body: <>
-        <Ul items={['Vercel Inc. (EE. UU.): alojamiento, almacenamiento de tokens publicados, medición de audiencia, registros.', 'Google LLC (EE. UU.): fuentes de Google Fonts.', 'GitHub, Inc. (EE. UU.): solo si conecta GitHub.']} />
+        <Ul items={['Vercel Inc. (EE. UU.): alojamiento, almacenamiento de tokens publicados, medición de audiencia, registros.', 'Google LLC (EE. UU.): fuentes de Google Fonts.', 'GitHub, Inc. (EE. UU.): solo si conecta GitHub.', 'Resend, Inc. (EE. UU.): envío de los mensajes del formulario de contacto.']} />
         <P>Estas transferencias fuera de la Unión Europea se basan en el Marco de Privacidad de Datos UE–EE. UU. (decisión de adecuación de la Comisión Europea) y/o en las cláusulas contractuales tipo de la Comisión (art. 45 y 46 RGPD).</P>
       </> },
       { id: 'securite', h: 'Seguridad', body: <P>Conexiones cifradas (HTTPS obligatorio mediante HSTS), claves de publicación guardadas solo como huella, límite de solicitudes y cortafuegos de aplicación. Si se produjera una brecha de datos con riesgo para sus derechos, la notificaremos a la CNIL en un plazo de 72 horas y le informaremos cuando corresponda (art. 33 y 34 RGPD).</P> },
-      { id: 'droits', h: 'Sus derechos', body: <P>Tiene derecho de acceso, rectificación, supresión, limitación, oposición y portabilidad, así como a dar instrucciones sobre el destino de sus datos tras su fallecimiento (ley Informatique et Libertés). Para eliminar un sistema publicado o ejercer sus derechos, contáctenos por {contact} indicando el identificador del sistema. Respondemos en un plazo de un mes. También puede presentar una reclamación ante la CNIL ({cnil}) o ante la autoridad de protección de datos de su país de la UE.</P> },
+      { id: 'droits', h: 'Sus derechos', body: <P>Tiene derecho de acceso, rectificación, supresión, limitación, oposición y portabilidad, así como a dar instrucciones sobre el destino de sus datos tras su fallecimiento (ley Informatique et Libertés). Para eliminar un sistema publicado o ejercer sus derechos, escríbanos mediante el {contactLink('es')} indicando el identificador del sistema. Respondemos en un plazo de un mes. También puede presentar una reclamación ante la CNIL ({cnil}) o ante la autoridad de protección de datos de su país de la UE.</P> },
     ],
   }
   return {
@@ -216,14 +226,18 @@ function privacyDoc(l: Locale): Doc {
       </> },
       { id: 'journaux', h: '5. Technical logs and security', body: <P>Like any host, Vercel logs requests (IP address, browser, requested page, time) to run the service, protect it from attacks and limit abuse (firewall, rate limiting). Legal basis: legitimate interest in securing the service (GDPR art. 6.1.f). These logs are kept for at most 30 days.</P> },
       { id: 'polices', h: '6. Google Fonts', body: <P>When you choose a font or preview a style, your browser downloads that font from Google’s servers (fonts.googleapis.com), which then receive your IP address. Google states it does not use this data for advertising.</P> },
+      { id: 'formulaire', h: '7. Contact form', body: <>
+        <P>When you write to us through the {contactLink('en')}, we receive your email address, your message, the topic you chose and, if you provide them, your name and your system ID. This data is used only to answer you.</P>
+        <Ul items={['Legal basis: legitimate interest in answering your request (GDPR art. 6.1.f); legal obligation for requests to exercise your rights (art. 6.1.c).', 'Nothing is stored on our servers: the message is relayed once by email through Resend, then kept in the publisher’s mailbox while the request is handled, and at most 3 years after the last exchange.', 'Spam protection without cookies or CAPTCHA: a hidden field, a minimum typing time and a per-IP message limit.']} />
+      </> },
       { id: 'cookies', h: 'Cookies and local storage', body: <P>The site sets no cookies. It uses your browser’s local storage only for features you ask for: your design system, language, light/dark theme, your publish key and, if you provide one, your GitHub token. These uses are strictly necessary for the service you request and need no consent (art. 82 of the French Data Protection Act, ePrivacy Directive).</P> },
       { id: 'profilage', h: 'No profiling', body: <P>No automated decision-making or profiling within the meaning of GDPR article 22. No data is sold, rented or used for advertising.</P> },
       { id: 'transferts', h: 'Processors and transfers outside the EU', body: <>
-        <Ul items={['Vercel Inc. (United States) — hosting, storage of published tokens, audience measurement, logs.', 'Google LLC (United States) — Google Fonts.', 'GitHub, Inc. (United States) — only if you connect GitHub.']} />
+        <Ul items={['Vercel Inc. (United States) — hosting, storage of published tokens, audience measurement, logs.', 'Google LLC (United States) — Google Fonts.', 'GitHub, Inc. (United States) — only if you connect GitHub.', 'Resend, Inc. (United States) — delivery of contact-form messages.']} />
         <P>These transfers outside the European Union rely on the EU–US Data Privacy Framework (a European Commission adequacy decision) and/or the Commission’s standard contractual clauses (GDPR arts. 45 and 46).</P>
       </> },
       { id: 'securite', h: 'Security', body: <P>Encrypted connections (HTTPS enforced through HSTS), publish keys stored only as a hash, rate limiting and an application firewall. Should a personal data breach create a risk to your rights, we will notify the CNIL within 72 hours and inform you where required (GDPR arts. 33 and 34).</P> },
-      { id: 'droits', h: 'Your rights', body: <P>You have the right of access, rectification, erasure, restriction, objection and portability, and the right to set instructions for your data after your death (French Data Protection Act). To delete a published system or exercise your rights, contact us via {contact} with the system ID. We reply within one month. You can also lodge a complaint with the CNIL ({cnil}) or your EU country’s data protection authority.</P> },
+      { id: 'droits', h: 'Your rights', body: <P>You have the right of access, rectification, erasure, restriction, objection and portability, and the right to set instructions for your data after your death (French Data Protection Act). To delete a published system or exercise your rights, write to us through the {contactLink('en')} with the system ID. We reply within one month. You can also lodge a complaint with the CNIL ({cnil}) or your EU country’s data protection authority.</P> },
     ],
   }
 }

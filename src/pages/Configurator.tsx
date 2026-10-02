@@ -83,7 +83,7 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-import { LEGAL_PATH, PRIVACY_PATH } from '../lib/legal'
+import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from '../lib/legal'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -2214,6 +2214,7 @@ export default function Configurator() {
         <div className="flex h-full flex-shrink-0 items-center gap-2">
         {/* Legal pages open in the same tab: they're short reads with their
             own way back, not a reason to keep a second editor tab around. */}
+        <a href={CONTACT_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Contact')}</a>
         <a href={LEGAL_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Legal notice')}</a>
         <a href={PRIVACY_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Privacy')}</a>
         <a

@@ -4,7 +4,8 @@ import Configurator from './pages/Configurator'
 import { AboutScaffold } from './components/configurator/AboutMenu'
 import { PublicReadingPage } from './components/public/PublicReadingPage'
 import { LegalPage } from './components/public/LegalPage'
-import { LEGAL_PATH, PRIVACY_PATH } from './lib/legal'
+import { ContactPage } from './components/public/ContactPage'
+import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
 import { applyDocumentHead } from './lib/documentHead'
 import { ABOUT_DESCRIPTION, ABOUT_TITLE, matchPublicPath } from './lib/publicSeo'
@@ -76,6 +77,15 @@ function App() {
   // configurator, so they cannot rewrite `/?project=&section=` or publish.
   const path = window.location.pathname.replace(/\/$/, '') || '/'
   const publicPage = path === '/about' ? null : matchPublicPath(path)
+
+  if (path === CONTACT_PATH) {
+    return (
+      <>
+        <ContactPage />
+        <ToastHost />
+      </>
+    )
+  }
 
   if (path === LEGAL_PATH || path === PRIVACY_PATH) {
     return (

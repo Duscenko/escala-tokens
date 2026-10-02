@@ -17,7 +17,7 @@ export const LEGAL = {
    *  public legal page is scraped for addresses. If an email is ever needed
    *  (RGPD requests are easier by mail), use a forwarding alias on the
    *  escalatokens.com domain, never the personal inbox. */
-  contact: { label: 'LinkedIn', href: 'https://www.linkedin.com/in/cesar-durango/' },
+  linkedin: 'https://www.linkedin.com/in/cesar-durango/',
   host: {
     name: 'Vercel Inc.',
     address: '440 N Barranca Ave #4133, Covina, CA 91723, United States',
@@ -27,5 +27,11 @@ export const LEGAL = {
   updated: '2026-10-02',
 }
 
+/** Contact form topics — shared by /contact and api/contact.ts so the form
+ *  can't offer a topic the server rejects. */
+export const CONTACT_TOPICS = ['general', 'privacy', 'delete', 'bug', 'business'] as const
+export type ContactTopic = (typeof CONTACT_TOPICS)[number]
+
+export const CONTACT_PATH = '/contact'
 export const LEGAL_PATH = '/legal'
 export const PRIVACY_PATH = '/privacy'
