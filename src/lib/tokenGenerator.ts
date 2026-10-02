@@ -3,6 +3,7 @@ import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
 import { dimensionRefsOf, dimensionScaleForStore } from './dimensions'
+import { normalizeFigmaViewports, type FigmaViewport } from './figmaSyncModes'
 import { resolveThemePalette, themeBrandRamp, themeDisplayName, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
 import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -119,6 +120,10 @@ export type GenerateTokenOptions = {
    *  keyed by the real library theme, and only the selected appearances
    *  are present — an unchecked Light or Dark is not in the payload. */
   modes?: FigmaSyncMode[] | null
+  /** Which viewports `Dimension Semantics` gets as Figma modes — Desktop ·
+   *  Tablet · Mobile. At least one; omit for all three. Shipped as the
+   *  top-level `viewports`. */
+  viewports?: FigmaViewport[] | null
   /** Plugin file display name (`tokens.project`). Does not change the
    *  `/api/tokens?project=` slug, which still comes from `projectName`. */
   project?: string | null
@@ -591,6 +596,9 @@ export function generateTokenJSON(
     // Contract version the Figma plugin checks on import. Bump only on a
     // breaking change to the payload shape; the plugin warns on a mismatch.
     schemaVersion: TOKEN_SCHEMA_VERSION,
+    // The viewports that become Dimension Semantics' Figma modes (canonical order,
+    // never empty). Additive: an older plugin ignores it.
+    viewports: normalizeFigmaViewports(opts?.viewports),
     project: opts?.project?.trim() || store.projectName,
     colors: {
       // The page background every ramp is generated against and every alpha

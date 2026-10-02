@@ -5,7 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
 import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
-import { defaultFigmaSyncModes, sameFigmaSyncModes, type FigmaSyncMode } from '../lib/figmaSyncModes'
+import { defaultFigmaSyncModes, sameFigmaSyncModes, FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { applyDocumentHead } from '../lib/documentHead'
@@ -916,6 +916,9 @@ export default function Configurator() {
     setFigmaSyncModesDirty(true)
     setFigmaSyncModes(modes)
   }, [])
+  // Which viewports Dimension Semantics gets as Figma modes. All three until the
+  // user narrows it (a Starter plan holds one mode per collection).
+  const [figmaViewports, setFigmaViewports] = useState<FigmaViewport[]>([...FIGMA_VIEWPORTS])
   const syncThemeKey = syncThemes.join('|')
   useEffect(() => {
     if (!figmaFileNameDirty) {
@@ -950,8 +953,9 @@ export default function Configurator() {
   const figmaPublishBase = useMemo(() => ({
     theme: previewTheme,
     modes: figmaSyncModes,
+    viewports: figmaViewports,
     project: figmaFileName.trim() || undefined,
-  }), [previewTheme, figmaSyncModes, figmaFileName])
+  }), [previewTheme, figmaSyncModes, figmaViewports, figmaFileName])
   // Ephemeral "try-on" of a System Style preset from the Themes Library. It
   // never touches the store — the preview reads `resolveStylePreviewTokens`
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
@@ -1481,6 +1485,8 @@ export default function Configurator() {
           }}
           syncModes={figmaSyncModes}
           onSyncModesChange={chooseFigmaSyncModes}
+          viewports={figmaViewports}
+          onViewportsChange={setFigmaViewports}
           section={workspaceSection}
         />
       </div>
@@ -2009,6 +2015,8 @@ export default function Configurator() {
                     }}
                     figmaSyncModes={figmaSyncModes}
                     onFigmaSyncModesChange={chooseFigmaSyncModes}
+                    figmaViewports={figmaViewports}
+                    onFigmaViewportsChange={setFigmaViewports}
                     githubPushState={githubPushState}
                     onGithubPushStateChange={handleGithubPushState}
                     docsExits={{

@@ -10,6 +10,10 @@ import { figmaSyncThemeKeys } from '../../lib/themeLibrary'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import {
   FIGMA_SYNC_MODE_CAP,
+  FIGMA_VIEWPORTS,
+  FIGMA_VIEWPORT_LABEL,
+  toggleFigmaViewport,
+  type FigmaViewport,
   hasFigmaSyncMode,
   toggleFigmaSyncAppearance,
   toggleFigmaSyncTheme,
@@ -42,6 +46,9 @@ interface FigmaSyncViewProps {
   /** Selected Figma columns — theme × Light/Dark, capped at `FIGMA_SYNC_MODE_CAP`. */
   syncModes: FigmaSyncMode[]
   onSyncModesChange: (modes: FigmaSyncMode[]) => void
+  /** Viewports that become Dimension Semantics' Figma modes (≥ 1). */
+  viewports: FigmaViewport[]
+  onViewportsChange: (viewports: FigmaViewport[]) => void
   /** Workspace section id for this window (`workspaceLink.ts`). Drives the
    *  auto-updating This page link. ID to plugin is `?project=<file slug>`. */
   section?: string
@@ -254,7 +261,7 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
 export default function FigmaSyncView({
   onClose, embedded = false, onOpenDownload,
   publishState, publishError, onRequestSync, previewTheme, onSelectTheme,
-  fileName, onFileNameChange, syncModes, onSyncModesChange, section,
+  fileName, onFileNameChange, syncModes, onSyncModesChange, viewports, onViewportsChange, section,
 }: FigmaSyncViewProps) {
   const store = useDesignStore()
   const {
@@ -474,6 +481,39 @@ export default function FigmaSyncView({
                 })}
               </div>
               )}
+            </div>
+            <div className="flex flex-col gap-1.5 border-t border-line pt-4">
+              <div className="flex items-center gap-3">
+                <p className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{t('Viewports')}</p>
+                <p className="ml-auto text-caption text-fg-faint">
+                  {t('{count} of {max}', { count: String(viewports.length), max: String(FIGMA_VIEWPORTS.length) })}
+                </p>
+              </div>
+              <p className="text-caption text-fg-faint leading-relaxed">
+                {t('Spacing, radius, size, stroke and grid get one Figma mode per viewport. Keep all three, or fewer if your plan limits modes per collection — at least one ships.')}
+              </p>
+              <div role="group" aria-label={t('Viewports to sync')} className="flex flex-wrap gap-1.5">
+                {FIGMA_VIEWPORTS.map((viewport: FigmaViewport) => {
+                  const on = viewports.includes(viewport)
+                  const last = on && viewports.length === 1
+                  return (
+                    <button
+                      key={viewport}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={last}
+                      title={last ? t('At least one viewport ships') : undefined}
+                      onClick={() => onViewportsChange(toggleFigmaViewport(viewports, viewport))}
+                      className={`inline-flex items-center gap-2 border border-line px-3 ${SYNC_CONTROL} text-body transition-colors ${SYNC_FOCUS} ${
+                        on ? 'bg-fg/8 font-semibold text-fg' : 'text-fg-muted hover:bg-fg/8 hover:text-fg'
+                      } ${last ? 'cursor-not-allowed' : ''}`}
+                    >
+                      <CheckMark selected={on} />
+                      {t(FIGMA_VIEWPORT_LABEL[viewport])}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>

@@ -23,7 +23,7 @@ import { FOUNDATION_DOCS, foundationDoc } from './docs/foundationDocs'
 import { PANEL_W, THEME_BAND_H } from './colorControls'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
-import type { FigmaSyncMode } from '../../lib/figmaSyncModes'
+import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
@@ -423,7 +423,7 @@ export default function ThemePreviewHub({
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onOpenComponents,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
-  figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange,
+  figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits,
 }: {
   docsOpen: boolean
@@ -463,6 +463,8 @@ export default function ThemePreviewHub({
   onFigmaFileNameChange: (name: string) => void
   figmaSyncModes: FigmaSyncMode[]
   onFigmaSyncModesChange: (modes: FigmaSyncMode[]) => void
+  figmaViewports: FigmaViewport[]
+  onFigmaViewportsChange: (viewports: FigmaViewport[]) => void
   githubPushState: GitHubPushState
   onGithubPushStateChange: (state: GitHubPushState) => void
   docsExits: Parameters<typeof DocsView>[0]['exits']
@@ -739,7 +741,7 @@ export default function ThemePreviewHub({
             <IntegrationContextBar view={surface === 'github' ? 'github' : 'figma'} onBack={() => onSurfaceChange('artefacts')} />
             <div className="flex min-h-0 flex-1 flex-col">
               {surface === 'github' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><GitHubConnectView embedded onPushStateChange={onGithubPushStateChange} /></div> : null}
-              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} section={workspaceSection} /></div> : null}
+              {surface === 'figma' ? <div className="flex-1 min-w-0 min-h-0 overflow-y-auto"><FigmaSyncView embedded onOpenDownload={onOpenFigmaDownload} publishState={figmaPublishState} onRequestSync={onRequestFigmaSync} previewTheme={previewTheme} onSelectTheme={onSelectTheme} fileName={figmaFileName} onFileNameChange={onFigmaFileNameChange} syncModes={figmaSyncModes} onSyncModesChange={onFigmaSyncModesChange} viewports={figmaViewports} onViewportsChange={onFigmaViewportsChange} section={workspaceSection} /></div> : null}
             </div>
           </>
         )}

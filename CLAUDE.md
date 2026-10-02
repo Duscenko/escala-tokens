@@ -2351,7 +2351,14 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > gone. Every other group carries one value in all three modes, ready to diverge. A
 > collection has one mode axis, so values come from the ACTIVE library theme; when
 > another theme's lengths differ the import logs it ("sync one theme per file").
-> Plugin v0.3.1.
+> **Which viewports ship is the user's choice** (File & modes → *Viewports*, Desktop ·
+> Tablet · Mobile, at least one, all three by default — a Starter plan holds one mode per
+> collection, Professional four): `figmaViewports` in `Configurator` → publish opts →
+> `generateTokenJSON({ viewports })` → top-level `viewports` in tokens.json → the plugin
+> creates only those columns (the first chosen takes the default mode; a viewport with no
+> value of its own takes the first chosen one's; unchosen columns from a past sync are
+> pruned). Helpers: `figmaSyncModes.ts` (`normalizeFigmaViewports`, `toggleFigmaViewport`).
+> Plugin v0.3.2.
 >
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
 > `Dimension primitives` collection (read-only — a primitive is its value — with

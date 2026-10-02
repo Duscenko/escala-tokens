@@ -135,7 +135,7 @@ export interface PublishResult {
  * `Authorization: Bearer`. The claim also lands in `.escala/system.json` when
  * the system is pushed to GitHub, so another machine can recover it.
  */
-export type PublishTokensInput = Pick<GenerateTokenOptions, 'theme' | 'themes' | 'modes' | 'project' | 'section'>
+export type PublishTokensInput = Pick<GenerateTokenOptions, 'theme' | 'themes' | 'modes' | 'viewports' | 'project' | 'section'>
 
 function publishOptions(
   themeOrOpts?: string | PublishTokensInput,
@@ -181,6 +181,7 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     ...(opts.theme ? { theme: opts.theme } : {}),
     ...(opts.themes?.length ? { themes: opts.themes } : {}),
     ...(opts.modes?.length ? { modes: opts.modes } : {}),
+    ...(opts.viewports?.length ? { viewports: opts.viewports } : {}),
     ...(opts.project?.trim() ? { project: opts.project.trim() } : {}),
     ...(opts.section ? { section: opts.section } : {}),
   }))
@@ -287,6 +288,7 @@ export function useAutoFigmaSync(
     theme: opts.theme ?? null,
     themes: opts.themes ?? null,
     modes: opts.modes ?? null,
+    viewports: opts.viewports ?? null,
     project: opts.project ?? null,
     section: opts.section ?? section ?? null,
   })
@@ -310,6 +312,7 @@ export function useAutoFigmaSync(
         ...(publishOpts.theme ? { theme: publishOpts.theme } : {}),
         ...(publishOpts.themes?.length ? { themes: publishOpts.themes } : {}),
         ...(publishOpts.modes?.length ? { modes: publishOpts.modes } : {}),
+        ...(publishOpts.viewports?.length ? { viewports: publishOpts.viewports } : {}),
         ...(publishOpts.project?.trim() ? { project: publishOpts.project.trim() } : {}),
         ...(publishOpts.section ? { section: publishOpts.section } : {}),
       }) as { editor?: unknown }

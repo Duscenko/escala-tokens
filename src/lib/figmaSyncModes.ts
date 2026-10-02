@@ -133,3 +133,32 @@ export function toggleFigmaSyncTheme(
   }
   return next
 }
+
+// ── Viewports ────────────────────────────────────────────────────────────────
+// `Dimension Semantics` in Figma has one mode per VIEWPORT, not per theme. The
+// user picks which of them ship: a Starter plan holds one mode per collection,
+// Professional four, and someone may simply want Desktop + Mobile. At least one
+// always ships (a collection cannot have no mode), and the order is canonical so
+// the first one chosen is the one a limited plan keeps.
+
+export const FIGMA_VIEWPORTS = ['desktop', 'tablet', 'mobile'] as const
+export type FigmaViewport = (typeof FIGMA_VIEWPORTS)[number]
+
+export const FIGMA_VIEWPORT_LABEL: Record<FigmaViewport, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+}
+
+/** Canonical order, deduped, unknown keys dropped, never empty (→ all three). */
+export function normalizeFigmaViewports(list?: readonly string[] | null): FigmaViewport[] {
+  const picked = FIGMA_VIEWPORTS.filter((v) => list?.includes(v))
+  return picked.length ? picked : [...FIGMA_VIEWPORTS]
+}
+
+/** Toggle one viewport. The last one standing can't be switched off. */
+export function toggleFigmaViewport(list: readonly FigmaViewport[], viewport: FigmaViewport): FigmaViewport[] {
+  const on = list.includes(viewport)
+  if (on && list.length === 1) return [...list]
+  return normalizeFigmaViewports(on ? list.filter((v) => v !== viewport) : [...list, viewport])
+}

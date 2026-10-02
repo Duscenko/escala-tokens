@@ -309,3 +309,23 @@ describe('quick edit stays on the primitive chain', () => {
     expect(json.dimensionRefs.sizes.md).toBe('{dimension.35}')
   })
 })
+
+describe('viewport modes selection', () => {
+  beforeEach(() => { useDesignStore.setState(makeDesignDefaults()) })
+
+  it('normalizes to canonical order, never empty', async () => {
+    const { normalizeFigmaViewports, toggleFigmaViewport } = await import('../figmaSyncModes')
+    expect(normalizeFigmaViewports(undefined)).toEqual(['desktop', 'tablet', 'mobile'])
+    expect(normalizeFigmaViewports(['mobile', 'desktop', 'bogus'])).toEqual(['desktop', 'mobile'])
+    expect(normalizeFigmaViewports([])).toEqual(['desktop', 'tablet', 'mobile'])
+    expect(toggleFigmaViewport(['desktop', 'tablet', 'mobile'], 'tablet')).toEqual(['desktop', 'mobile'])
+    expect(toggleFigmaViewport(['desktop'], 'desktop')).toEqual(['desktop']) // the last one stays
+    expect(toggleFigmaViewport(['mobile'], 'desktop')).toEqual(['desktop', 'mobile'])
+  })
+
+  it('tokens.json ships the chosen viewports, all three by default', () => {
+    expect((generateTokenJSON() as unknown as { viewports: string[] }).viewports).toEqual(['desktop', 'tablet', 'mobile'])
+    const two = generateTokenJSON(undefined, { viewports: ['mobile', 'desktop'] }) as unknown as { viewports: string[] }
+    expect(two.viewports).toEqual(['desktop', 'mobile'])
+  })
+})
