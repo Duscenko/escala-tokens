@@ -39,7 +39,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   {
     name: 'resolve_token',
     description:
-      'Resolve one token to Figma name, CSS var(), and values (hex/px per theme). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), alpha primitives (accent-a-3, black-a-8), and foundations (radius.lg, stroke.sm, selector.md). Foundation values come from foundationsByTheme when the published payload has it — the root map is only the fallback. A semantic value may come back as 8-digit #rrggbbaa. project is required: this server reads the last published Blob, not unsaved editor state.',
+      'Resolve one token to Figma name, CSS var(), and values (hex/px per theme). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), alpha primitives (accent-a-3, black-a-8), foundations (radius.lg, stroke.sm, selector.md) and Dimension primitives (dimension.16, --dimension-16). A foundation also returns `aliases`: the dimension primitive it points at per theme. Foundation values come from foundationsByTheme when the published payload has it — the root map is only the fallback. A semantic value may come back as 8-digit #rrggbbaa. project is required: this server reads the last published Blob, not unsaved editor state.',
     inputSchema: {
       type: 'object',
       properties: {

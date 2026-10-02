@@ -142,12 +142,14 @@ describe('buildSectionExport color markdown ↔ tokens.json', () => {
 describe('buildSectionExport grid', () => {
   it('CSS aliases breakpoint primitives and emits a resolved mobile media query', () => {
     const css = buildSectionExport('grid', 'css')
-    expect(css).toContain('--breakpoint-md: 768px;')
-    expect(css).toContain('--breakpoint-desktop: var(--breakpoint-md);')
-    expect(css).toContain('--breakpoint-tablet: var(--breakpoint-sm);')
-    expect(css).toContain('--breakpoint-mobile: calc(var(--breakpoint-sm) - 1px);')
+    // Breakpoints alias the Dimension primitive, and the slice carries it.
+    expect(css).toContain('--breakpoint-md: var(--dimension-768);')
+    expect(css).toContain('--dimension-768: 768px;')
+    expect(css).toContain('--breakpoint-desktop: var(--dimension-768);')
+    expect(css).toContain('--breakpoint-tablet: var(--dimension-640);')
+    expect(css).toContain('--breakpoint-mobile: calc(var(--dimension-640) - 1px);')
     expect(css).toContain('--grid-columns: 12;')
-    expect(css).toContain('--grid-gutter: var(--spacing-6);')
+    expect(css).toContain('--grid-gutter: var(--dimension-24);')
     expect(css).toContain('@media (max-width: 767px)')
     expect(css).toContain('--grid-columns: 8;')
     expect(css).toContain('@media (max-width: 639px)')
@@ -161,9 +163,9 @@ describe('buildSectionExport grid', () => {
     expect(md).toContain('`--breakpoint-desktop`')
     expect(md).toContain('`--breakpoint-tablet`')
     expect(md).toContain('`--breakpoint-mobile`')
-    expect(md).toContain('`var(--spacing-6)`')
-    expect(md).toContain('`var(--spacing-4)`')
-    expect(md).toContain('`var(--breakpoint-xl)`')
+    expect(md).toContain('`var(--dimension-24)`')
+    expect(md).toContain('`var(--dimension-16)`')
+    expect(md).toContain('`var(--dimension-1280)`')
   })
 })
 
@@ -178,10 +180,12 @@ describe('buildSectionExport sizes carries the selector ramp', () => {
 
   it('CSS emits both primitive ramps and both role sets', () => {
     const css = buildSectionExport('sizes', 'css', 'hex')
-    expect(css).toContain('--size-md: 40px;')
-    expect(css).toContain('--selector-md: 18px;')
-    expect(css).toContain('--size-control: var(--size-md);')
-    expect(css).toContain('--selector-control: var(--selector-md);')
+    expect(css).toContain('--size-md: var(--dimension-40);')
+    expect(css).toContain('--selector-md: var(--dimension-18);')
+    expect(css).toContain('--dimension-40: 40px;')
+    expect(css).toContain('--dimension-18: 18px;')
+    expect(css).toContain('--size-control: var(--dimension-40);')
+    expect(css).toContain('--selector-control: var(--dimension-18);')
   })
 
   it('markdown documents the ramp and the WCAG target-size pairing', () => {
@@ -200,6 +204,23 @@ describe('buildSectionExport sizes carries the selector ramp', () => {
 // A sub-pixel border only renders as a hairline at 2dppx+; below that the
 // browser rounds it into an artefact. The preview floors it in JS
 // (`hairlineSafe`); the shipped CSS has to make the same promise.
+describe('buildCSS dimension primitives', () => {
+  beforeEach(() => { useDesignStore.setState(makeDesignDefaults()) })
+
+  it('declares every primitive once in :root and aliases every length to one', () => {
+    const css = buildCSS(useDesignStore.getState())
+    const root = css.slice(0, css.indexOf('\n}'))
+    expect(root).toContain('--dimension-9999: 9999px;')
+    expect(root).toContain('--dimension--4: -4px;')
+    expect(root).toContain('--radius-full: var(--dimension-9999);')
+    // Every alias resolves to a declared primitive.
+    const declared = new Set([...root.matchAll(/--dimension-(-?[\d_]+):/g)].map((m) => m[1]))
+    const used = [...css.matchAll(/var\(--dimension-(-?[\d_]+)\)/g)].map((m) => m[1])
+    expect(used.length).toBeGreaterThan(20)
+    expect(used.filter((k) => !declared.has(k))).toEqual([])
+  })
+})
+
 describe('buildCSS hairline guard', () => {
   beforeEach(() => { useDesignStore.setState(makeDesignDefaults()) })
 
@@ -210,17 +231,18 @@ describe('buildCSS hairline guard', () => {
   it('floors a sub-pixel step to 1px on standard-density displays', () => {
     useDesignStore.setState({ stroke: { ...useDesignStore.getState().stroke, sm: '0.5px' } })
     const css = buildCSS(useDesignStore.getState())
-    expect(css).toContain('--stroke-sm: 0.5px;')
+    expect(css).toContain('--stroke-sm: var(--dimension-0_5);')
+    expect(css).toContain('--dimension-0_5: 0.5px;')
     expect(css).toMatch(/@media \(max-resolution: 1\.99dppx\) \{\s*:root \{\s*--stroke-sm: 1px;/)
     // The focus ring is a different step and is never a hairline candidate.
-    expect(css).toContain('--stroke-md: 2px;')
-    expect(css).toContain('--stroke-focus: var(--stroke-md);')
+    expect(css).toContain('--stroke-md: var(--dimension-2);')
+    expect(css).toContain('--stroke-focus: var(--dimension-2);')
   })
 
   it('ships the selector ramp and its roles in the full stylesheet', () => {
     const css = buildCSS(useDesignStore.getState())
-    expect(css).toContain('--selector-md: 18px;')
-    expect(css).toContain('--selector-control: var(--selector-md);')
+    expect(css).toContain('--selector-md: var(--dimension-18);')
+    expect(css).toContain('--selector-control: var(--dimension-18);')
   })
 
   it('aliases --padding-* onto spacing-inset-surface when the mirror still matches', () => {

@@ -44,6 +44,7 @@ import {
   extractBreakpoints,
   mergeGridFrame,
   mergeLayoutRoles,
+  rolePrimitiveName,
   resolveGridFrame,
   resolveLayoutRole,
   breakpointMobileMax,
@@ -698,8 +699,8 @@ function LayoutRolesBlock({
           {LAYOUT_ROLES[family].filter((r) => r.group === g.id).map((role) => {
             const step = map[role.key]
             const live = family === 'breakpoint' && role.key === 'mobile'
-              ? `calc(${family}-${step} − 1px) · ${breakpointMobileMax(map, primitives)}`
-              : `${family}-${step} · ${resolveLayoutRole(family, map, primitives, role.key) || '—'}`
+              ? `calc(${rolePrimitiveName(step, primitives)} − 1px) · ${breakpointMobileMax(map, primitives)}`
+              : `${rolePrimitiveName(step, primitives)} · ${resolveLayoutRole(family, map, primitives, role.key) || '—'}`
             return (
               <div key={role.key} className="flex items-baseline gap-4 min-w-0">
                 <span className="w-44 flex-shrink-0 text-mini font-mono text-fg-faint">

@@ -211,11 +211,11 @@ describe('resolve_token', () => {
     expect(b.id).toBe('accent-6')
   })
 
-  it('resolves a spacing step under step/', () => {
+  it('resolves a spacing step to its Dimension Semantics group', () => {
     const hit = resolveToken(JSON_FIXTURE, 'spacing.5')
     expect(hit.found).toBe(true)
     expect(hit.kind).toBe('foundation')
-    expect(hit.figma).toBe('step/5')
+    expect(hit.figma).toBe('Spacing/5')
     expect(hit.css).toBe('var(--spacing-5)')
     expect(hit.values.default).toBe('20px')
   })

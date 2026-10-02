@@ -60,7 +60,13 @@ export interface TokenJSON {
     stroke?: Record<string, string>
     grid?: Record<string, string>
     shadows?: Record<string, string>
+    /** Category → step → `{dimension.N}` for this theme. */
+    dimensionRefs?: Record<string, Record<string, string>>
   }>
+  /** Dimension primitives: one global collection of lengths named by value. */
+  dimensions?: Record<string, string>
+  /** Category → step → `{dimension.N}` (root / fallback). */
+  dimensionRefs?: Record<string, Record<string, string>>
   gradients?: Record<string, string>
   gradientAssignments?: Record<string, string | null>
   icons?: {

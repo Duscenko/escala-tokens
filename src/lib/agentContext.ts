@@ -16,6 +16,7 @@ import {
   defaultLayoutRoles,
   mergeLayoutRoles,
   resolveLayoutRole,
+  layoutValueCss,
   type LayoutFamily,
 } from './layoutTokens'
 
@@ -67,8 +68,11 @@ function cssColor(catalogId: string): string {
   return `var(--color-${catalogId.replace(/\./g, '-')})`
 }
 
-function figmaSpacing(key: string): string {
-  return /^\d/.test(key) ? `step/${key}` : key
+/** Figma variable name inside `Dimension Semantics`: the group, then the step
+ *  (`Radius/lg`, `Spacing/4`). Every step aliases a `Dimension Primitives`
+ *  variable named by its value. */
+function figmaDim(group: string, key: string): string {
+  return `${group}/${key}`
 }
 
 function primitivesOf(t: AgentFoundationTokens, family: LayoutFamily): Record<string, string> {
@@ -97,15 +101,14 @@ function semanticTable(t: AgentFoundationTokens, family: LayoutFamily, title: st
   const lines = [
     `### ${title} (semantics)`,
     '',
-    'Intent aliases. Bind these in components — they point at a primitive step, never a new px.',
+    'Intent aliases. Bind these in components — each points at a Dimension primitive, never a new px.',
     '',
     '| Role | CSS | Aliases | Live |',
     '|---|---|---|---|',
   ]
   for (const role of LAYOUT_ROLES[family]) {
-    const step = roles[role.key]
     lines.push(
-      `| \`${role.key}\` | \`--${family}-${role.key}\` | \`var(--${family}-${step})\` | \`${roleVal(t, family, role.key)}\` |`,
+      `| \`${role.key}\` | \`--${family}-${role.key}\` | \`${layoutValueCss(family, roles[role.key], primitivesOf(t, family))}\` | \`${roleVal(t, family, role.key)}\` |`,
     )
   }
   lines.push('')
@@ -178,19 +181,21 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
     'Resolved values from **this** system. Use the CSS custom property in code and the Figma variable in the file. **Never hardcode px, rem, or hex when a token exists. Never invent a parallel name.**',
     '',
     ...colorSection(def, t),
-    '### Radius (`Radius` collection)',
+    '### Dimension primitives (`Dimension Primitives` collection)',
+    '',
+    'Every length below aliases one variable here, named by its value (`16`, `-4`, `9999`, `3_5` = 3.5px). One mode — a theme changes which primitive a step points at, never a primitive. The steps and roles live in `Dimension Semantics`, grouped `Spacing/`, `Radius/`, `Stroke/`, `Size/`, `Selector/`, `Grid/`.',
+    '',
+    '### Radius (`Dimension Semantics` → `Radius/`)',
     '',
     '| Step | CSS | Figma | Value |',
     '|---|---|---|---|',
   ]
   ordered(t.radius, RADIUS_ORDER).forEach(([k, v]) =>
-    lines.push(`| \`${k}\` | \`--radius-${k}\` | \`${k}\` | \`${v}\` |`),
+    lines.push(`| \`${k}\` | \`--radius-${k}\` | \`${figmaDim('Radius', k)}\` | \`${v}\` |`),
   )
   lines.push('', ...semanticTable(t, 'radius', 'Radius roles'))
   lines.push(
-    '### Spacing (`Spacing` collection)',
-    '',
-    'Figma names nest under `step/` — a variable cannot start with a digit.',
+    '### Spacing (`Dimension Semantics` → `Spacing/`)',
     '',
     '| Step | CSS | Figma | Value |',
     '|---|---|---|---|',
@@ -198,7 +203,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
   Object.entries(t.spacing)
     .sort(([a], [b]) => Number(a) - Number(b) || a.localeCompare(b))
     .forEach(([k, v]) =>
-      lines.push(`| \`${k}\` | \`--spacing-${k}\` | \`${figmaSpacing(k)}\` | \`${v}\` |`),
+      lines.push(`| \`${k}\` | \`--spacing-${k}\` | \`${figmaDim('Spacing', k)}\` | \`${v}\` |`),
     )
 
   if (t.padding && Object.keys(t.padding).length) {
@@ -212,7 +217,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
       '|---|---|---|---|',
     )
     ordered(t.padding, PADDING_ORDER).forEach(([k, v]) =>
-      lines.push(`| \`${k}\` | \`--padding-${k}\` | \`padding/${k}\` | \`${v}\` |`),
+      lines.push(`| \`${k}\` | \`--padding-${k}\` | \`${figmaDim('Spacing', `padding/${k}`)}\` | \`${v}\` |`),
     )
   }
 
@@ -221,13 +226,13 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
   if (t.sizes && Object.keys(t.sizes).length) {
     lines.push(
       '',
-      '### Control height (`Size` collection)',
+      '### Control height (`Dimension Semantics` → `Size/`)',
       '',
       '| Step | CSS | Figma | Value |',
       '|---|---|---|---|',
     )
     ordered(t.sizes, SIZE_ORDER).forEach(([k, v]) =>
-      lines.push(`| \`${k}\` | \`--size-${k}\` | \`${k}\` | \`${v}\` |`),
+      lines.push(`| \`${k}\` | \`--size-${k}\` | \`${figmaDim('Size', k)}\` | \`${v}\` |`),
     )
     lines.push('', ...semanticTable(t, 'size', 'Size roles'))
   }
@@ -235,7 +240,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
   if (t.selector && Object.keys(t.selector).length) {
     lines.push(
       '',
-      '### Selector glyph (`Size` collection)',
+      '### Selector glyph (`Dimension Semantics` → `Selector/`)',
       '',
       'The square a checkbox, radio or switch knob is drawn in — a glyph, not a',
       'control height. Below 24px pair it with a transparent hit area',
@@ -245,13 +250,13 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
       '|---|---|---|---|',
     )
     ordered(t.selector, ['xs', 'sm', 'md', 'lg', 'xl']).forEach(([k, v]) =>
-      lines.push(`| \`${k}\` | \`--selector-${k}\` | \`${k}\` | \`${v}\` |`),
+      lines.push(`| \`${k}\` | \`--selector-${k}\` | \`${figmaDim('Selector', k)}\` | \`${v}\` |`),
     )
     lines.push('', ...semanticTable(t, 'selector', 'Selector roles'))
   }
 
   lines.push(
-    '### Stroke (`Stroke` collection)',
+    '### Stroke (`Dimension Semantics` → `Stroke/`)',
     '',
     'Line weight — not paint. Color stays on `border.*`.',
     '',
@@ -259,7 +264,7 @@ function tokenTables(def: ComponentDef, t: AgentFoundationTokens): string[] {
     '|---|---|---|---|',
   )
   ordered(primitivesOf(t, 'stroke'), ['none', 'sm', 'md', 'lg']).forEach(([k, v]) =>
-    lines.push(`| \`${k}\` | \`--stroke-${k}\` | \`${k}\` | \`${v}\` |`),
+    lines.push(`| \`${k}\` | \`--stroke-${k}\` | \`${figmaDim('Stroke', k)}\` | \`${v}\` |`),
   )
   lines.push('', ...semanticTable(t, 'stroke', 'Stroke roles'))
 

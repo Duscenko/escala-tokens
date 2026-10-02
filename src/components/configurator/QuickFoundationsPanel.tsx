@@ -13,7 +13,7 @@ import {
 } from './colorControls'
 import { resolveThemePalette } from '../../lib/themeSources'
 import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
-import { RADIUS_PRESETS, matchRadiusPreset } from './StepRadius'
+import { RADIUS_PRESETS, matchRadiusPreset } from '../../lib/layoutTokens'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_AI_SOURCES, getIconAiSource, type IconAiSourceKey } from '../../lib/iconLibraries'
 import { PADDING_STANDARD } from '../../lib/layoutTokens'

@@ -1,4 +1,4 @@
-import { figmaPrimitiveName, figmaPrimitiveNameAliases, flatKeyFromFigmaName, figmaSemanticName, figmaSpacingName, webCodeSyntax, type PrimitiveNameContext } from '../agentBundle/names.js'
+import { figmaDimensionName, figmaPrimitiveName, figmaPrimitiveNameAliases, flatKeyFromFigmaName, figmaSemanticName, figmaSpacingName, webCodeSyntax, type PrimitiveNameContext } from '../agentBundle/names.js'
 import type { ThemeSlot, TokenJSON } from '../agentBundle/types.js'
 
 export type ResolvedKind = 'semantic' | 'primitive' | 'foundation' | 'unknown'
@@ -11,6 +11,9 @@ export interface ResolvedToken {
   css: string
   values: Record<string, string>
   found: boolean
+  /** For a length: the Dimension primitive it aliases, per theme
+   *  (`{ light: 'dimension.16' }`). Absent for colours and for non-lengths. */
+  aliases?: Record<string, string>
 }
 
 const GROUP_FROM_FIGMA: Record<string, string> = {
@@ -170,12 +173,13 @@ function foundationValues(json: TokenJSON, id: string): ResolvedToken | null {
     themeField: keyof FoundationThemeMaps
     figma: (k: string) => string
   }[] = [
-    { kind: 'radius', cssPrefix: 'radius', root: json.radius, themeField: 'radius', figma: (k) => k },
+    // `dimensionRefs` category for each kind (shadow has none yet).
+    { kind: 'radius', cssPrefix: 'radius', root: json.radius, themeField: 'radius', figma: (k) => figmaDimensionName('Radius', k) },
     { kind: 'spacing', cssPrefix: 'spacing', root: json.spacing, themeField: 'spacing', figma: figmaSpacingName },
-    { kind: 'size', cssPrefix: 'size', root: json.sizes, themeField: 'sizes', figma: (k) => k },
-    { kind: 'selector', cssPrefix: 'selector', root: json.selector, themeField: 'selector', figma: (k) => k },
-    { kind: 'stroke', cssPrefix: 'stroke', root: json.stroke, themeField: 'stroke', figma: (k) => k },
-    { kind: 'grid', cssPrefix: 'grid', root: json.grid, themeField: 'grid', figma: (k) => k },
+    { kind: 'size', cssPrefix: 'size', root: json.sizes, themeField: 'sizes', figma: (k) => figmaDimensionName('Size', k) },
+    { kind: 'selector', cssPrefix: 'selector', root: json.selector, themeField: 'selector', figma: (k) => figmaDimensionName('Selector', k) },
+    { kind: 'stroke', cssPrefix: 'stroke', root: json.stroke, themeField: 'stroke', figma: (k) => figmaDimensionName('Stroke', k) },
+    { kind: 'grid', cssPrefix: 'grid', root: json.grid, themeField: 'grid', figma: (k) => figmaDimensionName('Grid', k) },
     { kind: 'shadow', cssPrefix: 'shadow', root: json.shadows, themeField: 'shadows', figma: (k) => `${json.project || 'SD'}/Shadow/${k}` },
   ]
   const tail = id.includes('.') ? id.slice(id.indexOf('.') + 1) : id
@@ -187,6 +191,7 @@ function foundationValues(json: TokenJSON, id: string): ResolvedToken | null {
     if (key == null) continue
     const values = foundationThemeValues(map.root, byTheme, json.colors.themeOrder, map.themeField, key)
     if (!values) continue
+    const aliases = dimensionAliases(json, map.themeField, key, Object.keys(values))
     return {
       query: id,
       id: `${map.kind}.${key}`,
@@ -195,9 +200,37 @@ function foundationValues(json: TokenJSON, id: string): ResolvedToken | null {
       css: `var(--${map.cssPrefix}-${key})`,
       values,
       found: true,
+      ...(aliases ? { aliases } : {}),
     }
   }
   return null
+}
+
+/** `{dimension.16}` → `dimension.16`, per theme, from the payload's own refs —
+ *  so an agent sees which primitive a step aliases, not only its px. */
+function dimensionAliases(
+  json: TokenJSON,
+  field: string,
+  key: string,
+  themes: string[],
+): Record<string, string> | null {
+  const strip = (ref?: string) => ref?.replace(/^\{|\}$/g, '')
+  const out: Record<string, string> = {}
+  for (const theme of themes) {
+    const ref = json.foundationsByTheme?.[theme]?.dimensionRefs?.[field]?.[key] ?? json.dimensionRefs?.[field]?.[key]
+    if (ref) out[theme] = strip(ref)!
+  }
+  return Object.keys(out).length ? out : null
+}
+
+/** `dimension.16` / `dimension/16` / `--dimension-16` / `var(--dimension-16)`. */
+function dimensionValues(json: TokenJSON, raw: string): { key: string; value: string } | null {
+  const dims = json.dimensions
+  if (!dims) return null
+  const m = /^(?:var\()?(?:--dimension-|dimension[./])(-?[\d_.]+)\)?$/i.exec(raw.trim())
+  if (!m) return null
+  const key = m[1].replace('.', '_')
+  return dims[key] != null ? { key, value: dims[key] } : null
 }
 
 function foundationKey(
@@ -270,6 +303,18 @@ export function resolveToken(json: TokenJSON, raw: string): ResolvedToken {
       figma: figmaSemanticName(id),
       css: webCodeSyntax(id),
       values: themed,
+      found: true,
+    }
+  }
+  const dim = dimensionValues(json, raw)
+  if (dim) {
+    return {
+      query: raw,
+      id: `dimension.${dim.key}`,
+      kind: 'primitive',
+      figma: dim.key,
+      css: `var(--dimension-${dim.key})`,
+      values: { default: dim.value },
       found: true,
     }
   }

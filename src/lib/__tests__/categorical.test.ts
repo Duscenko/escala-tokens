@@ -553,7 +553,8 @@ describe('the Skill export format', () => {
     expect(md).toContain('`Action/primary/default`')
     expect(md).toContain('`Content/primary`')
     expect(md).toContain('Spacing')
-    expect(md).toContain('step/{n}')
+    expect(md).toContain('Dimension Semantics')
+    expect(md).toContain('Dimension Primitives')
 
     const tokensMd = new TextDecoder().decode(
       unzipped.find((f) => f.path === 'references/tokens.md')!.data,

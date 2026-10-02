@@ -40,6 +40,8 @@ export const WORKSPACE_SECTION_PARAM = 'section'
 export const FOUNDATION_SECTION_KEYS = [
   'color',
   'typography',
+  // The global Dimension primitives — every length aliases one of these.
+  'dimensions',
   'radius',
   'spacing',
   'grid',

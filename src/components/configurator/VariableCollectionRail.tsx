@@ -223,7 +223,6 @@ export default function VariableCollectionRail({
             const selected = context.active === collection.key
             return (
               <button
-                key={collection.key}
                 type="button"
                 onClick={() => context.onChange(collection.key)}
                 aria-current={selected ? 'page' : undefined}

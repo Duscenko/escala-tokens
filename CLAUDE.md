@@ -2338,6 +2338,37 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   all three; its visibility condition checks the inset role too. The readout guards on
 >   `Number.isFinite`, not `|| 20` — step 0 is a legitimate `0px`.
 
+> **Every length aliases ONE global Dimension collection — `lib/dimensions.ts`.**
+> Plan and phases in `design-plans/dimension-primitives.md` (phases 0–2 and 5 done: model,
+> tokens.json, CSS, W3C, Markdown, MCP, the editor, and plugin v0.3.0 — `Dimension Primitives` +
+> one `Dimension Semantics` collection grouped Spacing/Radius/Stroke/Size/Selector/Grid,
+> replacing six per-foundation collections).
+> **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
+> `Dimension primitives` collection (read-only — a primitive is its value — with
+> "Used by"). Radius / Spacing / Grid / Sizes / Stroke own exactly ONE collection
+> each, `<X> semantics` (their roles); there is **no Scale/primitives tab and no
+> `radius-lg`-style step editor** — that was removed on purpose, so don't
+> reintroduce a "Radius primitives" collection. A role is **picked from the
+> primitives** (`ui/DimensionSelect` → `ui/VariableSelect`: native `<select>`,
+> `VariablesIcon` leading, drawn chevron, `appearance-none`, `left-2.5`/`right-2.5`),
+> the dimension twin of a colour role picking a ramp tone.
+>
+> **What a role stores** (`layoutTokens.ts`): a STEP of the family's scale (`lg`, `5` —
+> what every system stored before, and what an untouched role still holds; it FOLLOWS
+> the ramp) **or a pinned primitive** `dimension-<key>` (`dimension-20`, `dimension-3_5`
+> — what the editor writes on a pick; it does NOT move when the ramp does). Same for
+> Grid's gutter/margin/container and `breakpointRoles`. No migration. Always go
+> through `mergeLayoutRoles` / `resolveLayoutRole` / `roleValuePx`; never index
+> `primitives[roles[key]]` yourself — a pinned role has no such step. Every export
+> resolves a role to its **primitive directly** (`layoutValueCss`: `--radius-container:
+> var(--dimension-16)`, W3C `{dimension.16}`, the plugin aliases the primitive, not
+> `Radius/lg`), whichever form it is stored in. The primitive ladder
+> (`collectDimensions`) includes pinned values, or a role pinned to a length no ramp
+> step uses any more would detach. The global dials (Radius preset/roundness, Spacing
+> base unit) live in the roles page's rail (`LayoutRailControls`) and regrade the
+> RAMP: they move steps-valued roles, not pinned ones. A row that is a count, not a
+> length, is a plain select (Grid `columns`).
+
 > **Token value fields scrub like Figma's — `ui/ScrubInput.tsx`, one component, every
 > table.** Drag the double-chevron handle left/right and the number follows; Shift ×10,
 > Alt ×0.1, and ArrowUp/Down on the input do the same thing from the keyboard. Used by

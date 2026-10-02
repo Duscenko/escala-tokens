@@ -21,7 +21,8 @@ import { primitiveDisplayLabel } from './themeSources'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
 import { buildAgentProductExport, buildSkillExport } from './skillExport'
-import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, type LayoutFamily } from './layoutTokens'
+import { dimensionFromKey, dimensionRef, parseDimension } from './dimensions'
+import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, roleValuePx, type LayoutFamily } from './layoutTokens'
 
 export type WizardCollection =
   | 'primitives' | 'semantics' | 'gradients' | 'typography' | 'spacing'
@@ -307,6 +308,35 @@ function w3cSemantics(full: TokenJSON, modes: string[], aliases: boolean, famili
 
 const isPx = (v: string) => /(px|rem|em|%)$/.test(v)
 
+/** A length becomes a real alias to its Dimension primitive (`{dimension.16}`);
+ *  anything else (a count, `none`, a rem) keeps its literal value. The
+ *  `dimension` root ships whenever a numeric collection does, so the alias
+ *  always resolves inside the same document. */
+const lengthToken = (v: string): W3CNode => {
+  const n = parseDimension(v)
+  return n !== null ? token(dimensionRef(n), 'dimension') : token(v, isPx(v) ? 'dimension' : 'number')
+}
+
+/** Collections whose values are lengths — any of them pulls in `dimension`. */
+const DIMENSION_COLLECTIONS: readonly WizardCollection[] = ['spacing', 'radius', 'sizes', 'stroke', 'grid']
+
+function w3cDimensions(full: TokenJSON): W3CNode {
+  const dims = (full.dimensions ?? {}) as Record<string, string>
+  return Object.fromEntries(
+    Object.entries(dims)
+      .sort(([a], [b]) => dimensionFromKey(a) - dimensionFromKey(b))
+      .map(([k, v]) => [k, token(v, 'dimension')]),
+  ) as W3CNode
+}
+
+/** A role's alias: the Dimension primitive it resolves to (`{dimension.16}`),
+ *  whether it holds a step or a pinned primitive. A value that resolves to no
+ *  length falls back to the step's own path. */
+function roleRef(value: string, steps: Record<string, string> | undefined, stepPath: string): string {
+  const px = roleValuePx(value, steps)
+  return px !== null ? dimensionRef(px) : `{${stepPath}.${value}}`
+}
+
 function dimWithRoles(
   family: LayoutFamily,
   primitives: Record<string, string>,
@@ -316,13 +346,11 @@ function dimWithRoles(
    *  reason breakpoints alias `{grid.breakpoint.md}` rather than `{breakpoint.md}`. */
   refRoot?: string,
 ): W3CNode {
-  const dim = (o: Record<string, string>) =>
-    Object.fromEntries(Object.entries(o).map(([k, v]) => [k, token(v, isPx(v) ? 'dimension' : 'number')])) as Record<string, W3CNode>
-  const out = dim(primitives)
+  const out = Object.fromEntries(Object.entries(primitives).map(([k, v]) => [k, lengthToken(v)])) as Record<string, W3CNode>
   const map = mergeLayoutRoles(family, roles)
   const root = refRoot ?? (family === 'size' ? 'size' : family)
   for (const role of LAYOUT_ROLES[family]) {
-    out[role.key] = token(`{${root}.${map[role.key]}}`, 'dimension')
+    out[role.key] = token(roleRef(map[role.key], primitives, root), 'dimension')
   }
   return out as W3CNode
 }
@@ -374,17 +402,17 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
       const frame = mergeGridFrame(full.gridFrame)
       const breakpoint: Record<string, W3CNode> = {}
       for (const step of BREAKPOINT_STEPS) {
-        breakpoint[step] = token(bps[step], 'dimension')
+        breakpoint[step] = lengthToken(bps[step])
       }
-      breakpoint.desktop = token(`{grid.breakpoint.${cuts.desktop}}`, 'dimension')
-      breakpoint.mobile = token(`{grid.breakpoint.${cuts.mobile}}`, 'dimension')
+      breakpoint.desktop = token(roleRef(cuts.desktop, bps, 'grid.breakpoint'), 'dimension')
+      breakpoint.mobile = token(roleRef(cuts.mobile, bps, 'grid.breakpoint'), 'dimension')
       const pack = (alias: { columns: string; gutter: string; margin: string; container: string }): W3CNode => ({
         columns: token(Number(alias.columns), 'number'),
-        gutter: token(`{spacing.${alias.gutter}}`, 'dimension'),
-        margin: token(`{spacing.${alias.margin}}`, 'dimension'),
+        gutter: token(roleRef(alias.gutter, full.spacing, 'spacing'), 'dimension'),
+        margin: token(roleRef(alias.margin, full.spacing, 'spacing'), 'dimension'),
         container: alias.container === 'none'
           ? token('none', 'string')
-          : token(`{grid.breakpoint.${alias.container}}`, 'dimension'),
+          : token(roleRef(alias.container, bps, 'grid.breakpoint'), 'dimension'),
       })
       return {
         breakpoint,
@@ -502,14 +530,19 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
   }
 
   if (sel.format === 'w3c') {
+    const withDimensions = ordered.some((k) => DIMENSION_COLLECTIONS.includes(k))
     if (sel.structure === 'per-collection') {
-      return ordered.map((key) => ({
+      const files = ordered.map((key) => ({
         name: `${W3C_ROOT[key]}.tokens.json`,
         content: JSON.stringify({ [W3C_ROOT[key]]: w3cTreeFor(key, sel, full) }, null, 2),
         language: 'json' as const,
       }))
+      return withDimensions
+        ? [{ name: 'dimension.tokens.json', content: JSON.stringify({ dimension: w3cDimensions(full) }, null, 2), language: 'json' as const }, ...files]
+        : files
     }
     const tree: Record<string, W3CNode> = {}
+    if (withDimensions) tree.dimension = w3cDimensions(full)
     for (const key of ordered) tree[W3C_ROOT[key]] = w3cTreeFor(key, sel, full)
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(tree, null, 2), language: 'json' }]
   }

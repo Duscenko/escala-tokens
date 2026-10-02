@@ -11,6 +11,7 @@ export {
   figmaPrimitiveName,
   figmaSemanticName,
   figmaSpacingName,
+  figmaDimensionName,
   scopesFor,
   skillName,
   webCodeSyntax,

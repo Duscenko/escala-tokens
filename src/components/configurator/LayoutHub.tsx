@@ -18,10 +18,13 @@ export function LayoutTabHeading({ mode }: { mode: LayoutTab }) {
   )
 }
 
+/**
+ * A lengths foundation's one page: its semantic roles. There is no primitive
+ * tab — every number lives in `Dimension primitives`, and these roles are
+ * picked from it (see `design-plans/dimension-primitives.md`).
+ */
 export default function LayoutHub({
   family,
-  mode,
-  Primitives,
   Semantics,
   revealRole,
   railCollapsed = false,
@@ -31,33 +34,22 @@ export default function LayoutHub({
   query,
 }: {
   family: LayoutFamily
-  mode: LayoutTab
-  Primitives: ComponentType<{ tabBar?: ReactNode; query?: string; previewTheme?: string }>
   Semantics?: ComponentType<{ family?: LayoutFamily; tabBar?: ReactNode; query?: string; revealRole?: { key: string; seq: number } | null; railCollapsed?: boolean; previewTheme?: string; previewAppearance?: ThemeAppearance; previewPlatform?: GridViewport }>
   revealRole?: { key: string; seq: number } | null
   railCollapsed?: boolean
   previewTheme?: string
   previewAppearance?: ThemeAppearance
   previewPlatform?: GridViewport
-  /** Workspace "Search tokens" string — threaded down so the primitive table
-   *  and the semantic list drop their own search + heading bar (see
-   *  `VariablesTable`'s `query` prop). */
+  /** Workspace "Search tokens" string — threaded down so the semantic list
+   *  drops its own search + heading bar. */
   query?: string
 }) {
   const Sem = Semantics ?? LayoutSemantics
-  const heading = <LayoutTabHeading mode={mode} />
-
   return (
     <div className="h-full flex flex-col min-h-0">
-      {mode === 'primary' ? (
-        <div className="flex-1 min-h-0">
-          <Primitives tabBar={heading} query={query} previewTheme={previewTheme} />
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0">
-          <Sem family={family} tabBar={heading} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
-        </div>
-      )}
+      <div className="flex-1 min-h-0">
+        <Sem family={family} tabBar={<LayoutTabHeading mode="semantics" />} query={query} revealRole={revealRole} railCollapsed={railCollapsed} previewTheme={previewTheme} previewAppearance={previewAppearance} previewPlatform={previewPlatform} />
+      </div>
     </div>
   )
 }

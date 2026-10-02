@@ -16,8 +16,9 @@ import { detectSeedKind, solidFromSeed, generateColorScale, generateFamilyDarkSc
 import { slugify } from '../../lib/utils'
 import { RESERVED_COLOR_KEYS, SIZES_DEFAULT, DEFAULT_THEME_SOURCES } from '../../store/useDesignStore'
 import { COLOR_FAMILY_PRESETS } from './QuickFoundationsPanel'
-import { RADIUS_PRESETS, scaleRadiusFromLg } from '../../lib/layoutTokens'
-import { BASE_PRESETS, SPACING_STEPS, buildSpacingFromBase } from './Step5_Spacing'
+import { RADIUS_PRESETS, SPACING_BASE_PRESETS, SPACING_STEPS, buildSpacingFromBase, scaleRadiusFromLg } from '../../lib/layoutTokens'
+// (retired file — kept for reference) the base-unit presets live in layoutTokens now.
+const BASE_PRESETS: { label: string; value: number }[] = SPACING_BASE_PRESETS.map((p) => ({ label: p.label, value: p.value }))
 import { FONT_PRESETS, fontStack, loadGoogleFont } from '../../lib/fonts'
 
 export type TokenCategory = 'color' | 'typography' | 'radius' | 'spacing' | 'sizes'
@@ -182,7 +183,7 @@ export default function NewTokenWizard({
   }
 
   // ── Spacing ──
-  const [spacingBase, setSpacingBase] = useState(BASE_PRESETS[0].value)
+  const [spacingBase, setSpacingBase] = useState<number>(BASE_PRESETS[0].value)
 
   // ── Sizes ──
   const [sizeKey, setSizeKey] = useState<keyof typeof SIZES_DEFAULT>('md')

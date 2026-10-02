@@ -131,11 +131,24 @@
         }
       }
     },
+    "dimensions": {
+      "type": "object",
+      "description": "Dimension primitives: ONE global collection of lengths, named by value ('16', '-4', '9999', '3_5' = 3.5px), single mode. Standard ladder plus every length a shipped theme uses. Key order is not numeric; sort by value.",
+      "additionalProperties": { "type": "string" }
+    },
+    "dimensionRefs": {
+      "type": "object",
+      "description": "Category (spacing, padding, radius, sizes, selector, stroke, grid) -> step -> '{dimension.N}'. Which primitive each length aliases; the category maps keep the resolved px. Also per theme under foundationsByTheme.<theme>.dimensionRefs.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string", "pattern": "^\\{dimension\\.-?[0-9_]+\\}$" }
+      }
+    },
     "spacing": { "type": "object", "additionalProperties": { "type": "string" } },
     "spacingRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. Role → primitive step (e.g. inset-surface → \"5\")."
+      "description": "v6 additive. Role → a step of `spacing` (e.g. inset-surface → \"5\"), or a Dimension primitive pinned in the editor (\"dimension-20\" = 20px). Exports resolve both to the primitive."
     },
     "padding": {
       "type": "object",
@@ -146,7 +159,7 @@
     "radiusRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. Role → radius step (action → 2xl on a fresh system)."
+      "description": "v6 additive. Role → a step of `radius` (action → sm on a fresh system), or a pinned Dimension primitive (\"dimension-21\"). Exports resolve both to the primitive."
     },
     "gradients": { "type": "object", "additionalProperties": { "type": "string" } },
     "gradientsDark": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -174,19 +187,19 @@
     "breakpointRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. desktop | tablet | mobile → breakpoint step."
+      "description": "v6 additive. desktop | tablet | mobile → a breakpoint step, or a pinned Dimension primitive (\"dimension-1000\")."
     },
     "sizes": { "type": "object", "additionalProperties": { "type": "string" } },
     "sizeRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. control | compact | touch | hit | fab → size step."
+      "description": "v6 additive. control | compact | touch | hit | fab → a size step, or a pinned Dimension primitive."
     },
     "stroke": { "type": "object", "additionalProperties": { "type": "string" } },
     "strokeRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive."
+      "description": "v6 additive. divider | control | focus → a stroke step, or a pinned Dimension primitive."
     },
     "borders": {
       "type": "object",

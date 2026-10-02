@@ -72,13 +72,9 @@ import ExportWizard from '../components/configurator/ExportWizard'
 import ImportSystemModal from '../components/configurator/ImportSystemModal'
 import NewSystemModal from '../components/configurator/NewSystemModal'
 import Step4_Typography from '../components/configurator/Step4_Typography'
-import Step5_Spacing from '../components/configurator/Step5_Spacing'
-import StepRadius from '../components/configurator/StepRadius'
 import Step7_Shadow from '../components/configurator/Step7_Shadow'
-import Step8_Grid from '../components/configurator/Step8_Grid'
-import Step9_Sizes from '../components/configurator/Step9_Sizes'
-import StepStroke from '../components/configurator/StepStroke'
 import LayoutHub, { LayoutTabHeading } from '../components/configurator/LayoutHub'
+import DimensionPrimitives from '../components/configurator/DimensionPrimitives'
 import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
@@ -105,7 +101,10 @@ interface FoundationSection {
   subtitle: string
   /** Every Variables section takes the shell's table heading; the ones with no
    *  semantic layer (Icons, Color's own hub) just ignore it. */
-  Component: ComponentType<{ tabBar?: ReactNode; previewTheme?: string; query?: string }>
+  /** The section's own body. Absent for the lengths (Radius · Spacing · Grid ·
+   *  Sizes · Stroke): they render `LayoutHub` → the semantics page, which is
+   *  driven by `section.key`, not by a per-foundation component. */
+  Component?: ComponentType<{ tabBar?: ReactNode; previewTheme?: string; query?: string }>
   Icon: ComponentType
 }
 
@@ -135,14 +134,25 @@ const FOUNDATIONS: FoundationSection[] = [
     Icon: ic('M8 7H16M12 7V17M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z'),
   },
   {
+    key: 'dimensions',
+    label: 'Dimensions',
+    short: 'Dimensions',
+    hint: 'Every length, once',
+    title: 'Dimensions',
+    variablesLabel: 'Dimension variables',
+    subtitle: 'The global primitive scale. Radius, spacing, sizes, stroke and grid all alias these numbers — nothing else holds a px.',
+    Component: DimensionPrimitives,
+    // A ruler: the one collection every length is measured against.
+    Icon: ic('M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4Z|M7.5 10.5 9 9|M10.5 13.5 12 12|M13.5 16.5 15 15', '1.8'),
+  },
+  {
     key: 'radius',
     label: 'Border radius',
     short: 'Radius',
     hint: 'Corner-radius personality',
     title: 'Border radius',
     variablesLabel: 'Radius variables',
-    subtitle: 'Primitives for the scale, then semantic aliases — action, container, overlay — mapped onto that ramp.',
-    Component: StepRadius,
+    subtitle: 'Semantic roles — action, container, overlay — each pointing at a Dimension primitive.',
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
   },
   {
@@ -152,8 +162,7 @@ const FOUNDATIONS: FoundationSection[] = [
     hint: 'Base spacing scale',
     title: 'Spacing',
     variablesLabel: 'Spacing variables',
-    subtitle: 'Primitives for the 4px grid, then semantic aliases — gaps and insets — mapped onto that scale.',
-    Component: Step5_Spacing,
+    subtitle: 'Semantic roles — gaps and insets — each pointing at a Dimension primitive.',
     Icon: ic('M21 21V3M3 21V3M9 8V16C9 16.9319 9 17.3978 9.15224 17.7654C9.35523 18.2554 9.74458 18.6448 10.2346 18.8478C10.6022 19 11.0681 19 12 19C12.9319 19 13.3978 19 13.7654 18.8478C14.2554 18.6448 14.6448 18.2554 14.8478 17.7654C15 17.3978 15 16.9319 15 16V8C15 7.06812 15 6.60218 14.8478 6.23463C14.6448 5.74458 14.2554 5.35523 13.7654 5.15224C13.3978 5 12.9319 5 12 5C11.0681 5 10.6022 5 10.2346 5.15224C9.74458 5.35523 9.35523 5.74458 9.15224 6.23463C9 6.60218 9 7.06812 9 8Z'),
   },
   {
@@ -174,8 +183,7 @@ const FOUNDATIONS: FoundationSection[] = [
     hint: 'Columns, gutters & breakpoints',
     title: 'Grid',
     variablesLabel: 'Grid variables',
-    subtitle: 'Breakpoint primitives, then desktop / mobile aliases — the cut Type and the layout grid share.',
-    Component: Step8_Grid,
+    subtitle: 'The viewport cuts and the layout frame, each pointing at a Dimension primitive.',
     Icon: ic('M7.5 12h.01m8.99 0h.01M12 12h.01M12 16.5h.01m-.01-9h.01M3 7.8v8.4c0 1.68 0 2.52.327 3.162a3 3 0 0 0 1.311 1.311C5.28 21 6.12 21 7.8 21h8.4c1.68 0 2.52 0 3.162-.327a3 3 0 0 0 1.311-1.311C21 18.72 21 17.88 21 16.2V7.8c0-1.68 0-2.52-.327-3.162a3 3 0 0 0-1.311-1.311C18.72 3 17.88 3 16.2 3H7.8c-1.68 0-2.52 0-3.162.327a3 3 0 0 0-1.311 1.311C3 5.28 3 6.12 3 7.8Z'),
   },
   {
@@ -185,8 +193,7 @@ const FOUNDATIONS: FoundationSection[] = [
     hint: 'Component size scale',
     title: 'Sizes',
     variablesLabel: 'Size variables',
-    subtitle: 'Control heights, then semantic aliases — compact, control, touch — mapped onto that ramp.',
-    Component: Step9_Sizes,
+    subtitle: 'Semantic roles — compact, control, touch — each pointing at a Dimension primitive.',
     Icon: ic('M4 20V4M20 20V4M8 12h8M8 12l2.5-2.5M8 12l2.5 2.5M16 12l-2.5-2.5M16 12l-2.5 2.5', '1.8'),
   },
   {
@@ -196,8 +203,7 @@ const FOUNDATIONS: FoundationSection[] = [
     hint: 'Border width & focus ring',
     title: 'Stroke',
     variablesLabel: 'Stroke variables',
-    subtitle: 'Line weight primitives, then semantic aliases — divider, control, focus — not paint.',
-    Component: StepStroke,
+    subtitle: 'Line weight roles — divider, control, focus — each pointing at a Dimension primitive. Not paint.',
     Icon: ic('M3 3h.01M3 12h.01M3 21h.01M3 16.5h.01M3 7.5h.01M7.5 3h.01m-.01 9h.01m-.01 9h.01M16.5 3h.01m-.01 9h.01m-.01 9h.01M21 3h.01M21 12h.01M21 21h.01M21 16.5h.01m-.01-9h.01M12 21V3'),
   },
   {
@@ -233,7 +239,15 @@ const CATEGORY_ICONS: Record<string, ComponentType> = {
 // → group. Every foundation declares only the collections it actually owns,
 // so the navigation never offers a semantic or gradient surface that does not
 // exist for that data type.
+//
+// Lengths are the exception that proves it: their PRIMITIVES are not per
+// foundation. Every number lives once in `Dimension primitives` (its own rail
+// entry, `dimensions`), and Radius / Spacing / Grid / Sizes / Stroke own ONE
+// collection each — `<X> semantics`, the roles — whose values are picked from
+// those primitives. Same shape as Figma's `Dimension Primitives` +
+// `Dimension Semantics › Radius/`, and as Color semantics over Color primitives.
 const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
+  dimensions: [{ key: 'primitives', label: 'Dimension primitives' }],
   color: [
     { key: 'primitives', label: 'Color primitives' },
     { key: 'semantics', label: 'Color semantics', icon: 'variables' },
@@ -242,26 +256,11 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
     { key: 'primitives', label: 'Type primitives' },
     { key: 'semantics', label: 'Text semantics', icon: 'variables' },
   ],
-  radius: [
-    { key: 'primitives', label: 'Radius primitives' },
-    { key: 'semantics', label: 'Radius semantics', icon: 'variables' },
-  ],
-  spacing: [
-    { key: 'primitives', label: 'Spacing primitives' },
-    { key: 'semantics', label: 'Spacing semantics', icon: 'variables' },
-  ],
-  grid: [
-    { key: 'primitives', label: 'Grid primitives' },
-    { key: 'semantics', label: 'Grid semantics', icon: 'variables' },
-  ],
-  sizes: [
-    { key: 'primitives', label: 'Size primitives' },
-    { key: 'semantics', label: 'Size semantics', icon: 'variables' },
-  ],
-  stroke: [
-    { key: 'primitives', label: 'Stroke primitives' },
-    { key: 'semantics', label: 'Stroke semantics', icon: 'variables' },
-  ],
+  radius: [{ key: 'semantics', label: 'Radius semantics', icon: 'variables' }],
+  spacing: [{ key: 'semantics', label: 'Spacing semantics', icon: 'variables' }],
+  grid: [{ key: 'semantics', label: 'Grid semantics', icon: 'variables' }],
+  sizes: [{ key: 'semantics', label: 'Size semantics', icon: 'variables' }],
+  stroke: [{ key: 'semantics', label: 'Stroke semantics', icon: 'variables' }],
   shadow: [{ key: 'primitives', label: 'Shadow styles' }],
   icons: [{ key: 'primitives', label: 'Icon library' }],
 }
@@ -778,10 +777,12 @@ export default function Configurator() {
     () => incomingPlace?.foundation === 'color' && incomingPlace?.collection === 'gradients',
   )
   const activeFoundationCollections = VARIABLE_COLLECTIONS[activeFoundation] ?? [{ key: 'primitives', label: 'Primitives' }]
-  const requestedCollection = collectionByFoundation[activeFoundation] ?? 'primitives'
+  const requestedCollection = collectionByFoundation[activeFoundation] ?? activeFoundationCollections[0].key
+  // A foundation with one collection (the lengths) has no 'primitives' to fall
+  // back to — an old deep link to it lands on the collection that exists.
   const activeCollection = activeFoundationCollections.some(({ key }) => key === requestedCollection)
     ? requestedCollection
-    : 'primitives'
+    : activeFoundationCollections[0].key
   const setFoundationCollection = (foundation: string, collection: VariableCollectionKey) => {
     setCollectionByFoundation((current) => ({ ...current, [foundation]: collection }))
     if (foundation === 'color') setColorGradientsOpen(false)
@@ -1540,7 +1541,7 @@ export default function Configurator() {
     // Export is transversal and lives in TopNav; there's no per-foundation
     // action pill in CenterHeader (Variables foundations don't render that
     // header at all). The old whole-system Reset pill is gone entirely.
-    const Active = section.Component
+    const Active = section.Component ?? (() => null)
     // Inner body only — Groups | icon-rail is the STABLE shell
     // (FoundationWorkbench, mounted outside the keyed motion below) so
     // Color → Font doesn't remount the switcher.
@@ -1585,6 +1586,8 @@ export default function Configurator() {
         previewPlatform={previewPlatform}
         query={colorQuery}
       />
+    ) : section.key === 'dimensions' ? (
+      <DimensionPrimitives previewTheme={previewTheme} query={colorQuery} railCollapsed={groupsRailCollapsed} />
     ) : section.key === 'icons' ? (
       <div className="h-full overflow-y-auto p-8">
         <Active />
@@ -1592,8 +1595,6 @@ export default function Configurator() {
     ) : section.key === 'radius' || section.key === 'spacing' || section.key === 'sizes' || section.key === 'stroke' ? (
       <LayoutHub
         family={section.key === 'sizes' ? 'size' : section.key}
-        mode={activeCollection === 'semantics' ? 'semantics' : 'primary'}
-        Primitives={Active}
         revealRole={layoutReveal}
         railCollapsed={groupsRailCollapsed}
         previewTheme={previewTheme}
@@ -1604,8 +1605,6 @@ export default function Configurator() {
     ) : section.key === 'grid' ? (
       <LayoutHub
         family="breakpoint"
-        mode={activeCollection === 'semantics' ? 'semantics' : 'primary'}
-        Primitives={Active}
         Semantics={GridSemantics}
         revealRole={layoutReveal}
         railCollapsed={groupsRailCollapsed}

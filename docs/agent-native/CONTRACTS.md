@@ -98,6 +98,8 @@ Always emit when present in the store:
 
 - `colors.primitive`, `colors.primitiveAlpha`, `colors.themes`, `colors.themeOrder`
 - `colors.semantic`, `colors.semanticDark` (compat)
+- **Role values** (`radiusRoles`, `spacingRoles`, `sizeRoles`, `selectorRoles`, `strokeRoles`, `breakpointRoles`, and the `gridFrame` gutter/margin/container fields) are a **step** of the family's scale (`lg`, `5`) **or a pinned Dimension primitive** (`dimension-20`, `dimension-3_5`) — additive, no bump: a payload that only holds steps is unchanged. A consumer resolves either to a length; the plugin and the exports alias the primitive directly.
+- `dimensions` (the Dimension primitives, named by value) and `dimensionRefs` (category → step → `{dimension.N}`), also per theme in `foundationsByTheme.<theme>.dimensionRefs` — additive, no bump
 - `typography` (including `roles`), `spacing`, `spacingRoles`, `padding`, `radius`, `radiusRoles`, `sizes`, `sizeRoles`, `selector`, `selectorRoles`, `stroke`, `strokeRoles`, `grid`, `gridFrame`, `breakpointRoles`, `shadows`, `shadowsDark`, `gradients`, `gradientsDark`, `gradientAssignments`
 - `foundationsByTheme` — per-library-theme copies of the foundation maps above; the plugin materializes differing themes as modes on those collections
 - `borders.width` — copy of `stroke`, so a v5 plugin still creates the Border collection

@@ -10,6 +10,7 @@ import { radiusRoleOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import {
   breakpointMobileMax,
+  breakpointRolePx,
   extractBreakpoints,
   mergeGridFrame,
   resolveGridFrame,
@@ -244,11 +245,10 @@ export function GridPreview({
   const grid = t.grid ?? {}
   const bpsMap = extractBreakpoints(grid)
   const found = breakpointsOf(grid)
-  const desktopStep = t.breakpointRoles?.desktop ?? 'md'
-  const desktopMin = num(bpsMap[desktopStep], 768)
+  const desktopMin = breakpointRolePx(t.breakpointRoles, bpsMap, 'desktop')
   const mobileMax = num(breakpointMobileMax(t.breakpointRoles, bpsMap), desktopMin - 1)
   const platform = t.previewPlatform ?? 'desktop'
-  const tabletMin = num(bpsMap[t.breakpointRoles?.tablet ?? 'sm'], 640)
+  const tabletMin = breakpointRolePx(t.breakpointRoles, bpsMap, 'tablet')
   const liveFrame = frameOf(t, platform)
   const viewportPx = platform === 'mobile'
     ? Math.min(375, mobileMax)

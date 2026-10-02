@@ -4,7 +4,7 @@ import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
   LAYOUT_ROLE_GROUPS,
   LAYOUT_ROLES,
-  LAYOUT_PRIMITIVE_STEPS,
+  dimensionRoleValue,
   extractBreakpoints,
   layoutRoleIsDefault,
   layoutRolesInGroup,
@@ -14,6 +14,10 @@ import {
   type GridViewport,
 } from '../../lib/layoutTokens'
 import SemanticGroupRail from './SemanticGroupRail'
+import { parseDimension } from '../../lib/dimensions'
+import { useDimensions } from '../../lib/useDimensions'
+import DimensionSelect from '../ui/DimensionSelect'
+import { railControlsFor } from './LayoutRailControls'
 import VariablesPreviewPane from './VariablesPreviewPane'
 import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
@@ -21,7 +25,11 @@ import { RadiusRolesPreview } from '../preview/atoms/RadiusRolesPreview'
 import { LayoutRolesPreview } from '../preview/atoms/LayoutRolesPreview'
 import { PlatformBoard } from '../preview/artefacts/DeviceFrame'
 
-const GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,0.9fr)_minmax(8rem,1.2fr)_2.5rem]'
+// The Primitive track holds `<icon> dimension-9999 <chevron>`: ~92px of mono text
+// plus 56px of icon and chevron and the cell's own padding, so it needs more than
+// the 8rem it had before the control carried an icon.
+const GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(11rem,1fr)_minmax(8rem,1.2fr)_2.5rem]'
+
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -100,6 +108,8 @@ export default function LayoutSemantics({
   previewPlatform?: GridViewport
 }) {
   const { store, foundations, patch } = useThemeFoundations(previewTheme)
+  // A role is a semantic token: it points at a Dimension primitive, picked by name.
+  const { scale: dimensionScale } = useDimensions(previewTheme)
   const {
     radius, spacing, sizes, selector, stroke, grid,
     radiusRoles, spacingRoles, sizeRoles, selectorRoles, strokeRoles, breakpointRoles,
@@ -220,6 +230,7 @@ export default function LayoutSemantics({
           active={group}
           collapsed={railCollapsed}
           onChange={setGroup}
+          controls={railControlsFor(family, previewTheme)}
           items={[
             { key: 'all', label: 'All', count: viewFamilies.reduce((n, fam) => n + LAYOUT_ROLES[fam].length, 0), shortLabel: 'ALL' },
             ...groups.map((item) => ({
@@ -262,7 +273,7 @@ export default function LayoutSemantics({
             <div className="min-w-[36rem]">
               <div className={tableHeaderClass(GRID)}>
                 <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Role</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Aliases</div>
+                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Primitive</div>
                 <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
                 <div />
               </div>
@@ -271,9 +282,8 @@ export default function LayoutSemantics({
               ) : rows.map(({ family: rowFamily, role }, i) => {
                 const roles = rolesOf(rowFamily)
                 const primitives = primitivesOf(rowFamily)
-                const steps = LAYOUT_PRIMITIVE_STEPS[rowFamily]
                 const step = roles[role.key]
-                const modified = !layoutRoleIsDefault(rowFamily, role.key, step)
+                const modified = !layoutRoleIsDefault(rowFamily, role.key, step, primitives)
                 const resolved = resolveLayoutRole(rowFamily, roles, primitives, role.key, '')
                 return (
                   <div
@@ -289,16 +299,15 @@ export default function LayoutSemantics({
                       <span className="text-caption text-fg-faint truncate">{role.description}</span>
                     </div>
                     <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
-                      <select
-                        aria-label={`${role.key} primitive`}
-                        value={step}
-                        onChange={(e) => setRolesOf(rowFamily, { ...roles, [role.key]: e.target.value })}
-                        className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-                      >
-                        {steps.map((s) => (
-                          <option key={s} value={s}>{s} · {primitives[s] ?? '—'}</option>
-                        ))}
-                      </select>
+                      <DimensionSelect
+                        ariaLabel={`${role.key} primitive`}
+                        value={resolved}
+                        scale={dimensionScale}
+                        onChange={(px) => {
+                          const n = parseDimension(px)
+                          if (n !== null) setRolesOf(rowFamily, { ...roles, [role.key]: dimensionRoleValue(n) })
+                        }}
+                      />
                     </div>
                     <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden gap-2">
                       <RolePreview family={rowFamily} value={resolved} accent={accent} />

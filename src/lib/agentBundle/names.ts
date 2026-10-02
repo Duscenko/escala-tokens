@@ -211,8 +211,15 @@ export function figmaPrimitiveName(key: string, ctx?: PrimitiveNameContext): str
   return `${primitiveGroupFor(family, ctx)}/${padded}`
 }
 
+/** Spacing step's Figma name — a group of `Dimension Semantics` now, where a
+ *  numeric step needs no `step/` shelter (`Spacing/4`). */
 export function figmaSpacingName(key: string): string {
-  return /^\d/.test(key) ? `step/${key}` : key
+  return figmaDimensionName('Spacing', key)
+}
+
+/** `Dimension Semantics` variable: `<Group>/<step>` (`Radius/lg`, `Stroke/sm`). */
+export function figmaDimensionName(group: string, key: string): string {
+  return `${group}/${key}`
 }
 
 export function webCodeSyntax(id: string): string {

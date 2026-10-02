@@ -9,10 +9,11 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
+import { dimensionCssVar, dimensionFromKey, dimensionScaleForStore, dimensionVar, parseDimension } from './dimensions'
 
 // Panel (background-secondary: cards, panels, sections) tokens — translucent
 // mode bakes alpha into the color and pairs it with --panel-blur for backdrop-
@@ -27,11 +28,12 @@ function paddingCssEntries(
   spacing: Record<string, string>,
   spacingRoles?: Record<string, string>,
 ): [string, string][] {
-  const step = mergeLayoutRoles('spacing', spacingRoles)['inset-surface']
-  const resolved = spacing[step]
+  // The role may hold a step OR a pinned primitive — resolve through the same
+  // helper everything else uses, so a pinned inset still collapses the mirror.
+  const resolved = resolveLayoutRole('spacing', spacingRoles, spacing, 'inset-surface')
   return Object.entries(padding).map(([side, value]) => [
     side,
-    resolved && value === resolved ? 'var(--spacing-inset-surface)' : value,
+    resolved && value === resolved ? 'var(--spacing-inset-surface)' : dimensionVar(value),
   ])
 }
 
@@ -118,6 +120,15 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Panel background — apply to surface-1: backdrop-filter: var(--panel-blur) */')
   lines.push(`  --panel-blur: ${translucent ? 'blur(16px)' : 'none'};`)
 
+  // Dimension primitives — ONE collection of numbers, named by value, no theme
+  // modes. Every length below (spacing, radius, sizes, selector, stroke,
+  // breakpoints) aliases it, and theme blocks only re-point the alias. See
+  // design-plans/dimension-primitives.md.
+  lines.push('\n  /* Dimension primitives — one value each; every length below aliases these */')
+  Object.entries(dimensionScaleForStore(store, themeOrder))
+    .sort(([, a], [, b]) => parseFloat(a) - parseFloat(b))
+    .forEach(([k, v]) => lines.push(`  --dimension-${k}: ${v};`))
+
   lines.push('\n  /* Typography */')
   lines.push(`  --font-family-heading: ${fontStack(typography.headingFontFamily ?? typography.fontFamily)};`)
   lines.push(`  --font-family-body: ${fontStack(typography.fontFamily)};`)
@@ -128,25 +139,25 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   typeRoleCssVars(typography.roles).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Spacing */')
-  Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
+  Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Padding — per-side surface inset (alias of spacing-inset-surface) */')
   paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
-  Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
+  Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Sizes */')
-  Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
+  Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Selectors — checkbox / radio / switch glyph, a square not a height */')
-  Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${v};`))
+  Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Stroke — border-width / ring spread, not paint */')
   // A sub-pixel value is declared at its true weight and floored to 1px below
   // 2dppx: on a 1x display the browser rounds a hairline into an artefact (or
   // into nothing). The media query is emitted after `:root` closes, below.
-  Object.entries(stroke ?? {}).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${v};`))
+  Object.entries(stroke ?? {}).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${dimensionVar(v)};`))
 
   lines.push('\n  /* Layout roles — alias the primitive scale. Never raw px. */')
   allLayoutRoleCssVars({
@@ -156,7 +167,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     selector: mergeLayoutRoles('selector', selectorRoles),
     stroke: mergeLayoutRoles('stroke', strokeRoles),
     breakpoint: mergeLayoutRoles('breakpoint', breakpointRoles),
-  }).forEach((l) => lines.push(`  ${l}`))
+  }, { radius, spacing, size: sizes, selector: selector ?? {}, stroke: stroke ?? {}, breakpoint: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   lines.push('\n  /* Shadow */')
   Object.entries(shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
@@ -164,12 +175,12 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   lines.push('\n  /* Breakpoints — primitive min-widths */')
   const bps = extractBreakpoints(grid)
   BREAKPOINT_STEPS.forEach((step) => {
-    lines.push(`  --breakpoint-${step}: ${bps[step]};`)
+    lines.push(`  --breakpoint-${step}: ${dimensionVar(bps[step])};`)
     lines.push(`  --grid-${breakpointKey(step)}: var(--breakpoint-${step});`)
   })
 
   lines.push('\n  /* Grid frame — desktop aliases. Tablet / mobile override below. */')
-  gridFrameRootCss(gridFrame).forEach((l) => lines.push(`  ${l}`))
+  gridFrameRootCss(gridFrame, { spacing, breakpoints: extractBreakpoints(grid) }).forEach((l) => lines.push(`  ${l}`))
 
   if (gradients.length) {
     lines.push('\n  /* Gradients */')
@@ -195,7 +206,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push('}')
   }
 
-  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame)}`)
+  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing)}`)
 
   // Theme blocks contain semantics plus any complete foundation override.
   // Dark keeps the `.dark` convention; extra themes use data-theme.
@@ -246,13 +257,13 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
       Object.entries(foundations.typography.lineHeights ?? {}).forEach(([k, v]) => lines.push(`  --line-height-${k}: ${v};`))
       Object.entries(foundations.typography.weights).forEach(([k, v]) => lines.push(`  --font-weight-${k}: ${v};`))
       typeRoleCssVars(foundations.typography.roles).forEach((line) => lines.push(`  ${line}`))
-      Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${v};`))
+      Object.entries(foundations.spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
       paddingCssEntries(foundations.padding, foundations.spacing, foundations.spacingRoles)
         .forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
-      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${v};`))
-      Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${v};`))
-      Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${v};`))
-      Object.entries(foundations.stroke).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${v};`))
+      Object.entries(foundations.radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+      Object.entries(foundations.sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
+      Object.entries(foundations.selector).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
+      Object.entries(foundations.stroke).forEach(([k, v]) => lines.push(`  --stroke-${k}: ${dimensionVar(v)};`))
       allLayoutRoleCssVars({
         radius: mergeLayoutRoles('radius', foundations.radiusRoles),
         spacing: mergeLayoutRoles('spacing', foundations.spacingRoles),
@@ -260,9 +271,12 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
         selector: mergeLayoutRoles('selector', foundations.selectorRoles),
         stroke: mergeLayoutRoles('stroke', foundations.strokeRoles),
         breakpoint: mergeLayoutRoles('breakpoint', foundations.breakpointRoles),
+      }, {
+        radius: foundations.radius, spacing: foundations.spacing, size: foundations.sizes,
+        selector: foundations.selector, stroke: foundations.stroke, breakpoint: extractBreakpoints(foundations.grid),
       }).forEach((line) => lines.push(`  ${line}`))
       if (kind !== 'dark') Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
-      gridFrameRootCss(foundations.gridFrame).forEach((line) => lines.push(`  ${line}`))
+      gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`))
       lines.push(`  --panel-blur: ${foundations.panelBackground === 'translucent' ? 'blur(16px)' : 'none'};`)
     }
     if (darkGradients.length) {
@@ -277,6 +291,15 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
   })
 
   return lines.join('\n')
+}
+
+/** README table for a map of lengths: Token · Value · the Dimension primitive it aliases. */
+function readmeLengthTable(prefix: string, map: Record<string, string>): string {
+  const rows = Object.entries(map).map(([k, v]) => {
+    const n = parseDimension(v)
+    return `| \`--${prefix}-${k}\` | \`${v}\` | ${n === null ? '—' : `\`${dimensionCssVar(n)}\``} |`
+  })
+  return ['| Token | Value | Primitive |', '|-------|-------|-----------|', ...rows].join('\n')
 }
 
 export function buildMarkdown(store: ReturnType<typeof useDesignStore.getState>): string {
@@ -382,17 +405,23 @@ ${TYPE_ROLES.map((r) => {
 
 ---
 
+## Dimension primitives
+
+One collection of lengths, named by value and identical in every theme. Spacing, radius, sizes, selectors, stroke and breakpoints below all alias it — a theme changes which primitive a step points at, never a primitive's value.
+
+${Object.entries(dimensionScaleForStore(store, themeOrder)).sort(([a], [b]) => dimensionFromKey(a) - dimensionFromKey(b)).map(([k]) => `\`--dimension-${k}\``).join(' · ')}
+
+---
+
 ## Spacing
 
-| Token | Value |
-|-------|-------|
-${Object.entries(spacing).map(([k,v])=>`| \`--spacing-${k}\` | \`${v}\` |`).join('\n')}
+${readmeLengthTable('spacing', spacing)}
 
 ### Spacing roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`var(--spacing-${mergeLayoutRoles('spacing', spacingRoles)[r.key]})\` |`).join('\n')}
+${LAYOUT_ROLES.spacing.map((r) => `| \`--spacing-${r.key}\` | \`${layoutValueCss('spacing', mergeLayoutRoles('spacing', spacingRoles)[r.key], spacing)}\` |`).join('\n')}
 
 ### Padding — surface inset
 
@@ -404,15 +433,13 @@ ${paddingCssEntries(padding, spacing, spacingRoles).map(([k,v])=>`| \`--padding-
 
 ## Border Radius
 
-| Token | Value |
-|-------|-------|
-${Object.entries(radius).map(([k,v])=>`| \`--radius-${k}\` | \`${v}\` |`).join('\n')}
+${readmeLengthTable('radius', radius)}
 
 ### Radius roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`var(--radius-${mergeLayoutRoles('radius', radiusRoles)[r.key]})\` |`).join('\n')}
+${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`${layoutValueCss('radius', mergeLayoutRoles('radius', radiusRoles)[r.key], radius)}\` |`).join('\n')}
 
 ---
 
@@ -430,16 +457,14 @@ ${Object.entries(shadows).map(([k,v])=>`| \`--shadow-${k}\` | \`${v}\` | ${v ===
 
 Breakpoint primitives (min-width) plus desktop / mobile intent. Mobile max-width is \`calc(desktop − 1px)\` — never a raw 767. The layout frame aliases spacing and breakpoints.
 
-| Token | Value |
-|-------|-------|
-${BREAKPOINT_STEPS.map((s) => `| \`--breakpoint-${s}\` | \`${extractBreakpoints(grid)[s]}\` |`).join('\n')}
+${readmeLengthTable('breakpoint', Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, extractBreakpoints(grid)[s]])))}
 
 ### Viewport roles
 
 | Role | Aliases | Query |
 |------|---------|-------|
-| \`--breakpoint-desktop\` | \`var(--breakpoint-${mergeLayoutRoles('breakpoint', breakpointRoles).desktop})\` | min-width |
-| \`--breakpoint-mobile\` | \`calc(var(--breakpoint-${mergeLayoutRoles('breakpoint', breakpointRoles).mobile}) - 1px)\` | max-width |
+| \`--breakpoint-desktop\` | \`${layoutValueCss('breakpoint', mergeLayoutRoles('breakpoint', breakpointRoles).desktop, extractBreakpoints(grid))}\` | min-width |
+| \`--breakpoint-mobile\` | \`calc(${layoutValueCss('breakpoint', mergeLayoutRoles('breakpoint', breakpointRoles).mobile, extractBreakpoints(grid))} - 1px)\` | max-width |
 
 ### Frame
 
@@ -449,7 +474,7 @@ ${['columns', 'gutter', 'margin', 'container'].map((k) => {
   const f = mergeGridFrame(gridFrame)
   const d = f.desktop[k as 'columns']
   const m = f.mobile[k as 'columns']
-  const fmt = (step: string) => k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : `var(--breakpoint-${step})`) : `var(--spacing-${step})`
+  const fmt = (step: string) => k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : layoutValueCss('breakpoint', step, extractBreakpoints(grid))) : layoutValueCss('spacing', step, spacing)
   return `| \`--grid-${k}\` | \`${fmt(d)}\` | \`${fmt(m)}\` |`
 }).join('\n')}
 
@@ -457,15 +482,13 @@ ${['columns', 'gutter', 'margin', 'container'].map((k) => {
 
 ## Sizes
 
-| Token | Value |
-|-------|-------|
-${Object.entries(sizes).map(([k,v])=>`| \`--size-${k}\` | \`${v}\` |`).join('\n')}
+${readmeLengthTable('size', sizes)}
 
 ### Size roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`var(--size-${mergeLayoutRoles('size', sizeRoles)[r.key]})\` |`).join('\n')}
+${LAYOUT_ROLES.size.map((r) => `| \`--size-${r.key}\` | \`${layoutValueCss('size', mergeLayoutRoles('size', sizeRoles)[r.key], sizes)}\` |`).join('\n')}
 
 ---
 
@@ -475,15 +498,13 @@ The square a checkbox, radio or switch knob is drawn in — a glyph, not a contr
 height, so it has its own ramp. Below 24px, pair it with a transparent hit area
 (\`--size-hit\`) to meet WCAG 2.2 target size; don't grow the glyph instead.
 
-| Token | Value |
-|-------|-------|
-${Object.entries(selector ?? {}).map(([k,v])=>`| \`--selector-${k}\` | \`${v}\` |`).join('\n')}
+${readmeLengthTable('selector', selector ?? {})}
 
 ### Selector roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.selector.map((r) => `| \`--selector-${r.key}\` | \`var(--selector-${mergeLayoutRoles('selector', selectorRoles)[r.key]})\` |`).join('\n')}
+${LAYOUT_ROLES.selector.map((r) => `| \`--selector-${r.key}\` | \`${layoutValueCss('selector', mergeLayoutRoles('selector', selectorRoles)[r.key], selector ?? {})}\` |`).join('\n')}
 
 ---
 
@@ -491,15 +512,13 @@ ${LAYOUT_ROLES.selector.map((r) => `| \`--selector-${r.key}\` | \`var(--selector
 
 Line weight — not paint. Color stays on \`border.*\`.
 
-| Token | Value |
-|-------|-------|
-${Object.entries(stroke ?? {}).map(([k,v])=>`| \`--stroke-${k}\` | \`${v}\` |`).join('\n')}
+${readmeLengthTable('stroke', stroke ?? {})}
 
 ### Stroke roles
 
 | Role | Aliases |
 |------|---------|
-${LAYOUT_ROLES.stroke.map((r) => `| \`--stroke-${r.key}\` | \`var(--stroke-${mergeLayoutRoles('stroke', strokeRoles)[r.key]})\` |`).join('\n')}
+${LAYOUT_ROLES.stroke.map((r) => `| \`--stroke-${r.key}\` | \`${layoutValueCss('stroke', mergeLayoutRoles('stroke', strokeRoles)[r.key], stroke ?? {})}\` |`).join('\n')}
 
 ---
 

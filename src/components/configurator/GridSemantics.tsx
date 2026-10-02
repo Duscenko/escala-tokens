@@ -3,14 +3,14 @@ import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
   BREAKPOINT_ROLES,
-  BREAKPOINT_STEPS,
   GRID_COLUMN_STEPS,
-  GRID_CONTAINER_STEPS,
   GRID_FRAME_FIELDS,
   GRID_FRAME_STANDARD,
-  SPACING_STEPS,
   breakpointMobileMax,
+  breakpointRolePx,
+  dimensionRoleValue,
   extractBreakpoints,
+  roleValuePx,
   layoutRoleIsDefault,
   mergeGridFrame,
   mergeLayoutRoles,
@@ -24,6 +24,10 @@ import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { GridPreview } from '../preview/atoms/GridPreview'
 import { useI18n } from '../../lib/i18n'
+import VariableSelect from '../ui/VariableSelect'
+import DimensionSelect from '../ui/DimensionSelect'
+import { parseDimension } from '../../lib/dimensions'
+import { useDimensions } from '../../lib/useDimensions'
 
 const VIEWPORT_GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_2.5rem]'
 const FRAME_GRID = 'grid grid-cols-[minmax(9rem,1.2fr)_minmax(12rem,1.5fr)_2.5rem]'
@@ -36,28 +40,6 @@ function ResetIcon() {
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M3.5 1.5v2.4h2.4" />
     </svg>
-  )
-}
-
-function Select({
-  label, value, onChange, options,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  options: { value: string; label: string }[]
-}) {
-  return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="min-w-0 w-full h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
   )
 }
 
@@ -82,6 +64,8 @@ export default function GridSemantics({
   previewPlatform?: GridViewport
 } = {}) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
+  // Every cut and frame field is a semantic token: it points at a Dimension primitive.
+  const { scale: dimensionScale } = useDimensions(previewTheme)
   const { grid, spacing, breakpointRoles, gridFrame } = foundations
   const setBreakpointRoles = (value: Record<string, string>) => patch({ breakpointRoles: value })
   const setGridFrame = (value: typeof gridFrame) => patch({ gridFrame: value })
@@ -96,8 +80,8 @@ export default function GridSemantics({
     previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
 
   const mobileMax = breakpointMobileMax(cuts, bps)
-  const tabletMin = bps[cuts.tablet] ?? '640px'
-  const desktopMin = bps[cuts.desktop] ?? '768px'
+  const tabletMin = `${breakpointRolePx(cuts, bps, 'tablet')}px`
+  const desktopMin = `${breakpointRolePx(cuts, bps, 'desktop')}px`
 
   useEffect(() => {
     if (!revealRole?.key) return
@@ -135,16 +119,20 @@ export default function GridSemantics({
     })
   }
 
-  const stepOpts = BREAKPOINT_STEPS.map((s) => ({ value: s, label: `${s} · ${bps[s] ?? '—'}` }))
   const colOpts = GRID_COLUMN_STEPS.map((s) => ({ value: s, label: s }))
-  const spaceOpts = SPACING_STEPS.map((s) => ({ value: s, label: `${s} · ${spacing[s] ?? '—'}` }))
-  const containerOpts = GRID_CONTAINER_STEPS.map((s) => ({
-    value: s,
-    label: s === 'none' ? 'none' : `${s} · ${bps[s] ?? '—'}`,
-  }))
 
-  const optionsFor = (key: keyof GridFrameAlias) =>
-    key === 'columns' ? colOpts : key === 'container' ? containerOpts : spaceOpts
+  // A frame field holds a step of its scale or a pinned primitive; what the
+  // editor shows (and compares to the standard) is the px it resolves to.
+  const fieldPx = (key: keyof GridFrameAlias, value: string): number | null =>
+    key === 'gutter' || key === 'margin' ? roleValuePx(value, spacing)
+    : key === 'container' ? roleValuePx(value, bps)
+    : null
+  const fieldModified = (viewport: GridViewport, key: keyof GridFrameAlias) => {
+    const value = frame[viewport][key]
+    const standard = GRID_FRAME_STANDARD[viewport][key]
+    if (key === 'columns' || key === 'container' && (value === 'none' || standard === 'none')) return value !== standard
+    return fieldPx(key, value) !== fieldPx(key, standard)
+  }
 
   const live = (viewport: GridViewport, key: keyof GridFrameAlias) => {
     const resolved = resolveGridFrame(viewport, frame, spacing, bps)
@@ -204,7 +192,7 @@ export default function GridSemantics({
                   </div>
                   {viewportRoles.map((role, i) => {
                     const step = cuts[role.key]
-                    const modified = !layoutRoleIsDefault('breakpoint', role.key, step)
+                    const modified = !layoutRoleIsDefault('breakpoint', role.key, step, bps)
                     const mediaQuery = role.key === 'desktop'
                       ? `min-width: ${desktopMin}`
                       : role.key === 'tablet'
@@ -224,11 +212,14 @@ export default function GridSemantics({
                           <span className="text-caption text-fg-faint truncate">{role.description}</span>
                         </div>
                         <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
-                          <Select
-                            label={`${role.key} primitive`}
-                            value={step}
-                            onChange={(v) => patchCut(role.key, v)}
-                            options={stepOpts}
+                          <DimensionSelect
+                            ariaLabel={`${role.key} primitive`}
+                            value={`${breakpointRolePx(cuts, bps, role.key as 'desktop' | 'tablet' | 'mobile')}px`}
+                            scale={dimensionScale}
+                            onChange={(px) => {
+                              const n = parseDimension(px)
+                              if (n !== null) patchCut(role.key, dimensionRoleValue(n))
+                            }}
                           />
                         </div>
                         <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
@@ -259,7 +250,7 @@ export default function GridSemantics({
                   </div>
                   {GRID_FRAME_FIELDS.map((field, i) => {
                     const value = frame[previewPlatform][field.key]
-                    const modified = value !== GRID_FRAME_STANDARD[previewPlatform][field.key]
+                    const modified = fieldModified(previewPlatform, field.key)
                     return (
                       <div
                         key={field.key}
@@ -274,12 +265,27 @@ export default function GridSemantics({
                           <span className="text-caption text-fg-faint truncate">{field.description}</span>
                         </div>
                         <div className="flex flex-col justify-center gap-0.5 px-3 py-2 border-r border-line min-w-0">
-                          <Select
-                            label={`${previewPlatform} ${field.key}`}
-                            value={value}
-                            onChange={(v) => patchFrame(previewPlatform, field.key, v)}
-                            options={optionsFor(field.key)}
-                          />
+                          {field.key === 'columns' ? (
+                            <VariableSelect
+                              ariaLabel={`${previewPlatform} ${field.key}`}
+                              value={value}
+                              onChange={(v) => patchFrame(previewPlatform, field.key, v)}
+                            >
+                              {colOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </VariableSelect>
+                          ) : (
+                            <DimensionSelect
+                              ariaLabel={`${previewPlatform} ${field.key}`}
+                              value={value === 'none' ? 'none' : `${fieldPx(field.key, value) ?? 0}px`}
+                              scale={dimensionScale}
+                              allowNone={field.key === 'container'}
+                              onChange={(px) => {
+                                if (px === 'none') return patchFrame(previewPlatform, field.key, 'none')
+                                const n = parseDimension(px)
+                                if (n !== null) patchFrame(previewPlatform, field.key, dimensionRoleValue(n))
+                              }}
+                            />
+                          )}
                           <span className="text-mini font-mono text-fg-faint">{live(previewPlatform, field.key)}</span>
                         </div>
                         <button

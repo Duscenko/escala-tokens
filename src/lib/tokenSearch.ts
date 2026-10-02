@@ -23,7 +23,7 @@
 // `TokenSearchSource`) rather than importing the store.
 import { ALL_ROLES } from './semanticRoles'
 import { CATEGORICAL_ROLE_COMMENTS } from './semanticArchitectures'
-import { LAYOUT_ROLES, type LayoutFamily } from './layoutTokens'
+import { LAYOUT_ROLES, roleValuePx, type LayoutFamily } from './layoutTokens'
 import { TYPE_ROLES } from './typeRoles'
 
 /** Figma Variables hierarchy: foundation → collection → group. */
@@ -280,7 +280,10 @@ export function buildTokenSearchIndex(
       // name searchable — `radius.action` and `radius-sm` are two honest ways
       // to arrive at the same 8px.
       const step = roles?.[role.key] ?? role.primitive
-      const resolved = steps?.[step]
+      // A role holds a step (`sm`) or a pinned primitive (`dimension-8`): print
+      // what it resolves to and keep the held name searchable.
+      const px = roleValuePx(step, steps)
+      const resolved = px !== null ? `${px}px` : undefined
       add({
         id: `${family}.${role.key}`,
         label: role.label,

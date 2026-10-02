@@ -9,7 +9,45 @@
 // Family prefixes stay identical so a consumer never has to guess `space-` vs
 // `spacing-`. Steps are the public scale names (xs/sm/md… and 0/1/2/3/4/5…).
 
+import { dimensionFromKey, dimensionKey, parseDimension } from './dimensionCore'
+
 export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'selector' | 'stroke' | 'breakpoint'
+
+// ── What a role (or a Grid frame field) can hold ────────────────────────────
+// A role is a semantic token, and a semantic token points at a PRIMITIVE — in
+// colour a ramp tone, here a Dimension primitive. Two spellings exist:
+//
+//   `lg`            a STEP of the family's scale (what every role stored before
+//                   Dimension primitives, and what an untouched role still
+//                   holds). It follows the ramp: regrade the ramp and it moves.
+//   `dimension-16`  a Dimension primitive, picked in the editor. Pinned: the ramp
+//                   can change underneath it and it stays 16px.
+//
+// Exports resolve BOTH to the primitive (`--radius-container:
+// var(--dimension-16)`), so what ships is "semantic → primitive" either way.
+// Existing systems need no migration: a step is still valid and still resolves.
+export const ROLE_DIMENSION_PREFIX = 'dimension-'
+
+/** `dimension-16` → 16, `dimension-3_5` → 3.5; anything else (a step name,
+ *  `none`, a negative or malformed key) → null. */
+export function roleDimensionPx(value: unknown): number | null {
+  if (typeof value !== 'string' || !value.startsWith(ROLE_DIMENSION_PREFIX)) return null
+  const key = value.slice(ROLE_DIMENSION_PREFIX.length)
+  const n = dimensionFromKey(key)
+  return Number.isFinite(n) && n >= 0 && dimensionKey(n) === key ? n : null
+}
+
+/** The role value that pins a Dimension primitive. */
+export function dimensionRoleValue(px: number): string {
+  return `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}`
+}
+
+/** The px a role value resolves to: a pinned primitive, or a step looked up in
+ *  the family's scale. `null` when neither resolves. */
+export function roleValuePx(value: string | undefined, steps: Record<string, string> | undefined): number | null {
+  if (value === undefined) return null
+  return roleDimensionPx(value) ?? parseDimension(steps?.[value])
+}
 
 // ── Radius primitives ───────────────────────────────────────────────────────
 // Tailwind / HeroUI model: one base (`lg` = `--radius`) and named steps as
@@ -483,9 +521,10 @@ export const GRID_FRAME_STANDARD: GridFrameModes = {
 export function mergeGridFrame(stored?: GridFrameModes | null): GridFrameModes {
   const one = (hit: GridFrameAlias | undefined, fallback: GridFrameAlias): GridFrameAlias => {
     const columns = hit?.columns && (GRID_COLUMN_STEPS as readonly string[]).includes(hit.columns) ? hit.columns : fallback.columns
-    const gutter = hit?.gutter && (SPACING_STEPS as readonly string[]).includes(hit.gutter) ? hit.gutter : fallback.gutter
-    const margin = hit?.margin && (SPACING_STEPS as readonly string[]).includes(hit.margin) ? hit.margin : fallback.margin
-    const container = hit?.container && (GRID_CONTAINER_STEPS as readonly string[]).includes(hit.container) ? hit.container : fallback.container
+    // A field holds a step of its scale, or a pinned Dimension primitive.
+    const gutter = hit?.gutter && ((SPACING_STEPS as readonly string[]).includes(hit.gutter) || roleDimensionPx(hit.gutter) !== null) ? hit.gutter : fallback.gutter
+    const margin = hit?.margin && ((SPACING_STEPS as readonly string[]).includes(hit.margin) || roleDimensionPx(hit.margin) !== null) ? hit.margin : fallback.margin
+    const container = hit?.container && ((GRID_CONTAINER_STEPS as readonly string[]).includes(hit.container) || roleDimensionPx(hit.container) !== null) ? hit.container : fallback.container
     return { columns, gutter, margin, container }
   }
   return {
@@ -509,13 +548,14 @@ export function resolveGridFrame(
   breakpoints: Record<string, string>,
 ): ResolvedGridFrame {
   const alias = mergeGridFrame(frame)[viewport]
+  const pinned = (v: string) => { const n = roleDimensionPx(v); return n === null ? null : `${n}px` }
   const container = alias.container === 'none'
     ? 'none'
-    : (breakpoints[alias.container] || BREAKPOINT_STANDARD[alias.container as BreakpointStep] || 'none')
+    : (pinned(alias.container) ?? breakpoints[alias.container] ?? BREAKPOINT_STANDARD[alias.container as BreakpointStep] ?? 'none')
   return {
     columns: Math.max(1, parseInt(alias.columns, 10) || 12),
-    gutter: spacing[alias.gutter] || SPACING_STANDARD[alias.gutter as SpacingStep] || '24px',
-    margin: spacing[alias.margin] || SPACING_STANDARD[alias.margin as SpacingStep] || '32px',
+    gutter: pinned(alias.gutter) ?? (spacing[alias.gutter] || SPACING_STANDARD[alias.gutter as SpacingStep] || '24px'),
+    margin: pinned(alias.margin) ?? (spacing[alias.margin] || SPACING_STANDARD[alias.margin as SpacingStep] || '32px'),
     container,
   }
 }
@@ -536,7 +576,8 @@ export function desktopArtefactWidthPx(
 ): number {
   const container = parseFloat(frame.container)
   if (Number.isFinite(container) && container > 0) return container
-  const min = parseFloat(
+  // The desktop cut may be a step or a pinned primitive.
+  const min = roleDimensionPx(desktopStep) ?? parseFloat(
     breakpoints[desktopStep] || BREAKPOINT_STANDARD[desktopStep as BreakpointStep] || '768',
   )
   return Number.isFinite(min) && min > 0 ? min : 768
@@ -853,14 +894,25 @@ export function mergeLayoutRoles(
   const out: Record<string, string> = {}
   for (const role of LAYOUT_ROLES[family]) {
     const hit = bag[role.key]
-    out[role.key] = typeof hit === 'string' && allowed.has(hit) ? hit : role.primitive
+    out[role.key] = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit) !== null) ? hit : role.primitive
   }
   return out
 }
 
-export function layoutRoleIsDefault(family: LayoutFamily, key: string, primitive: string): boolean {
+/** Is this role still on its default? A pinned primitive counts as default only
+ *  when it resolves to the same px as the default STEP — pass the family's scale
+ *  for that comparison; without it, only the step name itself is default. */
+export function layoutRoleIsDefault(
+  family: LayoutFamily,
+  key: string,
+  value: string,
+  steps?: Record<string, string>,
+): boolean {
   const spec = LAYOUT_ROLES[family].find((r) => r.key === key)
-  return !spec || spec.primitive === primitive
+  if (!spec || spec.primitive === value) return true
+  if (!steps || roleDimensionPx(value) === null) return false
+  const def = roleValuePx(spec.primitive, steps)
+  return def !== null && def === roleValuePx(value, steps)
 }
 
 export function resolveLayoutRole(
@@ -873,6 +925,8 @@ export function resolveLayoutRole(
   const spec = LAYOUT_ROLES[family].find((r) => r.key === key)
   const step = roles?.[key] ?? spec?.primitive
   if (!step) return fallback
+  const pinned = roleDimensionPx(step)
+  if (pinned !== null) return `${pinned}px`
   return primitives[step] || fallback
 }
 
@@ -884,41 +938,64 @@ export function layoutPrimitiveVar(family: LayoutFamily, step: string): string {
   return `var(--${family}-${step})`
 }
 
-/** `:root` alias declarations — semantic → primitive, never raw px. */
+/** The CSS a role value points at: the Dimension primitive it resolves to
+ *  (`var(--dimension-16)`). Given the family's scale, a STEP resolves too — the
+ *  role then aliases the primitive directly, not `--radius-lg`. Without the
+ *  scale a step falls back to its own variable, which is what a caller that
+ *  cannot resolve (an older partial export) used to get. */
+export function layoutValueCss(
+  family: LayoutFamily,
+  value: string,
+  steps?: Record<string, string>,
+): string {
+  const px = roleValuePx(value, steps)
+  return px !== null ? `var(--dimension-${dimensionKey(px)})` : layoutPrimitiveVar(family, value)
+}
+
+/** The Dimension primitive a role value points at, by name (`dimension-16`) —
+ *  what the editor shows in place of a step name. A value that resolves to no
+ *  length keeps its own name. */
+export function rolePrimitiveName(value: string, steps?: Record<string, string>): string {
+  const px = roleValuePx(value, steps)
+  return px !== null ? `${ROLE_DIMENSION_PREFIX}${dimensionKey(px)}` : value
+}
+
+/** `:root` alias declarations — semantic → Dimension primitive, never raw px.
+ *  `steps` is the family's scale (`radius`, `spacing`, …): with it every role
+ *  aliases its primitive directly. */
 export function layoutRoleCssVars(
   family: LayoutFamily,
   roles?: Record<string, string> | null,
+  steps?: Record<string, string>,
 ): string[] {
   const map = mergeLayoutRoles(family, roles)
   return LAYOUT_ROLES[family].map((role) => {
-    if (family === 'breakpoint' && role.key === 'mobile') {
-      return `--breakpoint-mobile: calc(var(--breakpoint-${map.mobile}) - 1px);`
-    }
-    if (family === 'breakpoint' && role.key === 'tablet') {
-      return `--breakpoint-tablet: var(--breakpoint-${map.tablet});`
-    }
-    if (family === 'breakpoint' && role.key === 'desktop') {
-      return `--breakpoint-desktop: var(--breakpoint-${map.desktop});`
-    }
-    return `${layoutRoleVar(family, role.key)}: ${layoutPrimitiveVar(family, map[role.key])};`
+    const target = layoutValueCss(family, map[role.key], steps)
+    if (family === 'breakpoint' && role.key === 'mobile') return `--breakpoint-mobile: calc(${target} - 1px);`
+    if (family === 'breakpoint' && role.key === 'tablet') return `--breakpoint-tablet: ${target};`
+    if (family === 'breakpoint' && role.key === 'desktop') return `--breakpoint-desktop: ${target};`
+    return `${layoutRoleVar(family, role.key)}: ${target};`
   })
 }
 
-export function allLayoutRoleCssVars(roles: {
-  radius?: Record<string, string>
-  spacing?: Record<string, string>
-  size?: Record<string, string>
-  selector?: Record<string, string>
-  stroke?: Record<string, string>
-  breakpoint?: Record<string, string>
-}): string[] {
+export function allLayoutRoleCssVars(
+  roles: {
+    radius?: Record<string, string>
+    spacing?: Record<string, string>
+    size?: Record<string, string>
+    selector?: Record<string, string>
+    stroke?: Record<string, string>
+    breakpoint?: Record<string, string>
+  },
+  scales: Partial<Record<LayoutFamily, Record<string, string>>> = {},
+): string[] {
   return [
-    ...layoutRoleCssVars('radius', roles.radius),
-    ...layoutRoleCssVars('spacing', roles.spacing),
-    ...layoutRoleCssVars('size', roles.size),
-    ...layoutRoleCssVars('selector', roles.selector),
-    ...layoutRoleCssVars('stroke', roles.stroke),
-    ...layoutRoleCssVars('breakpoint', roles.breakpoint),
+    ...layoutRoleCssVars('radius', roles.radius, scales.radius),
+    ...layoutRoleCssVars('spacing', roles.spacing, scales.spacing),
+    ...layoutRoleCssVars('size', roles.size, scales.size),
+    ...layoutRoleCssVars('selector', roles.selector, scales.selector),
+    ...layoutRoleCssVars('stroke', roles.stroke, scales.stroke),
+    ...layoutRoleCssVars('breakpoint', roles.breakpoint, scales.breakpoint),
   ]
 }
 
@@ -930,7 +1007,20 @@ function breakpointStepPx(
 ): number {
   const map = mergeLayoutRoles('breakpoint', roles)
   const step = map[key] ?? fallback
+  const pinned = roleDimensionPx(step)
+  if (pinned !== null) return pinned
   return parseFloat(breakpoints[step] || BREAKPOINT_STANDARD[step as BreakpointStep] || '768')
+}
+
+/** The px a viewport role resolves to (`desktop`, `tablet`, `mobile`), whether
+ *  it holds a breakpoint step or a pinned primitive. */
+export function breakpointRolePx(
+  roles: Record<string, string> | undefined,
+  breakpoints: Record<string, string>,
+  key: 'desktop' | 'tablet' | 'mobile',
+): number {
+  const fallback = LAYOUT_ROLES.breakpoint.find((r) => r.key === key)?.primitive ?? 'md'
+  return breakpointStepPx(roles, breakpoints, key, fallback)
 }
 
 /** Resolved `max-width` for the tablet (8-col) `@media` — one px below desktop. */
@@ -951,26 +1041,34 @@ export function breakpointMobileMax(
   return `${Math.max(0, Math.round(min) - 1)}px`
 }
 
-function gridFrameAliasCss(alias: GridFrameAlias): string[] {
-  const container = alias.container === 'none' ? 'none' : `var(--breakpoint-${alias.container})`
+/** The scales a frame's fields are steps of. With them every field aliases its
+ *  Dimension primitive directly; without, a step keeps its own variable. */
+export interface GridFrameScales {
+  spacing?: Record<string, string>
+  /** `extractBreakpoints(grid)` — the breakpoint steps. */
+  breakpoints?: Record<string, string>
+}
+
+function gridFrameAliasCss(alias: GridFrameAlias, scales: GridFrameScales = {}): string[] {
+  const container = alias.container === 'none' ? 'none' : layoutValueCss('breakpoint', alias.container, scales.breakpoints)
   return [
     `--grid-columns: ${alias.columns};`,
-    `--grid-gutter: var(--spacing-${alias.gutter});`,
-    `--grid-margin: var(--spacing-${alias.margin});`,
+    `--grid-gutter: ${layoutValueCss('spacing', alias.gutter, scales.spacing)};`,
+    `--grid-margin: ${layoutValueCss('spacing', alias.margin, scales.spacing)};`,
     `--grid-container: ${container};`,
   ]
 }
 
-export function gridFrameRootCss(frame?: GridFrameModes | null): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).desktop)
+export function gridFrameRootCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
+  return gridFrameAliasCss(mergeGridFrame(frame).desktop, scales)
 }
 
-export function gridFrameTabletCss(frame?: GridFrameModes | null): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).tablet)
+export function gridFrameTabletCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
+  return gridFrameAliasCss(mergeGridFrame(frame).tablet, scales)
 }
 
-export function gridFrameMobileCss(frame?: GridFrameModes | null): string[] {
-  return gridFrameAliasCss(mergeGridFrame(frame).mobile)
+export function gridFrameMobileCss(frame?: GridFrameModes | null, scales?: GridFrameScales): string[] {
+  return gridFrameAliasCss(mergeGridFrame(frame).mobile, scales)
 }
 
 /** Nested tablet then mobile overrides. Desktop lives on `:root`. */
@@ -978,19 +1076,21 @@ export function gridFrameMediaCss(
   roles: Record<string, string> | undefined,
   grid: Record<string, string> | undefined,
   frame?: GridFrameModes | null,
+  spacing?: Record<string, string>,
 ): string {
   const bps = extractBreakpoints(grid)
+  const scales: GridFrameScales = { spacing, breakpoints: bps }
   const indent = (lines: string[]) => lines.map((l) => `    ${l}`).join('\n')
   return [
     `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
     '  :root {',
-    indent(gridFrameTabletCss(frame)),
+    indent(gridFrameTabletCss(frame, scales)),
     '  }',
     '}',
     '',
     `@media (max-width: ${breakpointMobileMax(roles, bps)}) {`,
     '  :root {',
-    indent(gridFrameMobileCss(frame)),
+    indent(gridFrameMobileCss(frame, scales)),
     '  }',
     '}',
   ].join('\n')

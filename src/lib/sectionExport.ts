@@ -10,6 +10,7 @@ import { getIconAiSource, iconAiContext } from './iconLibraries'
 import { generateTokenJSON, themeContextFromStore } from './tokenGenerator'
 import { useDesignStore } from '../store/useDesignStore'
 import { mdCell } from './utils'
+import { dimensionCssVar, dimensionDeclsFor, dimensionVar, parseDimension } from './dimensions'
 import { gradientToCss, gradientSlug } from './gradients'
 import {
   buildArchitectureView,
@@ -20,6 +21,8 @@ import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
 import {
   LAYOUT_ROLES,
   layoutRoleCssVars,
+  layoutValueCss,
+  breakpointRolePx,
   mergeLayoutRoles,
   extractBreakpoints,
   BREAKPOINT_STEPS,
@@ -308,23 +311,25 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   if (section === 'grid') {
     const bps = extractBreakpoints(store.grid)
     return [
-      ...BREAKPOINT_STEPS.map((s) => `--breakpoint-${s}: ${bps[s]};`),
-      ...layoutRoleCssVars('breakpoint', store.breakpointRoles),
-      ...gridFrameRootCss(store.gridFrame),
+      ...BREAKPOINT_STEPS.map((s) => `--breakpoint-${s}: ${dimensionVar(bps[s])};`),
+      ...layoutRoleCssVars('breakpoint', store.breakpointRoles, bps),
+      ...gridFrameRootCss(store.gridFrame, { spacing: store.spacing, breakpoints: bps }),
     ]
   }
   const simple = SIMPLE[section]!
-  const lines = Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${v};`)
+  // Lengths alias the Dimension primitives (`--radius-lg: var(--dimension-16)`).
+  // A shadow is a compound CSS string, so `dimensionVar` passes it through.
+  const lines = Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${dimensionVar(v)};`)
   const family = layoutFamilyOf(section)
   if (family) {
     lines.push(...layoutRoleCssFor(family, store))
   }
   if (simple.extra) {
-    Object.entries(simple.extra.get(store)).forEach(([k, v]) => lines.push(`--${simple.extra!.prefix}-${k}: ${v};`))
+    Object.entries(simple.extra.get(store)).forEach(([k, v]) => lines.push(`--${simple.extra!.prefix}-${k}: ${dimensionVar(v)};`))
     lines.push(...layoutRoleCssFor(simple.extra.family, store))
   }
   if (section === 'spacing') {
-    Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${v};`))
+    Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${dimensionVar(v)};`))
   }
   return lines
 }
@@ -346,18 +351,34 @@ function layoutRolesOf(family: LayoutFamily, store: Store): Record<string, strin
   return store.breakpointRoles
 }
 
+function layoutScaleOf(family: LayoutFamily, store: Store): Record<string, string> {
+  if (family === 'radius') return store.radius
+  if (family === 'spacing') return store.spacing
+  if (family === 'size') return store.sizes
+  if (family === 'selector') return store.selector ?? {}
+  if (family === 'stroke') return store.stroke ?? {}
+  return extractBreakpoints(store.grid)
+}
+
 function layoutRoleCssFor(family: LayoutFamily, store: Store): string[] {
-  return layoutRoleCssVars(family, layoutRolesOf(family, store))
+  return layoutRoleCssVars(family, layoutRolesOf(family, store), layoutScaleOf(family, store))
 }
 
 function wrapRoot(lines: string[]): string {
   return `:root {\n${lines.map((l) => (l ? `  ${l}` : '')).join('\n')}\n}`
 }
 
+/** Prepend the Dimension primitives a block of declarations references, so a
+ *  slice stays self-contained without shipping the whole ladder. */
+function withDimensions(lines: string[]): string[] {
+  const decls = dimensionDeclsFor(lines)
+  return decls.length ? ['/* Dimension primitives */', ...decls, '', ...lines] : lines
+}
+
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
-  const root = wrapRoot(cssLines(section, store, cf, opts))
+  const root = wrapRoot(withDimensions(cssLines(section, store, cf, opts)))
   if (section !== 'grid') return root
-  return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame)}`
+  return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing)}`
 }
 
 // ── Tailwind (theme.extend snippet) ──────────────────────────────────────────
@@ -404,7 +425,7 @@ function twExtend(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
     return {
       screens: {
         ...Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, bps[s]])),
-        desktop: bps[cuts.desktop],
+        desktop: `${breakpointRolePx(store.breakpointRoles, bps, 'desktop')}px`,
         mobile: { max: breakpointMobileMax(store.breakpointRoles, bps) },
       },
     }
@@ -430,18 +451,28 @@ function tailwindFor(section: SectionKey, store: Store, cf: ColorFormat, opts: S
 // byte-identical to the full tokens.json. Canonical hex — the color-format
 // toggle doesn't apply here (the modal hides it).
 
+/** The Dimension primitives + refs a slice needs, so an alias in it never
+ *  points at a primitive the slice left out. */
+function dimensionSlice(full: ReturnType<typeof generateTokenJSON>, categories: string[]) {
+  const all = (full.dimensionRefs ?? {}) as Record<string, Record<string, string>>
+  const dimensionRefs = Object.fromEntries(categories.filter((c) => all[c]).map((c) => [c, all[c]]))
+  const used = new Set(Object.values(dimensionRefs).flatMap((m) => Object.values(m)).map((r) => r.slice('{dimension.'.length, -1)))
+  const dimensions = Object.fromEntries(Object.entries(full.dimensions ?? {}).filter(([k]) => used.has(k)))
+  return { dimensions, dimensionRefs }
+}
+
 function tokensFor(section: SectionKey): unknown {
   const full = generateTokenJSON()
   switch (section) {
     case 'color': return { colors: full.colors }
     case 'gradients': return { gradients: full.gradients, gradientsDark: full.gradientsDark, gradientAssignments: full.gradientAssignments }
     case 'typography': return { typography: full.typography }
-    case 'spacing': return { spacing: full.spacing, spacingRoles: full.spacingRoles, padding: full.padding }
-    case 'radius': return { radius: full.radius, radiusRoles: full.radiusRoles }
+    case 'spacing': return { ...dimensionSlice(full, ['spacing', 'padding']), spacing: full.spacing, spacingRoles: full.spacingRoles, padding: full.padding }
+    case 'radius': return { ...dimensionSlice(full, ['radius']), radius: full.radius, radiusRoles: full.radiusRoles }
     case 'shadow': return { shadows: full.shadows }
-    case 'grid': return { grid: full.grid, gridFrame: full.gridFrame, breakpointRoles: full.breakpointRoles }
-    case 'sizes': return { sizes: full.sizes, sizeRoles: full.sizeRoles, selector: full.selector, selectorRoles: full.selectorRoles }
-    case 'stroke': return { stroke: full.stroke, strokeRoles: full.strokeRoles }
+    case 'grid': return { ...dimensionSlice(full, ['grid']), grid: full.grid, gridFrame: full.gridFrame, breakpointRoles: full.breakpointRoles }
+    case 'sizes': return { ...dimensionSlice(full, ['sizes', 'selector']), sizes: full.sizes, sizeRoles: full.sizeRoles, selector: full.selector, selectorRoles: full.selectorRoles }
+    case 'stroke': return { ...dimensionSlice(full, ['stroke']), stroke: full.stroke, strokeRoles: full.strokeRoles }
     case 'icons': return { icons: full.icons }
   }
 }
@@ -550,6 +581,18 @@ function categoricalSemanticsMd(store: Store, cf: ColorFormat, modes: string[]):
   return parts.join('\n')
 }
 
+/** A length's Dimension primitive as a Markdown cell — the agent reading the
+ *  doc sees which primitive a step aliases, not just its px. */
+function primitiveCell(v: string): string {
+  const n = parseDimension(v)
+  return n === null ? '—' : `\`${dimensionCssVar(n)}\``
+}
+
+/** Token · Value · Primitive table for a map of lengths. */
+function lengthTable(prefix: string, map: Record<string, string>): string {
+  return table(['Token', 'Value', 'Primitive'], Object.entries(map).map(([k, v]) => [`\`--${prefix}-${k}\``, `\`${v}\``, primitiveCell(v)]))
+}
+
 function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   if (section === 'color') {
     const parts = ['## Color']
@@ -637,18 +680,18 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     const max = breakpointMobileMax(store.breakpointRoles, bps)
     const f = mergeGridFrame(store.gridFrame)
     const fmt = (k: 'columns' | 'gutter' | 'margin' | 'container', step: string) =>
-      k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : `var(--breakpoint-${step})`) : `var(--spacing-${step})`
+      k === 'columns' ? step : k === 'container' ? (step === 'none' ? 'none' : layoutValueCss('breakpoint', step, bps)) : layoutValueCss('spacing', step, store.spacing)
     return [
       '## Grid\n',
       '### Breakpoints\n',
-      table(['Token', 'Value'], BREAKPOINT_STEPS.map((s) => [`\`--breakpoint-${s}\``, `\`${bps[s]}\``])),
+      lengthTable('breakpoint', Object.fromEntries(BREAKPOINT_STEPS.map((s) => [s, bps[s]]))),
       '\n### Viewport roles\n',
       table(
         ['Role', 'Aliases', 'Query'],
         [
-          [`\`--breakpoint-desktop\``, `\`var(--breakpoint-${cuts.desktop})\``, `min-width: ${bps[cuts.desktop]}`],
-          [`\`--breakpoint-tablet\``, `\`var(--breakpoint-${cuts.tablet})\``, `max-width: ${tabletMax}`],
-          [`\`--breakpoint-mobile\``, `\`calc(var(--breakpoint-${cuts.mobile}) - 1px)\``, `max-width: ${max}`],
+          [`\`--breakpoint-desktop\``, `\`${layoutValueCss('breakpoint', cuts.desktop, bps)}\``, `min-width: ${breakpointRolePx(store.breakpointRoles, bps, 'desktop')}px`],
+          [`\`--breakpoint-tablet\``, `\`${layoutValueCss('breakpoint', cuts.tablet, bps)}\``, `max-width: ${tabletMax}`],
+          [`\`--breakpoint-mobile\``, `\`calc(${layoutValueCss('breakpoint', cuts.mobile, bps)} - 1px)\``, `max-width: ${max}`],
         ],
       ),
       '\nType mobile styles apply at `max-width: var(--breakpoint-mobile)`. `@media` itself must use the resolved px (`' + max + '`), because custom properties are not valid there. Tablet (8-col) overrides at `' + tabletMax + '`.\n',
@@ -667,17 +710,19 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
   const simple = SIMPLE[section]!
   const parts = [
     `## ${cap(section)}\n`,
-    table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``])),
+    section === 'shadow'
+      ? table(['Token', 'Value'], Object.entries(simple.get(store)).map(([k, v]) => [`\`--${simple.prefix}-${k}\``, `\`${v}\``]))
+      : lengthTable(simple.prefix, simple.get(store)),
   ]
   const family = layoutFamilyOf(section)
   if (family) {
     const roles = mergeLayoutRoles(family, layoutRolesOf(family, store))
     parts.push(
       `\n### Semantics\n`,
-      '_Intent aliases — never raw px. Components bind these; they alias a primitive step._\n',
+      '_Intent aliases — never raw px. Components bind these; each aliases a Dimension primitive._\n',
       table(
         ['Role', 'Aliases'],
-        LAYOUT_ROLES[family].map((r) => [`\`--${family}-${r.key}\``, `\`var(--${family}-${roles[r.key]})\``]),
+        LAYOUT_ROLES[family].map((r) => [`\`--${family}-${r.key}\``, `\`${layoutValueCss(family, roles[r.key], layoutScaleOf(family, store))}\``]),
       ),
     )
   }
@@ -687,18 +732,18 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     parts.push(
       `\n### ${ex.label}\n`,
       '_The square a checkbox, radio or switch knob is drawn in — a glyph, not a control height. Below 24px, pair it with a transparent hit area (`--size-hit`) for WCAG 2.2 target size._\n',
-      table(['Token', 'Value'], Object.entries(ex.get(store)).map(([k, v]) => [`\`--${ex.prefix}-${k}\``, `\`${v}\``])),
+      lengthTable(ex.prefix, ex.get(store)),
       `\n#### ${ex.label} semantics\n`,
       table(
         ['Role', 'Aliases'],
-        LAYOUT_ROLES[ex.family].map((r) => [`\`--${ex.family}-${r.key}\``, `\`var(--${ex.family}-${roles[r.key]})\``]),
+        LAYOUT_ROLES[ex.family].map((r) => [`\`--${ex.family}-${r.key}\``, `\`${layoutValueCss(ex.family, roles[r.key], layoutScaleOf(ex.family, store))}\``]),
       ),
     )
   }
   if (section === 'spacing') {
     parts.push(
       `\n### Surface padding\n`,
-      table(['Token', 'Value'], Object.entries(store.padding ?? {}).map(([k, v]) => [`\`--padding-${k}\``, `\`${v}\``])),
+      lengthTable('padding', store.padding ?? {}),
     )
   }
   // The elevation ramp has a DERIVED dark twin (`shadowsDark` in tokens.json,
@@ -734,7 +779,7 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      return `${wrapRoot(lines)}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame)}`
+      return `${wrapRoot(withDimensions(lines))}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing)}`
     }
     case 'tailwind':
       return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))

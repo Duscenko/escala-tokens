@@ -2,6 +2,7 @@ import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '..
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
+import { dimensionRefsOf, dimensionScaleForStore } from './dimensions'
 import { resolveThemePalette, themeBrandRamp, themeDisplayName, FAMILY_SLOTS, GLOBAL_FAMILY } from './themeSources'
 import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
@@ -433,6 +434,10 @@ export function generateTokenJSON(
       stroke: resolved.stroke,
       strokeRoles: mergeLayoutRoles('stroke', resolved.strokeRoles),
       panelBackground: resolved.panelBackground,
+      // Which Dimension primitive each length of THIS theme aliases. Per theme
+      // because a style's radius/spacing differ — the primitives themselves
+      // (`dimensions`) never do.
+      dimensionRefs: dimensionRefsOf(resolved),
     }]
   }))
 
@@ -635,6 +640,16 @@ export function generateTokenJSON(
       weights: typography.weights,
       roles: mergeTypeRoles(typography.roles),
     },
+    // ── Dimension primitives — ONE global collection of numbers, named by
+    // value (`16`, `-4`, `9999`, `3_5`), single mode. Every numeric foundation
+    // below is now a filtered alias of it: `dimensionRefs.radius.lg` is
+    // `{dimension.16}`. ADDITIVE — the per-category maps still carry the
+    // resolved px, so an older plugin reads byte-identical values (same
+    // precedent as `shadowsDark` / `gradientsDark`, no schemaVersion bump).
+    // The ladder is standard ∪ every value a shipped theme uses, so every
+    // ref resolves. See design-plans/dimension-primitives.md.
+    dimensions: dimensionScaleForStore(store, themeNames),
+    dimensionRefs: dimensionRefsOf(store),
     spacing: store.spacing,
     spacingRoles: mergeLayoutRoles('spacing', store.spacingRoles),
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
