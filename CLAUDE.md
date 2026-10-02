@@ -3217,6 +3217,19 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   is decoration measured by nothing. This does NOT reverse the documented "no
 >   `border.focus.critical`" decision — that one is about the solid boundary
 >   staying accent for every severity, which it still does.
+> - **A role's alpha must be composited against the SAME page its primitive was solved
+>   against, or Figma gets a detached raw colour.** The plugin aliases a semantic value to
+>   a primitive by BYTE match (`primAlphaByHex`). A family PRIVATE to a theme (every System
+>   Style mints `<theme>-error`, `<theme>-warning`…) has its twin solved against that
+>   theme's own paper in `colors.primitiveAlpha` (`resolveFamilyPages`), but `scaleLookup`
+>   composited `{error-a.N}` against the system page — so `status.*.surface`,
+>   `surface-pressed` and `border` (and `action.ghost.*`, `surface.selected`) showed up as
+>   `FE6A33 · 12.16%` instead of `States/Error Dark/Alpha/03`, while their solid siblings
+>   linked fine. `ThemePalette.alphaPages` (filled by `resolveThemePalette` from the SAME
+>   `resolveFamilyPages`, which moved into `themeSources.ts` to make that possible) carries
+>   the page per private family; global families keep the system pages.
+>   `semanticPrimitiveLink.test.ts` asserts every Categorical role hex of every System Style
+>   is a primitive hex. Re-publish (Sync now) after upgrading — the MCP/plugin read the Blob.
 > - **`neutral-a` is the one family with no role, deliberately.** The neutral
 >   wash case is better served by `black-a`/`white-a`, which don't carry the
 >   accent tint `neutralFromBrand` bakes into the neutral ramp. Its real use

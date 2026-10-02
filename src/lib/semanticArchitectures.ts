@@ -1206,13 +1206,18 @@ export function scaleLookup(
   // explicitly in the SAME role (e.g. `content.inverse`); nothing here needs
   // that for alpha, so one kind-aware name is enough.
   if (pageBackground && darkBackground) {
-    const bg = kind === 'dark' ? darkBackground : pageBackground
+    const systemPage = kind === 'dark' ? darkBackground : pageBackground
+    // A family PRIVATE to a theme has its twin solved against that theme's own
+    // paper in `colors.primitiveAlpha`; composing against the system page here
+    // gave a different hex, so `status.*.surface` & co. never matched their
+    // primitive and landed in Figma as detached raw fills.
+    const pageOf = (fam: string) => palette?.alphaPages?.[fam as keyof NonNullable<typeof palette.alphaPages>]?.[kind] ?? systemPage
     const kindCorrectSolid: Record<string, Record<number, string> | undefined> = {
       neutral: neutralSolid, accent: fams.accent, error: fams.error,
       warning: fams.warning, success: fams.success, info: fams.info,
     }
     for (const [fam, solid] of Object.entries(kindCorrectSolid)) {
-      if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, bg, kind)
+      if (solid) fams[`${fam}-a`] = generateAlphaScale(solid, pageOf(fam), kind)
     }
   }
   return (fam, tone) => fams[fam]?.[tone]

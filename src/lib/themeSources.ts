@@ -5,7 +5,8 @@
 // can't drift from the primitives because it never held a copy to drift with.
 
 import type { ColorScale } from '../types/tokens'
-import type { ThemePalette, ThemeSources } from '../store/useDesignStore'
+import type { CustomColor, ThemePalette, ThemeSources } from '../store/useDesignStore'
+import { backgroundFromBase, neutralFromBrand, type NeutralTint } from './colorUtils'
 
 export const FAMILY_SLOTS = ['brand', 'gray', 'error', 'warning', 'success', 'info'] as const
 export type FamilySlot = (typeof FAMILY_SLOTS)[number]
@@ -189,6 +190,13 @@ export interface PrimitiveScales {
   infoScale: ColorScale
   infoDarkScale?: ColorScale
   customColors: { key: string; scale: ColorScale; darkScale?: ColorScale }[]
+  /** The store carries these too. When all four are present `resolveThemePalette`
+   *  can also report the page each private family's alpha twin was solved against
+   *  (`ThemePalette.alphaPages`); a caller passing a bare ramp set just gets none. */
+  pageBackground?: string
+  darkBackground?: string
+  neutralTint?: NeutralTint
+  themeSources?: Record<string, ThemeSources | undefined>
 }
 
 /**
@@ -233,10 +241,39 @@ export function resolveThemePalette(
     scaleForFamily(sources[slot], kind, p) ??
     scaleForFamily(GLOBAL_FAMILY[slot], kind, p) ??
     p.primaryScale
-  return {
+  const palette: ThemePalette = {
     brand: pick('brand'), gray: pick('gray'), error: pick('error'),
     warning: pick('warning'), success: pick('success'), info: pick('info'),
   }
+  const alphaPages = alphaPagesFor(sources, p)
+  if (alphaPages) palette.alphaPages = alphaPages
+  return palette
+}
+
+const ALPHA_NAME: Record<FamilySlot, keyof NonNullable<ThemePalette['alphaPages']>> = {
+  brand: 'accent', gray: 'neutral', error: 'error',
+  warning: 'warning', success: 'success', info: 'info',
+}
+
+/**
+ * The page each PRIVATE family's alpha twin is solved against — the SAME
+ * `resolveFamilyPages` call `generateTokenJSON` makes when it ships
+ * `colors.primitiveAlpha`, so a role reading `{error-a.3}` composites to the
+ * byte the primitive carries (and the Figma plugin can alias it). Global
+ * families are left out on purpose: their twins are solved against the system
+ * pages, which is what `scaleLookup` already falls back to.
+ */
+function alphaPagesFor(sources: ThemeSources, p: PrimitiveScales): ThemePalette['alphaPages'] {
+  if (!p.pageBackground || !p.darkBackground || !p.neutralTint || !p.themeSources) return undefined
+  const src = p as unknown as ThemePageSource
+  const out: NonNullable<ThemePalette['alphaPages']> = {}
+  for (const slot of FAMILY_SLOTS) {
+    const key = sources[slot]
+    if (!key || key === GLOBAL_FAMILY[slot]) continue
+    const { light, dark } = resolveFamilyPages(src, key)
+    out[ALPHA_NAME[slot]] = { light, dark }
+  }
+  return Object.keys(out).length ? out : undefined
 }
 
 /**
@@ -315,3 +352,82 @@ export function themeDisplayName(key: string, labels: Record<string, string> = {
   if (key === 'dark') return 'Dark'
   return key.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
+
+/** The two pages a theme's ramps grow out of. Tone 1 IS this pair. */
+export type ThemePageSource = {
+  pageBackground: string
+  darkBackground: string
+  neutralTint: NeutralTint
+  themeSources: Record<string, ThemeSources | undefined>
+  customColors: CustomColor[]
+}
+
+/**
+ * The page a theme's primitive ramps must be built against.
+ *
+ * Linked to a new accent: derive from that accent's harmony — the page follows
+ * the Neutral, which follows the Accent. This is the hole that left tone 1
+ * stuck on a leftover global purple (`#190f20`) after a custom-brand theme
+ * was retinted: the scoped applier only moved the page when the theme also
+ * owned a private gray, so a theme still reading the global Neutral kept
+ * growing its brand ramp out of the system's old paper.
+ *
+ * Unlinked with a private gray: that family's own page (derived from its
+ * base), never the leftover globals.
+ * Else: the system's `pageBackground` / `darkBackground`.
+ */
+export function resolveThemePages(
+  s: ThemePageSource,
+  themeKey: string,
+  linkedAccentHex?: string | null,
+): { light: string; dark: string; nextNeutral: string | null } {
+  if (linkedAccentHex) {
+    const nextNeutral = neutralFromBrand(linkedAccentHex, s.neutralTint)
+    return {
+      light: backgroundFromBase(nextNeutral, 'light', s.neutralTint),
+      dark: backgroundFromBase(nextNeutral, 'dark', s.neutralTint),
+      nextNeutral,
+    }
+  }
+  const grayKey = s.themeSources[themeKey]?.gray ?? GLOBAL_FAMILY.gray
+  const grayFamily = grayKey !== GLOBAL_FAMILY.gray
+    ? s.customColors.find((c) => c.key === grayKey)
+    : undefined
+  if (grayFamily) {
+    return {
+      light: backgroundFromBase(grayFamily.base, 'light', s.neutralTint),
+      dark: backgroundFromBase(grayFamily.base, 'dark', s.neutralTint),
+      nextNeutral: null,
+    }
+  }
+  return { light: s.pageBackground, dark: s.darkBackground, nextNeutral: null }
+}
+
+/**
+ * The page a custom family should regenerate against, plus whether it is some
+ * theme's Neutral (needs `generateDarkColorScale` + the tint, not the generic
+ * family dark transform).
+ */
+export function resolveFamilyPages(
+  s: ThemePageSource,
+  familyKey: string,
+): { light: string; dark: string; isGray: boolean } {
+  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
+    if (!refs) continue
+    if (refs.gray === familyKey) {
+      return { ...resolveThemePages(s, themeKey), isGray: true }
+    }
+  }
+  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
+    if (!refs) continue
+    if (
+      FAMILY_SLOTS.some((slot) => slot !== 'gray' && refs[slot] === familyKey)
+      || refs.secondary === familyKey
+      || refs.tertiary === familyKey
+    ) {
+      return { ...resolveThemePages(s, themeKey), isGray: false }
+    }
+  }
+  return { light: s.pageBackground, dark: s.darkBackground, isGray: false }
+}
+

@@ -18,7 +18,7 @@ import { ALL_ROLES, recToneFor, recDarkTone } from './semanticRoles'
 import { linkedStopsFor } from './gradients'
 import {
   FAMILY_SLOTS, GLOBAL_FAMILY, BRAND_EXTRA_LABEL, BRAND_EXTRA_RANKS,
-  nextBrandExtraRank, type BrandExtraRank,
+  nextBrandExtraRank, resolveThemePages, resolveFamilyPages, type ThemePageSource, type BrandExtraRank,
 } from './themeSources'
 import type { ThemeAppearance } from './themeModes'
 
@@ -64,83 +64,10 @@ function grayTokenUpdates(
   return updates
 }
 
-/** The two pages a theme's ramps grow out of. Tone 1 IS this pair. */
-export type ThemePageSource = {
-  pageBackground: string
-  darkBackground: string
-  neutralTint: NeutralTint
-  themeSources: Record<string, ThemeSources | undefined>
-  customColors: CustomColor[]
-}
-
-/**
- * The page a theme's primitive ramps must be built against.
- *
- * Linked to a new accent: derive from that accent's harmony — the page follows
- * the Neutral, which follows the Accent. This is the hole that left tone 1
- * stuck on a leftover global purple (`#190f20`) after a custom-brand theme
- * was retinted: the scoped applier only moved the page when the theme also
- * owned a private gray, so a theme still reading the global Neutral kept
- * growing its brand ramp out of the system's old paper.
- *
- * Unlinked with a private gray: that family's own page (derived from its
- * base), never the leftover globals.
- * Else: the system's `pageBackground` / `darkBackground`.
- */
-export function resolveThemePages(
-  s: ThemePageSource,
-  themeKey: string,
-  linkedAccentHex?: string | null,
-): { light: string; dark: string; nextNeutral: string | null } {
-  if (linkedAccentHex) {
-    const nextNeutral = neutralFromBrand(linkedAccentHex, s.neutralTint)
-    return {
-      light: backgroundFromBase(nextNeutral, 'light', s.neutralTint),
-      dark: backgroundFromBase(nextNeutral, 'dark', s.neutralTint),
-      nextNeutral,
-    }
-  }
-  const grayKey = s.themeSources[themeKey]?.gray ?? GLOBAL_FAMILY.gray
-  const grayFamily = grayKey !== GLOBAL_FAMILY.gray
-    ? s.customColors.find((c) => c.key === grayKey)
-    : undefined
-  if (grayFamily) {
-    return {
-      light: backgroundFromBase(grayFamily.base, 'light', s.neutralTint),
-      dark: backgroundFromBase(grayFamily.base, 'dark', s.neutralTint),
-      nextNeutral: null,
-    }
-  }
-  return { light: s.pageBackground, dark: s.darkBackground, nextNeutral: null }
-}
-
-/**
- * The page a custom family should regenerate against, plus whether it is some
- * theme's Neutral (needs `generateDarkColorScale` + the tint, not the generic
- * family dark transform).
- */
-export function resolveFamilyPages(
-  s: ThemePageSource,
-  familyKey: string,
-): { light: string; dark: string; isGray: boolean } {
-  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
-    if (!refs) continue
-    if (refs.gray === familyKey) {
-      return { ...resolveThemePages(s, themeKey), isGray: true }
-    }
-  }
-  for (const [themeKey, refs] of Object.entries(s.themeSources)) {
-    if (!refs) continue
-    if (
-      FAMILY_SLOTS.some((slot) => slot !== 'gray' && refs[slot] === familyKey)
-      || refs.secondary === familyKey
-      || refs.tertiary === familyKey
-    ) {
-      return { ...resolveThemePages(s, themeKey), isGray: false }
-    }
-  }
-  return { light: s.pageBackground, dark: s.darkBackground, isGray: false }
-}
+// `ThemePageSource` / `resolveThemePages` / `resolveFamilyPages` live in
+// `themeSources.ts` (they must be reachable from `resolveThemePalette`, and this
+// file already imports from there). Re-exported so existing callers are unchanged.
+export { resolveThemePages, resolveFamilyPages, type ThemePageSource } from './themeSources'
 
 function privateFamilyKeys(themeSources: ThemePageSource['themeSources']): Set<string> {
   const keys = new Set<string>()

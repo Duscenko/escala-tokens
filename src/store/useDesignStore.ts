@@ -83,6 +83,15 @@ export interface ThemePalette {
   warning: ColorScale
   success: ColorScale
   info: ColorScale
+  /**
+   * The page each family's ALPHA twin was solved against, keyed by the alpha
+   * family name `scaleLookup` uses (`accent`, `neutral`, `error`…). Only set for
+   * a slot reading a family PRIVATE to a theme: `colors.primitiveAlpha` solves
+   * that family's twin against its theme's own paper, so the projection has to
+   * compose `{error-a.N}` against the same page or the two hexes never match and
+   * the semantic role can't alias its primitive. Absent = the system pages.
+   */
+  alphaPages?: Partial<Record<'neutral' | 'accent' | 'error' | 'warning' | 'success' | 'info', { light: string; dark: string }>>
 }
 
 /**

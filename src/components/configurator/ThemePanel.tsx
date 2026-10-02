@@ -320,7 +320,7 @@ function ThemeForm({
   const seed = useMemo(() => {
     if (!editKey) return null
     const pal = resolveThemePalette(themeSources[editKey], themeKinds[editKey] ?? 'light', store)
-    const base = (s: ThemePalette[keyof ThemePalette] | undefined, fb: string) =>
+    const base = (s: ThemePalette['brand'] | undefined, fb: string) =>
       (s?.[BASE_TONE] as string | undefined) ?? fb
     return {
       kind: themeKinds[editKey] ?? 'light',
