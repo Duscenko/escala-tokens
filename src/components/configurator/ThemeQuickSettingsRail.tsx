@@ -2274,7 +2274,7 @@ export default function ThemeQuickSettingsRail({
 
           <SettingItem label="Inset surface" hint="Card, modal and alert padding — the same Spacing · Inset surface role Variables edits.">
             <ContainerInsetCard
-              stepIndex={insetSurfaceStepIndex(spacingRoles)}
+              stepIndex={insetSurfaceStepIndex(spacingRoles, spacing)}
               spacing={spacing}
               onScrubStart={() => beginScrub('Container padding updated')}
               onScrubEnd={endScrub}

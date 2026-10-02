@@ -290,3 +290,22 @@ describe('roles pinned to a Dimension primitive (layoutTokens)', () => {
     expect(merged.desktop).toEqual(GRID_FRAME_STANDARD.desktop)
   })
 })
+
+describe('quick edit stays on the primitive chain', () => {
+  it('the inset slider follows a role pinned in Variables', async () => {
+    const { insetSurfaceStepIndex, SPACING_STEPS, buildSpacingFromBase } = await import('../layoutTokens')
+    const spacing = buildSpacingFromBase(4)
+    expect(SPACING_STEPS[insetSurfaceStepIndex({ 'inset-surface': 'dimension-24' }, spacing)]).toBe('6')
+    expect(SPACING_STEPS[insetSurfaceStepIndex({ 'inset-surface': 'dimension-23' }, spacing)]).toBe('6')
+    expect(SPACING_STEPS[insetSurfaceStepIndex({ 'inset-surface': '3' }, spacing)]).toBe('3')
+  })
+
+  it('a quick-edit base unit that makes odd sizes still lands every value on the ladder', () => {
+    const st = useDesignStore.getState()
+    useDesignStore.setState({ sizes: { ...st.sizes, md: '35px' }, selector: { ...st.selector, md: '10.5px' } })
+    const json = generateTokenJSON() as unknown as { dimensions: Record<string, string>; dimensionRefs: Record<string, Record<string, string>> }
+    expect(json.dimensions['35']).toBe('35px')
+    expect(json.dimensions['10_5']).toBe('10.5px')
+    expect(json.dimensionRefs.sizes.md).toBe('{dimension.35}')
+  })
+})

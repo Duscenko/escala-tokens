@@ -320,11 +320,22 @@ export const PADDING_STANDARD: Record<PaddingSide, string> = {
 export const INSET_SURFACE_ROLE = 'inset-surface'
 
 /** Slider index into `SPACING_STEPS` for the current surface inset (default
- *  step 5). Out-of-range / hand-edited role values fall back to step 5. */
-export function insetSurfaceStepIndex(spacingRoles: Record<string, string> | undefined): number {
+ *  step 5). A role pinned to a Dimension primitive (set in Variables) lands on
+ *  the step with the same px, or the nearest one when the scale has none — pass
+ *  the spacing scale for that. Malformed values fall back to step 5. */
+export function insetSurfaceStepIndex(
+  spacingRoles: Record<string, string> | undefined,
+  spacing?: Record<string, string>,
+): number {
   const step = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
   const i = SPACING_STEPS.indexOf(step as SpacingStep)
-  return i === -1 ? SPACING_STEPS.indexOf(PADDING_DEFAULT_STEP) : i
+  if (i !== -1) return i
+  const pinned = roleDimensionPx(step)
+  if (pinned !== null && spacing) {
+    const near = nearestSpacingStep(spacing, pinned)
+    if (near) return SPACING_STEPS.indexOf(near)
+  }
+  return SPACING_STEPS.indexOf(PADDING_DEFAULT_STEP)
 }
 
 /** The four-sided `padding` mirror for a given inset px — so the export's
