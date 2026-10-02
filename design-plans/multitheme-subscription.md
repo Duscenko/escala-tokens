@@ -36,6 +36,34 @@ Decisiones que quedan (el resto de abajo se simplifica): **precio** (el consejo 
 pago único; falta la cifra), **Polar vs Lemon Squeezy**, **umbral gratis** (recomiendo
 1 tema) y **hora de corte** (Europe/Paris).
 
+## ESTADO — pendiente, retomar mañana (2026-10-03)
+
+**Decisiones tomadas (2026-10-02):**
+- Modelo: **pago único** vía **Merchant of Record**, sin cuentas ni suscripción (clave de licencia).
+- Proveedor: **Polar** (licencias, descargas, Discord/GitHub integrados; 5% + 50¢ igual que Lemon, que además se está integrando en Stripe).
+- Precio propuesto: **€79 pago único** (lanzamiento €59 hasta fin de año; cupón LATAM −30%), con "actualizaciones durante 1 año".
+- Umbral gratis: **1 tema** (Light+Dark cuentan como uno; los viewports no cuentan).
+- Corte de la promo: **2026-10-31 23:59 `Europe/Paris`**, fecha fijada en el servidor.
+
+**Pendiente de decidir (del usuario):**
+1. Confirmar precio (€79 / lanzamiento €59) — es una estimación, no un dato medido.
+2. Abrir cuenta en Polar con el SIRET y **comprobar que paga a un auto-entrepreneur francés** (la búsqueda no lo confirmó).
+3. Nombre y alcance de "Escala Complete" (¿sólo multi-tema o todo el pack?). Recomendación: todo.
+4. Política de reembolso (p. ej. 14 días).
+5. Fiscalidad micro-entreprise (seuil TVA, plafond micro-BNC): consultar al contable.
+
+**Hecho:** este plan; el selector de **Viewports** en File & modes (plugin 0.3.2), ya commiteado.
+**Sin hacer:** nada de código de pagos, banner ni bloqueo.
+
+**Siguiente paso mañana (fase 1, no requiere cobrar):**
+1. Mockup visual de los 4 estados (banner promo, fila bloqueada, popover de upgrade, estado Pro).
+2. `api/entitlement.ts` con la fecha de promo en el servidor.
+3. Banner con cuenta atrás en `FigmaSyncView.tsx` (tokens del acento, respeta reduced-motion).
+
+**Estado del repo:** configuradora con commits locales sin push desde `a6cc157`
+(viewports, plan); plugin con 0.3.1 y 0.3.2 sin push. Falta que pruebes el plugin 0.3.2
+en Figma y luego push de ambos repos.
+
 ## La idea
 
 `File & modes` (Figma Sync) es donde un sistema sale a Figma, y es el momento en que
