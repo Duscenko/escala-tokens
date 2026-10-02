@@ -69,9 +69,10 @@ export function buildVariableDescriptions(): VariableDescriptions {
     put(COLL.typography, `role/${role.key}/size-mobile`, `${role.description} Mobile size.`)
   }
 
+  // One variable per frame field, a value per VIEWPORT mode (Desktop · Tablet ·
+  // Mobile) in Dimension Semantics — not three `desktop/` `tablet/` `mobile/` copies.
   for (const field of GRID_FRAME_FIELDS) {
-    put(COLL.grid, `desktop/${field.key}`, `Desktop frame — ${field.description}`)
-    put(COLL.grid, `mobile/${field.key}`, `Mobile frame — ${field.description}`)
+    put(COLL.grid, field.key, `${field.description} One value per viewport mode: Desktop · Tablet · Mobile.`)
   }
 
   return out

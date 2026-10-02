@@ -2343,6 +2343,16 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > tokens.json, CSS, W3C, Markdown, MCP, the editor, and plugin v0.3.0 — `Dimension Primitives` +
 > one `Dimension Semantics` collection grouped Spacing/Radius/Stroke/Size/Selector/Grid,
 > replacing six per-foundation collections).
+> **In Figma, `Dimension Semantics`' MODES ARE VIEWPORTS — Desktop · Tablet · Mobile —
+> never Light/Dark.** A length does not change between colour appearances; it changes
+> between a phone and a desktop, and the names match the configurator's platform switch.
+> `Grid/columns · gutter · margin · container` are ONE variable each with a value per
+> viewport (12 / 8 / 4 columns…) — the old `Grid/desktop|tablet|mobile/*` copies are
+> gone. Every other group carries one value in all three modes, ready to diverge. A
+> collection has one mode axis, so values come from the ACTIVE library theme; when
+> another theme's lengths differ the import logs it ("sync one theme per file").
+> Plugin v0.3.1.
+>
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
 > `Dimension primitives` collection (read-only — a primitive is its value — with
 > "Used by"). Radius / Spacing / Grid / Sizes / Stroke own exactly ONE collection
