@@ -1191,12 +1191,16 @@ const en: Record<string, string> = {
 
 const messages: Record<Locale, Record<string, string>> = { en, es, fr }
 
+/** English is the default for everyone. Another language applies only when the
+ *  person picked it (stored by the Language menu) — the browser's own language
+ *  is deliberately NOT consulted, so a first visit always lands in English. */
 function initialLocale(): Locale {
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'en' || stored === 'es' || stored === 'fr') return stored
-  const language = window.navigator.language.toLowerCase()
-  if (language.startsWith('es')) return 'es'
-  if (language.startsWith('fr')) return 'fr'
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (stored === 'en' || stored === 'es' || stored === 'fr') return stored
+  } catch {
+    // Storage blocked (private mode, strict settings): fall through to English.
+  }
   return 'en'
 }
 
