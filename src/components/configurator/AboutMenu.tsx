@@ -17,6 +17,7 @@ import { SparkleCircleIcon } from '../ui/icons'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
 import AgentInstallPanel from './AgentInstallPanel'
+import { FooterLinks } from './FooterLinks'
 
 // ── The corporate/about drawer (burger menu) ─────────────────────────────────
 // Everything the workspace itself can't say: what Escala IS, how its three
@@ -1048,7 +1049,11 @@ export function AboutScaffold({
         </div>
       </div>
 
-      <footer className="mt-auto px-5 py-4 border-t border-line">
+      <footer className="mt-auto flex flex-col gap-2 px-5 py-4 border-t border-line">
+        {/* Same links as the desktop shell's footer — a phone has no other
+            door to Contact / Legal / Privacy. Wraps on a narrow screen; each
+            link keeps a 24px target (WCAG 2.2). */}
+        <FooterLinks className="flex-wrap -mx-0.5 gap-x-3 gap-y-0" linkClassName="min-h-6" />
         <p className="text-caption text-fg-faint">
           {COPYRIGHT_LINE} · {t('Figma is a trademark of Figma, Inc.')}
         </p>

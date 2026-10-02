@@ -35,6 +35,7 @@ import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
 import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
+import { FooterLinks } from '../components/configurator/FooterLinks'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { ChromeTabBackground, ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
@@ -79,7 +80,6 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
-import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from '../lib/legal'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -2210,56 +2210,11 @@ export default function Configurator() {
         <span className="min-w-0 flex-1 text-mini text-fg-faint truncate">
           {COPYRIGHT_LINE}
         </span>
-        {/* The project's own source. It used to be an icon button in TopNav's
-            global cluster, next to Language and Appearance — but those change
-            the session and this leaves the app, and its GitHub mark collided
-            with the user's OWN repo-sync mark two rows down. Here it reads as
-            what it is: a colophon link, on the attribution line, in the
-            attribution's own type size. Text + mark rather than a bare glyph —
-            there's no 24px target pressure on a 28px rule, and the word is what
-            makes it unambiguous next to a copyright notice. */}
-        <div className="flex h-full flex-shrink-0 items-center gap-2">
-        {/* Legal pages open in the same tab: they're short reads with their
-            own way back, not a reason to keep a second editor tab around. */}
-        <a href={CONTACT_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Contact')}</a>
-        <a href={LEGAL_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Legal notice')}</a>
-        <a href={PRIVACY_PATH} className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50">{t('Privacy')}</a>
-        <a
-          href="https://github.com/Duscenko/escala-tokens"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Open the Escala Tokens source on GitHub"
-          title="Open the Escala Tokens source on GitHub"
-          // `text-fg-muted`, not the `text-fg-faint` the copyright line uses:
-          // this is the one INTERACTIVE thing in the footer, and faint measured
-          // 4.39:1 at 10.5px — under AA for small text. The static line beside
-          // it can sit quieter; a link people have to find cannot.
-          // `h-full` claims the whole 28px strip as the hit area (WCAG 2.2
-          // target size) without the mark or the type growing.
-          className="flex h-full flex-shrink-0 items-center gap-1.5 rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-        >
-          <span
-            aria-hidden
-            className="h-3 w-3 bg-current"
-            style={{
-              WebkitMask: "url('/ide-logos/github-outline.svg') center / contain no-repeat",
-              mask: "url('/ide-logos/github-outline.svg') center / contain no-repeat",
-            }}
-          />
-          <span className="hidden sm:inline">Source</span>
-        </a>
-        <a
-          href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Read the MIT License"
-          title="Read the MIT License"
-          className="flex h-full flex-shrink-0 items-center rounded px-0.5 text-mini text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-        >
-          <span className="hidden sm:inline">MIT License</span>
-          <span className="sm:hidden">MIT</span>
-        </a>
-        </div>
+        {/* Contact · Legal · Privacy · Source · MIT License — shared with the
+            phone / `/about` footer (`AboutScaffold`) so the two can't drift.
+            Source used to be an icon in TopNav's global cluster; it's a
+            colophon link, so it lives on the attribution line. */}
+        <FooterLinks className="h-full" />
       </footer>
 
       {/* Guided export — Source → Format → Export. TRANSVERSAL: reachable from
