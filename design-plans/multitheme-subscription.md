@@ -36,6 +36,30 @@ Decisiones que quedan (el resto de abajo se simplifica): **precio** (el consejo 
 pago único; falta la cifra), **Polar vs Lemon Squeezy**, **umbral gratis** (recomiendo
 1 tema) y **hora de corte** (Europe/Paris).
 
+## Decisión open-core (2026-10-03): todo MIT, se cobra el servicio alojado
+
+Se evaluó el consejo "plugin de Figma privado + validador de licencia en el plugin" y se
+**descartó**:
+
+- Ambos repos ya son públicos con MIT, y `public/escala-figma-plugin.zip` se sirve desde la
+  web. Pasar el plugin a privado no retira lo ya publicado; la licencia concedida es
+  irrevocable para quien ya lo tiene.
+- Un validador dentro del plugin corre en la máquina del usuario y se quita editando el JS.
+  El límite que no se salta es el de `POST /api/tokens` (ver Arquitectura), y funciona igual
+  con el plugin público.
+- Lo que se vende es el **sync multi-tema alojado** (cuesta dinero en cada publicación),
+  las actualizaciones y el soporte, no el código. Un fork tendría que alojar su propio sync.
+
+Lo que sí se adopta del consejo: una sección de README que diga qué es gratis y qué es de
+pago (hecha: "Free and paid"), y el argumento de empresas/agencias (comprar una herramienta
+oficial con actualizaciones en lugar de compilar desde GitHub).
+
+Si más adelante se quiere código cerrado, solo vale para material NUEVO (plantillas de pago,
+tooling de licencias) en un repo privado aparte; no toca lo ya publicado bajo MIT.
+
+Por verificar antes de publicar en Figma Community: cómo reparte Figma los ingresos de
+plugins de pago y si permite validar una clave de licencia externa (Polar).
+
 ## ESTADO — pendiente, retomar mañana (2026-10-03)
 
 **Decisiones tomadas (2026-10-02):**

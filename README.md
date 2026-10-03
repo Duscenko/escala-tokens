@@ -6,7 +6,7 @@ You define a palette, type scale, spacing, radius and the rest once. Escala deri
 
 The point is **no bloat**: you export the tokens you actually chose, not a framework’s opinion of a design system. Everything on screen derives from one payload, so the preview, the export and what lands in Figma can’t disagree.
 
-**Hosted instance:** [www.escalatokens.com](https://www.escalatokens.com) — that site runs this repo. Nothing is held back.
+**Hosted instance:** [www.escalatokens.com](https://www.escalatokens.com) — that site runs this repo. The code is all here and all MIT; what the hosted service charges for is described under [Free and paid](#free-and-paid).
 
 ## What you get
 
@@ -85,6 +85,18 @@ The system must already be published (Escala → Figma → Sync). Unzip the AI a
 ## Deploy your own
 
 This is a Vite app hosted on Vercel. Publish and MCP need [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) on that project. After you change the public origin, point the plugin and the MCP snippet at *your* host — not `*.vercel.app` in user-facing copy. The public product URL is always [www.escalatokens.com](https://www.escalatokens.com).
+
+## Free and paid
+
+Escala is open source end to end: this configurator, the [Figma plugin](https://github.com/Duscenko/escala-figma-plugin), the CLI and the MCP server are all MIT. You can fork, self-host and modify any of it.
+
+**Free:** configure a system, export `tokens.json` / `variables.css` / W3C JSON, connect GitHub, and load **one theme** (Light + Dark, Desktop) into Figma by importing the exported `tokens.json` in the plugin.
+
+**Paid (one-time licence, not live yet):** up to 10 themes and every platform mode (Desktop · Tablet · Mobile) in Figma, automatic hosted sync, the live MCP server, plus updates and support. Hosted sync and MCP are enforced on the server (`api/tokens.ts`, `api/mcp.ts`), so there is nothing to patch out of the plugin. If you self-host, you set your own limits.
+
+Until the licence ships, everything is free for everyone. Status and details: [design-plans/pricing-and-packaging.md](design-plans/pricing-and-packaging.md).
+
+Why pay when the code is free: hosted sync and MCP cost money on every request, and a licence keeps your Figma file and your agents in step with the web without manual exports.
 
 ## License and credits
 
