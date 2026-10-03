@@ -9,7 +9,7 @@ import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
-import { mergeLayoutRoles, mergeGridFrame } from './layoutTokens'
+import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
@@ -124,6 +124,9 @@ export type GenerateTokenOptions = {
    *  Tablet · Mobile. At least one; omit for all three. Shipped as the
    *  top-level `viewports`. */
   viewports?: FigmaViewport[] | null
+  /** Which named grid styles ship (`gridStyles`). Omit for every style whose
+   *  viewport ships; a list narrows further (the free tier ships XL Desktop). */
+  gridStyles?: GridStyleKey[] | null
   /** Plugin file display name (`tokens.project`). Does not change the
    *  `/api/tokens?project=` slug, which still comes from `projectName`. */
   project?: string | null
@@ -417,6 +420,12 @@ export function generateTokenJSON(
     opts?.theme,
     scopeThemes.length ? scopeThemes : (opts?.themes ?? null),
   )
+  // The named grid styles that ship: those whose viewport ships, narrowed by
+  // `opts.gridStyles` when given. Resolved to px so the plugin does no maths.
+  const shippedViewports = normalizeFigmaViewports(opts?.viewports)
+  const gridStylesOf = (frame: GridFrameModes | undefined, spacing: Record<string, string>, grid: Record<string, string>) =>
+    resolveGridStyles(frame, spacing, extractBreakpoints(grid))
+      .filter((st) => shippedViewports.includes(st.viewport) && (!opts?.gridStyles?.length || opts.gridStyles.includes(st.key)))
   const foundationsByTheme = Object.fromEntries(themeNames.map((theme) => {
     const resolved = resolveThemeFoundations(store, theme)
     return [theme, {
@@ -431,6 +440,7 @@ export function generateTokenJSON(
       shadows: resolved.shadows,
       grid: resolved.grid,
       gridFrame: mergeGridFrame(resolved.gridFrame),
+      gridStyles: gridStylesOf(resolved.gridFrame, resolved.spacing, resolved.grid),
       breakpointRoles: mergeLayoutRoles('breakpoint', resolved.breakpointRoles),
       sizes: resolved.sizes,
       sizeRoles: mergeLayoutRoles('size', resolved.sizeRoles),
@@ -707,6 +717,9 @@ export function generateTokenJSON(
     shadowsDark: darkShadowMap(store.shadows),
     grid: store.grid,
     gridFrame: mergeGridFrame(store.gridFrame),
+    // The six named layouts a designer applies in Figma (2XL Desktop … SM
+    // Mobile), resolved to px with the fixed column width derived. Additive.
+    gridStyles: gridStylesOf(store.gridFrame, store.spacing, store.grid),
     breakpointRoles: mergeLayoutRoles('breakpoint', store.breakpointRoles),
     sizes: store.sizes,
     sizeRoles: mergeLayoutRoles('size', store.sizeRoles),

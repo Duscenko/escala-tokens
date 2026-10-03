@@ -473,7 +473,9 @@ export const BREAKPOINT_STEPS = ['sm', 'md', 'lg', 'xl', '2xl'] as const
 export type BreakpointStep = (typeof BREAKPOINT_STEPS)[number]
 
 export const BREAKPOINT_STANDARD: Record<BreakpointStep, string> = {
-  sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1536px',
+  // 2xl is 1440, not Tailwind's 1536: it is the widest of the six named grid
+  // styles (2XL Desktop and XL Desktop Sidebar both lay out on a 1440 frame).
+  sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1440px',
 }
 
 export function breakpointKey(step: string): string {
@@ -521,12 +523,168 @@ export const GRID_FRAME_FIELDS: { key: keyof GridFrameAlias; label: string; desc
   { key: 'container', label: 'Container', description: 'Max content width — a breakpoint step, or none.' },
 ]
 
-/** Desktop matches the previous global grid. Tablet is the 8-col middle
- *  recipe. Mobile is the 4-col phone. */
+/** The three Dimension Semantics modes ARE three of the six named grid
+ *  styles below: Desktop = XL Desktop (12 × 72 on 1280, gutter 32, margin 32),
+ *  Tablet = MD Tablet (8 × 60 on 768, 32 / 32), Mobile = SM Mobile (4 × 60 on
+ *  320, 16 / 16). Gutters hold 32 from tablet up; only the phone tightens. */
 export const GRID_FRAME_STANDARD: GridFrameModes = {
+  desktop: { columns: '12', gutter: '8', margin: '8', container: 'xl' },
+  tablet: { columns: '8', gutter: '8', margin: '8', container: 'none' },
+  mobile: { columns: '4', gutter: '4', margin: '4', container: 'none' },
+}
+
+/** What GRID_FRAME_STANDARD was before the six-style grid (store < v76). The
+ *  migration replaces a viewport only while it still holds exactly this. */
+export const GRID_FRAME_LEGACY_STANDARD: GridFrameModes = {
   desktop: { columns: '12', gutter: '6', margin: '8', container: 'xl' },
   tablet: { columns: '8', gutter: '6', margin: '6', container: 'none' },
   mobile: { columns: '4', gutter: '4', margin: '4', container: 'none' },
+}
+
+// ── Named grid styles (what a designer applies to a frame in Figma) ─────────
+// Six layouts, one per breakpoint and content context. Columns are FIXED width
+// and centred, so on a frame of the style's own width the margins land exactly
+// and every number on the spec sheet is the number in the file:
+//
+//   SM Mobile           4 × 60  · gutter 16 · margin 16 →  320
+//   MD Tablet           8 × 60  · gutter 32 · margin 32 →  768
+//   LG Web             12 × 48  · gutter 32 · margin 48 → 1024
+//   XL Desktop         12 × 72  · gutter 32 · margin 32 → 1280
+//   XL Desktop Sidebar 344 + 12 × 64 · gutter 24 · margin 32 → 1440
+//   2XL Desktop        12 × 80  · gutter 32 · margin 64 → 1440
+//
+// The column width is DERIVED — (width − sidebar − 2·margin − (n−1)·gutter) / n
+// — never stored, so editing a gutter re-solves the column instead of the
+// frame silently no longer adding up. SM · MD · XL read the editable viewport
+// frames above (they are the Figma modes); LG · 2XL inherit Desktop's columns
+// and gutter and pin only the margin that makes them theirs, and the sidebar
+// layout pins its own tighter gutter and the 344 rail.
+
+export const GRID_STYLE_KEYS = ['2xl-desktop', 'xl-desktop', 'xl-desktop-sidebar', 'lg-web', 'md-tablet', 'sm-mobile'] as const
+export type GridStyleKey = (typeof GRID_STYLE_KEYS)[number]
+
+export interface GridStyleDef {
+  key: GridStyleKey
+  label: string
+  description: string
+  /** The viewport this style belongs to — it ships only when that viewport does. */
+  viewport: GridViewport
+  /** Overrides on top of `gridFrame[viewport]` (pinned primitives). */
+  recipe?: Partial<Pick<GridFrameAlias, 'gutter' | 'margin'>>
+  /** The frame the style is laid out on: a breakpoint step, a pinned
+   *  primitive, or `container` (the desktop frame's own cap). */
+  width: string
+  /** A fixed-width rail on the left, before the margin. */
+  sidebar?: string
+}
+
+export const GRID_STYLES: readonly GridStyleDef[] = [
+  { key: '2xl-desktop', label: '2XL Desktop', viewport: 'desktop', width: '2xl', recipe: { margin: 'dimension-64' },
+    description: 'Full-width desktop without a sidebar. Wider columns let content scale on large screens.' },
+  { key: 'xl-desktop', label: 'XL Desktop', viewport: 'desktop', width: 'container',
+    description: 'Standard desktop layouts, balancing content density and readability.' },
+  { key: 'xl-desktop-sidebar', label: 'XL Desktop Sidebar', viewport: 'desktop', width: '2xl', sidebar: 'dimension-344', recipe: { gutter: 'dimension-24' },
+    description: 'Desktop with a persistent left sidebar; the content area keeps its own 12 columns.' },
+  { key: 'lg-web', label: 'LG Web', viewport: 'desktop', width: 'lg', recipe: { margin: 'dimension-48' },
+    description: 'Smaller desktop and large tablet web. Narrower columns keep focus on limited width.' },
+  { key: 'md-tablet', label: 'MD Tablet', viewport: 'tablet', width: 'md',
+    description: 'Tablet, where touch and content clarity matter equally. Desktop structure, tablet spacing.' },
+  { key: 'sm-mobile', label: 'SM Mobile', viewport: 'mobile', width: 'dimension-320',
+    description: 'Mobile-first, limited horizontal space: wide columns and tight gutters.' },
+]
+
+export interface ResolvedGridStyle {
+  key: GridStyleKey
+  label: string
+  description: string
+  viewport: GridViewport
+  columns: number
+  /** Derived fixed column width, px. */
+  column: number
+  gutter: number
+  margin: number
+  /** The frame width the style adds up to, px. */
+  width: number
+  sidebar?: number
+}
+
+/** Every named grid style, resolved to px against the system's own frames. */
+export function resolveGridStyles(
+  frame: GridFrameModes | undefined,
+  spacing: Record<string, string>,
+  breakpoints: Record<string, string>,
+): ResolvedGridStyle[] {
+  const merged = mergeGridFrame(frame)
+  const px = (v: string | undefined) => {
+    if (!v) return 0
+    const pinned = roleDimensionPx(v)
+    if (pinned !== null) return pinned
+    return parseFloat(spacing[v] || SPACING_STANDARD[v as SpacingStep] || '0') || 0
+  }
+  const bp = (v: string) => roleDimensionPx(v) ?? (parseFloat(breakpoints[v] || BREAKPOINT_STANDARD[v as BreakpointStep] || '0') || 0)
+  return GRID_STYLES.map((def) => {
+    const base = merged[def.viewport]
+    const columns = Math.max(1, parseInt(base.columns, 10) || 12)
+    const gutter = px(def.recipe?.gutter ?? base.gutter)
+    const margin = px(def.recipe?.margin ?? base.margin)
+    const sidebar = def.sidebar ? (roleDimensionPx(def.sidebar) ?? 0) : 0
+    const container = merged.desktop.container
+    const width = def.width === 'container'
+      ? (container !== 'none' ? bp(container) : 0) || bp('xl')
+      : bp(def.width)
+    const column = Math.max(1, Math.round(((width - sidebar - 2 * margin - (columns - 1) * gutter) / columns) * 100) / 100)
+    return {
+      key: def.key, label: def.label, description: def.description, viewport: def.viewport,
+      columns, column, gutter, margin, width, ...(sidebar ? { sidebar } : {}),
+    }
+  })
+}
+
+/** The standard frame, keeping each field on a spacing STEP where that step
+ *  still lands on the standard px, and PINNING the standard primitive where it
+ *  doesn't. A style built on a 3.5 / 4.5 / 5px spacing base would otherwise
+ *  drag its gutters and margins off the 4px grid (21 · 27 · 30px) and under
+ *  the 16px phone margin — the frame is a layout standard (4 / 8 / 12
+ *  columns, gutters 16 / 32 / 32, margins 16 / 32 / 32), not a property of
+ *  the spacing base. */
+export function standardGridFrameFor(spacing: Record<string, string>): GridFrameModes {
+  const out = {} as GridFrameModes
+  for (const vp of GRID_VIEWPORTS) {
+    const alias = GRID_FRAME_STANDARD[vp]
+    const keep = (step: string) => {
+      const want = parseFloat(SPACING_STANDARD[step as SpacingStep])
+      return parseFloat(spacing[step]) === want ? step : dimensionRoleValue(want)
+    }
+    out[vp] = { ...alias, gutter: keep(alias.gutter), margin: keep(alias.margin) }
+  }
+  return out
+}
+
+/** Store v76: move a slot (the root state, a theme's foundations, a saved
+ *  snapshot) onto the six-style grid. A viewport moves only while it still
+ *  holds exactly the pre-v76 default, and 2xl only while it is still 1536 —
+ *  a hand-set value stays. Mutates `slot`. */
+export function restandardGrid(
+  slot: { grid?: Record<string, string>; gridFrame?: GridFrameModes } | null | undefined,
+  spacing: Record<string, string> | undefined,
+): void {
+  if (!slot || typeof slot !== 'object') return
+  if (slot.grid && typeof slot.grid === 'object' && slot.grid['breakpoint-2xl'] === '1536px') {
+    slot.grid = { ...slot.grid, 'breakpoint-2xl': BREAKPOINT_STANDARD['2xl'] }
+  }
+  if (!slot.gridFrame || typeof slot.gridFrame !== 'object') return
+  const same = (a: GridFrameAlias | undefined, b: GridFrameAlias) =>
+    !!a && a.columns === b.columns && a.gutter === b.gutter && a.margin === b.margin && a.container === b.container
+  const next = standardGridFrameFor(spacing ?? SPACING_STANDARD)
+  const stored = slot.gridFrame
+  const frame = mergeGridFrame(stored)
+  for (const vp of GRID_VIEWPORTS) {
+    if (same(stored[vp], GRID_FRAME_LEGACY_STANDARD[vp])) frame[vp] = next[vp]
+  }
+  slot.gridFrame = frame
+  if (slot.grid && typeof slot.grid === 'object' && spacing) {
+    slot.grid = applyDesktopFrameToGrid(slot.grid, frame, spacing)
+  }
 }
 
 export function mergeGridFrame(stored?: GridFrameModes | null): GridFrameModes {

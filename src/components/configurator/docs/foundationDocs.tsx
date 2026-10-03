@@ -46,6 +46,7 @@ import {
   mergeLayoutRoles,
   rolePrimitiveName,
   resolveGridFrame,
+  resolveGridStyles,
   resolveLayoutRole,
   breakpointMobileMax,
   type LayoutFamily,
@@ -1169,7 +1170,7 @@ padding: var(--spacing-inset-surface);
   {
     key: 'grid',
     label: 'Grid',
-    lead: 'Two layers, same idea as Type. Primitives are the Tailwind min-width ramp (sm–2xl). Semantics name three window recipes — 12-col desktop, 8-col tablet, 4-col mobile — not OS platforms. Components bind `--grid-*` and `--breakpoint-desktop` / `--breakpoint-tablet` / `--breakpoint-mobile`; they never invent a 767.',
+    lead: 'Two layers, same idea as Type. Primitives are the min-width ramp (sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1440). Semantics name three window recipes — 12-col desktop, 8-col tablet, 4-col mobile — not OS platforms, and six named grid styles (2XL Desktop … SM Mobile) lay them out with fixed columns for Figma. Components bind `--grid-*` and `--breakpoint-desktop` / `--breakpoint-tablet` / `--breakpoint-mobile`; they never invent a 767.',
     why: 'A grid is the contract that lets two people lay out two different screens and have them line up. Tokenising the cut as well as the frame means Type mobile and the 4-col recipe switch at the same width — not a hardcoded 767 in type and a 768 in the plugin. Tablet is the missing middle recipe (8 columns), nested between desktop and mobile in CSS.',
     usage: 'Lay out against `--grid-columns`, `--grid-gutter`, `--grid-margin`, `--grid-container`. Query the viewport with `--breakpoint-desktop` (min-width) and `--breakpoint-mobile` (max-width = primitive − 1px). `@media` itself must use the resolved px — custom properties are not valid there.',
     usageCode: `max-width: var(--grid-container);
@@ -1179,25 +1180,27 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
 
 @media (max-width: var(--breakpoint-mobile)) { /* 4-col recipe already on :root */ }`,
     ships: {
-      json: 'grid · breakpointRoles · gridFrame',
+      json: 'grid · breakpointRoles · gridFrame · gridStyles',
       css: '--breakpoint-*  ·  --breakpoint-desktop/mobile  ·  --grid-*',
-      figma: 'Grid/{n} columns + Grid/Mobile styles · columns/gutter/… plus desktop/* and mobile/* variables',
+      figma: 'Six grid styles (Grid/2XL Desktop … Grid/SM Mobile) · Grid/columns · gutter · margin · container · column, one value per viewport mode',
     },
-    tokenCount: (c) => BREAKPOINT_STEPS.length + LAYOUT_ROLES.breakpoint.length + GRID_FRAME_FIELDS.length * 2,
+    tokenCount: (c) => BREAKPOINT_STEPS.length + LAYOUT_ROLES.breakpoint.length + GRID_FRAME_FIELDS.length * 3,
     sections: [
       {
         id: 'layout',
         title: 'Frame',
-        description: 'Desktop is 12 columns with a container cap. Mobile is 4 columns, fluid. Gutter and margin alias spacing steps.',
+        description: 'Desktop is 12 columns with a container cap; tablet is 8, mobile 4, both fluid. Gutter and margin alias spacing steps. These three are the Figma viewport modes.',
         render: (c) => {
           const bps = extractBreakpoints(c.grid)
           const frame = mergeGridFrame(c.gridFrame)
           const desktop = resolveGridFrame('desktop', frame, c.spacing, bps)
+          const tablet = resolveGridFrame('tablet', frame, c.spacing, bps)
           const mobile = resolveGridFrame('mobile', frame, c.spacing, bps)
           return (
             <div className="flex flex-col gap-5">
               {([
                 ['Desktop', desktop],
+                ['Tablet', tablet],
                 ['Mobile', mobile],
               ] as const).map(([label, f]) => (
                 <div key={label} className="flex flex-col gap-2">
@@ -1217,6 +1220,42 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
                   </div>
                 </div>
               ))}
+            </div>
+          )
+        },
+      },
+      {
+        id: 'styles',
+        title: 'Grid styles',
+        description: 'Six named layouts, one per breakpoint and context. Columns are a fixed width, centred, so on a frame of the style\'s own width every number adds up. Apply one to a Figma frame from the Grid panel. XL Desktop, MD Tablet and SM Mobile are the three modes above; the column width is derived, never set.',
+        render: (c) => {
+          const styles = resolveGridStyles(c.gridFrame, c.spacing, extractBreakpoints(c.grid))
+          return (
+            <div className="overflow-x-auto">
+              <table className="w-full text-body">
+                <thead>
+                  <tr className="text-left text-mini font-semibold uppercase tracking-widest text-fg-faint">
+                    <th className="py-2 pr-4 font-semibold">Style</th>
+                    <th className="py-2 pr-4 font-semibold">Columns</th>
+                    <th className="py-2 pr-4 font-semibold">Gutter</th>
+                    <th className="py-2 pr-4 font-semibold">Margin</th>
+                    <th className="py-2 pr-4 font-semibold">Sidebar</th>
+                    <th className="py-2 font-semibold text-right">Frame</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-fg-muted tabular-nums">
+                  {styles.map((st) => (
+                    <tr key={st.key} className="border-t border-line">
+                      <td className="py-2 pr-4 font-sans text-fg">{st.label}</td>
+                      <td className="py-2 pr-4">{st.columns} × {st.column}</td>
+                      <td className="py-2 pr-4">{st.gutter}</td>
+                      <td className="py-2 pr-4">{st.margin}</td>
+                      <td className="py-2 pr-4">{st.sidebar ?? '—'}</td>
+                      <td className="py-2 text-right">{st.width}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )
         },

@@ -16,6 +16,7 @@ import {
   mergeLayoutRoles,
   mergeGridFrame,
   applyDesktopFrameToGrid,
+  restandardGrid,
   nearestSpacingStep,
   scaleRadiusFromLg,
   SPACING_STEPS,
@@ -1714,7 +1715,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 75,
+      version: 76,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -2988,6 +2989,28 @@ export const useDesignStore = create<DesignStore>()(
           stepType(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) stepType(sys?.snapshot)
+          }
+        }
+        if (version < 76) {
+          // v75→v76: the six named grid styles. The viewport frames move to
+          // the new standard (gutter 32 from tablet up, tablet margin 32) and
+          // the 2xl breakpoint to 1440. Detect-don't-assume: a viewport moves
+          // only while it still holds exactly the pre-v76 default, and 2xl
+          // only while it is still Tailwind's 1536 — a hand-set value stays.
+          const regrid = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            restandardGrid(state, state.spacing)
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) {
+                const slot = foundations[key]
+                restandardGrid(slot, slot?.spacing ?? state.spacing)
+              }
+            }
+          }
+          regrid(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) regrid(sys?.snapshot)
           }
         }
         return persisted

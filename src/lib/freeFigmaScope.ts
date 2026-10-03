@@ -1,6 +1,6 @@
 // What a download for the Figma plugin carries when the person has no Escala
 // Pro: ONE library theme (with its Light and Dark columns) and the Desktop
-// viewport — the free tier on /pricing.
+// viewport with its one grid style, XL Desktop — the free tier on /pricing.
 //
 // A SOFT limit, and meant to be understood as one: the exporter and the plugin
 // are MIT, so anyone can lift it. The hard limits live on the server (hosted
@@ -13,7 +13,7 @@ import { defaultFigmaSyncModes } from './figmaSyncModes'
 import { figmaSyncThemeKeys } from './themeLibrary'
 import type { GenerateTokenOptions } from './tokenGenerator'
 
-export type FigmaScope = Pick<GenerateTokenOptions, 'themes' | 'modes' | 'viewports'>
+export type FigmaScope = Pick<GenerateTokenOptions, 'themes' | 'modes' | 'viewports' | 'gridStyles'>
 
 /** The scope a free download uses. `preferred` is the theme on screen when
  *  there is one; otherwise the first theme in My themes. With no themes at all
@@ -26,6 +26,6 @@ export function freeFigmaScope(
 ): FigmaScope {
   const keys = figmaSyncThemeKeys(themeOrder, themes)
   const theme = preferred && keys.includes(preferred) ? preferred : keys[0]
-  if (!theme) return { viewports: ['desktop'] }
-  return { themes: [theme], modes: defaultFigmaSyncModes([theme], themeKinds), viewports: ['desktop'] }
+  if (!theme) return { viewports: ['desktop'], gridStyles: ['xl-desktop'] }
+  return { themes: [theme], modes: defaultFigmaSyncModes([theme], themeKinds), viewports: ['desktop'], gridStyles: ['xl-desktop'] }
 }

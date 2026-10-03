@@ -308,15 +308,15 @@ describe('breakpoint + grid frame', () => {
     expect(breakpointMobileMax(defaultLayoutRoles('breakpoint'), BREAKPOINT_STANDARD)).toBe('639px')
   })
 
-  it('desktop frame matches the previous global grid; tablet is 8-col; mobile is 4-col', () => {
+  it('desktop frame is XL Desktop; tablet is 8-col MD; mobile is 4-col SM', () => {
     expect(GRID_STANDARD.columns).toBe('12')
-    expect(GRID_STANDARD.gutter).toBe('24px')
+    expect(GRID_STANDARD.gutter).toBe('32px')
     expect(GRID_STANDARD.margin).toBe('32px')
     expect(GRID_STANDARD.container).toBe('1280px')
     const tablet = resolveGridFrame('tablet', GRID_FRAME_STANDARD, SPACING_STANDARD, BREAKPOINT_STANDARD)
     expect(tablet.columns).toBe(8)
-    expect(tablet.gutter).toBe('24px')
-    expect(tablet.margin).toBe('24px')
+    expect(tablet.gutter).toBe('32px')
+    expect(tablet.margin).toBe('32px')
     expect(tablet.container).toBe('none')
     const mobile = resolveGridFrame('mobile', GRID_FRAME_STANDARD, SPACING_STANDARD, BREAKPOINT_STANDARD)
     expect(mobile.columns).toBe(4)

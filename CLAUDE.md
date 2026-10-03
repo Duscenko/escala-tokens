@@ -2360,6 +2360,21 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > pruned). Helpers: `figmaSyncModes.ts` (`normalizeFigmaViewports`, `toggleFigmaViewport`).
 > Plugin v0.3.2.
 >
+> **Grid ships SIX named styles, and the three viewport modes ARE three of them**
+> (`GRID_STYLES` / `resolveGridStyles` in `layoutTokens.ts`, store v76). SM Mobile
+> 4×60 · 16/16 → 320 · MD Tablet 8×60 · 32/32 → 768 · LG Web 12×48 · 32/48 → 1024 ·
+> XL Desktop 12×72 · 32/32 → 1280 · XL Desktop Sidebar 344 + 12×64 · 24/32 → 1440 ·
+> 2XL Desktop 12×80 · 32/64 → 1440. Mobile = SM, Tablet = MD, Desktop = XL read the
+> editable `gridFrame`; LG / 2XL / Sidebar inherit Desktop's columns + gutter and pin
+> only what makes them theirs. **The column width is DERIVED, never stored** — so a
+> frame always adds up. `2xl` is 1440, not Tailwind's 1536. tokens.json ships them
+> resolved as `gridStyles` (only those whose viewport ships; the free tier ships XL
+> Desktop alone via `freeFigmaScope`); the plugin (≥ 0.3.4) makes them FIXED,
+> centred Figma grid styles (`Grid/XL Desktop` …), adds `Grid/column` per mode, and
+> retires the old `Grid/12 columns` · `Grid/Tablet` · `Grid/Mobile`. Presets on a
+> non-4px spacing base pin the standard via `standardGridFrameFor` — a layout grid
+> is not a property of the spacing base. `gridViewportStandard.test.ts` locks all of it.
+>
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
 > `Dimension primitives` collection (read-only — a primitive is its value — with
 > "Used by"). Radius / Spacing / Grid / Sizes / Stroke own exactly ONE collection

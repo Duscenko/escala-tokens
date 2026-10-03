@@ -1,4 +1,5 @@
-// Grid foundation specimen — desktop / mobile layout recipes plus the
+// Grid foundation specimen — the live viewport frame, the six named grid
+// styles Figma gets (2XL Desktop … SM Mobile, drawn to scale), and the
 // primitive breakpoint ranges they cut on.
 //
 // Semantics drive the two layout frames (columns, gutter, margin, container).
@@ -14,8 +15,10 @@ import {
   extractBreakpoints,
   mergeGridFrame,
   resolveGridFrame,
+  resolveGridStyles,
   type GridViewport,
   type ResolvedGridFrame,
+  type ResolvedGridStyle,
 } from '../../../lib/layoutTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { EditIcon } from './RoleEditCard'
@@ -212,6 +215,53 @@ function Ranges({
   )
 }
 
+/** One named grid style drawn to scale against the widest frame: margins,
+ *  the fixed columns and the gutters between them, plus the sidebar rail when
+ *  the style has one. Every segment is a px width over the frame width, so the
+ *  drawing is the spec sheet at a smaller size, never an approximation. */
+function StyleRow({ t, style, widest, active }: { t: PreviewTokens; style: ResolvedGridStyle; widest: number; active: boolean }) {
+  const accent = t.brandSolid
+  const pct = (px: number) => `${(px / style.width) * 100}%`
+  const spec = `${style.sidebar ? `${style.sidebar} + ` : ''}${style.columns} × ${style.column} · gutter ${style.gutter} · margin ${style.margin}`
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span style={{ fontSize: 11.5, color: active ? accent : t.fgMuted, fontWeight: 600 }} className="flex-shrink-0">{style.label}</span>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: t.placeholderText || t.fgMuted }} className="truncate min-w-0" title={spec}>{spec}</span>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: t.fgMuted }} className="ml-auto flex-shrink-0 tabular-nums">{style.width}</span>
+      </div>
+      <div
+        className="relative"
+        title={`${style.label}: ${spec} = ${style.width}px`}
+        style={{
+          width: `${(style.width / widest) * 100}%`,
+          height: 22,
+          border: `1px solid ${active ? accent : (t.borderDefault || t.border || '#eaecf0')}`,
+          borderRadius: 5,
+          overflow: 'hidden',
+          background: t.surface,
+        }}
+      >
+        {style.sidebar ? (
+          <span aria-hidden className="absolute top-0 bottom-0 left-0" style={{ width: pct(style.sidebar), background: withAlpha(accent, 0.12) }} />
+        ) : null}
+        {Array.from({ length: style.columns }).map((_, i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="absolute top-0 bottom-0"
+            style={{
+              left: pct((style.sidebar ?? 0) + style.margin + i * (style.column + style.gutter)),
+              width: pct(style.column),
+              background: withAlpha(accent, active ? 0.34 : 0.22),
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Block({ t, title, children }: { t: PreviewTokens; title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2.5 min-w-0">
@@ -255,6 +305,9 @@ export function GridPreview({
     : platform === 'tablet'
       ? Math.min(768, Math.max(tabletMin, 640))
       : desktopMin
+  // The six named layouts Figma gets as grid styles, live from the frames.
+  const styles = resolveGridStyles(mergeGridFrame(t.gridFrame), t.spacing ?? {}, bpsMap)
+  const widest = Math.max(...styles.map((st) => st.width), 1)
   const activeMin = platform === 'mobile'
     ? -1
     : platform === 'tablet'
@@ -273,6 +326,12 @@ export function GridPreview({
           active
           onEdit={onEditRole ? () => onEditRole(platform) : undefined}
         />
+      </Block>
+
+      <Block t={t} title="Grid styles">
+        {styles.map((st) => (
+          <StyleRow key={st.key} t={t} style={st} widest={widest} active={st.viewport === platform} />
+        ))}
       </Block>
 
       {found.length > 0 && (

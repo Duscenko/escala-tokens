@@ -9,6 +9,7 @@ describe('free Figma scope', () => {
     const scope = freeFigmaScope('night', ['light', 'dark', 'core', 'night', 'brand'], { core: {}, night: {}, brand: {} }, kinds)
     expect(scope.themes).toEqual(['night'])
     expect(scope.viewports).toEqual(['desktop'])
+    expect(scope.gridStyles).toEqual(['xl-desktop'])
     expect(scope.modes).toEqual([
       { theme: 'night', appearance: 'dark' },
       { theme: 'night', appearance: 'light' },
@@ -21,6 +22,6 @@ describe('free Figma scope', () => {
   })
 
   it('limits only the viewports when there are no themes to narrow', () => {
-    expect(freeFigmaScope(undefined, ['light', 'dark'], {}, {})).toEqual({ viewports: ['desktop'] })
+    expect(freeFigmaScope(undefined, ['light', 'dark'], {}, {})).toEqual({ viewports: ['desktop'], gridStyles: ['xl-desktop'] })
   })
 })

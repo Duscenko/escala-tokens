@@ -13,6 +13,7 @@ import {
   concentricRadiusStep,
   defaultLayoutRoles,
   resolveLayoutRole,
+  standardGridFrameFor,
   type GridFrameModes,
 } from './layoutTokens'
 import { SHADOW_PRESETS } from './shadowTokens'
@@ -655,6 +656,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Space Grotesk', 'Space Grotesk'),
       spacing: buildSpacingFromBase(5),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(5)),
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'none', fields: 'none', selectors: 'none' }),
       sizes: buildSizesFromBase(4.5),
@@ -749,6 +751,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('IBM Plex Sans', 'IBM Plex Sans'),
       spacing: buildSpacingFromBase(3.5),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(3.5)),
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: 'sm', fields: 'xs', selectors: 'xs' }),
       sizes: buildSizesFromBase(3.5),
@@ -774,6 +777,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
     foundations: {
       typography: typography('Plus Jakarta Sans', 'Plus Jakarta Sans'),
       spacing: buildSpacingFromBase(4.5),
+      gridFrame: standardGridFrameFor(buildSpacingFromBase(4.5)),
       radius: { ...RADIUS_STANDARD },
       radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'lg' }),
       sizes: buildSizesFromBase(4.5),
