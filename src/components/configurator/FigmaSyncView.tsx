@@ -23,7 +23,7 @@ import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
 import { CopyGlyph } from '../ui/icons'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
-import { PRO_MAX_THEMES } from '../../lib/entitlement'
+import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
 
 interface FigmaSyncViewProps {
@@ -271,7 +271,8 @@ function PromoBanner({ daysLeft }: { daysLeft: number }) {
       <div className="min-w-0 flex-1">
         <p className="text-body font-semibold text-fg">{t('Every theme and viewport is free until October 31')}</p>
         <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
-          {t('After that: 1 theme and Desktop are free. Up to {max} themes and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}
+          {t('After that: 1 theme and Desktop are free. Up to {max} themes and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}{' '}
+          <a href={PRICING_PATH} className={`text-accent-ui underline-offset-2 hover:underline ${SYNC_FOCUS}`}>{t('See pricing')}</a>
         </p>
       </div>
       <p className="flex-shrink-0 text-right">

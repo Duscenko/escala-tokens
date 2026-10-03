@@ -14,6 +14,15 @@ export const PROMO_ENDS_AT = '2026-10-31T23:59:59+01:00'
 export const FREE_MAX_THEMES = 1
 export const PRO_MAX_THEMES = 10
 
+/** Public pricing page (`src/components/public/PricingPage.tsx`). */
+export const PRICING_PATH = '/pricing'
+
+/** Escala Pro, one-time, in US dollars (the main audience is LATAM). The
+ *  launch price runs to Dec 31. Hypotheses from the pricing plan — change
+ *  them here, never in the page. */
+export const PRO_PRICE_USD = 79
+export const PRO_LAUNCH_PRICE_USD = 59
+
 export interface Entitlement {
   /** True while the launch promo grants Pro to everyone. */
   promo: boolean

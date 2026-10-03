@@ -5,6 +5,8 @@ import { AboutScaffold } from './components/configurator/AboutMenu'
 import { PublicReadingPage } from './components/public/PublicReadingPage'
 import { LegalPage } from './components/public/LegalPage'
 import { ContactPage } from './components/public/ContactPage'
+import { PricingPage } from './components/public/PricingPage'
+import { PRICING_PATH } from './lib/entitlement'
 import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
 import { applyDocumentHead } from './lib/documentHead'
@@ -82,6 +84,15 @@ function App() {
     return (
       <>
         <ContactPage />
+        <ToastHost />
+      </>
+    )
+  }
+
+  if (path === PRICING_PATH) {
+    return (
+      <>
+        <PricingPage />
         <ToastHost />
       </>
     )

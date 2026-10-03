@@ -1,6 +1,7 @@
 import { useI18n } from '../../lib/i18n'
 import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from '../../lib/legal'
 import { cn } from '../../lib/utils'
+import { PRICING_PATH } from '../../lib/entitlement'
 
 // The colophon links — Contact · Legal notice · Privacy · Source · MIT License.
 // ONE component for every footer that carries them: the desktop shell's 28px
@@ -32,6 +33,7 @@ export function FooterLinks({
     <div className={cn('flex flex-shrink-0 items-center gap-2', className)}>
       {/* Legal pages open in the same tab: they're short reads with their own
           way back, not a reason to keep a second tab around. */}
+      <a href={PRICING_PATH} className={link}>{t('Pricing')}</a>
       <a href={CONTACT_PATH} className={link}>{t('Contact')}</a>
       <a href={LEGAL_PATH} className={link}>{t('Legal notice')}</a>
       <a href={PRIVACY_PATH} className={link}>{t('Privacy')}</a>
