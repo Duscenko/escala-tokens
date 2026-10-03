@@ -17,6 +17,7 @@
 // themes pre-normalized onto their source ramps.
 
 import { generateTokenJSON, flattenScale } from './tokenGenerator'
+import type { FigmaScope } from './freeFigmaScope'
 import { primitiveDisplayLabel } from './themeSources'
 import { buildSectionExport, type ColorFormat, type SectionKey } from './sectionExport'
 import { useDesignStore } from '../store/useDesignStore'
@@ -73,6 +74,10 @@ export interface WizardSelection {
    *  tab edits, so there's no second, divergent "which components" list).
    *  Other formats have no component representation and ignore this. */
   includeComponents: boolean
+  /** Escala JSON only — narrows the Figma document to one theme and a viewport
+   *  subset. Set by the wizard when the person has no Escala Pro (see
+   *  `freeFigmaScope`); omitted, the whole document ships exactly as before. */
+  figmaScope?: FigmaScope
 }
 
 export interface WizardFile {
@@ -505,7 +510,8 @@ export function buildWizardExport(sel: WizardSelection): WizardFile[] {
     // `atoms`, the one field Step 1's "Include components" toggle controls:
     // off ships an empty array so the plugin's importComponents phase
     // no-ops, same as unchecking every component individually.
-    const payload = sel.includeComponents ? full : { ...full, atoms: [] }
+    const doc = sel.figmaScope ? generateTokenJSON(undefined, sel.figmaScope) : full
+    const payload = sel.includeComponents ? doc : { ...doc, atoms: [] }
     return [{ name: `${slug}.tokens.json`, content: JSON.stringify(payload, null, 2), language: 'json' }]
   }
 

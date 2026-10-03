@@ -6,6 +6,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
+import { useEntitlement } from '../../lib/useEntitlement'
+import { freeFigmaScope } from '../../lib/freeFigmaScope'
 import { generateTokenJSON } from '../../lib/tokenGenerator'
 import { buildCSS, buildMarkdown } from '../../lib/exporters'
 import { slugify } from '../../lib/utils'
@@ -183,11 +185,16 @@ export function FilePreviewCard() {
   const syncUrl = typeof window !== 'undefined' ? buildSyncUrl() : ''
 
   const slug = slugify(projectName) || 'scalable-designs'
+  // Without Escala Pro the Figma file carries one theme and Desktop — the same
+  // soft limit the Export wizard applies (lib/freeFigmaScope.ts).
+  const entitlement = useEntitlement()
+  const { themeOrder, themes, themeKinds } = useDesignStore()
+  const figmaScope = entitlement.pro ? undefined : freeFigmaScope(undefined, themeOrder, themes, themeKinds)
 
   // tokens.json is the contract the Figma plugin imports — badge it so users
   // know exactly which file feeds the plugin.
   const FILES: { id: FileTab; label: string; badge?: string; filename: string; mime: string; content: () => string }[] = [
-    { id: 'tokens',   label: 'tokens.json', badge: 'Figma plugin', filename: `${slug}-tokens.json`,   mime: 'application/json', content: () => JSON.stringify(generateTokenJSON(), null, 2) },
+    { id: 'tokens',   label: 'tokens.json', badge: 'Figma plugin', filename: `${slug}-tokens.json`,   mime: 'application/json', content: () => JSON.stringify(generateTokenJSON(undefined, figmaScope), null, 2) },
     { id: 'css',      label: 'variables.css',                      filename: `${slug}-variables.css`, mime: 'text/css',         content: () => buildCSS(useDesignStore.getState()) },
     { id: 'markdown', label: 'README.md',                          filename: `${slug}-README.md`,     mime: 'text/markdown',    content: () => buildMarkdown(useDesignStore.getState()) },
   ]

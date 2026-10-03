@@ -13,6 +13,9 @@ import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
 import { BASE_TONE } from '../../lib/colorUtils'
 import { AppearanceGlyph } from './colorControls'
 import AgentInstallPanel from './AgentInstallPanel'
+import { useEntitlement } from '../../lib/useEntitlement'
+import { freeFigmaScope } from '../../lib/freeFigmaScope'
+import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { trackEvent } from '../../lib/analytics'
 import { GitHubGlyph } from '../ui/icons'
 
@@ -255,17 +258,25 @@ export default function ExportWizard({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Without Escala Pro the Figma document carries one theme and Desktop (a soft
+  // limit — see lib/freeFigmaScope.ts). Only that destination: code exports,
+  // the AI zips and GitHub are not narrowed.
+  const entitlement = useEntitlement()
+  const figmaScope = format === 'escala' && !entitlement.pro
+    ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds)
+    : undefined
   // Every family picked = unscoped, so an untouched export keeps producing the
   // exact same payload it did before family scoping existed.
   const allFamilies = families.length === famMeta.length
   const sel: WizardSelection = {
     collections, modes, format, structure, colorFormat, includeAliases, includeComponents,
     primitiveFamilies: allFamilies ? undefined : families,
+    figmaScope,
   }
   const files = useMemo(
     () => (collections.length ? buildWizardExport(sel) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [collections, modes, families, format, structure, colorFormat, includeAliases, includeComponents, store],
+    [collections, modes, families, format, structure, colorFormat, includeAliases, includeComponents, figmaScope, store],
   )
   const varCount = useMemo(
     () => selectionCount({ collections, modes, primitiveFamilies: allFamilies ? undefined : families }),
@@ -892,6 +903,13 @@ export default function ExportWizard({
                       {selectedComponents.length} selected component{selectedComponents.length === 1 ? '' : 's'}{' '}
                       as <code className="font-mono">atoms</code>, off ships none.
                     </p>
+                    {figmaScope && (
+                      <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
+                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (Light + Dark)` : 'one theme'} and Desktop.</span>{' '}
+                        Up to {PRO_MAX_THEMES} themes and every viewport come with Escala Pro.{' '}
+                        <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
+                      </p>
+                    )}
                     {includeComponents && selectedComponents.length > 0 && (
                       <p className="px-3 pb-2 text-body text-fg-muted">
                         Of those, the import renders <strong className="text-fg font-medium">{figmaRenderedCount}</strong> as real
@@ -950,6 +968,15 @@ export default function ExportWizard({
                       ? 'All'
                       : themeChips.filter((th) => modes.includes(th.key)).map((th) => th.label).join(', ')}
                   />
+                )}
+                {format === 'escala' && !isGitHubDestination && (
+                  <>
+                    <SummaryRow
+                      label="Themes"
+                      value={figmaScope?.themes?.[0] ? themeDisplayName(figmaScope.themes[0], store.themeLabels) : 'All'}
+                    />
+                    <SummaryRow label="Viewports" value={figmaScope ? 'Desktop' : 'Desktop, Tablet, Mobile'} />
+                  </>
                 )}
                 <SummaryRow label="Going to" value={isGitHubDestination ? 'GitHub repository' : wizardFormatLabel(format)} />
                 <SummaryRow label="Structure" value={isGitHubDestination ? 'Repository bundle · 4 files' : files.length > 1 ? `${files.length} files` : 'Single file'} />
