@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { type PreviewTokens } from '../ButtonPreview'
-import { radiusOf, paddingOf, shadowOf, sizeOf, typeStyleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, paddingOf, shadowOf, sizeRoleOf, spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import { InputPreview } from './InputPreview'
 
 // A composed sign-up card: title + two inputs + a full-width primary CTA. Every
@@ -17,12 +17,12 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    height: sizeOf(tokens, 'md', 40),
+    height: sizeRoleOf(tokens, 'control', '40px'),
     background: tokens.brandSolid,
     color: tokens.onBrand,
     border: 'none',
-    borderRadius: radiusOf(tokens, 'md', '8px'),
-    padding: '0 18px',
+    borderRadius: radiusRoleOf(tokens, 'action', '8px'),
+    padding: `0 ${spacingRoleOf(tokens, 'inset-control', '12px')}`,
     ...typeStyleOf(tokens, 'button', { leading: false }),
     cursor: 'pointer',
   }
@@ -34,7 +34,7 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
         boxSizing: 'border-box',
         background: tokens.surface,
         border: `1px solid ${tokens.borderDefault || tokens.border || '#eaecf0'}`,
-        borderRadius: radiusOf(tokens, 'lg', '12px'),
+        borderRadius: radiusRoleOf(tokens, 'container', '16px'),
         padding: paddingOf(tokens),
         boxShadow: shadowOf(tokens, 'sm', 'none'),
         display: 'flex',

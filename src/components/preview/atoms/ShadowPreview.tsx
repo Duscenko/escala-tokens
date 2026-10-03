@@ -20,7 +20,7 @@
 // single value cannot serve both appearances).
 
 import { type ReactNode } from 'react'
-import { radiusOf, shadowOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, shadowOf } from '../../../lib/previewTokens'
 import { SPECIMENS } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
 
@@ -41,7 +41,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export function ShadowPreview({ tokens: t }: { tokens: PreviewTokens }) {
-  const r = radiusOf(t, 'lg', '12px')
+  const r = radiusRoleOf(t, 'container', '16px')
 
   return (
     <>

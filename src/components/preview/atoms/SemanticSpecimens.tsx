@@ -13,7 +13,7 @@
 //    saying which token produced it doesn't help you edit tokens.
 
 import { type ReactNode } from 'react'
-import { radiusOf, typeStyleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, typeStyleOf } from '../../../lib/previewTokens'
 import { checkContrast, WCAG_AA } from '../../../lib/colorUtils'
 import { TokenIcon, type IconConcept } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
@@ -261,7 +261,7 @@ export function ContentSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="On a filled surface">
         <div
           className="flex items-center justify-between gap-3"
-          style={{ background: fill.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}
+          style={{ background: fill.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '10px 12px' }}
         >
           <span
             className="flex items-center gap-2"
@@ -297,7 +297,7 @@ export function IconSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const onFill = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const fill = s('background-brand-solid', ['action.primary.default', 'action.primary', 'accent.solid', 'primary.fill'], t.brandSolid)
   const surface = s('background-secondary', ['action.secondary.default', 'action.neutral', 'background.surface', 'secondary.fill'], t.neutralFill)
-  const r = radiusOf(t, 'md', '8px')
+  const r = radiusRoleOf(t, 'action', '8px')
 
   const hierarchy: { slot: Slot; concept: IconConcept }[] = [
     { slot: primary, concept: 'home' },
@@ -393,7 +393,7 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const onAction = s('content-inverse', ['content.on-action', 'accent.on-solid', 'primary.foreground'], t.onBrand)
   const labelInk = s('content-primary', ['content.primary', 'text.primary', 'base.foreground'], t.neutralText)
   const stroke = s('border-primary', ['border.strong', 'border.default'], t.border || '#d0d5dd')
-  const r = radiusOf(t, 'md', '8px')
+  const r = radiusRoleOf(t, 'action', '8px')
 
   const Btn = ({ bg, fg, bd, children }: { bg: string; fg: string; bd?: string; children: ReactNode }) => (
     <span
@@ -464,7 +464,7 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Controls">
         <div className="flex items-center gap-4">
           <span className="inline-flex items-center gap-2" style={{ ...typeOf(t, 'label'), color: labelInk.css }}>
-            <span style={{ width: 16, height: 16, borderRadius: radiusOf(t, 'sm', '4px'), background: primary.css, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ width: 16, height: 16, borderRadius: radiusRoleOf(t, 'control', '4px'), background: primary.css, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <TokenIcon t={t} concept="check" size={11} color={onAction.css} />
             </span>
             Checkbox
@@ -502,7 +502,7 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const inverse = s('surface-inverse', ['surface.inverse', 'background.inverted'], t.neutralText)
   const overlay = s('background-overlay', ['surface.overlay'], t.neutralText)
   const stroke = s('border-secondary', ['border.subtle', 'border.emphasized', 'border.input'], t.borderDefault || t.border || '#e9eaeb')
-  const r = radiusOf(t, 'lg', '12px')
+  const r = radiusRoleOf(t, 'container', '12px')
 
   return (
     <Frame t={t}>
@@ -511,9 +511,9 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Elevation">
         <div style={{ background: page.css, border: `1px solid ${stroke.css}`, borderRadius: r, padding: 12 }}>
           <TokenMark slot={page} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
-          <div style={{ background: layer1.css, border: `1px solid ${stroke.css}`, borderRadius: radiusOf(t, 'md', '8px'), padding: 12, marginTop: 8 }}>
+          <div style={{ background: layer1.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: 12, marginTop: 8 }}>
             <TokenMark slot={layer1} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
-            <div style={{ background: layer2.css, borderRadius: radiusOf(t, 'sm', '6px'), padding: 12, marginTop: 8 }}>
+            <div style={{ background: layer2.css, borderRadius: radiusRoleOf(t, 'control', '6px'), padding: 12, marginTop: 8 }}>
               <TokenMark slot={layer2} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
             </div>
           </div>
@@ -522,10 +522,10 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 
       <Section t={t} title="Input & selected">
         <div className="flex flex-col gap-2.5">
-          <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
+          <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: '10px 12px' }}>
             <TokenMark slot={input} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
-          <div style={{ background: selected.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '10px 12px' }}>
+          <div style={{ background: selected.css, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: '10px 12px' }}>
             <span style={{ color: t.neutralText, ...typeOf(t, 'body-sm') }}>Selected row</span>
             <TokenMark slot={selected} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
@@ -534,10 +534,10 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 
       <Section t={t} title="Accent & inverse">
         <div className="flex gap-2.5">
-          <div style={{ flex: 1, minWidth: 0, background: accent.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '14px 12px' }}>
+          <div style={{ flex: 1, minWidth: 0, background: accent.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '14px 12px' }}>
             <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
           </div>
-          <div style={{ flex: 1, minWidth: 0, background: inverse.css, borderRadius: radiusOf(t, 'md', '8px'), padding: '14px 12px' }}>
+          <div style={{ flex: 1, minWidth: 0, background: inverse.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '14px 12px' }}>
             <TokenMark slot={inverse} onEdit={onEditToken} color={t.surface} />
           </div>
         </div>
@@ -546,7 +546,7 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       {/* A scrim only makes sense over content, so the modal renders on top of
           a dimmed layer rather than as another flat swatch. */}
       <Section t={t} title="Overlay">
-        <div style={{ position: 'relative', borderRadius: radiusOf(t, 'md', '8px'), overflow: 'hidden', background: layer1.css, height: 108 }}>
+        <div style={{ position: 'relative', borderRadius: radiusRoleOf(t, 'container', '8px'), overflow: 'hidden', background: layer1.css, height: 108 }}>
           {/* No hardcoded opacity here any more — `surface.overlay` resolves to
               a genuinely translucent alpha primitive now (`{black-a.8}`), so a
               bolted-on `opacity` would double-apply transparency on top of the
@@ -558,7 +558,7 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
             style={{
               position: 'absolute', left: 14, right: 14, top: 20,
               background: page.css, border: `1px solid ${stroke.css}`,
-              borderRadius: radiusOf(t, 'md', '8px'), padding: 12,
+              borderRadius: radiusRoleOf(t, 'overlay', '8px'), padding: 12,
             }}
           >
             <div style={{ ...typeOf(t, 'heading-xs'), color: t.neutralText }}>Dialog</div>
@@ -574,7 +574,7 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 // ── Status — feedback, one alert per severity ───────────────────────────────
 export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   const s = (flat: string, arch: string | string[], fb: string) => slotOf(t, flat, arch, fb)
-  const r = radiusOf(t, 'md', '8px')
+  const r = radiusRoleOf(t, 'container', '8px')
 
   // **Nothing here substitutes a colour. Every slot renders the token's REAL
   // value, and a failing pair is reported rather than repaired.**
@@ -739,7 +739,7 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
   // No per-severity halo role any more (audit F2 — it was byte-identical to
   // `status.critical.border`). The invalid field's halo IS its own alpha edge.
   const ringCritical = s('border-focus-ring-critical', ['status.critical.border', 'border.ring.critical'], t.errorColor)
-  const r = radiusOf(t, 'md', '8px')
+  const r = radiusRoleOf(t, 'action', '8px')
 
   const Field = ({ slot, text, ringSlot }: { slot: Slot; text: string; ringSlot?: Slot }) => (
     <Row t={t} slot={ringSlot ?? slot} onEdit={onEditToken}>

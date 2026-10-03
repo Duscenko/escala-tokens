@@ -2499,6 +2499,25 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   platform) and Spacing responsive (18 tokens, Component · Section · Layout, "Used by"
 >   chips back to the role). One viewport at a time via the Platform switch.
 
+> **Previews read ROLES, never a static step by name.** Audited after the radius
+> rename (v77): `radiusOf(t, 'md')` in a preview was always a token-model violation,
+> and after v77 it became a visible one — `md` moved 12 → 6, so every card and input
+> using it went sharper than the system said. Fixed in `SemanticSpecimens`,
+> `SignUpCardPreview`, `InputPreview`, `ShadowPreview` (cards/panels/alerts →
+> `container`, buttons/inputs → `action`, modal → `overlay`, checkbox/nested →
+> `control`). In `specimens.tsx`: shapes that ARE the `pill` role (chips, badges,
+> avatars, progress, slider track, FAB, pagination track, tab selection) read
+> `radiusRoleOf(t, 'pill')`; truly geometric circles (switch/slider thumbs, radio,
+> status dots, stepper nodes, scroll thumb) keep `999`. Spacing and heights were moved
+> to roles ONLY where the literal equals a role's Desktop value exactly (12px control
+> inline padding → `inset-control`, gap 8 → `gap-control`, gap 4 → `gap-tight`, field
+> height 40 → `size-control`, pagination 32 → `size-compact`), so Desktop is
+> byte-identical and those now tighten on Mobile. Off-scale literals (gaps of 6 / 10 /
+> 5 / 3) are a component's internal anatomy and stay; converting them is a visual
+> change, not a token fix. `DashboardPreview` is only used by the retired `HomeView`
+> and was left alone. Measured in Theme preview Desktop → Mobile: 32 → 16 (radius
+> 4xl → 2xl), 8 → 6, gaps 16 → 12.
+
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
 > `Dimension primitives` collection (read-only — a primitive is its value — with
 > "Used by"). Radius / Spacing / Grid / Sizes / Stroke own exactly ONE collection
