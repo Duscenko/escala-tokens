@@ -167,15 +167,27 @@ en el lado duro**: sync alojado y MCP en vivo (Escala Pro) y la Library (archivo
     activada. La meta sigue siendo 10–20 ventas para validar.
 13. Contar variables y variantes reales para las cifras de la página.
 
-## Precio (hipótesis, no dato)
+## Precio (decidido el 2026-10-03)
 
-Referente Create UI: Design $99 · Code $199 · Complete $249. Nuestro plan anterior: €79.
+| Fechas | Escala Pro |
+|---|---|
+| hasta el 31-oct | gratis para todos (promo) |
+| 1–15 nov | **$59** (precio de lanzamiento) |
+| desde el 16-nov | **$79** |
 
-- **Precios en dólares (USD)**: el público principal es LATAM.
-- **Escala Pro: $79**, lanzamiento $59 hasta el 31-dic.
-- **Library · Figma: a decidir** cuando se vea el archivo (por referencia, similar a Escala Pro o algo más).
-- **Complete (bundle): cuando exista el código**; por referencia, 2–2,5× Escala Pro.
-- Cupón LATAM −30 % (del plan anterior).
+- **USD**, pago único, 12 meses de sync/MCP/actualizaciones incluidos.
+- **En Polar es el PRECIO BASE, no un descuento**: $59 hasta el 15-nov, se edita a $79 el
+  16-nov. Escala Pro nunca se ha vendido a $79, y las reglas de precios de la UE/Francia
+  toman como referencia de una rebaja el precio más bajo cobrado en los 30 días anteriores;
+  un descuento "$79 → $59" sería una rebaja sobre un precio nunca cobrado. Se comunica como
+  un precio que SUBE en una fecha, nunca tachado.
+- **Sin Black Friday para Pro este año**: caería 12 días después del lanzamiento (castiga a
+  quien compró) y su precio de referencia legal sería $59.
+- **Cupón LATAM desde el 16-nov**: 25 % sobre $79 = $59, repartido en comunidades. Nada de
+  cupones durante el lanzamiento (no se apilan con $59).
+- Fuente única en el código: `src/lib/entitlement.ts` (`PRO_LAUNCH_PRICE_USD`,
+  `PRO_PRICE_USD`, `PRO_LAUNCH_ENDS_AT`); `/pricing` cambia sola de $59 a $79.
+- Library · Figma y Complete: a decidir.
 
 ## Decidido el 2026-10-03
 

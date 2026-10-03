@@ -30,13 +30,20 @@ function fetchEntitlement(): Promise<Entitlement | null> {
 
 export interface EntitlementView extends Entitlement {
   daysLeft: number
+  /** Days left at the launch price (0 once it is over). */
+  launchDaysLeft: number
   /** True once the server has answered; false while showing the fallback. */
   confirmed: boolean
 }
 
 function view(e: Entitlement, confirmed: boolean): EntitlementView {
   const now = new Date(Date.now() + skewMs)
-  return { ...e, daysLeft: e.promo ? promoDaysLeft(now, e.promoEndsAt) : 0, confirmed }
+  return {
+    ...e,
+    daysLeft: e.promo ? promoDaysLeft(now, e.promoEndsAt) : 0,
+    launchDaysLeft: e.launchPrice ? promoDaysLeft(now, e.launchEndsAt) : 0,
+    confirmed,
+  }
 }
 
 export function useEntitlement(): EntitlementView {

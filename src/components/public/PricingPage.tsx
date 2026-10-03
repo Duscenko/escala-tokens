@@ -6,8 +6,9 @@
 //     PRO_MAX_THEMES), the same constants the sync screen and, from phase 3,
 //     `api/tokens.ts` read — so this page cannot promise a number the server
 //     disagrees with.
-//   - Nothing is shown that does not exist yet. There is no checkout, so the
-//     Pro CTA opens the configurator (everything is free during the promo);
+//   - Nothing is shown that does not exist yet. During the free promo (to Oct 31)
+//     the Pro CTA opens the configurator; once it ends it goes to the Polar
+//     checkout (`lib/polar.ts`);
 //     Library · Figma has no published price, so it says so instead of a
 //     placeholder; the refund policy is not on the page until it is decided.
 //
@@ -23,6 +24,7 @@ import {
   FREE_MAX_THEMES, PRICING_PATH, PRO_LAUNCH_PRICE_USD, PRO_MAX_THEMES, PRO_PRICE_USD,
 } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
+import { POLAR_CHECKOUT_URL } from '../../lib/polar'
 
 const PRICING_TITLE = 'Pricing — Escala Tokens'
 const PRICING_DESCRIPTION = 'Escala is free to build and export. Pro adds what runs on our servers: hosted sync to Figma, the live MCP, and up to 10 themes with every platform mode.'
@@ -176,15 +178,24 @@ export function PricingPage() {
     <div className="flex h-screen flex-col bg-app text-fg">
       <PublicHeader />
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {entitlement.promo && (
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-line bg-accent-ui/[0.08] px-4 py-2.5 text-body">
-            <Badge solid>{t('Launch')}</Badge>
-            <span className="text-fg">{t('Everything in Pro is free for everyone until October 31.')}</span>
-            <span className="font-mono tabular-nums text-accent-ui">
-              {entitlement.daysLeft === 1 ? t('1 day left') : t('{n} days left', { n: String(entitlement.daysLeft) })}
-            </span>
-          </div>
-        )}
+        {(entitlement.promo || entitlement.launchPrice) && (() => {
+          // Oct: the free promo. Nov 1–15: the launch price. After: nothing —
+          // the regular price needs no banner.
+          const days = entitlement.promo ? entitlement.daysLeft : entitlement.launchDaysLeft
+          return (
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-line bg-accent-ui/[0.08] px-4 py-2.5 text-body">
+              <Badge solid>{t('Launch')}</Badge>
+              <span className="text-fg">
+                {entitlement.promo
+                  ? t('Everything in Pro is free for everyone until October 31.')
+                  : t('Escala Pro is ${launch} until November 15, then ${price}.', { launch: String(PRO_LAUNCH_PRICE_USD), price: String(PRO_PRICE_USD) })}
+              </span>
+              <span className="font-mono tabular-nums text-accent-ui">
+                {days === 1 ? t('1 day left') : t('{n} days left', { n: String(days) })}
+              </span>
+            </div>
+          )
+        })()}
 
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-4 py-14 md:px-8">
           <section className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
@@ -231,8 +242,12 @@ export function PricingPage() {
                   <Badge solid>{t('One-time')}</Badge>
                 </div>
                 <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-[40px] font-semibold leading-none tracking-[-0.02em]">${PRO_LAUNCH_PRICE_USD}</span>
-                  <span className="text-body text-fg-muted">{t('launch price until Dec 31, then ${price}', { price: String(PRO_PRICE_USD) })}</span>
+                  <span className="text-[40px] font-semibold leading-none tracking-[-0.02em]">${entitlement.priceUsd}</span>
+                  <span className="text-body text-fg-muted">
+                    {entitlement.launchPrice
+                      ? t('launch price until November 15, then ${price}', { price: String(PRO_PRICE_USD) })
+                      : t('one payment, no subscription')}
+                  </span>
                 </p>
                 {entitlement.promo ? (
                   <div className="flex flex-col gap-2">
@@ -240,7 +255,7 @@ export function PricingPage() {
                     <p className="text-caption text-fg-faint">{t('No licence needed during the launch offer.')}</p>
                   </div>
                 ) : (
-                  <a href={CONTACT_PATH} className={`${CTA} bg-accent-solid text-accent-ink`}>{t('Get Pro')}</a>
+                  <a href={POLAR_CHECKOUT_URL} className={`${CTA} bg-accent-solid text-accent-ink`}>{t('Get Pro')}</a>
                 )}
                 <Features items={[
                   t('Everything in Free'),

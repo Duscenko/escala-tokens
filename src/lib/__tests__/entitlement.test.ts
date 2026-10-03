@@ -23,3 +23,11 @@ describe('launch promo entitlement', () => {
     expect(entitlementAt(new Date('2026-10-03T09:00:00Z')).now).toBe('2026-10-03T09:00:00.000Z')
   })
 })
+
+describe('launch price', () => {
+  it('is $59 through Nov 15 in Paris, $79 from the next second', () => {
+    expect(entitlementAt(new Date('2026-11-01T09:00:00Z'))).toMatchObject({ launchPrice: true, priceUsd: 59, promo: false })
+    expect(entitlementAt(new Date('2026-11-15T22:59:59Z'))).toMatchObject({ launchPrice: true, priceUsd: 59 })
+    expect(entitlementAt(new Date('2026-11-15T23:00:00Z'))).toMatchObject({ launchPrice: false, priceUsd: 79 })
+  })
+})
