@@ -9,7 +9,10 @@ import {
   PROJECT_REQUIRED,
   tokenBlobKey,
 } from '../src/lib/publishTrust.js'
+import { entitlementAt } from '../src/lib/entitlement.js'
+import { LICENCE_REQUIRED_MESSAGE, isServable, stampLicence, stripLicence } from '../src/lib/licenceGate.js'
 import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
+import { checkLicenceKey } from './_licence.js'
 
 // Vercel compiles this to ESM (`package.json` "type": "module"). Node then
 // loads `/var/task/api/tokens.js` and requires a `.js` specifier for every
@@ -20,7 +23,7 @@ import { clientIp, forgetBlob, learnBlobBase, rateLimited, readJsonBlob, slugify
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-escala-license',
 }
 
 /** A full system serialises to a few hundred KB; anything far past that is
@@ -112,12 +115,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Cache-Control', 'no-store')
       return res.status(404).json({ error: 'No tokens published yet.' })
     }
+    // Hosted sync is Pro once the launch promo is over (design-plans/
+    // pricing-and-packaging.md). The answer rides inside the blob we just read
+    // — see lib/licenceGate.ts — so this costs no extra fetch. Never cached:
+    // a refusal must not outlive the licence that would lift it.
+    if (!isServable(data, new Date())) {
+      res.setHeader('Cache-Control', 'no-store')
+      return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+    }
     res.setHeader('Content-Type', 'application/json')
     // Short edge cache: many plugins polling one system collapse into one
     // function run per window. 10s is the plugin's fastest interval, so a
     // fresh publish is never staler than one poll.
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=30')
-    return res.status(200).json(data)
+    return res.status(200).json(stripLicence(data))
   }
 
   // ── POST /api/tokens[?project=<id>] ──────────────────────────────────────────
@@ -142,8 +153,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: PROJECT_REQUIRED })
     }
 
+    // Publishing needs a licence once the promo is over. Checked BEFORE any
+    // Blob read or write, so a refused request costs a Polar lookup at most.
+    let licenceUntil: string | null | undefined
+    if (!entitlementAt(new Date()).promo) {
+      const raw = req.headers['x-escala-license']
+      const licenceKey = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? ''
+      if (!licenceKey || licenceKey.length > 200) {
+        return res.status(402).json({ error: LICENCE_REQUIRED_MESSAGE })
+      }
+      const licence = await checkLicenceKey(licenceKey)
+      if (licence.reason === 'unavailable') {
+        // Polar is down: that is not the customer's fault, so say "retry", not "pay".
+        res.setHeader('Retry-After', '30')
+        return res.status(503).json({ error: 'Could not verify the licence. Try again shortly.' })
+      }
+      if (!licence.valid) {
+        return res.status(402).json({
+          error: licence.reason === 'expired'
+            ? 'Your Escala Pro licence has expired. Renew it at escalatokens.com/pricing, or import tokens.json in the plugin by hand.'
+            : LICENCE_REQUIRED_MESSAGE,
+        })
+      }
+      licenceUntil = licence.expiresAt
+    }
+
     const key = tokenBlobKey(project)
-    const json = JSON.stringify(body)
+    // The stamp is OURS to write. A client that sends its own `escalaLicence`
+    // (say, during the free promo) would otherwise be stored as "licensed
+    // forever" and stay readable after the promo — so any incoming one is
+    // dropped before ours, if any, is added.
+    const clean = stripLicence(body as object)
+    const json = JSON.stringify(licenceUntil === undefined ? clean : stampLicence(clean, licenceUntil))
     if (json.length > MAX_BODY_BYTES) {
       return res.status(413).json({ error: 'Payload too large.' })
     }

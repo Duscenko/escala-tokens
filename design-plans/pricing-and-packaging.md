@@ -196,6 +196,32 @@ en el lado duro**: sync alojado y MCP en vivo (Escala Pro) y la Library (archivo
   Library (Figma ahora, código después), conectada a los tokens que Escala genera.
 - **La Library de Figma ya existe** como archivo aparte; la de código está por hacer.
 
+## Estado de la implementación (2026-10-03)
+
+| Pieza | Estado |
+|---|---|
+| Producto, beneficio de licencia (prefijo ESCALA, 1 año) y enlace de pago en Polar | hecho (a mano en el panel) |
+| `/pricing`, promo, precio $59→$79 | hecho |
+| `api/license.ts` + `lib/licence.ts` (clave en localStorage, validación vía Polar sin API key) | hecho |
+| Modal de pegar clave + estado "Pro activo" en File & modes | hecho |
+| **Bloqueo en servidor desde el 1-nov**: `POST /api/tokens` exige clave válida; `GET /api/tokens` y MCP solo sirven blobs con sello de licencia vigente | hecho (`lib/licenceGate.ts`, `api/_licence.ts`, 15 tests) |
+| Auto-sync no reintenta tras un 402 | hecho |
+| Límite blando de 1 tema / solo Desktop en el export Escala JSON (wizard) | **pendiente** |
+| Plugin: mostrar el mensaje del 402 en su log | **pendiente** (repo del plugin) |
+| Account Review de Polar (email de soporte) | **pendiente, tuyo** |
+| Producto de renovación (la clave caduca a los 12 meses) | pendiente, antes de oct-2027 |
+
+**Decisión (2026-10-03): Free no tiene sync alojado.** Sin clave válida, `POST /api/tokens`
+da 402; los blobs publicados durante la promo dejan de servirse el 1-nov hasta que su dueño
+vuelva a publicar con clave. Esto sustituye al estado 2 del mockup ("primera fila libre, el
+resto con candado"): en su lugar la pantalla de sync muestra "Hosted sync is part of Escala
+Pro" con *I have a key* / *See pricing*. El plugin y lo ya importado en Figma siguen
+funcionando; solo se detiene el sync alojado.
+
+**El sello de licencia** (`escalaLicence: { until }`) lo escribe SOLO el servidor dentro del
+blob al publicar con clave. Se borra cualquier sello que venga del cliente (si no, un POST
+durante la promo se declararía "licenciado para siempre") y se quita antes de servir.
+
 ## Decidido el 2026-10-03 (segunda ronda)
 
 - **Free no incluye la documentación generada** (páginas de documentación en Figma, README

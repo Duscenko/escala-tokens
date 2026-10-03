@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { originAllowed, originsForHosts } from '../src/lib/publishTrust.js'
-import { POLAR_ORGANIZATION_ID, POLAR_VALIDATE_URL, interpretValidation } from '../src/lib/polar.js'
 import { clientIp, rateLimited } from './_blob.js'
+import { checkLicenceKey } from './_licence.js'
 
 // POST { key } → { valid, expiresAt, reason? }.
 //
@@ -50,13 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!key || key.length > MAX_KEY) return res.status(400).json({ error: 'invalid_key' })
 
   try {
-    const r = await fetch(POLAR_VALIDATE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, organization_id: POLAR_ORGANIZATION_ID }),
-    })
-    const body = await r.json().catch(() => null)
-    const result = interpretValidation(r.status, body, new Date())
+    const result = await checkLicenceKey(key)
     console.info(JSON.stringify({ evt: 'license', valid: result.valid, reason: result.reason ?? null }))
     // `unavailable` is a 502 so the client can tell "your key is wrong" from
     // "the validator is down" and never tells someone a good key is bad.

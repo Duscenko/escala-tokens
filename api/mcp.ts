@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { handleMcpMessage, mcpDiscovery } from '../src/lib/agentAccess/mcp.js'
 import type { TokenJSON } from '../src/lib/agentBundle/types.js'
 import { tokenBlobKey } from '../src/lib/publishTrust.js'
+import { isServable, stripLicence } from '../src/lib/licenceGate.js'
 import { clientIp, rateLimited, readJsonBlob, slugifyProject } from './_blob.js'
 
 const CORS_HEADERS = {
@@ -18,7 +19,12 @@ const RATE_LIMIT_PER_MIN = 120
 async function loadTokens(project?: string | null): Promise<TokenJSON | null> {
   const slug = slugifyProject(project)
   if (!slug) return null
-  return readJsonBlob<TokenJSON>(tokenBlobKey(slug))
+  const data = await readJsonBlob<TokenJSON>(tokenBlobKey(slug))
+  // Live MCP is an Escala Pro feature once the launch promo is over: an
+  // unlicensed system reads as "not published", the same answer an agent
+  // already handles. See lib/licenceGate.ts.
+  if (!data || !isServable(data, new Date())) return null
+  return stripLicence(data)
 }
 
 /** One structured line per tool call → Vercel Logs (searchable `"evt":"mcp"`).

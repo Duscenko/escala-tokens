@@ -25,6 +25,7 @@ import { CopyGlyph } from '../ui/icons'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { PRICING_PATH, PRO_MAX_THEMES } from '../../lib/entitlement'
 import { useEntitlement } from '../../lib/useEntitlement'
+import { LicenceModal } from './LicenceModal'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
@@ -283,6 +284,42 @@ function PromoBanner({ daysLeft }: { daysLeft: number }) {
   )
 }
 
+/** After the free promo, hosted sync is an Escala Pro feature. Says so at the
+ *  head of File & modes — the screen that offers it — instead of letting the
+ *  first clue be a failed publish. Two exits, both to something that works:
+ *  the pricing page, or pasting a key already bought. */
+function ProRequiredBanner({ onOpenLicence }: { onOpenLicence: () => void }) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-line bg-accent-ui/[0.08] px-5 py-3">
+      <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-0.5 text-nano font-semibold tracking-[0.1em] text-accent-ink">
+        PRO
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-body font-semibold text-fg">{t('Hosted sync is part of Escala Pro')}</p>
+        <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
+          {t('You can still import tokens.json in the plugin by hand: 1 theme and Desktop are free.')}
+        </p>
+      </div>
+      <div className="flex flex-shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onOpenLicence}
+          className={`h-8 rounded-lg border border-line px-3 text-caption font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg ${SYNC_FOCUS}`}
+        >
+          {t('I have a key')}
+        </button>
+        <a
+          href={PRICING_PATH}
+          className={`inline-flex h-8 items-center rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-opacity hover:opacity-90 ${SYNC_FOCUS}`}
+        >
+          {t('See pricing')}
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // ─── Sync status and explicit publish ───────────────────────────────────────
 // Opening this surface is intentionally read-only. Its parent owns the manual
 // publish request and status so the top-nav Sync control and this screen always
@@ -322,7 +359,9 @@ export default function FigmaSyncView({
     ? buildWorkspaceAppUrl({ origin: publishOrigin(), project: pluginSlug, section })
     : null
 
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const [licenceOpen, setLicenceOpen] = useState(false)
+  const entitlement = useEntitlement()
   const pageLabelId = useId()
   const pluginLabelId = useId()
   const fileHintId = useId()
@@ -364,6 +403,9 @@ export default function FigmaSyncView({
   const [handoff, setHandoff] = useState(false)
 
   function requestSync() {
+    // Without Pro the server answers 402 — say so BEFORE the request, with a way
+    // forward, instead of a red "couldn't publish" the user cannot act on.
+    if (!entitlement.pro) { setLicenceOpen(true); return }
     setHandoff(true)
     onRequestSync()
   }
@@ -387,6 +429,7 @@ export default function FigmaSyncView({
    *  published" and "the probe could not answer", so a copy is never made on a
    *  guess. */
   function copyPluginId() {
+    if (!entitlement.pro) { setLicenceOpen(true); return }
     if (publishedState !== 'live' && !cannotSync && publishState !== 'publishing') requestSync()
     else setHandoff(true)
     copyUrl('sync', pluginSlug)
@@ -401,7 +444,6 @@ export default function FigmaSyncView({
   }
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
-  const entitlement = useEntitlement()
 
   return (
     <motion.div
@@ -423,10 +465,24 @@ export default function FigmaSyncView({
           light/dark are not My themes — an empty library shows an empty
           list, never a default-blue "Dark" row. */}
       <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface/50">
-          {entitlement.promo ? <PromoBanner daysLeft={entitlement.daysLeft} /> : null}
+          {entitlement.promo
+            ? <PromoBanner daysLeft={entitlement.daysLeft} />
+            : !entitlement.pro ? <ProRequiredBanner onOpenLicence={() => setLicenceOpen(true)} /> : null}
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
             <p className="text-sm font-semibold text-fg">{t('File & modes')}</p>
-            <p className="ml-auto text-caption text-fg-faint">
+            {entitlement.licence.status === 'valid' && (
+              <span className="rounded-full bg-accent-solid px-1.5 py-0.5 text-nano font-semibold tracking-[0.1em] text-accent-ink">PRO</span>
+            )}
+            <button
+              type="button"
+              onClick={() => setLicenceOpen(true)}
+              className={`ml-auto rounded-md px-1.5 py-0.5 text-caption text-fg-faint transition-colors hover:bg-fg/8 hover:text-fg ${SYNC_FOCUS}`}
+            >
+              {entitlement.licence.status === 'valid' && entitlement.licence.expiresAt
+                ? t('Active until {date}', { date: new Date(entitlement.licence.expiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) })
+                : t('Have a licence key?')}
+            </button>
+            <p className="text-caption text-fg-faint">
               {t('{count} of {max}', { count: String(syncModes.length), max: String(FIGMA_SYNC_MODE_CAP) })}
             </p>
           </div>
@@ -768,6 +824,7 @@ export default function FigmaSyncView({
           </div>
         )}
       </div>
+      {licenceOpen ? <LicenceModal onClose={() => setLicenceOpen(false)} /> : null}
     </motion.div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { entitlementAt, promoDaysLeft, type Entitlement } from './entitlement'
+import { FREE_MAX_THEMES, PRO_MAX_THEMES, entitlementAt, promoDaysLeft, type Entitlement } from './entitlement'
 import { isLiveEnvironment } from './figmaSync'
+import { useLicence, type LicenceState } from './licence'
 
 // Client side of /api/entitlement. One request per page load, shared by every
 // caller — the answer only changes once a day, and an endpoint polled from a
@@ -34,12 +35,20 @@ export interface EntitlementView extends Entitlement {
   launchDaysLeft: number
   /** True once the server has answered; false while showing the fallback. */
   confirmed: boolean
+  /** What this browser's licence key is doing. `pro` already includes it. */
+  licence: LicenceState
 }
 
-function view(e: Entitlement, confirmed: boolean): EntitlementView {
+function view(e: Entitlement, confirmed: boolean, licence: LicenceState): EntitlementView {
   const now = new Date(Date.now() + skewMs)
+  // Pro is the promo OR a key Polar vouches for. `maxThemes` follows, so one
+  // `pro` flag is all a screen needs to read.
+  const pro = e.pro || licence.status === 'valid'
   return {
     ...e,
+    pro,
+    maxThemes: pro ? PRO_MAX_THEMES : FREE_MAX_THEMES,
+    licence,
     daysLeft: e.promo ? promoDaysLeft(now, e.promoEndsAt) : 0,
     launchDaysLeft: e.launchPrice ? promoDaysLeft(now, e.launchEndsAt) : 0,
     confirmed,
@@ -47,14 +56,15 @@ function view(e: Entitlement, confirmed: boolean): EntitlementView {
 }
 
 export function useEntitlement(): EntitlementView {
-  const [state, setState] = useState<EntitlementView>(() => view(entitlementAt(new Date()), false))
+  const licence = useLicence()
+  const [base, setBase] = useState<{ e: Entitlement; confirmed: boolean }>(() => ({ e: entitlementAt(new Date()), confirmed: false }))
   useEffect(() => {
     if (!isLiveEnvironment()) return
     let cancelled = false
     fetchEntitlement().then((data) => {
-      if (!cancelled && data) setState(view(data, true))
+      if (!cancelled && data) setBase({ e: data, confirmed: true })
     })
     return () => { cancelled = true }
   }, [])
-  return state
+  return view(base.e, base.confirmed, licence)
 }

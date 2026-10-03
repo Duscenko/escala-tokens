@@ -6,6 +6,7 @@ import { claimStorageKey } from './publishTrust'
 import { slugify } from './utils'
 import { isPublishId } from './publishId'
 import { trackEvent } from './analytics'
+import { getLicenceKey, onLicenceChange } from './licence'
 
 /** Ephemeral UI feedback for an explicit user-initiated Figma publish. This
  * deliberately does not live in the persisted design-system store: a spinner
@@ -111,10 +112,12 @@ export function setStoredClaim(slug: string, claim: string): void {
  *    server rejected it (401) — another browser/machine owns the slug now, or
  *    site data was cleared. Retrying with the same claim will fail again.
  *  - `network`: the request itself didn't complete (offline, timeout, CORS).
+ *  - `licence`: hosted sync needs Escala Pro and this browser has no valid key
+ *    (402). Retrying cannot help, so auto-sync stops until the licence changes.
  *  - `server`: the endpoint responded but rejected the payload for some other
  *    reason (400/403/5xx) — surfaced with its status so it's not a total guess.
  */
-export type PublishFailureReason = 'claim-lost' | 'network' | 'server'
+export type PublishFailureReason = 'claim-lost' | 'network' | 'server' | 'licence'
 export interface PublishResult {
   ok: boolean
   reason?: PublishFailureReason
@@ -151,6 +154,13 @@ function publishOptions(
 // had already turned off.
 let publishTail: Promise<void> = Promise.resolve()
 let publishSerial = 0
+
+// Set by a 402. Auto-sync republishes after EVERY edit burst, and a 402 cannot
+// be fixed by trying again — without this it would fire a doomed request per
+// edit, the exact kind of loop that has already cost this project money.
+// Cleared the moment the licence changes (a pasted key, a removed one).
+let licenceBlocked = false
+onLicenceChange(() => { licenceBlocked = false })
 
 export async function publishTokens(
   themeOrOpts?: string | PublishTokensInput,
@@ -190,6 +200,8 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     const claim = getStoredClaim(key)
     if (claim) headers.Authorization = `Bearer ${claim}`
+    const licence = getLicenceKey()
+    if (licence) headers['x-escala-license'] = licence
     try {
       return await fetch(`/api/tokens?project=${encodeURIComponent(key)}`, {
         method: 'POST', headers, body,
@@ -224,12 +236,13 @@ async function postPublishedTokens(opts: PublishTokensInput): Promise<PublishRes
     return { ok: true }
   }
 
+  if (res.status === 402) licenceBlocked = true
   return {
     ok: false,
     status: res.status,
     // 401 is `api/tokens.ts`'s exact response for "this slug is claimed by a
     // claim you didn't present" — the one failure mode a plain retry can't fix.
-    reason: res.status === 401 ? 'claim-lost' : 'server',
+    reason: res.status === 401 ? 'claim-lost' : res.status === 402 ? 'licence' : 'server',
   }
 }
 
@@ -247,6 +260,8 @@ export function describePublishFailure(
       // nothing now — so the escape hatch is the explicit one:
       // `regeneratePublishId()`, surfaced in Figma sync as "New ID".
       return `This ID (${syncProjectId(fileName)}) was first published from another browser or device, and only that one can update it. Generate a new ID to publish this copy separately, or sync from the browser that published it first.`
+    case 'licence':
+      return 'Hosted sync needs Escala Pro. Paste your licence key, or import tokens.json in the plugin by hand.'
     case 'network':
       return 'Could not reach the server — check your connection and try again.'
     case 'server':
@@ -307,6 +322,7 @@ export function useAutoFigmaSync(
     const schedule = () => {
       // Empty modes = My themes is empty. Do not republish scaffold light/dark.
       if (Array.isArray(opts.modes) && opts.modes.length === 0) return
+      if (licenceBlocked) return
       if (activeTheme) setActiveThemeHint(activeTheme)
       const payload = generateTokenJSON(undefined, {
         ...(publishOpts.theme ? { theme: publishOpts.theme } : {}),

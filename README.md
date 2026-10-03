@@ -94,7 +94,7 @@ Escala is open source end to end: this configurator, the [Figma plugin](https://
 
 **Paid (one-time licence, not live yet):** up to 10 themes and every platform mode (Desktop · Tablet · Mobile) in Figma, automatic hosted sync, the live MCP server, plus updates and support. Hosted sync and MCP are enforced on the server (`api/tokens.ts`, `api/mcp.ts`), so there is nothing to patch out of the plugin. If you self-host, you set your own limits.
 
-Until the licence ships, everything is free for everyone. Status and details: [design-plans/pricing-and-packaging.md](design-plans/pricing-and-packaging.md).
+Everything is free for everyone until October 31, 2026. From November 1, hosted sync and the live MCP need a licence. Status and details: [design-plans/pricing-and-packaging.md](design-plans/pricing-and-packaging.md).
 
 Why pay when the code is free: hosted sync and MCP cost money on every request, and a licence keeps your Figma file and your agents in step with the web without manual exports.
 
