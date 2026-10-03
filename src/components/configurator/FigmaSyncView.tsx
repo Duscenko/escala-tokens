@@ -23,6 +23,8 @@ import { BackToEditor, PluginInstallPromo } from './figmaShared'
 import { AppearanceGlyph } from './colorControls'
 import { CopyGlyph } from '../ui/icons'
 import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
+import { PRO_MAX_THEMES } from '../../lib/entitlement'
+import { useEntitlement } from '../../lib/useEntitlement'
 
 interface FigmaSyncViewProps {
   onClose?: () => void
@@ -253,6 +255,33 @@ function SyncUrlInfo({ deployed }: { deployed: boolean }) {
   )
 }
 
+/** Launch promo strip at the head of File & modes — the screen where several
+ *  themes and viewports are chosen, i.e. where the Pro limits will later bite.
+ *  States the rule that follows the promo up front, so November 1 is not the
+ *  first time anyone hears of it. Static: no shimmer, no ticking seconds — the
+ *  countdown's unit is a day. The PRO pill is the one accent FILL on this
+ *  chrome surface, so it takes `--accent-solid` + its solved `--accent-ink`. */
+function PromoBanner({ daysLeft }: { daysLeft: number }) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-shrink-0 items-center gap-3 border-b border-line bg-accent-ui/[0.08] px-5 py-3">
+      <span className="flex-shrink-0 rounded-full bg-accent-solid px-1.5 py-0.5 text-nano font-semibold tracking-[0.1em] text-accent-ink">
+        PRO
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-body font-semibold text-fg">{t('Every theme and viewport is free until October 31')}</p>
+        <p className="mt-0.5 text-caption leading-relaxed text-fg-muted">
+          {t('After that: 1 theme and Desktop are free. Up to {max} themes and every viewport with Pro.', { max: String(PRO_MAX_THEMES) })}
+        </p>
+      </div>
+      <p className="flex-shrink-0 text-right">
+        <span className="block font-mono text-heading font-medium leading-none tabular-nums text-accent-ui">{daysLeft}</span>
+        <span className="mt-1 block text-mini text-fg-faint">{daysLeft === 1 ? t('day left') : t('days left')}</span>
+      </p>
+    </div>
+  )
+}
+
 // ─── Sync status and explicit publish ───────────────────────────────────────
 // Opening this surface is intentionally read-only. Its parent owns the manual
 // publish request and status so the top-nav Sync control and this screen always
@@ -371,6 +400,7 @@ export default function FigmaSyncView({
   }
 
   const pluginUpdateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
+  const entitlement = useEntitlement()
 
   return (
     <motion.div
@@ -391,7 +421,8 @@ export default function FigmaSyncView({
       {/* Modes first, then File name + ID to plugin as one link. Scaffold
           light/dark are not My themes — an empty library shows an empty
           list, never a default-blue "Dark" row. */}
-      <div className="flex flex-col rounded-xl border border-line bg-surface/50">
+      <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface/50">
+          {entitlement.promo ? <PromoBanner daysLeft={entitlement.daysLeft} /> : null}
           <div className="flex flex-shrink-0 items-center gap-3 border-b border-line px-5 py-3">
             <p className="text-sm font-semibold text-fg">{t('File & modes')}</p>
             <p className="ml-auto text-caption text-fg-faint">
