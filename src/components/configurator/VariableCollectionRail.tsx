@@ -3,7 +3,7 @@ import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } fro
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PlatformRail } from './PlatformRail'
 
-export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients'
+export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients' | 'responsive'
 
 export type VariableCollectionItem = {
   key: VariableCollectionKey
@@ -60,6 +60,19 @@ function MaskGlyph({ src, size }: { src: string; size: number }) {
       }}
     />
   )
+}
+
+/** The collection selected in the rail, for a table that renders more than
+ *  one of them (Radius: semantics · responsive). `null` outside a provider. */
+export function useActiveVariableCollection(): VariableCollectionKey | null {
+  return useContext(CollectionContext)?.active ?? null
+}
+
+/** Switch the rail's collection from inside a table (a cross-link between
+ *  two layers of the same foundation). No-op outside a provider. */
+export function useSetVariableCollection(): (collection: VariableCollectionKey) => void {
+  const context = useContext(CollectionContext)
+  return (collection) => context?.onChange(collection)
 }
 
 export function FolderIcon({ size = 12 }: { size?: number }) {

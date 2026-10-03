@@ -480,7 +480,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
       // Selectors bumped xs → sm — from the adopted theme's radiusRoles.control.
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'lg' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -515,7 +515,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       radius: { ...RADIUS_STANDARD },
       // Selectors at `lg` (not `sm`) — matches the adopted theme's control
       // radius so checkboxes don't sit square next to pill fields.
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'lg' }),
+      radiusRoles: styleRadiusRoles({ boxes: '4xl', fields: '4xl', selectors: '2xl' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       // Hairline stroke — the glass chrome the adopted theme uses.
@@ -559,7 +559,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // after. Glass and Nature keep Pill — "generous" and "organic" are their
       // briefs, and at the corrected role rungs that is 36px, not 72px.
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: '2xl', selectors: 'xs' }),
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '4xl', selectors: 'sm' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -596,7 +596,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       // Generous boxes, moderate fields, soft selectors — Nature's documented
       // 32 · 16 · 8 ladder on `RADIUS_STANDARD`.
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
+      radiusRoles: styleRadiusRoles({ boxes: '4xl', fields: '2xl', selectors: 'lg' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -630,7 +630,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Courier Prime', 'Courier Prime'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'xs', fields: 'xs', selectors: 'none' }),
+      radiusRoles: styleRadiusRoles({ boxes: 'sm', fields: 'sm', selectors: 'none' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -697,7 +697,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Newsreader', 'Playfair Display'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'xs', selectors: 'xs' }),
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'sm', selectors: 'sm' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -753,7 +753,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       spacing: buildSpacingFromBase(3.5),
       gridFrame: standardGridFrameFor(buildSpacingFromBase(3.5)),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'sm', fields: 'xs', selectors: 'xs' }),
+      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'sm' }),
       sizes: buildSizesFromBase(3.5),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },
@@ -779,7 +779,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       spacing: buildSpacingFromBase(4.5),
       gridFrame: standardGridFrameFor(buildSpacingFromBase(4.5)),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: '2xl', selectors: 'lg' }),
+      radiusRoles: styleRadiusRoles({ boxes: '4xl', fields: '4xl', selectors: '2xl' }),
       sizes: buildSizesFromBase(4.5),
       selector: buildSelectorsFromBase(3.5),
       stroke: { ...STROKE_STANDARD },
@@ -804,7 +804,7 @@ export const THEME_STYLE_PRESETS: ThemeStylePreset[] = [
       typography: typography('Inter', 'Cormorant Garamond'),
       spacing: buildSpacingFromBase(4),
       radius: { ...RADIUS_STANDARD },
-      radiusRoles: styleRadiusRoles({ boxes: 'lg', fields: 'sm', selectors: 'xs' }),
+      radiusRoles: styleRadiusRoles({ boxes: '2xl', fields: 'lg', selectors: 'sm' }),
       sizes: buildSizesFromBase(4),
       selector: buildSelectorsFromBase(3),
       stroke: { ...STROKE_STANDARD },

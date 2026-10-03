@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { tableHeaderClass, tableRowClass } from './tableChrome'
+import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
   LAYOUT_ROLE_GROUPS,
@@ -12,18 +12,20 @@ import {
   resolveLayoutRole,
   type LayoutFamily,
   type GridViewport,
+  RADIUS_RESPONSIVE_STEPS,
+  radiusTokensByRoleGroup,
+  SPACING_RESPONSIVE_FAMILIES,
+  SPACING_RESPONSIVE_KEYS,
 } from '../../lib/layoutTokens'
 import SemanticGroupRail from './SemanticGroupRail'
+import RadiusSemanticsTable, { type RadiusCollection } from './RadiusSemanticsTable'
+import SpacingSemanticsTable, { type SpacingCollection } from './SpacingSemanticsTable'
+import { useActiveVariableCollection, useSetVariableCollection } from './VariableCollectionRail'
 import { parseDimension } from '../../lib/dimensions'
 import { useDimensions } from '../../lib/useDimensions'
 import DimensionSelect from '../ui/DimensionSelect'
 import { railControlsFor } from './LayoutRailControls'
-import VariablesPreviewPane from './VariablesPreviewPane'
-import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { RadiusRolesPreview } from '../preview/atoms/RadiusRolesPreview'
-import { LayoutRolesPreview } from '../preview/atoms/LayoutRolesPreview'
-import { PlatformBoard } from '../preview/artefacts/DeviceFrame'
 
 // The Primitive track holds `<icon> dimension-9999 <chevron>`: ~92px of mono text
 // plus 56px of icon and chevron and the cell's own padding, so it needs more than
@@ -93,8 +95,6 @@ export default function LayoutSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
-  previewAppearance,
-  previewPlatform,
 }: {
   family: LayoutFamily
   tabBar?: ReactNode
@@ -117,12 +117,24 @@ export default function LayoutSemantics({
   const { primaryColor, primaryScale } = store
   const accent = primaryScale[9] ?? primaryColor
   const [group, setGroup] = useState<string>('all')
+  // Radius renders two collections (layers) from this one component: the
+  // roles and the responsive tokens they alias. Hooks run unconditionally.
+  const activeCollection = useActiveVariableCollection()
+  const setCollection = useSetVariableCollection()
+  const radiusCollection: RadiusCollection = family === 'radius' && activeCollection === 'responsive' ? 'responsive' : 'semantics'
+  const spacingCollection: SpacingCollection = family === 'spacing' && activeCollection === 'responsive' ? 'responsive' : 'semantics'
+  const responsiveView = radiusCollection === 'responsive' || spacingCollection === 'responsive'
+  // A group that only exists in the OTHER collection (radius' `unassigned`, a
+  // spacing family vs a role group) reads as All, never as an empty table.
+  const ownGroups = responsiveView
+    ? (family === 'spacing' ? [...SPACING_RESPONSIVE_FAMILIES] : [...LAYOUT_ROLE_GROUPS.radius.map((g) => g.id), 'unassigned'])
+    : LAYOUT_ROLE_GROUPS[family].map((g) => g.id)
+  const railGroup = group === 'all' || ownGroups.includes(group) ? group : 'all'
   const controlledQuery = query !== undefined
   const [innerQuery, setInnerQuery] = useState('')
   const setQuery = setInnerQuery
   const activeQuery = controlledQuery ? query : innerQuery
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
 
   // Sizes owns two families (heights + selector glyphs). The primitive table
   // already splits them; semantics used to hand LayoutSemantics only `size`,
@@ -159,8 +171,8 @@ export default function LayoutSemantics({
   const groups = viewFamilies.flatMap((fam) => LAYOUT_ROLE_GROUPS[fam])
   const q = activeQuery.trim().toLowerCase()
   const rows = viewFamilies.flatMap((fam) => {
-    if (group !== 'all' && !LAYOUT_ROLE_GROUPS[fam].some((g) => g.id === group)) return []
-    return layoutRolesInGroup(fam, group)
+    if (railGroup !== 'all' && !LAYOUT_ROLE_GROUPS[fam].some((g) => g.id === railGroup)) return []
+    return layoutRolesInGroup(fam, railGroup)
       .filter((r) => !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q))
       .map((role) => ({ family: fam, role }))
   })
@@ -198,48 +210,46 @@ export default function LayoutSemantics({
     flash(hit.family, hit.key)
   }, [family, revealRole?.key, revealRole?.seq])
 
-  const revealFromPreview = (key: string, fromFamily: LayoutFamily = family) => {
-    const hit = locateRole(key.includes('.') ? key : `${fromFamily}.${key}`) ?? locateRole(key)
-    if (!hit) return
-    flash(hit.family, hit.key)
-  }
-
-  const sizePreview = family === 'size' && (group === 'all' || group === 'glyph')
-  const preview = family === 'radius'
-    ? <RadiusRolesPreview tokens={previewTokens} onEditRole={revealFromPreview} />
-    : family === 'spacing' || family === 'stroke'
-      ? <LayoutRolesPreview family={family} tokens={previewTokens} onEditRole={revealFromPreview} />
-    : family === 'size'
-      ? (
-        <>
-          {(group === 'all' || group !== 'glyph') && (
-            <LayoutRolesPreview family="size" tokens={previewTokens} onEditRole={(key) => revealFromPreview(key, 'size')} />
-          )}
-          {sizePreview && (
-            <LayoutRolesPreview family="selector" tokens={previewTokens} onEditRole={(key) => revealFromPreview(key, 'selector')} />
-          )}
-        </>
-      )
-      : null
 
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
         <SemanticGroupRail
           ariaLabel="Role groups"
-          active={group}
+          active={railGroup}
           collapsed={railCollapsed}
           onChange={setGroup}
           controls={railControlsFor(family, previewTheme)}
-          items={[
-            { key: 'all', label: 'All', count: viewFamilies.reduce((n, fam) => n + LAYOUT_ROLES[fam].length, 0), shortLabel: 'ALL' },
-            ...groups.map((item) => ({
-              key: item.id,
-              label: item.label,
-              count: viewFamilies.reduce((n, fam) => n + layoutRolesInGroup(fam, item.id).length, 0),
-              hint: item.hint,
-            })),
-          ]}
+          items={spacingCollection === 'responsive'
+            ? [
+                { key: 'all', label: 'All', count: SPACING_RESPONSIVE_KEYS.length, shortLabel: 'ALL' },
+                ...SPACING_RESPONSIVE_FAMILIES.map((family) => ({
+                  key: family,
+                  label: family[0].toUpperCase() + family.slice(1),
+                  count: SPACING_RESPONSIVE_KEYS.filter((k) => k.startsWith(`${family}-`)).length,
+                  hint: family === 'component' ? 'Padding and gaps inside a component.' : family === 'section' ? 'Rhythm between blocks of a page.' : 'Room between page regions.',
+                })),
+              ]
+            : radiusCollection === 'responsive'
+            ? (() => {
+                // Same Boxes · Fields · Selectors words as the roles, counting the
+                // tokens each group's roles alias; Unassigned = no role uses it.
+                const byGroup = radiusTokensByRoleGroup(rolesOf('radius'))
+                return [
+                  { key: 'all', label: 'All', count: RADIUS_RESPONSIVE_STEPS.length, shortLabel: 'ALL' },
+                  ...groups.map((item) => ({ key: item.id, label: item.label, count: byGroup[item.id]?.length ?? 0, hint: `Tokens the ${item.label.toLowerCase()} roles use.` })),
+                  { key: 'unassigned', label: 'Unassigned', count: byGroup.unassigned.length, hint: 'No role uses these; a component can bind one directly.' },
+                ]
+              })()
+            : [
+                { key: 'all', label: 'All', count: viewFamilies.reduce((n, fam) => n + LAYOUT_ROLES[fam].length, 0), shortLabel: 'ALL' },
+                ...groups.map((item) => ({
+                  key: item.id,
+                  label: item.label,
+                  count: viewFamilies.reduce((n, fam) => n + layoutRolesInGroup(fam, item.id).length, 0),
+                  hint: item.hint,
+                })),
+              ]}
         />
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
@@ -270,67 +280,101 @@ export default function LayoutSemantics({
 
           <div className="flex flex-1 min-w-0 min-h-0">
           <div className="flex-1 min-w-0 overflow-auto">
+            {family === 'spacing' ? (
+              <SpacingSemanticsTable
+                collection={spacingCollection}
+                group={railGroup}
+                rows={rows.map((r) => r.role)}
+                roles={rolesOf('spacing')}
+                spacing={spacing}
+                onRoles={(next) => setRolesOf('spacing', next)}
+                onRevealRole={(key) => {
+                  setCollection('semantics')
+                  flash('spacing', key)
+                }}
+                accent={accent}
+                flashKey={flashKey}
+                query={activeQuery}
+              />
+            ) : family === 'radius' ? (
+              <RadiusSemanticsTable
+                collection={radiusCollection}
+                group={railGroup}
+                rows={rows.map((r) => r.role)}
+                roles={rolesOf('radius')}
+                radius={radius}
+                onRoles={(next) => setRolesOf('radius', next)}
+                viewports={foundations.radiusRoleViewports}
+                onViewports={(next) => patch({ radiusRoleViewports: next })}
+                onRevealRole={(key) => {
+                  setCollection('semantics')
+                  flash('radius', key)
+                }}
+                dimensionScale={dimensionScale}
+                accent={accent}
+                flashKey={flashKey}
+                query={activeQuery}
+              />
+            ) : (
             <div className="min-w-[36rem]">
-              <div className={tableHeaderClass(GRID)}>
-                <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Role</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Primitive</div>
-                <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Preview</div>
-                <div />
-              </div>
-              {rows.length === 0 ? (
-                <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{activeQuery}”.</div>
-              ) : rows.map(({ family: rowFamily, role }, i) => {
-                const roles = rolesOf(rowFamily)
-                const primitives = primitivesOf(rowFamily)
-                const step = roles[role.key]
-                const modified = !layoutRoleIsDefault(rowFamily, role.key, step, primitives)
-                const resolved = resolveLayoutRole(rowFamily, roles, primitives, role.key, '')
-                return (
-                  <div
-                    key={`${rowFamily}-${role.key}`}
-                    id={`layout-role-${rowFamily}-${role.key}`}
-                    className={`${rowClass(i)} ${flashKey === `${rowFamily}.${role.key}` ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
-                  >
-                    <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <code className="font-mono text-body text-fg-muted truncate">{rowFamily}-{role.key}</code>
-                        {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
-                      </span>
-                      <span className="text-caption text-fg-faint truncate">{role.description}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
-                      <DimensionSelect
-                        ariaLabel={`${role.key} primitive`}
-                        value={resolved}
-                        scale={dimensionScale}
-                        onChange={(px) => {
-                          const n = parseDimension(px)
-                          if (n !== null) setRolesOf(rowFamily, { ...roles, [role.key]: dimensionRoleValue(n) })
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden gap-2">
-                      <RolePreview family={rowFamily} value={resolved} accent={accent} />
-                      <span className="text-caption font-mono text-fg-faint tabular-nums flex-shrink-0">{resolved || '—'}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setRolesOf(rowFamily, { ...roles, [role.key]: role.primitive })}
-                      disabled={!modified}
-                      title="Reset to standard"
-                      aria-label={`Reset ${role.label}`}
-                      className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+                <div className={tableHeaderClass(GRID)}>
+                  <span className={`${TABLE_HEAD_CELL} pl-4`}>Role</span>
+                  <span className={`${TABLE_HEAD_CELL} px-3`}>Primitive</span>
+                  <span className={`${TABLE_HEAD_CELL} px-3`}>Preview</span>
+                  <span aria-hidden />
+                </div>
+                {rows.length === 0 ? (
+                  <div className="px-4 py-12 text-center text-sm text-fg-faint">No roles match “{activeQuery}”.</div>
+                ) : rows.map(({ family: rowFamily, role }, i) => {
+                  const roles = rolesOf(rowFamily)
+                  const primitives = primitivesOf(rowFamily)
+                  const step = roles[role.key]
+                  const modified = !layoutRoleIsDefault(rowFamily, role.key, step, primitives)
+                  const resolved = resolveLayoutRole(rowFamily, roles, primitives, role.key, '')
+                  return (
+                    <div
+                      key={`${rowFamily}-${role.key}`}
+                      id={`layout-role-${rowFamily}-${role.key}`}
+                      className={`${rowClass(i)} ${flashKey === `${rowFamily}.${role.key}` ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                     >
-                      <ResetIcon />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
+                      <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <code className="font-mono text-body text-fg-muted truncate">{rowFamily}-{role.key}</code>
+                          {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
+                        </span>
+                        <span className="text-caption text-fg-faint truncate">{role.description}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-2 border-r border-line min-w-0">
+                        <DimensionSelect
+                          ariaLabel={`${role.key} primitive`}
+                          value={resolved}
+                          scale={dimensionScale}
+                          onChange={(px) => {
+                            const n = parseDimension(px)
+                            if (n !== null) setRolesOf(rowFamily, { ...roles, [role.key]: dimensionRoleValue(n) })
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden gap-2">
+                        <RolePreview family={rowFamily} value={resolved} accent={accent} />
+                        <span className="text-caption font-mono text-fg-faint tabular-nums flex-shrink-0">{resolved || '—'}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setRolesOf(rowFamily, { ...roles, [role.key]: role.primitive })}
+                        disabled={!modified}
+                        title="Reset to standard"
+                        aria-label={`Reset ${role.label}`}
+                        className="flex items-center justify-center w-full h-full py-3 text-fg-faint hover:text-fg disabled:opacity-25 disabled:hover:text-fg-faint transition-colors"
+                      >
+                        <ResetIcon />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
-          <VariablesPreviewPane watch={`${family}/${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
-            {preview ? <PlatformBoard t={previewTokens} fit="fill">{preview}</PlatformBoard> : preview}
-          </VariablesPreviewPane>
           </div>
         </div>
       </div>

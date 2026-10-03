@@ -5,18 +5,22 @@
 // hand-inserting a caption: that is what lands it on the group rows' own
 // footprint.
 //
-// It exists because that shape was written three times in a row: same h-9
-// `rounded-[13px] border-line-strong bg-surface` trigger, same chevron, same
-// outside-click/Escape listbox. Matching ColorPrimitives' hex field, which is
-// the original of the shape.
+// It exists because that shape was written three times in a row. Its trigger
+// and listbox are THE workspace dropdown (`SELECT_*` in themeWorkspaceLayout) —
+// the same shell Theme preview's menus and the colour selects use, so a preset
+// select and a font menu in one card read as one kind of control.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER } from '../configurator/themeWorkspaceLayout'
 
 export interface RailOption<T> {
   value: T
   label: string
   /** Tooltip — the "why you'd pick this" line, when there is one. */
   description?: string
+  /** A quiet readout on the option's right edge — the value it applies
+   *  (Radius' preset shows its corner and `lg` px), so picking is not blind. */
+  trailing?: ReactNode
 }
 
 export default function RailSelect<T extends string | number>({
@@ -62,10 +66,10 @@ export default function RailSelect<T extends string | number>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="w-full h-9 pl-2.5 pr-1.5 rounded-[13px] border border-line-strong bg-surface flex items-center gap-2 text-left hover:border-fg-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+        className={SELECT_TRIGGER}
       >
         {icon && <span className="flex-shrink-0 text-fg-muted">{icon}</span>}
-        <span className="flex-1 min-w-0 truncate text-ui font-medium text-fg">
+        <span className="flex-1 min-w-0 truncate text-body text-fg">
           {selected?.label ?? fallbackLabel}
         </span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-fg-faint transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden>
@@ -73,7 +77,7 @@ export default function RailSelect<T extends string | number>({
         </svg>
       </button>
       {open && (
-        <div role="listbox" className="absolute left-0 top-full mt-2 z-30 w-full min-w-[11rem] rounded-xl border border-line bg-app shadow-xl p-1 flex flex-col">
+        <div role="listbox" className={`absolute left-0 top-full mt-1.5 z-30 w-full min-w-[11rem] flex flex-col ${SELECT_LIST}`}>
           {options.map((o) => (
             <button
               key={String(o.value)}
@@ -82,11 +86,10 @@ export default function RailSelect<T extends string | number>({
               aria-selected={o.value === value}
               title={o.description}
               onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`px-2.5 py-1.5 rounded-lg text-left text-ui transition-colors ${
-                o.value === value ? 'bg-elevated text-fg font-semibold' : 'text-fg-muted hover:text-fg hover:bg-elevated/60'
-              }`}
+              className={`${SELECT_OPTION} text-body flex items-center gap-2 ${o.value === value ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`}
             >
-              {o.label}
+              <span className="flex-1 min-w-0 truncate">{o.label}</span>
+              {o.trailing != null && <span className="flex-shrink-0 flex items-center gap-1.5 text-caption font-normal text-fg-faint tabular-nums">{o.trailing}</span>}
             </button>
           ))}
         </div>

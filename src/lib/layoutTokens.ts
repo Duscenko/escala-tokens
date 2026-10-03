@@ -46,16 +46,105 @@ export function dimensionRoleValue(px: number): string {
  *  the family's scale. `null` when neither resolves. */
 export function roleValuePx(value: string | undefined, steps: Record<string, string> | undefined): number | null {
   if (value === undefined) return null
-  return roleDimensionPx(value) ?? parseDimension(steps?.[value])
+  // A responsive spacing reference (`component-md`) reads its Desktop step.
+  const step = spacingRefStep(value)
+  return roleDimensionPx(step) ?? parseDimension(steps?.[step])
+}
+
+// ── Responsive spacing (Desktop · Tablet · Mobile) ──────────────────────────
+// Three families of six sizes, each REFERENCING a static step (never a value):
+//
+//   Component — padding and gaps inside one component; subtle, tighter on mobile.
+//   Section   — rhythm between blocks of a page.
+//   Layout    — breathing room between page regions (header, sidebar, content).
+//
+// At the default 4px base, Desktop / Tablet / Mobile px (Spacing reference):
+//   component  xl 24/16/12 · lg 16/16/12 · md 12/12/8 · sm 8/8/8 · xs 4/4/4
+//   section    xl 48/32/20 · lg 32/20/16 · md 24/16/12 · sm 16/16/12 · xs 12/12/8
+//   layout     xl 128/64/48 · lg 96/48/32 · md 64/32/16 · sm 48/24/12 · xs 32/16/8
+//   (every family's `none` is 0)
+// A spacing ROLE may point at one of these (`component-md`) and then steps down
+// with it; a role on a static step or a pinned primitive holds one value.
+
+export const SPACING_RESPONSIVE_FAMILIES = ['component', 'section', 'layout'] as const
+export type SpacingResponsiveFamily = (typeof SPACING_RESPONSIVE_FAMILIES)[number]
+export const SPACING_RESPONSIVE_SIZES = ['xl', 'lg', 'md', 'sm', 'xs', 'none'] as const
+export type SpacingResponsiveSize = (typeof SPACING_RESPONSIVE_SIZES)[number]
+
+const SR = (d: string, t: string, m: string) => ({ desktop: d, tablet: t, mobile: m })
+const SPACING_RESPONSIVE_TABLE: Record<SpacingResponsiveFamily, Record<SpacingResponsiveSize, Record<GridViewport, string>>> = {
+  component: { xl: SR('6', '4', '3'), lg: SR('4', '4', '3'), md: SR('3', '3', '2'), sm: SR('2', '2', '2'), xs: SR('1', '1', '1'), none: SR('0', '0', '0') },
+  section: { xl: SR('12', '8', '5'), lg: SR('8', '5', '4'), md: SR('6', '4', '3'), sm: SR('4', '4', '3'), xs: SR('3', '3', '2'), none: SR('0', '0', '0') },
+  layout: { xl: SR('32', '16', '12'), lg: SR('24', '12', '8'), md: SR('16', '8', '4'), sm: SR('12', '6', '3'), xs: SR('8', '4', '2'), none: SR('0', '0', '0') },
+}
+
+/** `component-md` → its Desktop / Tablet / Mobile static steps. 18 tokens. */
+export const SPACING_RESPONSIVE: Record<string, Record<GridViewport, string>> = Object.fromEntries(
+  SPACING_RESPONSIVE_FAMILIES.flatMap((family) =>
+    SPACING_RESPONSIVE_SIZES.map((size) => [`${family}-${size}`, SPACING_RESPONSIVE_TABLE[family][size]])),
+)
+export const SPACING_RESPONSIVE_KEYS = Object.keys(SPACING_RESPONSIVE)
+
+export function isSpacingResponsiveRef(value: unknown): value is string {
+  return typeof value === 'string' && value in SPACING_RESPONSIVE
+}
+
+/** The static step a spacing value reads at a viewport: a responsive
+ *  reference resolves through its table; anything else is returned as is. */
+export function spacingRefStep(value: string, viewport: GridViewport = 'desktop'): string {
+  return isSpacingResponsiveRef(value) ? SPACING_RESPONSIVE[value][viewport] : value
+}
+
+/** Every spacing role read at one viewport (responsive refs → static steps). */
+export function spacingRolesAtViewport(roles: Record<string, string> | undefined, viewport: GridViewport): Record<string, string> {
+  const merged = mergeLayoutRoles('spacing', roles)
+  return Object.fromEntries(Object.entries(merged).map(([k, v]) => [k, spacingRefStep(v, viewport)]))
+}
+
+/** The spacing roles that point at responsive token `key`. */
+export function rolesUsingSpacingToken(roles: Record<string, string> | undefined, key: string): string[] {
+  const merged = mergeLayoutRoles('spacing', roles)
+  return LAYOUT_ROLES.spacing.filter((r) => merged[r.key] === key).map((r) => r.key)
+}
+
+/** The 18 responsive tokens as CSS: `--spacing-component-md` references the
+ *  static `--spacing-<step>`, so a theme that redefines the ramp needs no block
+ *  of its own. Desktop on `:root`; Tablet / Mobile override what steps down. */
+export function spacingResponsiveCss(viewport: GridViewport = 'desktop'): string[] {
+  return SPACING_RESPONSIVE_KEYS
+    .filter((key) => viewport === 'desktop' || SPACING_RESPONSIVE[key][viewport] !== SPACING_RESPONSIVE[key].desktop)
+    .map((key) => `--spacing-${key}: var(--spacing-${SPACING_RESPONSIVE[key][viewport]});`)
+}
+
+/** `--spacing-<role>` overrides for one smaller viewport — only the roles on a
+ *  responsive token whose step changes there. */
+export function spacingRolesViewportCss(
+  viewport: GridViewport,
+  roles: Record<string, string> | undefined,
+  spacing: Record<string, string> | undefined,
+): string[] {
+  const merged = mergeLayoutRoles('spacing', roles)
+  const out: string[] = []
+  for (const role of LAYOUT_ROLES.spacing) {
+    const value = merged[role.key]
+    if (!isSpacingResponsiveRef(value)) continue
+    const step = spacingRefStep(value, viewport)
+    if (step === spacingRefStep(value)) continue
+    out.push(`--spacing-${role.key}: ${layoutValueCss('spacing', step, spacing)};`)
+  }
+  return out
 }
 
 // ── Radius primitives ───────────────────────────────────────────────────────
 // Tailwind / HeroUI model: one base (`lg` = `--radius`) and named steps as
 // fixed ratios of it. Values at the default 8px base are the published table
-// (xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32).
+// (xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48) —
+// Tailwind v4's scale plus a 5xl for the largest sheets. Store v77 moved every
+// system onto these names (the ramp used to be graded from lg 16, i.e. every
+// name sat two rungs higher) without moving a single resolved pixel.
 // `2.5xl` is NOT a step — neither Tailwind nor HeroUI ships it.
 
-export const RADIUS_WORKING_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
+export const RADIUS_WORKING_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'] as const
 export type RadiusWorkingStep = (typeof RADIUS_WORKING_STEPS)[number]
 
 export const RADIUS_SCALE_RATIOS: Record<RadiusWorkingStep, number> = {
@@ -67,6 +156,7 @@ export const RADIUS_SCALE_RATIOS: Record<RadiusWorkingStep, number> = {
   '2xl': 2,
   '3xl': 3,
   '4xl': 4,
+  '5xl': 6,
 }
 
 export const RADIUS_STEPS = ['none', ...RADIUS_WORKING_STEPS, 'full'] as const
@@ -235,17 +325,17 @@ function radiusPreset(
 }
 
 export const RADIUS_PRESETS: { label: string; description: string; values: Record<RadiusStep, string> }[] = [
-  radiusPreset('Sharp', 'lg 8px — Tailwind / HeroUI default', 8),
-  radiusPreset('Soft', 'lg 12px — slightly softer controls', 12),
-  radiusPreset('Rounded', 'lg 16px — friendly, approachable', 16),
-  radiusPreset('Pill', 'lg 24px — generous, consumer apps', 24),
+  radiusPreset('Sharp', 'lg 4px — tight, technical', 4),
+  radiusPreset('Soft', 'lg 6px — slightly softer controls', 6),
+  radiusPreset('Rounded', 'lg 8px — Tailwind / HeroUI default', 8),
+  radiusPreset('Pill', 'lg 12px — generous, consumer apps', 12),
 ]
 
 /**
- * System standard = Rounded (lg 16). With the roles on their natural rungs this
- * resolves control 4 / action 16 / container 24 / overlay 32 — the exact pixels
- * the old Sharp-ramp-plus-offset produced, so the default system is unchanged.
- * See the note on `RADIUS_ROLES` for why the offset had to go.
+ * System standard = Rounded (lg 8): none 0 · xs 2 · sm 4 · md 6 · lg 8 · xl 12
+ * · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full 9999 — the Corner Radius table.
+ * The same pixels the pre-v77 lg-16 ramp carried, under the names designers
+ * already know from Tailwind.
  */
 export const RADIUS_STANDARD: Record<RadiusStep, string> = RADIUS_PRESETS[2].values
 
@@ -274,10 +364,15 @@ export function matchRadiusPreset(radius: Record<string, string>): string | null
 }
 
 // ── Spacing primitives ──────────────────────────────────────────────────────
-// 4px grid (Tailwind / Untitled). Step 5 = 20px so surface inset can alias
-// the padding the platform already shipped, without a raw 20px collection.
+// 4px grid (Tailwind / Untitled). A step is a MULTIPLIER of the base unit, so
+// at the default 4px base the scale is the Spacing Scale reference — 0 · 2 · 4 ·
+// 6 · 8 · 10 · 12 · 16 · 20 · 24 · 32 · 48 · 64 · 96 · 128 — plus 40 (step 10),
+// which Tailwind also ships. Half steps are keyed `0_5` / `1_5` / `2_5` (the
+// same `_` rule as `dimension-3_5`): a `.` would split a Figma variable path
+// and is not a valid CSS identifier character. Step 5 = 20px so surface inset
+// can alias the padding the platform already shipped.
 
-export const SPACING_STEPS = ['0', '1', '2', '3', '4', '5', '6', '8', '10', '12', '16'] as const
+export const SPACING_STEPS = ['0', '0_5', '1', '1_5', '2', '2_5', '3', '4', '5', '6', '8', '10', '12', '16', '24', '32'] as const
 export type SpacingStep = (typeof SPACING_STEPS)[number]
 
 export const SPACING_BASE_PRESETS = [
@@ -291,7 +386,7 @@ export const SPACING_DEFAULT_BASE = 4
 export function buildSpacingFromBase(base: number): Record<string, string> {
   const result: Record<string, string> = {}
   for (const step of SPACING_STEPS) {
-    result[step] = `${Number(step) * base}px`
+    result[step] = `${Number(step.replace('_', '.')) * base}px`
   }
   return result
 }
@@ -327,7 +422,7 @@ export function insetSurfaceStepIndex(
   spacingRoles: Record<string, string> | undefined,
   spacing?: Record<string, string>,
 ): number {
-  const step = spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP
+  const step = spacingRefStep(spacingRoles?.[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP)
   const i = SPACING_STEPS.indexOf(step as SpacingStep)
   if (i !== -1) return i
   const pinned = roleDimensionPx(step)
@@ -871,10 +966,10 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
  * the export contract does not change.
  */
 export const RADIUS_ROLES: LayoutRole[] = [
-  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'xs' },
-  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'sm' },
-  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: 'lg' },
-  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: 'lg' },
+  { key: 'control', label: 'Control', description: 'Checkbox, nested child, menu item, inner thumb.', group: 'selectors', primitive: 'sm' },
+  { key: 'action', label: 'Action', description: 'Buttons, inputs, selects, OTP, tabs.', group: 'fields', primitive: 'lg' },
+  { key: 'container', label: 'Container', description: 'Cards, accordion, inline alerts.', group: 'boxes', primitive: '2xl' },
+  { key: 'overlay', label: 'Overlay', description: 'Modal, popover, command, dropdown.', group: 'boxes', primitive: '2xl' },
   { key: 'pill', label: 'Pill', description: 'Badge, chip, avatar, switch, progress.', group: 'selectors', primitive: 'full' },
 ]
 
@@ -894,7 +989,8 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * axis instead of derived from a single `lg`.
  *
  * `RADIUS_GROUP_STEPS` is DaisyUI's own ladder: at the standard ramp these are
- * 0 / 4 / 8 / 16 / 32px, i.e. 0, 0.25rem, 0.5rem, 1rem, 2rem exactly.
+ * 0 / 4 / 8 / 16 / 32px, i.e. 0, 0.25rem, 0.5rem, 1rem, 2rem exactly
+ * (none · sm · lg · 2xl · 4xl since v77 renamed the ramp; same pixels).
  *
  * `pill` is deliberately NOT an axis. It means "this is a circle" (avatar,
  * progress, switch track) rather than "this is somewhat rounded", so it stays
@@ -902,7 +998,7 @@ export const RADIUS_ROLES: LayoutRole[] = [
  * someone picked a tighter checkbox. That is the one place these groups diverge
  * from DaisyUI, whose selector axis also covers the badge.
  */
-export const RADIUS_GROUP_STEPS = ['none', 'xs', 'sm', 'lg', '2xl'] as const
+export const RADIUS_GROUP_STEPS = ['none', 'sm', 'lg', '2xl', '4xl'] as const
 export type RadiusGroupStep = (typeof RADIUS_GROUP_STEPS)[number]
 
 export interface RadiusGroup {
@@ -954,6 +1050,64 @@ export function radiusRolesFromGroups(
   return roles
 }
 
+/**
+ * ── Radius presets are ROLE bundles, not ramps ───────────────────────────────
+ *
+ * The static ramp IS the Corner Radius table (`RADIUS_STANDARD`) — the
+ * Variables tables are the source of truth and every widget just follows that
+ * token pattern. A preset therefore never regrades the ramp: it picks the three
+ * axes (Boxes · Fields · Selectors) ON that ramp, so choosing one and the three
+ * axis rows are one decision seen two ways. Sharp means every corner is 0;
+ * Rounded is exactly the default roles. Picking a preset also puts the ramp back
+ * on the standard table and clears per-viewport overrides — it is a whole look.
+ *
+ * (`RADIUS_PRESETS` — the old lg-graded ramps — stays for migrations and the
+ * retired wizard; no live control offers it.)
+ */
+export interface RadiusRolePreset {
+  label: string
+  description: string
+  picks: Record<'boxes' | 'fields' | 'selectors', RadiusGroupStep>
+}
+
+export const RADIUS_ROLE_PRESETS: RadiusRolePreset[] = [
+  { label: 'Sharp', description: 'Square corners everywhere — 0 / 0 / 0.', picks: { boxes: 'none', fields: 'none', selectors: 'none' } },
+  { label: 'Soft', description: 'A hint of rounding — boxes 8, fields 4, selectors 4.', picks: { boxes: 'lg', fields: 'sm', selectors: 'sm' } },
+  { label: 'Rounded', description: 'The standard — boxes 16, fields 8, selectors 4.', picks: { boxes: '2xl', fields: 'lg', selectors: 'sm' } },
+  { label: 'Pill', description: 'Generous — boxes 32, pill fields, selectors 8.', picks: { boxes: '4xl', fields: '4xl', selectors: 'lg' } },
+]
+
+/** The role map a preset produces (the `pill` role and any role outside the
+ *  three axes are left as they are). */
+export function radiusRolesForPreset(label: string, roles?: Record<string, string>): Record<string, string> | null {
+  const preset = RADIUS_ROLE_PRESETS.find((p) => p.label === label)
+  if (!preset) return null
+  let next = mergeLayoutRoles('radius', roles)
+  for (const group of RADIUS_GROUPS) next = applyRadiusGroup(group, next, preset.picks[group.key as keyof RadiusRolePreset['picks']])
+  return next
+}
+
+/** The preset the three axes currently match, or null (shown as Custom). */
+export function matchRadiusRolePreset(roles: Record<string, string> | undefined): string | null {
+  const hit = RADIUS_ROLE_PRESETS.find((p) =>
+    RADIUS_GROUPS.every((group) => radiusGroupStep(group, roles) === p.picks[group.key as keyof RadiusRolePreset['picks']]))
+  return hit?.label ?? null
+}
+
+/** Everything a preset writes: the standard ramp, the three axes, and no
+ *  per-viewport overrides. One patch, so every surface applies it the same. */
+export function radiusPresetPatch(label: string, roles?: Record<string, string>) {
+  const radiusRoles = radiusRolesForPreset(label, roles)
+  if (!radiusRoles) return null
+  return { radius: { ...RADIUS_STANDARD }, radiusRoles, radiusRoleViewports: {} as RadiusRoleViewports }
+}
+
+/** Resolved px of each axis for a preset on the standard ramp — for labels. */
+export function radiusPresetPx(preset: RadiusRolePreset): [number, number, number] {
+  const px = (step: string) => parseFloat(RADIUS_STANDARD[step as RadiusStep] ?? '0') || 0
+  return [px(preset.picks.boxes), px(preset.picks.fields), px(preset.picks.selectors)]
+}
+
 /** The rungs the roles occupied before v63, and the factor between the two
  *  ladders. The migration needs both; nothing else should. */
 export const LEGACY_RADIUS_ROLE_RUNGS: Record<string, string> =
@@ -967,7 +1121,210 @@ export function isGradedRadiusRamp(radius: Record<string, string> | undefined): 
   const lg = parseFloat(radius?.lg ?? '')
   if (!radius || !Number.isFinite(lg) || lg <= 0) return false
   const graded = scaleRadiusFromLg(lg)
-  return RADIUS_WORKING_STEPS.every((step) => radius[step] === graded[step])
+  // Migration-only (v67), so it judges the ramp by the steps that existed
+  // then — a pre-v77 ramp has no 5xl and must still read as graded.
+  return LEGACY_RADIUS_WORKING_STEPS.every((step) => radius[step] === graded[step])
+}
+
+/** The working steps before v77 added 5xl. Migrations only. */
+export const LEGACY_RADIUS_WORKING_STEPS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'] as const
+
+/** v77 rename: a pre-v77 step name → the step that carries the same pixels on
+ *  the Tailwind-named ramp (every name moved up two rungs). `4xl` has no
+ *  counterpart (it was 4 × the old lg, 64px at the default); a role on it is
+ *  pinned to its pixels instead. */
+export const RADIUS_V77_RENAME: Record<string, string> = {
+  none: 'none', xs: 'sm', sm: 'lg', md: 'xl', lg: '2xl', xl: '3xl', '2xl': '4xl', '3xl': '5xl', full: 'full',
+}
+
+/** Store v77: rename one slot's radius ramp + roles onto the Tailwind names
+ *  without moving any resolved pixel. The two new rungs between (xs, md) are
+ *  the midpoints the ratio ladder puts there. Hand-edited values survive —
+ *  they are carried by name, not re-graded. Mutates `slot`. */
+export function renameRadiusV77(
+  slot: { radius?: Record<string, string>; radiusRoles?: Record<string, string> } | null | undefined,
+  /** The ramp a slot's roles read when it carries none of its own (a theme
+   *  override that only re-points roles reads the system ramp). Pre-rename. */
+  inheritedRadius?: Record<string, string>,
+): void {
+  if (!slot || typeof slot !== 'object') return
+  const own = slot.radius && typeof slot.radius === 'object' ? slot.radius : undefined
+  const old = own ?? inheritedRadius
+  if (own) {
+    const px = (k: string) => parseFloat(own[k] ?? '')
+    const next: Record<string, string> = { none: own.none ?? '0px', full: own.full ?? '9999px' }
+    for (const [from, to] of Object.entries(RADIUS_V77_RENAME)) {
+      if (from === 'none' || from === 'full' || own[from] === undefined) continue
+      next[to] = own[from]
+    }
+    if (Number.isFinite(px('xs'))) next.xs = `${Math.round(px('xs') / 2)}px`
+    if (Number.isFinite(px('xs')) && Number.isFinite(px('sm'))) next.md = `${Math.round((px('xs') + px('sm')) / 2)}px`
+    slot.radius = next
+  }
+  if (slot.radiusRoles && typeof slot.radiusRoles === 'object') {
+    const roles: Record<string, string> = {}
+    for (const [role, step] of Object.entries(slot.radiusRoles)) {
+      if (typeof step !== 'string') continue
+      if (roleDimensionPx(step) !== null) roles[role] = step
+      else if (RADIUS_V77_RENAME[step]) roles[role] = RADIUS_V77_RENAME[step]
+      else {
+        const n = parseFloat(old?.[step] ?? '')
+        roles[role] = Number.isFinite(n) ? dimensionRoleValue(n) : step
+      }
+    }
+    slot.radiusRoles = roles
+  }
+}
+
+// ── Responsive radius (Desktop · Tablet · Mobile) ───────────────────────────
+// Corner rounding scales with the screen: the same semantic size steps DOWN on
+// smaller viewports so a card keeps its proportion on a phone. Ten responsive
+// tokens, each REFERENCING a static step (never a raw value):
+//
+//   step   none  sm   md   lg   xl   2xl  3xl  4xl  5xl  full
+//   Desk   none  sm   md   lg   xl   2xl  3xl  4xl  5xl  full
+//   Tab    none  xs   sm   md   lg   xl   2xl  3xl  4xl  full   one step down
+//   Mob    none  xs   sm   md   lg   xl   xl   2xl  3xl  full   two from 3xl up
+//
+// `xs` is the floor, not a responsive token: there is nothing smaller to step
+// to, so a role on xs (or pinned to a primitive) holds one value everywhere.
+// The radius ROLES follow this table — `radius.container` on 2xl is 16 / 12 /
+// 12 — which is what makes a component's corners responsive at all.
+
+export const RADIUS_RESPONSIVE_STEPS = ['none', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', 'full'] as const
+export type RadiusResponsiveStep = (typeof RADIUS_RESPONSIVE_STEPS)[number]
+
+export const RADIUS_RESPONSIVE: Record<RadiusResponsiveStep, Record<GridViewport, RadiusStep>> = {
+  none: { desktop: 'none', tablet: 'none', mobile: 'none' },
+  sm: { desktop: 'sm', tablet: 'xs', mobile: 'xs' },
+  md: { desktop: 'md', tablet: 'sm', mobile: 'sm' },
+  lg: { desktop: 'lg', tablet: 'md', mobile: 'md' },
+  xl: { desktop: 'xl', tablet: 'lg', mobile: 'lg' },
+  '2xl': { desktop: '2xl', tablet: 'xl', mobile: 'xl' },
+  '3xl': { desktop: '3xl', tablet: '2xl', mobile: 'xl' },
+  '4xl': { desktop: '4xl', tablet: '3xl', mobile: '2xl' },
+  '5xl': { desktop: '5xl', tablet: '4xl', mobile: '3xl' },
+  full: { desktop: 'full', tablet: 'full', mobile: 'full' },
+}
+
+/** Hand-set radius role values for the smaller viewports. A role with no
+ *  entry FOLLOWS Desktop one (or two) rungs down; an entry is a step or a
+ *  pinned primitive, exactly like a Desktop role value. Only what someone
+ *  changed is stored, so an untouched system carries `{}`. */
+export type RadiusRoleViewports = Partial<Record<'tablet' | 'mobile', Record<string, string>>>
+
+/** The value one radius role reads at a viewport: Desktop's own value; on a
+ *  smaller viewport the hand-set override, else Desktop stepped down. */
+export function radiusRoleAt(
+  roles: Record<string, string> | undefined,
+  viewports: RadiusRoleViewports | undefined,
+  role: string,
+  viewport: GridViewport,
+): string {
+  const desktop = mergeLayoutRoles('radius', roles)[role]
+  if (viewport === 'desktop') return desktop
+  return viewports?.[viewport]?.[role] ?? radiusAtViewport(desktop, viewport)
+}
+
+/** The static step a role value reads at a viewport. A pinned primitive or a
+ *  step with no responsive token (xs) returns itself. */
+export function radiusAtViewport(value: string, viewport: GridViewport): string {
+  const row = RADIUS_RESPONSIVE[value as RadiusResponsiveStep]
+  return row ? row[viewport] : value
+}
+
+/** The value to STORE when a radius role is picked as a px. A px that a
+ *  responsive step carries on this ramp is stored as that step, so the role
+ *  keeps stepping down on Tablet and Mobile; any other px is pinned (and then
+ *  holds one value everywhere, like any pinned primitive). */
+export function radiusRoleValueForPx(px: number, radius: Record<string, string> | undefined): string {
+  for (const step of RADIUS_RESPONSIVE_STEPS) {
+    if (parseDimension(radius?.[step]) === px) return step
+  }
+  return dimensionRoleValue(px)
+}
+
+/** Every radius role read at one viewport (steps moved down, pins kept). */
+export function radiusRolesAtViewport(
+  roles: Record<string, string> | undefined,
+  viewport: GridViewport,
+  viewports?: RadiusRoleViewports,
+): Record<string, string> {
+  const merged = mergeLayoutRoles('radius', roles)
+  if (viewport === 'desktop') return merged
+  return Object.fromEntries(Object.keys(merged).map((k) => [k, radiusRoleAt(merged, viewports, k, viewport)]))
+}
+
+/** Set (or clear) one role's override at a smaller viewport. Picking the value
+ *  it would follow anyway CLEARS the override, so the role keeps following
+ *  Desktop instead of freezing on today's derived step. */
+export function setRadiusRoleViewport(
+  viewports: RadiusRoleViewports | undefined,
+  roles: Record<string, string> | undefined,
+  role: string,
+  viewport: 'tablet' | 'mobile',
+  value: string | null,
+): RadiusRoleViewports {
+  const next: RadiusRoleViewports = { ...viewports, [viewport]: { ...viewports?.[viewport] } }
+  const follows = radiusAtViewport(mergeLayoutRoles('radius', roles)[role], viewport)
+  if (value === null || value === follows) delete next[viewport]![role]
+  else next[viewport]![role] = value
+  if (!Object.keys(next[viewport]!).length) delete next[viewport]
+  return next
+}
+
+/** The ten responsive tokens as CSS: `--radius-component-<step>` references
+ *  the static `--radius-<step>` (so a theme that redefines the ramp needs no
+ *  block of its own). Desktop on `:root`; Tablet / Mobile override only the
+ *  tokens that step down. */
+export function radiusComponentCss(viewport: GridViewport = 'desktop'): string[] {
+  return RADIUS_RESPONSIVE_STEPS
+    .filter((step) => viewport === 'desktop' || RADIUS_RESPONSIVE[step][viewport] !== step)
+    .map((step) => `--radius-component-${step}: var(--radius-${RADIUS_RESPONSIVE[step][viewport]});`)
+}
+
+/** The radius roles that alias responsive token `step` (a pinned role aliases
+ *  none). This is the link the editor shows in both directions: a role names
+ *  its token, a token names its roles. */
+export function rolesUsingRadiusToken(roles: Record<string, string> | undefined, step: string): string[] {
+  const merged = mergeLayoutRoles('radius', roles)
+  return LAYOUT_ROLES.radius.filter((r) => merged[r.key] === step).map((r) => r.key)
+}
+
+/** The responsive tokens grouped by the role group (Boxes · Fields ·
+ *  Selectors) whose roles alias them, plus `unassigned` for the ones no role
+ *  uses — available to a component that needs a specific size. A token two
+ *  groups share appears under both. */
+export function radiusTokensByRoleGroup(roles: Record<string, string> | undefined): Record<string, RadiusResponsiveStep[]> {
+  const merged = mergeLayoutRoles('radius', roles)
+  const out: Record<string, RadiusResponsiveStep[]> = {}
+  const used = new Set<string>()
+  for (const group of LAYOUT_ROLE_GROUPS.radius) {
+    const steps = LAYOUT_ROLES.radius.filter((r) => r.group === group.id).map((r) => merged[r.key])
+    out[group.id] = RADIUS_RESPONSIVE_STEPS.filter((step) => steps.includes(step))
+    out[group.id].forEach((step) => used.add(step))
+  }
+  out.unassigned = RADIUS_RESPONSIVE_STEPS.filter((step) => !used.has(step))
+  return out
+}
+
+/** `--radius-<role>` overrides for one smaller viewport — only the roles whose
+ *  value actually changes there. */
+export function radiusRolesViewportCss(
+  viewport: GridViewport,
+  roles: Record<string, string> | undefined,
+  radius: Record<string, string> | undefined,
+  viewports?: RadiusRoleViewports,
+): string[] {
+  const merged = mergeLayoutRoles('radius', roles)
+  const out: string[] = []
+  for (const role of LAYOUT_ROLES.radius) {
+    const value = merged[role.key]
+    const step = radiusRoleAt(merged, viewports, role.key, viewport)
+    if (step === value) continue
+    out.push(`--radius-${role.key}: ${layoutValueCss('radius', step, radius)};`)
+  }
+  return out
 }
 
 /** True when the stored radius roles are still the ones the pre-v67 ladder
@@ -979,16 +1336,53 @@ export function radiusRolesAreLegacyDefault(roles: Record<string, string> | unde
     .every(([key, rung]) => roles[key] === undefined || roles[key] === rung)
 }
 
+/**
+ * Spacing roles alias a RESPONSIVE token where one carries their Desktop value
+ * exactly (`gap-section` → `section-md`, 24 / 16 / 12), so they tighten on
+ * Tablet and Mobile without any Desktop pixel moving. Two stay on a static step
+ * on purpose: `none` (0 everywhere anyway) and `inset-surface` — its 20px has
+ * no responsive token, and moving every card to 16 would restyle every system
+ * and System Style; point it at `component-lg` in the table to opt in.
+ */
 export const SPACING_ROLES: LayoutRole[] = [
   { key: 'none', label: 'None', description: 'Collapse a gap or inset.', group: 'gap', primitive: '0' },
-  { key: 'gap-tight', label: 'Gap tight', description: 'Icon + label, chip dismiss, inline meta.', group: 'gap', primitive: '1' },
-  { key: 'gap-control', label: 'Gap control', description: 'Button groups, OTP cells, field + helper.', group: 'gap', primitive: '2' },
-  { key: 'gap-group', label: 'Gap group', description: 'Stacked fields, nav item groups.', group: 'gap', primitive: '4' },
-  { key: 'gap-section', label: 'Gap section', description: 'Between sections, modal header → body.', group: 'gap', primitive: '6' },
-  { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: '3' },
+  { key: 'gap-tight', label: 'Gap tight', description: 'Icon + label, chip dismiss, inline meta.', group: 'gap', primitive: 'component-xs' },
+  { key: 'gap-control', label: 'Gap control', description: 'Button groups, OTP cells, field + helper.', group: 'gap', primitive: 'component-sm' },
+  { key: 'gap-group', label: 'Gap group', description: 'Stacked fields, nav item groups.', group: 'gap', primitive: 'section-sm' },
+  { key: 'gap-section', label: 'Gap section', description: 'Between sections, modal header → body.', group: 'gap', primitive: 'section-md' },
+  { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: 'component-md' },
   { key: 'inset-surface', label: 'Inset surface', description: 'Card / modal / alert padding.', group: 'inset', primitive: '5' },
-  { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: '8' },
+  { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: 'layout-xs' },
 ]
+
+/** The static steps the spacing roles defaulted to before v79 — the migration
+ *  moves a role only while it still holds exactly this. */
+export const LEGACY_SPACING_ROLE_STEPS: Record<string, string> = {
+  'gap-tight': '1', 'gap-control': '2', 'gap-group': '4', 'gap-section': '6', 'inset-control': '3', 'inset-page': '8',
+}
+
+/** Store v79: move a slot's spacing roles that are still on their pre-v79
+ *  default step onto the responsive token with the same Desktop value, and
+ *  backfill the new static steps (0_5 · 1_5 · 2_5 · 24 · 32) from the slot's own
+ *  base. A hand-picked role and a hand-edited step stay as they are. */
+export function migrateSpacingV79(slot: { spacing?: Record<string, string>; spacingRoles?: Record<string, string> } | null | undefined): void {
+  if (!slot || typeof slot !== 'object') return
+  if (slot.spacing && typeof slot.spacing === 'object') {
+    const base = parseFloat(slot.spacing['1'] ?? '') || SPACING_DEFAULT_BASE
+    const graded = buildSpacingFromBase(base)
+    const next = { ...slot.spacing }
+    for (const step of SPACING_STEPS) if (next[step] === undefined) next[step] = graded[step]
+    slot.spacing = next
+  }
+  if (slot.spacingRoles && typeof slot.spacingRoles === 'object') {
+    const next = { ...slot.spacingRoles }
+    for (const role of SPACING_ROLES) {
+      const legacy = LEGACY_SPACING_ROLE_STEPS[role.key]
+      if (legacy && next[role.key] === legacy) next[role.key] = role.primitive
+    }
+    slot.spacingRoles = next
+  }
+}
 
 export const SIZE_ROLES: LayoutRole[] = [
   { key: 'compact', label: 'Compact', description: 'Toolbars, dense tables.', group: 'control', primitive: 'sm' },
@@ -1063,7 +1457,8 @@ export function mergeLayoutRoles(
   const out: Record<string, string> = {}
   for (const role of LAYOUT_ROLES[family]) {
     const hit = bag[role.key]
-    out[role.key] = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit) !== null) ? hit : role.primitive
+    const ok = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit) !== null || (family === 'spacing' && isSpacingResponsiveRef(hit)))
+    out[role.key] = ok ? hit : role.primitive
   }
   return out
 }
@@ -1092,8 +1487,11 @@ export function resolveLayoutRole(
   fallback = '',
 ): string {
   const spec = LAYOUT_ROLES[family].find((r) => r.key === key)
-  const step = roles?.[key] ?? spec?.primitive
-  if (!step) return fallback
+  const raw = roles?.[key] ?? spec?.primitive
+  if (!raw) return fallback
+  // A responsive spacing reference reads its Desktop step here; viewport-aware
+  // callers resolve the roles through `spacingRolesAtViewport` first.
+  const step = family === 'spacing' ? spacingRefStep(raw) : raw
   const pinned = roleDimensionPx(step)
   if (pinned !== null) return `${pinned}px`
   return primitives[step] || fallback
@@ -1246,23 +1644,71 @@ export function gridFrameMediaCss(
   grid: Record<string, string> | undefined,
   frame?: GridFrameModes | null,
   spacing?: Record<string, string>,
+  /** When given, the radius roles step down in the same two blocks (see
+   *  RADIUS_RESPONSIVE) — one media query per viewport, not two. */
+  radiusOpts?: { roles?: Record<string, string>; radius?: Record<string, string>; viewports?: RadiusRoleViewports },
+  /** When given, the responsive spacing tokens and the roles on them step down
+   *  in the same two blocks. */
+  spacingOpts?: { roles?: Record<string, string>; spacing?: Record<string, string> },
 ): string {
   const bps = extractBreakpoints(grid)
   const scales: GridFrameScales = { spacing, breakpoints: bps }
   const indent = (lines: string[]) => lines.map((l) => `    ${l}`).join('\n')
+  const radiusFor = (vp: GridViewport) => [
+    ...(radiusOpts ? [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusOpts.roles, radiusOpts.radius, radiusOpts.viewports)] : []),
+    ...(spacingOpts ? [...spacingResponsiveCss(vp), ...spacingRolesViewportCss(vp, spacingOpts.roles, spacingOpts.spacing)] : []),
+  ]
   return [
     `@media (max-width: ${breakpointTabletMax(roles, bps)}) {`,
     '  :root {',
-    indent(gridFrameTabletCss(frame, scales)),
+    indent([...gridFrameTabletCss(frame, scales), ...radiusFor('tablet')]),
     '  }',
     '}',
     '',
     `@media (max-width: ${breakpointMobileMax(roles, bps)}) {`,
     '  :root {',
-    indent(gridFrameMobileCss(frame, scales)),
+    indent([...gridFrameMobileCss(frame, scales), ...radiusFor('mobile')]),
     '  }',
     '}',
   ].join('\n')
+}
+
+/** Only the spacing tokens' and roles' tablet / mobile step-down, for a
+ *  Spacing-only export. */
+export function spacingMediaCss(
+  roles: Record<string, string> | undefined,
+  grid: Record<string, string> | undefined,
+  spacingRoles: Record<string, string> | undefined,
+  spacing: Record<string, string> | undefined,
+): string {
+  const bps = extractBreakpoints(grid)
+  const out: string[] = []
+  for (const [vp, max] of [['tablet', breakpointTabletMax(roles, bps)], ['mobile', breakpointMobileMax(roles, bps)]] as const) {
+    const decls = [...spacingResponsiveCss(vp), ...spacingRolesViewportCss(vp, spacingRoles, spacing)]
+    if (!decls.length) continue
+    if (out.length) out.push('')
+    out.push(`@media (max-width: ${max}) {`, '  :root {', ...decls.map((d) => `    ${d}`), '  }', '}')
+  }
+  return out.join('\n')
+}
+
+/** Only the radius roles' tablet / mobile step-down, for a Radius-only export. */
+export function radiusMediaCss(
+  roles: Record<string, string> | undefined,
+  grid: Record<string, string> | undefined,
+  radiusRoles: Record<string, string> | undefined,
+  radius: Record<string, string> | undefined,
+  viewports?: RadiusRoleViewports,
+): string {
+  const bps = extractBreakpoints(grid)
+  const out: string[] = []
+  for (const [vp, max] of [['tablet', breakpointTabletMax(roles, bps)], ['mobile', breakpointMobileMax(roles, bps)]] as const) {
+    const decls = [...radiusComponentCss(vp), ...radiusRolesViewportCss(vp, radiusRoles, radius, viewports)]
+    if (!decls.length) continue
+    if (out.length) out.push('')
+    out.push(`@media (max-width: ${max}) {`, '  :root {', ...decls.map((d) => `    ${d}`), '  }', '}')
+  }
+  return out.join('\n')
 }
 
 /** Nearest spacing step for a raw px (migrations, OTP recipes). */

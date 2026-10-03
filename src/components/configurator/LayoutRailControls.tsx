@@ -1,20 +1,23 @@
 import { useState, type ReactNode } from 'react'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import RailSelect from '../ui/RailSelect'
+import { radiusPresetOptions } from './radiusPresetOptions'
 import { RailControl } from './VariableCollectionRail'
 import {
-  RADIUS_PRESETS,
   SPACING_BASE_PRESETS,
   SPACING_DEFAULT_BASE,
   buildSpacingFromBase,
-  concentricRadiusRoles,
-  matchRadiusPreset,
-  scaleRadiusFromLg,
+  matchRadiusRolePreset,
+  radiusPresetPatch,
   type LayoutFamily,
 } from '../../lib/layoutTokens'
 
-// The GLOBAL controls of a lengths foundation — the dials that regrade a whole
-// ramp at once (Radius' preset and roundness, Spacing's base unit). They used to
+// The GLOBAL controls of a lengths foundation — Radius' preset (a bundle of
+// the three axis picks on the standard ramp) and Spacing's base unit (regrades
+// the spacing ramp). Radius had a free
+// Roundness slider too; it was removed because it lands between the four
+// presets on a "Custom" ramp nobody chose, which read as breaking them. A
+// specific corner is set per role in the table instead. They used to
 // sit in the rail of the Scale table; with Scale gone, the semantics page is the
 // foundation's only collection and these live in ITS rail, above the groups.
 //
@@ -43,48 +46,23 @@ function RulerIcon() {
 
 function RadiusRailControls({ previewTheme }: { previewTheme?: string }) {
   const { foundations, patch } = useThemeFoundations(previewTheme)
-  const radius = foundations.radius
-  // Regrading the ramp moves `radius.action`, and `radius.control` is the
-  // radius of whatever sits FLUSH inside it — so it has to move with it or the
-  // corners stop being concentric. `concentricRadiusRoles` only re-derives a
-  // role that was still tracking, so a hand-picked one survives.
-  const setRadius = (value: Record<string, string>) => patch({
-    radius: value,
-    radiusRoles: concentricRadiusRoles(radius, value, foundations.radiusRoles, foundations.spacing, foundations.spacingRoles),
-  })
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(() => matchRadiusPreset(radius))
-  const lgPx = pxToNum(radius.lg ?? '8px')
+  // A preset is a bundle of the three axis picks ON the standard ramp
+  // (RADIUS_ROLE_PRESETS) — read straight off the roles, so the select and the
+  // Boxes / Fields / Selectors rows can never disagree.
+  const selectedPreset = matchRadiusRolePreset(foundations.radiusRoles)
 
   return (
     <>
       <RailControl label="Preset">
         <RailSelect
           value={selectedPreset}
-          options={RADIUS_PRESETS.map((p) => ({ value: p.label, label: p.label, description: p.description }))}
+          options={radiusPresetOptions()}
           onChange={(label) => {
-            const preset = RADIUS_PRESETS.find((p) => p.label === label)
-            if (!preset) return
-            setSelectedPreset(preset.label)
-            setRadius(preset.values)
+            const next = radiusPresetPatch(label, foundations.radiusRoles)
+            if (next) patch(next)
           }}
           ariaLabel="Radius preset"
           icon={<CornerIcon />}
-        />
-      </RailControl>
-      <RailControl label="Roundness" trailing={`lg · ${radius.lg ?? '8px'}`}>
-        <input
-          type="range"
-          min={0}
-          max={40}
-          step={1}
-          value={Math.min(lgPx, 40)}
-          onChange={(e) => {
-            const next = scaleRadiusFromLg(Number(e.target.value), radius)
-            setRadius(next)
-            setSelectedPreset(matchRadiusPreset(next))
-          }}
-          className="w-full accent-fg cursor-pointer"
-          aria-label="Scale border radius"
         />
       </RailControl>
     </>

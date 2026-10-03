@@ -9,7 +9,7 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingResponsiveCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -140,12 +140,14 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
+  spacingResponsiveCss().forEach((line) => lines.push(`  ${line}`))
 
   lines.push('\n  /* Padding — per-side surface inset (alias of spacing-inset-surface) */')
   paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
+  radiusComponentCss().forEach((line) => lines.push(`  ${line}`))
 
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))
@@ -206,7 +208,11 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     lines.push('}')
   }
 
-  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing)}`)
+  // The same two viewport blocks carry the grid frame AND the radius roles
+  // stepping down (RADIUS_RESPONSIVE): one media query per viewport.
+  lines.push(`\n${gridFrameMediaCss(breakpointRoles, grid, gridFrame, spacing, { roles: radiusRoles, radius, viewports: store.radiusRoleViewports }, { roles: spacingRoles, spacing })}`)
+  // Themes with their own foundations step their OWN radius roles down too.
+  const themedRadius: { selector: string; roles?: Record<string, string>; radius: Record<string, string>; viewports?: RadiusRoleViewports; spacingRoles?: Record<string, string>; spacing: Record<string, string> }[] = []
 
   // Theme blocks contain semantics plus any complete foundation override.
   // Dark keeps the `.dark` convention; extra themes use data-theme.
@@ -277,6 +283,7 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
       }).forEach((line) => lines.push(`  ${line}`))
       if (kind !== 'dark') Object.entries(foundations.shadows).forEach(([k, v]) => lines.push(`  --shadow-${k}: ${v};`))
       gridFrameRootCss(foundations.gridFrame, { spacing: foundations.spacing, breakpoints: extractBreakpoints(foundations.grid) }).forEach((line) => lines.push(`  ${line}`))
+      themedRadius.push({ selector: themeSelector, roles: foundations.radiusRoles, radius: foundations.radius, viewports: foundations.radiusRoleViewports, spacingRoles: foundations.spacingRoles, spacing: foundations.spacing })
       lines.push(`  --panel-blur: ${foundations.panelBackground === 'translucent' ? 'blur(16px)' : 'none'};`)
     }
     if (darkGradients.length) {
@@ -289,6 +296,23 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
     }
     lines.push('}')
   })
+
+  if (themedRadius.length) {
+    const bps = extractBreakpoints(grid)
+    for (const [vp, max] of [['tablet', breakpointTabletMax(breakpointRoles, bps)], ['mobile', breakpointMobileMax(breakpointRoles, bps)]] as const) {
+      const blocks = themedRadius
+        .map((t) => ({ selector: t.selector, decls: [...radiusRolesViewportCss(vp, t.roles, t.radius, t.viewports), ...spacingRolesViewportCss(vp, t.spacingRoles, t.spacing)] }))
+        .filter((b) => b.decls.length)
+      if (!blocks.length) continue
+      lines.push(`\n@media (max-width: ${max}) {`)
+      for (const b of blocks) {
+        lines.push(`  ${b.selector} {`)
+        b.decls.forEach((d) => lines.push(`    ${d}`))
+        lines.push('  }')
+      }
+      lines.push('}')
+    }
+  }
 
   return lines.join('\n')
 }
@@ -440,6 +464,14 @@ ${readmeLengthTable('radius', radius)}
 | Role | Aliases |
 |------|---------|
 ${LAYOUT_ROLES.radius.map((r) => `| \`--radius-${r.key}\` | \`${layoutValueCss('radius', mergeLayoutRoles('radius', radiusRoles)[r.key], radius)}\` |`).join('\n')}
+
+### Responsive radius
+
+Corner rounding steps down on smaller screens: every responsive token points at a static step, one smaller on Tablet and one (two from 3xl up) smaller on Mobile. The radius roles follow it in the Tablet and Mobile media queries; in Figma, Dimension Semantics carries a value per viewport mode.
+
+| Token | Desktop | Tablet | Mobile |
+|---|---|---|---|
+${RADIUS_RESPONSIVE_STEPS.map((step) => `| \`${step}\` | ${(['desktop', 'tablet', 'mobile'] as const).map((vp) => { const to = RADIUS_RESPONSIVE[step][vp]; return `\`${to}\` · ${radius[to] ?? '—'}` }).join(' | ')} |`).join('\n')}
 
 ---
 

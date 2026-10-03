@@ -17,6 +17,8 @@ import {
   mergeGridFrame,
   applyDesktopFrameToGrid,
   restandardGrid,
+  renameRadiusV77,
+  migrateSpacingV79,
   nearestSpacingStep,
   scaleRadiusFromLg,
   SPACING_STEPS,
@@ -28,6 +30,7 @@ import {
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
   type GridFrameModes,
+  type RadiusRoleViewports,
 } from '../lib/layoutTokens'
 import type { PhosphorWeight } from '../lib/phosphorIcons'
 import { DEFAULT_NEUTRAL_TINT, neutralFromBrand, recommendStateColors, type ColorAlgorithm, type ColorNaming, type NeutralTint } from '../lib/colorUtils'
@@ -421,6 +424,9 @@ export interface DesignSnapshot {
   padding: Record<string, string>
   /** Intent aliases → primitive step keys. Never raw px. */
   radiusRoles: Record<string, string>
+  /** Hand-set radius role values on Tablet / Mobile; absent ⇒ follow Desktop
+   *  one (or two) rungs down (RADIUS_RESPONSIVE). */
+  radiusRoleViewports: RadiusRoleViewports
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
   selectorRoles: Record<string, string>
@@ -575,6 +581,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     strokeRoles: defaultLayoutRoles('stroke'),
     breakpointRoles: defaultLayoutRoles('breakpoint'),
     gridFrame: mergeGridFrame(GRID_FRAME_STANDARD),
+    radiusRoleViewports: {},
     panelBackground: 'solid',
     statusAction: 'solid',
     iconWeight: 'regular',
@@ -880,6 +887,7 @@ interface DesignStore {
   setPadding: (p: Record<string, string>) => void
 
   radiusRoles: Record<string, string>
+  radiusRoleViewports: RadiusRoleViewports
   spacingRoles: Record<string, string>
   sizeRoles: Record<string, string>
   selectorRoles: Record<string, string>
@@ -1715,7 +1723,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 76,
+      version: 79,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3011,6 +3019,56 @@ export const useDesignStore = create<DesignStore>()(
           regrid(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) regrid(sys?.snapshot)
+          }
+        }
+        if (version < 77) {
+          // v76→v77: the radius ramp takes the Tailwind names (lg 8, plus 5xl)
+          // and the roles move with it, so no resolved pixel changes — the
+          // pre-v77 ramp was graded from lg 16, i.e. every name sat two rungs
+          // higher. Renamed by name, never re-graded, so hand-edited values
+          // survive. Theme overrides read the system ramp captured BEFORE it
+          // is renamed.
+          const rename = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            const systemRamp = state.radius && typeof state.radius === 'object' ? { ...state.radius } : undefined
+            renameRadiusV77(state)
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) renameRadiusV77(foundations[key], systemRamp)
+            }
+          }
+          rename(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) rename(sys?.snapshot)
+          }
+        }
+        if (version < 78) {
+          // v77→v78: per-viewport radius role overrides. Empty = every role
+          // follows Desktop one (or two) rungs down — what v77 already shipped.
+          const seed = (state: any) => {
+            if (state && typeof state === 'object' && !state.radiusRoleViewports) state.radiusRoleViewports = {}
+          }
+          seed(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) seed(sys?.snapshot)
+          }
+        }
+        if (version < 79) {
+          // v78→v79: responsive spacing. Roles still on their old default step
+          // move to the responsive token with the same Desktop value (no
+          // Desktop pixel moves), and the new static steps are backfilled from
+          // each slot's own base. Detect-don't-assume: hand-picked roles stay.
+          const respace = (state: any) => {
+            if (!state || typeof state !== 'object') return
+            migrateSpacingV79(state)
+            const foundations = state.themeFoundations
+            if (foundations && typeof foundations === 'object') {
+              for (const key of Object.keys(foundations)) migrateSpacingV79(foundations[key])
+            }
+          }
+          respace(persisted)
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) respace(sys?.snapshot)
           }
         }
         return persisted

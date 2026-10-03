@@ -23,12 +23,8 @@ import {
   type TypeWeightKey,
 } from '../../lib/typeRoles'
 import SemanticGroupRail from './SemanticGroupRail'
-import VariablesPreviewPane from './VariablesPreviewPane'
-import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
-import { TypeRolesPreview } from '../preview/atoms/TypeRolesPreview'
-import { PlatformBoard } from '../preview/artefacts/DeviceFrame'
 import { useI18n } from '../../lib/i18n'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
@@ -134,7 +130,6 @@ export default function TypeSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
-  previewAppearance,
   previewPlatform = 'desktop',
 }: {
   tabBar?: ReactNode
@@ -156,7 +151,6 @@ export default function TypeSemantics({
   const [group, setGroup] = useState<TypeFocus>('all')
   const [localQuery, setLocalQuery] = useState('')
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
   const { t } = useI18n()
   const typeViewport = asTypeViewport(previewPlatform)
   const platformLabel =
@@ -207,15 +201,6 @@ export default function TypeSemantics({
   const rows = typeRolesInGroup(group).filter((r) =>
     !q || r.key.includes(q) || r.label.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
   )
-  const revealFromPreview = (key: string) => {
-    const spec = TYPE_ROLE_BY_KEY[key]
-    if (!spec) return
-    if (!controlled) setLocalQuery('')
-    setGroup(spec.group)
-    setFlashKey(key)
-    window.setTimeout(() => document.getElementById(`type-role-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40)
-    window.setTimeout(() => setFlashKey(null), 1400)
-  }
 
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
@@ -326,11 +311,6 @@ export default function TypeSemantics({
               })}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
-            <PlatformBoard t={previewTokens} fit="fill">
-              <TypeRolesPreview tokens={previewTokens} focus={group} onEditRole={revealFromPreview} />
-            </PlatformBoard>
-          </VariablesPreviewPane>
           </div>
         </div>
       </div>

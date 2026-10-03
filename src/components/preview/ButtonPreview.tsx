@@ -82,6 +82,8 @@ export interface PreviewTokens {
   selector?: Record<string, string>
   stroke?: Record<string, string>
   radiusRoles?: Record<string, string>
+  /** Hand-set radius roles on Tablet / Mobile — `radiusRoleOf` reads them. */
+  radiusRoleViewports?: import('../../lib/layoutTokens').RadiusRoleViewports
   spacingRoles?: Record<string, string>
   sizeRoles?: Record<string, string>
   selectorRoles?: Record<string, string>

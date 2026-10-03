@@ -222,7 +222,7 @@ describe('roles pinned to a Dimension primitive (layoutTokens)', () => {
     const { mergeLayoutRoles } = await import('../layoutTokens')
     const merged = mergeLayoutRoles('radius', { container: 'dimension-21', action: 'dimension-nope', control: 'xs' })
     expect(merged.container).toBe('dimension-21')
-    expect(merged.action).toBe('sm') // default, the malformed value is repaired
+    expect(merged.action).toBe('lg') // default, the malformed value is repaired
     expect(merged.control).toBe('xs')
   })
 
@@ -238,8 +238,8 @@ describe('roles pinned to a Dimension primitive (layoutTokens)', () => {
 
   it('a pinned role is default only when it resolves to the default step', async () => {
     const { layoutRoleIsDefault } = await import('../layoutTokens')
-    const radius = { sm: '8px', lg: '16px' }
-    expect(layoutRoleIsDefault('radius', 'action', 'sm', radius)).toBe(true)
+    const radius = { lg: '8px', '2xl': '16px' }
+    expect(layoutRoleIsDefault('radius', 'action', 'lg', radius)).toBe(true)
     expect(layoutRoleIsDefault('radius', 'action', 'dimension-8', radius)).toBe(true)
     expect(layoutRoleIsDefault('radius', 'action', 'dimension-9', radius)).toBe(false)
     expect(layoutRoleIsDefault('radius', 'action', 'dimension-8')).toBe(false) // no scale to compare against

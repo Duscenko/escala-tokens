@@ -13,7 +13,7 @@ import {
 } from './colorControls'
 import { resolveThemePalette } from '../../lib/themeSources'
 import { TYPE_SCALE_KEYS } from '../../lib/typographyStandard'
-import { RADIUS_PRESETS, matchRadiusPreset } from '../../lib/layoutTokens'
+import { RADIUS_ROLE_PRESETS, matchRadiusRolePreset, radiusPresetPatch, radiusPresetPx } from '../../lib/layoutTokens'
 import { SHADOW_PRESETS, matchShadowPreset } from './Step7_Shadow'
 import { ICON_AI_SOURCES, getIconAiSource, type IconAiSourceKey } from '../../lib/iconLibraries'
 import { PADDING_STANDARD } from '../../lib/layoutTokens'
@@ -541,7 +541,7 @@ export function QuickEditSections({
     errorColor, warningColor, successColor, infoColor,
     customColors, removeCustomColor,
     neutralTint,
-    radius, setRadius, panelBackground, setPanelBackground,
+    setRadius, panelBackground, setPanelBackground,
     typography, setTypography,
     iconAiSource, setIconAiSource,
     padding, setPadding,
@@ -551,7 +551,7 @@ export function QuickEditSections({
   const applyGrayColor = useApplyGrayColor()
   const applyStateColor = useApplyStateColor()
   useEnsureColorScales()
-  const activeRadius = matchRadiusPreset(radius)
+  const activeRadius = matchRadiusRolePreset(store.radiusRoles)
   const activeShadow = matchShadowPreset(shadows)
 
   // While a custom style theme is previewed, the accent/neutral chips read (and
@@ -747,17 +747,21 @@ export function QuickEditSections({
           ariaLabel="Radius preset"
           value={activeRadius}
           onChange={(label) => {
-            const preset = RADIUS_PRESETS.find((p) => p.label === label)
-            if (preset) setRadius(preset.values)
+            // Same bundle as Foundations · Radius: three axis picks on the standard ramp.
+            const next = radiusPresetPatch(label, store.radiusRoles)
+            if (!next) return
+            setRadius(next.radius)
+            store.setRadiusRoles(next.radiusRoles)
+            useDesignStore.setState({ radiusRoleViewports: next.radiusRoleViewports })
           }}
-          options={RADIUS_PRESETS.map((p) => ({
+          options={RADIUS_ROLE_PRESETS.map((p) => ({
             key: p.label,
             label: p.label,
             title: p.description,
             icon: (
               <span
                 className="w-2.5 h-2.5 flex-shrink-0 border-t-[1.5px] border-l-[1.5px] border-current"
-                style={{ borderTopLeftRadius: p.values.md }}
+                style={{ borderTopLeftRadius: `${Math.min(radiusPresetPx(p)[0] / 3, 10)}px` }}
                 aria-hidden
               />
             ),

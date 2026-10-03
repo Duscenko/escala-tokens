@@ -28,6 +28,10 @@ import {
   BREAKPOINT_STEPS,
   gridFrameRootCss,
   gridFrameMediaCss,
+  radiusMediaCss,
+  radiusComponentCss,
+  spacingResponsiveCss,
+  spacingMediaCss,
   breakpointMobileMax,
   breakpointTabletMax,
   mergeGridFrame,
@@ -322,6 +326,8 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   const lines = Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${dimensionVar(v)};`)
   const family = layoutFamilyOf(section)
   if (family) {
+    if (family === 'radius') lines.push(...radiusComponentCss())
+    if (family === 'spacing') lines.push(...spacingResponsiveCss())
     lines.push(...layoutRoleCssFor(family, store))
   }
   if (simple.extra) {
@@ -377,6 +383,15 @@ function withDimensions(lines: string[]): string[] {
 
 function cssFor(section: SectionKey, store: Store, cf: ColorFormat, opts: SectionExportOptions = {}): string {
   const root = wrapRoot(withDimensions(cssLines(section, store, cf, opts)))
+  if (section === 'spacing') {
+    const media = spacingMediaCss(store.breakpointRoles, store.grid, store.spacingRoles, store.spacing)
+    return media ? `${root}\n\n${media}` : root
+  }
+  if (section === 'radius') {
+    // Radius alone: just its roles stepping down, in the grid's own two blocks.
+    const media = radiusMediaCss(store.breakpointRoles, store.grid, store.radiusRoles, store.radius, store.radiusRoleViewports)
+    return media ? `${root}\n\n${media}` : root
+  }
   if (section !== 'grid') return root
   return `${root}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing)}`
 }
@@ -779,7 +794,7 @@ function buildFullExport(store: Store, format: ExportFormat, cf: ColorFormat, op
         if (i) lines.push('')
         lines.push(`/* ═══ ${cap(s)} ═══ */`, ...body)
       })
-      return `${wrapRoot(withDimensions(lines))}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing)}`
+      return `${wrapRoot(withDimensions(lines))}\n\n${gridFrameMediaCss(store.breakpointRoles, store.grid, store.gridFrame, store.spacing, { roles: store.radiusRoles, radius: store.radius, viewports: store.radiusRoleViewports }, { roles: store.spacingRoles, spacing: store.spacing })}`
     }
     case 'tailwind':
       return twConfig(Object.assign({}, ...ALL_SECTIONS.map((s) => twExtend(s, store, cf))))

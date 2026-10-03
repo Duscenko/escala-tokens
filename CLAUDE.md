@@ -1272,9 +1272,9 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
     to be the only separator or you're judging the border.
   - **The rail's dropdown is `ui/RailSelect`, one component, wrapped in `RailControl`.**
     Gradients' type, Radius' and Shadow's presets and Spacing's base unit are the same
-    control, and it was hand-rolled three times (identical `h-9 rounded-[13px]
-    border-line-strong` trigger, chevron and outside-click listbox) before being
-    extracted. It takes `fallbackLabel` — Radius shows **"Custom"** when the ramp matches
+    control, and it was hand-rolled three times (identical trigger, chevron and
+    outside-click listbox) before being extracted. Its shell is THE workspace dropdown
+    (`SELECT_*`, see below), no longer its own `rounded-[13px]` silhouette. It takes `fallbackLabel` — Radius shows **"Custom"** when the ramp matches
     no preset, where the old Sharp/Soft/Rounded/Pill pill row just showed nothing
     selected, which read as "no preset applied yet".
   - Radius' presets, Spacing's base units and Shadow's presets all moved OUT of
@@ -2375,6 +2375,130 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > non-4px spacing base pin the standard via `standardGridFrameFor` — a layout grid
 > is not a property of the spacing base. `gridViewportStandard.test.ts` locks all of it.
 >
+> **UPDATE (store v77): RADIUS is the Corner Radius table, and it is RESPONSIVE.**
+> This supersedes the step NAMES in the radius notes above — every pixel they quote
+> still holds. The ramp is Tailwind v4's names + a 5xl: none 0 · xs 2 · sm 4 · md 6 ·
+> lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full (`RADIUS_STANDARD` =
+> Rounded, lg 8; presets Sharp/Soft/Rounded/Pill are lg 4/6/8/12). The pre-v77 ramp
+> was graded from lg 16, so every name sat two rungs higher; `renameRadiusV77` moves
+> ramps + roles by NAME (`RADIUS_V77_RENAME`: xs→sm, sm→lg, md→xl, lg→2xl, xl→3xl,
+> 2xl→4xl, 3xl→5xl; a role on old 4xl is pinned to its px), never re-grades, and the
+> test proves no role pixel moves at any old preset. Roles now sit on control sm ·
+> action lg · container/overlay 2xl; the three axes on `RADIUS_GROUP_STEPS` none ·
+> sm · lg · 2xl · 4xl (still 0/4/8/16/32).
+> - **`RADIUS_RESPONSIVE`** — ten tokens (none · sm … 5xl · full), each REFERENCING a
+>   static step: one smaller on Tablet, one smaller on Mobile — two from 3xl up. A
+>   role on a responsive step follows it (card 16 / 12 / 12, button 8 / 6 / 6); a
+>   role PINNED to a px and the `xs` floor hold one value everywhere. That is why
+>   the Variables radius picker stores a STEP when the px matches one
+>   (`radiusRoleValueForPx`) — pinning would silently kill responsiveness.
+> - It ships everywhere viewports already do: CSS steps `--radius-<role>` down in the
+>   same tablet/mobile media blocks as the grid (`radiusRolesViewportCss`, themes
+>   with their own foundations get scoped blocks); tokens.json carries
+>   `radiusResponsive`; the plugin (≥ 0.3.5) writes `Radius/component/<step>` with a
+>   value per Desktop · Tablet · Mobile mode aliasing the static `Radius/<step>`, and
+>   `Radius/role/*` aliases the component token. Previews read it through
+>   `radiusRoleOf` + `previewPlatform`, and the Radius section shows the Platform
+>   switch. `radiusResponsive.test.ts` locks the table, the roles and the rename.
+> - **The Variables editor shows ONE viewport at a time, like Grid and Type**
+>   (`RadiusSemanticsTable`) — the one picked in the rail's Platform switch — and
+>   **every viewport edits with the same Dimension-primitive picker.** Desktop sets
+>   the role. Tablet / Mobile open on the value they FOLLOW (Desktop one — two
+>   from 3xl — rungs down, "Follows Desktop: 2xl ↓ 1"); picking another value
+>   stores an override for THAT viewport only (`radiusRoleViewports`, store v78,
+>   `setRadiusRoleViewport`). Picking the followed value again, or the row's
+>   Reset, clears it, so a role never freezes on today's derived step. Only
+>   overrides are stored — an untouched system carries `{}` and ships exactly what
+>   v77 did. They reach CSS (the tablet/mobile blocks, `radiusRoleAt`), tokens.json
+>   (`radiusRoleViewports`, root + per theme), the preview (`radiusRoleOf`) and the
+>   plugin (≥ 0.3.6: an overridden role gets a value per mode — Desktop and any
+>   viewport without its own value alias `Radius/component/<step>`, an override
+>   aliases the STATIC `Radius/<step>` or the pinned primitive, never a component
+>   token, which would step down a second time). Comparing all three side by
+>   side is Docs → Radius' job.
+> - **Radius is TWO COLLECTIONS, one per layer — never one mixed list.** The chain is
+>   `radius-container → radius-component-2xl → radius-2xl`. A "Responsive (10)" rail
+>   GROUP beside Boxes · Fields · Selectors was tried and reverted: a layer is not a
+>   role group, and "All 15" summed roles with tokens.
+>   - **Radius semantics** — the 5 roles, grouped Boxes · Fields · Selectors. Each
+>     row names the token it aliases (`→ radius-component-2xl`), or "Pinned".
+>   - **Radius responsive** — the 10 tokens, read-only, grouped by the SAME words:
+>     the tokens each role group's roles alias (`radiusTokensByRoleGroup`), plus
+>     **Unassigned** for the ones no role uses (available to a component that needs
+>     an exact size). A "Used by" column lists the roles (`rolesUsingRadiusToken`);
+>     each chip switches back to Radius semantics and flashes that role
+>     (`useSetVariableCollection`). Both views read the rail's Platform switch.
+>   CSS ships the tokens too: `--radius-component-<step>: var(--radius-<step>)` on
+>   `:root`, overridden in the tablet/mobile blocks (`radiusComponentCss`); they
+>   reference the static step, so a theme that redefines the ramp needs no block of
+>   its own.
+> - **A radius PRESET is a bundle of the three axis picks, never a ramp.** The
+>   static ramp is the Corner Radius table and the Variables tables are the truth;
+>   widgets only follow that token pattern. `RADIUS_ROLE_PRESETS`: Sharp 0·0·0 ·
+>   Soft 8·4·4 · Rounded 16·8·4 (= the default roles) · Pill 32·32·8 (Boxes ·
+>   Fields · Selectors on the standard ramp; `pill` stays `full`). Applying one
+>   (`radiusPresetPatch`) writes the axes, puts the ramp back on `RADIUS_STANDARD`
+>   and clears per-viewport overrides — one patch every surface uses (Variables
+>   rail, Theme preview's Radius edition, `QuickFoundationsPanel`). The select reads
+>   `matchRadiusRolePreset(radiusRoles)`, so moving one axis row off the bundle reads
+>   Custom. This REPLACED presets that regraded the ramp (lg 4/6/8/12): picking
+>   "Sharp" then still left boxes at 8, because the roles stayed on their steps —
+>   the select and the rows below it disagreed. `RADIUS_PRESETS` (the ramps) stays
+>   only for migrations and the retired wizard. Options show their three px
+>   (`radiusPresetOptions`, shared).
+> - **No Roundness slider.** It regraded the ramp to any `lg` and landed between
+>   the four presets on a "Custom" ramp nobody chose, which read as breaking them.
+>   The rail keeps the Preset select only (each option shows its corner + `lg`).
+>
+> **Variables is TABLES ONLY — the `VariablesPreviewPane` aside is DELETED.** Each
+> semantic table (Color semantics, Type, Grid, Layout) rendered a live specimen
+> beside itself; it rendered unreliably and squeezed the tables, and Theme preview
+> already is the place a system is looked at. Its specimens
+> (`SEMANTIC_SPECIMENS`, `GridPreview`, `TypeRolesPreview`, `RadiusRolesPreview`,
+> `LayoutRolesPreview`) are still used by `PreviewPanel`; `PlatformBoard` went with
+> the pane. Spacing lost its Platform switch for the same reason: its values do not
+> vary per viewport, so the switch only ever drove that preview. Don't add a
+> preview aside back to Variables.
+>
+> **SPACING follows the same three layers as radius — static · responsive · role — and
+> stays separate from SIZING (store v79).** Spacing is the AIR between and inside things
+> (gap, padding, margin) and TIGHTENS on small screens; sizing is the OBJECT (control
+> height, hit area, selector box) and holds or GROWS on mobile (touch). Merging them would
+> make one token shrink and grow at once, so they share Dimension primitives and nothing
+> else.
+> - **Static:** `SPACING_STEPS` is the Spacing Scale reference + Tailwind's 40 — 0 · 2 · 4
+>   · 6 · 8 · 10 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64 · 96 · 128 at the 4px base.
+>   Half steps are keyed `0_5` / `1_5` / `2_5` (a `.` would split a Figma path and is not
+>   a CSS identifier character); display as `space-1.5`.
+> - **Responsive:** `SPACING_RESPONSIVE` — Component · Section · Layout × xl…none (18),
+>   each a reference to a static STEP per viewport (component-md 12/12/8, section-md
+>   24/16/12, layout-xs 32/16/8 …). Steps, not px, so the **base unit dial stays**: a
+>   5px-base style scales the whole thing and still steps down. (Contrast with radius'
+>   Roundness slider, which was removed: that one landed between presets.)
+> - **Roles alias a token where one carries their Desktop value EXACTLY** —
+>   gap-tight→component-xs, gap-control→component-sm, inset-control→component-md,
+>   gap-group→section-sm, gap-section→section-md, inset-page→layout-xs. No Desktop pixel
+>   moved (asserted). `inset-surface` stays on step 5 (20px) on purpose: no token carries
+>   20 on Desktop and moving every card to 16 would restyle every system and System
+>   Style; `none` stays 0. Both can be re-pointed in the table. `migrateSpacingV79` moves
+>   only roles still on their old default step and backfills the new static steps from
+>   each slot's own base.
+> - **One resolver:** a role value may be a step, a pinned `dimension-N`, or a responsive
+>   ref; `spacingRefStep` maps a ref to its step and is applied inside `roleValuePx` /
+>   `resolveLayoutRole` / `mergeLayoutRoles`, so every existing call site resolves Desktop
+>   unchanged. Viewport-aware callers use `spacingRolesAtViewport` (the preview does).
+> - **Exports:** CSS `--spacing-<family>-<size>: var(--spacing-<step>)` on `:root` +
+>   tablet/mobile overrides for the tokens and the roles on them (same media blocks as
+>   grid/radius; themed blocks too). tokens.json keeps **`spacingRoles` as Desktop static
+>   steps** — an older plugin or agent reads exactly what it always did — and adds
+>   `spacingRoleRefs` + `spacingResponsive`. Plugin ≥ 0.3.7 writes
+>   `Spacing/<family>/<size>` per viewport mode (aliasing `Spacing/<step>`) and aliases a
+>   ref'd role to it.
+> - **Editor:** two collections like radius — Spacing semantics (roles, Gap · Inset; the
+>   picker chooses a responsive token or a fixed step, the same choice on every
+>   platform) and Spacing responsive (18 tokens, Component · Section · Layout, "Used by"
+>   chips back to the role). One viewport at a time via the Platform switch.
+
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE
 > `Dimension primitives` collection (read-only — a primitive is its value — with
 > "Used by"). Radius / Spacing / Grid / Sizes / Stroke own exactly ONE collection
@@ -2821,6 +2945,22 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > exactly the ramp requested — verified through `makeDesignDefaults()`, not just the
 > constant.
 
+> **ONE dropdown shell for the whole workspace — `SELECT_*` in `themeWorkspaceLayout.ts`.**
+> Every select-style trigger (`RailSelect` — the Variables rail presets/base unit — Theme
+> preview's `Menu` for fonts, the Radius edition's Preset, `ColorSelect`'s full / pill
+> triggers, the state-colours trigger, `ThemePanel`'s slot pickers) composes
+> `SELECT_SHELL` + `SELECT_FOCUS` (or uses `SELECT_TRIGGER`), and every listbox they open
+> uses `SELECT_LIST` / `SELECT_OPTION`. The shell is the chrome control radius
+> `rounded-lg` — the same `RAIL_SURFACE_RADIUS` the edition cards and "Go to advanced
+> edition" use — with a softened `line-strong` edge and an `elevated` fill. They had
+> drifted into two silhouettes (`rounded-[13px] bg-surface border-line-strong` beside
+> `rounded-lg bg-elevated`), so a Preset select and a font menu in the SAME card read as
+> two different controls (reported). Measured after: identical radius, border, fill and
+> height. **Not in scope, deliberately:** the 42px icon squircles (`FoundationIconRail`,
+> `ThemeSwitcher`, `ThemeToggle`, `rounded-[13px]`) and the CTA buttons — those are
+> different controls with their own rule. A new dropdown imports these constants; it does
+> not hand-roll a trigger.
+
 > **There is ONE "open a token, edit its value" surface in the Color hub:
 > `TokenDetailsModal` (`colorControls.tsx`).** Semantics' role rows and Primitives' tone
 > rows both open it — same shell (Token Details header + Reset · Name · copyable CSS-var
@@ -2950,8 +3090,8 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > instead (`rounded-[13px]`), which looked deliberate in isolation but inconsistent once
 > the State Colors ramps (still `rounded-md`) were visible in the same scroll — don't
 > special-case this cell's radius again without checking it against the ramps below it.
-> `ColorSelect`'s `pill` variant is still `rounded-[13px]` though (unrelated call — that's
-> the State Colors hex trigger, not a swatch grid, matching the dropdown it sits beside).
+> `ColorSelect`'s triggers (all variants) now use the workspace dropdown shell
+> (`SELECT_SHELL`, `rounded-lg`) — see "ONE dropdown shell" below.
 
 > **Editing a family's color.** Each row of the Color-families nav carries a pencil AND a
 > clickable swatch that both open the same `editFamily` popover (`ColorPickerPanel` for

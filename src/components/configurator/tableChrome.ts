@@ -150,7 +150,12 @@ export function tableHeaderClass(
   ].join(' ')
 }
 
-/** A cell in that header. */
+/** A cell in that header — EVERY header cell, with `pl-4` on the first and
+ *  `px-3` on the rest, and an `aria-hidden` span for a trailing action column.
+ *  Hand-rolled `px-3 py-2.5` cells were the second time the lattice broke: no
+ *  column rule (the body drew one, the header didn't) and labels pinned to the
+ *  top of the 52px band instead of centred. Found on Size, Stroke, Grid ·
+ *  Viewport, Radius and Spacing; all now use this. */
 export const TABLE_HEAD_CELL = `flex items-center ${TABLE_CELL_DIVIDER}`
 
 /**

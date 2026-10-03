@@ -35,52 +35,6 @@ export function artefactSourceWidth(t: PreviewTokens): number {
   return desktopArtefactWidthPx(frame, bps, t.breakpointRoles?.desktop ?? 'md')
 }
 
-/** Outer board for Theme Preview collage / Variables specimens. Uses the
- *  PLATFORM grid frame (columns + page margin) without claiming true-size
- *  type — ScaledModule photographs already ran at their own source width. */
-export function PlatformBoard({
-  t, children, fit = 'viewport',
-}: {
-  t: PreviewTokens
-  children: ReactNode
-  /** `viewport` caps to the phone / desktop container. `fill` only applies
-   *  the page margin — the Variables aside is ~20rem, not a 1280px canvas. */
-  fit?: 'viewport' | 'fill'
-}) {
-  const platform: GridViewport = t.previewPlatform ?? 'desktop'
-  const bps = extractBreakpoints(t.grid)
-  const frame = resolveGridFrame(platform, t.gridFrame, t.spacing, bps)
-  const isMobile = platform === 'mobile'
-  const isTablet = platform === 'tablet'
-  const desktopWidth = desktopArtefactWidthPx(frame, bps, t.breakpointRoles?.desktop ?? 'md')
-  const maxWidth = fit === 'fill' ? undefined : (isMobile ? MOBILE_MAX : isTablet ? TABLET_ARTEFACT_SOURCE : desktopWidth)
-
-  return (
-    <div className="flex flex-col gap-2 min-w-0">
-      <div
-        style={{
-          width: '100%',
-          maxWidth,
-          margin: '0 auto',
-          background: t.surface,
-          border: `1px solid ${t.borderDefault || t.border || '#eaecf0'}`,
-          borderRadius: radiusRoleOf(t, 'container', '16px'),
-          padding: frame.margin,
-          // Specimens (collage elevation, Variables cards) paint past the
-          // content box; clipping would hide the shadow this board exists to
-          // frame.
-          overflow: 'visible',
-        }}
-      >
-        {children}
-      </div>
-      <p className="text-mini text-fg-faint text-center tabular-nums">
-        {platformCaption(platform)} · {frame.columns} col · page margin {frame.margin} from Grid
-      </p>
-    </div>
-  )
-}
-
 /** Photograph `DeviceFrame` at the PLATFORM's true width, then `scale()` it
  *  into the canvas. Theme Preview is ~500px; a 1280 desktop board must not
  *  re-flow the collage into three columns and call that desktop. */

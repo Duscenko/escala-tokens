@@ -77,3 +77,21 @@ export function measureShellDrawerInsets(): ShellDrawerInsets {
 
   return { top, bottom }
 }
+
+// ── THE dropdown ─────────────────────────────────────────────────────────────
+// Every select-style trigger in the workspace (rail presets, Theme preview's
+// font / radius menus, colour family selects, the theme slot pickers) and every
+// listbox it opens share ONE shell: the chrome control radius `rounded-lg`
+// (8px — the same `RAIL_SURFACE_RADIUS` the edition cards use), a softened
+// `line-strong` edge and an `elevated` fill. They had drifted into two
+// silhouettes (`rounded-[13px] bg-surface border-line-strong` beside
+// `rounded-lg bg-elevated`), so two dropdowns in one card read as two controls.
+// A trigger composes `SELECT_SHELL` + `SELECT_FOCUS` with its own size/padding;
+// a plain text select uses `SELECT_TRIGGER`.
+export const SELECT_SHELL = 'rounded-lg border border-line-strong/80 bg-elevated/70 hover:border-line-strong hover:bg-elevated transition-colors'
+export const SELECT_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+export const SELECT_TRIGGER = `w-full h-9 px-2.5 flex items-center gap-2 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`
+export const SELECT_LIST = 'rounded-lg border border-line-strong bg-app shadow-lg p-1'
+export const SELECT_OPTION = 'w-full px-2.5 py-1.5 rounded-md text-left transition-colors'
+export const SELECT_OPTION_ON = 'bg-elevated text-fg font-medium'
+export const SELECT_OPTION_OFF = 'text-fg-muted hover:bg-surface hover:text-fg'

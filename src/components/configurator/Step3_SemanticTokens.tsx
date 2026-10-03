@@ -21,15 +21,11 @@ import {
 } from './colorControls'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import ThemePanel from './ThemePanel'
-import { usePreviewTokens } from '../../lib/previewTokens'
-import { SEMANTIC_SPECIMENS } from '../preview/atoms/SemanticSpecimens'
 import {
   appearanceFromModeKey, appearanceOrder, semanticModesFor, themeModeKey,
   type ThemeAppearance,
 } from '../../lib/themeModes'
-import VariablesPreviewPane from './VariablesPreviewPane'
 import VariableCollectionRail from './VariableCollectionRail'
-import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
 
 // Role catalogue + tone helpers live in lib/semanticRoles.ts (shared with the
 // token export so exported values always resolve to a tone of their ramp).
@@ -715,32 +711,6 @@ function ScrollPager({
   )
 }
 
-function SemanticPreviewPane({
-  previewTheme,
-  previewAppearance,
-  focus,
-  onEditToken,
-}: {
-  previewTheme: string
-  previewAppearance: ThemeAppearance
-  focus: SemanticFocus
-  onEditToken: (id: string) => void
-}) {
-  const tokens = usePreviewTokens(previewTheme, previewAppearance)
-  const themeReset = useThemeReset(previewTheme)
-  return (
-    <VariablesPreviewPane
-      watch={`${focus}/${previewTheme}/${previewAppearance}`}
-      scope={focus}
-      headerTrailing={themeReset.show ? (
-        <ThemeResetButton mode={themeReset.mode} target={themeReset.target} onClick={themeReset.onClick} />
-      ) : undefined}
-    >
-      {SEMANTIC_SPECIMENS[focus]({ tokens, onEditToken })}
-    </VariablesPreviewPane>
-  )
-}
-
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function Step3_SemanticTokens({
@@ -1148,28 +1118,6 @@ export default function Step3_SemanticTokens({
     }
   }
 
-  const previewFocus = focusForNavKey(activeKey) ?? 'surface'
-  const editFromPreview = (id: string) => {
-    setQuery('')
-    // From the Variables-preview panel there's no column — open on whatever
-    // appearance the preview is currently showing.
-    setDetailsMode(null)
-    if (isFlat) {
-      const category = flatCategoryForRole(id)
-      if (category) selectCategory(category)
-      setExpandedRole(id)
-    } else {
-      const category = archView ? archNavForToken(id, archView.categories) : null
-      if (category) {
-        setArchCategory(category)
-        onFocusChange?.(focusForNavKey(category) ?? 'all')
-      }
-      setArchEditing(id)
-    }
-    setFlashKey(id)
-    window.setTimeout(() => document.getElementById(`color-role-${id}`)?.scrollIntoView({ block: 'center' }), 60)
-    window.setTimeout(() => setFlashKey(null), 1400)
-  }
 
   // Non-flat table rows — straight from the projection, filtered by search.
   // Keys repeat across groups (content.primary vs action.primary), so rows are
@@ -1700,7 +1648,6 @@ export default function Step3_SemanticTokens({
         </div>
         <ScrollPager scrollRef={tableRef} watch={scrollWatch} reduce={reduce} />
         </div>
-        <SemanticPreviewPane previewTheme={activeTheme} previewAppearance={activeAppearance} focus={previewFocus} onEditToken={editFromPreview} />
         </div>
       </div>
       </div>

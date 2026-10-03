@@ -14,7 +14,7 @@ import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { typeStyleCss } from './typeRoles'
-import { resolveLayoutRole, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
+import { resolveLayoutRole, radiusRolesAtViewport, spacingRolesAtViewport, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 
@@ -278,7 +278,11 @@ export function resolvePreviewTokens(
     // with the `min-resolution: 2dppx` guard the exported CSS ships.
     stroke: hairlineSafeMap(foundations.stroke),
     radiusRoles: foundations.radiusRoles,
-    spacingRoles: foundations.spacingRoles,
+    radiusRoleViewports: foundations.radiusRoleViewports,
+    // Responsive spacing refs resolved for the previewed platform, so a
+    // Mobile preview tightens exactly like the CSS media query and the Figma
+    // viewport mode do.
+    spacingRoles: spacingRolesAtViewport(foundations.spacingRoles, previewPlatform),
     sizeRoles: foundations.sizeRoles,
     selectorRoles: foundations.selectorRoles,
     strokeRoles: foundations.strokeRoles,
@@ -439,7 +443,11 @@ export function radiusOf(t: PreviewTokens, key: string, fallback: string): strin
   return t.radius?.[key] || fallback
 }
 export function radiusRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
-  return resolveLayoutRole('radius', t.radiusRoles, t.radius ?? {}, role, fallback || radiusOf(t, 'md', '16px'))
+  // Responsive: on a Tablet or Mobile preview the role reads its stepped-down
+  // static step (RADIUS_RESPONSIVE), exactly what the CSS media query and the
+  // Figma viewport mode ship.
+  const roles = radiusRolesAtViewport(t.radiusRoles, t.previewPlatform ?? 'desktop', t.radiusRoleViewports)
+  return resolveLayoutRole('radius', roles, t.radius ?? {}, role, fallback || radiusOf(t, 'md', '16px'))
 }
 
 /**

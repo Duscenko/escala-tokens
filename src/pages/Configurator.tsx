@@ -256,8 +256,19 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
     { key: 'primitives', label: 'Type primitives' },
     { key: 'semantics', label: 'Text semantics', icon: 'variables' },
   ],
-  radius: [{ key: 'semantics', label: 'Radius semantics', icon: 'variables' }],
-  spacing: [{ key: 'semantics', label: 'Spacing semantics', icon: 'variables' }],
+  // Radius has TWO layers the editor shows: the roles (what a corner is for)
+  // and the ten responsive tokens they alias (Desktop · Tablet · Mobile steps).
+  // Separate collections, not rail groups — a layer is not a role group.
+  radius: [
+    { key: 'semantics', label: 'Radius semantics', icon: 'variables' },
+    { key: 'responsive', label: 'Radius responsive', icon: 'variables' },
+  ],
+  // Same two layers as Radius: the roles, and the 18 responsive tokens
+  // (Component · Section · Layout) they alias.
+  spacing: [
+    { key: 'semantics', label: 'Spacing semantics', icon: 'variables' },
+    { key: 'responsive', label: 'Spacing responsive', icon: 'variables' },
+  ],
   grid: [{ key: 'semantics', label: 'Grid semantics', icon: 'variables' }],
   sizes: [{ key: 'semantics', label: 'Size semantics', icon: 'variables' }],
   stroke: [{ key: 'semantics', label: 'Stroke semantics', icon: 'variables' }],
@@ -1758,12 +1769,10 @@ export default function Configurator() {
   }
 
   const foundationCanvas = themesCanvas && themeWorkspaceTab === 'primitives'
-  // NOT extended to the Variables tab. The mockup's right-hand "VARIABLES
-  // PREVIEW" column already exists — it is `VariablesPreviewPane`, the inline
-  // aside every semantic table (Color, Type, Layout, Grid) renders as a sibling
-  // of its own scroll region, header text and all. Adding a second, shell-level
-  // aside beside it put the SAME specimen on screen twice and squeezed the
-  // token table to ~238px between them (measured at 1266px). One preview.
+  // NOT extended to the Variables tab. Variables is TABLES ONLY: the inline
+  // `VariablesPreviewPane` each semantic table used to render beside itself was
+  // deleted (it rendered unreliably and squeezed the tables), and Theme preview
+  // is where a system is looked at. Don't add a preview aside back here.
   const showPreview = exportMode === 'save'
   // Figma / GitHub already own IntegrationStatusRail. Leaving Color · Font ·
   // Radius beside that status column is two left rails on a connect screen,
@@ -2067,11 +2076,11 @@ export default function Configurator() {
                   activeCollection={activeCollection}
                   collections={activeFoundationCollections}
                   onCollectionChange={(collection) => setFoundationCollection(activeFoundation, collection)}
-                  showPlatform={activeFoundation === 'typography' || activeFoundation === 'grid' || activeFoundation === 'spacing'}
+                  // Only foundations whose VALUES change per viewport.
+                  showPlatform={activeFoundation === 'typography' || activeFoundation === 'grid' || activeFoundation === 'radius' || activeFoundation === 'spacing'}
                   platformGuide={
                     activeFoundation === 'grid' ? 'grid'
                     : activeFoundation === 'typography' ? 'type'
-                    : activeFoundation === 'spacing' ? 'spacing'
                     : undefined
                   }
                 >

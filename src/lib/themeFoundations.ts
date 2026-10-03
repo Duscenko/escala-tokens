@@ -1,5 +1,5 @@
 import type { TypeRoleModes } from './typeRoles'
-import { completeRadiusScale, type GridFrameModes } from './layoutTokens'
+import { completeRadiusScale, type GridFrameModes, type RadiusRoleViewports } from './layoutTokens'
 import type { PhosphorWeight } from './phosphorIcons'
 
 export interface ThemeTypographyTokens {
@@ -34,6 +34,8 @@ export interface ThemeFoundationOverride {
   strokeRoles?: Record<string, string>
   breakpointRoles?: Record<string, string>
   gridFrame?: GridFrameModes
+  /** Hand-set radius role values on Tablet / Mobile (see RadiusRoleViewports). */
+  radiusRoleViewports?: RadiusRoleViewports
   panelBackground?: 'solid' | 'translucent' | 'page'
   /** How a style paints a DESTRUCTIVE or CONFIRMING action — see `StatusAction`. */
   statusAction?: 'soft' | 'solid'
@@ -59,6 +61,7 @@ export interface FoundationSource extends ThemeFoundationOverride {
   strokeRoles: Record<string, string>
   breakpointRoles: Record<string, string>
   gridFrame: GridFrameModes
+  radiusRoleViewports?: RadiusRoleViewports
   panelBackground: 'solid' | 'translucent' | 'page'
   statusAction: 'soft' | 'solid'
   iconWeight: PhosphorWeight
@@ -103,6 +106,7 @@ export function resolveThemeFoundations(source: FoundationSource, themeKey: stri
     strokeRoles: mergeMap(source.strokeRoles, override.strokeRoles),
     breakpointRoles: mergeMap(source.breakpointRoles, override.breakpointRoles),
     gridFrame: override.gridFrame ?? source.gridFrame,
+    radiusRoleViewports: override.radiusRoleViewports ?? source.radiusRoleViewports,
     panelBackground: override.panelBackground ?? source.panelBackground,
     statusAction: override.statusAction ?? source.statusAction,
     iconWeight: override.iconWeight ?? source.iconWeight,

@@ -9,7 +9,7 @@ import { myThemeKeys } from './themeLibrary'
 import { ALL_ROLES, sourceScaleFor, normalizeThemeValue, type GlobalScales } from './semanticRoles'
 import { projectArchitecture, projectCategorical, type ArchOverrides } from './semanticArchitectures'
 import { mergeTypeRoles } from './typeRoles'
-import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
+import { mergeLayoutRoles, mergeGridFrame, resolveGridStyles, RADIUS_RESPONSIVE, SPACING_RESPONSIVE, spacingRolesAtViewport, extractBreakpoints, type GridFrameModes, type GridStyleKey } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { semanticModesFor, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
@@ -437,6 +437,7 @@ export function generateTokenJSON(
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
+      radiusRoleViewports: resolved.radiusRoleViewports ?? {},
       shadows: resolved.shadows,
       grid: resolved.grid,
       gridFrame: mergeGridFrame(resolved.gridFrame),
@@ -669,12 +670,27 @@ export function generateTokenJSON(
     dimensions: dimensionScaleForStore(store, themeNames),
     dimensionRefs: dimensionRefsOf(store),
     spacing: store.spacing,
-    spacingRoles: mergeLayoutRoles('spacing', store.spacingRoles),
+    // Desktop STATIC steps, so a consumer that predates responsive spacing
+    // (an older plugin, an agent reading `spacingRoles`) keeps resolving every
+    // role to the same value it always did…
+    spacingRoles: spacingRolesAtViewport(store.spacingRoles, 'desktop'),
+    // …and the responsive layer on top, additive: which roles alias a
+    // responsive token (`component-md`), and the token table itself.
+    spacingRoleRefs: mergeLayoutRoles('spacing', store.spacingRoles),
+    spacingResponsive: SPACING_RESPONSIVE,
     // Per-side surface padding for padded surfaces (cards, tiles, panels).
     // Resolved px of `spacing-inset-surface` (step 5 on a fresh system).
     padding: store.padding,
     radius: store.radius,
     radiusRoles: mergeLayoutRoles('radius', store.radiusRoles),
+    // Hand-set radius roles on Tablet / Mobile (only the ones someone changed);
+    // a role absent here follows `radiusResponsive`. Additive.
+    radiusRoleViewports: store.radiusRoleViewports ?? {},
+    // Responsive radius: the static step each token reads per viewport (one
+    // smaller on Tablet, one — two from 3xl up — on Mobile). The roles follow
+    // it; the plugin makes Radius/component/<step> a value per viewport mode.
+    // Additive, so no schemaVersion bump.
+    radiusResponsive: RADIUS_RESPONSIVE,
     // Named gradients (slug → CSS) + which one drives each preview surface.
     gradients: Object.fromEntries(store.gradients.map((g) => [gradientSlug(g), gradientToCss(g)])),
     // The dark appearance, ADDITIVE and keyed by the SAME slugs — a consumer

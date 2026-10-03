@@ -64,12 +64,12 @@ describe('theme foundation overrides', () => {
     const state = useDesignStore.getState()
     state.addTheme('glass', 'light', DEFAULT_THEME_SOURCES)
     useDesignStore.getState().patchThemeFoundations('glass', {
-      radiusRoles: { control: '2xl', action: '2xl', container: '2xl', overlay: '2xl', pill: 'full' },
+      radiusRoles: { control: '4xl', action: '4xl', container: '4xl', overlay: '4xl', pill: 'full' },
     })
     const json = generateTokenJSON()
-    expect(json.foundationsByTheme.glass.radiusRoles.container).toBe('2xl')
-    expect(json.foundationsByTheme.glass.radiusRoles.action).toBe('2xl')
-    expect(json.radiusRoles.container).not.toBe('2xl')
+    expect(json.foundationsByTheme.glass.radiusRoles.container).toBe('4xl')
+    expect(json.foundationsByTheme.glass.radiusRoles.action).toBe('4xl')
+    expect(json.radiusRoles.container).not.toBe('4xl')
   })
 
   it('moves and removes foundation overrides with their theme', () => {

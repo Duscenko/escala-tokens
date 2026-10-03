@@ -19,10 +19,7 @@ import {
   type GridViewport,
 } from '../../lib/layoutTokens'
 import SemanticGroupRail from './SemanticGroupRail'
-import VariablesPreviewPane from './VariablesPreviewPane'
-import { usePreviewTokens } from '../../lib/previewTokens'
 import type { ThemeAppearance } from '../../lib/themeModes'
-import { GridPreview } from '../preview/atoms/GridPreview'
 import { useI18n } from '../../lib/i18n'
 import VariableSelect from '../ui/VariableSelect'
 import DimensionSelect from '../ui/DimensionSelect'
@@ -49,7 +46,6 @@ export default function GridSemantics({
   revealRole,
   railCollapsed = false,
   previewTheme = 'light',
-  previewAppearance,
   previewPlatform = 'desktop',
 }: {
   family?: unknown
@@ -74,7 +70,6 @@ export default function GridSemantics({
   const frame = mergeGridFrame(gridFrame)
   const [group, setGroup] = useState<'all' | 'viewport' | 'frame'>('all')
   const [flashKey, setFlashKey] = useState<string | null>(null)
-  const previewTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
   const { t } = useI18n()
   const platformLabel =
     previewPlatform === 'mobile' ? t('Mobile') : previewPlatform === 'tablet' ? t('Tablet') : t('Desktop')
@@ -146,16 +141,6 @@ export default function GridSemantics({
   const viewportRoles = BREAKPOINT_ROLES.filter((role) => role.key === previewPlatform)
   const showViewport = group === 'all' || group === 'viewport'
   const showFrame = group === 'all' || group === 'frame'
-  const revealFromPreview = (key: string) => {
-    const isViewport = BREAKPOINT_ROLES.some((role) => role.key === key)
-    const isFrame = GRID_FRAME_FIELDS.some((field) => field.key === key)
-    if (!isViewport && !isFrame) return
-    setGroup(isViewport ? 'viewport' : 'frame')
-    setFlashKey(key)
-    const id = isViewport ? `layout-role-breakpoint-${key}` : `layout-role-grid-${key}`
-    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40)
-    window.setTimeout(() => setFlashKey(null), 1400)
-  }
 
   return (
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
@@ -185,10 +170,10 @@ export default function GridSemantics({
               {showViewport && (
                 <>
                   <div className={tableHeaderClass(VIEWPORT_GRID)}>
-                    <div className="px-4 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Viewport</div>
-                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">{platformLabel}</div>
-                    <div className="px-3 py-2.5 text-mini font-semibold uppercase tracking-widest text-fg-faint">Query</div>
-                    <div />
+                    <span className={`${TABLE_HEAD_CELL} pl-4`}>Viewport</span>
+                    <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
+                    <span className={`${TABLE_HEAD_CELL} px-3`}>Query</span>
+                    <span aria-hidden />
                   </div>
                   {viewportRoles.map((role, i) => {
                     const step = cuts[role.key]
@@ -311,9 +296,6 @@ export default function GridSemantics({
               )}
             </div>
           </div>
-          <VariablesPreviewPane watch={`${group}/${previewTheme}/${previewAppearance}/${previewPlatform}`} scope={group}>
-            <GridPreview tokens={previewTokens} onEditRole={revealFromPreview} />
-          </VariablesPreviewPane>
           </div>
         </div>
       </div>

@@ -45,6 +45,8 @@ import {
   mergeGridFrame,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
+  matchRadiusRolePreset,
+  radiusPresetPatch,
   radiusGroupStep,
   applyRadiusGroup,
   resolveGridFrame,
@@ -64,6 +66,8 @@ import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, typePrimitivesForViewport, asTypeViewport } from '../../lib/typeRoles'
 import { PlatformSwitch } from './PlatformRail'
+import RailSelect from '../ui/RailSelect'
+import { radiusPresetOptions } from './radiusPresetOptions'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconStyleOverview } from './docs/specimens'
@@ -72,7 +76,7 @@ import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } fro
 import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
 import { ColorAgentButton } from '../ui/shimmer-button'
 import { SparkleCircleIcon } from '../ui/icons'
-import { CHROME_CONTROL_SHELL, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -810,13 +814,13 @@ function Menu<T extends string>({
   }, [open])
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} className="w-full h-9 px-2.5 flex items-center gap-2 rounded-lg border border-line-strong/80 bg-elevated/70 hover:border-line-strong hover:bg-elevated text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} className={SELECT_TRIGGER}>
         <span className="min-w-0 flex-1 truncate text-body text-fg" style={render?.(value)}>{options.find((option) => option.value === value)?.label ?? value}</span>
         <Chevron open={open} />
       </button>
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.12 }} role="listbox" className="absolute z-40 top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto rounded-lg border border-line-strong bg-app shadow-lg p-1">
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.12 }} role="listbox" className={`absolute z-40 top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto ${SELECT_LIST}`}>
             {options.map((option, index) => (
               <Fragment key={option.value}>
               {option.group && option.group !== options[index - 1]?.group ? (
@@ -824,7 +828,7 @@ function Menu<T extends string>({
                   {option.group}
                 </div>
               ) : null}
-              <button type="button" role="option" aria-selected={option.value === value} onClick={() => { onChange(option.value); setOpen(false) }} className={`w-full px-2.5 py-1.5 rounded-md text-left transition-colors ${option.value === value ? 'bg-elevated text-fg font-medium' : 'text-fg-muted hover:bg-surface hover:text-fg'}`} style={render?.(option.value)}>
+              <button type="button" role="option" aria-selected={option.value === value} onClick={() => { onChange(option.value); setOpen(false) }} className={`${SELECT_OPTION} ${option.value === value ? SELECT_OPTION_ON : SELECT_OPTION_OFF}`} style={render?.(option.value)}>
                 <span className="block text-body">{option.label}</span>
                 {option.description ? <span className="block mt-0.5 text-mini text-fg-faint">{option.description}</span> : null}
               </button>
@@ -1130,17 +1134,31 @@ function RadiusTile({
 }
 
 function RadiusCard({
-  radius, radiusRoles, onRoles,
+  radius, radiusRoles, onRoles, onPreset,
 }: {
   radius: Record<string, string>
   radiusRoles: Record<string, string> | undefined
   onRoles: (next: Record<string, string>) => void
+  /** Apply a preset — the three axis picks on the standard ramp. */
+  onPreset: (label: string) => void
 }) {
   // `gap-3` (13.5px here), not the design's literal 15px — a one-off arbitrary
   // value in a column where every other gap is a scale step is a 2px difference
   // nobody can see and one more number to keep in step.
   return (
     <div className="flex flex-col gap-3">
+      {/* The same select the Variables rail carries. A preset IS a set of the
+          three axis picks below, so choosing one moves those rows, and moving a
+          row off the bundle reads Custom. */}
+      <div className="min-w-0">
+        <span className="mb-1 block text-micro font-medium text-fg-muted">Preset</span>
+        <RailSelect
+          value={matchRadiusRolePreset(radiusRoles)}
+          options={radiusPresetOptions()}
+          onChange={onPreset}
+          ariaLabel="Radius preset"
+        />
+      </div>
       {RADIUS_GROUPS.map((group) => {
         const current = radiusGroupStep(group, radiusRoles)
         return (
@@ -1412,6 +1430,20 @@ export default function ThemeQuickSettingsRail({
     const themes = useDesignStore.getState().themes
     if (Object.keys(themes).length === 1) {
       useDesignStore.getState().setRadiusRoles(value)
+    }
+  }
+  // A preset writes the three axes on the standard ramp (and clears any
+  // per-viewport override) — the same `radiusPresetPatch` Variables applies —
+  // mirrored to the root for a one-theme system, like the roles above.
+  const setRadiusPreset = (key: string, label: string) => {
+    const resolved = resolveThemeFoundations(useDesignStore.getState(), key)
+    const next = radiusPresetPatch(label, resolved.radiusRoles)
+    if (!next) return
+    patchThemeFoundations(key, next)
+    if (Object.keys(useDesignStore.getState().themes).length === 1) {
+      useDesignStore.getState().setRadius(next.radius)
+      useDesignStore.getState().setRadiusRoles(next.radiusRoles)
+      useDesignStore.setState({ radiusRoleViewports: {} })
     }
   }
   const setShadows = (key: string, value: Record<string, string>) => patchThemeFoundations(key, { shadows: value })
@@ -2217,11 +2249,12 @@ export default function ThemeQuickSettingsRail({
 
         {activePanel === 'radius' && (
         <EditionCard title="Radius edition" foundationKey="radius" onOpenAdvanced={onOpenAdvanced}>
-          <SettingItem label="Radius" hint="Boxes, fields and selectors round independently. Regrade the underlying scale in Variables.">
+          <SettingItem label="Radius" hint="The preset sets the scale; boxes, fields and selectors then round independently on it.">
             <RadiusCard
               radius={radius}
               radiusRoles={foundations.radiusRoles}
               onRoles={(next) => applyScrub('Radius updated', (themeKey) => setRadiusRoles(themeKey, next))}
+              onPreset={(label) => commit('Radius preset updated', (themeKey) => setRadiusPreset(themeKey, label))}
             />
           </SettingItem>
         </EditionCard>

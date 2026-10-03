@@ -13,6 +13,7 @@ import { useI18n } from '../../lib/i18n'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { TOP_NAV_H } from './TopNav'
+import { SELECT_FOCUS, SELECT_SHELL } from './themeWorkspaceLayout'
 import {
   SWATCH, ScaleRow, curatedPaletteFor, ColorPickerPopover,
   COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH,
@@ -65,9 +66,7 @@ function SlotRow({
           aria-expanded={open}
           aria-label={`Edit ${label} color`}
           title={`${label} — ${value.toUpperCase()}`}
-          className={`w-full h-9 pl-2 pr-2.5 rounded-[13px] border bg-surface flex items-center gap-2 transition-colors ${
-            open ? 'border-fg-faint' : 'border-line-strong hover:border-fg-faint'
-          }`}
+          className={`w-full h-9 pl-2 pr-2.5 flex items-center gap-2 ${SELECT_SHELL} ${SELECT_FOCUS} ${open ? 'border-line-strong bg-elevated' : ''}`}
         >
           <span className={SWATCH} style={{ backgroundColor: value }} />
           <span className="flex-1 min-w-0 text-left text-ui text-fg truncate">{label}</span>

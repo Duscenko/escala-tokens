@@ -51,7 +51,7 @@ export const FOUNDATION_SECTION_KEYS = [
   'icons',
 ] as const
 
-export const COLLECTION_SECTION_KEYS = ['primitives', 'semantics', 'gradients'] as const
+export const COLLECTION_SECTION_KEYS = ['primitives', 'semantics', 'gradients', 'responsive'] as const
 
 export const HUB_SURFACE_KEYS = [
   'artefacts',

@@ -50,6 +50,7 @@ import {
   type LayoutFamily,
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
+  isSpacingResponsiveRef,
   RADIUS_GROUPS,
   radiusGroupStep,
   applyRadiusGroup,
@@ -113,14 +114,14 @@ describe('base-unit scaling', () => {
 })
 
 describe('layout primitives', () => {
-  it('the standard radius ramp is Rounded, graded from lg 16', () => {
-    expect(RADIUS_STEPS).toEqual(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'])
+  it('the standard radius ramp is Rounded, graded from lg 8 (the Corner Radius table)', () => {
+    expect(RADIUS_STEPS).toEqual(['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', 'full'])
     // Rounded, not Sharp — see the note on `RADIUS_ROLES`. The roles moved down
     // two rungs in the same change, so the RESOLVED default is unchanged; the
     // next test pins that, which is the property that actually matters.
     expect(RADIUS_STANDARD).toEqual({
-      none: '0px', xs: '4px', sm: '8px', md: '12px', lg: '16px', xl: '24px',
-      '2xl': '32px', '3xl': '48px', '4xl': '64px', full: '9999px',
+      none: '0px', xs: '2px', sm: '4px', md: '6px', lg: '8px', xl: '12px',
+      '2xl': '16px', '3xl': '24px', '4xl': '32px', '5xl': '48px', full: '9999px',
     })
   })
 
@@ -197,14 +198,15 @@ describe('layout primitives', () => {
     }
     expect(completeRadiusScale(saved)).toEqual({
       none: '0px', xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px',
-      '2xl': '48px', '3xl': '72px', '4xl': '96px', full: '9999px',
+      '2xl': '48px', '3xl': '72px', '4xl': '96px', '5xl': '144px', full: '9999px',
     })
     expect(matchRadiusPreset(completeRadiusScale(saved))).toBeNull()
     expect(completeRadiusScale({ ...saved, '2xl': '0px', '3xl': '0px' })['2xl']).toBe('48px')
   })
 
-  it('spacing is a 4px grid including 0 and 5 (20px)', () => {
-    expect(SPACING_STEPS).toEqual(['0', '1', '2', '3', '4', '5', '6', '8', '10', '12', '16'])
+  it('spacing is a 4px grid: the Spacing Scale reference plus 40, including 0 and 5 (20px)', () => {
+    expect(SPACING_STEPS).toEqual(['0', '0_5', '1', '1_5', '2', '2_5', '3', '4', '5', '6', '8', '10', '12', '16', '24', '32'])
+    expect(SPACING_STEPS.map((s) => parseFloat(SPACING_STANDARD[s]))).toEqual([0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64, 96, 128])
     expect(SPACING_STANDARD['0']).toBe('0px')
     expect(SPACING_STANDARD['5']).toBe('20px')
     expect(SPACING_STANDARD['16']).toBe('64px')
@@ -223,10 +225,10 @@ describe('layout primitives', () => {
 describe('layout semantics', () => {
   it('default aliases only point at primitive steps', () => {
     const radius = defaultLayoutRoles('radius')
-    expect(radius.action).toBe('sm')
-    expect(radius.control).toBe('xs')
-    expect(radius.container).toBe('lg')
-    expect(radius.overlay).toBe('lg')
+    expect(radius.action).toBe('lg')
+    expect(radius.control).toBe('sm')
+    expect(radius.container).toBe('2xl')
+    expect(radius.overlay).toBe('2xl')
     expect(radius.pill).toBe('full')
     expect(defaultLayoutRoles('spacing')['inset-surface']).toBe('5')
     expect(defaultLayoutRoles('size').control).toBe('md')
@@ -242,7 +244,9 @@ describe('layout semantics', () => {
     for (const [family, roles] of Object.entries(LAYOUT_ROLES)) {
       const steps = new Set(LAYOUT_PRIMITIVE_STEPS[family as LayoutFamily])
       for (const role of roles) {
-        expect(steps.has(role.primitive), `${family}-${role.key} → ${role.primitive}`).toBe(true)
+        // A spacing role may alias a responsive token instead of a step.
+        const ok = steps.has(role.primitive) || (family === 'spacing' && isSpacingResponsiveRef(role.primitive))
+        expect(ok, `${family}-${role.key} → ${role.primitive}`).toBe(true)
       }
     }
   })
@@ -278,7 +282,7 @@ describe('layout semantics', () => {
       stroke: defaultLayoutRoles('stroke'),
       breakpoint: defaultLayoutRoles('breakpoint'),
     }).join('\n')
-    expect(css).toContain('--radius-action: var(--radius-sm);')
+    expect(css).toContain('--radius-action: var(--radius-lg);')
     expect(css).toContain('--spacing-inset-surface: var(--spacing-5);')
     expect(css).toContain('--size-control: var(--size-md);')
     expect(css).toContain('--stroke-focus: var(--stroke-md);')

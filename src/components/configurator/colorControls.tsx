@@ -11,7 +11,7 @@ import { BASE_TONE, DEFAULT_NEUTRAL_TINT, neutralCuratedPalette, neutralTintSpec
 import { PRESET_GROUPS } from '../../lib/brandPalette'
 import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
-import { THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
+import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
 
 export { CHECKER } from './checker'
@@ -241,7 +241,6 @@ export function ColorSelect({
   groups,
   onChange,
   variant = 'full',
-  accentColor,
   allowCustom = false,
   previewSwatches,
   extras,
@@ -253,7 +252,6 @@ export function ColorSelect({
   groups: OptionGroup[]
   onChange: (hex: string) => void
   variant?: 'full' | 'compact' | 'pill'
-  accentColor?: string
   /** Renders a "Custom" row (native picker + hex field) as the dropdown's first option. */
   allowCustom?: boolean
   /** Extra content appended below the option groups (e.g. the state-colour editors). */
@@ -301,10 +299,8 @@ export function ColorSelect({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
-  // Pill — label · color dot · hex · chevron, in a rounded outlined field.
-  // Radius matches the `full` variant's `rounded-[13px]` deliberately: these
-  // sit directly under the Color families / Gray-Neutral dropdowns in Picker
-  // Color, and a pill-vs-field mismatch there read as two different controls.
+  // Pill — label · color dot · hex · chevron, in the workspace dropdown shell
+  // (`SELECT_SHELL`), the same as the `full` variant and every other select.
   if (pill) {
     return (
       <div ref={ref} className="relative w-full">
@@ -314,8 +310,7 @@ export function ColorSelect({
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-label={`${label ?? 'Color'} — ${hexLabel}`}
-          className="w-full flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 transition-colors"
-          style={{ ['--tw-ring-color' as string]: accentColor ?? '#111111' }}
+          className={`w-full flex items-center gap-2 pl-3 pr-2.5 py-2 ${SELECT_SHELL} ${SELECT_FOCUS}`}
         >
           {label && <span className="text-ui text-fg">{label}</span>}
           <span className={SWATCH} style={{ backgroundColor: value }} />
@@ -375,7 +370,7 @@ export function ColorSelect({
           className={
             compact
               ? 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1.5 rounded-full bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors'
-              : 'w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left'
+              : `w-full flex items-center gap-2 px-3 py-2 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`
           }
         >
           {previewSwatches ? (
@@ -938,7 +933,7 @@ export function StateColorsSelect({
           aria-haspopup="dialog"
           aria-expanded={open}
           aria-label="State colors"
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-[13px] bg-surface border border-line-strong hover:border-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg transition-colors text-left"
+          className={`w-full flex items-center gap-2 px-3 py-2 text-left ${SELECT_SHELL} ${SELECT_FOCUS}`}
         >
           <span className="flex-1 min-w-0 flex items-center gap-1.5">
             {swatches.map((s) => (
