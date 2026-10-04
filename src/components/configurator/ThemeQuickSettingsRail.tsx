@@ -1859,11 +1859,13 @@ export default function ThemeQuickSettingsRail({
           >
             {t('Add to system')}
           </button>
-          <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
-            {canAddTheme
-              ? t('Trying {name}. Editing anything below adds it too.', { name: tryOn.preset.shortLabel })
-              : t(MY_THEME_FULL_ERROR, { count: ownThemeCount })}
-          </p>
+          {/* The "Trying X…" hint is gone; the limit message stays, since it
+              explains why the button is disabled. */}
+          {!canAddTheme && (
+            <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
+              {t(MY_THEME_FULL_ERROR, { count: ownThemeCount })}
+            </p>
+          )}
           {adoptError && <p role="alert" className="mt-1.5 text-mini text-status-danger">{adoptError}</p>}
         </div>
       )}

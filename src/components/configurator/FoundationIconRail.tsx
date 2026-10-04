@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { RailGroup } from './SectionRail'
-import { CHROME_CONTROL_HOVER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 
 const VARIABLE_ICON_SOURCES: Record<string, string> = {
   'theme-preview': '/icons/theme-hub-icons/Icon/theme.svg',
@@ -32,6 +32,66 @@ const VARIABLE_ICON_MASK_SIZE: Record<string, string> = {
 }
 
 export const FOUNDATION_ICON_RAIL_WIDTH = 64
+
+/** One tile language for every button in the 64px workspace rail (foundation
+ *  icons + the Themes library folder): glyph over a short label. Active = the
+ *  platform accent as INK on a very subtle wash of itself — not a solid fill,
+ *  so the selection reads without shouting over the canvas. Inactive = muted
+ *  ink, neutral hover. `compact` drops the label (horizontal placement). */
+export function RailTile({
+  on, label, onClick, children, ariaCurrent, compact = false, className = '', ...aria
+}: {
+  on: boolean
+  label: string
+  onClick: () => void
+  children: ReactNode
+  ariaCurrent?: 'page'
+  compact?: boolean
+  className?: string
+  'aria-pressed'?: boolean
+  'aria-expanded'?: boolean
+  'aria-controls'?: string
+  'aria-label'?: string
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={ariaCurrent}
+      aria-label={aria['aria-label'] ?? label}
+      title={aria.title ?? label}
+      aria-pressed={aria['aria-pressed']}
+      aria-expanded={aria['aria-expanded']}
+      aria-controls={aria['aria-controls']}
+      className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        compact ? '' : 'w-[56px] gap-1 py-1'
+      } ${className}`}
+    >
+      {/* Only the glyph's square carries the selection — the label stays plain
+          beneath it, so the rail doesn't read as a column of filled blocks. */}
+      <span
+        className={`flex items-center justify-center rounded-[11px] transition-[color,background-color,box-shadow] ${
+          'w-9 h-9'
+        } ${on
+          ? 'bg-accent-ui/[0.16] text-accent-ui'
+          : 'text-fg-muted group-hover:bg-black/[0.06] dark:group-hover:bg-white/[0.07] group-hover:text-fg'}`}
+      >
+        {children}
+      </span>
+      {!compact && (
+        <span
+          aria-hidden
+          className={`block max-w-full truncate px-0.5 text-mini font-medium leading-tight transition-colors ${
+            on ? 'text-fg' : 'text-fg-muted group-hover:text-fg'
+          }`}
+        >
+          {label}
+        </span>
+      )}
+    </button>
+  )
+}
 
 // ── Horizontal foundation switcher (Variables tab only) ──────────────────────
 // Replaces the outer SectionRail for Variables specifically: a compact row of
@@ -77,29 +137,25 @@ export default function FoundationIconRail({
           <div
             key={group.label ?? gi}
             className={vertical
-              ? `flex flex-col items-center gap-1.5 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
+              ? `flex flex-col items-center gap-1 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
               : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
           >
             {group.items.map(({ key, label, Icon }) => {
               const on = active === key
               const maskSize = VARIABLE_ICON_MASK_SIZE[key] ?? '100%'
               return (
-                <button
+                <RailTile
                   key={key}
+                  on={on}
+                  label={label}
                   onClick={() => onSelect(key)}
-                  aria-current={on ? 'page' : undefined}
-                  aria-label={label}
-                  title={label}
-                  className={`flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-                    on
-                      ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-                      : `text-fg-muted ${CHROME_CONTROL_HOVER}`
-                  }`}
+                  ariaCurrent={on ? 'page' : undefined}
+                  compact={!vertical}
                 >
                   {VARIABLE_ICON_SOURCES[key]
                     ? <span
                         aria-hidden
-                        className={`h-5 w-5 ${on ? 'drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]' : 'opacity-90'}`}
+                        className="h-5 w-5"
                         style={{
                           backgroundColor: 'currentColor',
                           maskImage: `url(${VARIABLE_ICON_SOURCES[key]})`,
@@ -110,7 +166,7 @@ export default function FoundationIconRail({
                         }}
                       />
                     : Icon && <Icon />}
-                </button>
+                </RailTile>
               )
             })}
           </div>

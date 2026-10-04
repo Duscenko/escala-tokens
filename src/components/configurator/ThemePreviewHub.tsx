@@ -91,14 +91,23 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
  * The visible label switches — **Inspect tokens** to enter, **Exit inspector**
  * to leave — so the exit is on the control itself, not only in the tooltip.
  */
-function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
+function InspectorToggle({ active, onChange, accent, ink }: {
+  active: boolean
+  onChange: (v: boolean) => void
+  /** The PREVIEWED theme's brand solid + its solved label ink. This is the one
+   *  chrome control that deliberately follows the theme, not Escala's violet:
+   *  armed, it is the theme's own accent telling you what you're inspecting. */
+  accent?: string
+  ink?: string
+}) {
   const { t } = useI18n()
   const label = active ? t('Exit inspector') : t('Inspect tokens')
   return (
     <div
       className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
-        active ? 'border-accent-ui/50' : 'border-line hover:border-line-strong'
+        active ? (accent ? '' : 'border-accent-ui/50') : 'border-line hover:border-line-strong'
       }`}
+      style={active && accent ? { borderColor: `color-mix(in srgb, ${accent} 50%, transparent)` } : undefined}
     >
       <button
         type="button"
@@ -110,9 +119,10 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
           : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`}
         className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
           active
-            ? 'bg-accent-solid text-accent-ink'
+            ? (accent ? '' : 'bg-accent-solid text-accent-ink')
             : `text-fg ${CHROME_CONTROL_HOVER}`
         }`}
+        style={active && accent ? { backgroundColor: accent, color: ink } : undefined}
       >
         <InspectGlyph size={16} hint={!active} />
         {label}
@@ -647,7 +657,12 @@ export default function ThemePreviewHub({
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
-                    <InspectorToggle active={inspecting} onChange={setInspecting} />
+                    <InspectorToggle
+                      active={inspecting}
+                      onChange={setInspecting}
+                      accent={boardCanvasTokens.brandSolid}
+                      ink={boardCanvasTokens.onBrand}
+                    />
                   )}
                   <DocsPanelButton active={docsOpen} onClick={() => onDocsOpenChange(!docsOpen)} />
                 </div>

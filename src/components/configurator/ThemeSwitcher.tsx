@@ -13,7 +13,7 @@ import { useI18n } from '../../lib/i18n'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
 import { DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar } from './ThemeLibraryRail'
-import { FOUNDATION_ICON_RAIL_WIDTH } from './FoundationIconRail'
+import { FOUNDATION_ICON_RAIL_WIDTH, RailTile } from './FoundationIconRail'
 import { FolderIcon } from './VariableCollectionRail'
 
 const MENU_W = 260
@@ -50,30 +50,31 @@ export function ThemesLibraryToggle({
   const { t } = useI18n()
   const label = open ? t('Hide themes library') : t('Show themes library')
   const iconRail = placement === 'icon-rail'
-  return (
-    <button
-      type="button"
+  const tile = (
+    <RailTile
+      on={open}
+      label={t('Themes')}
+      compact
+      onClick={onToggle}
       aria-pressed={open}
       aria-expanded={open}
       aria-controls="themes-library"
       aria-label={label}
       title={label}
-      onClick={onToggle}
-      className={
-        iconRail
-          ? `flex-shrink-0 flex items-center justify-center w-[42px] h-[42px] rounded-[13px] transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-              open
-                ? 'bg-accent-solid text-accent-ink shadow-[0_2px_10px_-2px_rgba(0,0,0,0.15)]'
-                : `text-fg-muted ${CHROME_CONTROL_HOVER}`
-            }`
-          : `flex h-full flex-shrink-0 items-center justify-center border-r border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
-              open ? 'bg-app text-fg' : `text-fg-muted ${CHROME_CONTROL_HOVER}`
-            }`
-      }
-      style={iconRail ? undefined : { width: FOUNDATION_ICON_RAIL_WIDTH }}
     >
-      <FolderIcon size={16} />
-    </button>
+      <FolderIcon size={18} />
+    </RailTile>
+  )
+  if (iconRail) return tile
+  // Tab-bar placement: the cell is exactly the icon rail's width and keeps its
+  // border-r, so the rail's divider runs up through this row.
+  return (
+    <div
+      className="flex h-full flex-shrink-0 items-center justify-center border-r border-line"
+      style={{ width: FOUNDATION_ICON_RAIL_WIDTH }}
+    >
+      {tile}
+    </div>
   )
 }
 
