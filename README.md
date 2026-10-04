@@ -2,7 +2,7 @@
 
 **Token generator.** A configurator for design token systems.
 
-You define a palette, type scale, spacing, radius and the rest once. Escala derives the full scales, keeps light and dark in step, and ships the result as `tokens.json`, `variables.css` and a README — plus a [Figma plugin](https://github.com/Duscenko/escala-figma-plugin) that imports all of it as real Variables.
+You define a palette, type scale, spacing, radius and the rest once. Escala derives the full scales, keeps light and dark in step, and ships the result as `tokens.json`, `variables.css` and a README — plus a [Figma plugin](https://www.figma.com/community/plugin/1678705529144062964/escala-tokens) that imports all of it as real Variables.
 
 The point is **no bloat**: you export the tokens you actually chose, not a framework’s opinion of a design system. Everything on screen derives from one payload, so the preview, the export and what lands in Figma can’t disagree.
 
@@ -88,7 +88,7 @@ This is a Vite app hosted on Vercel. Publish and MCP need [Vercel Blob](https://
 
 ## Free and paid
 
-Escala is open source end to end: this configurator, the [Figma plugin](https://github.com/Duscenko/escala-figma-plugin), the CLI and the MCP server are all MIT. You can fork, self-host and modify any of it.
+This configurator, the CLI and the MCP server are MIT: you can fork, self-host and modify them. The Figma plugin is a separate, proprietary product (free to install, source not published).
 
 **Free:** configure a system, export `tokens.json` / `variables.css` / W3C JSON, connect GitHub, and load **one theme** (Light + Dark, Desktop) into Figma by importing the exported `tokens.json` in the plugin.
 
