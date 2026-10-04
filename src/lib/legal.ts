@@ -24,7 +24,7 @@ export const LEGAL = {
     site: 'https://vercel.com',
   },
   /** Bump whenever either page's substance changes. */
-  updated: '2026-10-02',
+  updated: '2026-10-04',
 }
 
 /** Contact form topics — shared by /contact and api/contact.ts so the form
@@ -35,3 +35,10 @@ export type ContactTopic = (typeof CONTACT_TOPICS)[number]
 export const CONTACT_PATH = '/contact'
 export const LEGAL_PATH = '/legal'
 export const PRIVACY_PATH = '/privacy'
+export const TERMS_PATH = '/terms'
+
+/** Flip to true in the SAME change that ships login (design-plans/accounts-and-login.md).
+ *  It switches on the account clauses of /terms and /privacy and swaps the "no
+ *  accounts" lead. Those pages must never describe accounts before they exist,
+ *  nor deny them once they do — this is the one switch both follow. */
+export const ACCOUNTS_LIVE = false

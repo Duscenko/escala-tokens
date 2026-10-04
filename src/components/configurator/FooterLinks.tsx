@@ -1,5 +1,5 @@
 import { useI18n } from '../../lib/i18n'
-import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from '../../lib/legal'
+import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 import { cn } from '../../lib/utils'
 
 // The colophon links — Contact · Legal notice · Privacy · Source · MIT License.
@@ -35,6 +35,7 @@ export function FooterLinks({
       <a href={CONTACT_PATH} className={link}>{t('Contact')}</a>
       <a href={LEGAL_PATH} className={link}>{t('Legal notice')}</a>
       <a href={PRIVACY_PATH} className={link}>{t('Privacy')}</a>
+      <a href={TERMS_PATH} className={link}>{t('Terms')}</a>
       <a
         href="https://github.com/Duscenko/escala-tokens"
         target="_blank"

@@ -100,7 +100,7 @@ Why pay when the code is free: hosted sync and MCP cost money on every request, 
 
 ## License and credits
 
-[MIT](LICENSE) © 2026 Cesar Durango (Duscenko). Third-party notices: [NOTICE](NOTICE). Security model (no accounts, claim-on-first-publish): [SECURITY.md](SECURITY.md).
+[MIT](LICENSE) © 2026 Cesar Durango (Duscenko). The MIT licence covers the code in this repository, not the hosted service at escalatokens.com (see the [terms of use](https://www.escalatokens.com/terms)) and not the proprietary Figma plugin. Third-party notices: [NOTICE](NOTICE). Security model (no accounts, claim-on-first-publish): [SECURITY.md](SECURITY.md).
 
 Standards referenced for defaults: Radix Colors (12-step scales), W3C Design Tokens, WCAG. Escala is not affiliated with those projects. Figma is a trademark of Figma, Inc.
 

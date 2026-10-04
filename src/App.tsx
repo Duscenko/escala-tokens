@@ -7,7 +7,7 @@ import { LegalPage } from './components/public/LegalPage'
 import { ContactPage } from './components/public/ContactPage'
 import { PricingPage } from './components/public/PricingPage'
 import { PRICING_PATH } from './lib/entitlement'
-import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH } from './lib/legal'
+import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
 import { applyDocumentHead } from './lib/documentHead'
 import { ABOUT_DESCRIPTION, ABOUT_TITLE, matchPublicPath } from './lib/publicSeo'
@@ -98,10 +98,10 @@ function App() {
     )
   }
 
-  if (path === LEGAL_PATH || path === PRIVACY_PATH) {
+  if (path === LEGAL_PATH || path === PRIVACY_PATH || path === TERMS_PATH) {
     return (
       <>
-        <LegalPage kind={path === LEGAL_PATH ? 'legal' : 'privacy'} />
+        <LegalPage kind={path === LEGAL_PATH ? 'legal' : path === TERMS_PATH ? 'terms' : 'privacy'} />
         <ToastHost />
       </>
     )

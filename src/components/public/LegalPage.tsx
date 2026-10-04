@@ -18,15 +18,19 @@
 //   - contact form: api/contact.ts (relayed by Resend, nothing stored)
 //   - security: vercel.json headers, Vercel Firewall rate limit
 //   - Google Fonts: src/lib/fonts.ts (loaded on demand from Google's CDN)
+//   - accounts: ACCOUNTS_LIVE in src/lib/legal.ts gates every account clause here
+//   - licences: MIT covers the CODE of this repo; the hosted service, the Figma plugin and
+//     the Pro licence are covered by /terms. Keep the three statements in step
+//     with LICENSE, the plugin's LICENSE, README and PricingPage's FAQ.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { DocHeader, DocSection, DocTitle, OnThisPage, type TocEntry } from '../configurator/docs/blocks'
 import { PublicHeader } from './PublicReadingPage'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n, type Locale } from '../../lib/i18n'
-import { CONTACT_PATH, LEGAL, LEGAL_PATH, PRIVACY_PATH } from '../../lib/legal'
+import { ACCOUNTS_LIVE, CONTACT_PATH, LEGAL, LEGAL_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 
-export type LegalKind = 'legal' | 'privacy'
+export type LegalKind = 'legal' | 'privacy' | 'terms'
 
 type Section = { id: string; h: string; body: ReactNode }
 type Doc = { title: string; description: string; lead: string; note?: string; sections: Section[] }
@@ -89,7 +93,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'editeur', h: 'Éditeur du site', body: <Ul items={identity('fr')} /> },
       { id: 'directeur', h: 'Directeur de la publication', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Hébergeur', body: <Ul items={hostItems} /> },
-      { id: 'propriete', h: 'Propriété intellectuelle', body: <P>Le code source d’Escala Tokens est publié sous licence MIT. Les systèmes de design que vous créez avec l’outil vous appartiennent : les tokens et fichiers exportés ne sont soumis à aucune licence ni obligation d’attribution de notre part. Figma est une marque de Figma, Inc. ; ce projet n’est ni affilié à Figma ni approuvé par elle.</P> },
+      { id: 'propriete', h: 'Propriété intellectuelle', body: <P>Le code source d’Escala Tokens est publié sous licence MIT. Les systèmes de design que vous créez avec l’outil vous appartiennent : les tokens et fichiers exportés ne sont soumis à aucune licence ni obligation d’attribution de notre part. Le plugin Figma est un produit propriétaire distinct, et le service hébergé est régi par les <A href={TERMS_PATH}>conditions d’utilisation</A>. Figma est une marque de Figma, Inc. ; ce projet n’est ni affilié à Figma ni approuvé par elle.</P> },
       { id: 'donnees', h: 'Données personnelles', body: <P>Le traitement des données respecte le Règlement général sur la protection des données (RGPD) et la loi Informatique et Libertés ; il est décrit dans la <A href={PRIVACY_PATH}>politique de confidentialité</A>. Le site ne dépose aucun cookie.</P> },
       { id: 'droit', h: 'Droit applicable', body: <P>Le site et les présentes mentions sont soumis au droit français. Tout litige relève des juridictions françaises compétentes, sous réserve des règles protectrices dont bénéficie le consommateur dans son pays de résidence au sein de l’Union européenne.</P> },
     ],
@@ -103,7 +107,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'editeur', h: 'Editor del sitio', body: <Ul items={identity('es')} /> },
       { id: 'directeur', h: 'Director de la publicación', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Alojamiento', body: <Ul items={hostItems} /> },
-      { id: 'propriete', h: 'Propiedad intelectual', body: <P>El código fuente de Escala Tokens se publica bajo licencia MIT. Los sistemas de diseño que usted crea con la herramienta son suyos: los tokens y archivos exportados no llevan ninguna licencia ni obligación de atribución por nuestra parte. Figma es una marca de Figma, Inc.; este proyecto no está afiliado a Figma ni respaldado por ella.</P> },
+      { id: 'propriete', h: 'Propiedad intelectual', body: <P>El código fuente de Escala Tokens se publica bajo licencia MIT. Los sistemas de diseño que usted crea con la herramienta son suyos: los tokens y archivos exportados no llevan ninguna licencia ni obligación de atribución por nuestra parte. El plugin de Figma es un producto propietario aparte, y el servicio alojado se rige por los <A href={TERMS_PATH}>términos de uso</A>. Figma es una marca de Figma, Inc.; este proyecto no está afiliado a Figma ni respaldado por ella.</P> },
       { id: 'donnees', h: 'Datos personales', body: <P>El tratamiento de datos cumple el Reglamento General de Protección de Datos (RGPD) y la ley francesa Informatique et Libertés; se describe en la <A href={PRIVACY_PATH}>política de privacidad</A>. El sitio no usa cookies.</P> },
       { id: 'droit', h: 'Ley aplicable', body: <P>El sitio y este aviso se rigen por el derecho francés. Cualquier litigio corresponde a los tribunales franceses competentes, sin perjuicio de las normas de protección de las que goza el consumidor en su país de residencia dentro de la Unión Europea.</P> },
     ],
@@ -117,7 +121,7 @@ function legalDoc(l: Locale): Doc {
       { id: 'editeur', h: 'Publisher', body: <Ul items={identity('en')} /> },
       { id: 'directeur', h: 'Publication director', body: <P>{LEGAL.publisher}</P> },
       { id: 'hebergeur', h: 'Host', body: <Ul items={hostItems} /> },
-      { id: 'propriete', h: 'Intellectual property', body: <P>The Escala Tokens source code is published under the MIT License. The design systems you build with the tool are yours: exported tokens and files carry no licence or attribution requirement from us. Figma is a trademark of Figma, Inc.; this project is not affiliated with or endorsed by Figma.</P> },
+      { id: 'propriete', h: 'Intellectual property', body: <P>The Escala Tokens source code is published under the MIT License. The design systems you build with the tool are yours: exported tokens and files carry no licence or attribution requirement from us. The Figma plugin is a separate proprietary product, and the hosted service is governed by the <A href={TERMS_PATH}>terms of use</A>. Figma is a trademark of Figma, Inc.; this project is not affiliated with or endorsed by Figma.</P> },
       { id: 'donnees', h: 'Personal data', body: <P>Data is handled in line with the EU General Data Protection Regulation (GDPR) and the French Data Protection Act (loi Informatique et Libertés), as described in the <A href={PRIVACY_PATH}>privacy policy</A>. The site sets no cookies.</P> },
       { id: 'droit', h: 'Governing law', body: <P>The site and this notice are governed by French law. Any dispute falls under the competent French courts, without prejudice to the protective rules a consumer enjoys in their country of residence within the European Union.</P> },
     ],
@@ -126,7 +130,7 @@ function legalDoc(l: Locale): Doc {
 
 // ── Politique de confidentialité ────────────────────────────────────────────
 
-function privacyDoc(l: Locale): Doc {
+function privacyBase(l: Locale): Doc {
   if (l === 'fr') return {
     title: 'Politique de confidentialité',
     description: 'Données traitées par Escala Tokens, service édité en France, conformément au RGPD : aucun cookie, aucune publicité, aucun profilage.',
@@ -242,6 +246,109 @@ function privacyDoc(l: Locale): Doc {
   }
 }
 
+/** With accounts live, the privacy text stops saying "no accounts" and gains the
+ *  account clause. Layered over `privacyBase` so the account wording lives in one
+ *  place and is off until `ACCOUNTS_LIVE` flips. */
+function privacyDoc(l: Locale): Doc {
+  const base = privacyBase(l)
+  if (!ACCOUNTS_LIVE) return base
+  const lead = {
+    fr: 'En bref : un compte est facultatif et ne sert qu’à la sauvegarde en ligne et à la licence Pro ; pas de cookie de suivi, pas de publicité, pas de profilage, pas de revente de données. Sans compte, votre système reste dans votre navigateur. Escala Tokens est édité en France et applique le RGPD (règlement (UE) 2016/679) et la loi Informatique et Libertés.',
+    es: 'En resumen: la cuenta es opcional y solo sirve para guardar en línea y para la licencia Pro; sin cookies de seguimiento, sin publicidad, sin perfiles y sin venta de datos. Sin cuenta, su sistema se queda en su navegador. Escala Tokens se edita en Francia y aplica el RGPD (Reglamento (UE) 2016/679) y la ley francesa Informatique et Libertés.',
+    en: 'In short: an account is optional and only serves online saving and the Pro licence; no tracking cookies, no advertising, no profiling, no selling of data. Without an account your design system stays in your browser. Escala Tokens is published from France and applies the GDPR (Regulation (EU) 2016/679) and the French Data Protection Act.',
+  }[l]
+  const account: Section = {
+    fr: { id: 'compte', h: 'Compte (facultatif)', body: <>
+      <P>Si vous créez un compte, nous traitons votre adresse e-mail, l’identifiant fourni par le service de connexion choisi (GitHub ou Google, qui ne nous transmettent ni vos dépôts ni votre mot de passe), l’empreinte de votre mot de passe si vous utilisez la connexion par e-mail, l’empreinte de votre clé de licence et sa date d’expiration, et, avec une licence Pro, les systèmes que vous enregistrez en ligne. Les connexions GitHub et Google ne demandent que votre identité, jamais l’accès à vos dépôts.</P>
+      <Ul items={['Base légale : exécution du contrat (art. 6.1.b RGPD) ; intérêt légitime pour la sécurité du compte (art. 6.1.f).', 'Durée : tant que le compte existe ; suppression immédiate à la fermeture du compte, hors justificatifs de paiement que conserve Polar.', 'Sous-traitants : Supabase (base de données et authentification, hébergée dans l’Union européenne), Resend (e-mails de confirmation et de réinitialisation), Polar (vente et licences, vendeur officiel), et GitHub ou Google si vous choisissez leur connexion.', 'Stockage local : la session de connexion est conservée dans le stockage local de votre navigateur, strictement nécessaire au service ; ce n’est pas un cookie et il ne sert à aucun suivi.']} />
+      <P>Depuis votre compte, vous pouvez exporter vos données et supprimer votre compte.</P>
+    </> },
+    es: { id: 'compte', h: 'Cuenta (opcional)', body: <>
+      <P>Si crea una cuenta, tratamos su correo electrónico, el identificador que da el servicio de acceso elegido (GitHub o Google, que no nos transmiten sus repositorios ni su contraseña), la huella de su contraseña si usa el acceso por correo, la huella de su clave de licencia y su fecha de caducidad y, con una licencia Pro, los sistemas que guarde en línea. El acceso con GitHub o Google solo pide su identidad, nunca acceso a sus repositorios.</P>
+      <Ul items={['Base legal: ejecución del contrato (art. 6.1.b RGPD); interés legítimo para la seguridad de la cuenta (art. 6.1.f).', 'Plazo: mientras exista la cuenta; supresión inmediata al cerrarla, salvo los justificantes de pago que conserva Polar.', 'Encargados: Supabase (base de datos y autenticación, alojada en la Unión Europea), Resend (correos de confirmación y de restablecimiento), Polar (venta y licencias, vendedor oficial), y GitHub o Google si elige su acceso.', 'Almacenamiento local: la sesión se guarda en el almacenamiento local de su navegador, estrictamente necesario para el servicio; no es una cookie y no sirve para ningún seguimiento.']} />
+      <P>Desde su cuenta puede exportar sus datos y eliminarla.</P>
+    </> },
+    en: { id: 'compte', h: 'Account (optional)', body: <>
+      <P>If you create an account we process your email address, the identifier supplied by the sign-in service you chose (GitHub or Google, which do not give us your repositories or your password), a hash of your password if you sign in by email, a hash of your licence key and its expiry date and, with a Pro licence, the systems you save online. GitHub and Google sign-in request your identity only, never access to your repositories.</P>
+      <Ul items={['Legal basis: performance of the contract (GDPR art. 6.1.b); legitimate interest in account security (art. 6.1.f).', 'Retention: while the account exists; deleted immediately when you close it, except payment records that Polar keeps.', 'Processors: Supabase (database and authentication, hosted in the European Union), Resend (confirmation and reset emails), Polar (sales and licences, merchant of record), and GitHub or Google if you choose their sign-in.', 'Local storage: the sign-in session is kept in your browser’s local storage, strictly necessary for the service; it is not a cookie and is used for no tracking.']} />
+      <P>From your account you can export your data and delete your account.</P>
+    </> },
+  }[l]
+  const sections = base.sections.flatMap((s) => (s.id === 'cookies' ? [account, s] : [s]))
+  return { ...base, lead, sections }
+}
+
+// ── Conditions d’utilisation ────────────────────────────────────────────────
+
+/** What the MIT licence does and does not cover is the point of this page: the
+ *  four statements below (code · hosted service · plugin · your content) must
+ *  match LICENSE, the plugin's LICENSE, README and the /pricing FAQ. */
+function termsDoc(l: Locale): Doc {
+  const acc = ACCOUNTS_LIVE
+  if (l === 'fr') return {
+    title: 'Conditions d’utilisation',
+    description: 'Conditions d’utilisation d’Escala Tokens : ce que couvre la licence MIT, le service hébergé, le plugin Figma, la licence Pro et vos contenus.',
+    lead: 'Escala Tokens se compose de plusieurs choses qui n’ont pas la même licence. Cette page dit laquelle est régie par quoi, pour qu’il n’y ait pas de doute.',
+    sections: [
+      { id: 'portee', h: '1. Ce que couvrent ces conditions', body: <P>Elles régissent le service hébergé sur escalatokens.com : le configurateur en ligne, la synchronisation, le serveur MCP en direct{acc ? ', les comptes' : ''} et la licence Pro. Elles ne modifient pas la licence du code source (article 2). En utilisant le service, vous les acceptez.</P> },
+      { id: 'mit', h: '2. Le code : licence MIT', body: <P>Le configurateur, la CLI et le serveur MCP publiés sur GitHub sont sous <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>licence MIT</A> : vous pouvez les copier, les modifier, les héberger vous-même et les utiliser commercialement, en conservant la mention de licence. Cette licence couvre le code, pas le service que nous hébergeons : si vous hébergez votre propre instance, vous n’obtenez ni compte, ni sauvegarde en ligne, ni synchronisation, ni licence Pro d’escalatokens.com, et vous fixez vos propres limites.</P> },
+      { id: 'plugin', h: '3. Le plugin Figma : licence propriétaire', body: <P>Le plugin Figma est un produit distinct, gratuit à installer, dont le code source n’est pas publié et n’est pas sous licence MIT. Il est fourni sous une licence d’utilisation qui interdit de le copier, de le modifier, de le redistribuer ou d’en faire des œuvres dérivées. Les fonctions qu’il reçoit du service hébergé relèvent de la licence Pro (article 6).</P> },
+      { id: 'contenu', h: '4. Vos contenus', body: <P>Les systèmes de design que vous créez, les tokens et fichiers que vous exportez vous appartiennent. Nous ne demandons ni licence ni attribution et nous ne les utilisons pas pour entraîner des modèles. Vous nous accordez seulement le droit technique de les stocker et de les servir pour fournir le service que vous demandez (par exemple la synchronisation). Les tokens publiés sont lisibles par quiconque connaît l’identifiant du système : n’y mettez pas d’information confidentielle.</P> },
+      ...(acc ? [{ id: 'compte', h: '5. Compte', body: <P>Le compte est facultatif : le configurateur et l’export fonctionnent sans. Vous êtes responsable de la confidentialité de vos identifiants. Un compte gratuit ne sauvegarde rien en ligne ; la sauvegarde en ligne et la synchronisation exigent une licence Pro. Une clé de licence est liée à un seul compte. Vous pouvez exporter vos données et supprimer votre compte à tout moment depuis la page Compte ; la suppression est définitive.</P> }] : []),
+      { id: 'pro', h: `${acc ? '6' : '5'}. Escala Pro`, body: <>
+        <P>Escala Pro est vendu en paiement unique via Polar, qui agit comme vendeur officiel (merchant of record) : le paiement, la facturation et la TVA relèvent des conditions de Polar. Il inclut la synchronisation hébergée, le serveur MCP en direct, plusieurs thèmes et les modes de plateforme, ainsi que les mises à jour et le support pendant 12 mois à compter de l’achat. Après ces 12 mois, la clé reste valable pour ce qui ne dépend pas du service hébergé ; la synchronisation hébergée et le MCP en direct nécessitent une licence en cours de validité.</P>
+        <Ul items={['Prix et période de lancement : affichés sur la page Tarifs au moment de l’achat. Jusqu’au 31 octobre 2026, la synchronisation est offerte à tous.', 'Remboursement : 14 jours après l’achat, sur demande via le formulaire de contact.', 'Une clé = un acheteur. La revente ou le partage de clé est interdit et peut entraîner sa révocation.']} />
+      </> },
+      { id: 'usage', h: `${acc ? '7' : '6'}. Utilisation acceptable`, body: <P>N’utilisez pas le service pour y porter atteinte (surcharge, contournement des limites, accès aux données d’autrui), pour y publier des contenus illicites, ni pour revendre l’accès à l’API. Nous pouvons limiter ou suspendre un usage abusif.</P> },
+      { id: 'garantie', h: `${acc ? '8' : '7'}. Disponibilité et responsabilité`, body: <P>Le service est fourni « en l’état », sans garantie de disponibilité continue ; la version gratuite l’est au mieux de nos moyens. Conservez vos systèmes ailleurs aussi (export, GitHub) : une synchronisation publiée n’est pas une sauvegarde. Dans la mesure permise par la loi, notre responsabilité est limitée aux dommages directs et plafonnée au prix payé pour la licence Pro ; cela n’affecte pas les droits que la loi reconnaît impérativement aux consommateurs.</P> },
+      { id: 'fin', h: `${acc ? '9' : '8'}. Modification et fin`, body: <P>Nous pouvons faire évoluer le service et ces conditions ; un changement substantiel est signalé sur cette page avec sa date. Vous pouvez cesser d’utiliser le service à tout moment{acc ? ' et supprimer votre compte' : ''}.</P> },
+      { id: 'droit', h: `${acc ? '10' : '9'}. Droit applicable`, body: <P>Ces conditions sont soumises au droit français. Tout litige relève des juridictions françaises compétentes, sous réserve des règles protectrices dont bénéficie le consommateur dans son pays de résidence au sein de l’Union européenne. Voir aussi les <A href={LEGAL_PATH}>mentions légales</A> et la <A href={PRIVACY_PATH}>politique de confidentialité</A>.</P> },
+    ],
+  }
+  if (l === 'es') return {
+    title: 'Términos de uso',
+    description: 'Términos de uso de Escala Tokens: qué cubre la licencia MIT, el servicio alojado, el plugin de Figma, la licencia Pro y sus contenidos.',
+    lead: 'Escala Tokens se compone de varias cosas que no tienen la misma licencia. Esta página dice cuál se rige por qué, para que no haya dudas.',
+    note: 'Traducción informativa. La versión francesa es la que tiene valor legal.',
+    sections: [
+      { id: 'portee', h: '1. Qué cubren estos términos', body: <P>Rigen el servicio alojado en escalatokens.com: el configurador en línea, la sincronización, el servidor MCP en vivo{acc ? ', las cuentas' : ''} y la licencia Pro. No modifican la licencia del código fuente (artículo 2). Al usar el servicio, los acepta.</P> },
+      { id: 'mit', h: '2. El código: licencia MIT', body: <P>El configurador, la CLI y el servidor MCP publicados en GitHub están bajo <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>licencia MIT</A>: puede copiarlos, modificarlos, alojarlos usted y usarlos comercialmente, conservando el aviso de licencia. Esa licencia cubre el código, no el servicio que alojamos: si aloja su propia instancia no obtiene cuenta, guardado en línea, sincronización ni licencia Pro de escalatokens.com, y fija sus propios límites.</P> },
+      { id: 'plugin', h: '3. El plugin de Figma: licencia propietaria', body: <P>El plugin de Figma es un producto aparte, gratuito de instalar, cuyo código fuente no se publica y no está bajo licencia MIT. Se ofrece con una licencia de uso que prohíbe copiarlo, modificarlo, redistribuirlo o crear obras derivadas. Las funciones que recibe del servicio alojado dependen de la licencia Pro (artículo 6).</P> },
+      { id: 'contenu', h: '4. Sus contenidos', body: <P>Los sistemas de diseño que usted crea y los tokens y archivos que exporta son suyos. No pedimos licencia ni atribución y no los usamos para entrenar modelos. Solo nos concede el derecho técnico de almacenarlos y servirlos para prestar el servicio que solicita (por ejemplo, la sincronización). Los tokens publicados los puede leer quien conozca el identificador del sistema: no incluya información confidencial.</P> },
+      ...(acc ? [{ id: 'compte', h: '5. Cuenta', body: <P>La cuenta es opcional: el configurador y la exportación funcionan sin ella. Usted es responsable de la confidencialidad de sus credenciales. Una cuenta gratuita no guarda nada en línea; el guardado en línea y la sincronización requieren una licencia Pro. Una clave de licencia se vincula a una sola cuenta. Puede exportar sus datos y eliminar su cuenta en cualquier momento desde la página de Cuenta; la eliminación es definitiva.</P> }] : []),
+      { id: 'pro', h: `${acc ? '6' : '5'}. Escala Pro`, body: <>
+        <P>Escala Pro se vende con pago único a través de Polar, que actúa como vendedor oficial (merchant of record): el pago, la facturación y el IVA se rigen por las condiciones de Polar. Incluye la sincronización alojada, el servidor MCP en vivo, varios temas y los modos de plataforma, además de actualizaciones y soporte durante 12 meses desde la compra. Pasados esos 12 meses, la clave sigue valiendo para lo que no depende del servicio alojado; la sincronización alojada y el MCP en vivo requieren una licencia vigente.</P>
+        <Ul items={['Precio y periodo de lanzamiento: se muestran en la página de Precios en el momento de la compra. Hasta el 31 de octubre de 2026 la sincronización es gratuita para todos.', 'Reembolso: 14 días desde la compra, a petición mediante el formulario de contacto.', 'Una clave = un comprador. Revender o compartir la clave está prohibido y puede causar su revocación.']} />
+      </> },
+      { id: 'usage', h: `${acc ? '7' : '6'}. Uso aceptable`, body: <P>No use el servicio para dañarlo (sobrecarga, eludir límites, acceder a datos ajenos), para publicar contenidos ilícitos ni para revender el acceso a la API. Podemos limitar o suspender un uso abusivo.</P> },
+      { id: 'garantie', h: `${acc ? '8' : '7'}. Disponibilidad y responsabilidad`, body: <P>El servicio se presta «tal cual», sin garantía de disponibilidad continua; la versión gratuita, lo mejor que podemos. Guarde también sus sistemas en otro lugar (exportación, GitHub): una sincronización publicada no es una copia de seguridad. En la medida que permita la ley, nuestra responsabilidad se limita a los daños directos y al precio pagado por la licencia Pro; esto no afecta a los derechos que la ley reconoce imperativamente a los consumidores.</P> },
+      { id: 'fin', h: `${acc ? '9' : '8'}. Cambios y fin`, body: <P>Podemos modificar el servicio y estos términos; un cambio sustancial se indica en esta página con su fecha. Puede dejar de usar el servicio en cualquier momento{acc ? ' y eliminar su cuenta' : ''}.</P> },
+      { id: 'droit', h: `${acc ? '10' : '9'}. Ley aplicable`, body: <P>Estos términos se rigen por el derecho francés. Cualquier litigio corresponde a los tribunales franceses competentes, sin perjuicio de las normas de protección de las que goza el consumidor en su país de residencia dentro de la Unión Europea. Vea también el <A href={LEGAL_PATH}>aviso legal</A> y la <A href={PRIVACY_PATH}>política de privacidad</A>.</P> },
+    ],
+  }
+  return {
+    title: 'Terms of use',
+    description: 'Escala Tokens terms of use: what the MIT licence covers, the hosted service, the Figma plugin, the Pro licence and your content.',
+    lead: 'Escala Tokens is several things that do not share one licence. This page says which is governed by what, so there is no doubt.',
+    note: 'Informative translation. The French version is the legally binding one.',
+    sections: [
+      { id: 'portee', h: '1. What these terms cover', body: <P>They govern the service hosted at escalatokens.com: the online configurator, sync, the live MCP server{acc ? ', accounts' : ''} and the Pro licence. They do not change the licence of the source code (section 2). By using the service you accept them.</P> },
+      { id: 'mit', h: '2. The code: MIT licence', body: <P>The configurator, the CLI and the MCP server published on GitHub are under the <A href="https://github.com/Duscenko/escala-tokens/blob/main/LICENSE" external>MIT License</A>: you may copy, modify, self-host and use them commercially, keeping the licence notice. That licence covers the code, not the service we host: if you host your own instance you get no account, online saving, sync or Pro licence from escalatokens.com, and you set your own limits.</P> },
+      { id: 'plugin', h: '3. The Figma plugin: proprietary licence', body: <P>The Figma plugin is a separate product, free to install, whose source code is not published and is not under the MIT licence. It is provided under a licence of use that forbids copying, modifying, redistributing it or creating derivative works. The features it receives from the hosted service fall under the Pro licence (section 6).</P> },
+      { id: 'contenu', h: '4. Your content', body: <P>The design systems you build and the tokens and files you export are yours. We ask for no licence or attribution and do not use them to train models. You only grant us the technical right to store and serve them to provide the service you ask for (for example sync). Published tokens can be read by anyone who knows the system ID: do not put confidential information in them.</P> },
+      ...(acc ? [{ id: 'compte', h: '5. Account', body: <P>An account is optional: the configurator and export work without one. You are responsible for keeping your credentials confidential. A free account saves nothing online; online saving and sync require a Pro licence. A licence key is tied to one account. You can export your data and delete your account at any time from the Account page; deletion is permanent.</P> }] : []),
+      { id: 'pro', h: `${acc ? '6' : '5'}. Escala Pro`, body: <>
+        <P>Escala Pro is sold as a one-time payment through Polar, which acts as merchant of record: payment, invoicing and VAT are governed by Polar’s terms. It includes hosted sync, the live MCP server, multiple themes and platform modes, plus updates and support for 12 months from purchase. After those 12 months the key stays valid for whatever does not depend on the hosted service; hosted sync and the live MCP require a licence in date.</P>
+        <Ul items={['Price and launch period: shown on the Pricing page at the time of purchase. Until October 31, 2026, sync is free for everyone.', 'Refund: 14 days from purchase, on request through the contact form.', 'One key = one buyer. Reselling or sharing a key is forbidden and may lead to its revocation.']} />
+      </> },
+      { id: 'usage', h: `${acc ? '7' : '6'}. Acceptable use`, body: <P>Do not use the service to harm it (overload, bypassing limits, reaching other people’s data), to publish unlawful content, or to resell API access. We may limit or suspend abusive use.</P> },
+      { id: 'garantie', h: `${acc ? '8' : '7'}. Availability and liability`, body: <P>The service is provided “as is”, with no guarantee of continuous availability; the free tier on a best-effort basis. Keep your systems elsewhere too (export, GitHub): a published sync is not a backup. To the extent the law allows, our liability is limited to direct damages and capped at the price paid for the Pro licence; this does not affect rights the law gives consumers that cannot be waived.</P> },
+      { id: 'fin', h: `${acc ? '9' : '8'}. Changes and ending`, body: <P>We may change the service and these terms; a substantial change is flagged on this page with its date. You can stop using the service at any time{acc ? ' and delete your account' : ''}.</P> },
+      { id: 'droit', h: `${acc ? '10' : '9'}. Governing law`, body: <P>These terms are governed by French law. Any dispute falls under the competent French courts, without prejudice to the protective rules a consumer enjoys in their country of residence within the European Union. See also the <A href={LEGAL_PATH}>legal notice</A> and the <A href={PRIVACY_PATH}>privacy policy</A>.</P> },
+    ],
+  }
+}
+
 const UPDATED_LABEL: Record<Locale, string> = { fr: 'Mis à jour le', en: 'Updated', es: 'Actualizado el' }
 
 function formatDate(iso: string, l: Locale): string {
@@ -251,17 +358,19 @@ function formatDate(iso: string, l: Locale): string {
 export function LegalPage({ kind }: { kind: LegalKind }) {
   const { t, locale } = useI18n()
   const articleRef = useRef<HTMLDivElement>(null)
-  const doc = kind === 'legal' ? legalDoc(locale) : privacyDoc(locale)
-  const other = kind === 'legal'
-    ? { href: PRIVACY_PATH, label: privacyDoc(locale).title }
-    : { href: LEGAL_PATH, label: legalDoc(locale).title }
+  const doc = kind === 'legal' ? legalDoc(locale) : kind === 'terms' ? termsDoc(locale) : privacyDoc(locale)
+  const other = kind === 'privacy'
+    ? { href: TERMS_PATH, label: termsDoc(locale).title }
+    : kind === 'terms'
+      ? { href: PRIVACY_PATH, label: privacyDoc(locale).title }
+      : { href: PRIVACY_PATH, label: privacyDoc(locale).title }
   const toc: TocEntry[] = doc.sections.map((s) => ({ id: s.id, label: s.h }))
 
   useEffect(() => {
     applyDocumentHead({
       title: `${doc.title} — Escala Tokens`,
       description: doc.description,
-      canonicalPath: kind === 'legal' ? LEGAL_PATH : PRIVACY_PATH,
+      canonicalPath: kind === 'legal' ? LEGAL_PATH : kind === 'terms' ? TERMS_PATH : PRIVACY_PATH,
       robots: 'index, follow',
     })
   }, [doc.title, doc.description, kind])
