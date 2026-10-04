@@ -65,7 +65,7 @@ export function RailTile({
       aria-expanded={aria['aria-expanded']}
       aria-controls={aria['aria-controls']}
       className={`group flex-shrink-0 flex flex-col items-center justify-center rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        compact ? '' : 'w-[56px] gap-1 py-1'
+        compact ? '' : 'w-[56px] gap-0.5 py-1'
       } ${className}`}
     >
       {/* Only the glyph's square carries the selection — the label stays plain

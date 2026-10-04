@@ -7,12 +7,13 @@ import { COMPONENT_KEYS } from '../../lib/componentCatalogue'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
+import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
+import { PRICING_PATH } from '../../lib/entitlement'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
 import PluginCommunityBanner from './PluginCommunityBanner'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
-import { BentoGrid } from '../ui/bento-grid'
 import { SparkleCircleIcon } from '../ui/icons'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
@@ -542,51 +543,6 @@ function Stat({ value, label, delay = 0 }: { value: number; label: string; delay
   )
 }
 
-/** One tile in the differentiator's bento grid (`BentoGrid` from
- *  `ui/bento-grid` supplies the grid mechanics; this is a from-scratch tile,
- *  NOT that file's own `BentoCard` — `BentoCard` styles itself with plain
- *  shadcn tokens (`bg-background`, `text-neutral-700`…) that this project
- *  never defines, since the whole chrome runs on its own `bg-app`/`text-fg`
- *  scale instead. Rather than bolt a second, undefined palette onto the
- *  page, this reuses the SAME hover contract `DestinationRow` (Docs → Get
- *  started) and the plain `FeatureCard` this replaced already used: border,
- *  not shadow/scale theatrics. `span` carries the grid placement so the
- *  featured tile (AI agents) can run wider/taller than the other two — a
- *  cell's SIZE reflecting how much it actually has to say, not decoration
- *  for its own sake.
- *
- *  The oversized corner-watermark rendering of `Icon` (removed) was the
- *  reason `overflow-hidden` and `relative`/`z-10` existed on this component;
- *  both stay harmless no-ops now (z-10 has nothing to sit above, overflow
- *  has nothing left to clip) rather than being ripped out along with it —
- *  cutting them is a separate, purely-cosmetic cleanup, not required for
- *  this fix. */
-function FeatureCard({
-  title, Icon, span = '', children,
-}: {
-  title: string
-  Icon: ComponentType<{ className?: string }>
-  span?: string
-  children: ReactNode
-}) {
-  return (
-    <div
-      className={cn(
-        'group relative flex flex-col gap-2.5 p-4 rounded-2xl border border-line bg-elevated/20 overflow-hidden transition-colors hover:border-line-strong hover:bg-elevated/40',
-        span,
-      )}
-    >
-      <span className="relative z-10 flex items-center gap-1.5 text-ui font-semibold text-fg">
-        <Icon className="h-3.5 w-3.5 text-fg-faint" aria-hidden />
-        {title}
-      </span>
-      <div className="relative z-10 flex flex-col gap-2.5 text-body leading-relaxed text-fg-muted">
-        {children}
-      </div>
-    </div>
-  )
-}
-
 /** `</>` — the "Code" tile's mark. Kept local (matches `MailIcon`/`GlobeIcon`
  *  above): one glyph, no reason to pull in an icon package for it. */
 function CodeGlyph({ className }: { className?: string }) {
@@ -624,103 +580,157 @@ const statsItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
 }
 
+/** A small mono eyebrow chip — names a section without competing with its
+ *  headline. Section numbers ("01 · Color") give the long page a spine. */
+function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    // Plain concatenation, NOT `cn`: tailwind-merge reads the custom
+    // `text-mini` size as a colour and drops it in favour of `text-fg-muted`
+    // (same trap FooterLinks documents).
+    <span
+      className={`inline-flex items-center rounded-md border border-line-strong bg-elevated/40 px-2 py-0.5 font-mono text-mini font-medium uppercase tracking-widest text-fg-muted ${className ?? ''}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Centered section opener: eyebrow · headline · one-line lead. */
+function SectionHeader({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 text-center">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="max-w-[640px] text-[26px] font-semibold leading-tight text-fg">{title}</h2>
+      <p className="max-w-[560px] text-ui leading-relaxed text-fg-muted">{lead}</p>
+    </div>
+  )
+}
+
+/** One feature tile: a media slot on top (a placeholder until a real
+ *  screenshot is dropped in) and title + one or two sentences below. */
+function ShowcaseCard({ title, body, media, mediaRatio = 'aspect-[16/10]' }: {
+  title: string
+  body: string
+  /** Placeholder label — replace the whole `ImagePlaceholder` with an `<img>`. */
+  media: string
+  mediaRatio?: string
+}) {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-elevated/20 transition-colors hover:border-line-strong">
+      <div className="p-2">
+        <ImagePlaceholder label={media} className={cn('w-full rounded-xl', mediaRatio)} />
+      </div>
+      <div className="flex flex-col gap-1.5 px-4 pb-4 pt-2">
+        <h3 className="text-strong font-semibold text-fg">{title}</h3>
+        <p className="text-body leading-relaxed text-fg-muted">{body}</p>
+      </div>
+    </div>
+  )
+}
+
+/** A destination row in the hand-off section: glyph · name · what lands there. */
+function DestinationRow({ Icon, title, body, action }: {
+  Icon: ComponentType<{ className?: string }>
+  title: string
+  body: string
+  action?: ReactNode
+}) {
+  return (
+    <div className="flex gap-3 rounded-2xl border border-line bg-elevated/20 p-4">
+      <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-line bg-app text-fg-muted">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <h3 className="text-ui font-semibold text-fg">{title}</h3>
+        <p className="text-body leading-relaxed text-fg-muted">{body}</p>
+        {action}
+      </div>
+    </div>
+  )
+}
+
+function ArrowGlyph({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}
+
 /** The About TAB's canvas — the workspace's landing surface for new visitors
  *  (see `Configurator.tsx`'s `hasOnboarded()` gate). Embedded in the
  *  flex-1/min-h-0 center column like any other tab's body, so it owns its own
- *  scroll region and a read-width column rather than reusing
- *  `AboutScaffold`'s `min-h-screen` page wrapper. Its CTA is an in-app action
- *  (`onStart` → Theme preview workspace), not a link — unlike the mobile
- *  screen or `/about`, there's no "back to the app" to link to; this IS the
- *  app. Same `SECTIONS`/`AboutAccordion`/`AboutContact` as every other
- *  surface, so the pitch can't drift between them.
+ *  scroll region rather than reusing `AboutScaffold`'s `min-h-screen` wrapper.
+ *  Its CTA is an in-app action (`onStart`), not a link: this IS the app.
  *
- *  The hero copy is deliberately byte-identical to `/about`'s
- *  (`App.tsx`'s `AboutPage`) — one pitch, not two. It used to say a generic
- *  "Welcome to Escala Tokens" here, which is how the app ended up with a
- *  landing surface that never once said "AI": the real differentiator (a
- *  live MCP server so a coding agent stops inventing hex/spacing) was only
- *  ever a click away behind "Sync"/"Export", never stated up front. The
- *  eyebrow line above the headline, the stats row, and the differentiator
- *  block below all exist to fix exactly that gap — see the note above
- *  `SECTIONS.platform`'s body for the same fix applied to the shared
- *  accordion content `/about` and the mobile notice also render. */
+ *  Long-form product page, one section per job: hero → proof (stats) → start
+ *  from a style → Color → the other foundations → hand-off (Figma · agent ·
+ *  code) → closing CTA → the shared reference accordion + contact. Same
+ *  `SECTIONS`/`AboutAccordion`/`AboutContact` as every other About surface, so
+ *  the reference copy can't drift.
+ *
+ *  Every `ImagePlaceholder` here is a slot for a REAL screenshot of Escala —
+ *  its label says what to capture and at what ratio. Swap it for an `<img>`
+ *  with the same rounding; never fill it with generated art.
+ *
+ *  Copy rule: every claim on this page must be true of the code today. Counts
+ *  are imported (`THEME_STYLE_PRESETS.length`, `COMPONENT_KEYS.length`, …),
+ *  never typed. */
 export function AboutHome({
   onStart, onLearnAI, foundationCount,
 }: {
   onStart: () => void
-  /** Opens Docs → Get started → "Use in code" — the real guide, not a second
-   *  one. That page absorbed the former "Use with AI" (its Connect section);
-   *  `Configurator.tsx` wires this to `openDocs(GUIDE_CODE_KEY)`. */
+  /** Opens Docs → Get started → "Use in code" (its Connect section is the
+   *  agent guide). `Configurator.tsx` wires this to `openDocs(GUIDE_CODE_KEY)`. */
   onLearnAI: () => void
-  /** `FOUNDATIONS.length` from `Configurator.tsx` — that array is local
-   *  there, so this is a prop rather than a duplicated constant. */
+  /** `FOUNDATIONS.length` from `Configurator.tsx`. */
   foundationCount: number
 }) {
   const { t } = useI18n()
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
 
+  const secondaryCta =
+    'inline-flex h-10 items-center gap-1.5 rounded-[13px] border border-line-strong px-5 text-ui font-semibold text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-[880px] mx-auto flex flex-col">
-        {/* ── Hero — the one staggered entrance this page gets. Runs once on
-            tab mount (About remounts each time you switch back to it), never
-            again — a landing that re-plays its own intro every render would
-            wear out fast for a returning user. */}
+      <div className="mx-auto flex max-w-[1080px] flex-col">
+        {/* ── Hero — the one staggered entrance this page gets. ── */}
         <motion.div
           initial={reduceMotion ? false : 'hidden'}
           animate="show"
           variants={heroContainer}
-          className="flex flex-col items-center gap-3 px-6 pt-14 pb-10 text-center"
+          className="flex flex-col items-center gap-4 px-6 pt-16 pb-10 text-center"
         >
           <motion.div variants={heroItem}>
-            <BrandMark />
+            <Eyebrow>{t('For Figma, code, and your AI agent')}</Eyebrow>
           </motion.div>
-          <motion.span
-            variants={heroItem}
-            className="text-caption font-semibold uppercase tracking-widest text-fg-faint mt-1"
-          >
-            {t('For Figma, code, and your AI agent')}
-          </motion.span>
-          <motion.div variants={heroItem} className="flex flex-col gap-2 max-w-[520px]">
+          <motion.div variants={heroItem} className="flex max-w-[640px] flex-col gap-3">
             <h1>
-              {/* SUPERSEDES the earlier version of this headline, which kept
-                  "Define your foundations before you" static and cycled only
-                  the last word through 3 destinations on a repeating loop.
-                  Replaced with a single, ONE-TIME reveal across the whole
-                  sentence (`text` is a plain string here, not an array —
-                  `isMulti` is false, so `repeat`/`fixedWidth` and everything
-                  those existed to fix no longer apply: there is no width
-                  tween between strings and no repeat cycle to go invisible
-                  on, because there is only one string and it plays once).
-                  This is a genuinely simpler animation, not a smaller version
-                  of the old one — it plays on mount like the rest of the
-                  hero's stagger, then settles and stays. */}
               <DiaTextReveal
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
-                className="text-[22px] font-semibold leading-snug"
+                className="text-[38px] font-semibold leading-[1.1] tracking-tight"
               />
             </h1>
             <p className="text-ui leading-relaxed text-fg-muted">
               {t('Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius.')}
             </p>
           </motion.div>
-          {/* Same RainbowButton chrome as `AIContextButton`'s "Copy context to
-              Agents" (Docs) — one CTA treatment for the app's primary
-              calls-to-action, not a one-off style invented for this page. */}
-          <motion.div variants={heroItem} className="mt-2">
+          <motion.div variants={heroItem} className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <RainbowButton
               type="button"
               onClick={onStart}
               className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
             >
               {t('Start building')}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <ArrowGlyph />
             </RainbowButton>
+            <button type="button" onClick={onLearnAI} className={secondaryCta}>
+              {t('Connect your agent')}
+            </button>
           </motion.div>
         </motion.div>
 
@@ -728,12 +738,12 @@ export function AboutHome({
           <DemoVideo className="mb-14" />
         </div>
 
-        {/* ── Stats — real counts, not marketing round numbers ── */}
+        {/* ── Proof — real counts, imported, never typed ── */}
         <motion.div
           initial={reduceMotion ? false : 'hidden'}
           animate="show"
           variants={statsContainer}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-6 px-6 pb-14 border-b border-line"
+          className="mx-6 grid grid-cols-2 gap-6 border-b border-line pb-14 sm:grid-cols-4"
         >
           <Stat value={foundationCount} label={t('Foundations you configure')} delay={0} />
           <Stat value={COMPONENT_KEYS.length} label={t('Components in the catalogue')} delay={0.08} />
@@ -741,95 +751,189 @@ export function AboutHome({
           <Stat value={TOOL_SPECS.length} label={t('MCP tools your agent can call')} delay={0.24} />
         </motion.div>
 
-        {/* ── The differentiator — the point of this whole page ── */}
-        <div className="flex flex-col gap-6 px-6 py-14 border-b border-line">
-          <div className="flex flex-col gap-2 max-w-[560px]">
-            <span className="text-caption font-semibold uppercase tracking-widest text-accent-ui">
-              {t('Built for the age of AI agents')}
-            </span>
-            <h2 className="text-[18px] font-semibold text-fg">
-              {t('Your AI is guessing your colors right now.')}
+        {/* ── Start from a style — split: media left, copy right ── */}
+        <div className="grid items-center gap-10 border-b border-line px-6 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <ImagePlaceholder
+            label="Placeholder — System Styles: the Themes library with one style tried on and its artefacts repainted (4:3)"
+            className="aspect-[4/3] w-full"
+          />
+          <div className="flex flex-col gap-3">
+            <Eyebrow className="self-start">{t('Start from a style')}</Eyebrow>
+            <h2 className="text-[26px] font-semibold leading-tight text-fg">
+              {t('Pick a System Style. Every foundation follows.')}
             </h2>
             <p className="text-ui leading-relaxed text-fg-muted">
-              {t('Ask Cursor, Claude Code or Copilot to build a button and it invents a hex, a spacing value, a radius, because it has never seen your system. Escala publishes a live, queryable contract instead: a Model Context Protocol (MCP) server your agent can call directly, plus a one-command install.')}
+              {t('{count} curated styles set colour, type, radius, shadows and icons in one move. Try one on, keep what fits, change the rest. Nothing is applied until you add it to your system.', { count: THEME_STYLE_PRESETS.length })}
             </p>
           </div>
-
-          {/* Bento: AI agents is the featured tile (2 cols × 2 rows, and
-              first in DOM so the grid's default auto-flow places Figma/Code
-              into the remaining right column on their own) — its cell is
-              bigger because it has more to say, not for decoration's sake.
-              `BentoGrid` (magicui) supplies only the grid mechanics here;
-              see `FeatureCard`'s own note for why its sibling `BentoCard`
-              isn't used. */}
-          {/* `minmax(126px, auto)`, not a flat row height. A flat
-              `auto-rows-*` caps a tile at that height, and these tiles carry
-              `overflow-hidden` (they need it to clip the corner watermark),
-              so copy that outgrows the row gets silently cut with nothing on
-              screen saying so. It was already binding, if only just: allowing
-              the rows to grow moved the Code tile 126px → 129px, i.e. its
-              copy had been pressed 3px past its own bottom padding. The floor
-              keeps the bento's proportions while the copy is short; `auto`
-              means the next edit to that copy grows the row instead of
-              vanishing into the clip.
-              (What this does NOT fix, because it was never broken: the
-              watermark hangs 18px below each tile by design — `-bottom-4` —
-              so `scrollHeight - clientHeight === 18` on every tile is the
-              decoration being clipped as intended, not lost text. Measure the
-              last flow child against the padding box, not scrollHeight, or
-              you will chase that 18px forever.)
-              126px is written in px on purpose: `:root` is 18px here, so the
-              `7rem` this replaced silently meant 126px anyway (see CLAUDE.md's
-              root-font-size note) — same number, now stated honestly. */}
-          <BentoGrid className="grid-cols-3 auto-rows-[minmax(126px,auto)] gap-4">
-            <FeatureCard title={t('AI agents')} Icon={SparkleCircleIcon} span="col-span-2 row-span-2">
-              <p>
-                {t('A live MCP server with')} <C>resolve_token</C>, <C>check_contrast</C>,{' '}
-                <C>list_components</C> {t('and more. Pick your editor, then run the steps or hand the whole setup to the agent:')}
-              </p>
-
-              {/* The real "Connect your agent" widget: client logos + an
-                  MCP/PROMPT switch, rather than a second, drifting copy of it.
-                  Same component Docs and the Export wizard use, every string
-                  from `agentInstall.ts`. `variant="about"` trims it to the tabs,
-                  the toggle and the first step; the rest is one click away. */}
-              <AgentInstallPanel variant="about" />
-
-              <button
-                type="button"
-                onClick={onLearnAI}
-                className="self-start inline-flex items-center gap-1 rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-              >
-                {t('Full steps, CSS, other tools and a repo in Docs')}
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </button>
-            </FeatureCard>
-            <FeatureCard title="Figma" Icon={FigmaGlyph}>
-              <p>{t('Plugin + Live Sync. Variables land in the file you already design in.')}</p>
-            </FeatureCard>
-            <FeatureCard title={t('Code')} Icon={CodeGlyph}>
-              <p>
-                <C>variables.css</C>, W3C JSON, {t('or a GitHub push; code binds to roles, never a hex on a button.')}
-              </p>
-            </FeatureCard>
-          </BentoGrid>
         </div>
 
-        {/* ── Reference accordion — FULL WIDTH, same gutter as every band
-            above (hero/stats/bento all run edge-to-edge of the 828px content
-            box). This SUPERSEDES an earlier version that capped it at 640px
-            for reading comfort: on screen that read as cut off — a section
-            that visibly stopped ~190px short of where the bento cards above
-            it ended, like a second, narrower page stapled under the first.
-            Consistent width across every band beats a line-length rule that
-            only this one section followed; the body copy is still short
-            per-paragraph, not full-bleed walls of text, so the wider
-            measure reads fine in practice.
-            No footer here: Configurator.tsx's own Row 3 (the fixed hairline
-            under every tab) already prints {COPYRIGHT_LINE} — repeating it
-            here was the same line twice on screen at once. */}
+        {/* ── 01 · Color ── */}
+        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+          <SectionHeader
+            eyebrow={t('01 · Color')}
+            title={t('One accent in. A whole accessible palette out.')}
+            lead={t('Twelve-step ramps for light and dark, semantic roles on top, every pairing checked.')}
+          />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ShowcaseCard
+              title={t('Ramps in both appearances')}
+              body={t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.')}
+              media="Placeholder — Primitives table: one family, light and dark columns (16:10)"
+            />
+            <ShowcaseCard
+              title={t('Roles solved for contrast')}
+              body={t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.')}
+              media="Placeholder — Semantics table with a role's Token Details open (16:10)"
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <ShowcaseCard
+              title={t('WCAG and APCA, side by side')}
+              body={t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.')}
+              media="Placeholder — Contrast grid (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+            <ShowcaseCard
+              title={t('Translucent tokens that stay true')}
+              body={t('Alpha twins are solved against their page, so a hover wash renders the colour you meant in light and dark.')}
+              media="Placeholder — Accent-Alpha ramp on the checkerboard (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+            <ShowcaseCard
+              title={t('Harmony with your accent')}
+              body={t('Neutral and state colours can follow the accent, so the whole palette reads as one system.')}
+              media="Placeholder — quick rail: accent hue + tint sliders and the four states (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+          </div>
+        </section>
+
+        {/* ── 02 · Type, shape and layout ── */}
+        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+          <SectionHeader
+            eyebrow={t('02 · Type, shape and layout')}
+            title={t('The rest of the system, from the same settings.')}
+            lead={t('Type, radius, spacing, grids and shadows. All tokens, responsive where it matters.')}
+          />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ShowcaseCard
+              title={t('A type scale with a density dial')}
+              body={t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.')}
+              media="Placeholder — Text edition: font family + density slider (16:10)"
+            />
+            <ShowcaseCard
+              title={t('Radius on three axes')}
+              body={t('Boxes, fields and selectors round independently, so a pill button never turns your cards into stadiums.')}
+              media="Placeholder — Radius edition: Boxes · Fields · Selectors (16:10)"
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <ShowcaseCard
+              title={t('Spacing that tightens on mobile')}
+              body={t('Component, section and layout tokens step down per viewport, all from one base unit.')}
+              media="Placeholder — Spacing responsive table, Mobile selected (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+            <ShowcaseCard
+              title={t('Grids that add up')}
+              body={t('Named grids from mobile to wide desktop. Column widths are derived, so every frame sums to its viewport.')}
+              media="Placeholder — Grid preview at every breakpoint (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+            <ShowcaseCard
+              title={t('Shadows that work in dark')}
+              body={t('A derived dark twin adds a soft light rim, so elevation still reads on a near-black page.')}
+              media="Placeholder — Shadow ramp, light vs dark (4:3)"
+              mediaRatio="aspect-[4/3]"
+            />
+          </div>
+        </section>
+
+        {/* ── 03 · Hand-off — destinations left, diagram right ── */}
+        <section className="flex flex-col gap-8 border-b border-line px-6 py-16">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="flex flex-col gap-4">
+              <Eyebrow className="self-start">{t('03 · Hand-off')}</Eyebrow>
+              <h2 className="text-[26px] font-semibold leading-tight text-fg">
+                {t('One system, three destinations.')}
+              </h2>
+              <div className="flex flex-col gap-3">
+                <DestinationRow
+                  Icon={FigmaGlyph}
+                  title="Figma"
+                  body={t('Plugin and live sync. Variables and styles land in your file, light and dark, with a mode per viewport.')}
+                />
+                <DestinationRow
+                  Icon={SparkleCircleIcon}
+                  title={t('AI agents')}
+                  body={t('A live MCP server your agent queries for real tokens, plus an offline package for when it cannot connect.')}
+                  action={(
+                    <button
+                      type="button"
+                      onClick={onLearnAI}
+                      className="mt-1 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+                    >
+                      {t('See how to connect')}
+                      <ArrowGlyph size={10} />
+                    </button>
+                  )}
+                />
+                <DestinationRow
+                  Icon={CodeGlyph}
+                  title={t('Code')}
+                  body={t('CSS variables, W3C JSON, Tailwind, or a push to your GitHub repo.')}
+                />
+              </div>
+            </div>
+            <ImagePlaceholder
+              label="Placeholder — diagram: your foundations flowing into Figma, an AI agent and code (1:1)"
+              className="aspect-square w-full"
+            />
+          </div>
+
+          {/* The real "Connect your agent" widget — same component Docs and the
+              Export wizard use, every string from `agentInstall.ts`. */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-line bg-elevated/20 p-4">
+            <span className="text-ui font-semibold text-fg">{t('Connect your agent')}</span>
+            <AgentInstallPanel variant="about" />
+          </div>
+        </section>
+
+        {/* ── Closing CTA — a background slot behind the copy ── */}
+        <div className="px-6 py-16">
+          <div className="relative overflow-hidden rounded-3xl border border-line">
+            {/* Background slot — swap for an <img>/<video> with
+                `absolute inset-0 h-full w-full object-cover`. Its label sits in
+                the corner so it never collides with the headline on top. */}
+            <div aria-hidden className="absolute inset-0 rounded-3xl border border-dashed border-line-strong bg-elevated/30">
+              <span className="absolute left-4 top-3 text-caption font-medium text-fg-faint">
+                Placeholder — background image or video for the closing band (wide)
+              </span>
+            </div>
+            <div className="relative flex flex-col items-center gap-4 bg-app/60 px-6 py-16 text-center">
+              <Eyebrow>{t('Get started')}</Eyebrow>
+              <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-fg">
+                {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
+              </h2>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+                <RainbowButton
+                  type="button"
+                  onClick={onStart}
+                  className="h-10 px-5 rounded-[13px] gap-1.5 text-ui font-semibold"
+                >
+                  {t('Start building')}
+                  <ArrowGlyph />
+                </RainbowButton>
+                <a href={PRICING_PATH} className={secondaryCta}>{t('See pricing')}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Reference accordion + contact (shared with /about and mobile).
+            No footer: Configurator's own bottom row already prints the
+            copyright line. ── */}
         <div className="px-6 pb-8">
           <AboutAccordion section={section} onSectionChange={setSection} bleed />
           <AboutContact pad="px-0" card />
