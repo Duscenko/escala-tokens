@@ -30,7 +30,7 @@ import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
-import { FigmaGlyph, InspectGlyph } from '../ui/icons'
+import { InspectGlyph } from '../ui/icons'
 import { adoptPreset } from '../../lib/adoptPreset'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
@@ -121,31 +121,6 @@ function InspectorToggle({ active, onChange }: { active: boolean; onChange: (v: 
   )
 }
 
-/**
- * Figma sync — a DESTINATION in the canvas header, beside Inspect tokens.
- *
- * The only door to the Figma page was the `SyncTrack` pinned to the bottom of
- * the Themes library rail: the least-looked-at corner of the workspace, for the
- * handoff this product is largely about. Solid `bg-tab-bar` track (not Inspect's
- * dashed outline) so it joins the action cluster without inventing a third shell.
- *
- * Deliberately NOT a second status readout. The footer track and the Figma page
- * itself both report publish state; a third would be the "two doors to the same
- * facts" duplication this hub already avoids. It says where it goes, nothing
- * more — which is also why it is a plain action, not an `aria-pressed` toggle
- * like Inspect: the surface it opens replaces this header entirely, so there is
- * no state here for it to reflect.
- *
- * The mark renders at 14 against Inspect's 16: `FigmaGlyph` is a 38×57 mark
- * that fills its full height, so matching the square glyph's number would read
- * visibly taller. 14 is the size `SyncTrack` already uses.
- *
- * Rest ink is `text-fg` on `bg-tab-bar`. Inspect's idle label matches —
- * faint ink on a dark board (the header sits inside the previewed appearance)
- * read as disabled. Same shell as Inspect; the fill matches `ThemeViewSwitcher`.
- * Hover is `CHROME_CONTROL_HOVER` (inset wash), not `hover:bg-surface` — same
- * as the Community banner and session chips on workspace gray.
- */
 function DocsPanelButton({ active, onClick }: { active: boolean; onClick: () => void }) {
   const { t } = useI18n()
   const mask = `url('/icons/theme-hub-icons/Icon/doc.svg') center / contain no-repeat`
@@ -169,23 +144,6 @@ function DocsPanelButton({ active, onClick }: { active: boolean; onClick: () => 
   )
 }
 
-function FigmaSyncButton({ onOpen }: { onOpen: () => void }) {
-  const { t } = useI18n()
-  return (
-    <div className="flex h-8 items-center rounded-lg border border-line bg-tab-bar p-0.5">
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={t('Sync with Figma')}
-        title={t('Sync with Figma')}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-normal tracking-[0.18px] text-fg transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] ${CHROME_CONTROL_HOVER} active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
-      >
-        <FigmaGlyph size={14} />
-        {t('Sync')}
-      </button>
-    </div>
-  )
-}
 
 // Hue dragging is a VIEW-ONLY optimistic paint on resolved preview tokens.
 function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null): PreviewTokens {
@@ -420,7 +378,7 @@ export default function ThemePreviewHub({
   docsOpen,
   onDocsOpenChange,
   surface, onSurfaceChange,
-  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
+  previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onCreateTheme, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
   onOpenComponents,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
@@ -440,6 +398,8 @@ export default function ThemePreviewHub({
   /** A tried-on style was adopted into the system — re-point the preview at it
    *  and drop the ephemeral try-on. */
   onAdoptStyle: (themeKey: string) => void
+  /** Opens the create-theme panel — the quick-settings rail's pinned footer. */
+  onCreateTheme?: () => void
   onSelectTheme: (themeKey: string) => void
   onPreviewAppearanceChange: (appearance: ThemeAppearance) => void
   /** Open the Components destination — catalogue link in the Button teaser header. */
@@ -630,6 +590,7 @@ export default function ThemePreviewHub({
           onAccentPreview={setAccentPreview}
           stylePreview={stylePreview}
           onAdoptStyle={onAdoptStyle}
+          onCreateTheme={onCreateTheme}
           onQuickEditOpenChange={setQuickEditOpen}
           containedDrawerRootRef={hubRootRef}
           onRandomBoardAppearance={setRandomBoardAppearance}
@@ -688,7 +649,6 @@ export default function ThemePreviewHub({
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
                     <InspectorToggle active={inspecting} onChange={setInspecting} />
                   )}
-                  <FigmaSyncButton onOpen={() => onSurfaceChange('figma')} />
                   <DocsPanelButton active={docsOpen} onClick={() => onDocsOpenChange(!docsOpen)} />
                 </div>
               </div>

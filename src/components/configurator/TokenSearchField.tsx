@@ -84,6 +84,7 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
     const { t } = useI18n()
     const inputRef = useRef<HTMLInputElement>(null)
     const rootRef = useRef<HTMLDivElement>(null)
+    const fieldBoxRef = useRef<HTMLDivElement>(null)
     const listRef = useRef<HTMLUListElement>(null)
     const [expanded, setExpanded] = useState(false)
     const [wide, setWide] = useState(
@@ -132,10 +133,15 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
     useImperativeHandle(ref, () => ({ focus: focusField }), [focusField])
 
     const measurePanel = useCallback(() => {
-      const el = rootRef.current
+      // Measure the FIELD, not the root: below the wide breakpoint the root
+      // stays an icon-sized slot and the field floats over the tabs from it.
+      const el = fieldBoxRef.current ?? rootRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
-      setPanelRect({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 320) })
+      const width = Math.max(r.width, 320)
+      // Right-aligned to the field, kept on screen.
+      const left = Math.max(8, Math.min(r.left, r.right - width))
+      setPanelRect({ top: r.bottom + 6, left, width })
     }, [])
 
     useLayoutEffect(() => {
@@ -365,9 +371,14 @@ export const TokenSearchField = forwardRef<TokenSearchHandle, TokenSearchFieldPr
     }
 
     return (
-      <div ref={rootRef} className="relative flex-shrink-0">
+      // Below the wide breakpoint the search must not take layout width: the
+      // tab strip would be squeezed the moment it opens. The root keeps the
+      // icon's 32px slot, and the field grows LEFTWARD over the tabs as a
+      // floating layer (right-anchored, above them), then collapses back.
+      <div ref={rootRef} className="relative h-8 w-8 flex-shrink-0">
         <motion.div
-          className={clipping ? 'overflow-hidden' : ''}
+          ref={fieldBoxRef}
+          className={`absolute right-0 top-0 z-30 rounded-lg ${clipping ? 'overflow-hidden' : ''} ${open ? 'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]' : ''}`}
           initial={false}
           animate={{ width: open ? SEARCH_W : ICON_W }}
           transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}

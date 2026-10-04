@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
@@ -12,7 +12,7 @@ import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } fr
 import { useI18n } from '../../lib/i18n'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
-import { ThemeAvatar } from './ThemeLibraryRail'
+import { DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar } from './ThemeLibraryRail'
 import { FOUNDATION_ICON_RAIL_WIDTH } from './FoundationIconRail'
 import { FolderIcon } from './VariableCollectionRail'
 
@@ -26,6 +26,11 @@ const PRESET_AVATAR_RAMPS = Object.fromEntries(
     ]),
   ),
 )
+
+/** Selected row — the same neutral edge the Themes library rail gives its
+ *  active row (`border-line-strong`), on the menu's hover fill. One selection
+ *  language for both lists, so My themes and System styles read alike. */
+const ROW_SELECTED = 'bg-elevated text-fg ring-1 ring-inset ring-line-strong'
 
 const ITEM =
   'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
@@ -87,6 +92,7 @@ export function ThemeSwitcher({
   onCreateTheme,
   onDuplicateTheme,
   onOpenReset,
+  onOpenTheme,
 }: {
   previewTheme: string
   onPreviewThemeChange: (theme: string) => void
@@ -95,6 +101,8 @@ export function ThemeSwitcher({
   onCreateTheme: () => void
   onDuplicateTheme: () => void
   onOpenReset: () => void
+  /** "Open" in a row's options — select the theme and land on Theme preview. */
+  onOpenTheme?: (theme: string) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -107,6 +115,16 @@ export function ThemeSwitcher({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  // Which row's options are expanded, and what that row is doing. One row at a
+  // time: the actions open INLINE under the row they belong to, not in a second
+  // floating menu stacked on this one.
+  const [rowMenu, setRowMenu] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const resetRow = () => { setRowMenu(null); setRenaming(null); setConfirmDelete(null) }
+  // Escape unwinds one level at a time: an open row first, then the menu.
+  const rowBusy = useRef(false)
+  rowBusy.current = rowMenu !== null || renaming !== null
   const place = usePopoverPlacement(triggerRef, open, { prefer: 280, min: 180, max: 420 })
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
 
@@ -138,7 +156,9 @@ export function ThemeSwitcher({
       setOpen(false)
     }
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key !== 'Escape') return
+      if (rowBusy.current) resetRow()
+      else setOpen(false)
     }
     document.addEventListener('pointerdown', onPointer)
     document.addEventListener('keydown', onKey)
@@ -148,6 +168,8 @@ export function ThemeSwitcher({
     }
   }, [open, place.up])
 
+  useEffect(() => { if (!open) resetRow() }, [open])
+
   const previewPreset = (preset: ThemeStylePreset) => {
     loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
     loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
@@ -155,22 +177,81 @@ export function ThemeSwitcher({
     setOpen(false)
   }
 
+  const deleteTheme = (key: string) => {
+    const other = listed.find((k) => k !== key)
+    if (previewTheme === key) {
+      if (other) onPreviewThemeChange(other)
+      else {
+        const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
+        if (core) previewPreset(core)
+      }
+    }
+    store.removeTheme(key)
+    resetRow()
+  }
+
+  // Selecting is instant, CLOSING waits one double-click interval, so a
+  // double-click on a row's name can turn into a rename instead of closing the
+  // menu out from under the second click.
+  const closeTimer = useRef<number | null>(null)
+  const cancelClose = () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current)
+    closeTimer.current = null
+  }
+  useEffect(() => cancelClose, [])
   const selectTheme = (key: string) => {
     onStylePreview?.(null)
     onPreviewThemeChange(key)
-    setOpen(false)
+    cancelClose()
+    closeTimer.current = window.setTimeout(() => { closeTimer.current = null; setOpen(false) }, 220)
   }
+  const startRename = (key: string) => {
+    cancelClose()
+    setConfirmDelete(null)
+    setRowMenu(null)
+    setRenaming(key)
+  }
+
+  // The chip itself is renameable too — double-click its name. Only for one of
+  // My themes: a System style being tried on isn't the user's to rename yet.
+  const [chipRenaming, setChipRenaming] = useState(false)
+  const chipRenameable = !tryOn && listed.includes(previewTheme)
 
   return (
     <div className="relative flex-shrink-0">
+      {chipRenaming ? (
+        <div
+          style={{ width: THEME_SWITCHER_WIDTH }}
+          className={`flex h-8 min-w-0 flex-shrink-0 items-center gap-1.5 rounded-lg px-1.5 ${CHROME_CONTROL_SHELL}`}
+        >
+          <ThemeAvatar ramp={chipRamp} appearance={chipKind} fallback={chipFallback} />
+          <RenameField
+            initial={chipName}
+            onCommit={(next) => {
+              if (next && next !== chipName) store.setThemeLabel(previewTheme, next)
+              setChipRenaming(false)
+              requestAnimationFrame(() => triggerRef.current?.focus())
+            }}
+            onCancel={() => {
+              setChipRenaming(false)
+              requestAnimationFrame(() => triggerRef.current?.focus())
+            }}
+          />
+        </div>
+      ) : (
       <button
         ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('Switch theme')}
-        title={chipName}
-        onClick={() => setOpen((v) => !v)}
+        title={chipRenameable ? `${chipName} — ${t('double-click to rename')}` : chipName}
+        onClick={(event) => { if (event.detail < 2) setOpen((v) => !v) }}
+        onDoubleClick={() => {
+          if (!chipRenameable) return
+          setOpen(false)
+          setChipRenaming(true)
+        }}
         style={{ width: THEME_SWITCHER_WIDTH }}
         className={`flex h-8 min-w-0 flex-shrink-0 items-center gap-1.5 rounded-lg px-1.5 text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
@@ -178,6 +259,7 @@ export function ThemeSwitcher({
         <span className="min-w-0 flex-1 truncate text-left">{chipName}</span>
         <ChevronDown />
       </button>
+      )}
       {createPortal(
         <AnimatePresence>
           {open && pos && (
@@ -233,23 +315,97 @@ export function ThemeSwitcher({
                   </button>
                   {listed.map((key) => {
                     const selected = !tryOn && key === previewTheme
+                    const name = themeDisplayName(key, themeLabels)
+                    const expanded = rowMenu === key
+                    const avatar = (
+                      <ThemeAvatar
+                        ramp={themeBrandRamp(key, themeSources, themeKinds, store)}
+                        appearance={themeKinds[key] ?? 'light'}
+                        fallback={store.primaryColor}
+                      />
+                    )
                     return (
-                      <button
-                        key={key}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={selected}
-                        onClick={() => selectTheme(key)}
-                        className={ITEM}
-                      >
-                        <ThemeAvatar
-                          ramp={themeBrandRamp(key, themeSources, themeKinds, store)}
-                          appearance={themeKinds[key] ?? 'light'}
-                          fallback={store.primaryColor}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{themeDisplayName(key, themeLabels)}</span>
-                        {selected ? <CheckMark /> : null}
-                      </button>
+                      <div key={key} className={`group/row relative rounded-md transition-colors ${expanded ? 'bg-elevated/50' : ''}`}>
+                        {renaming === key ? (
+                          <RenameRow
+                            avatar={avatar}
+                            initial={name}
+                            onCommit={(next) => { if (next && next !== name) store.setThemeLabel(key, next); resetRow() }}
+                            onCancel={resetRow}
+                          />
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={selected}
+                              onClick={(event) => { if (event.detail < 2) selectTheme(key) }}
+                              onDoubleClick={() => startRename(key)}
+                              title={t('Double-click to rename')}
+                              className={`${ITEM} pr-9 ${selected ? ROW_SELECTED : ''}`}
+                            >
+                              {avatar}
+                              <span className={`min-w-0 flex-1 truncate ${selected ? 'font-semibold' : ''}`}>{name}</span>
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={t('Options for {name}', { name })}
+                              title={t('Options for {name}', { name })}
+                              aria-expanded={expanded}
+                              aria-controls={`theme-row-options-${key}`}
+                              onClick={() => { setConfirmDelete(null); setRowMenu(expanded ? null : key) }}
+                              className={`absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-md transition-[opacity,color,background-color] duration-150 hover:bg-chip-rest hover:text-fg focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                                expanded || selected ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
+                              } ${expanded ? 'bg-chip-rest text-fg' : 'text-fg-faint'}`}
+                            >
+                              <LibraryOptionsIcon />
+                            </button>
+                          </>
+                        )}
+                        <AnimatePresence initial={false}>
+                          {expanded && renaming !== key && (
+                            <motion.div
+                              key="options"
+                              id={`theme-row-options-${key}`}
+                              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+                              transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                              className="overflow-hidden"
+                            >
+                              {confirmDelete === key ? (
+                                <div className="p-1 pt-0.5">
+                                  <DeleteThemeConfirmation
+                                    name={name}
+                                    isPreviewed={key === previewTheme}
+                                    isLast={listed.length <= 1}
+                                    onCancel={() => setConfirmDelete(null)}
+                                    onConfirm={() => deleteTheme(key)}
+                                  />
+                                </div>
+                              ) : (
+                                // Indented so each action's label starts where the
+                                // theme's NAME starts (10px pad + 24px avatar + 8px gap):
+                                // they read as that row's children, no tree rule needed.
+                                <div role="group" aria-label={t('Options for {name}', { name })} className="flex flex-col pb-1 pl-8">
+                                  {onOpenTheme && (
+                                    <button type="button" role="menuitem" onClick={() => { setOpen(false); onOpenTheme(key) }} className={`${ITEM} h-7`}>{t('Open')}</button>
+                                  )}
+                                  <button type="button" role="menuitem" onClick={() => startRename(key)} className={`${ITEM} h-7`}>{t('Rename')}</button>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => setConfirmDelete(key)}
+                                    className={`${ITEM} h-7 text-status-danger hover:bg-status-danger/10 hover:text-status-danger focus-visible:ring-status-danger/50`}
+                                  >
+                                    {t('Delete')}
+                                  </button>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )
                   })}
                 </div>
@@ -264,15 +420,14 @@ export function ThemeSwitcher({
                         role="menuitemradio"
                         aria-checked={selected}
                         onClick={() => previewPreset(preset)}
-                        className={ITEM}
+                        className={`${ITEM} ${selected ? ROW_SELECTED : ''}`}
                       >
                         <ThemeAvatar
                           ramp={PRESET_AVATAR_RAMPS[`${preset.id}:${chromeTheme}`]}
                           appearance={chromeTheme}
                           fallback={preset.accent}
                         />
-                        <span className="min-w-0 flex-1 truncate">{preset.shortLabel}</span>
-                        {selected ? <CheckMark /> : null}
+                        <span className={`min-w-0 flex-1 truncate ${selected ? 'font-semibold' : ''}`}>{preset.shortLabel}</span>
                       </button>
                     )
                   })}
@@ -306,6 +461,54 @@ export function ThemeSwitcher({
   )
 }
 
+/** A row mid-rename: the name turns into a field in place. Enter or leaving it
+ *  commits, Escape cancels, an empty name keeps the old one. */
+function RenameRow({
+  avatar, initial, onCommit, onCancel,
+}: {
+  avatar: ReactNode
+  initial: string
+  onCommit: (next: string) => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex h-8 w-full items-center gap-2 rounded-md px-2.5">
+      {avatar}
+      <RenameField initial={initial} onCommit={onCommit} onCancel={onCancel} />
+    </div>
+  )
+}
+
+/** The editable name itself — shared by a menu row and the trigger chip. */
+function RenameField({
+  initial, onCommit, onCancel,
+}: {
+  initial: string
+  onCommit: (next: string) => void
+  onCancel: () => void
+}) {
+  const { t } = useI18n()
+  const [draft, setDraft] = useState(initial)
+  const done = useRef(false)
+  const commit = () => { if (done.current) return; done.current = true; onCommit(draft.trim()) }
+  return (
+      <input
+        autoFocus
+        value={draft}
+        maxLength={40}
+        aria-label={t('Theme name')}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          else if (e.key === 'Escape') { e.stopPropagation(); done.current = true; onCancel() }
+        }}
+        className="h-7 min-w-0 flex-1 rounded-md border border-line-strong bg-app px-2 text-caption font-medium text-fg outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      />
+  )
+}
+
 function PlusIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
@@ -322,12 +525,5 @@ function ChevronDown() {
   )
 }
 
-function CheckMark() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0 text-accent-ui">
-      <path d="m2.25 6.25 2.5 2.5 5-5" />
-    </svg>
-  )
-}
 
 export { PlatformSwitch } from './PlatformRail'

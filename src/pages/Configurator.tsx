@@ -17,7 +17,8 @@ import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/Sec
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
 import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
-import ThemeCodeFormat, { resolveCodeTheme, type CodeThemeScope } from '../components/configurator/ThemeCodeFormat'
+import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
+import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
@@ -25,7 +26,7 @@ import { ThemeSwitcher, ThemesLibraryToggle } from '../components/configurator/T
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
-import { SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
+import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
@@ -302,10 +303,15 @@ const ExportIcon: ComponentType = () => (
 )
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
-type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
-// Every workspace page is a tab in the strip — Get code included, so the page the
-// Export menu and the library's folder both open also has a visible home here.
-type ThemeWorkspaceTabStrip = ThemeWorkspaceTab
+// `library` is the Themes library page — the folder in the tab bar is its door,
+// it has no tab of its own. Get code is a page too, but not a tab: it already
+// had five doors (Export, library, row menus…), so in the strip it is the
+// `</>` icon beside Search. Its tab slot went to Sync — Figma sync used to be
+// reachable only from Theme preview's header, i.e. not from Variables at all.
+// `sync` is not a workspace of its own: it lights while Theme preview shows
+// its Figma surface.
+type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code' | 'library'
+type ThemeWorkspaceTabStrip = 'preview' | 'primitives' | 'sync'
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -400,7 +406,7 @@ function PreviewThemeSwitch({
 const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTabStrip; label: string; icon: string }[] = [
   { key: 'preview', label: 'Theme preview', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
   { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
-  { key: 'code', label: 'Get code', icon: '/icons/theme-hub-icons/Icon/code.svg' },
+  { key: 'sync', label: 'Sync', icon: '/icons/theme-hub-icons/Icon/figma.svg' },
 ]
 
 function WorkspaceTabIcon({ source }: { source: string }) {
@@ -523,11 +529,32 @@ function ThemeWorkspaceTabs({
         })}
       </div>
       {search && (
-        <div className="ml-auto flex flex-shrink-0 items-center min-w-0">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2 min-w-0">
           {search}
         </div>
       )}
     </div>
+  )
+}
+
+/** Get code's door in the tab strip — an icon, same 32px chrome square as the
+ *  Search trigger beside it. Lit (pressed) while the Get code page is open. */
+function GetCodeButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  const { t } = useI18n()
+  const mask = "url('/icons/theme-hub-icons/Icon/code.svg') center / contain no-repeat"
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={t('Get code')}
+      title={t('Get code')}
+      className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        active ? `${CHROME_CONTROL_ACTIVE} text-fg` : 'text-fg-muted'
+      }`}
+    >
+      <span aria-hidden className="h-4 w-4 bg-current" style={{ WebkitMask: mask, mask }} />
+    </button>
   )
 }
 
@@ -749,7 +776,6 @@ export default function Configurator() {
     const place = incomingPlace
     return place?.surface === 'documentation' || place?.workspace === 'documentation'
   })
-  const [codeScope, setCodeScope] = useState<CodeThemeScope>('')
   const [activeComponent, setActiveComponent] = useState<ComponentDef | null>(
     () => COMPONENTS.find((c) => c.key === incomingPlace?.component) ?? COMPONENTS.find((c) => c.key === 'Button') ?? null,
   )
@@ -1233,7 +1259,7 @@ export default function Configurator() {
     setActiveFoundation(key)
     // From the Themes library page, a foundation icon means "edit this", which
     // lives in Theme preview's widget panel.
-    if (themeWorkspaceTab === 'code') {
+    if (themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library') {
       setThemeWorkspaceTab('preview')
       setThemeHubSurface('artefacts')
       return
@@ -1258,7 +1284,6 @@ export default function Configurator() {
   }
   const openCodeForTheme = (key: string) => {
     changePreviewTheme(key)
-    setCodeScope(key)
     setThemeWorkspaceTab('code')
   }
   /**
@@ -1284,9 +1309,7 @@ export default function Configurator() {
     setThemeWorkspaceTab('preview')
     setThemeHubSurface('figma')
   }
-  const openThemeLibraryFromCode = () => {
-    changeThemeWorkspaceTab('preview')
-  }
+  const openThemeLibraryFromCode = () => openLibraryPage()
   /** Docs destination, opened at a specific foundation — the reverse of
    *  `FoundationArticle`'s own "Edit tokens" link. Used by the preview aside's
    *  Documentation tab, whose accordion is a reading surface for the column,
@@ -1319,11 +1342,19 @@ export default function Configurator() {
     commitVisit()
     setExportMode(null)
     setTab('foundations')
-    if (themeWorkspaceTab !== 'code') {
-      const listed = myThemeKeys(themeOrder, themes)
-      setCodeScope(resolveCodeTheme(listed, codeScope, previewTheme))
-    }
+    // Get code reads the theme the switcher shows. If that is a built-in
+    // scaffold (not one of My themes), land on the theme the page can export
+    // so the switcher and the code agree.
+    const resolved = resolveCodeTheme(myThemeKeys(themeOrder, themes), '', previewTheme)
+    if (resolved && resolved !== previewTheme) changePreviewTheme(resolved)
     setThemeWorkspaceTab('code')
+  }
+  const openLibraryPage = () => {
+    leaveExportWizard()
+    commitVisit()
+    setExportMode(null)
+    setTab('foundations')
+    setThemeWorkspaceTab('library')
   }
   const openMcpPage = () => {
     leaveExportWizard()
@@ -1785,7 +1816,7 @@ export default function Configurator() {
   // render.
   const themeHubConnecting = themeWorkspaceTab === 'preview'
     && (themeHubSurface === 'figma' || themeHubSurface === 'github')
-  // The library page ('code') keeps the icon column: the folder that opens it
+  // The library and Get code pages keep the icon column: the folder that opens it
   // sits on top of that column, and the column stays the one way back into a
   // foundation's widget.
   const themeWorkspaceRailVisible = themesCanvas
@@ -1833,7 +1864,9 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
-        exportAction={(
+        // Export is for the two surfaces that hold a system you're shaping —
+        // Generator and Components. About and Docs are reading surfaces.
+        exportAction={(tab === 'foundations' || tab === 'components') ? (
           <ExportPill
             onExport={openSectionExport}
             onSyncFigma={openFigmaSyncPage}
@@ -1841,7 +1874,7 @@ export default function Configurator() {
             onExportCode={openGetCodePage}
             onConnectMcp={openMcpPage}
           />
-        )}
+        ) : undefined}
         brandWidth={themesCanvas ? null : outerRailVisible ? (railCollapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH) : null}
         // Drops the wordmark, leaving just the mark. Either narrow-brand-block
         // case has to set this, not only the Components rail: at 56px the
@@ -1889,9 +1922,18 @@ export default function Configurator() {
         >
           {themesCanvas && (
             <ThemeWorkspaceTabs
-              value={themeWorkspaceTab}
-              onChange={(tab) => (tab === 'code' ? openGetCodePage() : changeThemeWorkspaceTab(tab))}
-              search={tokenSearchField}
+              value={
+                themeWorkspaceTab === 'preview'
+                  ? (themeHubSurface === 'figma' ? 'sync' : 'preview')
+                  : themeWorkspaceTab === 'primitives' ? 'primitives' : null
+              }
+              onChange={(tab) => (tab === 'sync' ? openFigmaSyncPage() : changeThemeWorkspaceTab(tab))}
+              search={(
+                <>
+                  <GetCodeButton active={themeWorkspaceTab === 'code'} onClick={openGetCodePage} />
+                  {tokenSearchField}
+                </>
+              )}
               leading={(
                 <>
                   {/* Transversal: the library is the same list on Theme preview
@@ -1904,14 +1946,15 @@ export default function Configurator() {
                       library's door, not part of the rail, so it must not
                       vanish with it. */}
                   <ThemesLibraryToggle
-                    open={themeWorkspaceTab === 'code'}
-                    onToggle={() => (themeWorkspaceTab === 'code' ? changeThemeWorkspaceTab('preview') : openGetCodePage())}
+                    open={themeWorkspaceTab === 'library'}
+                    onToggle={() => (themeWorkspaceTab === 'library' ? changeThemeWorkspaceTab('preview') : openLibraryPage())}
                     placement="tab-bar"
                   />
                   <div className="flex h-full flex-shrink-0 items-center gap-2 pl-3">
                     <ThemeSwitcher
                       previewTheme={previewTheme}
                       onPreviewThemeChange={changePreviewTheme}
+                      onOpenTheme={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                       onStylePreview={setStylePreview}
                       activeStylePreview={stylePreview}
                       onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
@@ -1939,7 +1982,7 @@ export default function Configurator() {
             <FoundationIconRail
               orientation="vertical"
               ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
-              active={themeWorkspaceTab === 'code' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
+              active={themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
@@ -1949,11 +1992,11 @@ export default function Configurator() {
           )}
           {/* Themes library page: the library docks in the widget panel's
               slot (same 240px), the canvas shows the selected theme's export. */}
-          {themesCanvas && themeWorkspaceTab === 'code' && (
+          {themesCanvas && themeWorkspaceTab === 'library' && (
             <ThemeLibraryRail
               width={COLOR_RAIL_WIDTH}
               previewTheme={previewTheme}
-              onPreviewThemeChange={(key) => { setCodeScope(key); changePreviewTheme(key) }}
+              onPreviewThemeChange={changePreviewTheme}
               onStylePreview={setStylePreview}
               activeStylePreview={stylePreview}
               onSyncFigma={syncFigmaForTheme}
@@ -2005,6 +2048,7 @@ export default function Configurator() {
                     onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
+                    onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}
@@ -2040,6 +2084,23 @@ export default function Configurator() {
                     }}
                   />
                 </motion.div>
+              ) : themesCanvas && themeWorkspaceTab === 'library' ? (
+                <motion.div
+                  key="theme-library"
+                  className="h-full"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <ThemeLibraryPage
+                    previewTheme={previewTheme}
+                    onSelectTheme={changePreviewTheme}
+                    onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
+                    onGetCode={openCodeForTheme}
+                    onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+                    onManageSaved={() => openExport('save')}
+                  />
+                </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (
                 <motion.div
                   key="theme-code-format"
@@ -2050,14 +2111,11 @@ export default function Configurator() {
                 >
                   <ThemeCodeFormat
                     previewTheme={previewTheme}
-                    scope={codeScope}
-                    onScopeChange={(next) => {
-                      setCodeScope(next)
-                      if (next) changePreviewTheme(next)
-                    }}
+                    // The theme switcher in the tab bar IS this page's picker.
+                    scope={previewTheme}
+                    onScopeChange={(next) => { if (next) changePreviewTheme(next) }}
                     onPreviewThemeChange={changePreviewTheme}
                     onBack={openThemeLibraryFromCode}
-                    showScopeRail={false}
                     onEditTheme={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                   />
                 </motion.div>

@@ -64,7 +64,7 @@ export const HUB_SURFACE_KEYS = [
 export type FoundationSectionKey = (typeof FOUNDATION_SECTION_KEYS)[number]
 export type CollectionSectionKey = (typeof COLLECTION_SECTION_KEYS)[number]
 export type HubSurfaceKey = (typeof HUB_SURFACE_KEYS)[number]
-export type WorkspaceTabKey = 'preview' | 'primitives' | 'documentation' | 'code'
+export type WorkspaceTabKey = 'preview' | 'primitives' | 'documentation' | 'code' | 'library'
 export type AppTabKey = 'about' | 'foundations' | 'components' | 'docs'
 
 export type WorkspacePlace = {
@@ -132,6 +132,7 @@ export function encodeWorkspaceSection(place: {
   if (place.workspace === 'code') {
     return theme ? `code/${theme}` : 'code'
   }
+  if (place.workspace === 'library') return 'library'
   if (place.workspace === 'primitives') {
     const parts = ['variables']
     if (theme) parts.push(theme)
@@ -175,6 +176,7 @@ export function decodeWorkspaceSection(section: string | null | undefined): Work
       doc: isSegment(rest[0]) ? rest[0] : undefined,
     }
   }
+  if (root === 'library') return { tab: 'foundations', workspace: 'library', surface: 'artefacts' }
   if (root === 'code') {
     return {
       tab: 'foundations',

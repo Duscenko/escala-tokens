@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
+import { TABLE_GROUP_LABEL, TABLE_HEAD_CELL, tableHeaderClass, tableRowClass } from './tableChrome'
 import { useThemeFoundations } from '../../lib/useThemeFoundations'
 import {
   BREAKPOINT_ROLES,
@@ -26,11 +26,17 @@ import DimensionSelect from '../ui/DimensionSelect'
 import { parseDimension } from '../../lib/dimensions'
 import { useDimensions } from '../../lib/useDimensions'
 
-const VIEWPORT_GRID = 'grid grid-cols-[minmax(9rem,1.1fr)_minmax(8rem,1fr)_minmax(8rem,1fr)_2.5rem]'
-const FRAME_GRID = 'grid grid-cols-[minmax(9rem,1.2fr)_minmax(12rem,1.5fr)_2.5rem]'
-const GRID = FRAME_GRID
+// ONE column template for both groups, so in "All" the Viewport and Frame
+// tables share every column edge instead of each sizing its own: token ·
+// the value you edit on the active platform · what that resolves to (the
+// media query for a cut, the live value for a frame field) · reset.
+const GRID = 'grid grid-cols-[minmax(9rem,1.2fr)_minmax(12rem,1.5fr)_minmax(8rem,1fr)_2.5rem]'
 
-const rowClass = (index: number, template = GRID) => tableRowClass(index, template)
+const rowClass = (index: number) => tableRowClass(index, GRID)
+
+function GroupTitle({ children }: { children: ReactNode }) {
+  return <span className="text-caption font-semibold text-fg">{children}</span>
+}
 
 function ResetIcon() {
   return (
@@ -168,8 +174,9 @@ export default function GridSemantics({
           <div className="flex-1 min-w-0 overflow-auto">
             <div className="min-w-[28rem]">
               {showViewport && (
-                <>
-                  <div className={tableHeaderClass(VIEWPORT_GRID)}>
+                <section aria-label="Viewport">
+                  {group === 'all' && <div className={TABLE_GROUP_LABEL}><GroupTitle>{t('Viewport')}</GroupTitle></div>}
+                  <div className={tableHeaderClass(GRID, { stacked: group === 'all' })}>
                     <span className={`${TABLE_HEAD_CELL} pl-4`}>Viewport</span>
                     <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
                     <span className={`${TABLE_HEAD_CELL} px-3`}>Query</span>
@@ -187,7 +194,7 @@ export default function GridSemantics({
                       <div
                         key={role.key}
                         id={`layout-role-breakpoint-${role.key}`}
-                        className={`${rowClass(i, VIEWPORT_GRID)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                        className={`${rowClass(i)} ${flashKey === role.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                       >
                         <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                           <span className="flex items-center gap-2 min-w-0">
@@ -223,14 +230,16 @@ export default function GridSemantics({
                       </div>
                     )
                   })}
-                </>
+                </section>
               )}
 
               {showFrame && (
-                <>
-                  <div className={`${tableHeaderClass(FRAME_GRID)} ${showViewport ? 'mt-6' : ''}`}>
+                <section aria-label="Frame">
+                  {group === 'all' && <div className={TABLE_GROUP_LABEL}><GroupTitle>{t('Frame')}</GroupTitle></div>}
+                  <div className={tableHeaderClass(GRID, { stacked: group === 'all' })}>
                     <span className={`${TABLE_HEAD_CELL} pl-4`}>Frame</span>
                     <span className={`${TABLE_HEAD_CELL} px-3 text-fg`}>{platformLabel}</span>
+                    <span className={`${TABLE_HEAD_CELL} px-3`}>{t('Resolves to')}</span>
                     <span aria-hidden />
                   </div>
                   {GRID_FRAME_FIELDS.map((field, i) => {
@@ -240,7 +249,7 @@ export default function GridSemantics({
                       <div
                         key={field.key}
                         id={`layout-role-grid-${field.key}`}
-                        className={`${rowClass(i, FRAME_GRID)} ${flashKey === field.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
+                        className={`${rowClass(i)} ${flashKey === field.key ? 'bg-accent-ui/[0.12] ring-1 ring-inset ring-accent-ui/35' : ''}`}
                       >
                         <div className="flex flex-col justify-center py-2.5 pl-4 pr-3 min-w-0 border-r border-line">
                           <span className="flex items-center gap-2 min-w-0">
@@ -271,7 +280,9 @@ export default function GridSemantics({
                               }}
                             />
                           )}
-                          <span className="text-mini font-mono text-fg-faint">{live(previewPlatform, field.key)}</span>
+                        </div>
+                        <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
+                          <span className="text-caption font-mono text-fg-faint tabular-nums truncate">{live(previewPlatform, field.key)}</span>
                         </div>
                         <button
                           type="button"
@@ -292,7 +303,7 @@ export default function GridSemantics({
                       </div>
                     )
                   })}
-                </>
+                </section>
               )}
             </div>
           </div>

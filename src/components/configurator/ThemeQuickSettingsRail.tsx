@@ -1292,6 +1292,7 @@ export default function ThemeQuickSettingsRail({
   onAccentPreview,
   stylePreview,
   onAdoptStyle,
+  onCreateTheme,
   onQuickEditOpenChange,
   containedDrawerRootRef,
   onRandomBoardAppearance,
@@ -1321,6 +1322,8 @@ export default function ThemeQuickSettingsRail({
    *  previewed style). The shell re-points `previewTheme` and drops the
    *  ephemeral preview. */
   onAdoptStyle?: (themeKey: string) => void
+  /** Pinned footer action — start a new theme from wherever this rail is. */
+  onCreateTheme?: () => void
   /** Reports whether a contained colour picker is open, so the canvas beside
    *  this rail can cede matching space instead of sitting under the fly-out. */
   onQuickEditOpenChange?: (open: boolean) => void
@@ -1825,9 +1828,9 @@ export default function ThemeQuickSettingsRail({
       className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: QUICK_SETTINGS_WIDTH }}
     >
-      <div className="flex-shrink-0">
-        <ThemeIdentityBand previewTheme={previewTheme} tryOnLabel={tryOn?.preset.label} />
-      </div>
+      {/* No Name band here any more: a theme is renamed where it is LISTED —
+          double-click in the theme switcher or the library, or Rename in a
+          row's options. This column is for editing how the theme looks. */}
       {/* "Add to system" sits directly UNDER the Name field, at the field's own
           width — it used to live in the Themes Library's expanded style row,
           which put the one control that commits a style in a different column
@@ -1841,7 +1844,7 @@ export default function ThemeQuickSettingsRail({
           disabled-when-idle — a permanent control that is dead most of the time
           is the thing this fix exists to remove. */}
       {tryOn && (
-        <div className="flex-shrink-0 px-3">
+        <div className="flex-shrink-0 px-3 pt-3">
           <button
             type="button"
             onClick={addTryOnToSystem}
@@ -2420,6 +2423,26 @@ export default function ThemeQuickSettingsRail({
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Creating a theme is GLOBAL, not a property of one edition, so it is
+          pinned here, under every panel, instead of after Color's Random
+          (which only exists in Color edition). Outline, not filled: Random and
+          "Add to system" stay the column's emphasised actions. */}
+      {onCreateTheme && (
+        <div className={`flex-shrink-0 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
+          <button
+            type="button"
+            onClick={onCreateTheme}
+            disabled={!canAddTheme}
+            title={!canAddTheme ? t(MY_THEME_FULL_ERROR, { count: ownThemeCount }) : undefined}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-caption font-medium text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+              <path d="M7 2.25v9.5M2.25 7h9.5" />
+            </svg>
+            {t('Create new theme')}
+          </button>
+        </div>
+      )}
       </div>
     </aside>
   )

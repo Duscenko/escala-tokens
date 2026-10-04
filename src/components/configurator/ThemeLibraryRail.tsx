@@ -258,6 +258,7 @@ function ThemeOptionsMenu({
   onClose,
   onSyncFigma,
   onOpenInCode,
+  onRename,
   onAskDelete,
 }: {
   open: boolean
@@ -268,12 +269,13 @@ function ThemeOptionsMenu({
    *  that names the theme it would publish. */
   onSyncFigma?: () => void
   onOpenInCode?: () => void
+  onRename: () => void
   onAskDelete: () => void
 }) {
   const { t } = useI18n()
   const reduceMotion = useReducedMotion()
   const panelRef = useRef<HTMLDivElement>(null)
-  const place = usePopoverPlacement(anchorRef, open, { prefer: 96, min: 80, max: 200 })
+  const place = usePopoverPlacement(anchorRef, open, { prefer: 140, min: 80, max: 200 })
   const [rect, setRect] = useState<DOMRect | null>(null)
   const lastRect = useRef<DOMRect | null>(null)
 
@@ -365,6 +367,14 @@ function ThemeOptionsMenu({
           <button
             type="button"
             role="menuitem"
+            onClick={onRename}
+            className={THEME_MENU_ITEM}
+          >
+            {t('Rename')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={onAskDelete}
             className="flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-status-danger transition-colors hover:bg-status-danger/10 active:bg-status-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger/50"
           >
@@ -392,6 +402,7 @@ function ThemeLibraryRow({
   onCloseMenu,
   onSyncFigma,
   onOpenInCode,
+  onRename,
   onAskDelete,
   onCancelDelete,
   onConfirmDelete,
@@ -410,12 +421,22 @@ function ThemeLibraryRow({
   onCloseMenu: () => void
   onSyncFigma?: () => void
   onOpenInCode?: () => void
+  /** Commit a new display name. The row owns the inline editing; the parent
+   *  only writes the label. */
+  onRename: (next: string) => void
   onAskDelete: () => void
   onCancelDelete: () => void
   onConfirmDelete: () => void
 }) {
   const { t } = useI18n()
   const menuBtnRef = useRef<HTMLButtonElement>(null)
+  const [renaming, setRenaming] = useState(false)
+  const [draft, setDraft] = useState(label)
+  const commitRename = () => {
+    const next = draft.trim()
+    setRenaming(false)
+    if (next && next !== label) onRename(next)
+  }
   return (
     <div className="flex flex-col gap-1">
       <div
@@ -434,6 +455,22 @@ function ThemeLibraryRow({
         >
           <ThemeAvatar ramp={ramp} appearance={kind} fallback={fallback} />
         </button>
+        {renaming ? (
+          <input
+            autoFocus
+            value={draft}
+            maxLength={40}
+            aria-label={t('Theme name')}
+            onChange={(e) => setDraft(e.target.value)}
+            onFocus={(e) => e.currentTarget.select()}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename()
+              else if (e.key === 'Escape') setRenaming(false)
+            }}
+            className="h-7 min-w-0 flex-1 rounded-md border border-line-strong bg-app px-2 text-body font-semibold text-fg outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          />
+        ) : (
         <button
           type="button"
           onClick={onPreview}
@@ -446,6 +483,7 @@ function ThemeLibraryRow({
             {label}
           </span>
         </button>
+        )}
         <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center ${active || menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity`}>
           <button
             ref={menuBtnRef}
@@ -466,6 +504,7 @@ function ThemeLibraryRow({
           onClose={onCloseMenu}
           onSyncFigma={onSyncFigma}
           onOpenInCode={onOpenInCode}
+          onRename={() => { setDraft(label); setRenaming(true); onCloseMenu() }}
           onAskDelete={onAskDelete}
         />
       </div>
@@ -778,6 +817,7 @@ export default function ThemeLibraryRail({
               onCloseMenu={() => setRowMenuKey(null)}
               onSyncFigma={() => { setRowMenuKey(null); onSyncFigma?.(key) }}
               onOpenInCode={() => { setRowMenuKey(null); onOpenInCode?.(key) }}
+              onRename={(next) => store.setThemeLabel(key, next)}
               onAskDelete={() => { setRowMenuKey(null); setDeleteKey(key) }}
               onCancelDelete={() => setDeleteKey(null)}
               onConfirmDelete={() => deleteTheme(key)}
