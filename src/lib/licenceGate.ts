@@ -13,7 +13,7 @@
 //
 // Pure and DOM-free: the endpoints and the tests share it.
 
-import { entitlementAt } from './entitlement'
+import { entitlementAt } from './entitlement.js'
 
 export const LICENCE_STAMP = 'escalaLicence'
 
