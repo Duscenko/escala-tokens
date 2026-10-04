@@ -61,12 +61,12 @@ export function buildVariableDescriptions(): VariableDescriptions {
     }
   }
 
-  // Type roles: same copy on size / weight / family aliases, plus the mobile size.
+  // Type roles: same copy on size / weight / family aliases. Size carries a
+  // value per Typography viewport mode (Desktop · Tablet · Mobile, plugin ≥ 0.3.9).
   for (const role of TYPE_ROLES) {
     for (const part of ['size', 'weight', 'family'] as const) {
-      put(COLL.typography, `role/${role.key}/${part}`, role.description)
+      put(COLL.typography, `role/${role.key}/${part}`, part === 'size' ? `${role.description} One value per viewport mode: Desktop · Tablet · Mobile.` : role.description)
     }
-    put(COLL.typography, `role/${role.key}/size-mobile`, `${role.description} Mobile size.`)
   }
 
   // One variable per frame field, a value per VIEWPORT mode (Desktop · Tablet ·

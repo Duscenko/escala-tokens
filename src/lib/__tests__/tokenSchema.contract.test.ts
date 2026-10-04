@@ -44,7 +44,7 @@ describe('token schema contract (docs/agent-native)', () => {
     expect(json.descriptions && typeof json.descriptions).toBe('object')
     expect(json.descriptions?.['Color Semantics']?.['Content/primary']).toMatch(/High Contrast Text/)
     expect(json.descriptions?.['Radius']?.['role/action']).toMatch(/Buttons/)
-    expect(json.descriptions?.['Typography']?.['role/label/size-mobile']).toMatch(/Mobile size/)
+    expect(json.descriptions?.['Typography']?.['role/label/size']).toMatch(/per viewport mode/)
     expect(json.descriptions?.['Grid']?.['columns']).toMatch(/Desktop · Tablet · Mobile/)
   })
 })

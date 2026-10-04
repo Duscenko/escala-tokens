@@ -2360,6 +2360,21 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > pruned). Helpers: `figmaSyncModes.ts` (`normalizeFigmaViewports`, `toggleFigmaViewport`).
 > Plugin v0.3.2.
 >
+> **Plugin 0.3.9: the TYPOGRAPHY collection's modes are viewports too, and `Grid/columns`
+> is bound.** Typography's modes used to be THEME columns (per-theme typeface) with the
+> responsive sizes parked in `role/*/size-tablet` / `size-mobile` twins, so a component
+> bound to `role/*/size` never stepped down on a phone frame. Now `role/*/size|weight|family`
+> carry a value per Desktop · Tablet · Mobile mode (aliasing `size/*` etc.), the twins are
+> retired, and the values come from the ACTIVE theme (same "one theme per file" rule and
+> log as Dimension Semantics). `Type/{role} (Tablet|Mobile)` text styles pin the static
+> `size/*` step. Column counts get their own `columns/<n>` primitives in Dimension
+> Primitives (a count is not a length — never alias `dimension-12` for it), and
+> `Grid/columns` aliases them per mode.
+> **If Dimension Semantics shows identical values in all three modes, check the published
+> Blob first**: the plugin only steps radius/spacing when the payload carries
+> `radiusResponsive` / `spacingResponsive` — a stale publish (no Sync now since those
+> landed) imports flat.
+>
 > **Grid ships SIX named styles, and the three viewport modes ARE three of them**
 > (`GRID_STYLES` / `resolveGridStyles` in `layoutTokens.ts`, store v76). SM Mobile
 > 4×60 · 16/16 → 320 · MD Tablet 8×60 · 32/32 → 768 · LG Web 12×48 · 32/48 → 1024 ·
