@@ -16,6 +16,7 @@ import {
   type GridViewport,
 } from '../layoutTokens'
 import { generateTokenJSON } from '../tokenGenerator'
+import { useDesignStore } from '../../store/useDesignStore'
 
 const VPS: GridViewport[] = ['desktop', 'tablet', 'mobile']
 const px = (step: string) => parseFloat(SPACING_STANDARD[step])
@@ -79,6 +80,32 @@ describe('responsive spacing', () => {
     expect(doc.spacingRoles['gap-section']).toBe('6')
     expect(doc.spacingRoleRefs['gap-section']).toBe('section-md')
     expect(doc.spacingResponsive['layout-xl']).toEqual({ desktop: '32', tablet: '16', mobile: '12' })
+  })
+})
+
+describe('per-theme spacing roles reach the payload', () => {
+  it('foundationsByTheme carries each theme\'s own roles, not the root store\'s', () => {
+    const doc = generateTokenJSON() as unknown as {
+      foundationsByTheme: Record<string, { spacingRoles?: Record<string, string>; spacingRoleRefs?: Record<string, string> }>
+    }
+    const themes = Object.values(doc.foundationsByTheme)
+    expect(themes.length).toBeGreaterThan(0)
+    for (const f of themes) {
+      expect(f.spacingRoles?.['gap-section']).toBe('6')
+      expect(f.spacingRoleRefs?.['gap-section']).toBe('section-md')
+    }
+  })
+
+  it('a theme that pins its own role ships that pin while the root keeps the store\'s', () => {
+    const base = useDesignStore.getState()
+    const key = base.themeOrder[0]
+    const store = { ...base, themeFoundations: { ...base.themeFoundations, [key]: { spacingRoles: { 'inset-surface': '8' } } } }
+    const doc = generateTokenJSON(store) as unknown as {
+      spacingRoles: Record<string, string>
+      foundationsByTheme: Record<string, { spacingRoles?: Record<string, string> }>
+    }
+    expect(doc.foundationsByTheme[key].spacingRoles?.['inset-surface']).toBe('8')
+    expect(doc.spacingRoles['inset-surface']).not.toBe('8')
   })
 })
 

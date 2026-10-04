@@ -434,6 +434,13 @@ export function generateTokenJSON(
         roles: mergeTypeRoles(resolved.typography.roles),
       },
       spacing: resolved.spacing,
+      // THIS theme's spacing roles: a System Style pins its own (Neo's
+      // `inset-surface` is step 6). Without them the plugin fell back to the
+      // root store's roles and wrote another theme's insets into Figma's
+      // `Spacing/role/*`. Same split as the root: Desktop static steps, plus
+      // which roles alias a responsive token.
+      spacingRoles: spacingRolesAtViewport(resolved.spacingRoles, 'desktop'),
+      spacingRoleRefs: mergeLayoutRoles('spacing', resolved.spacingRoles),
       padding: resolved.padding,
       radius: resolved.radius,
       radiusRoles: mergeLayoutRoles('radius', resolved.radiusRoles),
