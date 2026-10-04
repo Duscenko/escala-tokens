@@ -11,7 +11,7 @@
 // never reach a form that has nowhere to post.
 
 import { useEffect, useId, useRef, useState } from 'react'
-import { BrandMark } from '../configurator/TopNav'
+import { BrandMark, DocsNavMenu, type DocsMenuPage } from '../configurator/TopNav'
 import { useI18n } from '../../lib/i18n'
 import {
   MIN_PASSWORD,
@@ -28,10 +28,19 @@ import { applyDocumentHead } from '../../lib/documentHead'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 import { accountsEnabled, authProviders, type AuthProvider } from '../../lib/supabase'
 
+const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
+  mcp: '/docs/mcp',
+  figma: '/docs/figma',
+  changelog: '/docs/changelog',
+  faq: '/docs/faq',
+}
+
 type Mode = 'signin' | 'signup' | 'reset' | 'recovery'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 const FIELD = `h-11 w-full rounded-lg border border-line-strong bg-app px-3 text-ui text-fg placeholder:text-fg-faint ${FOCUS}`
+/** Same type and ink as TopNav's inactive section items. */
+const NAV_LINK = 'rounded-md px-0.5 py-1 text-ui font-medium whitespace-nowrap text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
 const LINK = `text-accent-ui underline-offset-2 hover:underline rounded-sm ${FOCUS}`
 
 function GoogleMark() {
@@ -179,10 +188,10 @@ export function LoginPage() {
           <BrandMark size={28} />
           <span className="text-strong font-semibold">Escala Tokens</span>
         </a>
-        <nav aria-label={t('Sections')} className="flex items-center gap-5 text-ui text-fg-muted">
-          <a href="/" className={`transition-colors hover:text-fg ${FOCUS} rounded-sm`}>{t('Home')}</a>
-          <a href="/docs" className={`transition-colors hover:text-fg ${FOCUS} rounded-sm`}>{t('Docs')}</a>
-          <a href={CONTACT_PATH} className={`transition-colors hover:text-fg ${FOCUS} rounded-sm`}>{t('Need help?')}</a>
+        <nav aria-label={t('Sections')} className="flex items-center gap-5">
+          <a href="/" className={NAV_LINK}>{t('Home')}</a>
+          <DocsNavMenu onOpenDocsPage={(page) => window.location.assign(DOCS_PAGE_PATH[page])} />
+          <a href={CONTACT_PATH} className={NAV_LINK}>{t('Need help?')}</a>
         </nav>
       </header>
 

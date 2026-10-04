@@ -504,14 +504,61 @@ export function BrandMark({ size = 32 }: { size?: number } = {}) {
   )
 }
 
+/** The Docs trigger + its dropdown — ONE component for TopNav and every other
+ *  header (the login page) so the menu can't drift between them. Owns its own
+ *  open state. `active` mirrors the lit nav item. */
+export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boolean; onOpenDocsPage?: (page: DocsMenuPage) => void }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  return (
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-current={active ? 'page' : undefined}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`flex items-center gap-1 rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
+          active ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
+        }`}
+      >
+        {t('Docs')}
+        <ChevronDownIcon open={open} />
+      </button>
+      <ChromeAnchoredDropdown
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={triggerRef}
+        align="center"
+        gap={6}
+        menuAriaLabel={t('Docs')}
+        className="w-40 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
+      >
+        {DOCS_MENU_PAGES.map((page, index) => (
+          <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onOpenDocsPage?.(page.key) }}
+              className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
+            >
+              <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
+              {t(page.label)}
+            </button>
+          </div>
+        ))}
+      </ChromeAnchoredDropdown>
+    </div>
+  )
+}
+
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
 }: TopNavProps) {
   const { t } = useI18n()
-  const [docsMenuOpen, setDocsMenuOpen] = useState(false)
-  const docsTriggerRef = useRef<HTMLButtonElement>(null)
-
 
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
@@ -553,52 +600,7 @@ export default function TopNav({
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
             if (key === 'docs') {
-              return (
-                <div
-                  key={key}
-                  className="relative"
-                >
-                  <button
-                    ref={docsTriggerRef}
-                    type="button"
-                    onClick={() => {
-                      setDocsMenuOpen((open) => !open)
-                    }}
-                    aria-current={on ? 'page' : undefined}
-                    aria-haspopup="menu"
-                    aria-expanded={docsMenuOpen}
-                    className={`flex items-center gap-1 rounded-md px-0.5 py-1 text-ui lg:text-ui whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app ${
-                      on ? 'font-semibold text-fg' : 'font-medium text-fg-faint hover:text-fg-muted'
-                    }`}
-                  >
-                    {t(label)}
-                    <ChevronDownIcon open={docsMenuOpen} />
-                  </button>
-                  <ChromeAnchoredDropdown
-                    open={docsMenuOpen}
-                    onClose={() => setDocsMenuOpen(false)}
-                    anchorRef={docsTriggerRef}
-                    align="center"
-                    gap={6}
-                    menuAriaLabel={t('Docs')}
-                    className="w-40 rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
-                  >
-                    {DOCS_MENU_PAGES.map((page, index) => (
-                      <div key={page.key} className={index === 2 ? 'mt-1 border-t border-line pt-1' : ''}>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => { setDocsMenuOpen(false); onOpenDocsPage?.(page.key) }}
-                          className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50"
-                        >
-                          <span className="grid h-4 w-4 flex-shrink-0 place-items-center">{page.icon}</span>
-                          {t(page.label)}
-                        </button>
-                      </div>
-                    ))}
-                  </ChromeAnchoredDropdown>
-                </div>
-              )
+              return <DocsNavMenu key={key} active={on} onOpenDocsPage={onOpenDocsPage} />
             }
             return (
               <button
