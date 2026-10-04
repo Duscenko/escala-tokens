@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
-import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, readableInk } from '../lib/colorUtils'
-import { themeBrandRamp, themeDisplayName } from '../lib/themeSources'
+import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
+import { themeDisplayName } from '../lib/themeSources'
 import { defaultFigmaSyncModes, sameFigmaSyncModes, FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
@@ -28,7 +28,7 @@ import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
-import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
+import { type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
 import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
@@ -301,6 +301,16 @@ const ExportIcon: ComponentType = () => (
     <path d="M8 10V2.5M5 5.5 8 2.5l3 3M3 9.5v3.25c0 .69.56 1.25 1.25 1.25h7.5c.69 0 1.25-.56 1.25-1.25V9.5" />
   </svg>
 )
+
+/** Escala's own violet — the platform accent (`--accent-ui` / `--accent-solid`
+ *  / `--accent-ink`, the Layer 0 wash). Same value as `index.css`' fallback and
+ *  `.impeccable.md`. Never derived from the previewed theme: see the note where
+ *  the shell writes those vars. Both ramps are built once, at module load. */
+const ESCALA_CHROME_ACCENT = '#7f56d9'
+const ESCALA_CHROME_RAMPS = {
+  light: generateColorScale(ESCALA_CHROME_ACCENT, 'radix', 0, '#ffffff', 'light'),
+  dark: generateColorScale(ESCALA_CHROME_ACCENT, 'radix', 0, undefined, 'dark'),
+} as const
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
 // `library` is the Themes library page — the folder in the tab bar is its door,
@@ -710,7 +720,7 @@ export default function Configurator() {
   const { t } = useI18n()
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
-  const { primaryScale, primaryDarkScale, primaryColor, markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, themeSources, projectCreated } = store
+  const { markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = store
   const theme = useTheme()
   // Fetches the configured typeface's webfont — mounted here (not inside the
   // Typography foundation) so every foundation's PreviewPanel actually
@@ -1112,39 +1122,20 @@ export default function Configurator() {
   // lands around 3.8:1 — fine as a UI component, short of AA for body text.
   // Fixing THAT means moving those rows off `bg-elevated` onto an accent tint,
   // which is a visual-design change, not a token one.
-  // Resolved against the PREVIEWED theme's own brand family (`themeSources`),
-  // not always the global `accent` — selecting a theme folder in Primitives
-  // (or a Semantics column) previews that theme via `previewTheme`, and the
-  // chrome accent has to follow it or picking e.g. Green leaves every chip,
-  // dot and this toolbar wash pinned to Theme 1's purple. Same fix as
-  // `StepGradients`' `themeBrandRamp` call — one resolver, so a family
-  // reference can't disagree about which ramp "the accent" means depending on
-  // which surface reads it.
-  //
-  // FORCED to the chrome's own appearance (`theme`), not the previewed theme's.
-  // Preview appearance and chrome appearance are decoupled in the Themes
-  // workspace — inspecting a LIGHT theme's Light face while the workspace is in
-  // dark mode is normal — and every derivation below (`--accent-ui`,
-  // `--accent-solid`, the Layer 0 gradient, the toolbar wash) is chrome, read
-  // against the chrome page. Feeding it the light twin there bled a bright
-  // splash into the dark chrome and dropped the accent-fill contrast. The
-  // preview canvas keeps `previewAppearance`; only the chrome locks to `theme`.
-  //
-  // A live STYLE TRY-ON wins over the previewed theme, for the same reason the
-  // previewed theme wins over the global accent: the chrome has to be reading
-  // the same system the canvas is. `themeBrandRamp` resolves from the real
-  // store, which a try-on deliberately never touches — so selecting Core left
-  // the canvas blue and every chip, wash and accent-filled control on the
-  // traditional violet. Same appearance rule as below: the CHROME's, not the
-  // previewed one's.
+  // THE PLATFORM'S ACCENT IS ESCALA'S, NOT THE THEME'S. The chrome (tabs,
+  // badges, selection rings, the PRO chip, active icons, the Layer 0 wash) used
+  // to repaint with whatever theme was previewed or tried on, so the tool
+  // changed colour with the user's system and a theme's accent could not be
+  // told apart from the app's own. The split is now: the THEME paints the
+  // preview canvas, its specimens, swatches and avatars; the PLATFORM paints
+  // everything around them in Escala's violet, always. Only the chrome's
+  // light/dark appearance still picks which ramp of that violet is read.
   const chromeAppearance = theme === 'dark' ? 'dark' : 'light'
-  const uiAccentRamp = stylePreview
-    ? stylePreviewBrandRamp(store, stylePreview.preset, chromeAppearance)
-    : themeBrandRamp(previewTheme, themeSources, themeKinds, store, chromeAppearance)
+  const uiAccentRamp = ESCALA_CHROME_RAMPS[chromeAppearance]
   const uiAccent =
     theme === 'dark'
-      ? chromeAccent(uiAccentRamp ?? primaryDarkScale, '#1b1b1c', primaryColor)
-      : chromeAccent(uiAccentRamp ?? primaryScale, '#f5f5f5', primaryColor)
+      ? chromeAccent(uiAccentRamp, '#1b1b1c', ESCALA_CHROME_ACCENT)
+      : chromeAccent(uiAccentRamp, '#f5f5f5', ESCALA_CHROME_ACCENT)
   // ── …and the chrome accent as a FILL, which is a different question ──
   // `chromeAccent` walks UP the ramp until the tone clears 4.5:1 against the
   // chrome PAGE. That is the right rule for INK, and the wrong one for a solid
@@ -1163,13 +1154,7 @@ export default function Configurator() {
   // `solidInkPair`, and when that walked a dark ramp to its near-white end the
   // chrome's accent buttons went pale in lockstep with the canvas — the bug
   // stayed invisible precisely because both halves were wrong together.
-  const fillRamp = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
-  const uiAccentSolid = (() => {
-    const inks = ['#ffffff', '#0a0d12']
-    const ramp = fillRamp && Object.keys(fillRamp).length ? fillRamp : null
-    if (!ramp) return primaryColor
-    return ramp[brandSolidPair(ramp, inks).tone] ?? primaryColor
-  })()
+  const uiAccentSolid = uiAccentRamp[brandSolidPair(uiAccentRamp, ['#ffffff', '#0a0d12']).tone] ?? ESCALA_CHROME_ACCENT
   // The ink for an `--accent-solid` fill, solved against THAT fill — not
   // against `--accent-ui`, which is a different colour now.
   const uiAccentInk = readableInk(uiAccentSolid)
@@ -1180,7 +1165,7 @@ export default function Configurator() {
   }, [uiAccent, uiAccentSolid, uiAccentInk])
 
   // ── Layer 0: brand-derived gradient (re-derives live with brand + theme) ──
-  const s = uiAccentRamp ?? (theme === 'dark' ? primaryDarkScale : primaryScale)
+  const s = uiAccentRamp
   // Dark is SOLVED, not read off a ramp tone — see `darkChromeWash`. Picking a
   // tone is a lightness-driven choice, so the stop's saturation was whatever
   // that hue's ramp happened to leave there: the default accent's dark tone 6
@@ -1193,8 +1178,8 @@ export default function Configurator() {
   // into the page rather than onto a near-match of it.
   const gradient =
     theme === 'dark'
-      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? primaryColor ?? '#9522e9')} 0%, #1b1b1c 48%)`
-      : `linear-gradient(160deg, ${s[3] ?? s[2] ?? primaryColor ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
+      ? `linear-gradient(160deg, ${darkChromeWash(s[BASE_TONE] ?? ESCALA_CHROME_ACCENT)} 0%, #1b1b1c 48%)`
+      : `linear-gradient(160deg, ${s[3] ?? s[2] ?? '#ede9fe'} 0%, ${s[1] ?? '#faf5ff'} 42%, #ffffff 100%)`
 
   // ── Navigation handlers (selecting anything leaves export mode) ──
   // Marking happens on *leave*: a foundation counts as visited for the

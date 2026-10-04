@@ -2783,6 +2783,19 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > existing per-family trash already unlocks. No colour data is destroyed — only the theme
 > and the semantic values mapped to it.
 
+> **UPDATE (2026-10-04, supersedes the theme-following half of the notes below): the
+> platform's accent is ESCALA'S VIOLET, never the previewed theme's or a try-on's.**
+> `Configurator.tsx` builds `--accent-ui` / `--accent-solid` / `--accent-ink` and the Layer 0
+> wash from `ESCALA_CHROME_ACCENT = '#7f56d9'` (the `index.css` fallback, `.impeccable.md`'s
+> brand accent) through two module-level ramps (`ESCALA_CHROME_RAMPS.light/.dark`). The split:
+> the THEME paints the preview canvas, specimens, swatches and theme avatars; the PLATFORM
+> paints tabs, badges (PRO), selection rings, active icons and accent-filled controls. Reported
+> as the tool changing colour with each theme, so a theme's accent couldn't be told from the
+> app's own. What still holds from the notes below: the chrome's light/dark appearance picks
+> the ramp, `chromeAccent` solves the ink against the chrome page, and `brandSolidPair` the
+> fill. What no longer holds: every "follows the previewed theme / the try-on" rule for the
+> chrome (`themeBrandRamp` / `stylePreviewBrandRamp` are no longer read by the shell for it).
+
 > **The chrome accent ramp is resolved in the CHROME's appearance, never the previewed
 > theme's.** `uiAccentRamp = themeBrandRamp(previewTheme, …, theme === 'dark' ? 'dark' :
 > 'light')` — the previewed theme's brand FAMILY (`themeSources`), but its light-or-dark

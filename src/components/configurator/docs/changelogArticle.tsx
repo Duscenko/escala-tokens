@@ -35,6 +35,22 @@ export function changelogToc(t: Translate = (source) => source): TocEntry[] {
  *  describes the way the About page's role count once did. */
 const ENTRIES: { date: string; text: string; vars?: Record<string, string | number> }[] = [
   {
+    date: '2026-10-04',
+    text: "Themes library is now its own page — a card per theme painted with its own tokens, plus your saved systems — and Get code shows only the selected theme's code. Sync with Figma became a workspace tab, Get code an icon beside Search. Each theme can be opened, renamed (also by double-click) or deleted from the switcher, and the platform's own accent is always Escala's violet, never the previewed theme's.",
+  },
+  {
+    date: '2026-10-03',
+    text: "Radius and spacing became responsive: each viewport gets its own step, and Figma receives them as Desktop · Tablet · Mobile modes, alongside six named grid styles. Pricing launched — every theme and viewport is free until October 31; after that one theme and Desktop are free, and Pro unlocks up to 10 themes.",
+  },
+  {
+    date: '2026-10-02',
+    text: "Dimension primitives: one global collection every length points at, with Dimension Semantics as viewport modes in Figma — you choose which viewports ship. Type gained Desktop · Tablet · Mobile cuts. The legal notice, privacy policy and a contact form went live.",
+  },
+  {
+    date: '2026-09-29',
+    text: "Docs and Components got crawlable URLs, and the Figma plugin installs from its Community listing. Figma sync publishes only the theme columns you check.",
+  },
+  {
     date: '2026-09-05',
     text: 'Theme-scoped Figma sync: the handshake keys on the file name, and Light/Dark modes travel with it. Figma sync moved into the canvas header; the rail footer became a scoped Reset.',
   },

@@ -6,7 +6,13 @@ licencia, la promo y el enforcement en `api/tokens.ts`).
 
 ## Decisiones ya tomadas
 
-- Los dos repos actuales (`escala-tokens`, `escala-figma-plugin`) siguen **públicos y MIT**.
+- **Actualizado el 2026-10-04:** `escala-tokens` (configurador), el CLI y el servidor MCP siguen
+  **públicos y MIT**. `escala-figma-plugin` pasó a **privado y propietario** ("todos los derechos
+  reservados", `UNLICENSED`): es la parte que se vende con Pro. Lo publicado antes en GitHub bajo
+  MIT sigue siendo MIT para quien ya lo clonó; esto protege lo que venga a partir de ahora. El
+  plugin compilado se sigue distribuyendo (zip en escalatokens.com y Figma Community), así que su
+  JavaScript es legible: privado oculta la fuente y el historial, no el binario. El README y la
+  FAQ de `/pricing` (en/es/fr) ya lo dicen así.
 - **Pago único** vía Polar (Merchant of Record), clave de licencia, sin cuentas.
 - **Free no tiene nada alojado**: se descarga el `tokens.json` y se carga a mano en el plugin.
   El sync alojado y el MCP en vivo son de pago, porque son lo que cuesta dinero (Live Sync
@@ -119,14 +125,15 @@ Notas de las tablas:
 
 ## Auditoría: dónde un límite es duro y dónde es blando
 
-Este es el hallazgo principal. Con todo el código actual en MIT, **solo es límite duro lo que
-corre en el servidor o lo que se distribuye fuera de los repos públicos.**
+Este es el hallazgo principal. Con el configurador en MIT, **solo es límite duro lo que corre en
+el servidor o lo que se distribuye fuera de los repos públicos.** Desde el 2026-10-04 el plugin
+ya no es uno de esos repos públicos (ver Decisiones).
 
 | Límite | Dónde se aplica | Tipo |
 |---|---|---|
 | Sync alojado, temas sincronizados, MCP en vivo | `api/tokens.ts`, `api/mcp.ts` | **duro** |
 | Library (Figma y código) | distribución privada con clave de licencia | **duro** |
-| 1 tema / solo Desktop en la carga manual | wizard de Export (Escala JSON) | **blando**: se quita editando el JSON o con un fork |
+| 1 tema / solo Desktop en la carga manual | wizard de Export (Escala JSON) | **blando**: se quita editando el JSON o con un fork del configurador (MIT). Ya no con un fork del plugin, que es privado |
 | System Styles en Free | configurador | **blando** |
 
 Los límites blandos están bien como empujón: un usuario normal no hace fork para ahorrarse la
@@ -355,9 +362,10 @@ a sabiendas.
    serverless hay varias; el límite real tiene que ser una regla de Firewall de Vercel
    (como la de `/api/contact`). Las claves llevan un UUID, así que adivinar una es
    impracticable, pero cada intento le cuesta una llamada a Polar. *Acción*: crear la regla.
-5. **El límite de 1 tema / Desktop en la carga manual es blando.** El exportador y el plugin
-   son MIT; se quita con un fork. Es una decisión (ver más arriba): el valor de pago está en el
-   servidor.
+5. **El límite de 1 tema / Desktop en la carga manual es blando.** El exportador del
+   configurador es MIT; se quita editando el JSON o con un fork del configurador. El plugin ya es
+   privado (2026-10-04), así que esa vía se cerró, pero su JavaScript compilado sigue siendo
+   legible. Es una decisión (ver más arriba): el valor de pago está en el servidor.
 6. **Polar caído = no se puede publicar** (responde 503 "reintenta", nunca "paga"). Leer no
    se ve afectado: el sello viaja en el blob. La clave se cachea 10 min en memoria.
 7. **Plugins ya instalados siguen consultando tras un 402.** Un plugin con Live Sync abierto
@@ -377,3 +385,26 @@ a sabiendas.
     proponía 14 días).
 12. **Library (Figma/código) no está construida.** `/pricing` la muestra como "Coming soon"
     sin precio; no vender nada de ella hasta que exista.
+
+## En evaluación: cuentas y login (2026-10-04)
+
+Inclinación del dueño: **a favor del login**. El producto aún tiene muy poco reconocimiento, el
+lanzamiento propio es en una semana, y lo hecho hasta ahora es un MVP beta, no un producto cerrado.
+
+Descartado en la misma conversación: **limitar Free a una descarga de JSON cada 48 h.** La
+descarga se genera en el navegador (no pasa por el servidor), así que sin cuentas solo se puede
+contar por IP o `localStorage`, y se salta con incógnito o un fork del configurador. Y castiga el
+momento que vende el producto: iterar un sistema es exportar 10–15 veces en una tarde. Free se
+limita por capacidad (1 tema, solo Desktop), no por frecuencia.
+
+| A favor de cuentas | En contra |
+|---|---|
+| Las librerías de Pro se guardan en el servidor, no en el `localStorage` de un navegador | Auth, base de datos, recuperación de acceso y soporte, para una sola persona |
+| Cierra los riesgos 1 (claves compartidas), 2 (reembolso no corta), 3 (blobs públicos) y 8 (clave en `localStorage`) | RGPD: política de privacidad, borrado de cuenta, qué datos se guardan |
+| Permite avisar de la renovación de los 12 meses | Un login obligatorio quita a Free su mayor ventaja: abrir y usar |
+| Abre equipos, historial de versiones y colaboración | Poco margen antes del lanzamiento |
+
+Forma propuesta si se hace: **login solo para Pro, sin contraseñas** — enlace mágico al email con
+el que se compró en Polar (Polar ya sabe quién pagó). Free sigue anónimo. Las librerías y la
+licencia se atan a la cuenta. Proveedor y base de datos: por decidir (Marketplace de Vercel).
+
