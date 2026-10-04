@@ -2375,6 +2375,16 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > `radiusResponsive` / `spacingResponsive` — a stale publish (no Sync now since those
 > landed) imports flat.
 >
+> **File & modes is PERSISTED (`figmaSyncSelection`, store v80) — it was component state.**
+> `figmaSyncModes`/`figmaViewports` lived in `useState` in `Configurator`, so every reload
+> reset them to "every theme + every viewport" and auto-sync republished exactly what the
+> user had unticked; the plugin then (correctly) imported every column the payload named.
+> `modes: null` = untouched, follow the default; a saved pick naming themes the current
+> system lacks is pruned on read. The plugin was never the problem: every mode-bearing
+> collection runs `pruneModes`, so it mirrors whatever the payload scopes. The FREE tier is
+> unaffected and still enforced elsewhere: hosted sync is 402 without Pro (server), and
+> downloads use `freeFigmaScope` (1 theme + Desktop), which ignores this selection.
+>
 > **Grid ships SIX named styles, and the three viewport modes ARE three of them**
 > (`GRID_STYLES` / `resolveGridStyles` in `layoutTokens.ts`, store v76). SM Mobile
 > 4×60 · 16/16 → 320 · MD Tablet 8×60 · 32/32 → 768 · LG Web 12×48 · 32/48 → 1024 ·

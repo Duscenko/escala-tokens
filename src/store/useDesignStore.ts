@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { persist } from 'zustand/middleware'
 import { COMPONENT_KEYS, ESSENTIAL_COMPONENT_KEYS } from '../lib/componentCatalogue'
 import { FONT_SIZE_STANDARD, LINE_HEIGHT_STANDARD, FONT_WEIGHT_STANDARD, TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale } from '../lib/typographyStandard'
@@ -732,6 +733,14 @@ interface DesignStore {
   // null until the first download so a first-time user sees no false "update".
   pluginBuildSeen: string | null
   setPluginBuildSeen: (build: string) => void
+  // File & modes: which `theme::appearance` columns and which viewports the
+  // live sync publishes. `modes: null` = untouched, follow the default (every
+  // theme in My themes). Persisted because it used to be component state: a
+  // reload reset it to "everything" and auto-sync republished every theme and
+  // viewport the user had just unticked. A global preference, not per-system —
+  // themes a loaded system lacks are pruned on read (Configurator).
+  figmaSyncSelection: { modes: FigmaSyncMode[] | null; viewports: FigmaViewport[] }
+  setFigmaSyncSelection: (patch: Partial<{ modes: FigmaSyncMode[] | null; viewports: FigmaViewport[] }>) => void
 
   // Color — scale generation algorithm + contrast shift (drive every 1–12 ramp)
   // and the token-naming scheme used in the export.
@@ -1057,6 +1066,8 @@ export const useDesignStore = create<DesignStore>()(
       setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
       pluginBuildSeen: null,
       setPluginBuildSeen: (build) => set({ pluginBuildSeen: build }),
+      figmaSyncSelection: { modes: null, viewports: [...FIGMA_VIEWPORTS] },
+      setFigmaSyncSelection: (patch) => set((st) => ({ figmaSyncSelection: { ...st.figmaSyncSelection, ...patch } })),
 
       // Color scale generation
       setColorAlgorithm: (a) => set({ colorAlgorithm: a }),
@@ -1723,7 +1734,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 79,
+      version: 80,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3070,6 +3081,11 @@ export const useDesignStore = create<DesignStore>()(
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) respace(sys?.snapshot)
           }
+        }
+        if (version < 80) {
+          // v79→v80: File & modes persists. Untouched = every theme, every
+          // viewport — exactly what a fresh mount derived before.
+          if (!persisted.figmaSyncSelection) persisted.figmaSyncSelection = { modes: null, viewports: [...FIGMA_VIEWPORTS] }
         }
         return persisted
       },

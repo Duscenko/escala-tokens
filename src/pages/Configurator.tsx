@@ -5,7 +5,7 @@ import { useDesignStore } from '../store/useDesignStore'
 import { useTheme, setTheme } from '../lib/theme'
 import { BASE_TONE, brandSolidPair, chromeAccent, darkChromeWash, generateColorScale, readableInk } from '../lib/colorUtils'
 import { themeDisplayName } from '../lib/themeSources'
-import { defaultFigmaSyncModes, sameFigmaSyncModes, FIGMA_VIEWPORTS, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
+import { defaultFigmaSyncModes, sameFigmaSyncModes, normalizeFigmaViewports, type FigmaSyncMode, type FigmaViewport } from '../lib/figmaSyncModes'
 import { isLiveEnvironment, publishTokens, syncProjectId, useAutoFigmaSync, describePublishFailure, type FigmaPublishState, type PublishFailureReason } from '../lib/figmaSync'
 import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } from '../lib/workspaceLink'
 import { applyDocumentHead } from '../lib/documentHead'
@@ -955,20 +955,34 @@ export default function Configurator() {
     : store.projectName
   const [figmaFileName, setFigmaFileName] = useState(defaultFigmaFileName)
   const [figmaFileNameDirty, setFigmaFileNameDirty] = useState(false)
-  const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() =>
-    defaultFigmaSyncModes(syncThemes, themeKinds),
-  )
+  // File & modes is PERSISTED (`figmaSyncSelection`): as component state a
+  // reload reset it to every theme + every viewport, and auto-sync then
+  // republished exactly what the user had unticked.
+  const savedSyncSelection = useDesignStore((s) => s.figmaSyncSelection)
+  const setFigmaSyncSelection = useDesignStore((s) => s.setFigmaSyncSelection)
+  const [figmaSyncModes, setFigmaSyncModes] = useState<FigmaSyncMode[]>(() => {
+    const saved = savedSyncSelection.modes?.filter((m) => syncThemes.includes(m.theme))
+    return saved?.length ? saved : defaultFigmaSyncModes(syncThemes, themeKinds)
+  })
   // Whether the user has picked columns themselves. Same signal as
   // `figmaFileNameDirty` above, for the same reason: everything below may
   // re-derive a DEFAULT, and nothing may re-derive a CHOICE.
-  const [figmaSyncModesDirty, setFigmaSyncModesDirty] = useState(false)
+  const [figmaSyncModesDirty, setFigmaSyncModesDirty] = useState(() => savedSyncSelection.modes !== null)
   const chooseFigmaSyncModes = useCallback((modes: FigmaSyncMode[]) => {
     setFigmaSyncModesDirty(true)
     setFigmaSyncModes(modes)
-  }, [])
-  // Which viewports Dimension Semantics gets as Figma modes. All three until the
-  // user narrows it (a Starter plan holds one mode per collection).
-  const [figmaViewports, setFigmaViewports] = useState<FigmaViewport[]>([...FIGMA_VIEWPORTS])
+    setFigmaSyncSelection({ modes })
+  }, [setFigmaSyncSelection])
+  // Which viewports Dimension Semantics + Typography get as Figma modes. All
+  // three until the user narrows it (a Starter plan holds one mode per collection).
+  const figmaViewports = useMemo<FigmaViewport[]>(
+    () => normalizeFigmaViewports(savedSyncSelection.viewports),
+    [savedSyncSelection.viewports],
+  )
+  const setFigmaViewports = useCallback(
+    (viewports: FigmaViewport[]) => setFigmaSyncSelection({ viewports }),
+    [setFigmaSyncSelection],
+  )
   const syncThemeKey = syncThemes.join('|')
   useEffect(() => {
     if (!figmaFileNameDirty) {
