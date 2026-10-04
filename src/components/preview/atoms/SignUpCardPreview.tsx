@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { type PreviewTokens } from '../ButtonPreview'
-import { radiusRoleOf, paddingOf, shadowOf, sizeRoleOf, spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, paddingOf, shadowOf, sizeRoleOf, spacingRoleOf, typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import { InputPreview } from './InputPreview'
 
 // A composed sign-up card: title + two inputs + a full-width primary CTA. Every
@@ -39,7 +39,7 @@ export function SignUpCardPreview({ tokens }: { tokens: PreviewTokens }) {
         boxShadow: shadowOf(tokens, 'sm', 'none'),
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: spaceOf(tokens, 14),
         ...typeStyleOf(tokens, 'body-md', { leading: false }),
       }}
     >

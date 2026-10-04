@@ -14,7 +14,7 @@ import { buildArchitectureView } from './semanticArchitectures'
 import { fontStack, loadGoogleFont } from './fonts'
 import { getIconLibrary } from './iconLibraries'
 import { typeStyleCss } from './typeRoles'
-import { resolveLayoutRole, radiusRolesAtViewport, spacingRolesAtViewport, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
+import { resolveLayoutRole, radiusRolesAtViewport, spacingRolesAtViewport, SPACING_STEPS, extractBreakpoints, hairlineSafe, nestedRadius, type GridViewport, type LayoutFamily } from './layoutTokens'
 import { semanticModesFor, themeModeKey, type ThemeAppearance } from './themeModes'
 import { resolveThemeFoundations } from './themeFoundations'
 
@@ -476,6 +476,27 @@ export function nestedRadiusOf(
 
 export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('spacing', t.spacingRoles, t.spacing ?? {}, role, fallback)
+}
+/**
+ * A component's INTERNAL spacing (the 6 between an icon and its label, the
+ * `7px 14px` of a chip) snapped to the system's own spacing scale — the nearest
+ * step, a tie going up (3 → 4, 7 → 8, 14 → 16). Literals in a specimen were
+ * invisible to the system: change the base unit and a card moved while the chip
+ * inside it did not, so the preview stopped showing what the chosen values do.
+ * Anatomy that is already ON the scale (2 · 4 · 6 · 8 · 10 · 12 · 16 · 20 · 24 ·
+ * 32) comes back byte-identical at the default 4px base.
+ */
+export function spaceOf(t: PreviewTokens, px: number): string {
+  if (!px) return '0px'
+  const steps = SPACING_STEPS
+    .map((k) => parseFloat(t.spacing?.[k] ?? ''))
+    .filter((n) => Number.isFinite(n) && n > 0)
+  if (!steps.length) return `${px}px`
+  const best = steps.reduce((a, b) => {
+    const da = Math.abs(a - px), db = Math.abs(b - px)
+    return db < da || (db === da && b > a) ? b : a
+  })
+  return `${best}px`
 }
 export function sizeRoleOf(t: PreviewTokens, role: string, fallback = ''): string {
   return resolveLayoutRole('size', t.sizeRoles, t.sizes ?? {}, role, fallback)

@@ -1,5 +1,5 @@
 import { SPECIMENS, TokenIcon } from '../../configurator/docs/specimens'
-import { spacingRoleOf, typeStyleOf } from '../../../lib/previewTokens'
+import { spacingRoleOf, typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import { DeviceFrame } from './DeviceFrame'
 import type { ArtefactProps } from './types'
@@ -65,7 +65,7 @@ function PricingScreen({ t, compact }: ArtefactProps) {
             <Badge t={t} v={{ Color: 'Brand', Style: 'Soft' }}>Most popular</Badge>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: spaceOf(t, 4) }}>
             <span style={{ ...typeStyleOf(t, 'heading-lg'), color: t.neutralText }}>$12</span>
             <span style={{ ...typeStyleOf(t, 'body-sm'), color: muted }}>/ month</span>
           </div>

@@ -12,7 +12,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -629,7 +629,7 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
       aria-disabled={disabled}
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: sz.gap,
+        display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, sz.gap),
         // A width only arrives from an artefact (see `SpecimenProps.w`). Centring
         // rides with it: the playground's button hugs its label, so left-aligned
         // content is right there and wrong the moment the button spans a column.
@@ -742,7 +742,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
         onMouseLeave={() => setHover(false)}
         onClick={() => { if (!disabled) inputRef.current?.focus() }}
         style={{
-          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: h, padding: '0 12px',
+          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: h, padding: `0 ${spaceOf(t, 12)}`,
           borderRadius: radiusRoleOf(t, 'action'),
           border: `${strokeControl(t)} solid ${border}`,
           background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
@@ -752,7 +752,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
         }}
       >
         {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={16} color={iconColor} />}
-        {meta.prefix && <span style={{ ...typeOf(t, 'placeholder'), color: t.fgMuted, borderRight: `${strokeControl(t)} solid ${t.border}`, paddingRight: 8 }}>{meta.prefix}</span>}
+        {meta.prefix && <span style={{ ...typeOf(t, 'placeholder'), color: t.fgMuted, borderRight: `${strokeControl(t)} solid ${t.border}`, paddingRight: spaceOf(t, 8) }}>{meta.prefix}</span>}
         {/* Lead (@, ⌕) is supporting ink — `content.secondary` — not the
             placeholder tier. The plugin paints this slot as `textTertiary`
             (the same job). Sharing `placeholderText` with the value made
@@ -954,7 +954,7 @@ function BadgeSpecimen({ t, v, children }: SpecimenProps) {
     <span
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: showDot ? sz.gap : 0,
+        display: 'inline-flex', alignItems: 'center', gap: showDot ? spaceOf(t, sz.gap) : 0,
         padding: showDot ? sz.pad : `${sz.pad.split(' ')[0]} ${sz.dot + 6}px`,
         borderRadius: radiusRoleOf(t, 'pill'), background: bg, color: fg, border: `${strokeControl(t)} solid ${line}`,
         ...typeOf(t, 'caption'),
@@ -1117,16 +1117,16 @@ function ModalSpecimen({ t }: { t: PreviewTokens }) {
         boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.25)'), overflow: 'hidden',
       }}
     >
-      <div style={{ padding: '16px 20px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: `${spaceOf(t, 16)} ${spaceOf(t, 20)} ${spaceOf(t, 4)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ ...typeOf(t, 'heading-sm') }}>Delete project?</span>
         <span style={{ color: t.fgMuted, cursor: 'pointer' }}>✕</span>
       </div>
-      <p style={{ padding: '4px 20px 16px', margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
+      <p style={{ padding: `${spaceOf(t, 4)} ${spaceOf(t, 20)} ${spaceOf(t, 16)}`, margin: 0, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
         This action can't be undone. All tokens in this project will be removed.
       </p>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: '12px 20px', borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
-        <span style={{ ...typeOf(t, 'button'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Cancel</span>
-        <span style={{ ...typeOf(t, 'button'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), background: t.errorColor, color: t.onBrand, cursor: 'pointer' }}>Delete</span>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 12)} ${spaceOf(t, 20)}`, borderTop: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
+        <span style={{ ...typeOf(t, 'button'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Cancel</span>
+        <span style={{ ...typeOf(t, 'button'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), background: t.errorColor, color: t.onBrand, cursor: 'pointer' }}>Delete</span>
       </div>
     </div>
   )
@@ -1139,7 +1139,7 @@ function TooltipSpecimen({ t }: { t: PreviewTokens }) {
   const inverse = t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ ...typeOf(t, 'caption'), padding: '6px 10px', borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
+      <span style={{ ...typeOf(t, 'caption'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
         Copy to clipboard
       </span>
       <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${inverse}` }} />
@@ -1155,7 +1155,7 @@ function TabsSpecimen({ t }: { t: PreviewTokens }) {
         <span
           key={tab}
           style={{
-            ...typeOf(t, 'button'), padding: '8px 14px', cursor: 'pointer',
+            ...typeOf(t, 'button'), padding: `${spaceOf(t, 8)} ${spaceOf(t, 14)}`, cursor: 'pointer',
             fontWeight: i === 0 ? weightOf(t, 'semibold', 600) : 400,
             color: i === 0 ? t.brandText : t.fgMuted,
             borderBottom: i === 0 ? `2px solid ${t.brandSolid}` : '2px solid transparent',
@@ -1342,7 +1342,7 @@ function SocialLoginButtonSpecimen({ t, v, w }: SpecimenProps) {
       type="button"
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: spaceOf(t, 10),
         width: w ?? (large ? 320 : 280),
         maxWidth: w != null ? '100%' : undefined,
         minWidth: w != null ? 0 : undefined,
@@ -1396,7 +1396,7 @@ function AppStoreBadgeSpecimen({ t, v }: SpecimenProps) {
       aria-label={play ? 'Get it on Google Play' : 'Download on the App Store'}
       style={{
         ...baseFont(t),
-        display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 16px',
+        display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 8)} ${spaceOf(t, 16)}`,
         borderRadius: radiusRoleOf(t, 'action'), background: '#111111', color: '#ffffff',
         textDecoration: 'none', border: '1px solid #2a2a2a',
       }}
@@ -1421,7 +1421,7 @@ function InputGroupSpecimen({ t }: { t: PreviewTokens }) {
     <div style={{ ...baseFont(t), display: 'flex', width: 300, height: sizeRoleOf(t, 'control', '40px'), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, overflow: 'hidden' }}>
       <span style={{ display: 'flex', alignItems: 'center', padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, ...typeOf(t, 'placeholder'), color: t.fgMuted, background: t.neutralFill, borderRight: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}` }}>https://</span>
       <span style={{ flex: 1, display: 'flex', alignItems: 'center', padding: `0 ${spacingRoleOf(t, 'inset-control', '12px')}`, ...typeOf(t, 'placeholder'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.neutralText }}>escala.design</span>
-      <span style={{ display: 'flex', alignItems: 'center', padding: '0 14px', ...typeOf(t, 'button'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.brandText, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
+      <span style={{ display: 'flex', alignItems: 'center', padding: `0 ${spaceOf(t, 14)}`, ...typeOf(t, 'button'), background: t.inputSurface ?? inputSurfaceOf(t), color: t.brandText, borderLeft: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, cursor: 'pointer' }}>Copy</span>
     </div>
   )
 }
@@ -1433,11 +1433,11 @@ function TextareaSpecimen({ t, v }: SpecimenProps) {
   const focus = error ? (t.borderCritical ?? borderCriticalOf(t)) : focusBorderOf(t)
   const border = fieldStroke(t, state, error)
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 6, width: 280 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 6), width: 280 }}>
       <span style={{ ...typeOf(t, 'label'), color: disabled ? t.disabledText : t.neutralText }}>Description</span>
       <div
         style={{
-          minHeight: 88, padding: '10px 12px', borderRadius: radiusRoleOf(t, 'action'),
+          minHeight: 88, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'),
           border: `${strokeControl(t)} solid ${border}`, background: disabled ? t.disabledBg : t.inputSurface ?? inputSurfaceOf(t),
           ...typeStyleOf(t, 'placeholder', { leading: true }), color: disabled ? t.disabledText : t.placeholderText,
           boxShadow: state === 'Focused' ? `0 0 0 ${strokeFocus(t)} ${focus}26` : undefined,
@@ -1536,8 +1536,8 @@ function InputTagSpecimen({ t, w }: SpecimenProps) {
     <div
       onClick={() => inputRef.current?.focus()}
       style={{
-        ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6,
-        width: w ?? 300, minHeight: 40, padding: '6px 10px',
+        ...baseFont(t), display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spaceOf(t, 6),
+        width: w ?? 300, minHeight: 40, padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`,
         borderRadius: radiusRoleOf(t, 'action'),
         border: `${strokeControl(t)} solid ${focus ? focusBorderOf(t) : (t.border ?? '#d0d5dd')}`,
         background: t.inputSurface ?? inputSurfaceOf(t),
@@ -1546,7 +1546,7 @@ function InputTagSpecimen({ t, w }: SpecimenProps) {
       }}
     >
       {tags.map((tag) => (
-        <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: soft(t, t.brandSolid), color: t.brandText, ...typeOf(t, 'label') }}>
+        <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 5), padding: `${spaceOf(t, 3)} ${spaceOf(t, 8)}`, borderRadius: radiusRoleOf(t, 'pill', '9999px'), background: soft(t, t.brandSolid), color: t.brandText, ...typeOf(t, 'label') }}>
           {tag}
           <button
             type="button"
@@ -1589,7 +1589,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         role="combobox"
         aria-expanded={open}
         style={{
-          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: sizeRoleOf(t, 'control', '40px'), padding: '0 12px',
+          display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), height: sizeRoleOf(t, 'control', '40px'), padding: `0 ${spaceOf(t, 12)}`,
           borderRadius: radiusRoleOf(t, 'action'),
           border: `${strokeControl(t)} solid ${open ? t.brandSolid : (t.border ?? '#d0d5dd')}`, background: t.inputSurface ?? inputSurfaceOf(t),
           boxShadow: open ? `0 0 0 ${strokeFocus(t)} ${t.brandSolid}26` : undefined,
@@ -1599,9 +1599,9 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         <PreviewIcon concept="chevron" size={12} color={t.fgMuted} />
       </div>
       {open && (
-        <div style={{ marginTop: 4, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: 4 }}>
+        <div style={{ marginTop: spaceOf(t, 4), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: spaceOf(t, 4) }}>
           {options.map((o, i) => (
-            <span key={o} style={{ display: 'block', padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? soft(t, t.brandSolid) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
+            <span key={o} style={{ display: 'block', padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), background: i === 1 ? soft(t, t.brandSolid) : 'transparent', color: i === 1 ? t.brandText : t.neutralText, fontWeight: i === 1 ? weightOf(t, 'medium', 500) : 400, cursor: 'pointer' }}>
               {o}
             </span>
           ))}
@@ -1613,7 +1613,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
 
 function CheckRow({ t, checked, onToggle, children }: { t: PreviewTokens; checked?: boolean; onToggle?: () => void; children: ReactNode }) {
   return (
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10), cursor: 'pointer' }}>
       <button
         type="button"
         role="checkbox"
@@ -1642,8 +1642,8 @@ function CheckboxGroupSpecimen({ t }: { t: PreviewTokens }) {
   const rows = ['Comments on my files', 'New team members', 'Weekly digest']
   const [on, setOn] = useState(() => new Set([0, 1]))
   return (
-    <fieldset style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: 8, padding: 0 }}>Notify me about</legend>
+    <fieldset style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10) }}>
+      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: spaceOf(t, 8), padding: 0 }}>Notify me about</legend>
       {rows.map((label, i) => (
         <CheckRow
           key={label}
@@ -1702,8 +1702,8 @@ function RadioGroupSpecimen({ t }: { t: PreviewTokens }) {
     { label: 'Lifetime', checked: false },
   ]
   return (
-    <fieldset role="radiogroup" style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: 8, padding: 0 }}>Billing period</legend>
+    <fieldset role="radiogroup" style={{ ...baseFont(t), border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10) }}>
+      <legend style={{ ...typeOf(t, 'label'), color: t.fgMuted, marginBottom: spaceOf(t, 8), padding: 0 }}>Billing period</legend>
       {options.map((o) => (
         <label key={o.label} style={{ display: 'inline-flex', alignItems: 'center', gap: hitGap(t, selectorGlyph(t, false), 10), cursor: 'pointer' }}>
           <HitArea t={t} box={selectorGlyph(t, false)}>
@@ -1732,10 +1732,10 @@ function SwitchGroupSpecimen({ t, w }: SpecimenProps) {
     { label: 'Marketing emails', on: false },
   ]
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 12, width: w ?? 260 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 12), width: w ?? 260 }}>
       <span style={{ ...typeOf(t, 'label'), color: t.fgMuted }}>Notifications</span>
       {rows.map((r) => (
-        <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 12) }}>
           <span style={{ ...typeOf(t, 'label'), color: t.neutralText }}>{r.label}</span>
           <MiniSwitch t={t} on={r.on} />
         </div>
@@ -1890,14 +1890,14 @@ function SliderSpecimen({ t, w }: SpecimenProps) {
 
 function FileUploadSpecimen({ t, w }: SpecimenProps) {
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: 10, width: w ?? 300 }}>
-      <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: '8px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), ...typeOf(t, 'button'), cursor: 'pointer' }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10), width: w ?? 300 }}>
+      <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 8)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), ...typeOf(t, 'button'), cursor: 'pointer' }}>
         <PreviewIcon concept="upload" size={14} color="currentColor" />
         Upload file
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
-        <span style={{ ...typeOf(t, 'caption'), color: t.brandText, background: soft(t, t.brandSolid), padding: '3px 6px', borderRadius: radiusRoleOf(t, 'control') }}>PDF</span>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
+        <span style={{ ...typeOf(t, 'caption'), color: t.brandText, background: soft(t, t.brandSolid), padding: `${spaceOf(t, 3)} ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'control') }}>PDF</span>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: spaceOf(t, 5) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', ...typeOf(t, 'caption') }}>
             <span style={{ color: t.neutralText, fontWeight: weightOf(t, 'medium', 500) }}>brand-guide.pdf</span>
             <span style={{ color: t.fgMuted }}>80%</span>
@@ -1920,7 +1920,7 @@ function DropzoneSpecimen({ t, v }: SpecimenProps) {
     <div
       style={{
         ...baseFont(t),
-        width: 300, padding: '28px 20px', borderRadius: radiusRoleOf(t, 'container'),
+        width: 300, padding: `${spaceOf(t, 28)} ${spaceOf(t, 20)}`, borderRadius: radiusRoleOf(t, 'container'),
         border: `1.5px dashed ${line}`,
         background: active ? softer(t, t.brandSolid) : error ? softer(t, t.errorColor) : 'transparent',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), textAlign: 'center',
@@ -2004,7 +2004,7 @@ function StatusBadgeSpecimen({ t, v }: SpecimenProps) {
   const status = v.Status ?? 'Online'
   const c = (PRESENCE[status] ?? PRESENCE.Online)(t)
   return (
-    <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px', borderRadius: radiusRoleOf(t, 'pill', '9999px'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), ...typeOf(t, 'caption') }}>
+    <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 7), padding: `${spaceOf(t, 4)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'pill', '9999px'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), ...typeOf(t, 'caption') }}>
       <span style={{ width: 8, height: 8, borderRadius: 999, background: c }} aria-hidden />
       {status}
     </span>
@@ -2045,7 +2045,7 @@ function RatingSpecimen({ t, v }: SpecimenProps) {
   const interactive = (v.Interactive ?? 'False') === 'True'
   return (
     <div style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px') }} aria-label="4 of 5 stars">
-      <span style={{ display: 'flex', gap: 3, cursor: interactive ? 'pointer' : 'default' }}>
+      <span style={{ display: 'flex', gap: spaceOf(t, 3), cursor: interactive ? 'pointer' : 'default' }}>
         {Array.from({ length: 5 }).map((_, i) => (
           <PreviewIcon
             key={i}
@@ -2071,7 +2071,7 @@ function FileFormatSpecimen({ t, v }: SpecimenProps) {
         <path d="M4 4a3 3 0 0 1 3-3h18l11 11v32a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V4Z" fill={raisedBg(t)} stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
         <path d="M25 1v8a3 3 0 0 0 3 3h8" stroke={t.border ?? '#d0d5dd'} strokeWidth="1.5" />
       </svg>
-      <span style={{ position: 'absolute', left: -4, bottom: 8, padding: '2px 6px', borderRadius: radiusRoleOf(t, 'control', '4px'), background: c, color: '#ffffff', ...typeOf(t, 'caption'), letterSpacing: 0.5 }}>
+      <span style={{ position: 'absolute', left: -4, bottom: 8, padding: `${spaceOf(t, 2)} ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'control', '4px'), background: c, color: '#ffffff', ...typeOf(t, 'caption'), letterSpacing: 0.5 }}>
         {format}
       </span>
     </span>
@@ -2086,14 +2086,14 @@ function AccordionSpecimen({ t }: { t: PreviewTokens }) {
     <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden' }}>
       {rows.map((q, i) => (
         <div key={q} style={{ borderTop: i === 0 ? 'none' : `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
-          <button type="button" aria-expanded={i === 0} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '13px 16px', background: 'transparent', border: 'none', cursor: 'pointer', ...typeOf(t, 'heading-xs'), color: t.neutralText, textAlign: 'left' }}>
+          <button type="button" aria-expanded={i === 0} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 10), padding: `${spaceOf(t, 13)} ${spaceOf(t, 16)}`, background: 'transparent', border: 'none', cursor: 'pointer', ...typeOf(t, 'heading-xs'), color: t.neutralText, textAlign: 'left' }}>
             {q}
             <span style={{ transform: i === 0 ? 'rotate(180deg)' : undefined, flexShrink: 0, display: 'inline-flex' }}>
               <PreviewIcon concept="chevron" size={13} color={t.fgMuted} />
             </span>
           </button>
           {i === 0 && (
-            <p style={{ margin: 0, padding: '0 16px 14px', ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
+            <p style={{ margin: 0, padding: `0 ${spaceOf(t, 16)} ${spaceOf(t, 14)}`, ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>
               Named values for color, type and spacing that keep every surface consistent.
             </p>
           )}
@@ -2128,14 +2128,14 @@ function AspectRatioSpecimen({ t, v }: SpecimenProps) {
 
 function PopoverSpecimen({ t }: { t: PreviewTokens }) {
   return (
-    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spaceOf(t, 6) }}>
+      <div style={{ width: 260, borderRadius: radiusRoleOf(t, 'overlay'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'xl', '0 12px 32px rgba(10,13,18,0.14)'), padding: spaceOf(t, 16), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 6) }}>
         <span style={{ ...typeOf(t, 'heading-xs') }}>Share this system</span>
         <span style={{ ...typeStyleOf(t, 'body-sm', { leading: true }), color: t.fgMuted }}>Anyone with the link can view tokens and docs.</span>
-        <span style={{ alignSelf: 'flex-start', marginTop: 4, ...typeOf(t, 'button'), padding: '6px 12px', borderRadius: radiusRoleOf(t, 'action'), background: t.brandSolid, color: t.onBrand, cursor: 'pointer' }}>Copy link</span>
+        <span style={{ alignSelf: 'flex-start', marginTop: spaceOf(t, 4), ...typeOf(t, 'button'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), background: t.brandSolid, color: t.onBrand, cursor: 'pointer' }}>Copy link</span>
       </div>
       <span style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `6px solid ${floatingBg(t)}`, filter: 'drop-shadow(0 1px 0 rgba(10,13,18,0.08))' }} aria-hidden />
-      <span style={{ ...typeOf(t, 'label'), padding: '7px 14px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>Share</span>
+      <span style={{ ...typeOf(t, 'label'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>Share</span>
     </div>
   )
 }
@@ -2145,11 +2145,11 @@ function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
   const inverse = t.neutralText
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacingRoleOf(t, 'gap-tight', '4px') }}>
-      <span style={{ ...typeOf(t, 'caption'), padding: '6px 10px', borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
+      <span style={{ ...typeOf(t, 'caption'), padding: `${spaceOf(t, 6)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'action'), background: inverse, color: t.surface }}>
         Applies to new projects only.
       </span>
       <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${inverse}` }} aria-hidden />
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...typeOf(t, 'label') }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6), ...typeOf(t, 'label') }}>
         Default visibility
         <PreviewIcon concept="info" size={14} color={t.fgMuted} />
       </span>
@@ -2160,10 +2160,10 @@ function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
 function ScrollAreaSpecimen({ t }: { t: PreviewTokens }) {
   const rows = ['Accent / 500', 'Accent / 600', 'Neutral / 100', 'Neutral / 200', 'Success / 500']
   return (
-    <div style={{ ...baseFont(t), position: 'relative', width: 240, height: 150, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden', padding: '6px 14px 6px 6px' }}>
+    <div style={{ ...baseFont(t), position: 'relative', width: 240, height: 150, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), overflow: 'hidden', padding: `${spaceOf(t, 6)} ${spaceOf(t, 14)} ${spaceOf(t, 6)} ${spaceOf(t, 6)}` }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {rows.map((r) => (
-          <span key={r} style={{ padding: '8px 10px', ...typeOf(t, 'body-sm'), color: t.neutralText, borderRadius: radiusRoleOf(t, 'control') }}>{r}</span>
+          <span key={r} style={{ padding: `${spaceOf(t, 8)} ${spaceOf(t, 10)}`, ...typeOf(t, 'body-sm'), color: t.neutralText, borderRadius: radiusRoleOf(t, 'control') }}>{r}</span>
         ))}
       </div>
       <span style={{ position: 'absolute', top: 8, right: 4, width: 5, height: 56, borderRadius: 999, background: t.neutralFill }} aria-hidden />
@@ -2188,7 +2188,7 @@ function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
     // described "Cards, accordion, inline alerts". When `nested`, the inner
     // corner is parent − `inset-surface` so a short banner cannot reuse the
     // card's radius and read as a pill (see `nestedRadiusOf`).
-    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 10, width: 380, padding: '10px 14px', borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    <div role="status" style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), width: 380, padding: `${spaceOf(t, 10)} ${spaceOf(t, 14)}`, borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
       <span style={{ ...typeOf(t, 'body-sm'), flex: 1 }}>
         {status === 'Error' ? 'Sync failed — tokens were not published.' : status === 'Warning' ? 'Your trial ends in 3 days.' : status === 'Success' ? 'All tokens are synced to Figma.' : 'Scheduled maintenance on Sunday 02:00 UTC.'}
@@ -2206,9 +2206,9 @@ function InlineAlertSpecimen({ t, v, w, children, nested }: SpecimenProps) {
   const c = statusColor(t, status)
   return (
     // `container` — see `AlertBannerSpecimen`; an alert is a Box, not a Field.
-    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: 10, width: w ?? 320, padding: 14, borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
+    <div role="status" style={{ ...baseFont(t), display: 'flex', gap: spaceOf(t, 10), width: w ?? 320, padding: spaceOf(t, 14), borderRadius: nested ? nestedRadiusOf(t, 'container') : radiusRoleOf(t, 'container'), background: soft(t, c), border: `${strokeControl(t)} solid ${statusBorder(t, status, c)}` }}>
       <StatusIcon c={c} status={status} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spaceOf(t, 3), flex: 1, minWidth: 0 }}>
         {children ?? (
           <>
             <span style={{ ...typeOf(t, 'button') }}>
@@ -2248,14 +2248,14 @@ function MenuPanel({
     <div role="menu" style={{ ...baseFont(t), width: w ?? 210, borderRadius: outerRadius, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: elev === false ? undefined : shadowOf(t, elev || 'lg', '0 12px 32px rgba(10,13,18,0.14)'), padding: pad, overflow: 'hidden' }}>
       {items.map((item, i) =>
         item.sep ? (
-          <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: '4px 6px' }} aria-hidden />
+          <span key={i} style={{ display: 'block', height: 1, background: t.borderDefault ?? '#e9eaeb', margin: `${spaceOf(t, 4)} ${spaceOf(t, 6)}` }} aria-hidden />
         ) : (
           <span
             key={item.label}
             role="menuitem"
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-              padding: '7px 10px', borderRadius: rowRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 10),
+              padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: rowRadius, ...typeOf(t, 'body-sm'), cursor: 'pointer',
               // `action.ghost.hover` — the role named for menu items
               // and close buttons. `surface.selected` is persistent selection
               // (a tab, a table row), not a transient hover.
@@ -2274,8 +2274,8 @@ function MenuPanel({
 
 function DropdownMenuSpecimen({ t }: { t: PreviewTokens }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-      <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: 6, ...typeOf(t, 'label'), padding: '7px 12px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: spaceOf(t, 6) }}>
+      <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6), ...typeOf(t, 'label'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>
         Options
         <PreviewIcon concept="chevron" size={11} color={t.fgMuted} />
       </span>
@@ -2319,15 +2319,15 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
   ]
   return (
     <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: '11px 14px', borderBottom: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 11)} ${spaceOf(t, 14)}`, borderBottom: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
         <PreviewIcon concept="search" size={14} color={t.fgMuted} />
         <span style={{ flex: 1, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>Type a command…</span>
-        <span style={{ ...typeOf(t, 'caption'), color: t.placeholderText, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, borderRadius: radiusRoleOf(t, 'control', '4px'), padding: '2px 5px' }}>⌘K</span>
+        <span style={{ ...typeOf(t, 'caption'), color: t.placeholderText, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, borderRadius: radiusRoleOf(t, 'control', '4px'), padding: `${spaceOf(t, 2)} ${spaceOf(t, 5)}` }}>⌘K</span>
       </div>
-      <div style={{ padding: 6 }}>
-        <span style={{ display: 'block', padding: '4px 10px', ...typeOf(t, 'caption'), textTransform: 'uppercase', letterSpacing: 1, color: t.placeholderText }}>Actions</span>
+      <div style={{ padding: spaceOf(t, 6) }}>
+        <span style={{ display: 'block', padding: `${spaceOf(t, 4)} ${spaceOf(t, 10)}`, ...typeOf(t, 'caption'), textTransform: 'uppercase', letterSpacing: 1, color: t.placeholderText }}>Actions</span>
         {results.map((r) => (
-          <span key={r.label} style={{ display: 'block', padding: '7px 10px', borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), color: t.neutralText, background: r.hover ? t.neutralFill : 'transparent', cursor: 'pointer' }}>
+          <span key={r.label} style={{ display: 'block', padding: `${spaceOf(t, 7)} ${spaceOf(t, 10)}`, borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'), color: t.neutralText, background: r.hover ? t.neutralFill : 'transparent', cursor: 'pointer' }}>
             {r.label}
           </span>
         ))}
@@ -2339,9 +2339,9 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
 function NavbarSpecimen({ t }: { t: PreviewTokens }) {
   const links = ['Home', 'Tokens', 'Components', 'Docs']
   return (
-    <header style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 20, width: 420, padding: '10px 16px', borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
+    <header style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: spaceOf(t, 20), width: 420, padding: `${spaceOf(t, 10)} ${spaceOf(t, 16)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
       <span style={{ width: 24, height: 24, borderRadius: radiusRoleOf(t, 'control'), background: t.brandSolid, flexShrink: 0 }} aria-hidden />
-      <nav aria-label="Main" style={{ display: 'flex', gap: 14, flex: 1 }}>
+      <nav aria-label="Main" style={{ display: 'flex', gap: spaceOf(t, 14), flex: 1 }}>
         {links.map((l, i) => (
           <span key={l} style={{ ...typeOf(t, i === 0 ? 'button' : 'body-sm'), cursor: 'pointer', color: i === 0 ? t.neutralText : t.fgMuted }}>{l}</span>
         ))}
@@ -2371,7 +2371,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
   const trackRef = useRef<HTMLElement>(null)
 
   return (
-    <nav ref={trackRef} aria-label="Sidebar" style={{ ...baseFont(t), position: 'relative', width: w ?? 200, padding: 8, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <nav ref={trackRef} aria-label="Sidebar" style={{ ...baseFont(t), position: 'relative', width: w ?? 200, padding: spaceOf(t, 8), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 2) }}>
       <SlidingSelection
         trackRef={trackRef}
         selection={active}
@@ -2405,7 +2405,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
             data-sliding-active={on ? 'true' : undefined}
             style={{
               position: 'relative',
-              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+              display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 8)} ${spaceOf(t, 10)}`,
               border: 'none', background: 'transparent',
               borderRadius: radiusRoleOf(t, 'control'), ...typeOf(t, 'body-sm'),
               cursor: 'pointer', textAlign: 'left', width: '100%',
@@ -2417,7 +2417,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
               transition: STATE_TRANSITION,
             }}
           >
-            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10) }}>
               <PreviewIcon concept={SIDEBAR_ICONS[item.icon]} size={15} color={on ? t.brandText : hot ? t.neutralText : t.fgMuted} />
               {item.label}
             </span>
@@ -2451,7 +2451,7 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         onMouseLeave={() => setHover((h) => (h === id ? null : h))}
         style={{
           position: 'relative',
-          minWidth: 32, height: sizeRoleOf(t, 'compact', '32px'), padding: '0 6px', borderRadius: radiusRoleOf(t, 'action'),
+          minWidth: 32, height: sizeRoleOf(t, 'compact', '32px'), padding: `0 ${spaceOf(t, 6)}`, borderRadius: radiusRoleOf(t, 'action'),
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           border: 'none', background: 'transparent',
           ...typeOf(t, 'body-sm'),
@@ -2475,8 +2475,8 @@ function PaginationSpecimen({ t }: { t: PreviewTokens }) {
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
-        padding: 4,
+        gap: spaceOf(t, 2),
+        padding: spaceOf(t, 4),
         borderRadius: radiusRoleOf(t, 'pill', '9999px'),
         background: raisedBg(t),
         border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`,
@@ -2513,7 +2513,7 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
     <ol style={{ ...baseFont(t), display: 'flex', alignItems: 'center', gap: 0, listStyle: 'none', margin: 0, padding: 0, width: w }}>
       {steps.map((s, i) => (
         <li key={s.label} style={{ display: 'flex', alignItems: 'center', flex: fill ? 1 : undefined, minWidth: 0 }} aria-current={s.state === 'current' ? 'step' : undefined}>
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: fill ? '100%' : 84 }}>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spaceOf(t, 6), width: fill ? '100%' : 84 }}>
             <span
               style={{
                 width: 28, height: 28, borderRadius: 999,
@@ -2532,7 +2532,7 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
             </span>
             <span style={{ ...typeOf(t, s.state === 'current' ? 'label' : 'helper'), color: s.state === 'todo' ? t.fgMuted : t.neutralText }}>{s.label}</span>
           </span>
-          {i < steps.length - 1 && <span style={{ width: fill ? undefined : 40, flex: fill ? 1 : undefined, minWidth: fill ? 12 : undefined, height: 2, marginBottom: 20, borderRadius: 999, background: s.state === 'done' ? t.brandSolid : t.neutralFill }} aria-hidden />}
+          {i < steps.length - 1 && <span style={{ width: fill ? undefined : 40, flex: fill ? 1 : undefined, minWidth: fill ? 12 : undefined, height: 2, marginBottom: spaceOf(t, 20), borderRadius: 999, background: s.state === 'done' ? t.brandSolid : t.neutralFill }} aria-hidden />}
         </li>
       ))}
     </ol>
@@ -2660,7 +2660,7 @@ function SegmentedControlSpecimen({ t, v }: SpecimenProps) {
     // `surface.layer-2` means in the elevation contract `overlaySurfaceOf`
     // states — layer-1 is the card it sits ON, so painting the track with it
     // too left the two indistinguishable.
-    <div ref={trackRef} role="radiogroup" style={{ ...baseFont(t), position: 'relative', display: 'inline-flex', padding: 3, gap: 2, borderRadius: radiusRoleOf(t, 'action'), background: overlaySurfaceOf(t) }}>
+    <div ref={trackRef} role="radiogroup" style={{ ...baseFont(t), position: 'relative', display: 'inline-flex', padding: spaceOf(t, 3), gap: spaceOf(t, 2), borderRadius: radiusRoleOf(t, 'action'), background: overlaySurfaceOf(t) }}>
       <SlidingSelection
         trackRef={trackRef}
         selection={active}

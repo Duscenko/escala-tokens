@@ -9,8 +9,7 @@ import {
   sizeRoleOf,
   spacingRoleOf,
   strokeRoleOf,
-  typeStyleOf,
-} from '../../../lib/previewTokens'
+  typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import type { PreviewTokens } from '../ButtonPreview'
 import type { ThemeAppearance } from '../../../lib/themeModes'
 import { useI18n } from '../../../lib/i18n'
@@ -494,7 +493,7 @@ export function SystemCollage({
         </div>
         <div
           className="flex flex-col items-center text-center"
-          style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: 2 }}
+          style={{ gap: gap(tile(5), 'gap-control', '8px'), paddingBottom: spaceOf(tile(5), 2) }}
         >
           <GradientAvatar t={tile(5)} size={wellLg} />
           <p style={{ margin: 0, ...typeStyleOf(tile(5), 'heading-sm'), color: tile(5).neutralText }}>
@@ -581,11 +580,11 @@ export function SystemCollage({
           <div className="flex min-w-0 flex-wrap" style={{ gap: gap(tile(8), 'gap-group', '16px') }}>
             <div>
               <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>4</span>
-              <span style={{ marginLeft: 6, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
+              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Following')}</span>
             </div>
             <div>
               <span style={{ ...typeStyleOf(tile(8), 'heading-sm'), color: tile(8).neutralText }}>12.4K</span>
-              <span style={{ marginLeft: 6, ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
+              <span style={{ marginLeft: spaceOf(tile(8), 6), ...typeStyleOf(tile(8), 'helper'), color: muted(8) }}>{translate('Followers')}</span>
             </div>
           </div>
         </TokenInspector>

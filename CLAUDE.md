@@ -2512,10 +2512,20 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > to roles ONLY where the literal equals a role's Desktop value exactly (12px control
 > inline padding → `inset-control`, gap 8 → `gap-control`, gap 4 → `gap-tight`, field
 > height 40 → `size-control`, pagination 32 → `size-compact`), so Desktop is
-> byte-identical and those now tighten on Mobile. Off-scale literals (gaps of 6 / 10 /
-> 5 / 3) are a component's internal anatomy and stay; converting them is a visual
-> change, not a token fix. `DashboardPreview` is only used by the retired `HomeView`
-> and was left alone. Measured in Theme preview Desktop → Mobile: 32 → 16 (radius
+> byte-identical and those now tighten on Mobile. **Every OTHER literal gap / padding /
+> margin in `specimens.tsx`, `SemanticSpecimens`, `SignUpCardPreview`, `SystemCollage`
+> and `PricingArtefact` goes through `spaceOf(t, px)`** (`previewTokens.ts`): the nearest
+> step of the system's own spacing scale, a tie going UP (3→4 · 5→6 · 7→8 · 11/13→12 ·
+> 14→16 · 28→32). On-scale values (2 · 4 · 6 · 8 · 10 · 12 · 16 · 20 · 24 · 32) come back
+> byte-identical at the 4px base; the off-scale ones moved by 1–2px **on purpose** — the
+> owner chose that over leaving anatomy fixed, so what a preview shows is what the chosen
+> scale really produces (change the base unit and the chip inside a card moves too).
+> It does NOT add steps and does not step down per viewport: it is anatomy snapped to
+> the scale, not a role. Module-level tables (`BUTTON_SIZE_SPECS`, `BADGE_SIZE_SPECS`)
+> keep plain numbers and snap at the use site, where `t` exists. The one deliberate
+> exception is `SystemCollage`'s `padding: 10` / `margin: -10` pair: a paint-room trick
+> whose two halves must match exactly, so it stays a literal. `DashboardPreview` is only
+> used by the retired `HomeView` and was left alone. Measured in Theme preview Desktop → Mobile: 32 → 16 (radius
 > 4xl → 2xl), 8 → 6, gaps 16 → 12.
 
 > **In the editor**, `Dimensions` is its own Variables rail entry holding the ONE

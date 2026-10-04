@@ -13,7 +13,7 @@
 //    saying which token produced it doesn't help you edit tokens.
 
 import { type ReactNode } from 'react'
-import { radiusRoleOf, typeStyleOf } from '../../../lib/previewTokens'
+import { radiusRoleOf, typeStyleOf, spaceOf } from '../../../lib/previewTokens'
 import { checkContrast, WCAG_AA } from '../../../lib/colorUtils'
 import { TokenIcon, type IconConcept } from '../../configurator/docs/specimens'
 import type { PreviewTokens } from '../ButtonPreview'
@@ -261,7 +261,7 @@ export function ContentSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="On a filled surface">
         <div
           className="flex items-center justify-between gap-3"
-          style={{ background: fill.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '10px 12px' }}
+          style={{ background: fill.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}` }}
         >
           <span
             className="flex items-center gap-2"
@@ -343,7 +343,7 @@ export function IconSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
             <span
               className="inline-flex items-center gap-2"
               style={{
-                background: surface.css, borderRadius: r, padding: '0 12px', height: 34,
+                background: surface.css, borderRadius: r, padding: `0 ${spaceOf(t, 12)}`, height: 34,
                 color: primary.css, ...typeOf(t, 'button'),
               }}
             >
@@ -403,7 +403,7 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
         justifyContent: 'center',
         flexShrink: 0,
         height: 34,
-        padding: '0 14px',
+        padding: `0 ${spaceOf(t, 14)}`,
         borderRadius: r,
         background: bg,
         color: fg,
@@ -453,9 +453,9 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 
       <Section t={t} title="Badges">
         <div className="flex flex-wrap items-center gap-2">
-          <span style={{ background: primary.css, color: onAction.css, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Solid</span>
-          <span style={{ background: secondary.css, color: labelInk.css, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Soft</span>
-          <span style={{ background: 'transparent', color: labelInk.css, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption') }}>Outline</span>
+          <span style={{ background: primary.css, color: onAction.css, borderRadius: 999, padding: `${spaceOf(t, 3)} ${spaceOf(t, 10)}`, ...typeOf(t, 'caption') }}>Solid</span>
+          <span style={{ background: secondary.css, color: labelInk.css, borderRadius: 999, padding: `${spaceOf(t, 3)} ${spaceOf(t, 10)}`, ...typeOf(t, 'caption') }}>Soft</span>
+          <span style={{ background: 'transparent', color: labelInk.css, border: `1px solid ${stroke.css}`, borderRadius: 999, padding: `${spaceOf(t, 3)} ${spaceOf(t, 10)}`, ...typeOf(t, 'caption') }}>Outline</span>
         </div>
       </Section>
 
@@ -479,7 +479,7 @@ export function ActionSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
         <div
           style={{
             height: 36, borderRadius: r, border: `1px solid ${stroke.css}`,
-            display: 'flex', alignItems: 'center', padding: '0 12px',
+            display: 'flex', alignItems: 'center', padding: `0 ${spaceOf(t, 12)}`,
             ...typeOf(t, 'placeholder'), color: t.placeholderText || t.fgMuted,
           }}
         >
@@ -509,11 +509,11 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       {/* Nested, not side-by-side: elevation only reads as elevation when the
           layers actually sit on each other. */}
       <Section t={t} title="Elevation">
-        <div style={{ background: page.css, border: `1px solid ${stroke.css}`, borderRadius: r, padding: 12 }}>
+        <div style={{ background: page.css, border: `1px solid ${stroke.css}`, borderRadius: r, padding: spaceOf(t, 12) }}>
           <TokenMark slot={page} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
-          <div style={{ background: layer1.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: 12, marginTop: 8 }}>
+          <div style={{ background: layer1.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: spaceOf(t, 12), marginTop: spaceOf(t, 8) }}>
             <TokenMark slot={layer1} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
-            <div style={{ background: layer2.css, borderRadius: radiusRoleOf(t, 'control', '6px'), padding: 12, marginTop: 8 }}>
+            <div style={{ background: layer2.css, borderRadius: radiusRoleOf(t, 'control', '6px'), padding: spaceOf(t, 12), marginTop: spaceOf(t, 8) }}>
               <TokenMark slot={layer2} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
             </div>
           </div>
@@ -522,10 +522,10 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 
       <Section t={t} title="Input & selected">
         <div className="flex flex-col gap-2.5">
-          <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: '10px 12px' }}>
+          <div style={{ background: input.css, border: `1px solid ${stroke.css}`, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}` }}>
             <TokenMark slot={input} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
-          <div style={{ background: selected.css, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: '10px 12px' }}>
+          <div style={{ background: selected.css, borderRadius: radiusRoleOf(t, 'action', '8px'), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}` }}>
             <span style={{ color: t.neutralText, ...typeOf(t, 'body-sm') }}>Selected row</span>
             <TokenMark slot={selected} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
           </div>
@@ -534,10 +534,10 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
 
       <Section t={t} title="Accent & inverse">
         <div className="flex gap-2.5">
-          <div style={{ flex: 1, minWidth: 0, background: accent.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '14px 12px' }}>
+          <div style={{ flex: 1, minWidth: 0, background: accent.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: `${spaceOf(t, 14)} ${spaceOf(t, 12)}` }}>
             <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
           </div>
-          <div style={{ flex: 1, minWidth: 0, background: inverse.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: '14px 12px' }}>
+          <div style={{ flex: 1, minWidth: 0, background: inverse.css, borderRadius: radiusRoleOf(t, 'container', '8px'), padding: `${spaceOf(t, 14)} ${spaceOf(t, 12)}` }}>
             <TokenMark slot={inverse} onEdit={onEditToken} color={t.surface} />
           </div>
         </div>
@@ -558,11 +558,11 @@ export function SurfaceSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
             style={{
               position: 'absolute', left: 14, right: 14, top: 20,
               background: page.css, border: `1px solid ${stroke.css}`,
-              borderRadius: radiusRoleOf(t, 'overlay', '8px'), padding: 12,
+              borderRadius: radiusRoleOf(t, 'overlay', '8px'), padding: spaceOf(t, 12),
             }}
           >
             <div style={{ ...typeOf(t, 'heading-xs'), color: t.neutralText }}>Dialog</div>
-            <div style={{ ...typeOf(t, 'body-sm', true), color: t.fgMuted, marginTop: 2 }}>Sits above the scrim</div>
+            <div style={{ ...typeOf(t, 'body-sm', true), color: t.fgMuted, marginTop: spaceOf(t, 2) }}>Sits above the scrim</div>
           </div>
         </div>
         <TokenMark slot={overlay} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
@@ -638,7 +638,7 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Alerts">
         <div className="flex flex-col gap-2">
           {severities.map((sev) => (
-            <div key={sev.label} style={{ background: sev.bg.css, borderRadius: r, padding: '10px 12px' }}>
+            <div key={sev.label} style={{ background: sev.bg.css, borderRadius: r, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}` }}>
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: sev.fg.css, ...typeOf(t, 'label') }}>{sev.copy}</span>
                 <span className="min-w-0">
@@ -658,7 +658,7 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
         <div
           className="flex items-center justify-between gap-3"
           style={{
-            background: criticalSolid.css, borderRadius: r, padding: '10px 12px',
+            background: criticalSolid.css, borderRadius: r, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`,
           }}
         >
           <span style={{ color: onCriticalSolid.css, ...typeOf(t, 'button') }}>Delete project</span>
@@ -680,9 +680,9 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
               key={sev.label}
               title={`${sev.label} — text ${sev.fg.label}, dot ${sev.dot.label}, fill ${sev.bg.label}`}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
+                display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6),
                 background: sev.bg.css, color: sev.fg.css,
-                borderRadius: 999, padding: '3px 10px', ...typeOf(t, 'caption'),
+                borderRadius: 999, padding: `${spaceOf(t, 3)} ${spaceOf(t, 10)}`, ...typeOf(t, 'caption'),
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: 999, background: sev.dot.css }} />
@@ -698,8 +698,8 @@ export function StatusSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
         <div
           style={{
             background: slotOf(t, 'surface-inverse', 'surface.inverse', t.neutralText).css,
-            borderRadius: r, padding: '10px 12px',
-            display: 'flex', alignItems: 'center', gap: 8,
+            borderRadius: r, padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`,
+            display: 'flex', alignItems: 'center', gap: spaceOf(t, 8),
           }}
         >
           {/* The severity SOLID, not the text role — a toast dot is a mark on
@@ -745,7 +745,7 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
     <Row t={t} slot={ringSlot ?? slot} onEdit={onEditToken}>
       <span
         style={{
-          display: 'inline-flex', alignItems: 'center', height: 34, minWidth: 150, padding: '0 12px',
+          display: 'inline-flex', alignItems: 'center', height: 34, minWidth: 150, padding: `0 ${spaceOf(t, 12)}`,
           borderRadius: r, border: `1px solid ${slot.css}`,
           boxShadow: ringSlot ? `0 0 0 3px ${ringSlot.css}` : undefined,
           ...typeOf(t, 'placeholder'), color: t.placeholderText || t.fgMuted,
@@ -792,11 +792,11 @@ export function BorderSpecimen({ tokens: t, onEditToken }: SpecimenProps) {
       <Section t={t} title="Containers">
         <div className="flex gap-2.5">
           {[subtle, def, strong].map((slot) => (
-            <div key={slot.label} style={{ flex: 1, minWidth: 0, border: `1px solid ${slot.css}`, borderRadius: r, padding: 12 }}>
+            <div key={slot.label} style={{ flex: 1, minWidth: 0, border: `1px solid ${slot.css}`, borderRadius: r, padding: spaceOf(t, 12) }}>
               <TokenMark slot={slot} onEdit={onEditToken} color={t.fgMuted || '#717680'} />
             </div>
           ))}
-          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${accent.css}`, borderRadius: r, padding: 12 }}>
+          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${accent.css}`, borderRadius: r, padding: spaceOf(t, 12) }}>
             <TokenMark slot={accent} onEdit={onEditToken} color={t.brandText} />
           </div>
         </div>
