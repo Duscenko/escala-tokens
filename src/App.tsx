@@ -6,8 +6,9 @@ import { PublicReadingPage } from './components/public/PublicReadingPage'
 import { LegalPage } from './components/public/LegalPage'
 import { ContactPage } from './components/public/ContactPage'
 import { PricingPage } from './components/public/PricingPage'
+import { LoginPage } from './components/public/LoginPage'
 import { PRICING_PATH } from './lib/entitlement'
-import { CONTACT_PATH, LEGAL_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
+import { CONTACT_PATH, LEGAL_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from './lib/legal'
 import { ToastHost } from './components/ui/Toast'
 import { applyDocumentHead } from './lib/documentHead'
 import { ABOUT_DESCRIPTION, ABOUT_TITLE, matchPublicPath } from './lib/publicSeo'
@@ -84,6 +85,15 @@ function App() {
     return (
       <>
         <ContactPage />
+        <ToastHost />
+      </>
+    )
+  }
+
+  if (path === LOGIN_PATH) {
+    return (
+      <>
+        <LoginPage />
         <ToastHost />
       </>
     )

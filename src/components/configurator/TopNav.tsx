@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { LOCALES, useI18n } from '../../lib/i18n'
+import AccountControl from './AccountControl'
 import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_FOCUS, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, CHROME_MENU_Z, SHELL_CHROME } from './themeWorkspaceLayout'
 
 type ChromeMenuAlign = 'left' | 'right' | 'center'
@@ -631,6 +632,7 @@ export default function TopNav({
             <LanguageMenu onOpen={onOpenLanguages} />
             <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
           </div>
+          <AccountControl />
           {exportAction}
         </div>
       </div>

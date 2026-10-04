@@ -36,6 +36,7 @@ export const CONTACT_PATH = '/contact'
 export const LEGAL_PATH = '/legal'
 export const PRIVACY_PATH = '/privacy'
 export const TERMS_PATH = '/terms'
+export const LOGIN_PATH = '/login'
 
 /** Flip to true in the SAME change that ships login (design-plans/accounts-and-login.md).
  *  It switches on the account clauses of /terms and /privacy and swaps the "no
