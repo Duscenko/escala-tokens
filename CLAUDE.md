@@ -2385,6 +2385,14 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > unaffected and still enforced elsewhere: hosted sync is 402 without Pro (server), and
 > downloads use `freeFigmaScope` (1 theme + Desktop), which ignores this selection.
 >
+> **Plugin 0.3.10: the generated pages run ⬡ Cover → ⬡ Getting started → ⬡ Documentation**
+> (`ensureFoundationPageOrder`), and both prose pages are hand-kept parallels of THIS
+> repo — when the publish model, licence, pricing or token layers change, update
+> `importGettingStarted` / `importDocumentation` in the plugin too. Documentation reads
+> the ACTIVE theme's `foundationsByTheme` (same theme Typography / Dimension Semantics are
+> written from), never the root maps, and shows responsive spacing/radius per shipped
+> viewport plus the named grid styles.
+>
 > **Grid ships SIX named styles, and the three viewport modes ARE three of them**
 > (`GRID_STYLES` / `resolveGridStyles` in `layoutTokens.ts`, store v76). SM Mobile
 > 4×60 · 16/16 → 320 · MD Tablet 8×60 · 32/32 → 768 · LG Web 12×48 · 32/48 → 1024 ·
