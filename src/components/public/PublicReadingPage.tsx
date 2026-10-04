@@ -4,6 +4,7 @@
 // sends — and the configurator attaches `project` after that load.
 
 import { useEffect, useState } from 'react'
+import { PRICING_PATH } from '../../lib/entitlement'
 import TopNav, { type DocsMenuPage, type TopNavKey } from '../configurator/TopNav'
 import ComponentsView from '../configurator/ComponentsView'
 import DocsView from '../configurator/DocsView'
@@ -99,6 +100,7 @@ const NAV_PATH: Record<TopNavKey, string | null> = {
   variables: null, // the configurator itself — `openEditor`
   components: '/components',
   docs: '/docs',
+  pricing: PRICING_PATH,
 }
 
 /** The one header every crawlable reading page shares — Components, Docs,

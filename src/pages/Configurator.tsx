@@ -29,7 +29,8 @@ import { SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/theme
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { stylePreviewBrandRamp, type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
-import TopNav, { TOP_NAV_LOCKUP_FALLBACK_W, type TopNavKey } from '../components/configurator/TopNav'
+import { PRICING_PATH } from '../lib/entitlement'
+import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
 import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
@@ -301,8 +302,10 @@ const ExportIcon: ComponentType = () => (
 )
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
-type ThemeWorkspaceTabStrip = 'preview' | 'primitives'
-type ThemeWorkspaceTab = ThemeWorkspaceTabStrip | 'code'
+type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code'
+// Every workspace page is a tab in the strip — Get code included, so the page the
+// Export menu and the library's folder both open also has a visible home here.
+type ThemeWorkspaceTabStrip = ThemeWorkspaceTab
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -397,6 +400,7 @@ function PreviewThemeSwitch({
 const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTabStrip; label: string; icon: string }[] = [
   { key: 'preview', label: 'Theme preview', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
   { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
+  { key: 'code', label: 'Get code', icon: '/icons/theme-hub-icons/Icon/code.svg' },
 ]
 
 function WorkspaceTabIcon({ source }: { source: string }) {
@@ -709,7 +713,6 @@ export default function Configurator() {
   // (About as the landing tab, the Themes Library collapsed to just
   // "Create your theme") must hold for the whole session.
   const [firstRun] = useState(() => !hasOnboarded())
-  const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_LOCKUP_FALLBACK_W)
   // App deep-link (`?project=&section=`). Per-window, not Zustand — two
   // windows can sit on two sections of the same system. A shared section
   // wins over the first-visit About landing.
@@ -1242,7 +1245,7 @@ export default function Configurator() {
       setThemeHubSurface('artefacts')
     }
   }
-  const changeThemeWorkspaceTab = (next: ThemeWorkspaceTabStrip) => {
+  const changeThemeWorkspaceTab = (next: 'preview' | 'primitives') => {
     setThemeWorkspaceTab(next)
     // GitHub and Figma are detail surfaces inside Theme Preview, not a new
     // workspace tab. Clicking the already-selected Theme preview tab must
@@ -1759,7 +1762,8 @@ export default function Configurator() {
     : (!exportMode && tab === 'foundations') ? 'variables'
     : null
   const handleNav = (key: TopNavKey) => {
-    if (key === 'variables') {
+    if (key === 'pricing') window.location.assign(PRICING_PATH)
+    else if (key === 'variables') {
       commitVisit()
       setExportMode(null)
       setTab('foundations')
@@ -1823,13 +1827,12 @@ export default function Configurator() {
       {/* ── Layer 0: brand gradient ── */}
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: gradient }} />
 
-      <PluginCommunityBanner navAnchorBrandW={navAnchorBrandW} />
+      <PluginCommunityBanner />
 
       {/* ── Row 1: the global top bar — brand block + section nav + actions ── */}
       <TopNav
         nav={navActive}
         onNav={handleNav}
-        onNavAnchorBrandWChange={setNavAnchorBrandW}
         exportAction={(
           <ExportPill
             onExport={openSectionExport}
@@ -1886,8 +1889,8 @@ export default function Configurator() {
         >
           {themesCanvas && (
             <ThemeWorkspaceTabs
-              value={themeWorkspaceTab === 'code' ? null : themeWorkspaceTab}
-              onChange={changeThemeWorkspaceTab}
+              value={themeWorkspaceTab}
+              onChange={(tab) => (tab === 'code' ? openGetCodePage() : changeThemeWorkspaceTab(tab))}
               search={tokenSearchField}
               leading={(
                 <>
@@ -1905,7 +1908,7 @@ export default function Configurator() {
                     onToggle={() => (themeWorkspaceTab === 'code' ? changeThemeWorkspaceTab('preview') : openGetCodePage())}
                     placement="tab-bar"
                   />
-                  <div className="flex h-full flex-shrink-0 items-center gap-2 pl-2.5">
+                  <div className="flex h-full flex-shrink-0 items-center gap-2 pl-3">
                     <ThemeSwitcher
                       previewTheme={previewTheme}
                       onPreviewThemeChange={changePreviewTheme}

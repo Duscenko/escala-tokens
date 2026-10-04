@@ -41,8 +41,6 @@ export const CHROME_MENU_Z = 200
 export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
 export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:hover:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] hover:text-fg'
 
-/** Theme switcher chip — fixed so the chrome tab strip does not shift per label. */
-export const THEME_SWITCHER_WIDTH_CLASS = 'w-[11rem]'
 export const CHROME_CONTROL_ACTIVE = 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.08)] text-fg dark:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.09)]'
 export const CHROME_CONTROL_FOCUS = 'focus-within:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:focus-within:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] focus-within:text-fg'
 

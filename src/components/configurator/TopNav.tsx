@@ -152,7 +152,10 @@ function ChromeAnchoredDropdown({
 // tab now, first in order: `Configurator.tsx` also lands a first-time
 // visitor there by default (`hasOnboarded()`, `lib/onboarding.ts`), making it
 // the workspace's landing surface without reviving a wizard/HomeView.
-export type TopNavKey = 'about' | 'variables' | 'components' | 'docs'
+// `pricing` is the one key that LEAVES the workspace — it's a public route
+// (`/pricing`), so the shell navigates to it instead of switching a tab, and
+// `PricingPage`'s own `PublicHeader` lights it.
+export type TopNavKey = 'about' | 'variables' | 'components' | 'docs' | 'pricing'
 export type DocsMenuPage = 'mcp' | 'figma' | 'changelog' | 'faq'
 
 const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
@@ -160,6 +163,7 @@ const NAV_ITEMS: { key: TopNavKey; label: string }[] = [
   { key: 'variables', label: 'Generator' },
   { key: 'components', label: 'Components' },
   { key: 'docs', label: 'Docs' },
+  { key: 'pricing', label: 'Pricing' },
 ]
 
 interface TopNavProps {
@@ -191,8 +195,6 @@ interface TopNavProps {
   search?: ReactNode
   /** Guided export — transversal, same wizard as elsewhere in the shell. */
   exportAction?: ReactNode
-  /** Measured brand lockup width — keeps `PluginCommunityBanner` aligned with section nav. */
-  onNavAnchorBrandWChange?: (width: number) => void
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -481,10 +483,6 @@ function TopNavCompactMenu({
   )
 }
 
-/** Fallback until the live lockup is measured — mark + wordmark + Beta + `px-3`. */
-export const TOP_NAV_LOCKUP_FALLBACK_W = 196
-const TOP_NAV_CONTENT_BRAND_W = TOP_NAV_LOCKUP_FALLBACK_W
-
 // Escala Tokens mark. Every fill is `currentColor` (the brand art ships a hard
 // #18181B) so the lockup inverts with the theme instead of going invisible on
 // the dark chrome; the middle ring keeps its 0.3 opacity, which reads on both.
@@ -508,30 +506,11 @@ export function BrandMark({ size = 32 }: { size?: number } = {}) {
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
-  onNavAnchorBrandWChange,
 }: TopNavProps) {
-  const { locale, t } = useI18n()
+  const { t } = useI18n()
   const [docsMenuOpen, setDocsMenuOpen] = useState(false)
   const docsTriggerRef = useRef<HTMLButtonElement>(null)
-  const brandContentRef = useRef<HTMLDivElement>(null)
-  const [navAnchorBrandW, setNavAnchorBrandW] = useState(TOP_NAV_CONTENT_BRAND_W)
 
-  // Measured from the lockup itself (w-max), not the column `brandWidth` — so
-  // Generator's 196px theme-library block cannot drag the nav when About uses
-  // the same content-sized lockup.
-  useLayoutEffect(() => {
-    const inner = brandContentRef.current
-    const outer = inner?.parentElement
-    if (!inner || !outer) return
-    const padX =
-      (parseFloat(getComputedStyle(outer).paddingLeft) || 0)
-      + (parseFloat(getComputedStyle(outer).paddingRight) || 0)
-    const w = inner.getBoundingClientRect().width + padX
-    if (w > 0) {
-      setNavAnchorBrandW(w)
-      onNavAnchorBrandWChange?.(w)
-    }
-  }, [brandWidth, railCollapsed, locale, onNavAnchorBrandWChange])
 
   // z-30 (not 20): the header must stay above the Color primitives quick-edit
   // strip (`sticky z-20 isolate`) when the workspace scrolls beneath it.
@@ -548,7 +527,7 @@ export default function TopNav({
         }`}
         style={brandWidth ? { width: brandWidth } : undefined}
       >
-        <div ref={brandContentRef} className="flex w-max items-center gap-2.5">
+        <div className="flex w-max items-center gap-2.5">
           <BrandMark size={24} />
           {!railCollapsed && (
             <div className="flex items-baseline gap-1 whitespace-nowrap leading-none">
@@ -561,14 +540,14 @@ export default function TopNav({
 
       <div className="min-w-0 flex-1 self-stretch" aria-hidden />
 
-      {/* Section nav — screen position is (W + B)/2 where B is the lockup width,
-          NOT the column `brandWidth`. Anchored on the header so a wider brand
-          block (theme library, Components rail) and the contextual Search
-          cluster never move it. */}
+      {/* Section nav — centred on the VIEWPORT (left 50%), not on the space
+          right of the brand lockup. It used to sit at (W + B)/2, which put its
+          centre ~88px right of the screen's at 1440 and read as off-centre the
+          moment a fifth item widened it. Absolute on the header, so the brand
+          block's width and the contextual Search cluster still never move it. */}
       <nav
         aria-label={t('Sections')}
-        className="absolute top-1/2 z-[1] hidden min-[860px]:flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 lg:gap-5 min-w-0"
-        style={{ left: `calc(50% + ${navAnchorBrandW / 2}px)` }}
+        className="absolute left-1/2 top-1/2 z-[1] hidden min-[860px]:flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 lg:gap-5 min-w-0"
       >
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key

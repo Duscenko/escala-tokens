@@ -97,7 +97,8 @@ const COPY: Record<Locale, Copy> = {
 
 const PRIVACY_LABEL: Record<Locale, string> = { fr: 'politique de confidentialité', en: 'privacy policy', es: 'política de privacidad' }
 
-const FIELD = 'w-full bg-app border border-line-strong rounded-lg px-3 py-2 text-ui text-fg placeholder:text-fg-faint outline-none transition-colors focus:border-accent-ui focus-visible:ring-2 focus-visible:ring-accent-ui/30 aria-[invalid=true]:border-status-danger'
+// 16px / 44px on a phone: below 16px iOS zooms the page on focus, and a 34px field is under the touch-target size; both relax at md where a pointer is the norm.
+const FIELD = 'w-full min-h-11 md:min-h-0 bg-app border border-line-strong rounded-lg px-3 py-2 text-base md:text-ui text-fg placeholder:text-fg-faint outline-none transition-colors focus:border-accent-ui focus-visible:ring-2 focus-visible:ring-accent-ui/30 aria-[invalid=true]:border-status-danger'
 const LABEL = 'text-body font-medium text-fg'
 const HINT = 'text-caption text-fg-faint'
 
@@ -249,11 +250,11 @@ export function ContactPage() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
                     <button
                       type="submit"
                       disabled={status.kind === 'sending'}
-                      className="px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+                      className="flex-1 sm:flex-none min-h-11 md:min-h-0 px-5 py-2 rounded-lg text-ui font-semibold bg-accent-solid text-accent-ink disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
                     >
                       {status.kind === 'sending' ? c.sending : c.send}
                     </button>

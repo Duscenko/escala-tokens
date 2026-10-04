@@ -10,8 +10,8 @@ import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, THEME_SWITCHER_WIDTH_CLASS } from './themeWorkspaceLayout'
-import { usePopoverPlacement } from './colorControls'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
 import { ThemeAvatar } from './ThemeLibraryRail'
 import { FOUNDATION_ICON_RAIL_WIDTH } from './FoundationIconRail'
 import { FolderIcon } from './VariableCollectionRail'
@@ -71,6 +71,13 @@ export function ThemesLibraryToggle({
     </button>
   )
 }
+
+/** Same width as the rail's Name field right below it (the rail's width minus the
+ *  field's own `px-3` on each side) — the switcher is the first thing in the tab
+ *  strip and that field the first thing in the column under it, so the two read
+ *  as one aligned stack. Derived, not a magic number: if the rail resizes, this
+ *  follows. Fixed (not content-sized) so the strip doesn't shift per label. */
+export const THEME_SWITCHER_WIDTH = COLOR_RAIL_WIDTH - 24
 
 export function ThemeSwitcher({
   previewTheme,
@@ -164,7 +171,8 @@ export function ThemeSwitcher({
         aria-label={t('Switch theme')}
         title={chipName}
         onClick={() => setOpen((v) => !v)}
-        className={`flex h-8 ${THEME_SWITCHER_WIDTH_CLASS} min-w-0 items-center gap-1.5 rounded-lg px-1.5 text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
+        style={{ width: THEME_SWITCHER_WIDTH }}
+        className={`flex h-8 min-w-0 flex-shrink-0 items-center gap-1.5 rounded-lg px-1.5 text-caption font-medium text-fg ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50`}
       >
         <ThemeAvatar ramp={chipRamp} appearance={chipKind} fallback={chipFallback} />
         <span className="min-w-0 flex-1 truncate text-left">{chipName}</span>

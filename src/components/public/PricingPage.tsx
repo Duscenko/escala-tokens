@@ -17,6 +17,7 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { PublicHeader } from './PublicReadingPage'
+import TopBanner from '../configurator/TopBanner'
 import { applyDocumentHead } from '../../lib/documentHead'
 import { useI18n } from '../../lib/i18n'
 import { CONTACT_PATH } from '../../lib/legal'
@@ -69,44 +70,111 @@ function Badge({ children, solid }: { children: ReactNode; solid?: boolean }) {
   )
 }
 
-type Cell = string | null
+// A cell is `true` (included, nothing more to say), `null` (not included) or a
+// string — the value only when it actually DIFFERS ("Up to 10", "12 months").
+// "Included" written out nine times was half the table saying the same word,
+// burying the few cells that tell the plans apart; a check carries it instead.
+type Cell = string | true | null
 type Row = { label: string; free: Cell; pro: Cell }
 type Group = { title: string; rows: Row[] }
 
-function CompareTable({ groups }: { groups: Group[] }) {
+function CompareTable({ groups, proPrice }: { groups: Group[]; proPrice: number }) {
   const { t } = useI18n()
-  const cell = (value: Cell) =>
-    value === null
-      ? <span className="text-fg-faint">{t('Not included')}</span>
-      : <span className="text-fg">{value}</span>
+  const cell = (value: Cell, pro: boolean) => {
+    if (value === true) {
+      return (
+        <span className="inline-flex items-center">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className={pro ? 'text-accent-ui' : 'text-fg'}>
+            <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="sr-only">{t('Included')}</span>
+        </span>
+      )
+    }
+    // A dash in `text-fg-muted`, not the words in `text-fg-faint` — faint
+    // measured 4.39:1 here, under AA; the label stays for screen readers.
+    if (value === null) {
+      return (
+        <span className="inline-flex items-center text-fg-muted">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path d="M4.5 8h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <span className="sr-only">{t('Not included')}</span>
+        </span>
+      )
+    }
+    return <span className={pro ? 'font-medium text-fg' : 'text-fg'}>{value}</span>
+  }
+  // The Pro column carries the same accent the Pro card does, as a faint wash
+  // down its whole height, so the table reads as "this column is the offer".
+  const proCol = 'bg-accent-ui/[0.05]'
+  const pad = 'px-3 md:px-5'
+  // The rule between the feature labels and the two plans — runs the whole
+  // table height, so every row reads as label | Free | Pro.
+  const DIVIDER = 'border-l border-line'
+  // Titles (the caption, the header row, each group) sit on a faint band so
+  // they read as headings, not as one more feature row. Translucent on purpose:
+  // over the Pro column it stacks with that column's accent wash instead of
+  // erasing it.
+  const BAND = 'bg-fg/[0.045]'
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
-      <table className="w-full min-w-[560px] border-collapse text-body">
-        <caption className="px-5 pt-5 pb-2 text-left text-ui font-semibold text-fg">{t('Compare Escala plans')}</caption>
-        <thead>
-          <tr className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">
-            <th scope="col" className="px-5 py-3 text-left font-semibold">{t('Feature')}</th>
-            <th scope="col" className="w-[24%] px-5 py-3 text-left font-semibold">{t('Free')}</th>
-            <th scope="col" className="w-[24%] px-5 py-3 text-left font-semibold">Pro</th>
-          </tr>
-        </thead>
-        {groups.map((group) => (
-          <tbody key={group.title}>
-            <tr className="border-t border-line">
-              <th colSpan={3} scope="colgroup" className="px-5 pt-4 pb-2 text-left text-caption font-semibold text-accent-ui">
-                {group.title}
+    <div className="flex flex-col gap-4">
+      {/* A heading BEFORE the card, not a <caption> inside it: it names the
+          table without taking a row of the table's own chrome, and
+          `aria-labelledby` keeps the programmatic name a caption gave. */}
+      <h3 id="pricing-compare" className="text-title font-semibold">{t('Compare Escala plans')}</h3>
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+        {/* table-fixed + percentage plan columns: the feature label wraps and
+            both plans stay on screen at phone width — no horizontal scroll
+            hiding the Pro column, which is the one this table exists to sell. */}
+        <table aria-labelledby="pricing-compare" className="w-full table-fixed border-collapse text-body">
+          <colgroup>
+            <col />
+            <col className="w-[27%] md:w-[24%]" />
+            <col className={`w-[27%] md:w-[24%] ${proCol}`} />
+          </colgroup>
+          <thead>
+            <tr className="border-t border-line align-bottom">
+              {/* The FIRST group's title lives here, on the header's own line, in the
+                  same type as Free / Pro — a lone "BUILD" row right under the
+                  header was a second header with nothing under it yet. */}
+              <th scope="col" className={`${pad} ${BAND} py-3 text-left text-ui font-semibold text-fg`}>{groups[0]?.title}</th>
+              <th scope="col" className={`${pad} ${DIVIDER} ${BAND} py-3 text-left`}>
+                <span className="block text-ui font-semibold text-fg">{t('Free')}</span>
+                <span className="block text-caption font-normal text-fg-muted">$0</span>
+              </th>
+              <th scope="col" className={`${pad} ${BAND} py-3 text-left`}>
+                <span className="block text-ui font-semibold text-fg">Pro</span>
+                <span className="block text-caption font-normal text-fg-muted">
+                  ${proPrice} <span className="hidden sm:inline">{t('one-time')}</span>
+                </span>
               </th>
             </tr>
-            {group.rows.map((row) => (
-              <tr key={row.label} className="border-t border-line/60">
-                <th scope="row" className="px-5 py-3 text-left font-normal text-fg-muted">{row.label}</th>
-                <td className="px-5 py-3">{cell(row.free)}</td>
-                <td className="px-5 py-3">{cell(row.pro)}</td>
-              </tr>
-            ))}
-          </tbody>
-        ))}
-      </table>
+          </thead>
+          {groups.map((group, index) => (
+            <tbody key={group.title}>
+              {index > 0 && (
+                <tr className="border-t border-line">
+                  {/* Three cells, not a colSpan, so the divider and the Pro wash
+                      run unbroken through the group rows. */}
+                  <th scope="colgroup" className={`${pad} ${BAND} py-3 text-left text-ui font-semibold text-fg`}>
+                    {group.title}
+                  </th>
+                  <td aria-hidden className={`${DIVIDER} ${BAND}`} />
+                  <td aria-hidden className={BAND} />
+                </tr>
+              )}
+              {group.rows.map((row, rowIndex) => (
+                <tr key={row.label} className={`${index === 0 && rowIndex === 0 ? 'border-t border-line' : 'border-t border-line/60'} transition-colors hover:bg-elevated/40`}>
+                  <th scope="row" className={`${pad} py-3 text-left align-top font-normal leading-snug text-fg-muted`}>{row.label}</th>
+                  <td className={`${pad} ${DIVIDER} py-3 align-top leading-snug`}>{cell(row.free, false)}</td>
+                  <td className={`${pad} py-3 align-top leading-snug`}>{cell(row.pro, true)}</td>
+                </tr>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </div>
     </div>
   )
 }
@@ -143,10 +211,10 @@ export function PricingPage() {
     {
       title: t('Build'),
       rows: [
-        { label: t('Configurator, every foundation, unlimited themes while editing'), free: t('Included'), pro: t('Included') },
+        { label: t('Configurator, every foundation, unlimited themes while editing'), free: true, pro: true },
         { label: t('System Styles'), free: t('All 12'), pro: t('All 12') },
-        { label: t('Exports: tokens.json, CSS, W3C, Tailwind, Markdown'), free: t('Included'), pro: t('Included') },
-        { label: t('Generated documentation (Figma doc pages, system README)'), free: null, pro: t('Included') },
+        { label: t('Exports: tokens.json, CSS, W3C, Tailwind, Markdown'), free: true, pro: true },
+        { label: t('Generated documentation (Figma doc pages, system README)'), free: null, pro: true },
       ],
     },
     {
@@ -154,14 +222,14 @@ export function PricingPage() {
       rows: [
         { label: t('Themes in one Figma file'), free: t('{n} (Light + Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
         { label: t('Platform modes'), free: 'Desktop', pro: 'Desktop, Tablet, Mobile' },
-        { label: t('Manual import of tokens.json'), free: t('Included'), pro: t('Included') },
+        { label: t('Manual import of tokens.json'), free: true, pro: true },
         { label: t('Hosted sync (Live Sync and auto-publish)'), free: null, pro: t('12 months') },
       ],
     },
     {
       title: t('AI'),
       rows: [
-        { label: t('Offline agent skill and design.md'), free: t('Included'), pro: t('Included') },
+        { label: t('Offline agent skill and design.md'), free: true, pro: true },
         { label: t('Live MCP against your published system'), free: null, pro: t('12 months') },
       ],
     },
@@ -176,27 +244,28 @@ export function PricingPage() {
 
   return (
     <div className="flex h-screen flex-col bg-app text-fg">
-      <PublicHeader />
+      {(entitlement.promo || entitlement.launchPrice) && (() => {
+        // Oct: the free promo. Nov 1–15: the launch price. After: nothing —
+        // the regular price needs no banner. Same strip as the Figma plugin
+        // bar (`TopBanner`), above the header; not dismissible, since this
+        // page is where the offer is being read.
+        const days = entitlement.promo ? entitlement.daysLeft : entitlement.launchDaysLeft
+        return (
+          <TopBanner>
+            <Badge solid>{t('Launch')}</Badge>
+            <span>
+              {entitlement.promo
+                ? t('Everything in Pro is free for everyone until October 31.')
+                : t('Escala Pro is ${launch} until November 15, then ${price}.', { launch: String(PRO_LAUNCH_PRICE_USD), price: String(PRO_PRICE_USD) })}
+            </span>
+            <span className="font-mono tabular-nums text-accent-ui">
+              {days === 1 ? t('1 day left') : t('{n} days left', { n: String(days) })}
+            </span>
+          </TopBanner>
+        )
+      })()}
+      <PublicHeader current="pricing" />
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {(entitlement.promo || entitlement.launchPrice) && (() => {
-          // Oct: the free promo. Nov 1–15: the launch price. After: nothing —
-          // the regular price needs no banner.
-          const days = entitlement.promo ? entitlement.daysLeft : entitlement.launchDaysLeft
-          return (
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-line bg-accent-ui/[0.08] px-4 py-2.5 text-body">
-              <Badge solid>{t('Launch')}</Badge>
-              <span className="text-fg">
-                {entitlement.promo
-                  ? t('Everything in Pro is free for everyone until October 31.')
-                  : t('Escala Pro is ${launch} until November 15, then ${price}.', { launch: String(PRO_LAUNCH_PRICE_USD), price: String(PRO_PRICE_USD) })}
-              </span>
-              <span className="font-mono tabular-nums text-accent-ui">
-                {days === 1 ? t('1 day left') : t('{n} days left', { n: String(days) })}
-              </span>
-            </div>
-          )
-        })()}
-
         <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-4 py-14 md:px-8">
           <section className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
             <h1 className="text-[clamp(30px,4.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em]">
@@ -269,7 +338,7 @@ export function PricingPage() {
               </div>
             </div>
 
-            <CompareTable groups={groups} />
+            <CompareTable groups={groups} proPrice={entitlement.priceUsd} />
           </section>
 
           <section aria-labelledby="pricing-library" className="flex flex-col gap-6">
