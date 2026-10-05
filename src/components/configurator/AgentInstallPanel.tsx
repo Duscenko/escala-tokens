@@ -99,8 +99,10 @@ export default function AgentInstallPanel({
 
       {/* Client row + mode toggle. One line, the way the thing you're
           configuring and the thing you're configuring it with belong together. */}
-      <div className="flex items-center gap-3 px-3 pt-3 pb-3 border-b border-line">
-        <div className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto">
+      {/* Below `sm` (the About page on a phone) the toggle wraps under the
+          tabs so they get the full width; from `sm` up it's one line as before. */}
+      <div className="flex flex-wrap items-center gap-3 px-3 pt-3 pb-3 border-b border-line sm:flex-nowrap">
+        <div className="flex items-center gap-0.5 w-full min-w-0 overflow-x-auto sm:w-auto sm:flex-1">
           {TABS.map(({ id, label, logo }) => (
             <button
               key={id}

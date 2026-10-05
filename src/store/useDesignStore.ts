@@ -668,6 +668,19 @@ export function scopeSnapshotToTheme(snapshot: DesignSnapshot, themeKey: string)
   }
 }
 
+/** The id `saveCurrentSystem` files the system on screen under — the repo when
+ *  GitHub-connected, else a slug of the project name. One expression, so a
+ *  "Save library" button's saved/unsaved readout can't look up a different
+ *  entry than the save itself writes. */
+export function activeLibraryId(state: { githubRepo: string | null; projectName: string }): string {
+  return state.githubRepo ?? `local:${slugify(state.projectName) || 'design-system'}`
+}
+
+/** True when the system on screen matches its saved library byte for byte. */
+export function libraryMatchesSaved(state: DesignSnapshot, saved: DesignSnapshot): boolean {
+  return JSON.stringify(captureSnapshot(state)) === JSON.stringify(saved)
+}
+
 /** Builds the `SavedSystem` entry `saveCurrentSystem`/`saveCurrentSystemAsTheme`
  *  both upsert — ONE place deciding the id (repo id when GitHub-connected, else
  *  a stable slug of the project name) so the two save paths can never disagree
@@ -680,7 +693,7 @@ function buildSavedSystemEntry(
   nameOverride?: string,
 ): SavedSystem {
   const name = nameOverride?.trim() || state.projectName
-  const id = state.githubRepo ?? `local:${slugify(name) || 'design-system'}`
+  const id = activeLibraryId({ githubRepo: state.githubRepo, projectName: name })
   return {
     id,
     name,

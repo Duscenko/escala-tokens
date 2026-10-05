@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { useI18n } from './lib/i18n'
 import Configurator from './pages/Configurator'
 import { AboutScaffold } from './components/configurator/AboutMenu'
@@ -27,13 +27,31 @@ import { ABOUT_DESCRIPTION, ABOUT_TITLE, matchPublicPath } from './lib/publicSeo
 // unreachable: the only door to it was a burger button inside the desktop
 // shell. `AboutScaffold` renders the SAME `SECTIONS` array here — see that
 // component for why it also backs the `/about` route below.
+// The phone screen is now the WHOLE About page (`AboutScaffold` → `AboutHome`),
+// not a short card — too much to keep mounted invisibly behind the desktop
+// shell (`md:hidden` is `display: none`, not an unmount). So it MOUNTS only
+// below `md`. The query is read synchronously on the first render
+// (`useSyncExternalStore` calls `getSnapshot` before paint), so there is still
+// no flash of the wrong screen; `md:hidden` stays as the belt to that brace.
+const PHONE_QUERY = '(max-width: 767.98px)'
+function subscribePhone(onChange: () => void) {
+  const mq = window.matchMedia(PHONE_QUERY)
+  mq.addEventListener('change', onChange)
+  return () => mq.removeEventListener('change', onChange)
+}
+function useIsPhone() {
+  return useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE_QUERY).matches, () => false)
+}
+
 function DesktopOnlyNotice() {
   const { t } = useI18n()
   return (
     <AboutScaffold
       wrapperClassName="md:hidden"
-      heading={t('Optimized for desktop')}
-      subheading={t('Escala Tokens is a design token workspace built for a laptop or desktop screen. Open it there to configure and export your system.')}
+      notice={{
+        heading: t('Optimized for desktop'),
+        subheading: t('Escala Tokens is a design token workspace built for a laptop or desktop screen. Open it there to configure and export your system.'),
+      }}
     />
   )
 }
@@ -63,12 +81,7 @@ function AboutPage() {
   }, [t])
 
   return (
-    <AboutScaffold
-      heading={t('Define your foundations before you prompt')}
-      subheading={t('Escala is where you set your design tokens once, then hand them to Figma, your code and any AI agent as one contract, so nothing invents its own colors, spacing or radius.')}
-      ctaHref="/"
-      ctaLabel={t('Open the configurator')}
-    />
+    <AboutScaffold />
   )
 }
 
@@ -78,6 +91,7 @@ function App() {
   // a fresh document load. Matches the SPA catch-all in vercel.json.
   // Public reading paths (`/components`, `/docs/mcp`, …) never mount the
   // configurator, so they cannot rewrite `/?project=&section=` or publish.
+  const isPhone = useIsPhone()
   const path = window.location.pathname.replace(/\/$/, '') || '/'
   const publicPage = path === '/about' ? null : matchPublicPath(path)
 
@@ -139,7 +153,7 @@ function App() {
 
   return (
     <>
-      <DesktopOnlyNotice />
+      {isPhone && <DesktopOnlyNotice />}
       <main className="hidden md:block min-h-screen bg-app text-fg">
         <Configurator />
       </main>

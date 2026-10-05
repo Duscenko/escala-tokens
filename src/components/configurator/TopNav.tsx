@@ -123,7 +123,7 @@ function ChromeAnchoredDropdown({
 //     reachable from their own surfaces now (SaveSidePanel, and the Figma /
 //     GitHub pills in the theme-workspace tab strip), and the one thing it
 //     owned that IS global chrome — the appearance toggle — moved out here.
-//   • Below 860px the centred section nav hides; a compact ☰ menu (md+ only)
+//   • Below 1080px the section nav hides; a compact ☰ menu (md+ only)
 //     carries About · Generator · Components · Docs shortcuts, Language, and
 //     Appearance. Export stays in the right cluster beside the menu trigger.
 //
@@ -196,6 +196,9 @@ interface TopNavProps {
   search?: ReactNode
   /** Guided export — transversal, same wizard as elsewhere in the shell. */
   exportAction?: ReactNode
+  /** The grouped `[theme | ☀]` control (`ThemeAppearanceControl`). When given it
+   *  REPLACES the bare appearance toggle — it carries that toggle itself. */
+  themeControl?: ReactNode
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -222,7 +225,7 @@ export function FigmaGlyph({ className }: { className?: string } = {}) {
   )
 }
 
-function SunIcon() {
+export function SunIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="8" cy="8" r="2.6" />
@@ -231,7 +234,7 @@ function SunIcon() {
   )
 }
 
-function MoonIcon() {
+export function MoonIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M13.2 10.3A5.7 5.7 0 0 1 5.7 2.8 5.7 5.7 0 1 0 13.2 10.3Z" />
@@ -363,7 +366,7 @@ export function LanguageMenu({ onOpen, align = 'right' }: { onOpen?: () => void;
  *  that dock under TopNav add another 52 for their top fallback. */
 export const TOP_NAV_H = 52
 
-/** Below `min-[860px]` the centred section nav is hidden; this menu carries
+/** Below `min-[1080px]` the section nav is hidden; this menu carries
  *  the same destinations plus Language and Appearance. Export stays outside. */
 function TopNavCompactMenu({
   nav,
@@ -387,7 +390,7 @@ function TopNavCompactMenu({
   const close = () => setOpen(false)
 
   return (
-    <div className="relative hidden max-[859px]:flex flex-shrink-0">
+    <div className="relative hidden max-[1079px]:flex flex-shrink-0">
       <button
         ref={triggerRef}
         type="button"
@@ -556,7 +559,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl,
 }: TopNavProps) {
   const { t } = useI18n()
 
@@ -586,16 +589,15 @@ export default function TopNav({
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 self-stretch" aria-hidden />
-
-      {/* Section nav — centred on the VIEWPORT (left 50%), not on the space
-          right of the brand lockup. It used to sit at (W + B)/2, which put its
-          centre ~88px right of the screen's at 1440 and read as off-centre the
-          moment a fifth item widened it. Absolute on the header, so the brand
-          block's width and the contextual Search cluster still never move it. */}
+      {/* Section nav — LEFT-aligned, right after the brand lockup (Arc's
+          layout). It used to be centred on the viewport with the right cluster
+          absolutely positioned over it; once that cluster grew (theme pill ·
+          Sign in · Export) the two collided on any window under ~1300px. In
+          the flow, the spacer between them is what gives way, so they can no
+          longer overlap. Below 1080px (measured: Spanish labels need ~1060) the compact menu takes over. */}
       <nav
         aria-label={t('Sections')}
-        className="absolute left-1/2 top-1/2 z-[1] hidden min-[860px]:flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 lg:gap-5 min-w-0"
+        className="hidden min-[1080px]:flex min-w-0 flex-shrink-0 items-center gap-3 pl-5 lg:gap-5 lg:pl-6"
       >
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
@@ -617,10 +619,9 @@ export default function TopNav({
           })}
       </nav>
 
-      {/* Right cluster — absolute so contextual Search width never shifts the
-          section nav. Sits above the centred band; controls stay clickable. */}
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center gap-2 pl-2 pr-3 xl:pr-4">
-        <div className="pointer-events-auto flex min-w-0 items-center gap-2">
+      <div className="min-w-0 flex-1 self-stretch" aria-hidden />
+
+      <div className="flex flex-shrink-0 items-center gap-2 pl-2 pr-3 xl:pr-4">
           {search}
           <TopNavCompactMenu
             nav={nav}
@@ -630,13 +631,17 @@ export default function TopNav({
             chromeAppearance={chromeAppearance}
             onChromeAppearanceChange={onChromeAppearanceChange}
           />
-          <div className="hidden min-[860px]:flex items-center gap-2">
+          {/* Language is a one-click icon again (it briefly moved into the
+              theme sheet and read as noise there). The theme control stays
+              visible at every width: the compact menu carries Language and
+              Appearance but not the theme pick. */}
+          <div className="hidden min-[1080px]:flex items-center gap-2">
             <LanguageMenu onOpen={onOpenLanguages} />
-            <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
+            {!themeControl && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           </div>
+          {themeControl}
           <AccountControl />
           {exportAction}
-        </div>
       </div>
     </header>
   )

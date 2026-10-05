@@ -27,6 +27,7 @@ import {
 import { applyDocumentHead } from '../../lib/documentHead'
 import { CONTACT_PATH, LOGIN_PATH, PRIVACY_PATH, TERMS_PATH } from '../../lib/legal'
 import { accountsEnabled, authProviders, type AuthProvider } from '../../lib/supabase'
+import { pathForNext, pendingNext, readLoginSearch, rememberReturn } from '../../lib/loginReturn'
 
 const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
   mcp: '/docs/mcp',
@@ -38,10 +39,12 @@ const DOCS_PAGE_PATH: Record<DocsMenuPage, string> = {
 type Mode = 'signin' | 'signup' | 'reset' | 'recovery'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
-const FIELD = `h-11 w-full rounded-lg border border-line-strong bg-app px-3 text-ui text-fg placeholder:text-fg-faint ${FOCUS}`
+const FIELD = `h-12 w-full rounded-2xl border border-line bg-surface px-4 text-ui text-fg placeholder:text-fg-faint transition-colors hover:border-line-strong focus:border-line-strong ${FOCUS}`
 /** Same type and ink as TopNav's inactive section items. */
 const NAV_LINK = 'rounded-md px-0.5 py-1 text-ui font-medium whitespace-nowrap text-fg-faint transition-colors hover:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app'
-const LINK = `text-accent-ui underline-offset-2 hover:underline rounded-sm ${FOCUS}`
+const LINK = `rounded-sm text-fg-muted underline-offset-2 transition-colors hover:text-fg hover:underline ${FOCUS}`
+/** The page's one filled action: the inverse of the page (light in dark chrome). */
+const PRIMARY = `flex h-12 w-full items-center justify-center rounded-2xl bg-fg px-4 text-ui font-semibold text-app transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`
 
 function GoogleMark() {
   return (
@@ -62,11 +65,83 @@ function GithubMark() {
   )
 }
 
-function Check() {
+function EyeIcon({ off }: { off?: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="mt-0.5 flex-shrink-0">
-      <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {off && <path d="M4 4l16 16" />}
     </svg>
+  )
+}
+
+function ArrowLeft() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M19 12H5M11 6l-6 6 6 6" />
+    </svg>
+  )
+}
+
+/** Decorative right panel: the product in miniature — a ramp, a synced file and
+ *  the appearance switch — over a soft accent glow. Chrome tokens only, so it
+ *  follows the platform accent and the light/dark chrome like everything else. */
+function ShowcasePanel() {
+  const { t } = useI18n()
+  // Twelve tones of the platform accent: 1–8 grow out of the page, 9 is the
+  // accent itself, 10–12 run toward the ink — the same shape a real ramp has.
+  const ramp = Array.from({ length: 12 }, (_, i) => {
+    const n = i + 1
+    if (n < 9) return `color-mix(in oklab, var(--accent-ui) ${Math.round(16 + (n - 1) * 10)}%, var(--app))`
+    if (n === 9) return 'var(--accent-ui)'
+    return `color-mix(in oklab, var(--accent-ui) ${100 - (n - 9) * 22}%, var(--fg))`
+  })
+  return (
+    <aside aria-hidden className="relative hidden overflow-hidden rounded-[32px] border border-line bg-surface lg:block">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 50% at 32% 30%, color-mix(in srgb, var(--accent-ui) 22%, transparent), transparent 70%),' +
+            'radial-gradient(ellipse 45% 40% at 82% 78%, color-mix(in srgb, var(--status-warning) 12%, transparent), transparent 70%)',
+        }}
+      />
+      <div className="relative flex h-full flex-col justify-between p-12">
+        <div />
+        <div className="flex flex-col items-center gap-14">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2.5 text-ui font-medium text-fg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="text-fg-muted">
+                <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h4" />
+              </svg>
+              tokens.json
+            </span>
+            <span className="flex h-10 items-center gap-2 rounded-full border border-status-success/50 px-4 text-ui font-medium text-status-success">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Figma
+            </span>
+          </div>
+          <div className="flex w-full max-w-[360px] gap-1">
+            {ramp.map((c, i) => (
+              <span key={i} className={`h-10 flex-1 rounded-md ${i === 8 ? 'ring-2 ring-fg/70 ring-offset-2 ring-offset-surface' : ''}`} style={{ background: c }} />
+            ))}
+          </div>
+          <div className="flex rounded-full border border-line bg-app/60 p-1 text-ui font-medium">
+            <span className="rounded-full px-4 py-1.5 text-fg-muted">{t('Light')}</span>
+            <span className="rounded-full bg-elevated px-4 py-1.5 text-fg shadow-sm">{t('Dark')}</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-baseline gap-3">
+            <span className="text-strong font-medium text-fg">{t('Hosted Figma sync')}</span>
+            <span className="text-ui text-fg-faint">{t('Live MCP for your AI agents')}</span>
+          </div>
+          <div className="h-[3px] w-full rounded-full bg-fg/10">
+            <div className="h-full w-2/3 rounded-full bg-fg/70" />
+          </div>
+        </div>
+      </div>
+    </aside>
   )
 }
 
@@ -76,10 +151,14 @@ export function LoginPage() {
   const titleId = useId()
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
-  const [mode, setMode] = useState<Mode>('signin')
+  // `?mode=signup` opens on Create account; `?next=` is where to go afterwards
+  // (closed list, see lib/loginReturn). Read once — the page never rewrites it.
+  const [search] = useState(() => readLoginSearch(window.location.search))
+  const [mode, setMode] = useState<Mode>(search.mode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [problem, setProblem] = useState<AuthProblem | 'short_password' | null>(null)
   const [done, setDone] = useState<string | null>(null)
 
@@ -89,7 +168,7 @@ export function LoginPage() {
 
   useEffect(() => {
     applyDocumentHead({
-      title: `${t('Log in')} — Escala Tokens`,
+      title: `${t('Sign in')} — Escala Tokens`,
       description: t('Optional. You only need an account to save in the cloud and to use your Pro licence.'),
       canonicalPath: LOGIN_PATH,
       robots: 'noindex, nofollow',
@@ -100,6 +179,21 @@ export function LoginPage() {
   useEffect(() => {
     if (!accountsEnabled) window.location.replace('/')
   }, [])
+
+  // Keep `next` across the OAuth round trip: Google/GitHub return to plain /login.
+  useEffect(() => {
+    if (search.next) rememberReturn(search.next)
+  }, [search.next])
+
+  // Back from OAuth (or already signed in) with somewhere to return to: go there.
+  // Without a pending return the page shows its own "You are logged in" screen.
+  useEffect(() => {
+    if (loading || !user || event === 'PASSWORD_RECOVERY') return
+    const next = pendingNext()
+    if (next) window.location.replace(pathForNext(next))
+  }, [loading, user, event])
+
+  const afterSignIn = () => window.location.assign(pathForNext(pendingNext()))
 
   useEffect(() => {
     if (done) return
@@ -128,14 +222,14 @@ export function LoginPage() {
     if (view === 'signin') {
       const r = await signInWithEmail(address, password)
       setBusy(false)
-      if (r.ok) window.location.assign('/')
+      if (r.ok) afterSignIn()
       else setProblem(r.problem)
     } else if (view === 'signup') {
       const r = await signUpWithEmail(address, password)
       setBusy(false)
       if (!r.ok) setProblem(r.problem)
       else if (r.value.needsConfirmation) setDone(t('We sent a confirmation link to {email}. Open it to finish creating your account.', { email: address }))
-      else window.location.assign('/')
+      else afterSignIn()
     } else if (view === 'reset') {
       const r = await requestPasswordReset(address)
       setBusy(false)
@@ -145,7 +239,7 @@ export function LoginPage() {
       const r = await setNewPassword(password)
       setBusy(false)
       if (!r.ok) setProblem(r.problem)
-      else window.location.assign('/')
+      else afterSignIn()
     }
   }
 
@@ -167,90 +261,88 @@ export function LoginPage() {
     view === 'signup' ? t('Create your account')
     : view === 'reset' ? t('Reset your password')
     : view === 'recovery' ? t('Choose a new password')
-    : t('Welcome to Escala')
+    : t('Sign in to Escala')
   const sub =
     view === 'signup' ? t('Optional. You only need an account to save in the cloud and to use your Pro licence.')
     : view === 'reset' ? t('Enter your email and we will send you a link to choose a new password.')
     : view === 'recovery' ? null
-    : t('Log in or create an account. The configurator works without one.')
+    : t('Sign in or create an account. The configurator works without one.')
   const cta =
     view === 'signup' ? t('Create account')
     : view === 'reset' ? t('Send reset link')
     : view === 'recovery' ? t('Save password')
-    : t('Log in')
+    : t('Sign in')
 
   const showSocial = authProviders.length > 0 && (view === 'signin' || view === 'signup') && !done
 
   return (
-    <div className="flex min-h-screen flex-col bg-app text-fg">
-      <header className="flex h-[72px] flex-shrink-0 items-center justify-between px-6 lg:px-10">
-        <a href="/" className={`flex items-center gap-2.5 rounded-md ${FOCUS}`}>
-          <BrandMark size={28} />
-          <span className="text-strong font-semibold">Escala Tokens</span>
-        </a>
-        <nav aria-label={t('Sections')} className="flex items-center gap-5">
-          <a href="/" className={NAV_LINK}>{t('Home')}</a>
-          <DocsNavMenu onOpenDocsPage={(page) => window.location.assign(DOCS_PAGE_PATH[page])} />
-          <a href={CONTACT_PATH} className={NAV_LINK}>{t('Need help?')}</a>
-        </nav>
-      </header>
+    <div className="grid min-h-screen bg-app text-fg lg:grid-cols-2 lg:gap-3 lg:p-3">
+      <div className="flex min-h-full flex-col">
+        <header className="flex h-[72px] flex-shrink-0 items-center justify-between px-6 lg:px-10">
+          <a href="/" className={`flex items-center gap-2.5 rounded-md ${FOCUS}`}>
+            <BrandMark size={28} />
+            <span className="text-strong font-semibold">Escala Tokens</span>
+          </a>
+          <nav aria-label={t('Sections')} className="flex items-center gap-5">
+            <a href="/" className={`${NAV_LINK} inline-flex items-center gap-1.5`}><ArrowLeft />{t('Home')}</a>
+            <DocsNavMenu onOpenDocsPage={(page) => window.location.assign(DOCS_PAGE_PATH[page])} />
+            <a href={CONTACT_PATH} className={NAV_LINK}>{t('Need help?')}</a>
+          </nav>
+        </header>
 
-      <main className="flex flex-1 items-center justify-center px-6 py-10 lg:px-10">
-        <div className="grid w-full max-w-[1000px] items-center gap-12 lg:grid-cols-[minmax(0,436px)_minmax(0,1fr)] lg:gap-20">
-          <section aria-labelledby={titleId} className="flex w-full max-w-[436px] flex-col gap-6 justify-self-center lg:justify-self-start">
+        <main className="flex flex-1 items-center justify-center px-6 py-12 lg:px-10">
+          <section aria-labelledby={titleId} className="flex w-full max-w-[420px] flex-col gap-8">
             {user && !recovering ? (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <div>
-                  <h1 id={titleId} className="text-heading font-semibold text-fg">{t('You are logged in')}</h1>
-                  <p className="mt-2 text-ui leading-relaxed text-fg-muted">{t('Signed in as')} <span className="text-fg">{user.email}</span></p>
+                  <h1 id={titleId} className="text-[clamp(30px,3.4vw,40px)] font-semibold leading-[1.1] tracking-[-0.02em] text-fg">{t('You are signed in')}</h1>
+                  <p className="mt-3 text-ui leading-relaxed text-fg-muted">{t('Signed in as')} <span className="text-fg">{user.email}</span></p>
                 </div>
-                <a
-                  href="/"
-                  className={`flex min-h-11 items-center justify-center rounded-lg bg-accent-solid px-4 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90 ${FOCUS}`}
-                >
-                  {t('Open the configurator')}
-                </a>
-                <button type="button" onClick={() => void signOut()} className={`self-start text-ui ${LINK}`}>{t('Log out')}</button>
+                <a href={pathForNext(pendingNext())} className={PRIMARY}>{t('Open the configurator')}</a>
+                <button type="button" onClick={() => void signOut()} className={`self-center text-ui ${LINK}`}>{t('Sign out')}</button>
               </div>
             ) : (
               <>
                 <div>
-                  <h1 id={titleId} className="text-heading font-semibold text-fg">{done ? t('Check your email') : heading}</h1>
-                  {!done && sub && <p className="mt-2 text-ui leading-relaxed text-fg-muted">{sub}</p>}
+                  <h1 id={titleId} className="text-[clamp(30px,3.4vw,40px)] font-semibold leading-[1.1] tracking-[-0.02em] text-fg">{done ? t('Check your email') : heading}</h1>
+                  {!done && sub && <p className="mt-3 text-ui leading-relaxed text-fg-muted">{sub}</p>}
                 </div>
 
                 {done ? (
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-5">
                     <p role="status" className="text-ui leading-relaxed text-fg-muted">{done}</p>
-                    <button type="button" onClick={() => go('signin')} className={`self-start text-ui ${LINK}`}>{t('Back to log in')}</button>
+                    <button type="button" onClick={() => go('signin')} className={PRIMARY}>{t('Back to sign in')}</button>
                   </div>
                 ) : (
                   <>
                     {showSocial && (
-                      <div className="flex flex-col gap-2.5">
-                        {authProviders.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => void social(p)}
-                            className={`flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-elevated text-ui font-semibold text-fg transition-colors hover:border-fg/40 ${FOCUS}`}
-                          >
-                            {p === 'google' ? <GoogleMark /> : <GithubMark />}
-                            {p === 'google' ? t('Continue with Google') : t('Continue with GitHub')}
-                          </button>
-                        ))}
-                        <div className="my-1.5 flex items-center gap-4 text-caption text-fg-faint" aria-hidden>
+                      <div className="flex flex-col gap-6">
+                        <div className={`grid gap-3 ${authProviders.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                          {authProviders.map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => void social(p)}
+                              aria-label={p === 'google' ? t('Continue with Google') : t('Continue with GitHub')}
+                              className={`flex h-12 items-center justify-center gap-2.5 rounded-2xl border border-line bg-surface text-ui font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated ${FOCUS}`}
+                            >
+                              {p === 'google' ? <GoogleMark /> : <GithubMark />}
+                              {p === 'google' ? 'Google' : 'GitHub'}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-4 text-body text-fg-faint" aria-hidden>
                           <span className="h-px flex-1 bg-line" />
-                          {t('OR')}
+                          {t('or use email')}
                           <span className="h-px flex-1 bg-line" />
                         </div>
                       </div>
                     )}
 
-                    <form onSubmit={submit} noValidate className="flex flex-col gap-3.5">
+                    <form onSubmit={submit} noValidate className="flex flex-col gap-5">
                       {view !== 'recovery' && (
-                        <label className="flex flex-col gap-1.5">
-                          <span className="text-body font-medium text-fg">{t('Email address')}</span>
+                        <label className="flex flex-col gap-2">
+                          <span className="text-ui font-medium text-fg">{t('Email address')}</span>
                           <input
                             ref={emailRef}
                             type="email"
@@ -264,79 +356,73 @@ export function LoginPage() {
                         </label>
                       )}
                       {view !== 'reset' && (
-                        <label className="flex flex-col gap-1.5">
-                          <span className="text-body font-medium text-fg">{view === 'recovery' ? t('New password') : t('Password')}</span>
-                          <input
-                            ref={passwordRef}
-                            type="password"
-                            autoComplete={view === 'signin' ? 'current-password' : 'new-password'}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            aria-describedby={message ? `${titleId}-err` : undefined}
-                            className={FIELD}
-                          />
-                        </label>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <label htmlFor={`${titleId}-pw`} className="text-ui font-medium text-fg">
+                              {view === 'recovery' ? t('New password') : t('Password')}
+                            </label>
+                            {view === 'signin' && (
+                              <button type="button" onClick={() => go('reset')} className={`text-body ${LINK}`}>{t('Forgot your password?')}</button>
+                            )}
+                          </div>
+                          <div className="relative">
+                            <input
+                              id={`${titleId}-pw`}
+                              ref={passwordRef}
+                              type={showPassword ? 'text' : 'password'}
+                              autoComplete={view === 'signin' ? 'current-password' : 'new-password'}
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              aria-describedby={message ? `${titleId}-err` : undefined}
+                              className={`${FIELD} pr-12`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((v) => !v)}
+                              aria-label={showPassword ? t('Hide password') : t('Show password')}
+                              aria-pressed={showPassword}
+                              className={`absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-fg-muted transition-colors hover:text-fg ${FOCUS}`}
+                            >
+                              <EyeIcon off={showPassword} />
+                            </button>
+                          </div>
+                        </div>
                       )}
                       {message && <p id={`${titleId}-err`} role="alert" className="text-body text-status-danger">{message}</p>}
 
-                      <button
-                        type="submit"
-                        disabled={busy}
-                        className={`mt-1 flex min-h-11 items-center justify-center rounded-lg bg-accent-solid px-4 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-60 ${FOCUS}`}
-                      >
-                        {cta}
-                      </button>
+                      <button type="submit" disabled={busy} className={`mt-1 ${PRIMARY}`}>{cta}</button>
                     </form>
 
-                    <div className="flex flex-col gap-2 text-body text-fg-muted">
+                    <div className="flex flex-col items-center gap-3 text-ui">
                       {view === 'signin' && (
-                        <>
-                          <button type="button" onClick={() => go('reset')} className={`self-start ${LINK}`}>{t('Forgot your password?')}</button>
-                          <button type="button" onClick={() => go('signup')} className={`self-start ${LINK}`}>{t('No account yet? Create one')}</button>
-                        </>
+                        <button type="button" onClick={() => go('signup')} className={LINK}>{t('No account yet? Create one')}</button>
                       )}
                       {view === 'signup' && (
-                        <button type="button" onClick={() => go('signin')} className={`self-start ${LINK}`}>{t('Already have an account? Log in')}</button>
+                        <button type="button" onClick={() => go('signin')} className={LINK}>{t('Already have an account? Sign in')}</button>
                       )}
                       {view === 'reset' && (
-                        <button type="button" onClick={() => go('signin')} className={`self-start ${LINK}`}>{t('Back to log in')}</button>
+                        <button type="button" onClick={() => go('signin')} className={LINK}>{t('Back to sign in')}</button>
                       )}
+                      <p className="text-center text-caption leading-relaxed text-fg-faint">
+                        {t('By continuing, you accept the')}{' '}
+                        <a href={TERMS_PATH} className={`underline ${LINK}`}>{t('Terms')}</a>{' '}
+                        {t('and the')}{' '}
+                        <a href={PRIVACY_PATH} className={`underline ${LINK}`}>{t('Privacy')}</a>.
+                      </p>
                     </div>
-
-                    <p className="text-center text-caption leading-relaxed text-fg-faint">
-                      {t('By continuing, you accept the')}{' '}
-                      <a href={TERMS_PATH} className={LINK}>{t('Terms')}</a>{' '}
-                      {t('and the')}{' '}
-                      <a href={PRIVACY_PATH} className={LINK}>{t('Privacy')}</a>.
-                    </p>
                   </>
                 )}
               </>
             )}
           </section>
+        </main>
 
-          <aside aria-hidden className="hidden lg:block">
-            <div className="flex aspect-[4/5] max-w-[440px] flex-col justify-between rounded-[28px] bg-accent-solid p-9 text-accent-ink">
-              <p className="text-[34px] font-semibold leading-[1.1] tracking-tight">
-                {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
-              </p>
-              <ul className="flex flex-col gap-3 text-ui font-medium">
-                {[
-                  t('Save systems and themes in the cloud'),
-                  t('Hosted Figma sync'),
-                  t('Live MCP for your AI agents'),
-                ].map((line) => (
-                  <li key={line} className="flex items-start gap-2.5"><Check />{line}</li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        </div>
-      </main>
+        <footer className="flex-shrink-0 px-6 py-6 text-caption text-fg-faint lg:px-10">
+          © 2026 Escala Tokens
+        </footer>
+      </div>
 
-      <footer className="flex-shrink-0 px-6 py-6 text-center text-caption text-fg-faint">
-        © 2026 Escala Tokens
-      </footer>
+      <ShowcasePanel />
     </div>
   )
 }

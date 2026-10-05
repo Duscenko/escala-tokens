@@ -25,13 +25,12 @@ import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHR
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
-import { appearanceFromModeKey, themeModeKey, type ThemeAppearance } from '../../lib/themeModes'
+import { type ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
-import { adoptPreset } from '../../lib/adoptPreset'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
@@ -472,31 +471,11 @@ export default function ThemePreviewHub({
   const store = useDesignStore()
   const hasOwnTheme = myThemeKeys(store.themeOrder, store.themes).length > 0
   const needsMyTheme = !hasOwnTheme && !stylePreview
-  // A REAL pick (not a Reset-driven clear) during a try-on is a deliberate
-  // edit, not a glance — it can't stay ephemeral the way `tryOnEdits` is,
-  // because nothing ephemeral survives leaving the tab. So it adopts the
-  // style into My themes on the spot, the same "first edit makes it real"
-  // rule `ThemeQuickSettingsRail`'s `resolveWriteTarget` already applies to
-  // the quick-edit rail. `mode` here is the PREVIEWED theme's own mode key
-  // (`<previewTheme>::light|dark` — see `useArchitectureTokens`), which
-  // still points at whatever real theme sits under the try-on; writing
-  // straight to it would silently edit that committed theme instead of the
-  // style being tried on, so the edit is re-targeted at the freshly minted
-  // theme's OWN mode key (same appearance, new theme id) once adoption
-  // hands one back.
+  // Inspector edits during a try-on stay EPHEMERAL (`tryOnEdits`). They used
+  // to adopt the style into My themes on the spot, as "<Style> Copy" — one of
+  // the silent paths that filled My themes with themes nobody chose. Only
+  // "Edit theme" (sheet or rail, `openStyleForEditing`) adds a style now.
   const recordTryOnEdit = (tokenId: string, mode: string, ref: string | null) => {
-    if (ref && stylePreview) {
-      const adopted = adoptPreset(stylePreview.preset, previewAppearance, { asCopy: true, copyWord: t('Copy (duplicated theme suffix)') })
-      if ('error' in adopted) {
-        showToast(t(adopted.error, { count: myThemeKeys(store.themeOrder, store.themes).length }))
-        return
-      }
-      showToast(t('{name} added to My themes', { name: adopted.name }))
-      onAdoptStyle(adopted.key)
-      const appearance = appearanceFromModeKey(mode) ?? previewAppearance
-      store.setArchitectureOverride(store.semanticArchitecture, tokenId, themeModeKey(adopted.key, appearance), ref)
-      return
-    }
     setTryOnEdits((prev) => {
       const nextToken = { ...(prev[tokenId] ?? {}) }
       if (ref) nextToken[mode] = ref

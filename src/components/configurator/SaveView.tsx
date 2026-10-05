@@ -60,7 +60,7 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm text-fg-muted uppercase tracking-wide">My design systems</h3>
+      <h3 className="text-sm text-fg-muted uppercase tracking-wide">My libraries</h3>
       <div className="grid sm:grid-cols-2 gap-3">
         {savedSystems.map((sys) => (
           <div
@@ -107,7 +107,7 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
             </div>
             {confirmingDelete === sys.id && (
               <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
-                <span className="text-caption text-fg-faint flex-1">Remove from this browser? The repository is untouched.</span>
+                <span className="text-caption text-fg-faint flex-1">Delete this library from this browser? The repository is untouched.</span>
                 <button
                   onClick={() => { removeSavedSystem(sys.id); setConfirmingDelete(null) }}
                   className="text-caption font-medium text-status-danger hover:text-status-danger transition-colors"
@@ -127,7 +127,7 @@ function SavedSystemsList({ onAddNew, onImport }: { onAddNew: () => void; onImpo
 
         {/* Create or import — one tile, two actions */}
         <div className="rounded-xl border-2 border-dashed border-line-strong bg-surface/50 p-4 flex flex-col items-center justify-center gap-3 text-fg-muted min-h-28">
-          <span className="text-sm font-medium">Create or import a design system</span>
+          <span className="text-sm font-medium">Create or import a library</span>
           <div className="flex items-center gap-2">
             <button
               onClick={onAddNew}
@@ -339,7 +339,7 @@ export default function SaveView({ onImport, onNewSystem }: SaveViewProps) {
       className="flex flex-col gap-7 max-w-4xl"
     >
       <div>
-        <p className="text-ui text-fg-muted">Local snapshots and restored systems. Deliver the current system from Export.</p>
+        <p className="text-ui text-fg-muted">Your saved libraries. Deliver the current system from Export.</p>
       </div>
       <SavedSystemsList onAddNew={onNewSystem} onImport={onImport} />
     </motion.div>
@@ -480,11 +480,11 @@ export function SaveSidePanel({
             className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
             style={{ backgroundColor: justSaved ? '#10b981' : primaryColor, ['--tw-ring-color' as string]: primaryColor }}
           >
-            {justSaved ? '✓ Saved' : savedEntry ? 'Save changes' : 'Save design system'}
+            {justSaved ? '✓ Saved' : 'Save library'}
           </motion.button>
           <span className="text-xs text-fg-faint text-center">
             {justSaved
-              ? 'Saved to your systems.'
+              ? 'Saved to My libraries.'
               : savedEntry
                 ? `Last saved ${timeAgo(savedEntry.savedAt)}.`
                 : 'Not saved yet.'}

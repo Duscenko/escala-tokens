@@ -8,7 +8,7 @@ import type { ColorScale } from '../../types/tokens'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
-import { SHELL_CHROME, THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
 import {
@@ -212,14 +212,29 @@ export function DeleteThemeConfirmation({
  * rather than a baked light/dark asset. This keeps the library honest when a
  * theme points at a custom family or its primitives are retinted.
  */
-export function ThemeAvatar({ ramp, appearance, fallback }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string }) {
+/** The avatar's corner as a fraction of its side — export it so a ring drawn
+ *  around one can derive its own radius instead of guessing. */
+export const AVATAR_RADIUS = 8 / 31
+
+export function ThemeAvatar({ ramp, appearance, fallback, size = 24 }: { ramp?: ColorScale; appearance: 'light' | 'dark'; fallback: string; size?: number }) {
   const base = ramp?.[5] ?? fallback
   const middle = ramp?.[7] ?? base
   const highlight = ramp?.[9] ?? middle
   const border = appearance === 'dark' ? '#FFFFFF' : '#0A0D12'
 
   return (
-    <svg viewBox="0 0 31 31" className="h-6 w-6 flex-shrink-0 overflow-hidden rounded-md" aria-hidden>
+    <svg
+      viewBox="0 0 31 31"
+      width={size}
+      height={size}
+      // Corner = the inner rect's own `rx` (8/31 of the box), so the clip and the
+      // drawn edge agree at every size. A fixed `rounded-md` was 6.75px against
+      // a 10px drawn corner at 40px, and anything wrapping the avatar (a
+      // selection ring) had no true radius to be concentric with.
+      style={{ borderRadius: size * AVATAR_RADIUS }}
+      className="flex-shrink-0 overflow-hidden"
+      aria-hidden
+    >
       <rect width="31" height="31" rx="8" fill={base} />
       <circle cx="5.5" cy="4.8" r="14.5" fill={middle} />
       <circle cx="3.22" cy="2.73" r="8.29" fill={highlight} />
@@ -713,7 +728,12 @@ export default function ThemeLibraryRail({
     <aside
       id="themes-library"
       tabIndex={-1}
-      className={`flex h-full w-full min-h-0 flex-col border-r border-line ${SHELL_CHROME} outline-none`}
+      // WORKSPACE_CHROME like every other left rail (quick settings, Variables). It sat
+      // on the shell's `--nav` because its right rule was the brand block's rule
+      // continued — but the Generator has no brand column any more (`brandWidth` is
+      // null on `themesCanvas`), so that reason is gone and it read as the odd,
+      // darker column.
+      className={`flex h-full w-full min-h-0 flex-col border-r border-line ${WORKSPACE_CHROME} outline-none`}
       style={{ width }}
       aria-label={t('Themes library')}
     >

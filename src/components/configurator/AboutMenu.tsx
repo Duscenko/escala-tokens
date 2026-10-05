@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { TOKEN_SCHEMA_VERSION } from '../../lib/tokenGenerator'
 import { useI18n } from '../../lib/i18n'
@@ -9,9 +9,12 @@ import { categoricalRoleCount } from '../../lib/semanticArchitectures'
 import { TOOL_SPECS } from '../../lib/agentAccess/types'
 import { THEME_STYLE_PRESETS } from '../../lib/themePresets'
 import { PRICING_PATH } from '../../lib/entitlement'
+import { CONTACT_PATH } from '../../lib/legal'
+import { FOUNDATION_KEYS } from '../../lib/foundationKeys'
+import { showToast } from '../ui/Toast'
 import { FIGMA_PLUGIN_COMMUNITY, cn } from '../../lib/utils'
 import PluginCommunityBanner from './PluginCommunityBanner'
-import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H } from './TopNav'
+import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H, type DocsMenuPage } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
 import { SparkleCircleIcon } from '../ui/icons'
@@ -110,12 +113,16 @@ function Tier({ n, name, detail, example }: { n: number; name: string; detail: s
  *  `AboutScaffold`'s mobile/`/about` callers through it) are components, so
  *  nothing had to move to accommodate it. */
 export function useAboutSections(): {
-  key: AboutSection; label: string; hint: string; body: ReactNode
+  /** `question` is the same section phrased as a FAQ — the About tab's
+   *  "Good questions" band (`AboutAccordion variant="faq"`); the drawer and
+   *  `AboutScaffold` keep `label` + `hint`. */
+  key: AboutSection; label: string; hint: string; question: string; body: ReactNode
 }[] {
   const { t } = useI18n()
   return [
   {
     key: 'platform',
+    question: t('What is Escala?'),
     label: t('What Escala is'),
     hint: t('The short version'),
     body: (
@@ -139,6 +146,7 @@ export function useAboutSections(): {
   },
   {
     key: 'tokens',
+    question: t('How do the tokens work?'),
     label: t('How the tokens work'),
     hint: t('Three tiers, one chain'),
     body: (
@@ -186,6 +194,7 @@ export function useAboutSections(): {
   },
   {
     key: 'plugin',
+    question: t('How does the Figma plugin work?'),
     label: t('How the Figma plugin works'),
     hint: t('Import and live sync'),
     body: (
@@ -220,6 +229,7 @@ export function useAboutSections(): {
   },
   {
     key: 'docs',
+    question: t('What is the documentation based on?'),
     label: t('What the documentation is based on'),
     hint: t('Sources of truth'),
     body: (
@@ -246,6 +256,7 @@ export function useAboutSections(): {
   },
   {
     key: 'legal',
+    question: t('Who owns my data, and where is it stored?'),
     label: t('Legal & data'),
     hint: t('Ownership and storage'),
     body: (
@@ -395,24 +406,20 @@ const SECTION_ICONS: Record<AboutSection, ComponentType<{ className?: string }>>
  *  rather than a readability aid; the other two callers are already
  *  narrower than 500px in practice, so nothing there was relying on it. */
 export function AboutAccordion({
-  section, onSectionChange, pad = 'px-5', bleed,
+  section, onSectionChange, pad = 'px-5', variant = 'list',
 }: {
   section: AboutSection | null
   onSectionChange: (s: AboutSection | null) => void
   pad?: string
-  /** The About tab's own band already carries the horizontal gutter
-   *  (`px-6` wrapping this whole component), so that caller passes
-   *  `pad="px-0"` — but a trigger with zero horizontal padding means its
-   *  hover fill hugs the label with no breathing room on either side,
-   *  reading as cramped rather than a real list-row hover. `bleed` cancels
-   *  the wrapper's own gutter with a negative margin and re-applies it as
-   *  the trigger's OWN padding, so the hover fill spans edge-to-edge of the
-   *  section instead of stopping at the text. Also drops the row divider —
-   *  with a full-bleed hover already marking each row's bounds, an
-   *  always-on hairline between them was a redundant second boundary. */
-  bleed?: boolean
+  /** `'list'` (default) is the drawer / mobile / `/about` rendering: glyph ·
+   *  label · hint. `'faq'` is the About tab's "Good questions" band: the same
+   *  sections phrased as questions, no glyph or hint, a hairline between rows
+   *  (`AccordionItem`'s own `border-b`) and roomier type — one component, two
+   *  presentations, so the copy still can't drift between surfaces. */
+  variant?: 'list' | 'faq'
 }) {
   const sections = useAboutSections()
+  const faq = variant === 'faq'
   return (
     <Accordion
       type="single"
@@ -423,17 +430,30 @@ export function AboutAccordion({
       {sections.map((s) => {
         const Icon = SECTION_ICONS[s.key]
         return (
-          <AccordionItem key={s.key} value={s.key} data-section={s.key} className={bleed ? 'border-b-0' : undefined}>
-            <AccordionTrigger className={`${bleed ? '-mx-6 px-6' : pad} hover:bg-elevated/40`}>
-              <Icon className="h-4 w-4 flex-shrink-0 mt-0.5 text-fg-faint" />
-              <span className="flex-1 min-w-0">
-                <span className="block text-ui font-medium text-fg leading-tight">{s.label}</span>
-                <span className="block text-caption text-fg-faint leading-tight mt-1">{s.hint}</span>
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className={bleed ? '-mx-6 px-6' : pad}>
-              {s.body}
-            </AccordionContent>
+          <AccordionItem key={s.key} value={s.key} data-section={s.key}>
+            {faq ? (
+              <>
+                <AccordionTrigger className="items-center py-6 [&>svg]:translate-y-0">
+                  <span className="flex-1 min-w-0 text-title font-medium leading-snug text-fg">{s.question}</span>
+                </AccordionTrigger>
+                <AccordionContent className="max-w-[640px] pb-6 text-ui leading-relaxed text-fg-muted">
+                  {s.body}
+                </AccordionContent>
+              </>
+            ) : (
+              <>
+                <AccordionTrigger className={`${pad} hover:bg-elevated/40`}>
+                  <Icon className="h-4 w-4 flex-shrink-0 mt-0.5 text-fg-faint" />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-ui font-medium text-fg leading-tight">{s.label}</span>
+                    <span className="block text-caption text-fg-faint leading-tight mt-1">{s.hint}</span>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className={pad}>
+                  {s.body}
+                </AccordionContent>
+              </>
+            )}
           </AccordionItem>
         )
       })}
@@ -442,16 +462,10 @@ export function AboutAccordion({
 }
 
 /** Contact — always open. It's four lines, and hiding the author behind a
- *  disclosure in an "about" menu would be perverse.
- *
- *  `card` wraps it in the SAME bordered-rounded treatment `FeatureCard`
- *  (above) already uses — opt-in, defaulting off, so the drawer and
- *  `AboutScaffold`'s two callers (mobile notice, `/about`) keep the flat
- *  "signature, not a promo panel" look this component originally shipped
- *  with. Only `AboutHome` passes it: sitting at the foot of a page that's
- *  otherwise all cards (stats, Figma/Code/AI), a flat block read as
- *  unfinished rather than deliberately quiet. */
-export function AboutContact({ pad = 'px-5', card = false }: { pad?: string; card?: boolean }) {
+ *  disclosure in an "about" menu would be perverse. Used flat by the drawer
+ *  and `AboutScaffold`; the About tab has its own Contact band (`AboutHome`)
+ *  with the socials moved to its footer. */
+export function AboutContact({ pad = 'px-5' }: { pad?: string }) {
   const { t } = useI18n()
   const body = (
     <>
@@ -472,16 +486,6 @@ export function AboutContact({ pad = 'px-5', card = false }: { pad?: string; car
       </div>
     </>
   )
-
-  if (card) {
-    return (
-      <div className={`${pad} py-6`}>
-        <div className="flex flex-col gap-2 p-5 rounded-2xl border border-line bg-elevated/20">
-          {body}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className={`${pad} py-4 flex flex-col gap-2`}>
@@ -512,6 +516,48 @@ function ImagePlaceholder({ label, className }: { label: string; className?: str
     </div>
   )
 }
+
+/** A real capture of the generator (public/about/*.webp, made by
+ *  `npm run about:shots` — re-run it when the interface changes, so this guide
+ *  never drifts). Dark chrome, 2×, already cropped to the slot's ratio; the
+ *  `width`/`height` attributes reserve that space so nothing shifts as they
+ *  load, and everything is lazy because the page is long. */
+function AboutShot({ shot, className }: { shot: AboutShotSpec; className?: string }) {
+  const { t } = useI18n()
+  const [w, h] = shot.size
+  return (
+    <img
+      src={`/about/${shot.file}.webp`}
+      alt={t(shot.alt)}
+      width={w}
+      height={h}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      className={cn('block w-full select-none rounded-xl border border-line object-cover', className)}
+      style={{ aspectRatio: `${w} / ${h}` }}
+    />
+  )
+}
+
+type AboutShotSpec = { file: string; size: [number, number]; alt: string }
+
+/** Every screenshot the About page shows. `size` is the stored file's own
+ *  pixel size (what `about:shots` prints); the alt text is the translatable
+ *  description a screen reader gets in place of the picture. */
+const SHOTS = {
+  styles: { file: 'system-styles', size: [1200, 900], alt: 'The theme sheet with a System Style selected, showing its palette, font, radius and icon weight' },
+  primitives: { file: 'primitives', size: [1360, 850], alt: 'The Primitives table: one accent family with a dark and a light column, step 9 marked as the anchor' },
+  semantics: { file: 'semantics', size: [1360, 850], alt: 'The Semantics table with Token Details open on a role, showing the ramp it can point at' },
+  contrast: { file: 'contrast', size: [1200, 900], alt: 'The contrast grid: every pair of the twelve accent steps measured with APCA' },
+  alpha: { file: 'alpha', size: [1200, 900], alt: 'The Primary-Alpha ramp over a checkerboard, with the solved value for dark and light' },
+  harmony: { file: 'harmony', size: [1200, 900], alt: 'The colour quick settings: accent hue and tint sliders and the four state colours, beside the repainted artefacts' },
+  type: { file: 'type', size: [1360, 850], alt: 'The Text edition panel: body and heading font and a five-step text scale slider' },
+  radius: { file: 'radius', size: [1360, 850], alt: 'The Radius edition panel with Fields at the roundest step while Boxes keep theirs' },
+  spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing responsive table with the Mobile platform selected' },
+  grid: { file: 'grid', size: [1200, 900], alt: 'The grid at desktop, tablet and mobile: twelve, eight and four columns' },
+  shadow: { file: 'shadow', size: [1200, 900], alt: 'The shadow ramp in light above and in dark below' },
+} satisfies Record<string, AboutShotSpec>
 
 /** One number in the stats row, real counts, imported/derived, never typed
  *  by hand (see the callers below). `NumberTicker` (magicui) drives the
@@ -608,17 +654,15 @@ function SectionHeader({ eyebrow, title, lead }: { eyebrow: string; title: strin
 
 /** One feature tile: a media slot on top (a placeholder until a real
  *  screenshot is dropped in) and title + one or two sentences below. */
-function ShowcaseCard({ title, body, media, mediaRatio = 'aspect-[16/10]' }: {
+function ShowcaseCard({ title, body, media }: {
   title: string
   body: string
-  /** Placeholder label — replace the whole `ImagePlaceholder` with an `<img>`. */
-  media: string
-  mediaRatio?: string
+  media: AboutShotSpec
 }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-elevated/20 transition-colors hover:border-line-strong">
       <div className="p-2">
-        <ImagePlaceholder label={media} className={cn('w-full rounded-xl', mediaRatio)} />
+        <AboutShot shot={media} />
       </div>
       <div className="flex flex-col gap-1.5 px-4 pb-4 pt-2">
         <h3 className="text-strong font-semibold text-fg">{title}</h3>
@@ -657,6 +701,82 @@ function ArrowGlyph({ size = 12 }: { size?: number }) {
   )
 }
 
+const FOOTER_LINK =
+  'inline-flex min-h-6 items-center self-start rounded text-body text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+type FooterItem = { label: string; onClick?: () => void; href?: string; external?: boolean }
+
+function FooterColumn({ title, items }: { title: string; items: FooterItem[] }) {
+  return (
+    <nav aria-label={title} className="flex flex-col gap-3">
+      <span className="text-caption font-medium text-fg-faint">{title}</span>
+      {items.map((item) => item.href ? (
+        <a
+          key={item.label}
+          href={item.href}
+          className={FOOTER_LINK}
+          {...(item.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+        >
+          {item.label}
+        </a>
+      ) : (
+        <button key={item.label} type="button" onClick={item.onClick} className={FOOTER_LINK}>
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  )
+}
+
+/** The About tab's own footer: brand + one line, then Product · AI · Social.
+ *  Navigation only — legal links and the copyright are the shell strip's job. */
+function AboutFooter({ onStart, onLearnAI, onOpenDocsPage, onOpenComponents }: {
+  onStart: () => void
+  onLearnAI: () => void
+  onOpenDocsPage: (page: DocsMenuPage) => void
+  onOpenComponents: () => void
+}) {
+  const { t } = useI18n()
+  const social: FooterItem[] = [
+    ...(CONTACT.linkedin ? [{ label: 'LinkedIn', href: CONTACT.linkedin, external: true }] : []),
+    ...(CONTACT.x ? [{ label: 'X', href: CONTACT.x, external: true }] : []),
+    { label: CONTACT.site, href: `https://${CONTACT.site}`, external: true },
+    // No "Source": the colophon strip (`FooterLinks`) already carries it, and
+    // nothing in that strip is repeated here.
+  ]
+  return (
+    <footer className="grid grid-cols-2 gap-10 px-6 pb-16 pt-14 sm:grid-cols-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+      <div className="col-span-2 flex flex-col gap-3 sm:col-span-3 lg:col-span-1">
+        <span className="flex items-center gap-2.5">
+          <BrandMark size={24} />
+          <span className="text-strong font-semibold text-fg">Escala Tokens</span>
+        </span>
+        <p className="max-w-[320px] text-body leading-relaxed text-fg-muted">
+          {t('One token system for Figma, code and your AI agent.')}
+        </p>
+      </div>
+      <FooterColumn
+        title={t('Product')}
+        items={[
+          { label: t('Generator'), onClick: onStart },
+          { label: t('Components'), onClick: onOpenComponents },
+          { label: t('Use in Figma'), onClick: () => onOpenDocsPage('figma') },
+          { label: t('Pricing'), href: PRICING_PATH },
+          { label: t('Changelog'), onClick: () => onOpenDocsPage('changelog') },
+        ]}
+      />
+      <FooterColumn
+        title={t('AI')}
+        items={[
+          { label: 'MCP', onClick: () => onOpenDocsPage('mcp') },
+          { label: t('Connect your agent'), onClick: onLearnAI },
+        ]}
+      />
+      <FooterColumn title={t('Social')} items={social} />
+    </footer>
+  )
+}
+
 /** The About TAB's canvas — the workspace's landing surface for new visitors
  *  (see `Configurator.tsx`'s `hasOnboarded()` gate). Embedded in the
  *  flex-1/min-h-0 center column like any other tab's body, so it owns its own
@@ -665,28 +785,52 @@ function ArrowGlyph({ size = 12 }: { size?: number }) {
  *
  *  Long-form product page, one section per job: hero → proof (stats) → start
  *  from a style → Color → the other foundations → hand-off (Figma · agent ·
- *  code) → closing CTA → the shared reference accordion + contact. Same
- *  `SECTIONS`/`AboutAccordion`/`AboutContact` as every other About surface, so
- *  the reference copy can't drift.
+ *  code) → closing CTA → "Good questions" (the shared reference sections as a
+ *  FAQ, `AboutAccordion variant="faq"`) → a Contact band → a navigation footer.
+ *  Same `useAboutSections` content as every other About surface, so the
+ *  reference copy can't drift. The footer is navigation only: the shell's 28px
+ *  strip stays the one colophon (copyright + legal links), and the socials
+ *  appear once, in the footer.
  *
- *  Every `ImagePlaceholder` here is a slot for a REAL screenshot of Escala —
- *  its label says what to capture and at what ratio. Swap it for an `<img>`
- *  with the same rounding; never fill it with generated art.
+ *  The pictures are REAL captures of the generator (`SHOTS` → public/about/,
+ *  made by `npm run about:shots`) — the page is a guide, so it must show the
+ *  product as it is. Re-run the script when the interface changes; never fill
+ *  a slot with generated art. The hand-off diagram and the closing band's
+ *  background are not screenshots, so their slots are HIDDEN until the
+ *  artwork exists (comments mark where they go) — a visible placeholder never
+ *  ships.
  *
  *  Copy rule: every claim on this page must be true of the code today. Counts
  *  are imported (`THEME_STYLE_PRESETS.length`, `COMPONENT_KEYS.length`, …),
  *  never typed. */
 export function AboutHome({
-  onStart, onLearnAI, foundationCount,
+  onStart, onLearnAI, onOpenDocsPage, onOpenComponents,
+  foundationCount = FOUNDATION_KEYS.length, scroll = true, videoTapToPlay = false,
 }: {
   onStart: () => void
+  /** Docs' focused pages — the SAME mapping TopNav's Docs menu uses
+   *  (`Configurator`'s `openDocsPage`). The FAQ's "Read the docs" and the
+   *  footer's Docs links go through it. */
+  onOpenDocsPage: (page: DocsMenuPage) => void
+  /** The Components destination (footer link). */
+  onOpenComponents: () => void
   /** Opens Docs → Get started → "Use in code" (its Connect section is the
    *  agent guide). `Configurator.tsx` wires this to `openDocs(GUIDE_CODE_KEY)`. */
   onLearnAI: () => void
-  /** `FOUNDATIONS.length` from `Configurator.tsx`. */
-  foundationCount: number
+  /** Defaults to `FOUNDATION_KEYS.length`, the list a test keeps equal to
+   *  `Configurator`'s `FOUNDATIONS`, so the public page states the same count. */
+  foundationCount?: number
+  /** `true` in the shell (the tab owns its scroll region); the public page
+   *  (phone, `/about`) scrolls the document instead. */
+  scroll?: boolean
+  /** The phone screen: no autoplay (see `DemoVideo`). */
+  videoTapToPlay?: boolean
 }) {
   const { t } = useI18n()
+  // Ids, not literals: the public copy and the in-app tab can both be in the DOM.
+  const uid = useId()
+  const faqId = `${uid}-faq`
+  const contactId = `${uid}-contact`
   const [section, setSection] = useState<AboutSection | null>('platform')
   const reduceMotion = useReducedMotion() ?? false
 
@@ -694,7 +838,7 @@ export function AboutHome({
     'inline-flex h-10 items-center gap-1.5 rounded-[13px] border border-line-strong px-5 text-ui font-semibold text-fg transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className={scroll ? 'h-full overflow-y-auto' : undefined}>
       <div className="mx-auto flex max-w-[1080px] flex-col">
         {/* ── Hero — the one staggered entrance this page gets. ── */}
         <motion.div
@@ -712,7 +856,7 @@ export function AboutHome({
                 text={t('Define your foundations before you prompt.')}
                 textColor="var(--fg)"
                 colors={['#22d3ee', '#818cf8', '#f472b6', '#34d399']}
-                className="text-[38px] font-semibold leading-[1.1] tracking-tight"
+                className="text-[30px] font-semibold leading-[1.1] tracking-tight sm:text-[38px]"
               />
             </h1>
             <p className="text-ui leading-relaxed text-fg-muted">
@@ -735,7 +879,7 @@ export function AboutHome({
         </motion.div>
 
         <div className="px-6">
-          <DemoVideo className="mb-14" />
+          <DemoVideo className="mb-14" tapToPlay={videoTapToPlay} />
         </div>
 
         {/* ── Proof — real counts, imported, never typed ── */}
@@ -753,10 +897,7 @@ export function AboutHome({
 
         {/* ── Start from a style — split: media left, copy right ── */}
         <div className="grid items-center gap-10 border-b border-line px-6 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <ImagePlaceholder
-            label="Placeholder — System Styles: the Themes library with one style tried on and its artefacts repainted (4:3)"
-            className="aspect-[4/3] w-full"
-          />
+          <AboutShot shot={SHOTS.styles} className="rounded-2xl" />
           <div className="flex flex-col gap-3">
             <Eyebrow className="self-start">{t('Start from a style')}</Eyebrow>
             <h2 className="text-[26px] font-semibold leading-tight text-fg">
@@ -779,32 +920,29 @@ export function AboutHome({
             <ShowcaseCard
               title={t('Ramps in both appearances')}
               body={t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.')}
-              media="Placeholder — Primitives table: one family, light and dark columns (16:10)"
+              media={SHOTS.primitives}
             />
             <ShowcaseCard
               title={t('Roles solved for contrast')}
               body={t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.')}
-              media="Placeholder — Semantics table with a role's Token Details open (16:10)"
+              media={SHOTS.semantics}
             />
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
             <ShowcaseCard
               title={t('WCAG and APCA, side by side')}
               body={t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.')}
-              media="Placeholder — Contrast grid (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.contrast}
             />
             <ShowcaseCard
               title={t('Translucent tokens that stay true')}
               body={t('Alpha twins are solved against their page, so a hover wash renders the colour you meant in light and dark.')}
-              media="Placeholder — Accent-Alpha ramp on the checkerboard (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.alpha}
             />
             <ShowcaseCard
               title={t('Harmony with your accent')}
               body={t('Neutral and state colours can follow the accent, so the whole palette reads as one system.')}
-              media="Placeholder — quick rail: accent hue + tint sliders and the four states (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.harmony}
             />
           </div>
         </section>
@@ -820,45 +958,45 @@ export function AboutHome({
             <ShowcaseCard
               title={t('A type scale with a density dial')}
               body={t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.')}
-              media="Placeholder — Text edition: font family + density slider (16:10)"
+              media={SHOTS.type}
             />
             <ShowcaseCard
               title={t('Radius on three axes')}
               body={t('Boxes, fields and selectors round independently, so a pill button never turns your cards into stadiums.')}
-              media="Placeholder — Radius edition: Boxes · Fields · Selectors (16:10)"
+              media={SHOTS.radius}
             />
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
             <ShowcaseCard
               title={t('Spacing that tightens on mobile')}
               body={t('Component, section and layout tokens step down per viewport, all from one base unit.')}
-              media="Placeholder — Spacing responsive table, Mobile selected (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.spacing}
             />
             <ShowcaseCard
               title={t('Grids that add up')}
               body={t('Named grids from mobile to wide desktop. Column widths are derived, so every frame sums to its viewport.')}
-              media="Placeholder — Grid preview at every breakpoint (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.grid}
             />
             <ShowcaseCard
               title={t('Shadows that work in dark')}
               body={t('A derived dark twin adds a soft light rim, so elevation still reads on a near-black page.')}
-              media="Placeholder — Shadow ramp, light vs dark (4:3)"
-              mediaRatio="aspect-[4/3]"
+              media={SHOTS.shadow}
             />
           </div>
         </section>
 
         {/* ── 03 · Hand-off — destinations left, diagram right ── */}
         <section className="flex flex-col gap-8 border-b border-line px-6 py-16">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+          {/* The diagram slot (foundations → Figma · agent · code, 1:1) is hidden
+              until the artwork exists — re-add it as the grid's second column
+              (`lg:grid-cols-2`) when it does. Never ship a visible placeholder. */}
+          <div className="grid items-center gap-10">
             <div className="flex flex-col gap-4">
               <Eyebrow className="self-start">{t('03 · Hand-off')}</Eyebrow>
               <h2 className="text-[26px] font-semibold leading-tight text-fg">
                 {t('One system, three destinations.')}
               </h2>
-              <div className="flex flex-col gap-3">
+              <div className="grid gap-3 lg:grid-cols-3">
                 <DestinationRow
                   Icon={FigmaGlyph}
                   title="Figma"
@@ -886,10 +1024,6 @@ export function AboutHome({
                 />
               </div>
             </div>
-            <ImagePlaceholder
-              label="Placeholder — diagram: your foundations flowing into Figma, an AI agent and code (1:1)"
-              className="aspect-square w-full"
-            />
           </div>
 
           {/* The real "Connect your agent" widget — same component Docs and the
@@ -903,15 +1037,9 @@ export function AboutHome({
         {/* ── Closing CTA — a background slot behind the copy ── */}
         <div className="px-6 py-16">
           <div className="relative overflow-hidden rounded-3xl border border-line">
-            {/* Background slot — swap for an <img>/<video> with
-                `absolute inset-0 h-full w-full object-cover`. Its label sits in
-                the corner so it never collides with the headline on top. */}
-            <div aria-hidden className="absolute inset-0 rounded-3xl border border-dashed border-line-strong bg-elevated/30">
-              <span className="absolute left-4 top-3 text-caption font-medium text-fg-faint">
-                Placeholder — background image or video for the closing band (wide)
-              </span>
-            </div>
-            <div className="relative flex flex-col items-center gap-4 bg-app/60 px-6 py-16 text-center">
+            {/* Background slot (image or video, `absolute inset-0 h-full w-full
+                object-cover`) is hidden until the media exists. */}
+            <div className="relative flex flex-col items-center gap-4 bg-elevated/20 px-6 py-16 text-center">
               <Eyebrow>{t('Get started')}</Eyebrow>
               <h2 className="max-w-[560px] text-[26px] font-semibold leading-tight text-fg">
                 {t('Your own token system. Free to build. Pro when it has to stay in sync.')}
@@ -931,13 +1059,42 @@ export function AboutHome({
           </div>
         </div>
 
-        {/* ── Reference accordion + contact (shared with /about and mobile).
-            No footer: Configurator's own bottom row already prints the
-            copyright line. ── */}
-        <div className="px-6 pb-8">
-          <AboutAccordion section={section} onSectionChange={setSection} bleed />
-          <AboutContact pad="px-0" card />
-        </div>
+        {/* ── Good questions — the shared reference sections, phrased as a
+            FAQ (same `useAboutSections` content as the drawer, mobile and
+            /about; only the presentation differs). ── */}
+        <section aria-labelledby={faqId} className="grid gap-10 border-b border-line px-6 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+          <div className="flex flex-col items-start gap-4">
+            <h2 id={faqId} className="text-[26px] font-semibold leading-tight text-fg">{t('Good questions')}</h2>
+            <button
+              type="button"
+              onClick={() => onOpenDocsPage('faq')}
+              className="inline-flex items-center gap-1.5 rounded text-ui font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            >
+              {t('Read the docs')}
+              <span aria-hidden className="inline-flex -rotate-45"><ArrowGlyph /></span>
+            </button>
+          </div>
+          <AboutAccordion variant="faq" section={section} onSectionChange={setSection} />
+        </section>
+
+        {/* ── Contact — the maker and one way to reach him. The socials are NOT
+            here: they live once, in the footer's Social column. ── */}
+        <section aria-labelledby={contactId} className="flex flex-col items-start gap-3 border-b border-line px-6 py-16">
+          <Eyebrow>{t('Contact')}</Eyebrow>
+          <h2 id={contactId} className="text-[26px] font-semibold leading-tight text-fg">
+            {t('Built and maintained by Cesar Durango')}
+          </h2>
+          <p className="text-ui leading-relaxed text-fg-muted">{t('Design systems and design engineering.')}</p>
+          <a href={CONTACT_PATH} className={`${secondaryCta} mt-2`}>
+            {t('Contact form')}
+            <ArrowGlyph />
+          </a>
+        </section>
+
+        {/* ── Footer — NAVIGATION back into the product. The shell's 28px strip
+            under every view stays the only colophon (copyright · Contact ·
+            Legal · Privacy · Terms · MIT), so none of that is repeated here. ── */}
+        <AboutFooter onStart={onStart} onLearnAI={onLearnAI} onOpenDocsPage={onOpenDocsPage} onOpenComponents={onOpenComponents} />
       </div>
     </div>
   )
@@ -1070,93 +1227,70 @@ function DesktopHandoffHint() {
   )
 }
 
+/** The About page OUTSIDE the shell — the phone screen (`DesktopOnlyNotice`)
+ *  and the `/about` route. It renders the SAME `AboutHome` the in-app tab does,
+ *  so phone and desktop read one page, not two versions of it; only the frame
+ *  differs: a slim top bar (brand · language · appearance, since `TopNav` lives
+ *  in the shell), an optional notice (the phone: "open it on a laptop"), and
+ *  the colophon the shell would otherwise print. Links that open the workspace
+ *  in the shell go to the public pages instead (`/docs/*`, `/components`). */
 export function AboutScaffold({
-  heading, subheading, wrapperClassName, ctaHref, ctaLabel,
+  wrapperClassName, notice,
 }: {
-  heading: string
-  subheading: string
   /** e.g. `md:hidden` for the mobile-only caller; omitted = always visible. */
   wrapperClassName?: string
-  /** Optional way back into the app — only meaningful when there IS an app to
-   *  return to (the mobile notice has nowhere useful to send you). */
-  ctaHref?: string
-  ctaLabel?: string
+  /** The phone screen's lead: the app needs a laptop, everything else is here. */
+  notice?: { heading: string; subheading: string }
 }) {
   const { t } = useI18n()
-  const [section, setSection] = useState<AboutSection | null>(null)
   const theme = useTheme()
+  const go = (href: string) => window.location.assign(href)
+  // "Start building" opens the workspace — which only exists from `md` up.
+  const start = () => {
+    if (window.matchMedia('(min-width: 768px)').matches) go('/')
+    else showToast(t('Escala opens on a laptop or desktop screen.'))
+  }
 
   return (
     <div className={cn('min-h-screen flex flex-col bg-app text-fg', wrapperClassName)}>
       <PluginCommunityBanner />
       {/* Appearance and language, the two chrome preferences that mean
-          something on a screen with no workspace. They live in `TopNav` for
-          everyone else, and `TopNav` is inside the desktop shell — so on a
-          phone (and on `/about`) they had no door at all. Same components, not
-          copies: `onChromeAppearanceChange` in the shell is literally
-          `setTheme`, so this is the identical wiring. */}
-      <div className="flex items-center justify-end gap-2 px-4 pt-4">
-        <LanguageMenu />
-        <AppearanceToggle value={theme} onChange={setTheme} />
-      </div>
-
-      <header className="flex flex-col items-center gap-4 px-6 pt-6 pb-8 text-center">
-        <BrandMark />
-        <div className="flex flex-col gap-1.5 max-w-[420px]">
-          <h1 className="text-[15px] font-semibold text-fg">{heading}</h1>
-          <p className="text-ui leading-relaxed text-fg-muted">{subheading}</p>
-        </div>
-        {/* Mutually exclusive by construction: either there IS a way into the
-            workspace from here (`/about` on a desktop) or there isn't (the
-            phone notice), and the slot says which. */}
-        {ctaHref ? (
-          <a
-            href={ctaHref}
-            className="inline-flex items-center gap-1.5 mt-1 text-body font-semibold text-accent-ui hover:underline"
-          >
-            {ctaLabel ?? t('Open the configurator')}
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </a>
-        ) : (
-          <DesktopHandoffHint />
-        )}
-      </header>
-
-      {/* The workspace itself, since neither caller can open it: this screen
-          is shown to a phone (no app below `md`) and to `/about` (a page, not
-          the shell). A still screenshot would undersell the one thing worth
-          showing — foundations repainting the whole system live. */}
-      <div className="px-5 pb-10">
-        {/* Capped and centred: this scaffold also backs `/about`, which is a
-            full-width page on a desktop, and an uncapped clip rendered ~1400px
-            wide there. 560px is the reading column the rest of the About copy
-            already uses; a phone is narrower than the cap either way. */}
-        <div className="mx-auto w-full max-w-[560px]">
-          <DemoVideo tapToPlay />
+          something here. They live in `TopNav` for everyone else, and `TopNav`
+          is inside the desktop shell — same components, not copies. */}
+      <div className="flex h-14 items-center justify-between gap-3 border-b border-line px-4">
+        <a href="/about" className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50">
+          <BrandMark size={24} />
+          <span className="text-ui font-semibold text-fg">Escala Tokens</span>
+        </a>
+        <div className="flex items-center gap-2">
+          <LanguageMenu />
+          <AppearanceToggle value={theme} onChange={setTheme} />
         </div>
       </div>
 
-      <div className="border-t border-line">
-        <div className="px-5 pt-5 pb-1">
-          <span className="text-caption font-semibold uppercase tracking-widest text-fg-faint">
-            About
-          </span>
-          <p className="text-caption text-fg-faint mt-0.5">
-            Design token infrastructure · schema v{TOKEN_SCHEMA_VERSION}
-          </p>
+      {notice && (
+        <div className="px-6 pt-6">
+          <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-2 rounded-2xl border border-line bg-elevated/30 p-4">
+            <h2 className="text-ui font-semibold text-fg">{notice.heading}</h2>
+            <p className="text-body leading-relaxed text-fg-muted">{notice.subheading}</p>
+            <DesktopHandoffHint />
+          </div>
         </div>
-        <div className="mt-3 border-t border-line">
-          <AboutAccordion section={section} onSectionChange={setSection} />
-          <AboutContact />
-        </div>
-      </div>
+      )}
 
-      <footer className="mt-auto flex flex-col gap-2 px-5 py-4 border-t border-line">
-        {/* Same links as the desktop shell's footer — a phone has no other
-            door to Contact / Legal / Privacy. Wraps on a narrow screen; each
-            link keeps a 24px target (WCAG 2.2). */}
+      <AboutHome
+        scroll={false}
+        videoTapToPlay={Boolean(notice)}
+        onStart={start}
+        onLearnAI={() => go('/docs/mcp')}
+        onOpenDocsPage={(page) => go(`/docs/${page}`)}
+        onOpenComponents={() => go('/components')}
+      />
+
+      <footer className="mt-auto flex flex-col gap-2 border-t border-line px-5 py-4">
+        {/* Same links as the desktop shell's footer — off the shell this is
+            the only door to Contact / Legal / Privacy. Wraps on a narrow
+            screen; each link keeps a 24px target (WCAG 2.2). */}
         <FooterLinks className="flex-wrap -mx-0.5 gap-x-3 gap-y-0" linkClassName="min-h-6" />
         <p className="text-caption text-fg-faint">
           {COPYRIGHT_LINE} · {t('Figma is a trademark of Figma, Inc.')}

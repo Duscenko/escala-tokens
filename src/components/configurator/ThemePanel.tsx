@@ -295,7 +295,7 @@ type ThemeFormProps = {
  * disclosed rather than always-on, so refining a slot is one click away
  * without making the common case pay for it.
  */
-function ThemeForm({
+export function ThemeForm({
   onClose,
   editKey = null,
   appearance = 'light',

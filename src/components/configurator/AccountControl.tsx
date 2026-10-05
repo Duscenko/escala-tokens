@@ -4,8 +4,8 @@ import { signOut, useAuth } from '../../lib/auth'
 import { LOGIN_PATH } from '../../lib/legal'
 import { accountsEnabled } from '../../lib/supabase'
 
-// TopNav's account entry: a "Log in" link to /login when signed out, an initial
-// that opens a small menu (email · Log out) when signed in. Renders NOTHING
+// TopNav's account entry: a "Sign in" link to /login when signed out, an initial
+// that opens a small menu (email · Sign out) when signed in. Renders NOTHING
 // while accounts are off (`accountsEnabled`), so the production header is
 // unchanged until ACCOUNTS_LIVE flips. The login itself is a page, not a dialog.
 
@@ -40,9 +40,9 @@ function AccountControlInner() {
     return (
       <a
         href={LOGIN_PATH}
-        className={`inline-flex h-8 flex-shrink-0 items-center rounded-[10px] px-3 text-body font-medium text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+        className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-line px-3 text-body font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated ${FOCUS}`}
       >
-        {t('Log in')}
+        {t('Sign in')}
       </a>
     )
   }
@@ -72,7 +72,7 @@ function AccountControlInner() {
             onClick={() => { setMenuOpen(false); void signOut() }}
             className={`rounded-lg px-2.5 py-2 text-left text-ui text-fg-muted transition-colors hover:bg-elevated hover:text-fg ${FOCUS}`}
           >
-            {t('Log out')}
+            {t('Sign out')}
           </button>
         </div>
       )}

@@ -43,7 +43,7 @@ import type { ThemeAppearance } from './themeModes'
 export function adoptPreset(
   preset: ThemeStylePreset,
   appearance: ThemeAppearance,
-  opts: { asCopy?: boolean; copyWord?: string } = {},
+  opts: { asCopy?: boolean; copyWord?: string; /** false for the automatic first-run seed — it isn't a choice anyone made. */ track?: boolean } = {},
 ): { key: string; name: string } | { error: string } {
   const store = useDesignStore.getState()
   const themes = store.themes
@@ -105,8 +105,29 @@ export function adoptPreset(
   loadGoogleFont(preset.foundations.typography?.fontFamily ?? '')
   loadGoogleFont(preset.foundations.typography?.headingFontFamily ?? '')
   // `preset.id` is a curated constant (core, neo…), never user-typed text.
-  trackEvent({ name: 'style_adopt', props: { style: preset.id } })
+  if (opts.track !== false) trackEvent({ name: 'style_adopt', props: { style: preset.id } })
   return { key: result.key, name: label }
+}
+
+/**
+ * "Edit theme" — the ONE way a System Style enters My themes. Re-opens the
+ * copy you already have (`themeOrigin === preset.id`, newest first) instead of
+ * minting a second one, otherwise adopts it under its clean name. Nothing else
+ * may add to My themes on the user's behalf: a list that grows from every
+ * glance and slider nudge stops being a list anyone chose (reported).
+ * (`themeHasEdits` can't be the reuse test — it reads true right after an
+ * adopt, which duplicated on the second click.)
+ */
+export function openStyleForEditing(
+  preset: ThemeStylePreset,
+  appearance: ThemeAppearance,
+): { key: string; name: string; created: boolean } | { error: string } {
+  const s = useDesignStore.getState()
+  const owned = myThemeKeys(s.themeOrder, s.themes).filter((key) => s.themeOrigin?.[key] === preset.id).at(-1)
+  if (owned) return { key: owned, name: s.themeLabels[owned] ?? preset.label, created: false }
+  const adopted = adoptPreset(preset, appearance)
+  if ('error' in adopted) return adopted
+  return { ...adopted, created: true }
 }
 
 type ThemeEditState = {

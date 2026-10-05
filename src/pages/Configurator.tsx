@@ -11,7 +11,8 @@ import { encodeWorkspaceSection, parseWorkspaceSearch, syncWorkspaceSearch } fro
 import { applyDocumentHead } from '../lib/documentHead'
 import { workspaceDocumentHead } from '../lib/publicSeo'
 import { type GitHubPushState } from '../lib/github'
-import { loadGoogleFont, useLoadActiveFonts } from '../lib/fonts'
+import { useLoadActiveFonts } from '../lib/fonts'
+import { adoptPreset } from '../lib/adoptPreset'
 import { useEnsureColorScales, useRegenerateScalesOnScaleSettings } from '../lib/colorActions'
 import { RAIL_WIDTH, RAIL_COLLAPSED_WIDTH } from '../components/configurator/SectionRail'
 import FoundationIconRail from '../components/configurator/FoundationIconRail'
@@ -22,7 +23,8 @@ import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
 import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
-import { ThemeSwitcher, ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
+import { ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
+import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
@@ -31,7 +33,7 @@ import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
 import { PRICING_PATH } from '../lib/entitlement'
-import TopNav, { type TopNavKey } from '../components/configurator/TopNav'
+import TopNav, { type DocsMenuPage, type TopNavKey } from '../components/configurator/TopNav'
 import PluginCommunityBanner from '../components/configurator/PluginCommunityBanner'
 import { TokenSearchField } from '../components/configurator/TokenSearchField'
 import { buildTokenSearchIndex, type TokenSearchEntry } from '../lib/tokenSearch'
@@ -776,6 +778,16 @@ export default function Configurator() {
     return w === 'documentation' ? 'preview' : w
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
+  // TopNav's theme sheet (browse the EscalaUI themes · My themes · CREATE).
+  // Lifted here so every "create a theme" door in the shell — the rail's button,
+  // the library, the empty states — opens the SAME sheet on its create view
+  // instead of the old docked ThemePanel. That panel survives for EDITING an
+  // existing theme only (`themeEditor` is a theme key).
+  const [themeSheet, setThemeSheet] = useState<false | 'browse' | 'create'>(false)
+  const openCreateTheme = () => {
+    setStylePreview(null)
+    setThemeSheet('create')
+  }
   const [resetOpen, setResetOpen] = useState(false)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
@@ -1025,26 +1037,10 @@ export default function Configurator() {
   // instead of the live tokens while it's set (see ThemePreviewHub). Cleared by
   // any real theme change and whenever the preview surface isn't on screen.
   //
-  // Core is tried on whenever My themes is empty, so Theme Preview is never a
-  // blank board. The seed lives HERE, not on ThemeLibraryRail: that rail is
-  // closed by default, and an unmount used to clear the overlay. The overlay
-  // never writes the store — Core is SHOWN, not added. Variables still cannot
-  // hold a try-on: an empty My themes shows NeedMyThemeEmpty there until
-  // something is added.
+  //
+  // (Core used to be tried on here whenever My themes was empty; it is now a REAL
+  // theme from the start — see the seed effect below `changePreviewTheme`.)
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
-  useEffect(() => {
-    if (myThemeKeys(themeOrder, themes).length > 0) return
-    if (themeEditor !== false) return
-    if (stylePreview) return
-    const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
-    if (!core) return
-    loadGoogleFont(core.foundations.typography?.fontFamily ?? '')
-    loadGoogleFont(core.foundations.typography?.headingFontFamily ?? '')
-    setStylePreview({
-      preset: core,
-      appearance: theme === 'dark' ? 'dark' : 'light',
-    })
-  }, [themeOrder, themes, themeEditor, stylePreview, theme])
   const changePreviewTheme = (key: string) => {
     setStylePreview(null)
     // Read the LIVE store, never this render's `themeKinds`. A theme that
@@ -1057,6 +1053,30 @@ export default function Configurator() {
     const kinds = useDesignStore.getState().themeKinds
     setPreviewSelection({ theme: key, appearance: kinds[key] ?? 'light' })
   }
+  // Default for everyone: with no theme of their own, the workspace starts on
+  // Core / Minimalist as a REAL theme in My themes, shown exactly like one
+  // already added — no "preview, then Edit theme" step before anything can be
+  // edited. (It used to be an ephemeral try-on; reported: the first screen read
+  // as an offer to add something instead of a system to work on.) Explicit
+  // "Edit theme" remains the only way ANYTHING ELSE enters My themes.
+  // Runs only while My themes is empty and nothing is being created, so it can't
+  // fight a user who is mid-way through making their own; silent in analytics —
+  // nobody chose it.
+  useEffect(() => {
+    if (myThemeKeys(themeOrder, themes).length > 0) return
+    if (themeEditor !== false) return
+    // Re-check against the LIVE store, not this render's closure: React runs
+    // effects twice in dev (and a fast re-render can repeat one) before the
+    // first adopt has reached `themes`, which minted "Core" and "Core 2".
+    const live = useDesignStore.getState()
+    if (myThemeKeys(live.themeOrder, live.themes).length > 0) return
+    const core = THEME_STYLE_PRESETS.find((preset) => preset.id === 'core-minimal') ?? THEME_STYLE_PRESETS[0]
+    if (!core) return
+    const adopted = adoptPreset(core, theme === 'dark' ? 'dark' : 'light', { track: false })
+    if ('error' in adopted) return
+    changePreviewTheme(adopted.key)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeOrder, themes, themeEditor, theme])
   const changePreviewAppearance = (appearance: ThemeAppearance) => {
     setPreviewSelection((current) => ({ ...current, theme: previewTheme, appearance }))
     // A live System Style try-on renders from `stylePreview.appearance`, not
@@ -1318,6 +1338,17 @@ export default function Configurator() {
     setExportMode(null)
     setTab('docs')
     setDocFoundationKey(key)
+  }
+  // Docs' focused pages, ONE mapping for every door to them — TopNav's Docs menu
+  // and the About tab (its FAQ link and footer) — so the two can't disagree.
+  const openDocsPage = (page: DocsMenuPage) => {
+    openDocs(page === 'mcp'
+      ? GUIDE_MCP_KEY
+      : page === 'figma'
+        ? GUIDE_FIGMA_KEY
+        : page === 'changelog'
+          ? CHANGELOG_KEY
+          : FAQ_KEY)
   }
   const leaveExportWizard = () => setSectionExportOpen(false)
   const openFigmaSyncPage = () => {
@@ -1582,6 +1613,8 @@ export default function Configurator() {
           changeThemeWorkspaceTab('preview')
         }}
         onLearnAI={() => openDocs(GUIDE_MCP_KEY)}
+        onOpenDocsPage={openDocsPage}
+        onOpenComponents={() => changeTab('components')}
         foundationCount={FOUNDATIONS.length}
       />
     )
@@ -1602,7 +1635,7 @@ export default function Configurator() {
     body = myThemeKeys(themeOrder, themes).length === 0 ? (
       <NeedMyThemeEmpty
         onSeePreview={() => changeThemeWorkspaceTab('preview')}
-        onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+        onCreateTheme={openCreateTheme}
       />
     ) : section.key === 'color' ? (
       <ColorHub
@@ -1882,16 +1915,30 @@ export default function Configurator() {
         railCollapsed={outerRailVisible && railCollapsed}
         chromeAppearance={theme}
         onChromeAppearanceChange={setTheme}
-        onOpenDocsPage={(page) => {
-          const docsPage = page === 'mcp'
-            ? GUIDE_MCP_KEY
-            : page === 'figma'
-              ? GUIDE_FIGMA_KEY
-              : page === 'changelog'
-                ? CHANGELOG_KEY
-                : FAQ_KEY
-          openDocs(docsPage)
-        }}
+        // Transversal: the theme you are looking at belongs to the whole
+        // workspace, so its door sits beside light/dark on every section.
+        themeControl={(
+          <ThemeAppearanceControl
+            previewTheme={previewTheme}
+            onPreviewThemeChange={changePreviewTheme}
+            stylePreview={stylePreview}
+            onStylePreview={setStylePreview}
+            appearance={theme}
+            onAppearanceChange={setTheme}
+            sheet={themeSheet}
+            onSheetChange={setThemeSheet}
+            onCreated={changePreviewTheme}
+            onOpenLibrary={openLibraryPage}
+            onOpenTheme={(key) => {
+              leaveExportWizard()
+              setExportMode(null)
+              setTab('foundations')
+              changePreviewTheme(key)
+              changeThemeWorkspaceTab('preview')
+            }}
+          />
+        )}
+        onOpenDocsPage={openDocsPage}
       />
 
       <div className="flex-1 min-h-0 flex">
@@ -1949,26 +1996,6 @@ export default function Configurator() {
                     onToggle={() => (themeWorkspaceTab === 'library' ? changeThemeWorkspaceTab('preview') : openLibraryPage())}
                     placement="tab-bar"
                   />
-                  <div className="flex h-full flex-shrink-0 items-center gap-2 pl-3">
-                    <ThemeSwitcher
-                      previewTheme={previewTheme}
-                      onPreviewThemeChange={changePreviewTheme}
-                      onOpenTheme={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
-                      onStylePreview={setStylePreview}
-                      activeStylePreview={stylePreview}
-                      onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
-                      onDuplicateTheme={() => {
-                        const key = useDesignStore.getState().duplicateTheme(
-                          previewTheme,
-                          t('Copy (duplicated theme suffix)'),
-                        )
-                        if (!key) return
-                        setStylePreview(null)
-                        changePreviewTheme(key)
-                      }}
-                      onOpenReset={() => setResetOpen(true)}
-                    />
-                  </div>
                 </>
               )}
             />
@@ -2000,7 +2027,7 @@ export default function Configurator() {
               activeStylePreview={stylePreview}
               onSyncFigma={syncFigmaForTheme}
               onOpenInCode={openCodeForTheme}
-              onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+              onCreateTheme={openCreateTheme}
               onEditTheme={(key) => { setStylePreview(null); setThemeEditor(key) }}
               onOpenReset={() => setResetOpen(true)}
             />
@@ -2047,7 +2074,7 @@ export default function Configurator() {
                     onPreviewPlatformChange={setPreviewPlatform}
                     stylePreview={stylePreview}
                     onAdoptStyle={changePreviewTheme}
-                    onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
+                    onCreateTheme={openCreateTheme}
                     onSelectTheme={changePreviewTheme}
                     onPreviewAppearanceChange={changePreviewAppearance}
                     onOpenComponents={() => changeTab('components')}
@@ -2096,8 +2123,8 @@ export default function Configurator() {
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                     onGetCode={openCodeForTheme}
-                    onCreateTheme={() => { setStylePreview(null); setThemeEditor('new') }}
-                    onManageSaved={() => openExport('save')}
+                    onNewSystem={() => setNewSystemOpen(true)}
+                    onImport={() => setImportOpen(true)}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (

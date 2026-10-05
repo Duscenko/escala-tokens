@@ -59,7 +59,8 @@ import {
 } from '../../lib/themeSources'
 import type { ThemeAppearance } from '../../lib/themeModes'
 import { resetThemeSemantics, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
-import { adoptPreset } from '../../lib/adoptPreset'
+import { openStyleForEditing } from '../../lib/adoptPreset'
+import { StyleOverview } from './StyleOverview'
 import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { MY_THEME_FULL_ERROR, canAddMyTheme, isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
@@ -1497,44 +1498,28 @@ export default function ThemeQuickSettingsRail({
   }
 
   /**
-   * Resolves the theme a write should land on, ADOPTING the tried-on style
-   * first if there is one. This is what makes the rail editable during a
-   * try-on: an ephemeral preview has no theme to write to, so the first edit
-   * makes it real. Returns `null` only if minting failed.
+   * Resolves the theme a write should land on. A tried-on style is NOT a write
+   * target: it used to auto-adopt as "<Style> Copy" on the first slider nudge,
+   * which is how My themes filled up with themes nobody chose (reported). While
+   * a style is only previewed, the rail shows its overview + Edit theme instead
+   * of the controls, so this branch is a guard, not a path anyone reaches.
    */
   const resolveWriteTarget = (): string | null => {
-    if (!tryOn) {
-      if (!isScaffoldTheme(previewTheme)) return previewTheme
-      const listed = myThemeKeys(store.themeOrder, store.themes)
-      if (!listed.length) return previewTheme
-      return resolveListedTheme(store.themeOrder, store.themes, store.themeKinds, listed[listed.length - 1], previewAppearance)
-    }
-    // Auto-adopt as "<Style> Copy" — the first quick-settings edit is the user
-    // starting to iterate, so it lands in MY THEMES as a duplication of the
-    // style, not as the style itself.
-    const adopted = adoptPreset(tryOn.preset, previewAppearance, { asCopy: true, copyWord: t('Copy (duplicated theme suffix)') })
-    if ('error' in adopted) { setAdoptError(t(adopted.error, { count: ownThemeCount })); return null }
-    setAdoptError(null)
-    // The write itself is silent — a slider that repaints the board is its own
-    // feedback — but ADOPTING is a second thing happening that the user did not
-    // ask for in that gesture, and the only place it shows is a new row in a
-    // column they may not be looking at. Say it out loud once.
-    announceAdopted(adopted.name)
-    onAdoptStyle?.(adopted.key)
-    return adopted.key
+    if (tryOn) return null
+    if (!isScaffoldTheme(previewTheme)) return previewTheme
+    const listed = myThemeKeys(store.themeOrder, store.themes)
+    if (!listed.length) return previewTheme
+    return resolveListedTheme(store.themeOrder, store.themes, store.themeKinds, listed[listed.length - 1], previewAppearance)
   }
 
-  /** Explicit "Add to system", the button under the Name field. Mints the style
-   *  under its OWN name — no "Copy" suffix — because nothing has diverged from
-   *  it yet; that suffix is the auto-adopt path's way of saying an edit already
-   *  moved it away from the style it came from. */
-  const addTryOnToSystem = () => {
+  /** Edit theme — the rail's twin of the sheet's button, same helper. */
+  const editTryOn = () => {
     if (!tryOn) return
-    const adopted = adoptPreset(tryOn.preset, previewAppearance)
-    if ('error' in adopted) { setAdoptError(t(adopted.error, { count: ownThemeCount })); return }
+    const result = openStyleForEditing(tryOn.preset, previewAppearance)
+    if ('error' in result) { setAdoptError(t(result.error, { count: ownThemeCount })); return }
     setAdoptError(null)
-    announceAdopted(adopted.name)
-    onAdoptStyle?.(adopted.key)
+    if (result.created) announceAdopted(result.name)
+    onAdoptStyle?.(result.key)
   }
 
   const commit = (label: string, action: (themeKey: string) => void) => {
@@ -1831,49 +1816,31 @@ export default function ThemeQuickSettingsRail({
       {/* No Name band here any more: a theme is renamed where it is LISTED —
           double-click in the theme switcher or the library, or Rename in a
           row's options. This column is for editing how the theme looks. */}
-      {/* "Add to system" sits directly UNDER the Name field, at the field's own
-          width — it used to live in the Themes Library's expanded style row,
-          which put the one control that commits a style in a different column
-          from the controls that edit it. Here, "this is the theme, this is its
-          name, this is how you keep it" reads as one block.
-
-          Rendered only while a try-on is live, because that is the only state
-          in which there is anything to add: once adopted, `onAdoptStyle`
-          re-points `previewTheme` and drops the try-on, so the button removes
-          itself and the Name field starts describing a real theme. It is not
-          disabled-when-idle — a permanent control that is dead most of the time
-          is the thing this fix exists to remove. */}
-      {tryOn && (
-        <div className="flex-shrink-0 px-3 pt-3">
-          <button
-            type="button"
-            onClick={addTryOnToSystem}
-            disabled={!canAddTheme}
-            title={!canAddTheme ? t(MY_THEME_FULL_ERROR, { count: ownThemeCount }) : undefined}
-            // `bg-fg text-app` — the CHROME's primary action, the same pill
-            // TopNav's Export uses. Deliberately not `bg-accent-ui`: this button
-            // belongs to Escala, not to the style being tried on, and painting
-            // it with the previewed accent made the one control that commits a
-            // theme change colour with the thing it was about to commit.
-            className="h-9 w-full rounded-lg bg-fg px-3 text-body font-semibold text-app transition-opacity hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:opacity-45"
-          >
-            {t('Add to system')}
-          </button>
-          {/* The "Trying X…" hint is gone; the limit message stays, since it
-              explains why the button is disabled. */}
-          {!canAddTheme && (
-            <p className="mt-1.5 text-mini leading-relaxed text-fg-faint">
-              {t(MY_THEME_FULL_ERROR, { count: ownThemeCount })}
-            </p>
-          )}
-          {adoptError && <p role="alert" className="mt-1.5 text-mini text-status-danger">{adoptError}</p>}
-        </div>
-      )}
+      {/* Only "Edit theme" adds a style to My themes (sheet or rail). The error
+          below is the My-themes-full case. */}
+      {adoptError && <p role="alert" className="flex-shrink-0 px-3 pt-3 text-mini text-status-danger">{adoptError}</p>}
       {/* Only this region scrolls; the Undo bar below is a pinned footer, so it
           never floats mid-content or leaves a gap under a short rail. Same
           shape as KitsPopover's scroll-body + fixed-footer. */}
       <div className="flex flex-1 min-h-0 flex-col">
       <ThemeRailScrollRegion padClass="py-3">
+      {tryOn ? (
+        // A previewed style isn't yours yet, so there is nothing to edit — show
+        // what it is and the one way to make it yours, instead of controls
+        // that would have to adopt it behind your back.
+        <section aria-label={t('EscalaUI themes')} className="min-w-0">
+          <div className="flex min-h-8 items-center border-b border-line px-3 pb-2 mb-3">
+            <span className="min-w-0 truncate text-caption font-normal text-fg">{t('EscalaUI themes')}</span>
+          </div>
+          <StyleOverview
+            compact
+            preset={tryOn.preset}
+            appearance={previewAppearance}
+            owned={myThemeKeys(store.themeOrder, store.themes).some((key) => store.themeOrigin?.[key] === tryOn.preset.id)}
+            onEdit={editTryOn}
+          />
+        </section>
+      ) : (
       <div className={`flex flex-col ${QUICK_RAIL_STACK_GAP}`}>
         {activePanel === 'color' && <EditionCard
           title="Color edition"
@@ -2414,6 +2381,7 @@ export default function ThemeQuickSettingsRail({
           </button>
         )}
       </div>
+      )}
       </ThemeRailScrollRegion>
 
       <AnimatePresence>

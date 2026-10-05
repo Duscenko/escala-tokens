@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useTheme } from '../../lib/theme'
 import { themeBrandRamp, themeDisplayName } from '../../lib/themeSources'
-import { generateColorScale } from '../../lib/colorUtils'
 import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
 import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { loadGoogleFont } from '../../lib/fonts'
@@ -13,19 +12,11 @@ import { useI18n } from '../../lib/i18n'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
 import { DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar } from './ThemeLibraryRail'
+import { PRESET_AVATAR_RAMPS } from './StyleOverview'
 import { FOUNDATION_ICON_RAIL_WIDTH, RailTile } from './FoundationIconRail'
 import { FolderIcon } from './VariableCollectionRail'
 
 const MENU_W = 260
-
-const PRESET_AVATAR_RAMPS = Object.fromEntries(
-  THEME_STYLE_PRESETS.flatMap((preset) =>
-    (['light', 'dark'] as const).map((appearance) => [
-      `${preset.id}:${appearance}`,
-      generateColorScale(preset.accent, 'radix', 0, undefined, appearance),
-    ]),
-  ),
-)
 
 /** Selected row — the same neutral edge the Themes library rail gives its
  *  active row (`border-line-strong`), on the menu's hover fill. One selection
@@ -528,3 +519,4 @@ function ChevronDown() {
 
 
 export { PlatformSwitch } from './PlatformRail'
+export { PRESET_AVATAR_RAMPS }

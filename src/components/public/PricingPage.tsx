@@ -37,9 +37,19 @@ function Eyebrow({ children }: { children: ReactNode }) {
   return <p className="text-mini font-semibold uppercase tracking-[0.12em] text-fg-faint">{children}</p>
 }
 
+const PLAN_CTA = `flex h-14 w-full items-center justify-between gap-3 rounded-full px-7 text-ui font-medium transition-[opacity,background-color] ${FOCUS}`
+
+function Arrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="flex-shrink-0">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}
+
 function Check() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="mt-[3px] flex-shrink-0 text-fg-muted">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="mt-[5px] flex-shrink-0 text-fg">
       <path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -47,9 +57,9 @@ function Check() {
 
 function Features({ items }: { items: string[] }) {
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-3">
       {items.map((item) => (
-        <li key={item} className="flex gap-2 text-body leading-relaxed text-fg">
+        <li key={item} className="flex gap-3 text-ui leading-relaxed text-fg">
           <Check />
           <span>{item}</span>
         </li>
@@ -282,59 +292,82 @@ export function PricingPage() {
               <h2 id="pricing-escala" className="text-heading font-semibold">{t('Escala, the generator')}</h2>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-6">
+            {/* One shell, two plans — the quiet Free card beside the Pro card that
+                carries the glow and the big number, so the eye lands on the offer. */}
+            <div className="grid gap-2 rounded-[32px] border border-line bg-surface/60 p-2 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <div className="flex flex-col gap-8 rounded-[26px] bg-surface p-7 md:p-9">
                 <div>
-                  <h3 className="text-title font-semibold">{t('Free')}</h3>
-                  <p className="mt-1 text-body text-fg-muted">{t('Build the whole system and take it anywhere by hand.')}</p>
+                  <h3 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">{t('Free')}</h3>
+                  <p className="mt-3 max-w-sm text-ui leading-relaxed text-fg-muted">{t('Build the whole system and take it anywhere by hand.')}</p>
                 </div>
-                <p className="flex items-baseline gap-2">
-                  <span className="text-[40px] font-semibold leading-none tracking-[-0.02em]">$0</span>
-                  <span className="text-body text-fg-faint">{t('forever')}</span>
+                <p className="flex items-baseline gap-3">
+                  <span className="text-[56px] font-medium leading-none tracking-[-0.03em]">$0</span>
+                  <span className="text-ui text-fg-muted">{t('forever')}</span>
                 </p>
-                <a href="/" className={`${CTA} border border-line-strong text-fg`}>{t('Open the configurator')}</a>
-                <Features items={[
-                  t('All 12 System Styles, unlimited themes while editing'),
-                  t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
-                  t('Open-source Figma plugin, manual import'),
-                  t('{n} theme (Light + Dark) and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
-                  t('Offline agent skill, GitHub push, CLI'),
-                ]} />
+                <div className="border-t border-line pt-7">
+                  <Features items={[
+                    t('All 12 System Styles, unlimited themes while editing'),
+                    t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
+                    t('Open-source Figma plugin, manual import'),
+                    t('{n} theme (Light + Dark) and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
+                    t('Offline agent skill, GitHub push, CLI'),
+                  ]} />
+                </div>
+                <a href="/" className={`${PLAN_CTA} mt-auto border border-line-strong text-fg hover:bg-elevated`}>
+                  {t('Open the configurator')}<Arrow />
+                </a>
               </div>
 
-              <div className="flex flex-col gap-5 rounded-2xl border border-accent-ui/60 bg-surface p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-title font-semibold">Pro</h3>
-                    <p className="mt-1 text-body text-fg-muted">{t('Your system stays in step with Figma and your agents.')}</p>
-                  </div>
-                  <Badge solid>{t('One-time')}</Badge>
+              <div className="relative flex flex-col gap-8 overflow-hidden rounded-[26px] bg-surface p-7 md:p-9">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse 70% 60% at 100% 0%, color-mix(in srgb, var(--accent-ui) 34%, transparent), transparent 72%),' +
+                      'radial-gradient(ellipse 60% 55% at 0% 100%, color-mix(in srgb, var(--status-danger) 22%, transparent), transparent 72%)',
+                  }}
+                />
+                <div className="relative flex flex-col gap-4">
+                  <span className="self-start rounded-full bg-fg/10 px-3 py-1 text-body font-medium text-fg">{t('One-time')}</span>
+                  <h3 className="text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-0.02em]">
+                    {t('Your system stays in step with Figma and your agents.')}
+                  </h3>
                 </div>
-                <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-[40px] font-semibold leading-none tracking-[-0.02em]">${entitlement.priceUsd}</span>
-                  <span className="text-body text-fg-muted">
+                <div className="relative flex flex-col gap-3">
+                  <p className="flex items-baseline gap-3">
+                    <span className="text-[clamp(64px,8vw,104px)] font-medium leading-[0.9] tracking-[-0.04em]">${entitlement.priceUsd}</span>
+                    <span className="text-ui text-fg-muted">{t('once')}</span>
+                  </p>
+                  <p className="text-ui text-fg-muted">
                     {entitlement.launchPrice
                       ? t('launch price until November 15, then ${price}', { price: String(PRO_PRICE_USD) })
                       : t('one payment, no subscription')}
-                  </span>
-                </p>
-                {entitlement.promo ? (
-                  <div className="flex flex-col gap-2">
-                    <a href="/" className={`${CTA} bg-accent-solid text-accent-ink`}>{t('Use Pro free until October 31')}</a>
-                    <p className="text-caption text-fg-faint">{t('No licence needed during the launch offer.')}</p>
-                  </div>
-                ) : (
-                  <a href={POLAR_CHECKOUT_URL} className={`${CTA} bg-accent-solid text-accent-ink`}>{t('Get Pro')}</a>
-                )}
-                <Features items={[
-                  t('Everything in Free'),
-                  t('Up to {max} themes in Figma, each with Light + Dark', { max }),
-                  t('Desktop, Tablet and Mobile platform modes'),
-                  t('Hosted sync: Figma updates when you edit'),
-                  t('Live MCP for Cursor, Claude Code and VS Code'),
-                  t('Generated documentation for your system'),
-                  t('12 months of sync, MCP and updates included'),
-                ]} />
+                  </p>
+                </div>
+                <div className="relative border-t border-line pt-7">
+                  <Features items={[
+                    t('Everything in Free'),
+                    t('Up to {max} themes in Figma, each with Light + Dark', { max }),
+                    t('Desktop, Tablet and Mobile platform modes'),
+                    t('Hosted sync: Figma updates when you edit'),
+                    t('Live MCP for Cursor, Claude Code and VS Code'),
+                    t('Generated documentation for your system'),
+                    t('12 months of sync, MCP and updates included'),
+                  ]} />
+                </div>
+                <div className="relative mt-auto flex flex-col gap-2">
+                  {entitlement.promo ? (
+                    <>
+                      <a href="/" className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>{t('Use Pro free until October 31')}<Arrow /></a>
+                      <p className="text-caption text-fg-muted">{t('No licence needed during the launch offer.')}</p>
+                    </>
+                  ) : (
+                    <a href={POLAR_CHECKOUT_URL} className={`${PLAN_CTA} bg-fg text-app hover:opacity-90`}>
+                      {t('Get Pro')} · ${entitlement.priceUsd}<Arrow />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 

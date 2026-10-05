@@ -1,0 +1,66 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  loginHref,
+  pathForNext,
+  pendingNext,
+  readLoginSearch,
+  rememberReturn,
+  takeLoginIntent,
+} from '../loginReturn'
+
+// vitest runs in `node`: give the module the one browser API it touches.
+function memoryStorage(): Storage {
+  const data = new Map<string, string>()
+  return {
+    get length() { return data.size },
+    clear: () => data.clear(),
+    getItem: (k) => data.get(k) ?? null,
+    key: (i) => [...data.keys()][i] ?? null,
+    removeItem: (k) => { data.delete(k) },
+    setItem: (k, v) => { data.set(k, String(v)) },
+  }
+}
+
+beforeEach(() => {
+  vi.stubGlobal('window', { sessionStorage: memoryStorage() })
+})
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
+
+describe('loginReturn', () => {
+  it('builds /login links from the closed list, never with an intent in the URL', () => {
+    expect(loginHref()).toBe('/login')
+    expect(loginHref({ next: 'library' })).toBe('/login?next=library')
+    expect(loginHref({ next: 'library', mode: 'signup' })).toBe('/login?mode=signup&next=library')
+  })
+
+  it('drops a next that is not on the list (no open redirect)', () => {
+    expect(readLoginSearch('?next=https://evil.example').next).toBeNull()
+    expect(readLoginSearch('?next=//evil.example').next).toBeNull()
+    expect(readLoginSearch('?next=__proto__').next).toBeNull()
+    expect(readLoginSearch('?next=library&mode=signup')).toEqual({ next: 'library', mode: 'signup' })
+    expect(pathForNext(null)).toBe('/')
+    expect(pathForNext('library')).toBe('/?section=library')
+  })
+
+  it('keeps next across the OAuth round trip and hands the intent over once', () => {
+    rememberReturn('library', 'save-library')
+    // The login page re-records next on open; the pending intent must survive it.
+    rememberReturn('library')
+    expect(pendingNext()).toBe('library')
+    expect(takeLoginIntent('library')).toBe('save-library')
+    expect(takeLoginIntent('library')).toBeNull()
+    expect(pendingNext()).toBeNull()
+  })
+
+  it('forgets an abandoned return after 30 minutes', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-05T10:00:00Z'))
+    rememberReturn('library', 'save-library')
+    vi.setSystemTime(new Date('2026-10-05T10:31:00Z'))
+    expect(pendingNext()).toBeNull()
+    expect(takeLoginIntent('library')).toBeNull()
+  })
+})

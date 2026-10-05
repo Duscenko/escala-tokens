@@ -39,6 +39,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > accordion starts fully collapsed: nothing can pre-open a section there, since the
 > `openAbout(section)` entry point only exists in the shell.
 
+> **UPDATE: the phone screen and `/about` render the SAME About page as the in-app tab.**
+> `AboutScaffold` is now a frame around `AboutHome` (`scroll={false}`): slim top bar (brand ·
+> language · appearance), an optional "Optimized for desktop" notice (phone only), the full
+> page, and the colophon (`FooterLinks` + ©). Phone and desktop read one page, adapted by
+> breakpoints (`text-[30px] sm:text-[38px]` hero, single-column grids below `lg`, a 2-column
+> footer, `AgentInstallPanel`'s MCP/PROMPT toggle wraps under the client tabs below `sm`). Off
+> the shell, the in-app actions become public routes (`/docs/mcp|figma|changelog|faq`,
+> `/components`); "Start building" opens `/` from `md` up and shows a toast on a phone. **The
+> phone screen MOUNTS only below `md`** (`useIsPhone`, `useSyncExternalStore` on matchMedia,
+> read before paint — no flash): the whole page kept invisibly behind the desktop shell would
+> have doubled the DOM and its animations. The hero count comes from `lib/foundationKeys.ts`
+> (a test keeps it equal to `Configurator`'s `FOUNDATIONS`), so both copies state the same number.
+> This supersedes the "mobile accordion starts collapsed / drawer copy" description above for
+> the phone and `/about`; the drawer itself is unchanged.
+
 ---
 
 ## Navigation model — top-nav workspace ("Escala")
@@ -1004,7 +1019,7 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
   menu open or row click. The Export wizard's step 2 also lists **GitHub repository** alongside
   Figma, Code and AI and hands off to that same view. `SaveSidePanel` retains its
   contextual entry point, so there is still only one GitHub pipeline. At widths below
-  860px the four section links move into this same panel instead of overlapping Export;
+  1080px the section links move into this same panel instead of overlapping Export;
   none are removed. Beside the
   rail, `ComponentsView` owns the 208px master list of that category's components (with the
   catalogue's include checkboxes). Don't fork the rail per section either — pass a
@@ -1078,6 +1093,76 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > no overlap. The ⌘K keycap `<img>` is `hidden min-[1180px]:block` — decorative,
 > and 1180 is already this app's "things get tight" breakpoint.
 >
+> **UPDATE: the theme switcher lives in TopNav, grouped with light/dark — `ThemeAppearanceControl`
+> (`ThemeSheet.tsx`), on EVERY section — and "Add to system" is GONE.** The tab-bar
+> `ThemeSwitcher` chip is no longer mounted (the file stays: `PRESET_AVATAR_RAMPS` is exported
+> from it). The pill is `[avatar name ⌄ | ☀]`; the name hides below 1240px so the right cluster
+> doesn't run into the nav. It opens a right-to-left modal sheet ("Customize"): **EscalaUI
+> themes** as large `ThemeAvatar`s (radius = `AVATAR_RADIUS` × size, so the selection ring is
+> concentric) plus a dashed **+** tile that is Create your theme; then My themes; footer = Themes
+> library. Appearance and Language are NOT in the sheet (the pill's ☀ and the header icon do it —
+> both were tried there and removed as noise). **Clicking a style only SELECTS it and shows
+> `StyleOverview`** (name, brief, accent + its four severities, Font · Radius · Icons · Neutral —
+> read off the preset, since an un-adopted style has no export to count). Nothing is written until
+> **Edit theme**, which adopts it and opens it on Generator · Theme preview. A style already in My
+> themes (`themeOrigin === preset.id`) is re-opened, never minted twice — `themeHasEdits` reads true
+> right after an adopt, so gating on it duplicated on the second click.
+> **RULE: only "Edit theme" adds to My themes — `openStyleForEditing` (`lib/adoptPreset.ts`),
+> shared by the sheet and the rail.** The two silent "<Style> Copy" auto-adopts are GONE: the
+> quick-settings rail's first-edit adopt (`resolveWriteTarget` now returns null during a try-on)
+> and Theme preview's inspector edit (`recordTryOnEdit` keeps try-on edits ephemeral). While a
+> style is only previewed (the seeded Core when My themes is empty), the rail shows
+> `StyleOverview` (`StyleOverview.tsx`, also home of `PRESET_AVATAR_RAMPS`) + Edit theme INSTEAD
+> of its controls — reported: a list that grows from every glance and slider nudge "se vuelve un
+> caos". This supersedes the "first edit makes it real" notes above.
+> **Core / Minimalist is a REAL theme from the start (supersedes the "Core is tried on" seed
+> notes).** With no theme of their own the shell adopts it (`adoptPreset(core, …, { track:
+> false })`, effect below `changePreviewTheme` in `Configurator`) and selects it, so the first
+> screen is a system to work on, not an offer to add one. The effect re-checks the LIVE store —
+> React runs effects twice in dev and it minted "Core" + "Core 2" off the stale closure. The
+> try-on / `StyleOverview` rail branch stays for any style that is only previewed.
+> **CREATE lives in the sheet too.** `themeSheet: false | 'browse' | 'create'` is lifted into
+> `Configurator`; every "create a theme" door (the rail's Create new theme, the library, the
+> empty states, the sheet's dashed + tile) calls `openCreateTheme`, which opens the sheet on its
+> create view — `ThemeForm` (exported from `ThemePanel.tsx`, the same form edit uses) rendered in
+> place of the list. Cancel/✕/Esc step back to the list; creating selects the new theme and
+> closes the sheet (`createdRef` stops the form's trailing `onClose` from reopening the list).
+> The sheet sits at z-[55] so the form's z-[60] colour popovers render above it. The docked
+> `ThemePanel` now serves EDIT only (`themeEditor` is a theme key, never `'new'`). The seeded Core try-on still exists and still adopts on the
+> first edit (`resolveWriteTarget`). Create from another section lands on the Generator first —
+> `ThemePanel` only docks on `themesCanvas`. TopNav's account link reads **Sign in** / **Sign out**.
+> **TopNav's section nav is LEFT-aligned after the brand (Arc's layout), and the right cluster
+> is in the flow, not absolute.** Centred on the viewport with an absolute right cluster, the two
+> collided once the cluster grew; in the flow, only the spacer between them gives way. The
+> compact ☰ menu takes over below **1080px** (Spanish labels need ~1060 — measured). Language
+> stays a header icon (a Language section in the Customize sheet was tried and removed as noise,
+> and the sheet's Appearance section went too — the pill's ☀ already does it); the theme pill
+> stays visible at every width.
+
+> **The About tab ends FAQ → Contact → footer** (supersedes the old "No footer" comment).
+> "Good questions" is `AboutAccordion variant="faq"` over the SAME `useAboutSections` content
+> (each section carries a `question`), so the drawer / mobile / `/about` keep the `list` variant and
+> the copy can't drift. The Contact band has ONE action (Contact form). The footer (`AboutFooter`,
+> inside the page) is NAVIGATION only — Product · AI · Social — because the shell's 28px strip stays
+> the one colophon (copyright + Contact · Legal · Privacy · Terms · MIT); socials appear only in
+> the footer. Docs links go through `Configurator`'s single `openDocsPage` mapping, shared with
+> TopNav's Docs menu.
+
+> **The About page's pictures are REAL captures of the generator, and a script makes them.**
+> `npm run about:shots` (`scripts/about-shots.mjs`, Playwright-core + sharp as devDependencies;
+> needs `npm run dev` running, `BASE_URL` if it isn't on 5173) drives the app in dark chrome at
+> 1440×900 @2×, from a clean context so the seeded Core theme is the system, and writes
+> `public/about/*.webp` (≈30–70 KB each, ≤150 KB budget — quality steps down until it fits).
+> `AboutMenu.tsx`'s `SHOTS` map holds each file's pixel size + translatable alt text, and
+> `AboutShot` renders it with `width`/`height` so nothing shifts. **When the interface changes,
+> re-run the script — that is what keeps the guide honest.** Notes: a shot declares the ratio of
+> its slot (4:3 / 16:10) and the script crops to it; wide tables use a narrower window
+> (`NARROW` / 1320) so a 4:3 crop fills instead of leaving a dead band; Shadow is two real
+> captures (light over dark) stacked, because dark elevation only reads next to light; Radius sets
+> Fields to the roundest tile by POSITION (the tiles have no accessible name) — if the rail's
+> layout moves, that click is the one to fix. Still placeholders: the hand-off diagram and the
+> closing band (not screenshots).
+
 > **The "Escala Tokens on GitHub" repo link lives in the FOOTER, not TopNav's
 > global cluster.** It used to lead that cluster and was the odd one out on two
 > counts: Language and Appearance change THIS session while that link leaves the
