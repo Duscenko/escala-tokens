@@ -3,6 +3,7 @@ import { useI18n } from '../../lib/i18n'
 import { signOut, useAuth } from '../../lib/auth'
 import { LOGIN_PATH } from '../../lib/legal'
 import { accountsEnabled } from '../../lib/supabase'
+import { useDesignStore } from '../../store/useDesignStore'
 
 // TopNav's account entry: a "Sign in" link to /login when signed out, an initial
 // that opens a small menu (email · Sign out) when signed in. Renders NOTHING
@@ -11,12 +12,13 @@ import { accountsEnabled } from '../../lib/supabase'
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/40'
 
-export default function AccountControl() {
+export default function AccountControl({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
   if (!accountsEnabled) return null
-  return <AccountControlInner />
+  return <AccountControlInner onOpenLibrary={onOpenLibrary} />
 }
 
-function AccountControlInner() {
+function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
+  const savedCount = useDesignStore((s) => s.savedSystems.length)
   const { t } = useI18n()
   const { user, loading } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -66,6 +68,17 @@ function AccountControlInner() {
             <p className="text-caption text-fg-faint">{t('Signed in as')}</p>
             <p className="truncate text-ui font-medium text-fg">{user.email}</p>
           </div>
+          {onOpenLibrary && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setMenuOpen(false); onOpenLibrary() }}
+              className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-ui text-fg transition-colors hover:bg-elevated ${FOCUS}`}
+            >
+              {t('Saved libraries')}
+              {savedCount > 0 && <span className="text-caption text-fg-faint">{savedCount}</span>}
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

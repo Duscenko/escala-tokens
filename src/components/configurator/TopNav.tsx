@@ -199,6 +199,9 @@ interface TopNavProps {
   /** The grouped `[theme | ☀]` control (`ThemeAppearanceControl`). When given it
    *  REPLACES the bare appearance toggle — it carries that toggle itself. */
   themeControl?: ReactNode
+  /** Opens the Themes library page (saved themes and systems). Shown in the
+   *  signed-in account menu; absent on public pages, which have no workspace. */
+  onOpenLibrary?: () => void
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -559,7 +562,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
-  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl,
+  chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary,
 }: TopNavProps) {
   const { t } = useI18n()
 
@@ -640,7 +643,7 @@ export default function TopNav({
             {!themeControl && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           </div>
           {themeControl}
-          <AccountControl />
+          <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}
       </div>
     </header>

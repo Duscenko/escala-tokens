@@ -1896,6 +1896,7 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
+        onOpenLibrary={openLibraryPage}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces.
         exportAction={(tab === 'foundations' || tab === 'components') ? (
