@@ -16,7 +16,7 @@ describe('free Figma payload', () => {
     expect(scope.modes).toHaveLength(1)
     expect(scope.modes?.[0].appearance).toBe('dark')
     const free = generateTokenJSON(undefined, scope)
-    const cols = (t: ReturnType<typeof generateTokenJSON>) => Object.keys(t.colors?.architecture?.tokens?.surface?.page ?? {}).filter((k) => k !== 'description')
+    const cols = (t: ReturnType<typeof generateTokenJSON>) => Object.keys(((t.colors?.architecture?.tokens ?? {}) as Record<string, Record<string, Record<string, unknown>>>).surface?.page ?? {}).filter((k) => k !== 'description')
     expect(cols(free)).toHaveLength(1)
     expect(cols(free)[0]).toMatch(/::dark$/)
   })
