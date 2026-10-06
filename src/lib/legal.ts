@@ -10,9 +10,11 @@
 export const LEGAL = {
   publisher: 'Cesar Durango',
   /** null while the site is a free, non-professional project. */
-  siret: null as string | null,
+  siret: '103 797 577 00014' as string | null,
   /** Postal address — null until a professional activity (use a domiciliation). */
-  address: null as string | null,
+  address: 'Traverse de la Gouffonne, 13009 Marseille' as string | null,
+  /** Nom commercial registered with the SIRET. */
+  tradeName: 'Duscenko Design' as string | null,
   /** How people reach the publisher. Deliberately NOT a personal email: a
    *  public legal page is scraped for addresses. If an email is ever needed
    *  (RGPD requests are easier by mail), use a forwarding alias on the
@@ -24,7 +26,7 @@ export const LEGAL = {
     site: 'https://vercel.com',
   },
   /** Bump whenever either page's substance changes. */
-  updated: '2026-10-06',
+  updated: '2026-10-07',
 }
 
 /** Contact form topics — shared by /contact and api/contact.ts so the form

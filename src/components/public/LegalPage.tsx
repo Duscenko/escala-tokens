@@ -72,8 +72,11 @@ const cnil = <A href="https://www.cnil.fr/fr/plaintes" external>cnil.fr</A>
 const colon = (l: Locale) => (l === 'fr' ? ' :' : ':')
 
 function identity(l: Locale): ReactNode[] {
-  const status = { fr: 'personne physique, France', en: 'private individual, France', es: 'persona física, Francia' }[l]
+  const status = LEGAL.siret
+    ? { fr: 'entrepreneur individuel, France', en: 'sole trader, France', es: 'empresario individual, Francia' }[l]
+    : { fr: 'personne physique, France', en: 'private individual, France', es: 'persona física, Francia' }[l]
   const lines: ReactNode[] = [<><span className="text-fg">{LEGAL.publisher}</span>, {status}</>]
+  if (LEGAL.tradeName) lines.push(<>{{ fr: 'Nom commercial', en: 'Trading name', es: 'Nombre comercial' }[l]}{colon(l)} {LEGAL.tradeName}</>)
   if (LEGAL.siret) lines.push(<>SIRET{colon(l)} {LEGAL.siret}</>)
   if (LEGAL.address) lines.push(<>{LEGAL.address}</>)
   lines.push(<>{{ fr: 'Contact', en: 'Contact', es: 'Contacto' }[l]}{colon(l)} {contactLink(l)}</>)
