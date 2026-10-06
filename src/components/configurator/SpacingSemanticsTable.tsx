@@ -22,6 +22,7 @@ import {
   SPACING_RESPONSIVE_FAMILIES,
   SPACING_RESPONSIVE_KEYS,
   SPACING_STEPS,
+  dimensionRoleValue,
   isSpacingResponsiveRef,
   layoutRoleIsDefault,
   roleDimensionPx,
@@ -38,6 +39,10 @@ const FAMILY_LABEL: Record<string, string> = { component: 'Component', section: 
 
 export type SpacingCollection = 'semantics' | 'responsive'
 
+/** The negative Dimension primitives an Overlap role may pin — the same ladder
+ *  Dimensions lists (`-32 … -1`), plus 0 for "no overlap". */
+const OVERLAP_CHOICES = [0, -1, -2, -4, -6, -8, -12, -16, -24, -32] as const
+
 function ResetIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +57,28 @@ const stepLabel = (step: string) => step.replace('_', '.')
 /** The value at the selected viewport: a gap drawn at its px, `space-N · px`,
  *  and — when it differs from Desktop — the Desktop value it stepped down from. */
 function Cell({ step, px, accent, desktopPx }: { step: string; px: number | null; accent: string; desktopPx?: number | null }) {
-  const pinned = roleDimensionPx(step) !== null
+  const pinned = roleDimensionPx(step, true) !== null
+  // A negative length is an OVERLAP, so it is drawn as what it does: three
+  // discs, each tucked under the last by `px`. A bar can't be negative.
+  if (px !== null && px < 0) {
+    const d = 16
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 min-w-0 border-r border-line">
+        <span aria-hidden className="flex items-center h-5 w-12 min-w-1 flex-shrink overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="h-4 w-4 flex-shrink-0 rounded-full"
+              style={{ marginLeft: i === 0 ? 0 : px, backgroundColor: accent + '66', border: `1px solid ${accent}` }}
+            />
+          ))}
+        </span>
+        <span className="flex-shrink-0 text-caption font-mono text-fg">overlap</span>
+        <span className="flex-shrink-0 text-caption font-mono text-fg-faint tabular-nums">{px}px</span>
+        <span className="sr-only">{`${Math.min(Math.abs(px), d)} of ${d}px hidden`}</span>
+      </div>
+    )
+  }
   const w = Math.min(Math.max(px ?? 0, 0), 48)
   return (
     <div className="flex items-center gap-2 px-3 py-2 min-w-0 border-r border-line">
@@ -98,7 +124,7 @@ export default function SpacingSemanticsTable({
   const platformCtx = usePreviewPlatform()
   const platform: GridViewport = platformCtx?.previewPlatform ?? 'desktop'
   const pxOf = (step: string): number | null => {
-    const pinned = roleDimensionPx(step)
+    const pinned = roleDimensionPx(step, true)
     if (pinned !== null) return pinned
     const n = parseFloat(spacing[step] ?? '')
     return Number.isFinite(n) ? n : null
@@ -171,7 +197,8 @@ export default function SpacingSemanticsTable({
         const responsive = isSpacingResponsiveRef(value)
         const step = spacingRefStep(value, platform)
         const modified = !layoutRoleIsDefault('spacing', role.key, value, spacing)
-        const pinned = roleDimensionPx(value) !== null
+        const pinned = roleDimensionPx(value, true) !== null
+        const overlap = role.group === 'overlap'
         return (
           <div
             key={role.key}
@@ -189,6 +216,18 @@ export default function SpacingSemanticsTable({
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
               {/* A role references a TOKEN — the same choice on every platform. */}
+              {overlap ? (
+                // Overlap is negative space: the only choices are the negative
+                // Dimension primitives, pinned — a spacing step is never negative.
+                <VariableSelect ariaLabel={`${role.key} overlap`} value={value} onChange={(next) => onRoles({ ...roles, [role.key]: next })}>
+                  {OVERLAP_CHOICES.map((n) => (
+                    <option key={n} value={dimensionRoleValue(n)}>{`dimension-${n}  ·  ${n}px`}</option>
+                  ))}
+                  {!OVERLAP_CHOICES.some((n) => dimensionRoleValue(n) === value) && pinned && (
+                    <option value={value}>{`pinned · ${roleDimensionPx(value, true)}px`}</option>
+                  )}
+                </VariableSelect>
+              ) : (
               <VariableSelect ariaLabel={`${role.key} token`} value={value} onChange={(next) => onRoles({ ...roles, [role.key]: next })}>
                 {SPACING_RESPONSIVE_FAMILIES.map((family) => (
                   <optgroup key={family} label={`Responsive · ${FAMILY_LABEL[family]}`}>
@@ -201,9 +240,10 @@ export default function SpacingSemanticsTable({
                   {SPACING_STEPS.map((s) => (
                     <option key={s} value={s}>{`space-${stepLabel(s)}  ·  ${pxOf(s) ?? '—'}px`}</option>
                   ))}
-                  {pinned && <option value={value}>{`pinned · ${roleDimensionPx(value)}px`}</option>}
+                  {pinned && <option value={value}>{`pinned · ${roleDimensionPx(value, true)}px`}</option>}
                 </optgroup>
               </VariableSelect>
+              )}
             </div>
             <Cell step={step} px={pxOf(step)} accent={accent} desktopPx={platform === 'desktop' || !responsive ? null : pxOf(spacingRefStep(value))} />
             <button

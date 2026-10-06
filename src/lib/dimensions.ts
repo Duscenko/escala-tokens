@@ -25,7 +25,7 @@ import { resolveThemeFoundations, type FoundationSource } from './themeFoundatio
 /** Shown even when nothing uses them, so the collection reads as a complete
  *  palette (negatives for overlaps and shadow spreads, 9999 for pills). */
 export const DIMENSION_STANDARD: readonly number[] = [
-  -16, -12, -8, -6, -4, -2, -1,
+  -32, -24, -16, -12, -8, -6, -4, -2, -1,
   0, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48,
   56, 60, 64, 72, 80, 96, 112, 128, 144, 160, 192, 224, 256, 320, 344, 360, 480,
   640, 768, 1024, 1280, 1440, 1920,

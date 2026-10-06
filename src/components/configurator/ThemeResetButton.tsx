@@ -6,6 +6,7 @@ import { useApplyAccentColor } from '../../lib/colorActions'
 import { resetThemeToOrigin, themeHasEdits } from '../../lib/adoptPreset'
 import { themeStylePreset } from '../../lib/themePresets'
 import { useI18n } from '../../lib/i18n'
+import { recordEdit, undoEdit } from '../../lib/editHistory'
 
 const UNDO_MS = 9000
 
@@ -35,13 +36,15 @@ export function useThemeReset(previewTheme: string, enabled = true) {
 
   const onClick = () => {
     if (undo) {
-      useDesignStore.setState(undo)
+      undoEdit()
       setUndo(null)
       if (timer.current) clearTimeout(timer.current)
       return
     }
     const snapshot = captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot)
     resetThemeToOrigin(previewTheme, applyAccent)
+    // A reset is one step of the edit history too, so ⌘Z undoes it as well.
+    recordEdit(snapshot, 'Reset theme')
     setUndo(snapshot)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setUndo(null), UNDO_MS)

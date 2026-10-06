@@ -51,6 +51,10 @@ import {
   LEGACY_RADIUS_ROLE_RUNGS,
   LEGACY_RADIUS_LG_FACTOR,
   isSpacingResponsiveRef,
+  roleDimensionPx,
+  SPACING_MODES,
+  matchSpacingMode,
+  STROKE_SM_STOPS,
   RADIUS_GROUPS,
   radiusGroupStep,
   applyRadiusGroup,
@@ -245,7 +249,8 @@ describe('layout semantics', () => {
       const steps = new Set(LAYOUT_PRIMITIVE_STEPS[family as LayoutFamily])
       for (const role of roles) {
         // A spacing role may alias a responsive token instead of a step.
-        const ok = steps.has(role.primitive) || (family === 'spacing' && isSpacingResponsiveRef(role.primitive))
+        // …or, for an Overlap role, a pinned (negative) Dimension primitive.
+        const ok = steps.has(role.primitive) || (family === 'spacing' && (isSpacingResponsiveRef(role.primitive) || roleDimensionPx(role.primitive, true) !== null))
         expect(ok, `${family}-${role.key} → ${role.primitive}`).toBe(true)
       }
     }
@@ -442,5 +447,28 @@ describe('concentric radius nesting', () => {
       'control in action',
       'container in overlay',
     ])
+  })
+})
+
+describe('spacing modes', () => {
+  it('a fresh system reads as Quiet, not Custom', async () => {
+    const { makeDesignDefaults } = await import('../../store/useDesignStore')
+    const d = makeDesignDefaults()
+    expect(matchSpacingMode(d.sizes, d.spacingRoles, d.stroke)).toBe('quiet')
+  })
+
+  it('every mode writes values on the token scales and is recognised back', () => {
+    for (const mode of SPACING_MODES) {
+      expect(SPACING_STEPS).toContain(mode.insetStep)
+      expect(STROKE_SM_STOPS).toContain(mode.border)
+      expect(mode.fieldBase).toBeGreaterThanOrEqual(BASE_UNIT_RANGE.min)
+      expect(mode.fieldBase).toBeLessThanOrEqual(BASE_UNIT_RANGE.max)
+      const matched = matchSpacingMode(
+        buildSizesFromBase(mode.fieldBase),
+        { 'inset-surface': mode.insetStep },
+        { sm: `${mode.border}px` },
+      )
+      expect(matched, mode.id).toBe(mode.id)
+    }
   })
 })

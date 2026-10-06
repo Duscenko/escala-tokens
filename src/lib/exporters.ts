@@ -1,6 +1,7 @@
 // Pure exporters — generate variables.css and README.md from store state.
 // Shared by ExportView (preview/download) and GitHubConnectView (repo push).
 
+import { iconSizeCssVars } from './iconSizing'
 import { useDesignStore } from '../store/useDesignStore'
 import { fontStack } from './fonts'
 import { getIconAiSource, iconAiContext } from './iconLibraries'
@@ -154,6 +155,9 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('\n  /* Selectors — checkbox / radio / switch glyph, a square not a height */')
   Object.entries(selector ?? {}).forEach(([k, v]) => lines.push(`  --selector-${k}: ${dimensionVar(v)};`))
+
+  lines.push('\n  /* Icon sizes — scale aliases Dimension primitives; control roles follow the control heights */')
+  iconSizeCssVars(sizes, typography.sizes?.['text-md']).forEach((l) => lines.push(l))
 
   lines.push('\n  /* Stroke — border-width / ring spread, not paint */')
   // A sub-pixel value is declared at its true weight and floored to 1px below

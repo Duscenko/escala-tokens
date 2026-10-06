@@ -62,7 +62,7 @@ async function openDocs(p, foundation) {
   await settle(p)
 }
 async function openPreview(p, foundation) {
-  await tab(p, 'Theme preview').click()
+  await p.getByRole('tab', { name: 'Theme', exact: true }).click()
   await settle(p, 500)
   if (foundation) await rail(p, foundation).click()
   await settle(p)

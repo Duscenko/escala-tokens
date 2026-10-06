@@ -137,7 +137,7 @@ export default function FoundationIconRail({
           <div
             key={group.label ?? gi}
             className={vertical
-              ? `flex flex-col items-center gap-1 pt-3 ${gi > 0 ? 'border-t border-line mt-3' : ''}`
+              ? `flex flex-col items-center gap-1 ${gi > 0 ? 'mt-1' : ''}`
               : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
           >
             {group.items.map(({ key, label, Icon }) => {

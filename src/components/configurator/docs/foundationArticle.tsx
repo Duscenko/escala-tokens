@@ -50,13 +50,31 @@ export function EditTokensPill({ label, onEdit }: { label: string; onEdit: () =>
  *  Default identity so a caller that has no locale in hand still compiles. */
 type Translate = (source: string, vars?: Record<string, string | number>) => string
 
+/** Color reads palette-first: its Primitives sit directly under the intro, and
+ *  "Use it" closes the page after the semantic tables — you need to see the
+ *  colours, then the roles built on them, before "how do I consume this" has
+ *  anything to point at. Every other foundation keeps Use it up top. */
+const PALETTE_FIRST = new Set(['color'])
+
 export function foundationToc(doc: FoundationDoc, t: Translate = (s) => s): TocEntry[] {
+  const why = { id: 'why', label: t('Why {foundation} tokens', { foundation: t(doc.label).toLowerCase() }) }
+  const usage = { id: 'usage', label: t('Usage') }
+  const useIt = { id: USE_IT_ID, label: t(USE_IT_TITLE) }
+  const entry = (s: FoundationDoc['sections'][number], sub = true) => ({ id: s.id, label: t(s.title), sub })
+  if (PALETTE_FIRST.has(doc.key)) {
+    const [first, ...rest] = doc.sections
+    return [
+      { id: 'description', label: t('Overview') },
+      ...(first ? [entry(first, false)] : []),
+      why, usage,
+      ...rest.map((s) => entry(s)),
+      useIt,
+    ]
+  }
   return [
     { id: 'description', label: t('Overview') },
-    { id: USE_IT_ID, label: t(USE_IT_TITLE) },
-    { id: 'why', label: t('Why {foundation} tokens', { foundation: t(doc.label).toLowerCase() }) },
-    { id: 'usage', label: t('Usage') },
-    ...doc.sections.map((s) => ({ id: s.id, label: t(s.title), sub: true })),
+    useIt, why, usage,
+    ...doc.sections.map((s) => entry(s)),
   ]
 }
 
@@ -95,6 +113,26 @@ export function FoundationArticle({
   ), [doc, system, onEdit, hubMode])
   useThemeHubHeaderActions(hubMode ? headerActions : null)
 
+  const paletteFirst = PALETTE_FIRST.has(doc.key)
+  const renderSection = (section: FoundationDoc['sections'][number]) => (
+    <DocSection
+      key={section.id}
+      id={section.id}
+      title={t(section.title)}
+      description={section.description ? t(section.description) : undefined}
+    >
+      {section.render(system)}
+    </DocSection>
+  )
+  const useItSection = (
+    <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
+      <UseItBlock
+        useIt={useItForFoundation(doc)}
+        trailingActions={hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : undefined}
+      />
+    </DocSection>
+  )
+
   return (
     <div className="min-w-0 flex flex-col gap-8">
       {!hubMode ? (
@@ -119,13 +157,9 @@ export function FoundationArticle({
 
       {/* Create UI's slot for this: immediately after the description, before
           any conceptual copy — you can't act on a page until you know how to
-          consume what it documents. */}
-      <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
-        <UseItBlock
-          useIt={useItForFoundation(doc)}
-          trailingActions={hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : undefined}
-        />
-      </DocSection>
+          consume what it documents. (Color moves it to the foot: see
+          `PALETTE_FIRST`.) */}
+      {paletteFirst ? doc.sections.slice(0, 1).map(renderSection) : useItSection}
 
       <DocSection
         id="why"
@@ -137,16 +171,9 @@ export function FoundationArticle({
         <CodeBlock file="variables.css" code={doc.usageCode} />
       </DocSection>
 
-      {doc.sections.map((section) => (
-        <DocSection
-          key={section.id}
-          id={section.id}
-          title={t(section.title)}
-          description={section.description ? t(section.description) : undefined}
-        >
-          {section.render(system)}
-        </DocSection>
-      ))}
+      {(paletteFirst ? doc.sections.slice(1) : doc.sections).map(renderSection)}
+
+      {paletteFirst ? useItSection : null}
 
       <Pager
         prev={prev && { key: prev.key, label: prev.label }}

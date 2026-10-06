@@ -19,7 +19,7 @@ export default function NeedMyThemeEmpty({
         <p className="text-body font-medium text-fg">{t('Add a theme to My themes')}</p>
         <p className="mt-1.5 text-caption leading-relaxed text-fg-muted">
           {onSeePreview
-            ? t('Theme preview shows a System style. Add it to My themes, then edit here.')
+            ? t('Theme shows a System style. Add it to My themes, then edit here.')
             : t('Add a System style or create a theme. Trying one on does not add it.')}
         </p>
         {(onSeePreview || onCreateTheme) && (
@@ -30,7 +30,7 @@ export default function NeedMyThemeEmpty({
                 onClick={onSeePreview}
                 className="h-8 rounded-lg bg-accent-solid px-3 text-caption font-semibold text-accent-ink transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
               >
-                {t('See it in Theme preview')}
+                {t('See it in Theme')}
               </button>
             )}
             {onCreateTheme && (

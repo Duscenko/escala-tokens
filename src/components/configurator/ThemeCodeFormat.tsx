@@ -454,7 +454,7 @@ export default function ThemeCodeFormat({
         {showBreadcrumb ? (
           <header className="flex-shrink-0 border-b border-line px-5 py-3 foundation-layer-bar">
             <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-mini text-fg-faint">
-              <span>Theme preview</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span>
+              <span>Theme</span><span aria-hidden>/</span><span>Code</span><span aria-hidden>/</span>
               <span className="font-medium text-fg">{active.label}</span>
             </nav>
           </header>

@@ -1,4 +1,5 @@
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE, type DesignSnapshot } from '../store/useDesignStore'
+import { iconSizeTokens } from './iconSizing'
 import { getIconAiSource, PHOSPHOR_LIBRARY } from './iconLibraries'
 import { toneLabel, generateAlphaScale, darkShadowMap, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -457,6 +458,11 @@ export function generateTokenJSON(
       stroke: resolved.stroke,
       strokeRoles: mergeLayoutRoles('stroke', resolved.strokeRoles),
       panelBackground: resolved.panelBackground,
+      // THIS theme's icon weight + icon sizes. The roles derive from the
+      // theme's own control heights, so a Compact style ships smaller control
+      // icons than an Airy one — the plugin binds `Icon/*` from these.
+      iconWeight: resolved.iconWeight,
+      iconSizes: iconSizeTokens(resolved.sizes, resolved.typography.sizes?.['text-md']),
       // Which Dimension primitive each length of THIS theme aliases. Per theme
       // because a style's radius/spacing differ — the primitives themselves
       // (`dimensions`) never do.
@@ -767,6 +773,12 @@ export function generateTokenJSON(
         return { key: src.key, label: src.label, repo: src.repo, npm: src.npm }
       })(),
       custom: store.customIcons,
+      // Additive (no schemaVersion bump, the `shadowsDark` precedent): the icon
+      // scale, the roles it resolves to for THIS system's control heights, and
+      // the small-icon weight rule. An older plugin ignores the key.
+      sizes: iconSizeTokens(store.sizes, store.typography.sizes?.['text-md']),
+      // The Phosphor weight the system renders (thin … duotone). Additive too.
+      weight: store.iconWeight,
     },
     style: null,
     // 'atoms' is the canonical field name the Figma plugin expects.

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import { THEME_STYLE_PRESETS } from '../themePresets'
 import { generateTokenJSON } from '../tokenGenerator'
+import { roleDimensionPx } from '../layoutTokens'
 import {
   DIMENSION_STANDARD, buildDimensionScale, dimensionFromKey, dimensionKey,
   dimensionDeclsFor, dimensionVar, parseDimension,
@@ -108,6 +109,25 @@ describe('dimension primitives — export', () => {
     const json = generateTokenJSON() as Json
     expect(json.dimensions['17_5']).toBe('17.5px')
     expect(json.dimensionRefs.radius?.lg).toBe('{dimension.17_5}')
+  })
+})
+
+describe('overlap roles — negative space reaches the plugin', () => {
+  beforeEach(() => { useDesignStore.setState(makeDesignDefaults()) })
+
+  // The Figma plugin aliases a role to a primitive BY VALUE: a role pinned to
+  // `dimension--8` whose `-8` is missing from the shipped ladder lands in Figma
+  // as a detached raw float (or not at all). Both halves ship in one payload.
+  it('ships all six overlap roles, each pinned to a negative primitive that exists', () => {
+    const json = generateTokenJSON() as { spacingRoles: Record<string, string>; dimensions: Record<string, string> }
+    const overlaps = Object.entries(json.spacingRoles).filter(([key]) => key.startsWith('overlap-'))
+    expect(overlaps.map(([key]) => key)).toEqual(['overlap-xs', 'overlap-sm', 'overlap-md', 'overlap-lg', 'overlap-xl', 'overlap-2xl'])
+    for (const [key, value] of overlaps) {
+      const px = roleDimensionPx(value, true)
+      expect(px, `${key} → ${value}`).not.toBeNull()
+      expect(px as number).toBeLessThan(0)
+      expect(Object.keys(json.dimensions), `${key} needs primitive ${px}`).toContain(String(px))
+    }
   })
 })
 

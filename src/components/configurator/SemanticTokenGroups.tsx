@@ -11,7 +11,8 @@
 
 import { AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useMemo } from 'react'
-import { useDesignStore } from '../../store/useDesignStore'
+import { captureSnapshot, useDesignStore, type DesignSnapshot } from '../../store/useDesignStore'
+import { recordEdit } from '../../lib/editHistory'
 import { useArchitectureTokens } from './architectureTokens'
 import { ArchModeEditor, parseRef } from './Step3_SemanticTokens'
 import { TokenDetailsModal } from './colorControls'
@@ -82,6 +83,7 @@ export default function SemanticTokenDrawer({
               for (const mode of archModeKeys) onTryOnEdit(token.id, mode, null)
               return
             }
+            recordEdit(captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot), `Reset ${token.id}`)
             for (const mode of archModeKeys) setArchitectureOverride(semanticArchitecture, token.id, mode, null)
           }}
           resetDisabled={
@@ -112,6 +114,7 @@ export default function SemanticTokenDrawer({
                       onTryOnEdit(token.id, mode, refStr)
                       return
                     }
+                    recordEdit(captureSnapshot(useDesignStore.getState() as unknown as DesignSnapshot), `${token.id} → ${refStr}`)
                     setArchitectureOverride(semanticArchitecture, token.id, mode, refStr)
                   }}
                   onOpenFamily={onOpenPrimitiveFamily}

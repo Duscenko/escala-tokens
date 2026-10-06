@@ -416,7 +416,7 @@ function PreviewThemeSwitch({
 }
 
 const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTabStrip; label: string; icon: string }[] = [
-  { key: 'preview', label: 'Theme preview', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
+  { key: 'preview', label: 'Theme', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
   { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
   { key: 'sync', label: 'Sync', icon: '/icons/theme-hub-icons/Icon/figma.svg' },
 ]
@@ -515,7 +515,7 @@ function ThemeWorkspaceTabs({
             animate={{ x: pill.x, y: pill.y, width: pill.w, height: pill.h }}
             transition={slide ? WORKSPACE_TAB_PILL : { duration: 0 }}
           >
-            <ChromeTabBackground />
+            <ChromeTabBackground flat />
           </motion.span>
         )}
         {THEME_WORKSPACE_TABS.map((item) => {
@@ -531,7 +531,7 @@ function ThemeWorkspaceTabs({
               title={t(item.label)}
               className={`color-hub-tab theme-workspace-chrome-tab ${active ? 'color-hub-tab-active' : ''}`}
             >
-              {!active && <ChromeTabBackground />}
+              {!active && <ChromeTabBackground flat />}
               <span className="relative flex min-w-0 items-center gap-2">
                 <WorkspaceTabIcon source={item.icon} />
                 <span className="truncate tracking-[0.18px]">{t(item.label)}</span>
@@ -2011,7 +2011,14 @@ export default function Configurator() {
               active={themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
-                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
+                { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
+                  key: foundation.key,
+                  // Theme preview's "Sizes" edition carries the room things take up
+                  // — field size, inset, border, overlap — so it reads "Spacing"
+                  // there. Variables keeps its own Spacing and Sizes entries.
+                  label: t(themeWorkspaceTab === 'preview' && foundation.key === 'sizes' ? 'Spacing' : foundation.short),
+                  Icon: foundation.Icon,
+                })) },
                 { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
             />

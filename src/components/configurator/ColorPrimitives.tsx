@@ -1261,6 +1261,12 @@ export default function ColorPrimitives({
       const wanted = custKey ? [`custom-${custKey}`, custKey] : [GLOBAL_FAMILY[slot], `custom-${GLOBAL_FAMILY[slot]}`]
       target = activeThemeFamilies.find((f) => !f.isAlpha && wanted.includes(f.key))
     }
+    // `secondary` / `tertiary` are RANKS, not families — the family a theme
+    // filed under that rank is whatever its sources say.
+    if (!target && (vocab === 'secondary' || vocab === 'tertiary')) {
+      const extraKey = themeSources[previewTheme]?.[vocab]
+      if (extraKey) target = activeThemeFamilies.find((f) => !f.isAlpha && (f.key === extraKey || f.key === `custom-${extraKey}`))
+    }
     // Set state in response to an explicit external command — the same shape as
     // the `focusFamilyKey` and theme→accent effects above.
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -23,6 +23,8 @@ import { buildSectionExport, type ColorFormat, type SectionKey } from './section
 import { useDesignStore } from '../store/useDesignStore'
 import { buildAgentProductExport, buildSkillExport } from './skillExport'
 import { dimensionFromKey, dimensionRef, parseDimension } from './dimensions'
+import { phosphorCoreBody, phosphorIconSvgForFigma } from './phosphorIcons'
+import { PHOSPHOR_CORE } from './iconLibraries'
 import { LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, roleValuePx, type LayoutFamily } from './layoutTokens'
 
 export type WizardCollection =
@@ -323,7 +325,11 @@ const lengthToken = (v: string): W3CNode => {
 }
 
 /** Collections whose values are lengths — any of them pulls in `dimension`. */
-const DIMENSION_COLLECTIONS: readonly WizardCollection[] = ['spacing', 'radius', 'sizes', 'stroke', 'grid']
+const DIMENSION_COLLECTIONS: readonly WizardCollection[] = ['spacing', 'radius', 'sizes', 'stroke', 'grid', 'icons']
+
+/** Sample glyphs shipped in the W3C `icon.glyph` group — a test set, not the
+ *  library. Regular weight, 256 grid, black fill (Figma accepts it on paste). */
+export const W3C_TEST_GLYPHS = ['home', 'search', 'settings'] as const
 
 function w3cDimensions(full: TokenJSON): W3CNode {
   const dims = (full.dimensions ?? {}) as Record<string, string>
@@ -450,6 +456,20 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         node.aiSource = token(ai.repo, 'string')
         node.aiPackage = token(ai.npm, 'string')
       }
+      // Sizes: the scale aliases Dimension primitives, each role aliases the
+      // scale step its control resolves to — same chain as the CSS and Figma.
+      const sizes = full.icons.sizes
+      if (sizes) {
+        node.size = Object.fromEntries(Object.entries(sizes.scale).map(([k, v]) => [k, lengthToken(v)])) as W3CNode
+        node.role = Object.fromEntries(Object.entries(sizes.roles).map(([role, step]) => [role, token(`{icon.size.${step}}`, 'dimension')])) as W3CNode
+      }
+      const glyphs: Record<string, W3CNode> = {}
+      for (const concept of W3C_TEST_GLYPHS) {
+        const slug = PHOSPHOR_CORE[concept]
+        const body = slug ? phosphorCoreBody(slug) : undefined
+        if (body) glyphs[concept] = token(phosphorIconSvgForFigma(body), 'string')
+      }
+      if (Object.keys(glyphs).length) node.glyph = glyphs as W3CNode
       return node as W3CNode
     }
     default: return {}

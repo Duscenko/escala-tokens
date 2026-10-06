@@ -12,7 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf } from '../../../lib/previewTokens'
+import { effectiveIconWeight, iconRolePx, resolveIconRoles, type IconRole } from '../../../lib/iconSizing'
+import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -448,6 +449,9 @@ export interface IconOpts {
  * so a subtree renders `regular` for one frame and swaps in when it resolves.
  */
 const PhosphorWeightContext = createContext<Record<string, string>>(PHOSPHOR_CORE_BODIES)
+/** The NAME of the weight in force, so a small icon can step up to regular
+ *  (`effectiveIconWeight`) without the provider knowing its children's sizes. */
+const PhosphorWeightNameContext = createContext<PhosphorWeight>('regular')
 
 function usePhosphorWeightBodies(weight: PhosphorWeight): Record<string, string> {
   const [bodies, setBodies] = useState(() => peekPhosphorWeight(weight) ?? PHOSPHOR_CORE_BODIES)
@@ -467,15 +471,23 @@ function usePhosphorWeightBodies(weight: PhosphorWeight): Record<string, string>
 
 export function PhosphorWeightProvider({ weight, children }: { weight: PhosphorWeight | undefined; children: ReactNode }) {
   const bodies = usePhosphorWeightBodies(weight ?? 'regular')
-  return <PhosphorWeightContext.Provider value={bodies}>{children}</PhosphorWeightContext.Provider>
+  return (
+    <PhosphorWeightNameContext.Provider value={weight ?? 'regular'}>
+      <PhosphorWeightContext.Provider value={bodies}>{children}</PhosphorWeightContext.Provider>
+    </PhosphorWeightNameContext.Provider>
+  )
 }
 
 function PreviewIcon({ concept, size = 16, color = 'currentColor' }: { prefix?: string; concept: IconConcept; size?: number; color?: string }) {
   const weightBodies = useContext(PhosphorWeightContext)
+  const weightName = useContext(PhosphorWeightNameContext)
   const slug = PHOSPHOR_CORE[concept] ?? ''
+  // Below 16px a thin / light stroke washes out, so a small icon steps up to
+  // regular — always synchronous, no lazy map to wait for (`lib/iconSizing`).
+  const smallLight = effectiveIconWeight(weightName, size) !== weightName
   // The weighted map is the full catalogue and contains the core slugs; fall
   // back to the sync regular body while a lazy weight is still loading.
-  const body = weightBodies[slug] ?? phosphorCoreBody(slug)
+  const body = smallLight ? phosphorCoreBody(slug) : weightBodies[slug] ?? phosphorCoreBody(slug)
   const mask = body ? phosphorIconMaskUrl(body) : undefined
   return (
     <span
@@ -502,6 +514,42 @@ export function TokenIcon({ t: _t, concept, size = 16, color }: { t: PreviewToke
 const ICON_STYLE_OVERVIEW: IconConcept[] = [
   'search', 'home', 'mail', 'user', 'settings', 'warning', 'check', 'plus',
 ]
+
+/**
+ * The icon-size ladder: one control per size (sm … xl), each at its true height
+ * with the icon its height derives (`icon-control-*`) inside, at the theme's
+ * weight — so the min-weight rule shows too: a light theme's 14px icon renders
+ * regular. Reads the live `sizes`, so a Spacing mode moves it.
+ */
+export function IconSizeLadder({ sizes, bodySize, weight = 'regular' }: {
+  sizes: Record<string, string> | undefined
+  bodySize: string | undefined
+  weight?: PhosphorWeight
+}) {
+  const steps = ['sm', 'md', 'lg', 'xl'] as const
+  const roles = resolveIconRoles(sizes, bodySize)
+  return (
+    <PhosphorWeightProvider weight={weight}>
+      <div className="flex items-end justify-between gap-1.5" role="img" aria-label="Icon size per control size">
+        {steps.map((step) => {
+          const h = parseFloat(sizes?.[step] ?? '') || 40
+          const px = iconRolePx(roles, `control-${step}`)
+          return (
+            <div key={step} className="flex min-w-0 flex-col items-center gap-1">
+              <span
+                className="flex items-center justify-center rounded-md border border-line bg-surface text-fg"
+                style={{ height: h, width: h }}
+              >
+                <PreviewIcon concept="search" size={px} />
+              </span>
+              <span className="text-micro tabular-nums text-fg-faint">{`${step} · ${px}`}</span>
+            </div>
+          )
+        })}
+      </div>
+    </PhosphorWeightProvider>
+  )
+}
 
 export function IconStyleOverview({ weight = 'regular', ariaLabel = 'Phosphor icon style preview' }: { weight?: PhosphorWeight; ariaLabel?: string }) {
   return (
@@ -581,11 +629,11 @@ export interface SpecimenProps {
 
 // Button size scale — heights resolve from the Sizes foundation (sm–xl), so
 // editing Foundations · Sizes retunes every button size live.
-const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number; padX: number; icon: number; gap: number }> = {
-  SM: { sizeKey: 'sm', h: 32, f: 13, padX: 14, icon: 14, gap: 6 },
-  MD: { sizeKey: 'md', h: 40, f: 14, padX: 18, icon: 16, gap: 8 },
-  LG: { sizeKey: 'lg', h: 48, f: 15, padX: 22, icon: 18, gap: 8 },
-  XL: { sizeKey: 'xl', h: 56, f: 16, padX: 26, icon: 20, gap: 10 },
+const BUTTON_SIZE_SPECS: Record<string, { sizeKey: string; h: number; f: number; padX: number; gap: number }> = {
+  SM: { sizeKey: 'sm', h: 32, f: 13, padX: 14, gap: 6 },
+  MD: { sizeKey: 'md', h: 40, f: 14, padX: 18, gap: 8 },
+  LG: { sizeKey: 'lg', h: 48, f: 15, padX: 22, gap: 8 },
+  XL: { sizeKey: 'xl', h: 56, f: 16, padX: 26, gap: 10 },
 }
 
 function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
@@ -596,6 +644,9 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   const style = v.Style ?? 'Solid'
   const state = v.State ?? 'Default'
   const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
+  // The icon follows the BUTTON's height (`icon-control-<size>`), so a
+  // Compact / Airy system resizes it with no second decision.
+  const iconPx = iconRoleOf(t, `control-${sz.sizeKey}` as IconRole)
   const disabled = state === 'Disabled'
   const loading = state === 'Loading'
   const slots = ICON_SLOTS.Button
@@ -656,17 +707,17 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
         transition: STATE_TRANSITION,
       }}
     >
-      {loading && <SpecimenSpinner size={sz.icon - 2} color={fg} track={fg + '33'} />}
+      {loading && <SpecimenSpinner size={iconPx - 2} color={fg} track={fg + '33'} />}
       {!loading && icons?.leading && (
         <PreviewIcon
           prefix={icons.prefix}
           concept={icons.leadingConcept ?? buttonLeadingConcept(v.Color)}
-          size={sz.icon}
+          size={iconPx}
           color={fg}
         />
       )}
       {children ?? 'Button'}
-      {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={sz.icon} color={fg} />}
+      {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconPx} color={fg} />}
     </button>
   )
 }
@@ -751,7 +802,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
           transition: STATE_TRANSITION,
         }}
       >
-        {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={16} color={iconColor} />}
+        {icons?.leading && <PreviewIcon prefix={icons.prefix} concept={slots.leading} size={iconForControl(h)} color={iconColor} />}
         {meta.prefix && <span style={{ ...typeOf(t, 'placeholder'), color: t.fgMuted, borderRight: `${strokeControl(t)} solid ${t.border}`, paddingRight: spaceOf(t, 8) }}>{meta.prefix}</span>}
         {/* Lead (@, ⌕) is supporting ink — `content.secondary` — not the
             placeholder tier. The plugin paints this slot as `textTertiary`
@@ -781,7 +832,7 @@ function InputSpecimen({ t, v, icons, w, hideHint }: SpecimenProps) {
             cursor: disabled ? 'not-allowed' : 'text',
           }}
         />
-        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={16} color={iconColor} />}
+        {icons?.trailing && <PreviewIcon prefix={icons.prefix} concept={slots.trailing} size={iconForControl(h)} color={iconColor} />}
         {state === 'Loading' && <SpecimenSpinner size={13} color={t.brandSolid} track={t.brandSolid + '33'} />}
       </div>
       {!hideHint && (
@@ -824,7 +875,7 @@ function SelectSpecimen({ t, v, w }: SpecimenProps) {
       }}
     >
       Select an option
-      <PreviewIcon concept="chevron" size={12} color={disabled ? t.disabledText : t.fgMuted} />
+      <PreviewIcon concept="chevron" size={iconOf(12)} color={disabled ? t.disabledText : t.fgMuted} />
     </div>
   )
 }
@@ -1062,6 +1113,15 @@ function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
       <span style={{ ...typeOf(t, 'button'), opacity: 0.6, cursor: 'pointer', flexShrink: 0 }}>✕</span>
     </div>
   )
+}
+
+// ── Icon (Size) ───────────────────────────────────────────────────────────────
+// The home glyph at each control's icon role — the same `icon-control-*`
+// tokens the Figma `Icon` set binds its width and height to.
+
+function IconSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
+  const step = ((v.Size ?? 'MD').toLowerCase()) as 'sm' | 'md' | 'lg' | 'xl'
+  return <PreviewIcon concept="home" size={iconRoleOf(t, `control-${step}`)} color={t.neutralText} />
 }
 
 // ── Spinner (Size) ────────────────────────────────────────────────────────────
@@ -1320,8 +1380,8 @@ const PROVIDER_MARKS: Record<string, { glyph: string; color: string }> = {
 }
 
 function ProviderMark({ provider, color }: { provider: string; color: string }) {
-  if (provider === 'GitHub') return <GitHubGlyph size={17} />
-  if (provider === 'Figma') return <FigmaGlyph size={17} />
+  if (provider === 'GitHub') return <GitHubGlyph size={iconOf(17)} />
+  if (provider === 'Figma') return <FigmaGlyph size={iconOf(17)} />
   if (provider === 'Apple') {
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -1554,7 +1614,7 @@ function InputTagSpecimen({ t, w }: SpecimenProps) {
             onClick={(e) => { e.stopPropagation(); setTags((list) => list.filter((x) => x !== tag)) }}
             style={{ display: 'inline-flex', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', color: t.brandText }}
           >
-            <PreviewIcon concept="close" size={9} color={t.brandText} />
+            <PreviewIcon concept="close" size={iconOf(9)} color={t.brandText} />
           </button>
         </span>
       ))}
@@ -1596,7 +1656,7 @@ function ComboboxSpecimen({ t, v }: SpecimenProps) {
         }}
       >
         <span style={{ ...typeOf(t, 'placeholder'), flex: 1, color: open ? t.neutralText : t.placeholderText }}>{open ? 'Po' : 'Search fonts…'}</span>
-        <PreviewIcon concept="chevron" size={12} color={t.fgMuted} />
+        <PreviewIcon concept="chevron" size={iconOf(12)} color={t.fgMuted} />
       </div>
       {open && (
         <div style={{ marginTop: spaceOf(t, 4), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, 'lg', '0 8px 24px rgba(10,13,18,0.12)'), padding: spaceOf(t, 4) }}>
@@ -1629,7 +1689,7 @@ function CheckRow({ t, checked, onToggle, children }: { t: PreviewTokens; checke
       >
         {checked && (
           <PhosphorWeightProvider weight="bold">
-            <PreviewIcon concept="check" size={13} color={t.brandSolid} />
+            <PreviewIcon concept="check" size={iconOf(13)} color={t.brandSolid} />
           </PhosphorWeightProvider>
         )}
       </button>
@@ -1892,7 +1952,7 @@ function FileUploadSpecimen({ t, w }: SpecimenProps) {
   return (
     <div style={{ ...baseFont(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 10), width: w ?? 300 }}>
       <span style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 8)} ${spaceOf(t, 14)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), ...typeOf(t, 'button'), cursor: 'pointer' }}>
-        <PreviewIcon concept="upload" size={14} color="currentColor" />
+        <PreviewIcon concept="upload" size={iconOf(14)} color="currentColor" />
         Upload file
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: spaceOf(t, 10), padding: `${spaceOf(t, 10)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t) }}>
@@ -1928,7 +1988,7 @@ function DropzoneSpecimen({ t, v }: SpecimenProps) {
       }}
     >
       <span style={{ width: 40, height: 40, borderRadius: 999, background: error ? soft(t, t.errorColor) : soft(t, t.brandSolid), color: error ? errorInkOf(t) : t.brandText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-        <PreviewIcon concept="upload" size={17} color="currentColor" />
+        <PreviewIcon concept="upload" size={iconOf(17)} color="currentColor" />
       </span>
       <span style={{ ...typeOf(t, 'body-sm') }}>
         <span style={{ fontWeight: weightOf(t, 'semibold', 600), color: t.brandText }}>Click to upload</span> or drag and drop
@@ -2050,7 +2110,7 @@ function RatingSpecimen({ t, v }: SpecimenProps) {
           <PreviewIcon
             key={i}
             concept="star"
-            size={18}
+            size={iconOf(18)}
             color={i < 4 ? (t.warningColor ?? '#f79009') : (t.fgMuted || t.neutralFill)}
           />
         ))}
@@ -2089,7 +2149,7 @@ function AccordionSpecimen({ t }: { t: PreviewTokens }) {
           <button type="button" aria-expanded={i === 0} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spaceOf(t, 10), padding: `${spaceOf(t, 13)} ${spaceOf(t, 16)}`, background: 'transparent', border: 'none', cursor: 'pointer', ...typeOf(t, 'heading-xs'), color: t.neutralText, textAlign: 'left' }}>
             {q}
             <span style={{ transform: i === 0 ? 'rotate(180deg)' : undefined, flexShrink: 0, display: 'inline-flex' }}>
-              <PreviewIcon concept="chevron" size={13} color={t.fgMuted} />
+              <PreviewIcon concept="chevron" size={iconOf(13)} color={t.fgMuted} />
             </span>
           </button>
           {i === 0 && (
@@ -2151,7 +2211,7 @@ function InfoTooltipSpecimen({ t }: { t: PreviewTokens }) {
       <span style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${inverse}` }} aria-hidden />
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6), ...typeOf(t, 'label') }}>
         Default visibility
-        <PreviewIcon concept="info" size={14} color={t.fgMuted} />
+        <PreviewIcon concept="info" size={iconOf(14)} color={t.fgMuted} />
       </span>
     </div>
   )
@@ -2176,7 +2236,7 @@ function ScrollAreaSpecimen({ t }: { t: PreviewTokens }) {
 function StatusIcon({ c, status }: { c: string; status: string }) {
   const concept: IconConcept =
     status === 'Success' ? 'success' : status === 'Warning' ? 'warning' : status === 'Error' ? 'error' : 'info'
-  return <PreviewIcon concept={concept} size={15} color={c} />
+  return <PreviewIcon concept={concept} size={iconOf(15)} color={c} />
 }
 
 function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
@@ -2196,7 +2256,7 @@ function AlertBannerSpecimen({ t, v, nested }: SpecimenProps) {
       <span style={{ ...typeOf(t, 'button'), color: c, cursor: 'pointer', whiteSpace: 'nowrap' }}>
         {status === 'Warning' ? 'Upgrade' : 'View'}
       </span>
-      <PreviewIcon concept="close" size={12} color={t.fgMuted} />
+      <PreviewIcon concept="close" size={iconOf(12)} color={t.fgMuted} />
     </div>
   )
 }
@@ -2277,7 +2337,7 @@ function DropdownMenuSpecimen({ t }: { t: PreviewTokens }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: spaceOf(t, 6) }}>
       <span style={{ ...baseFont(t), display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 6), ...typeOf(t, 'label'), padding: `${spaceOf(t, 7)} ${spaceOf(t, 12)}`, borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.border ?? '#d0d5dd'}`, background: raisedBg(t), cursor: 'pointer' }}>
         Options
-        <PreviewIcon concept="chevron" size={11} color={t.fgMuted} />
+        <PreviewIcon concept="chevron" size={iconOf(11)} color={t.fgMuted} />
       </span>
       <MenuPanel
         t={t}
@@ -2320,7 +2380,7 @@ function CommandSpecimen({ t }: { t: PreviewTokens }) {
   return (
     <div style={{ ...baseFont(t), width: 320, borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, ...overlaySurfaceStyle(t), boxShadow: shadowOf(t, '2xl', '0 20px 48px rgba(10,13,18,0.18)'), overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: spacingRoleOf(t, 'gap-control', '8px'), padding: `${spaceOf(t, 11)} ${spaceOf(t, 14)}`, borderBottom: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}` }}>
-        <PreviewIcon concept="search" size={14} color={t.fgMuted} />
+        <PreviewIcon concept="search" size={iconOf(14)} color={t.fgMuted} />
         <span style={{ flex: 1, ...typeOf(t, 'placeholder'), color: t.placeholderText }}>Type a command…</span>
         <span style={{ ...typeOf(t, 'caption'), color: t.placeholderText, border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, borderRadius: radiusRoleOf(t, 'control', '4px'), padding: `${spaceOf(t, 2)} ${spaceOf(t, 5)}` }}>⌘K</span>
       </div>
@@ -2371,7 +2431,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
   const trackRef = useRef<HTMLElement>(null)
 
   return (
-    <nav ref={trackRef} aria-label="Sidebar" style={{ ...baseFont(t), position: 'relative', width: w ?? 200, padding: spaceOf(t, 8), borderRadius: radiusRoleOf(t, 'action'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 2) }}>
+    <nav ref={trackRef} aria-label="Sidebar" style={{ ...baseFont(t), position: 'relative', width: w ?? 200, padding: spaceOf(t, 8), borderRadius: radiusRoleOf(t, 'container'), border: `${strokeControl(t)} solid ${t.borderDefault ?? '#e9eaeb'}`, background: raisedBg(t), display: 'flex', flexDirection: 'column', gap: spaceOf(t, 2) }}>
       <SlidingSelection
         trackRef={trackRef}
         selection={active}
@@ -2418,7 +2478,7 @@ function SidebarSpecimen({ t, w }: SpecimenProps) {
             }}
           >
             <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: spaceOf(t, 10) }}>
-              <PreviewIcon concept={SIDEBAR_ICONS[item.icon]} size={15} color={on ? t.brandText : hot ? t.neutralText : t.fgMuted} />
+              <PreviewIcon concept={SIDEBAR_ICONS[item.icon]} size={iconOf(15)} color={on ? t.brandText : hot ? t.neutralText : t.fgMuted} />
               {item.label}
             </span>
           </button>
@@ -2525,7 +2585,7 @@ function StepperSpecimen({ t, w }: SpecimenProps) {
               }}
             >
               {s.state === 'done' ? (
-                <PreviewIcon concept="check" size={12} color={t.onBrand} />
+                <PreviewIcon concept="check" size={iconOf(12)} color={t.onBrand} />
               ) : (
                 i + 1
               )}
@@ -2740,6 +2800,7 @@ export const SPECIMENS: Record<string, (p: SpecimenProps) => ReactNode> = {
   Chip: ChipSpecimen,
   Progress: ProgressSpecimen,
   Spinner: SpinnerSpecimen,
+  Icon: IconSpecimen,
   Rating: RatingSpecimen,
   FileFormat: FileFormatSpecimen,
   // Content & Surfaces
@@ -2951,6 +3012,9 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
       return `<Avatar name="Maya Duscenko" size="${low(v.Size) || 'md'}" />`
     case 'Toast':
       return `<Toast\n  status="${low(v.Status) || 'success'}"\n  message="Changes saved."\n  action={{ label: 'Undo', onClick: undo }}\n/>`
+    case 'Icon':
+      // Phosphor's `size` is an SVG attribute and can't read a CSS var — size by style.
+      return `<House aria-hidden style={{ width: 'var(--icon-control-${low(v.Size) || 'md'})', height: 'var(--icon-control-${low(v.Size) || 'md'})' }} />`
     case 'Spinner':
       return `<Spinner size="${low(v.Size) || 'md'}" label="Loading…" />`
     case 'Divider':

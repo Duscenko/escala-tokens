@@ -32,6 +32,7 @@ export const COMPONENT_COLOR_FIELDS: Record<string, PreviewColorField[]> = {
   "Field": ['neutralText', 'errorColor', 'border', 'fgMuted', 'inputSurface'],
   "FileFormat": ['surface', 'neutralFill', 'border'],
   "FileUpload": ['surface', 'brandSolid', 'brandText', 'neutralFill', 'neutralText', 'border', 'borderDefault', 'fgMuted'],
+  "Icon": ['neutralText'],
   "InfoTooltip": ['surface', 'neutralText', 'fgMuted'],
   "InlineAlert": ['brandSolid', 'neutralText', 'errorColor', 'fgMuted', 'successColor', 'warningColor', 'infoColor'],
   "Input": ['brandSolid', 'neutralText', 'errorColor', 'disabledBg', 'disabledText', 'border', 'fgMuted', 'placeholderText', 'inputSurface', 'borderHover', 'borderCritical'],

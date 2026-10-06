@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { usePreviewTokens, resolvePreviewTokens } from '../../lib/previewTokens'
-import { resolveStylePreviewTokens, stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
+import { resolvePreviewTokens } from '../../lib/previewTokens'
+import { stylePreviewStore, type StylePreview } from '../../lib/stylePreviewOverlay'
 import { useDesignStore } from '../../store/useDesignStore'
 import { readableInk } from '../../lib/colorUtils'
 import { themeDisplayName } from '../../lib/themeSources'
-import { COMPONENTS } from '../../lib/componentCatalogue'
 import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
-import { INSPECT_EXEMPT_ATTR, InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
-import { PhosphorWeightProvider, ICON_SLOTS, snippetFor, type AxisValues } from './docs/specimens'
+import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import { axisDefaults, ComponentCatalogueHero } from './docs/componentArticle'
-import { PHOSPHOR_LIBRARY } from '../../lib/iconLibraries'
 import ThemeQuickSettingsRail, { isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
@@ -26,7 +22,7 @@ import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
 import { type ThemeAppearance } from '../../lib/themeModes'
-import type { GridViewport } from '../../lib/layoutTokens'
+import type { GridViewport, OverlapSize } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
@@ -34,6 +30,8 @@ import { InspectGlyph } from '../ui/icons'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
+import { ThemeResetButton, useThemeReset } from './ThemeResetButton'
+import { redoEdit, resetEditHistory, undoEdit, useEditHistory } from '../../lib/editHistory'
 
 // No `code` view here: the workspace's own tab strip already carries
 // `Code Format` one row up, and two doors to the same screen read as two
@@ -57,16 +55,16 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
         <button
           type="button"
           onClick={onBack}
-          aria-label={t('Back to Theme preview')}
+          aria-label={t('Back to Theme')}
           className="inline-flex min-w-0 items-center gap-1 rounded px-1 py-1 -ml-1 font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
         >
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M7.5 2.5 4 6l3.5 3.5" />
           </svg>
-          <span className="truncate">{t('Theme preview')}</span>
+          <span className="truncate">{t('Theme')}</span>
         </button>
       ) : (
-        <span className="truncate">{t('Theme preview')}</span>
+        <span className="truncate">{t('Theme')}</span>
       )}
       <span aria-hidden>/</span>
       <span className="truncate font-medium text-fg">{section}</span>
@@ -153,6 +151,60 @@ function DocsPanelButton({ active, onClick }: { active: boolean; onClick: () => 
   )
 }
 
+function HistoryGlyph({ redo = false }: { redo?: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={redo ? { transform: 'scaleX(-1)' } : undefined}>
+      <path d="M5.5 3.5 2.5 6.5l3 3" />
+      <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
+    </svg>
+  )
+}
+
+/**
+ * Undo · Redo · Reset — the way back while customising. Appears only once the
+ * theme has something to go back FROM: an edit in the history, or the theme
+ * differing from the style it was made from. Undo / Redo walk the edit history
+ * (`lib/editHistory`, one step per rail edit, slider drag or token pick, ⌘Z /
+ * ⇧⌘Z); Reset is the existing whole-theme reset back to its origin, itself one
+ * step in that history.
+ */
+function EditHistoryControls({ previewTheme }: { previewTheme: string }) {
+  const { t } = useI18n()
+  const past = useEditHistory((s) => s.past)
+  const future = useEditHistory((s) => s.future)
+  const reset = useThemeReset(previewTheme)
+  if (!past.length && !future.length && !reset.show) return null
+  const lastUndo = past[past.length - 1]?.label
+  const lastRedo = future[future.length - 1]?.label
+  const btn = 'flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  return (
+    <>
+      <div className="flex h-8 items-center gap-0.5 rounded-lg border border-line p-0.5">
+        <button
+          type="button"
+          onClick={() => undoEdit()}
+          disabled={!past.length}
+          aria-label={lastUndo ? `${t('Undo')} — ${lastUndo}` : t('Undo')}
+          title={lastUndo ? `${t('Undo')} — ${lastUndo} (⌘Z)` : `${t('Undo')} (⌘Z)`}
+          className={btn}
+        >
+          <HistoryGlyph />
+        </button>
+        <button
+          type="button"
+          onClick={() => redoEdit()}
+          disabled={!future.length}
+          aria-label={lastRedo ? `${t('Redo')} — ${lastRedo}` : t('Redo')}
+          title={lastRedo ? `${t('Redo')} — ${lastRedo} (⇧⌘Z)` : `${t('Redo')} (⇧⌘Z)`}
+          className={btn}
+        >
+          <HistoryGlyph redo />
+        </button>
+      </div>
+      {reset.show && <ThemeResetButton mode={reset.mode} target={reset.target} onClick={reset.onClick} />}
+    </>
+  )
+}
 
 // Hue dragging is a VIEW-ONLY optimistic paint on resolved preview tokens.
 function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null): PreviewTokens {
@@ -178,20 +230,19 @@ function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null):
 const DRAWER_GUTTER = 24
 
 function ArtefactsView({
-  previewTheme, previewAppearance, previewPlatform, accentPreview, stylePreview, drawerOpen,
-  inspecting, onInspectingChange, tileAppearances, boardAppearance, onPickRole, onOpenRoleInVariables, editingRole,
-  onOpenComponents,
+  previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
+  inspecting, onInspectingChange, tileAppearances, boardAppearance, overlapSize, onPickRole, onOpenRoleInVariables, editingRole,
 }: {
   previewTheme: string
-  previewAppearance: ThemeAppearance
   previewPlatform: GridViewport
   accentPreview: string | null
   stylePreview: StylePreview | null
-  onOpenComponents: () => void
   /** One appearance for every tile — the whole board is light or dark. */
   tileAppearances: ThemeAppearance[]
   /** Uniform board appearance — all tiles share light or dark. */
   boardAppearance: ThemeAppearance
+  /** The avatar card's overlap — the Spacing edition's Overlap bar. */
+  overlapSize: OverlapSize
   /** Inspector mode — point at a specimen, get the roles that paint it. Lives
    *  in the hub (the toggle is in the canvas header, a sibling of this view),
    *  never local here. */
@@ -264,16 +315,10 @@ function ArtefactsView({
               tokensByAppearance={tokensByAppearance}
               tileAppearances={tileAppearances}
               projectName={store.projectName}
+              overlapSize={overlapSize}
             />
           </InspectorModeProvider>
         </div>
-        <ComponentsButtonTeaser
-          previewTheme={previewTheme}
-          previewAppearance={previewAppearance}
-          previewPlatform={previewPlatform}
-          stylePreview={stylePreview}
-          onOpenComponents={onOpenComponents}
-        />
       </div>
       <InspectorOverlay
         active={inspecting}
@@ -289,70 +334,6 @@ function ArtefactsView({
   )
 }
 
-
-/** Button playground under the bento — same hero + axis rail as Components →
- *  Button. Opts out of inspector hit-testing. */
-function ComponentsButtonTeaser({
-  previewTheme, previewAppearance, previewPlatform, stylePreview, onOpenComponents,
-}: {
-  previewTheme: string
-  previewAppearance: ThemeAppearance
-  previewPlatform: GridViewport
-  stylePreview: StylePreview | null
-  onOpenComponents: () => void
-}) {
-  const { t } = useI18n()
-  const store = useDesignStore()
-  const def = COMPONENTS.find((c) => c.key === 'Button')
-  const liveTokens = usePreviewTokens(previewTheme, previewAppearance, previewPlatform)
-  const previewTokens = useMemo(
-    () => (stylePreview ? resolveStylePreviewTokens(store, stylePreview, previewTheme, previewPlatform) : null),
-    [stylePreview, store, previewTheme, previewPlatform],
-  )
-  const tokens = previewTokens ?? liveTokens
-  const [values, setValues] = useState<AxisValues>(() => (def ? axisDefaults(def) : {}))
-  const [leadingIcon, setLeadingIcon] = useState(false)
-  const [trailingIcon, setTrailingIcon] = useState(false)
-  const slots = def ? ICON_SLOTS[def.key] : undefined
-  const icons = slots
-    ? { prefix: tokens.iconPrefix ?? PHOSPHOR_LIBRARY.key, leading: leadingIcon, trailing: trailingIcon }
-    : undefined
-  const snippet = def ? snippetFor(def, values, icons) : ''
-
-  if (!def) return null
-
-  return (
-    <PhosphorWeightProvider weight={tokens.iconWeight}>
-      <div
-        {...{ [INSPECT_EXEMPT_ATTR]: '' }}
-        className="mx-auto mt-10 w-full max-w-[1120px] border-t border-line/60 pt-8 cursor-default"
-      >
-        <h3 className="mb-5 text-ui font-semibold text-fg">{t('Components')}</h3>
-        <ComponentCatalogueHero
-          def={def}
-          tokens={tokens}
-          values={values}
-          onValuesChange={setValues}
-          icons={icons}
-          leadingIcon={leadingIcon}
-          onLeadingIconChange={setLeadingIcon}
-          trailingIcon={trailingIcon}
-          onTrailingIconChange={setTrailingIcon}
-          snippet={snippet}
-          headerTrailing={
-            <button
-              type="button"
-              onClick={onOpenComponents}
-              className="flex items-center gap-1.5 text-caption text-fg-muted hover:text-fg transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded"
-            >
-              {t('Catalogue')} · {COMPONENTS.length} →
-            </button>
-          }
-        />
-      </div>
-    </PhosphorWeightProvider>
-  )
-}
 
 // The doc list is a SIBLING of the context bar now (see the hub's return), like
 // the showcase rail — that's what lands its header band on the view-switcher's
@@ -388,7 +369,6 @@ export default function ThemePreviewHub({
   onDocsOpenChange,
   surface, onSurfaceChange,
   previewTheme, previewAppearance, previewPlatform = 'desktop', stylePreview, onAdoptStyle, onCreateTheme, onSelectTheme, onPreviewAppearanceChange, onPreviewPlatformChange,
-  onOpenComponents,
   onEditFoundation, onSyncFoundationFromDoc, activeFoundation, onOpenPrimitiveFamily, onOpenInVariables, figmaPublishState, workspaceSection, onRequestFigmaSync, onOpenFigmaDownload,
   figmaFileName, onFigmaFileNameChange, figmaSyncModes, onFigmaSyncModesChange, figmaViewports, onFigmaViewportsChange,
   githubPushState, onGithubPushStateChange, docsExits,
@@ -451,6 +431,9 @@ export default function ThemePreviewHub({
   // `DesignSnapshot`: it's a way of looking, like `previewCollapsed`.
   const [inspecting, setInspecting] = useState(true)
   const [contrastOpen, setContrastOpen] = useState(false)
+  // Which overlap size the board's avatar card shows. The Spacing edition's
+  // Overlap bar drives it; view state, like `inspecting`, never persisted.
+  const [overlapSize, setOverlapSize] = useState<OverlapSize>('md')
   const [editingToken, setEditingToken] = useState<string | null>(null)
   const [inspectedCss, setInspectedCss] = useState<string | null>(null)
   /** Whole-board light/dark flip from Random — view-only, not workspace chrome. */
@@ -518,6 +501,24 @@ export default function ThemePreviewHub({
     onPreviewAppearanceChange(appearance)
   }
   useEffect(() => { setRandomBoardAppearance(null) }, [previewTheme])
+  // The edit history belongs to ONE theme: undoing an edit made on another
+  // theme while looking at this one would change something off screen.
+  useEffect(() => { resetEditHistory() }, [previewTheme])
+  // ⌘Z / ⇧⌘Z (Ctrl on other platforms) while the board is on screen. Never
+  // while typing — a text field keeps its own native undo.
+  const historyKeysActive = surface === 'artefacts' && !docsOpen
+  useEffect(() => {
+    if (!historyKeysActive) return
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return
+      const el = event.target as HTMLElement | null
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+      const done = event.shiftKey ? redoEdit() : undoEdit()
+      if (done !== null) event.preventDefault()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [historyKeysActive])
   useEffect(() => { if (surface !== 'artefacts') setRandomBoardAppearance(null) }, [surface])
   useEffect(() => {
     if (activeFoundation !== 'color' || surface !== 'artefacts') setContrastOpen(false)
@@ -561,7 +562,7 @@ export default function ThemePreviewHub({
     ?? boardCanvasTokens.surface
   // Every left column is a sibling of the framed canvas, so its own scrolling
   // and collapse state cannot disturb the preview surface.
-  return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme preview')}>
+  return <section ref={hubRootRef} className="relative h-full min-h-0 flex flex-col bg-app" aria-label={t('Theme')}>
     <div className="flex-1 min-h-0 flex">
       {surface === 'artefacts' && !needsMyTheme && !docsOpen && (
         <ThemeQuickSettingsRail
@@ -587,6 +588,8 @@ export default function ThemePreviewHub({
           onContrastOpenChange={setContrastOpen}
           previewPlatform={previewPlatform}
           onPreviewPlatformChange={onPreviewPlatformChange}
+          overlapSize={overlapSize}
+          onOverlapSizeChange={setOverlapSize}
         />
       )}
       {(surface === 'github' || surface === 'figma') && (
@@ -612,7 +615,7 @@ export default function ThemePreviewHub({
             style={needsMyTheme ? undefined : { background: pageCanvasColor }}
           >
             <section
-              aria-label={needsMyTheme ? t('Theme preview') : `${themeName} preview canvas`}
+              aria-label={needsMyTheme ? t('Theme') : `${themeName} preview canvas`}
               className={`flex h-full min-h-0 flex-col overflow-hidden ${needsMyTheme ? 'rounded-xl border border-line bg-app' : ''}`}
             >
               {/* One header band for every hub view — the active view's NAME
@@ -630,11 +633,16 @@ export default function ThemePreviewHub({
                 ) : (
                   <span className="min-w-0 flex flex-col">
                     <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
-                    <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full bg-accent-ui" />
+                    {/* The theme's own brand solid, like the armed Inspect toggle beside it —
+                        the board is the theme's page, so its marker is the theme's accent. */}
+                    <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full" style={{ background: boardCanvasTokens.brandSolid }} />
                   </span>
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   {docsOpen && hubDocActions}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && !stylePreview && (
+                    <EditHistoryControls previewTheme={previewTheme} />
+                  )}
                   {!needsMyTheme && !contrastOpen && !docsOpen && (
                     <InspectorToggle
                       active={inspecting}
@@ -669,7 +677,6 @@ export default function ThemePreviewHub({
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView
                     previewTheme={previewTheme}
-                    previewAppearance={effectiveBoardAppearance}
                     previewPlatform={boardPlatform}
                     accentPreview={accentPreview}
                     stylePreview={paintedPreview}
@@ -679,9 +686,9 @@ export default function ThemePreviewHub({
                     onInspectingChange={setInspecting}
                     tileAppearances={effectiveTileAppearances}
                     boardAppearance={effectiveBoardAppearance}
+                    overlapSize={overlapSize}
                     onPickRole={pickRole}
                     onOpenRoleInVariables={onOpenInVariables}
-                    onOpenComponents={onOpenComponents}
                   />
                 ) : null}
                   </>

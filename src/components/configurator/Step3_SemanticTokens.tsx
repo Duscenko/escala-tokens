@@ -171,7 +171,11 @@ const PICKABLE_FAMILIES = ['accent', 'neutral', 'neutral-dark', 'error', 'warnin
 // too). Shown unconditionally: an earlier build gated them on "is the current
 // ref alpha", which meant a solid role could never be switched to alpha.
 const ALPHA_FAMILIES = ['accent-a', 'neutral-a', 'error-a', 'warning-a', 'success-a', 'info-a', 'black-a', 'white-a'] as const
-const ARCH_PICKABLE_FAMILIES = [...PICKABLE_FAMILIES, ...ALPHA_FAMILIES] as const
+// A theme's extra brand palettes sit between the solids and the alpha twins.
+// `build` returns undefined for a theme without them, and the grid skips empty
+// rows — so they appear exactly when Primitives has "Add secondary / tertiary".
+const BRAND_EXTRA_FAMILIES = ['secondary', 'tertiary'] as const
+const ARCH_PICKABLE_FAMILIES = [...PICKABLE_FAMILIES, ...BRAND_EXTRA_FAMILIES, ...ALPHA_FAMILIES] as const
 
 // Built through `scaleLookup` — the SAME resolver the architecture table and
 // the export use — so the swatch you click is the colour that mode will

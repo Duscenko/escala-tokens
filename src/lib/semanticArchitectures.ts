@@ -1226,6 +1226,9 @@ export function scaleLookup(
     warning: palette?.warning ?? darkTwin('warning') ?? scales.warning,
     success: palette?.success ?? darkTwin('success') ?? scales.success,
     info: palette?.info ?? darkTwin('info') ?? scales.info,
+    // The theme's extra brand palettes — only defined when it carries them.
+    secondary: palette?.secondary,
+    tertiary: palette?.tertiary,
     // Fixed opacity ladder, agnostic to theme/palette/kind — see
     // design-plans/alpha-primitives.md. Not derived from any family, so
     // there's no lookup chain here, just the constant.

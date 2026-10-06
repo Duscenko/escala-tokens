@@ -585,6 +585,21 @@ export const COMPONENTS: ComponentDef[] = [
     accessibility: 'role="status" with sr-only label. Animated via CSS, respects prefers-reduced-motion.',
   },
   {
+    key: 'Icon',
+    label: 'Icon',
+    category: 'Indicators',
+    description: 'A glyph from the system icon set, sized by the icon tokens of the control it sits in.',
+    usage: 'Use the size of the control the icon lives in (MD inside a default button or input). Pair an icon-only control with an accessible label; a decorative icon next to text is aria-hidden.',
+    axes: [{ name: 'Size', values: ['SM', 'MD', 'LG', 'XL'] }],
+    figmaSets: ['Icon'],
+    props: [
+      { name: 'size', type: '"sm" | "md" | "lg" | "xl"', description: 'Icon role — icon-control-sm … xl, derived from the control height (× 0.42, snapped to the icon scale)' },
+      { name: 'weight', type: '"thin" | "light" | "regular" | "bold" | "fill" | "duotone"', description: "Defaults to the theme's icon weight; below 16px thin/light render regular" },
+      { name: 'aria-label', type: 'string', description: 'Only for a meaningful standalone icon; omit when decorative' },
+    ],
+    accessibility: 'Decorative icons are aria-hidden. A standalone meaningful icon needs role="img" + aria-label, and an icon-only button carries the label on the button.',
+  },
+  {
     key: 'Rating',
     label: 'Rating',
     category: 'Indicators',

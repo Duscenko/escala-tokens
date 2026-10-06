@@ -58,6 +58,15 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ## Navigation model — top-nav workspace ("Escala")
 
+> **NAMING: the Generator's first workspace tab is called "Theme"** — it was "Theme
+> preview" until 2026-10. The tab is half the rail's edition panels and half the board
+> that repaints, and it is where a theme is edited (modes, Undo / Redo / Reset), so
+> "preview" undersold it; the pair reads Theme · Variables · Sync (the visual layer →
+> the token layer → the way out). The visible label, breadcrumb, aria-labels and es/fr
+> strings were renamed; the tab key (`preview`), routes and component names
+> (`ThemePreviewHub`, `workspaceLink`) were NOT, so links keep working. Older notes in
+> this file that say "Theme preview" mean this tab.
+
 The app is a **top-nav workspace**, **not a wizard**. Designers **configure tokens and see
 them live at the same time**: tweak the controls on the left, watch the canvas repaint,
 then export. **There is no left icon rail** — section switching lives in the top bar.
@@ -1455,6 +1464,20 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   so both can claim it; the markdown ships every theme's values, so it can't.
 >   `iconLibraryKey` suppresses it on Preview only — a glyph sheet has no theme, but the
 >   artefact is still painted in one even while Icons is the active foundation.
+
+> **The board's stretched tiles measure their NATURAL height by removing the stretch, never
+> by summing their children (`ScaledModule`, `fill`).** The last tile of each bento column
+> stretches (`fill`) so the four columns end on one line. Its natural height first came from
+> the children's bounding boxes — and any child that fills the space it is given made that
+> "natural" height depend on the stretch derived from it: a tile flipped between two heights
+> (439 ↔ 421px) EVERY FRAME for as long as the board was on screen (reported as "everything
+> moves in several jumps"). It now clears the surface's `min-height`, reads `offsetHeight`,
+> restores it, all in one task (no paint between), and only a change over 0.5px updates state.
+> **Diagnose this class of bug with the browser's own metric, not by eye:** in the page,
+> `new PerformanceObserver(l => …).observe({ type: 'layout-shift' })` while changing theme
+> / mode / width. A healthy board settles in ~3 shifts (CLS < 0.1) and then reports ZERO at
+> rest; the bug was 143 shifts, CLS 0.845, and never stopped. Vitest runs in Node with no DOM,
+> so this cannot be a unit test — re-measure after touching `ScaledModule`'s effects.
 
 > **An ARTEFACT is a composed SCREEN — the thing a designer ships — built from the
 > system's own components and foundations (`preview/artefacts/`).** `Preview` asks "what do
@@ -4190,6 +4213,35 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 >   measured mistake the `ThemeStyleSemantics` note already warns about. The honest way
 >   to give Material its M3 look is an underline FIELD SHAPE, which is a second axis and
 >   its own change.
+
+> **ICON SIZES are tokens now — `lib/iconSizing.ts`, three layers like radius/spacing.**
+> Scale `icon-size-xs…2xl` = 12 · 14 · 16 · 20 · 24 · 32 (each a Dimension primitive).
+> Roles are DERIVED, never stored: `icon-control-sm…xl` = that control's height ×
+> `ICON_CONTROL_RATIO` (0.42), snapped to the scale (tie goes up) — so a Spacing mode or the
+> field base unit resizes icons with no second decision (Compact 12/14/16/20 · standard
+> 14/16/20/24 · Airy 16/20/24/32); `icon-inline` = body text size snapped; `icon-feature` = xl.
+> **Small-icon weight rule:** below 16px a `thin`/`light` theme renders `regular`
+> (`effectiveIconWeight`, applied inside `PreviewIcon`); bold/fill/duotone untouched.
+> Specimens read `iconRoleOf` (Button), `iconForControl(h)` (Input) and `iconOf(px)` (anatomy
+> literals snapped to the scale — the `spaceOf` twin); no raw icon px left in `specimens.tsx`
+> except the style overview's 20. Ships in `buildCSS` and the section CSS (`--icon-size-*`,
+> `--icon-<role>`), Markdown, and `tokens.json` as `icons.sizes` (additive, no schema bump).
+> **Plugin ≥ 0.3.12 reads it.** tokens.json also ships `icons.weight` and, per theme,
+> `foundationsByTheme[t].iconWeight` / `.iconSizes` (roles follow THAT theme's control
+> heights). The plugin writes `Icon/size/<step>` (alias of the Dimension primitive) and
+> `Icon/role/<role>` (alias of the size step) into Dimension Semantics, and builds an **`Icon`
+> component** (catalogue key `Icon`, Indicators, `Size` SM·MD·LG·XL, also on the Overview
+> sheet): Phosphor `house` copied verbatim per weight into `HOUSE_BODY`, width + height bound
+> to `Icon/role/control-*`, every layer constrained SCALE, fill → `content/primary`, theme
+> weight with the small-icon rule. **Also bound:** Button's icon slots → `Icon/role/control-<size>`
+> (the configurator's `iconRoleOf`), Input's field icons → `Icon/size/<step>` from h × 0.42
+> (`iconForControl`), and the ⬡ Icons page variants Large/Medium/Small → `Icon/size/xl·lg·md`
+> (names kept so placed instances survive; every layer SCALE-constrained, placeholder masters
+> too). The ⬡ Icons page imports only a TEST set (`ICON_TEST_SET`: home · search · settings);
+> `ICON_CORE` stays the full vocabulary. **W3C** ships `icon.size.*` (→ `{dimension.N}`),
+> `icon.role.*` (→ `{icon.size.<step>}`) and `icon.glyph.*` — the same three test glyphs
+> (`W3C_TEST_GLYPHS`, regular SVG); `icons` is a `DIMENSION_COLLECTIONS` member so the aliases
+> resolve. **Not done yet:** a role can't be pinned by hand.
 
 > **UPDATE: each System Style renders Phosphor at its OWN WEIGHT (`iconWeight`).**
 > Requested — "que dependa del theme el tipo de style icon: thin, light, regular, bold,

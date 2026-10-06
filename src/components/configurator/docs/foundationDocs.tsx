@@ -18,14 +18,14 @@
 // appearances, because a hand-off reader needs to see that `content-brand` IS
 // `accent-8`, not just that it happens to be #CCF57B today.
 
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import { useItForFoundation, useItMarkdown } from './useIt'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../../../store/useDesignStore'
 import {
   ROLE_GROUPS, sourceScaleFor, recToneFor, SCALE_META, baseLabelForTone,
   type Role, type GlobalScales,
 } from '../../../lib/semanticRoles'
-import { toneLabel, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from '../../../lib/colorUtils'
+import { toneLabel, readableInk, compositeOver, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE, type ColorNaming } from '../../../lib/colorUtils'
 import {
   buildArchitectureView,
   CATEGORICAL_ROLE_COMMENTS,
@@ -80,6 +80,9 @@ export interface SystemDoc {
   primitiveFamilies: { label: string; scale: Record<number, string> }[]
   alphaFamilies: { label: string; scale: Record<number, string> }[]
   colorNaming: ColorNaming
+  /** The light page the roles are read against — what a translucent role is
+   *  composited over before its label ink is solved. */
+  pageLight: string
   typography: ReturnType<typeof useDesignStore.getState>['typography']
   spacing: Record<string, string>
   padding: Record<string, string>
@@ -350,6 +353,13 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
       errorScale, errorDarkScale, warningScale, warningDarkScale, successScale, successDarkScale,
       infoScale, infoDarkScale, customColors])
 
+  // Neutral tone 1 of THIS theme's ramps; the open system's leftover
+  // `pageBackground` only when no neutral resolves (see `alphaFamilies`).
+  const pageLight = useMemo(
+    () => primitiveFamilies.find((f) => f.label === 'Neutral')?.scale?.[1] ?? store.pageBackground,
+    [primitiveFamilies, store.pageBackground],
+  )
+
   const alphaFamilies = useMemo(() => {
     const twin = (label: string, scale: Record<number, string>, bg: string) =>
       ({ label, scale: generateAlphaScale(scale, bg, 'light') })
@@ -358,17 +368,16 @@ export function useSystemDoc(scope: SystemDocScope = {}): SystemDoc {
     // not the open system's leftover `pageBackground`. Glass Accent on
     // `#f1fdff` against global `#fdfefb` produced accent-a-1 at ~89% opaque
     // pale cyan ("pegado" on the checkerboard) instead of transparent.
-    const neutral = primitiveFamilies.find((f) => f.label === 'Neutral')
-    const page = neutral?.scale?.[1] ?? store.pageBackground
+    const page = pageLight
     const wanted = new Set(['Accent', 'Neutral', 'State/Error', 'State/Warning', 'State/Success', 'State/Info'])
     return primitiveFamilies
       .filter((f) => wanted.has(f.label))
       .map((f) => twin(f.label, f.scale, page))
       .filter((f) => Object.keys(f.scale).length)
-  }, [primitiveFamilies, store.pageBackground])
+  }, [primitiveFamilies, pageLight])
 
   return {
-    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming,
+    scales, roles, categoricalCategories, primitiveFamilies, alphaFamilies, colorNaming, pageLight,
     typography: foundations.typography,
     spacing: foundations.spacing,
     padding: foundations.padding,
@@ -431,45 +440,6 @@ function Swatch({ hex, className = '' }: { hex: string; className?: string }) {
  *  breakpoint (`@2xl` = 42rem) would silently mean 756px (see CLAUDE.md's
  *  "Root font-size" note — this file's own floor was already once bitten by
  *  exactly that, `min-w-[40rem]` meaning 720px). */
-/** Same ramp, on a CHECKERBOARD — an alpha swatch painted on a flat backdrop
- *  silently reads as whatever that backdrop makes it, which is exactly the
- *  misreading these tokens exist to prevent. The checkerboard has no "wrong
- *  theme" to break against. Same `CHECKER` treatment `AlphaHexCell` uses in
- *  the Primitives table, so the two surfaces agree on what "translucent"
- *  looks like. */
-function AlphaRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
-  return (
-    <div className="@container">
-      <div className="overflow-x-auto">
-        <div className="flex gap-1.5 min-w-[640px] @max-[640px]:gap-1 @max-[640px]:min-w-0">
-          {Object.entries(scale)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([tone, hex]) => (
-              <div key={tone} className="flex-1 min-w-0 flex flex-col items-center gap-1 @max-[640px]:gap-0.5">
-                <span
-                  className="w-full h-11 rounded-lg ring-1 ring-black/10 dark:ring-white/15 relative overflow-hidden @max-[640px]:h-8 @max-[640px]:rounded-md"
-                  style={{
-                    backgroundImage: 'repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)',
-                    backgroundSize: '10px 10px',
-                  }}
-                  title={hex}
-                >
-                  <span className="absolute inset-0" style={{ background: hex }} />
-                </span>
-                <span className="text-micro font-mono tabular-nums text-fg-faint">
-                  {toneLabel(naming, Number(tone))}
-                </span>
-                <span className="text-nano font-mono text-fg-faint/80 truncate max-w-full @max-[640px]:hidden">
-                  {hex.toUpperCase()}
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>; naming: ColorNaming }) {
   return (
     <div className="@container">
@@ -493,6 +463,63 @@ export function PrimitiveRamp({ scale, naming }: { scale: Record<number, string>
               </div>
             ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * One colour family as a card: the anchor (tone 9) as a tall block carrying the
+ * family's name and hex, beside the whole ramp as a column of labelled rows, each
+ * painted in its own colour. The labels and hexes sit ON their swatches — one
+ * object instead of a strip of chips with captions underneath — and the ink on
+ * each is solved against THAT swatch, so every row stays readable.
+ */
+export function PrimitiveCard({ label, scale, naming, alpha = false }: {
+  label: string
+  scale: Record<number, string>
+  naming: ColorNaming
+  /** Translucent ramp: every swatch sits on the checkerboard AlphaRamp uses, and
+   *  the ink is the page's own (`--fg`) — a translucent fill has no single
+   *  colour to solve a label against, it is judged on whatever is behind it. */
+  alpha?: boolean
+}) {
+  const tones = Object.keys(scale).map(Number).sort((a, b) => a - b)
+  const anchor = scale[9] ?? scale[tones[Math.floor(tones.length / 2)]]
+  if (!anchor) return null
+  const ink = (bg: string) => (alpha ? 'var(--fg)' : readableInk(bg, '#0a0d12', '#ffffff'))
+  // The wash over the checkerboard, as ONE background so it needs no wrapper.
+  const paint = (hex: string): CSSProperties => (alpha
+    ? {
+        backgroundImage: `linear-gradient(${hex}, ${hex}), repeating-conic-gradient(var(--elevated) 0% 25%, var(--surface) 0% 50%)`,
+        backgroundSize: 'auto, 10px 10px',
+        color: ink(hex),
+      }
+    : { background: hex, color: ink(hex) })
+  return (
+    <div className="flex min-w-0 overflow-hidden rounded-xl ring-1 ring-black/10 dark:ring-white/15">
+      <div
+        className="flex w-[44%] flex-shrink-0 flex-col justify-between p-5"
+        style={paint(anchor)}
+      >
+        <span className="text-heading font-semibold leading-tight [overflow-wrap:anywhere]">{label}</span>
+        <span className="text-caption font-mono uppercase tabular-nums opacity-80">{anchor}</span>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {tones.map((tone) => {
+          const hex = scale[tone]
+          return (
+            <div
+              key={tone}
+              className="flex h-8 items-center justify-between gap-3 px-3.5 text-caption"
+              style={paint(hex)}
+              title={hex}
+            >
+              <span className="font-medium tabular-nums">{toneLabel(naming, tone)}</span>
+              <span className="font-mono uppercase tabular-nums opacity-70">{hex}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -568,7 +595,26 @@ function RoleTable({ rows }: { rows: ResolvedRole[] }) {
 
 /** The colour band above each table — every role's fill, laid out edge to edge,
  *  so the group reads as a palette before it reads as a list. */
-function RoleBand({ rows }: { rows: ResolvedRole[] }) {
+/**
+ * What a role actually LOOKS like on the page, and the ink that reads on it.
+ *
+ * A translucent role (`border.default` = white 15 %, `status.*.surface` = an
+ * alpha wash) is flattened over the page it ships on before anything is judged:
+ * its label used to be a fixed black blend, which vanished on every dark fill
+ * and on any wash whose true colour is the page. The ink is solved against the
+ * flattened swatch (`readableInk` — whichever of near-black / near-white clears
+ * more contrast), so the label is legible whatever the token resolves to.
+ */
+function bandPaint(hex: string, page: string): { background: string; color: string } {
+  let flat = hex
+  try { flat = compositeOver(hex, page) } catch { /* not a hex (e.g. 'transparent') — paint it as given */ }
+  // Pure black / white, not the page's near-black: on a mid-tone fill the
+  // crossover is the only place both inks are weak, and pure ink is what keeps
+  // that worst case above 4.5:1.
+  return { background: flat, color: readableInk(flat, '#000000', '#ffffff') }
+}
+
+function RoleBand({ rows, page }: { rows: ResolvedRole[]; page: string }) {
   if (!rows.length) return null
   return (
     <div className="flex flex-wrap rounded-xl overflow-hidden border border-line mb-5">
@@ -576,27 +622,27 @@ function RoleBand({ rows }: { rows: ResolvedRole[] }) {
         <span
           key={r.role.key}
           className="flex-1 min-w-[8rem] px-3 py-2.5 text-caption text-center truncate"
-          style={{ background: r.lightHex }}
+          style={bandPaint(r.lightHex, page)}
           title={`${r.role.key} — ${r.lightHex}`}
         >
-          <span className="mix-blend-luminosity text-black/70">{r.role.key}</span>
+          {r.role.key}
         </span>
       ))}
     </div>
   )
 }
 
-function RoleGroup({ rows }: { rows: ResolvedRole[] }) {
+function RoleGroup({ rows, page }: { rows: ResolvedRole[]; page: string }) {
   if (!rows.length) return null
   return (
     <>
-      <RoleBand rows={rows} />
+      <RoleBand rows={rows} page={page} />
       <RoleTable rows={rows} />
     </>
   )
 }
 
-function CategoricalRoleBand({ rows }: { rows: ResolvedCategoricalToken[] }) {
+function CategoricalRoleBand({ rows, page }: { rows: ResolvedCategoricalToken[]; page: string }) {
   if (!rows.length) return null
   return (
     <div className="flex flex-wrap rounded-xl overflow-hidden border border-line mb-5">
@@ -604,10 +650,10 @@ function CategoricalRoleBand({ rows }: { rows: ResolvedCategoricalToken[] }) {
         <span
           key={r.id}
           className="flex-1 min-w-[8rem] px-3 py-2.5 text-caption text-center truncate"
-          style={{ background: r.lightHex }}
+          style={bandPaint(r.lightHex, page)}
           title={`${r.id} — ${r.lightHex}`}
         >
-          <span className="mix-blend-luminosity text-black/70">{r.id}</span>
+          {r.id}
         </span>
       ))}
     </div>
@@ -655,11 +701,11 @@ function CategoricalRoleTable({ rows }: { rows: ResolvedCategoricalToken[] }) {
   )
 }
 
-function CategoricalRoleGroup({ rows }: { rows: ResolvedCategoricalToken[] }) {
+function CategoricalRoleGroup({ rows, page }: { rows: ResolvedCategoricalToken[]; page: string }) {
   if (!rows.length) return null
   return (
     <>
-      <CategoricalRoleBand rows={rows} />
+      <CategoricalRoleBand rows={rows} page={page} />
       <CategoricalRoleTable rows={rows} />
     </>
   )
@@ -668,9 +714,9 @@ function CategoricalRoleGroup({ rows }: { rows: ResolvedCategoricalToken[] }) {
 function renderCategoricalCategory(categoryKey: string, flatRows: (c: SystemDoc) => ResolvedRole[]) {
   return (c: SystemDoc) => {
     const cat = c.categoricalCategories?.find((x) => x.key === categoryKey)
-    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} />
+    if (cat?.tokens.length) return <CategoricalRoleGroup rows={cat.tokens} page={c.pageLight} />
     const rows = flatRows(c)
-    return rows.length ? <RoleGroup rows={rows} /> : null
+    return rows.length ? <RoleGroup rows={rows} page={c.pageLight} /> : null
   }
 }
 
@@ -785,13 +831,12 @@ color:      var(--color-content-on-action);
         title: 'Primitives',
         description: 'The raw color ramps — unopinionated source values that every semantic token aliases. Never used directly in designs.',
         render: (c) => (
-          <div className="flex flex-col gap-5">
-            {c.primitiveFamilies.map((fam) => (
-              <div key={fam.label} className="flex flex-col gap-1.5">
-                <span className="text-caption text-fg-muted">{fam.label}</span>
-                <PrimitiveRamp scale={fam.scale} naming={c.colorNaming} />
-              </div>
-            ))}
+          <div className="@container">
+            <div className="grid grid-cols-1 gap-4 @min-[760px]:grid-cols-2">
+              {c.primitiveFamilies.map((fam) => (
+                <PrimitiveCard key={fam.label} label={fam.label} scale={fam.scale} naming={c.colorNaming} />
+              ))}
+            </div>
           </div>
         ),
       },
@@ -800,20 +845,15 @@ color:      var(--color-content-on-action);
         title: 'Alpha',
         description: 'Translucent primitives — for anything painted ON TOP of a surface the token cannot know in advance. Two different contracts, deliberately not merged: a family TWIN is solved so tone N reproduces the solid tone N over its own page (the opacity is a result, so the ladder is not monotonic and tone 1 is fully transparent); black/white is a fixed opacity ladder — 5 to 95 % — for scrims, neutral washes and the dark-mode elevation rim, where the ink really is black or white and the opacity IS the decision.',
         render: (c) => (
-          <div className="flex flex-col gap-5">
-            {c.alphaFamilies.map((fam) => (
-              <div key={fam.label} className="flex flex-col gap-1.5">
-                <span className="text-caption text-fg-muted">{fam.label} <span className="text-fg-faint">— twin, solved vs the page</span></span>
-                <AlphaRamp scale={fam.scale} naming={c.colorNaming} />
-              </div>
-            ))}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-caption text-fg-muted">Black <span className="text-fg-faint">— fixed ladder</span></span>
-              <AlphaRamp scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-caption text-fg-muted">White <span className="text-fg-faint">— fixed ladder</span></span>
-              <AlphaRamp scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} />
+          <div className="@container">
+            <div className="grid grid-cols-1 gap-4 @min-[760px]:grid-cols-2">
+              {c.alphaFamilies.map((fam) => (
+                <PrimitiveCard key={fam.label} label={`${fam.label} Alpha`} scale={fam.scale} naming={c.colorNaming} alpha />
+              ))}
+              {/* The two fixed ladders keep their "fixed" contract in the name:
+                  a family twin is SOLVED against its page, these are not. */}
+              <PrimitiveCard label="Black Alpha" scale={BLACK_ALPHA_SCALE} naming={c.colorNaming} alpha />
+              <PrimitiveCard label="White Alpha" scale={WHITE_ALPHA_SCALE} naming={c.colorNaming} alpha />
             </div>
           </div>
         ),

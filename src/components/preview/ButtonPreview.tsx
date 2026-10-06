@@ -119,6 +119,11 @@ export interface PreviewTokens {
   // P6b). Adding an architecture must not require remembering this line.
   architecture?: SemanticArchitecture
   archTokens?: Record<string, string>
+  /** The previewed theme's accent and neutral ramps (1–12) in the previewed
+   *  appearance — for specimens that show the PALETTE itself (Theme preview's
+   *  Color style card). Optional: every other call site reads roles. */
+  brandRamp?: Record<number, string>
+  neutralRamp?: Record<number, string>
 }
 
 /** Parse a px token from a map (e.g. spacing['4'] → 16), with a fallback. */

@@ -13,7 +13,8 @@
 // Noise effect toggle. Shadows are included because they are a real,
 // theme-scoped foundation and repaint the specimens beside this rail.
 
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
+import { recordEdit, undoEdit, useEditHistory } from '../../lib/editHistory'
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { captureSnapshot, DEFAULT_THEME_SOURCES, RESERVED_COLOR_KEYS, type DesignSnapshot, useDesignStore } from '../../store/useDesignStore'
@@ -21,12 +22,11 @@ import {
   useApplyAccentColor, useApplyGrayColor, useApplyStateColor, addBrandExtra, removeBrandExtra,
   resolveThemePages, stateColorAnchor, type StateRole,
 } from '../../lib/colorActions'
-import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, recommendStateColors, type NeutralTint } from '../../lib/colorUtils'
+import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
 import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
   BASE_UNIT_RANGE,
-  SELECTOR_STEPS,
   SELECTOR_DEFAULT_BASE,
   SIZE_DEFAULT_BASE,
   SIZE_STEPS,
@@ -34,22 +34,24 @@ import {
   STROKE_SM_STOPS,
   buildSelectorsFromBase,
   buildSizesFromBase,
-  extractBreakpoints,
-  GRID_FRAME_FIELDS,
   inferSelectorBase,
   inferSizeBase,
   INSET_SURFACE_ROLE,
   PADDING_DEFAULT_STEP,
-  insetSurfaceStepIndex,
   insetSurfacePadding,
-  mergeGridFrame,
+  mergeLayoutRoles,
+  OVERLAP_SIZES,
+  SPACING_MODES,
+  matchSpacingMode,
+  type OverlapSize,
+  type SpacingMode,
+  roleValuePx,
   RADIUS_GROUPS,
   RADIUS_GROUP_STEPS,
   matchRadiusRolePreset,
   radiusPresetPatch,
   radiusGroupStep,
   applyRadiusGroup,
-  resolveGridFrame,
   type GridViewport,
 } from '../../lib/layoutTokens'
 import { slugify } from '../../lib/utils'
@@ -71,13 +73,9 @@ import RailSelect from '../ui/RailSelect'
 import { radiusPresetOptions } from './radiusPresetOptions'
 import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
-import { IconStyleOverview } from './docs/specimens'
-import type { StatusAction } from '../../lib/themePresets'
+import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { ColorControls, ScaleSettingsModal } from './Step2_ColorPalette'
-import { ColorAgentButton } from '../ui/shimmer-button'
-import { SparkleCircleIcon } from '../ui/icons'
-import { CHROME_CONTROL_SHELL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
@@ -338,26 +336,95 @@ function CutFacts({ rows }: { rows: { label: string; value: string }[] }) {
   )
 }
 
-function GridCutCard({
-  columns, gutter, margin, container,
-}: {
-  columns: number
-  gutter: string
-  margin: string
-  container: string
+/**
+ * OVERLAP as a bar — the same shape as Border width below it: a caption + live
+ * px over a 6-stop slider (xs … 2xl) with the stop names underneath. It picks
+ * which `overlap-*` role the board's avatar card shows, so dragging it walks
+ * the stack through the system's six overlaps. The px are the LIVE role values:
+ * editing them in Variables moves the readout and the card the same frame.
+ */
+function OverlapBar({ value, onChange, pxOf }: {
+  value: OverlapSize
+  onChange: (size: OverlapSize) => void
+  pxOf: (size: OverlapSize) => number
 }) {
-  const n = Math.max(1, columns)
-  const values = { columns: String(columns), gutter, margin, container: container === 'none' ? 'fluid' : container }
+  const { t } = useI18n()
+  const index = Math.max(0, OVERLAP_SIZES.indexOf(value))
   return (
     <div>
-      <div className="flex h-9 gap-px" aria-hidden>
-        {Array.from({ length: n }, (_, i) => (
-          <span key={i} className="min-w-0 flex-1 rounded-[2px] bg-accent-ui/40" />
+      <div className="flex items-baseline justify-between">
+        <span className="text-micro uppercase tracking-[0.12em] text-fg-faint">{`overlap-${value}`}</span>
+        <span className="text-ui font-semibold tabular-nums text-fg">{`${pxOf(value)}px`}</span>
+      </div>
+      <RangeInput
+        ariaLabel={t('Overlap')}
+        min={0}
+        max={OVERLAP_SIZES.length - 1}
+        step={1}
+        value={index}
+        onChange={(i) => onChange(OVERLAP_SIZES[i])}
+        className={ROW_GAP_CONTROL}
+      />
+      <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
+        {OVERLAP_SIZES.map((size) => (
+          <span key={size} className={size === value ? 'text-fg' : undefined}>{size}</span>
         ))}
       </div>
-      <div className="mt-2">
-        <CutFacts rows={GRID_FRAME_FIELDS.map((field) => ({ label: field.label, value: values[field.key] }))} />
+    </div>
+  )
+}
+
+/**
+ * SPACING MODE — four ready-made densities in a 2×2 grid, laid out as the two
+ * axes they are: the top row is how much room (Compact · Airy), the bottom how
+ * much weight (Quiet · Bold). Each tile draws its own mode — a card whose inset,
+ * control height and stroke are that mode's real values, scaled — so the choice
+ * is visible before it is made. The selection is READ from the tokens
+ * (`matchSpacingMode`): edit a value elsewhere and no tile is lit.
+ */
+function SpacingModeGrid({ value, onChange }: {
+  value: SpacingMode['id'] | null
+  onChange: (mode: SpacingMode) => void
+}) {
+  const { t } = useI18n()
+  const order: SpacingMode['id'][] = ['compact', 'airy', 'quiet', 'bold']
+  return (
+    <div>
+      <div role="radiogroup" aria-label={t('Spacing mode')} className="grid grid-cols-2 gap-1.5">
+        {order.map((id) => {
+          const mode = SPACING_MODES.find((m) => m.id === id)!
+          const on = value === id
+          // The drawing, at ~1/4 scale: inset, control height and stroke all
+          // come from the mode itself.
+          const inset = Math.round((Number(mode.insetStep) * 4) / 3)
+          const control = Math.round((mode.fieldBase * 10) / 3)
+          return (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              title={t(mode.description)}
+              onClick={() => onChange(mode)}
+              className={`flex flex-col items-start gap-1.5 rounded-lg border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                on ? 'border-accent-ui bg-accent-ui/[0.08]' : 'border-line hover:border-line-strong hover:bg-elevated'
+              }`}
+            >
+              <span
+                aria-hidden
+                className="flex w-full flex-col justify-end rounded-[4px] bg-fg/[0.05]"
+                style={{ height: 34, padding: inset, border: `${mode.border}px solid color-mix(in srgb, var(--fg) 45%, transparent)` }}
+              >
+                <span className="block rounded-[2px] bg-fg/30" style={{ height: control }} />
+              </span>
+              <span className={`text-caption font-medium ${on ? 'text-fg' : 'text-fg-muted'}`}>{t(mode.label)}</span>
+            </button>
+          )
+        })}
       </div>
+      {value === null && (
+        <p className="mt-1.5 text-micro text-fg-faint">{t('Custom — values set by hand. Pick a mode to reset all three.')}</p>
+      )}
     </div>
   )
 }
@@ -369,7 +436,7 @@ function ColorAppearanceSwitch({ value, onChange }: {
   const { t } = useI18n()
   return (
     <div
-      className={`flex h-6 flex-shrink-0 items-center rounded-md p-0.5 ${CHROME_CONTROL_SHELL}`}
+      className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
       role="group"
       aria-label={t('Preview appearance')}
       title={t('Choose which appearance of this theme the artefacts display.')}
@@ -380,8 +447,12 @@ function ColorAppearanceSwitch({ value, onChange }: {
           type="button"
           aria-pressed={value === mode}
           onClick={() => onChange(mode)}
-          className={`rounded px-1.5 py-0.5 text-micro font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-            value === mode ? 'bg-elevated text-fg' : 'text-fg-faint hover:text-fg-muted'
+          // Same pill as Desktop / Tablet / Mobile (`PlatformSwitch`): one
+          // control language for every segmented switch in an edition header.
+          className={`flex h-7 items-center justify-center rounded-md px-2.5 text-caption font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            value === mode
+              ? 'bg-app text-fg shadow-[0_1px_3px_rgba(0,0,0,0.22)] ring-1 ring-line-strong'
+              : `text-fg-faint ${CHROME_CONTROL_HOVER}`
           }`}
         >
           {t(mode === 'light' ? 'Light' : 'Dark')}
@@ -498,13 +569,13 @@ function InfoHint({ children }: { children: string }) {
  * (icon weight + status action). Adding a panel means adding its key here
  * and a matching `EditionCard` below, nowhere else.
  */
-export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'grid', 'stroke', 'shadow', 'icons'] as const
+export const QUICK_PANEL_FOUNDATIONS = ['color', 'typography', 'radius', 'sizes', 'shadow', 'icons'] as const
 export type QuickPanelFoundation = (typeof QUICK_PANEL_FOUNDATIONS)[number]
 
 /** Widgets whose values actually change with Desktop / Mobile. Color / radius
  *  / shadow keep the artefacts board on desktop so a platform cut is not a
  *  second appearance toggle sitting on every panel. */
-export const PLATFORM_QUICK_PANELS: ReadonlySet<QuickPanelFoundation> = new Set(['typography', 'sizes', 'grid'])
+export const PLATFORM_QUICK_PANELS: ReadonlySet<QuickPanelFoundation> = new Set(['typography', 'sizes'])
 
 export function isQuickPanelFoundation(key: string): key is QuickPanelFoundation {
   return (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(key)
@@ -582,7 +653,7 @@ function EditionCard({ title, foundationKey, trailing, footer, flush, onOpenAdva
   return (
     <section aria-label={t(title)} className="min-w-0 overflow-visible">
       <div className="flex min-h-8 items-center justify-between gap-2 border-b border-line px-3 pb-2">
-        <span className={`min-w-0 truncate text-caption text-fg ${flush ? 'font-normal' : 'font-semibold'}`}>{t(title)}</span>
+        <span className="min-w-0 truncate text-caption font-semibold text-fg">{t(title)}</span>
         {trailing}
       </div>
       <div className={flush ? undefined : 'divide-y divide-line'}>{children}</div>
@@ -637,8 +708,8 @@ function RandomThemeButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label={t('Random theme')}
-      title={t('Random theme')}
+      aria-label={t('Random tweak')}
+      title={t('Random tweak')}
       className="relative flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-line text-mini font-normal text-fg-muted transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-elevated hover:text-fg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
     >
       <span
@@ -649,7 +720,7 @@ function RandomThemeButton({ onClick }: { onClick: () => void }) {
           mask: "url('/icons/settings/random.svg') center / contain no-repeat",
         }}
       />
-      <span className="relative z-[1]">{t('Random')}</span>
+      <span className="relative z-[1]">{t('Random tweak')}</span>
       <span aria-hidden className="random-theme-border pointer-events-none absolute inset-0 rounded-lg" />
     </button>
   )
@@ -911,67 +982,6 @@ function BaseUnitCard({
         ariaLabel={ariaLabel}
         className={ROW_GAP_CONTROL}
       />
-    </div>
-  )
-}
-
-/**
- * Container inset — the one dial for how much room every boxed surface (Card,
- * panel, alert, the artefact collage) leaves inside its edge. It moves the
- * `inset-surface` spacing role (which is what `paddingOf` actually reads), so
- * the slider snaps across `SPACING_STEPS` rather than being free px — same
- * stepped model as the Stroke control in this panel. The readout shows the
- * resolved px so the number is the number that ships.
- */
-function ContainerInsetCard({
-  stepIndex, spacing, onChange, onScrubStart, onScrubEnd,
-}: {
-  stepIndex: number
-  spacing: Record<string, string>
-  onChange: (index: number) => void
-  onScrubStart?: () => void
-  onScrubEnd?: () => void
-}) {
-  // `|| fallback` would swallow a legitimate 0 (step 0 = 0px), so guard on
-  // NaN explicitly.
-  const parsed = parseFloat(spacing[SPACING_STEPS[stepIndex]] ?? '')
-  const resolvedPx = Math.round(Number.isFinite(parsed) ? parsed : 20)
-  // A 46×34 box, its inner block inset by the padding scaled into a 0–11px
-  // visual range — reads the step difference without the inner block getting
-  // too thin at the top of the ramp.
-  const maxStepPx = 64
-  const visualInset = Math.round((resolvedPx / maxStepPx) * 11)
-  return (
-    <div>
-      <div className="flex items-end justify-between gap-3">
-        <div role="img" aria-label="Container inset preview" className={`flex ${ROW_PREVIEW_H} items-center`}>
-          <span
-            className="grid place-items-stretch rounded-[4px] border border-fg/45 bg-fg/[0.06]"
-            style={{ width: 46, height: 34, padding: visualInset }}
-          >
-            <span className="rounded-[2px] bg-fg/25" />
-          </span>
-        </div>
-        <div className="text-right leading-none">
-          <span className="block text-heading font-semibold tabular-nums text-fg">{resolvedPx}</span>
-          <span className="mt-1 block text-micro uppercase tracking-widest text-fg-faint">Pixels</span>
-        </div>
-      </div>
-      <RangeInput
-        min={0}
-        max={SPACING_STEPS.length - 1}
-        step={1}
-        value={stepIndex}
-        onChange={onChange}
-        onScrubStart={onScrubStart}
-        onScrubEnd={onScrubEnd}
-        ariaLabel="Container padding in pixels"
-        className={ROW_GAP_CONTROL}
-      />
-      <div className="mt-1 flex justify-between text-micro tabular-nums text-fg-faint" aria-hidden>
-        <span>0</span>
-        <span>{maxStepPx}</span>
-      </div>
     </div>
   )
 }
@@ -1283,6 +1293,63 @@ function TintSlider({
   )
 }
 
+/** "−.15", "0", "+.3" — fits the 24px chip slot the rows above use. */
+function formatShift(n: number): string {
+  if (n === 0) return '0'
+  const abs = Math.abs(n).toFixed(2).replace(/^0/, '').replace(/0$/, '')
+  return `${n < 0 ? '−' : '+'}${abs}`
+}
+
+/**
+ * CONTRAST SHIFT as a bar, in the same language as Brand accent and Neutral
+ * tint: a 20px painted track, a ring thumb, a caption row underneath. The
+ * track reads softer → stronger in the neutral's own hue — the ramp's steps
+ * pulled together on the left, pushed apart on the right.
+ */
+function ContrastSlider({
+  hueHex, value, onChange,
+}: {
+  hueHex: string
+  value: number
+  onChange: (n: number) => void
+}) {
+  const soft = `color-mix(in oklab, ${hueHex} 45%, #a3a3a3)`
+  const deep = `color-mix(in oklab, ${hueHex} 55%, #000)`
+  const bright = `color-mix(in oklab, ${hueHex} 35%, #fff)`
+  const marks: [string, number][] = [['Softer', -1], ['Default', 0], ['Stronger', 1]]
+  return (
+    <div>
+      <div
+        className="relative h-5 rounded-full border border-line"
+        style={{ background: `linear-gradient(to right, ${soft} 0%, ${hueHex} 50%, ${deep} 75%, ${bright} 100%)` }}
+      >
+        <input
+          type="range"
+          aria-label="Contrast shift"
+          min={-1}
+          max={1}
+          step={0.05}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          onDoubleClick={() => onChange(0)}
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4
+            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white
+            [&::-webkit-slider-thumb]:bg-transparent [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(0,0,0,0.35)]
+            [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full
+            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-transparent
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 rounded-full"
+        />
+      </div>
+      <div className="mt-1 flex justify-between text-micro font-medium uppercase tracking-wide text-fg-faint" aria-hidden>
+        {marks.map(([label, at]) => (
+          <span key={label} className={(at === 0 ? value === 0 : Math.sign(value) === at) ? 'text-fg' : undefined}>{label}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ThemeQuickSettingsRail({
   previewTheme,
   previewAppearance,
@@ -1301,6 +1368,8 @@ export default function ThemeQuickSettingsRail({
   onContrastOpenChange,
   previewPlatform = 'desktop',
   onPreviewPlatformChange,
+  overlapSize = 'md',
+  onOverlapSizeChange,
 }: {
   previewTheme: string
   previewAppearance: ThemeAppearance
@@ -1335,9 +1404,13 @@ export default function ThemeQuickSettingsRail({
   /** Contrast grid occupies the artefacts canvas while Color edition is open. */
   contrastOpen?: boolean
   onContrastOpenChange?: (open: boolean) => void
-  /** Session desktop / mobile cut — Type, Grid and Size edition resolve against this. */
+  /** Session desktop / mobile cut — Type and Spacing edition resolve against this. */
   previewPlatform?: GridViewport
   onPreviewPlatformChange?: (platform: GridViewport) => void
+  /** Which overlap size the board's avatar card shows — view state, lifted to
+   *  the hub so the bar here and the card there are one value. */
+  overlapSize?: OverlapSize
+  onOverlapSizeChange?: (size: OverlapSize) => void
 }) {
   const { t } = useI18n()
   const store = useDesignStore()
@@ -1345,10 +1418,13 @@ export default function ThemeQuickSettingsRail({
   const applyNeutral = useApplyGrayColor()
   const applyState = useApplyStateColor()
   const [undo, setUndo] = useState<{ snapshot: DesignSnapshot; label: string } | null>(null)
+  // The footer bar offers THIS edit only while it is still the newest step of
+  // the edit history. Once the header's Undo / ⌘Z has stepped past it, the bar
+  // would otherwise sit there naming an edit it no longer undoes.
+  const lastStep = useEditHistory((h) => h.past[h.past.length - 1])
+  const undoIsCurrent = Boolean(undo && lastStep?.snapshot === undo.snapshot)
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   const [openChip, setOpenChip] = useState<ColorChipId | null>(null)
-  const [agentOpen, setAgentOpen] = useState(false)
-  const agentAnchorRef = useRef<HTMLDivElement>(null)
   const rampAppearance = colorAppearance ?? previewAppearance
   // Only ever set by a FAILED adopt (`mintTheme` refusing — a name collision it
   // can't resolve, a slot it can't fill). Rendered next to the button, not as a
@@ -1364,7 +1440,6 @@ export default function ThemeQuickSettingsRail({
   const scrub = useRef<{ snapshot: DesignSnapshot; label: string; target?: string } | null>(null)
   const {
     themeSources, customColors, primaryColor, grayBaseColor, neutralTint, linkNeutralToAccent,
-    linkStatesToAccent, setLinkNeutralToAccent, setLinkStatesToAccent,
     contrastShift, setContrastShift, setNeutralTint,
     patchThemeFoundations,
   } = store
@@ -1377,7 +1452,7 @@ export default function ThemeQuickSettingsRail({
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
-  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, statusAction, iconWeight } = foundations
+  const { typography, radius, shadows, sizes, selector, stroke, spacing, spacingRoles, iconWeight } = foundations
   const platformSwitch = onPreviewPlatformChange ? (
     <PlatformCutSwitch value={previewPlatform} onChange={onPreviewPlatformChange} />
   ) : undefined
@@ -1389,17 +1464,9 @@ export default function ThemeQuickSettingsRail({
     const style = resolveTypeStyle(alias, typography)
     return [{ label: spec.label, value: style.size || alias.size }]
   })
-  const gridCut = resolveGridFrame(
-    previewPlatform,
-    foundations.gridFrame,
-    foundations.spacing,
-    extractBreakpoints(foundations.grid),
-  )
   const sizeUsedStep = previewPlatform === 'mobile'
     ? (foundations.sizeRoles?.touch ?? 'lg')
     : (foundations.sizeRoles?.control ?? 'md')
-  const setStatusAction = (key: string, value: StatusAction) =>
-    patchThemeFoundations(key, { statusAction: value })
   const setIconWeight = (key: string, value: PhosphorWeight) =>
     patchThemeFoundations(key, { iconWeight: value })
   // Every write takes an explicit theme KEY rather than closing over
@@ -1492,6 +1559,9 @@ export default function ThemeQuickSettingsRail({
     showToast(t('{name} added to My themes', { name }))
 
   const showUndo = (snapshot: DesignSnapshot, label: string) => {
+    // Every rail edit is one step of the header's Undo / Redo history; the
+    // footer bar is the same step, offered right where the edit was made.
+    recordEdit(snapshot, label)
     setUndo({ snapshot, label })
     if (undoTimer.current) clearTimeout(undoTimer.current)
     undoTimer.current = setTimeout(() => setUndo(null), 9000)
@@ -1676,7 +1746,9 @@ export default function ThemeQuickSettingsRail({
 
   const restore = () => {
     if (!undo) return
-    useDesignStore.setState(undo.snapshot)
+    // Through the history, not a raw setState, so the header's Redo can bring
+    // it back and the two Undo doors can't disagree about where you are.
+    undoEdit()
     setUndo(null)
     if (undoTimer.current) clearTimeout(undoTimer.current)
   }
@@ -1695,7 +1767,6 @@ export default function ThemeQuickSettingsRail({
   // left the tint track one gesture behind the Accent row until pointer-up.
   // A detached neutral remains stable, as expected.
   const liveAccent = accentPreview ?? accent
-  const stateRecommendation = useMemo(() => recommendStateColors(liveAccent), [liveAccent])
   const liveNeutral = linkNeutralToAccent
     ? neutralFromBrand(liveAccent, activeTint)
     : neutral
@@ -1732,11 +1803,9 @@ export default function ThemeQuickSettingsRail({
       ? 'secondary'
       : null
   const toggleChip = (id: ColorChipId) => {
-    setAgentOpen(false)
     setOpenChip((current) => current === id ? null : id)
   }
-  useEffect(() => { setOpenChip(null); setAgentOpen(false) }, [rampAppearance])
-  useEffect(() => { if (activePanel !== 'color') setAgentOpen(false) }, [activePanel])
+  useEffect(() => { setOpenChip(null) }, [rampAppearance])
   const chipAnchor = (id: ColorChipId): RefObject<HTMLElement | null> => ({
     current: chipRefs.current[id] ?? null,
   })
@@ -1756,7 +1825,7 @@ export default function ThemeQuickSettingsRail({
     onRandomBoardAppearance?.(randomBoardAppearance(rng))
     loadGoogleFont(recipe.bodyFont)
     loadGoogleFont(recipe.headingFont)
-    commit(t('Theme randomized'), (themeKey) => {
+    commit(t('Random tweak applied'), (themeKey) => {
       setNeutralTint(recipe.neutralTint)
       writeAccent(themeKey, recipe.accent)
       if (useDesignStore.getState().linkNeutralToAccent) {
@@ -1795,7 +1864,7 @@ export default function ThemeQuickSettingsRail({
   // itself (`announceAdopted`) so the new row in My themes isn't a surprise.
   const drawerContained = Boolean(containedDrawerRootRef)
   const colorPickerOpen = openChip != null
-  const quickEditOpen = colorPickerOpen || agentOpen
+  const quickEditOpen = colorPickerOpen
 
   useEffect(() => {
     onQuickEditOpenChange?.(quickEditOpen)
@@ -1860,74 +1929,6 @@ export default function ThemeQuickSettingsRail({
           )}
         >
           <div className="divide-y divide-line">
-            <div className="px-3 py-2.5">
-              <div ref={agentAnchorRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenChip(null)
-                    setAgentOpen((open) => !open)
-                  }}
-                  aria-haspopup="dialog"
-                  aria-expanded={agentOpen}
-                  aria-label={t('Color Agent')}
-                  title={t('Color Agent')}
-                  className={`group flex h-9 w-full min-w-0 items-stretch gap-2 overflow-hidden border bg-input-bg p-1 pr-3 text-left transition-[color,border-color,background-color,box-shadow] hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/15 ${RAIL_SURFACE_RADIUS} ${agentOpen ? 'border-accent-ui/70 ring-2 ring-accent-ui/15' : 'border-line'}`}
-                >
-                  <ColorAgentButton
-                    asChild
-                    nested
-                    active={agentOpen}
-                    className="aspect-square h-full w-auto shrink-0"
-                  >
-                    <span className="flex items-center justify-center">
-                      <SparkleCircleIcon size={14} />
-                    </span>
-                  </ColorAgentButton>
-                  <span className="min-w-0 flex-1 self-center truncate text-body font-semibold text-fg">{t('Color Agent')}</span>
-                </button>
-              </div>
-              <ScaleSettingsModal
-                open={agentOpen}
-                onClose={() => setAgentOpen(false)}
-                anchorRef={agentAnchorRef}
-                placement="end"
-                contained={drawerContained}
-                containedRootRef={containedDrawerRootRef}
-                containedDockLeft={COLOR_RAIL_WIDTH}
-              >
-                <ColorControls
-                  contrastShift={contrastShift}
-                  onShift={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
-                  accentHex={liveAccent}
-                  appearance={rampAppearance}
-                  onPickAccent={(hex) => {
-                    setLinkNeutralToAccent(true)
-                    setLinkStatesToAccent(true)
-                    commitAccent(hex)
-                  }}
-                  linkNeutral={linkNeutralToAccent}
-                  onLinkNeutral={(v) => {
-                    setLinkNeutralToAccent(v)
-                    if (v) commit('Neutral follows accent', (themeKey) => applyNeutral(neutralFromBrand(liveAccent, activeTint), themeKey, true))
-                  }}
-                  linkedNeutralPreview={neutralFromBrand(liveAccent, activeTint)}
-                  linkStates={linkStatesToAccent}
-                  onLinkStates={(v) => {
-                    setLinkStatesToAccent(v)
-                    if (v) {
-                      commit('States follow accent', (themeKey) => {
-                        applyState('error', stateRecommendation.error, true, themeKey)
-                        applyState('warning', stateRecommendation.warning, true, themeKey)
-                        applyState('success', stateRecommendation.success, true, themeKey)
-                        applyState('info', stateRecommendation.info, true, themeKey)
-                      })
-                    }
-                  }}
-                  linkedStatesPreview={stateRecommendation}
-                />
-              </ScaleSettingsModal>
-            </div>
             <div className="flex flex-col px-3 py-2.5">
               <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Brand accent')}</p>
               <div className="flex flex-col gap-2">
@@ -2029,6 +2030,54 @@ export default function ThemeQuickSettingsRail({
               />
             </div>
               </div>
+            </div>
+
+            {/* Its own section, not a third bar in Brand accent: contrast is how
+                the ramp's steps are spread, a different question from which colour
+                or how tinted — the title keeps it from reading as part of them. */}
+            <div className="flex flex-col px-3 py-2.5">
+              <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-fg-faint">{t('Contrast')}</p>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <ContrastSlider
+                    hueHex={liveNeutral}
+                    value={contrastShift}
+                    onChange={(n) => commit('Contrast shift updated', () => setContrastShift(n))}
+                  />
+                </div>
+                {/* The chip slot, as in Brand accent, carries the readout;
+                    clicking it is the reset, since 0 is the generator's own. */}
+                <button
+                  type="button"
+                  onClick={() => commit('Contrast shift reset', () => setContrastShift(0))}
+                  disabled={contrastShift === 0}
+                  title={t('Reset contrast shift')}
+                  aria-label={`${t('Contrast shift')} ${contrastShift.toFixed(2)} — ${t('Reset contrast shift')}`}
+                  className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-line text-[9px] font-semibold tabular-nums text-fg transition-colors hover:border-fg-faint disabled:cursor-default disabled:text-fg-faint disabled:hover:border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
+                >
+                  {formatShift(contrastShift)}
+                </button>
+            </div>
+            <div className="mt-2.5 border-t border-line pt-2">
+              <button
+                type="button"
+                onClick={() => onContrastOpenChange?.(!contrastOpen)}
+                aria-pressed={contrastOpen}
+                className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
+              >
+                <ContrastGridThumb tones={contrastThumbTones} />
+                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
+                <span
+                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
+                    contrastOpen
+                      ? 'border border-line text-fg-muted group-hover:text-fg'
+                      : 'bg-elevated text-fg ring-1 ring-line-strong'
+                  }`}
+                >
+                  {contrastOpen ? t('Hide') : t('Show')}
+                </span>
+              </button>
+            </div>
             </div>
 
             <div className="px-3 py-2.5">
@@ -2139,27 +2188,6 @@ export default function ThemeQuickSettingsRail({
                 )}
               </div>
             </div>
-
-            <div className="px-3 py-2">
-              <button
-                type="button"
-                onClick={() => onContrastOpenChange?.(!contrastOpen)}
-                aria-pressed={contrastOpen}
-                className="group flex h-9 w-full min-w-0 items-center gap-2 text-left"
-              >
-                <ContrastGridThumb tones={contrastThumbTones} />
-                <span className="min-w-0 flex-1 truncate text-caption font-medium text-fg">{t('Contrast grid')}</span>
-                <span
-                  className={`flex h-7 flex-shrink-0 items-center rounded-md px-2.5 text-caption font-semibold transition-colors ${
-                    contrastOpen
-                      ? 'border border-line text-fg-muted group-hover:text-fg'
-                      : 'bg-elevated text-fg ring-1 ring-line-strong'
-                  }`}
-                >
-                  {contrastOpen ? t('Hide') : t('Show')}
-                </span>
-              </button>
-            </div>
           </div>
         </EditionCard>}
 
@@ -2244,12 +2272,23 @@ export default function ThemeQuickSettingsRail({
         )}
 
         {activePanel === 'sizes' && (
-        <EditionCard title="Size edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+        <EditionCard title="Spacing edition" foundationKey="sizes" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
           <SettingItem>
             <CutFacts rows={[
               { label: previewPlatform === 'mobile' ? 'Touch' : 'Control', value: sizes[sizeUsedStep] ?? sizeUsedStep },
             ]} />
           </SettingItem>
+          <SettingItem label="Mode" hint="Four ready-made densities. Each sets field size, card padding (Spacing · Inset surface) and border width together — ordinary tokens, still editable in Variables.">
+            <SpacingModeGrid
+              value={matchSpacingMode(sizes, spacingRoles, stroke)}
+              onChange={(mode) => commit(`Spacing mode: ${mode.label}`, (themeKey) => {
+                setSizes(themeKey, buildSizesFromBase(mode.fieldBase))
+                setContainerInset(themeKey, SPACING_STEPS.indexOf(mode.insetStep))
+                setStroke(themeKey, { ...stroke, sm: `${mode.border}px` })
+              })}
+            />
+          </SettingItem>
+
           <SettingItem label="Fields" hint="Base size for buttons, inputs, selects, and tabs.">
             <BaseUnitCard
               ariaLabel="Fields base size in pixels"
@@ -2264,77 +2303,15 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Selectors" hint="Base size for checkbox, radio, and switch controls.">
-            <BaseUnitCard
-              ariaLabel="Selector base size in pixels"
-              kind="selector"
-              steps={SELECTOR_STEPS}
-              values={selector}
-              base={inferSelectorBase(selector) ?? null}
-              onScrubStart={() => beginScrub('Selector sizes updated')}
-              onScrubEnd={endScrub}
-              onChange={(base) => applyScrub('Selector sizes updated', (themeKey) => setSelector(themeKey, buildSelectorsFromBase(base)))}
+
+          <SettingItem label="Overlap" hint="Walk the avatar card on the board through the six overlap sizes. Edit their values in Variables · Spacing · Overlap.">
+            <OverlapBar
+              value={overlapSize}
+              onChange={(size) => onOverlapSizeChange?.(size)}
+              pxOf={(size) => roleValuePx(mergeLayoutRoles('spacing', spacingRoles)[`overlap-${size}`], spacing) ?? 0}
             />
           </SettingItem>
 
-          <SettingItem label="Inset surface" hint="Card, modal and alert padding — the same Spacing · Inset surface role Variables edits.">
-            <ContainerInsetCard
-              stepIndex={insetSurfaceStepIndex(spacingRoles, spacing)}
-              spacing={spacing}
-              onScrubStart={() => beginScrub('Container padding updated')}
-              onScrubEnd={endScrub}
-              onChange={(index) => applyScrub('Container padding updated', (themeKey) => setContainerInset(themeKey, index))}
-            />
-          </SettingItem>
-        </EditionCard>
-        )}
-
-        {activePanel === 'grid' && (
-        <EditionCard title="Grid edition" foundationKey="grid" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
-          <SettingItem label="Frame" hint="Columns, gutter and margin for this platform. The recipes live in Variables · Grid.">
-            <GridCutCard
-              columns={gridCut.columns}
-              gutter={gridCut.gutter}
-              margin={gridCut.margin}
-              container={gridCut.container}
-            />
-          </SettingItem>
-        </EditionCard>
-        )}
-
-        {activePanel === 'icons' && (
-        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced}>
-          <div className="px-3 pt-1 pb-2">
-            <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
-            <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
-          </div>
-          <SettingItem label="Status action" hint="How destructive and confirming buttons paint — a solid fill or a soft wash. System styles set this; it is a real axis, not a preset-only secret.">
-            <Menu
-              ariaLabel="Status action style"
-              value={statusAction ?? 'solid'}
-              options={[
-                { value: 'solid', label: t('Solid') },
-                { value: 'soft', label: t('Soft') },
-              ]}
-              onChange={(value) => commit('Status action updated', (themeKey) => setStatusAction(themeKey, value))}
-            />
-          </SettingItem>
-          <SettingItem label="Icon weight" hint="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision.">
-            <Menu
-              ariaLabel="Icon weight"
-              value={iconWeight ?? 'regular'}
-              options={PHOSPHOR_WEIGHTS.map((weight) => ({
-                value: weight,
-                label: weight.charAt(0).toUpperCase() + weight.slice(1),
-              }))}
-              onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
-            />
-          </SettingItem>
-        </EditionCard>
-        )}
-
-        {activePanel === 'stroke' && (
-        <EditionCard title="Stroke edition" foundationKey="stroke" onOpenAdvanced={onOpenAdvanced}>
           <SettingItem label="Border width" hint="Controls dividers and component borders. The 2px focus ring remains unchanged.">
             <div>
               <div className="flex items-baseline justify-between">
@@ -2363,6 +2340,29 @@ export default function ThemeQuickSettingsRail({
         </EditionCard>
         )}
 
+        {activePanel === 'icons' && (
+        <EditionCard title="Style edition" foundationKey="icons" onOpenAdvanced={onOpenAdvanced}>
+          <div className="px-3 pt-1 pb-2">
+            <IconStyleOverview weight={iconWeight ?? 'regular'} ariaLabel={t('Phosphor icons at this weight')} />
+            <p className="mt-2 text-center text-micro text-fg-faint">{t('Phosphor icons at this weight')}</p>
+          </div>
+          <SettingItem label="Icon weight" hint="Phosphor stroke weight for every glyph. The set never changes; only the weight is a style decision.">
+            <Menu
+              ariaLabel="Icon weight"
+              value={iconWeight ?? 'regular'}
+              options={PHOSPHOR_WEIGHTS.map((weight) => ({
+                value: weight,
+                label: weight.charAt(0).toUpperCase() + weight.slice(1),
+              }))}
+              onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
+            />
+          </SettingItem>
+          <SettingItem label="Icon sizes" hint="Each control's icon is derived from its height (× 0.42, snapped to 12 · 14 · 16 · 20 · 24 · 32), so Spacing modes resize icons too. Below 16px, thin and light icons render at regular weight.">
+            <IconSizeLadder sizes={sizes} bodySize={typography.sizes?.['text-md']} weight={iconWeight ?? 'regular'} />
+          </SettingItem>
+        </EditionCard>
+        )}
+
         {activePanel === 'sizes' && (
           inferSizeBase(sizes) !== SIZE_DEFAULT_BASE ||
           inferSelectorBase(selector) !== SELECTOR_DEFAULT_BASE ||
@@ -2385,7 +2385,7 @@ export default function ThemeQuickSettingsRail({
       </ThemeRailScrollRegion>
 
       <AnimatePresence>
-        {undo && (
+        {undo && undoIsCurrent && (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} className={`flex-shrink-0 border-t border-line ${WORKSPACE_CHROME} px-4 py-2`}>
             <button type="button" onClick={restore} className="text-caption font-medium text-accent-ui hover:underline underline-offset-2">
               Undo {undo.label}

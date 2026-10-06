@@ -245,6 +245,14 @@ export function resolveThemePalette(
     brand: pick('brand'), gray: pick('gray'), error: pick('error'),
     warning: pick('warning'), success: pick('success'), info: pick('info'),
   }
+  // Extra brand palettes are real primitives, so the semantic layer may read
+  // them. They never fall back to a global: a rank the theme doesn't carry (or
+  // whose family was deleted) simply isn't offered.
+  for (const rank of BRAND_EXTRA_RANKS) {
+    const key = sources[rank]
+    const scale = key ? scaleForFamily(key, kind, p) : undefined
+    if (scale && Object.keys(scale).length) palette[rank] = scale
+  }
   const alphaPages = alphaPagesFor(sources, p)
   if (alphaPages) palette.alphaPages = alphaPages
   return palette

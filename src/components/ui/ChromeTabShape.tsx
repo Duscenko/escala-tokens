@@ -23,6 +23,10 @@
 
 const SYMBOL_VIEWBOX = '0 0 214 36'
 const SYMBOL_PATH = 'M17 0h197v36H0v-2c4.5 0 9-3.5 9-8V8c0-4.5 3.5-8 8-8z'
+/** Same convex top corner, but the base is a straight edge: no concave
+ *  "shoulder" flaring outward at the bottom. For a strip whose active tab
+ *  should sit as a plain rounded-top block (Theme workspace). */
+const FLAT_SYMBOL_PATH = 'M8 0h206v36H0V8c0-4.5 3.5-8 8-8z'
 
 /** Rendered at our tab height (44px), not the source repo's 36px — scaling
  *  both axes by the same factor (44/36) keeps every proportion identical to
@@ -40,6 +44,12 @@ export function ChromeTabDefs() {
         <symbol id="chrome-tab-geometry-right" viewBox={SYMBOL_VIEWBOX}>
           <use href="#chrome-tab-geometry-left" />
         </symbol>
+        <symbol id="chrome-tab-flat-left" viewBox={SYMBOL_VIEWBOX}>
+          <path d={FLAT_SYMBOL_PATH} />
+        </symbol>
+        <symbol id="chrome-tab-flat-right" viewBox={SYMBOL_VIEWBOX}>
+          <use href="#chrome-tab-flat-left" />
+        </symbol>
       </defs>
     </svg>
   )
@@ -49,7 +59,8 @@ export function ChromeTabDefs() {
  *  entirely by CSS off the parent's `.color-hub-tab-active`/`:hover` state
  *  (see `.color-hub-tab-bg` in index.css) — this component only lays out
  *  the geometry, same split as the upstream repo's own CSS/SVG boundary. */
-export function ChromeTabBackground() {
+export function ChromeTabBackground({ flat = false }: { flat?: boolean } = {}) {
+  const shape = flat ? 'flat' : 'geometry'
   return (
     <span className="color-hub-tab-bg" aria-hidden="true">
       {/* One outer `<svg>` (100% of the span) hosting both mirrored halves —
@@ -57,11 +68,11 @@ export function ChromeTabBackground() {
           can't hang directly off the span the way the left half's does. */}
       <svg className="color-hub-tab-bg-outer" width="100%" height="100%">
         <svg width="52%" height="100%">
-          <use href="#chrome-tab-geometry-left" width={RENDER_WIDTH} height={RENDER_HEIGHT} className="color-hub-tab-geometry" />
+          <use href={`#chrome-tab-${shape}-left`} width={RENDER_WIDTH} height={RENDER_HEIGHT} className="color-hub-tab-geometry" />
         </svg>
         <g transform="scale(-1, 1)">
           <svg width="52%" height="100%" x="-100%" y="0">
-            <use href="#chrome-tab-geometry-right" width={RENDER_WIDTH} height={RENDER_HEIGHT} className="color-hub-tab-geometry" />
+            <use href={`#chrome-tab-${shape}-right`} width={RENDER_WIDTH} height={RENDER_HEIGHT} className="color-hub-tab-geometry" />
           </svg>
         </g>
       </svg>

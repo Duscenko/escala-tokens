@@ -88,6 +88,11 @@ export interface ThemePalette {
   warning: ColorScale
   success: ColorScale
   info: ColorScale
+  /** The theme's extra brand palettes (Primitives · "Add secondary / tertiary"),
+   *  resolved in the theme's appearance. Present only when the theme carries
+   *  them — so a role can be pointed at `{secondary.N}` / `{tertiary.N}`. */
+  secondary?: ColorScale
+  tertiary?: ColorScale
   /**
    * The page each family's ALPHA twin was solved against, keyed by the alpha
    * family name `scaleLookup` uses (`accent`, `neutral`, `error`…). Only set for

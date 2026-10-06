@@ -29,12 +29,17 @@ export type LayoutFamily = 'radius' | 'spacing' | 'size' | 'selector' | 'stroke'
 export const ROLE_DIMENSION_PREFIX = 'dimension-'
 
 /** `dimension-16` → 16, `dimension-3_5` → 3.5; anything else (a step name,
- *  `none`, a negative or malformed key) → null. */
-export function roleDimensionPx(value: unknown): number | null {
+ *  `none`, a negative or malformed key) → null.
+ *
+ *  `signed` also accepts `dimension--8` → -8. Overlap is the one length that is
+ *  legitimately negative, and only SPACING roles may hold it — so signed is
+ *  opt-in at the spacing call sites, and a Grid margin or a Radius that arrives
+ *  as `dimension--2` is still rejected as malformed. */
+export function roleDimensionPx(value: unknown, signed = false): number | null {
   if (typeof value !== 'string' || !value.startsWith(ROLE_DIMENSION_PREFIX)) return null
   const key = value.slice(ROLE_DIMENSION_PREFIX.length)
   const n = dimensionFromKey(key)
-  return Number.isFinite(n) && n >= 0 && dimensionKey(n) === key ? n : null
+  return Number.isFinite(n) && (signed || n >= 0) && dimensionKey(n) === key ? n : null
 }
 
 /** The role value that pins a Dimension primitive. */
@@ -48,7 +53,7 @@ export function roleValuePx(value: string | undefined, steps: Record<string, str
   if (value === undefined) return null
   // A responsive spacing reference (`component-md`) reads its Desktop step.
   const step = spacingRefStep(value)
-  return roleDimensionPx(step) ?? parseDimension(steps?.[step])
+  return roleDimensionPx(step, true) ?? parseDimension(steps?.[step])
 }
 
 // ── Responsive spacing (Desktop · Tablet · Mobile) ──────────────────────────
@@ -909,6 +914,7 @@ export const LAYOUT_ROLE_GROUPS: Record<LayoutFamily, { id: string; label: strin
   spacing: [
     { id: 'gap', label: 'Gap', hint: 'Space between siblings.' },
     { id: 'inset', label: 'Inset', hint: 'Padding inside a surface or control.' },
+    { id: 'overlap', label: 'Overlap', hint: 'Negative space — stacked avatars and badges.' },
   ],
   size: [
     { id: 'control', label: 'Control', hint: 'Default and density heights.' },
@@ -1353,7 +1359,64 @@ export const SPACING_ROLES: LayoutRole[] = [
   { key: 'inset-control', label: 'Inset control', description: 'Padding inside buttons, inputs, chips.', group: 'inset', primitive: 'component-md' },
   { key: 'inset-surface', label: 'Inset surface', description: 'Card / modal / alert padding.', group: 'inset', primitive: '5' },
   { key: 'inset-page', label: 'Inset page', description: 'Page and sheet margins when Grid is unused.', group: 'inset', primitive: 'layout-xs' },
+  // Overlap — NEGATIVE space: how far a stacked item tucks under its neighbour
+  // (avatar stacks, overlapping badges). Pinned primitives, not steps: a spacing
+  // step is never negative, and the base-unit dial must not move an avatar stack.
+  { key: 'overlap-xs', label: 'Overlap xs', description: 'Barely touching — dense avatar stacks.', group: 'overlap', primitive: 'dimension--2' },
+  { key: 'overlap-sm', label: 'Overlap sm', description: 'A hairline tuck.', group: 'overlap', primitive: 'dimension--4' },
+  { key: 'overlap-md', label: 'Overlap md', description: 'The default avatar-stack overlap.', group: 'overlap', primitive: 'dimension--8' },
+  { key: 'overlap-lg', label: 'Overlap lg', description: 'A third of a 48px avatar.', group: 'overlap', primitive: 'dimension--16' },
+  { key: 'overlap-xl', label: 'Overlap xl', description: 'Heavily stacked; only the edge shows.', group: 'overlap', primitive: 'dimension--24' },
+  { key: 'overlap-2xl', label: 'Overlap 2xl', description: 'Nearly fully covered — a count badge on a stack.', group: 'overlap', primitive: 'dimension--32' },
 ]
+
+/**
+ * SPACING MODES — four ready-made densities for the Theme preview's Spacing
+ * edition, so a theme gets a coherent feel in one pick instead of three dials.
+ * Every value is already ON the token scales (a field base inside
+ * `BASE_UNIT_RANGE`, a static spacing step, a `STROKE_SM_STOPS` width), so a
+ * mode writes ordinary tokens and the result stays editable in Variables.
+ *
+ * Two axes, the corners of the "Character" pad the modes come from:
+ * Compact ↔ Airy is how much room things take; Quiet ↔ Bold is how much they
+ * assert themselves. Quiet IS the standard system (base 4 · 20px · 1px), so a
+ * fresh theme reads as Quiet, not "Custom".
+ */
+export interface SpacingMode {
+  id: 'compact' | 'quiet' | 'bold' | 'airy'
+  label: string
+  description: string
+  /** Field base unit → `buildSizesFromBase` (control md = base × 10). */
+  fieldBase: number
+  /** The `inset-surface` spacing step (card / modal / alert padding). */
+  insetStep: SpacingStep
+  /** `stroke.sm` in px — every divider and control border. */
+  border: (typeof STROKE_SM_STOPS)[number]
+}
+
+export const SPACING_MODES: readonly SpacingMode[] = [
+  { id: 'compact', label: 'Compact', description: 'Dense: smaller controls, tight cards.', fieldBase: 3.5, insetStep: '3', border: 1 },
+  { id: 'quiet', label: 'Quiet', description: 'The standard: calm, nothing shouts.', fieldBase: 4, insetStep: '5', border: 1 },
+  { id: 'bold', label: 'Bold', description: 'Larger controls, heavier strokes.', fieldBase: 4.5, insetStep: '5', border: 2 },
+  { id: 'airy', label: 'Airy', description: 'Roomy: big targets, generous cards.', fieldBase: 5, insetStep: '6', border: 1 },
+]
+
+/** The mode a theme currently sits on, or null when any of the three values was
+ *  set by hand (read: "Custom"). Read from the tokens, never stored. */
+export function matchSpacingMode(
+  sizes: Record<string, string> | undefined,
+  spacingRoles: Record<string, string> | undefined,
+  stroke: Record<string, string> | undefined,
+): SpacingMode['id'] | null {
+  const base = inferSizeBase(sizes ?? {})
+  const inset = spacingRefStep(mergeLayoutRoles('spacing', spacingRoles)[INSET_SURFACE_ROLE] ?? PADDING_DEFAULT_STEP)
+  const border = parseFloat(stroke?.sm ?? '1px')
+  return SPACING_MODES.find((m) => m.fieldBase === base && m.insetStep === inset && m.border === border)?.id ?? null
+}
+
+/** The six Overlap sizes, as the `overlap-<size>` role keys carry them. */
+export const OVERLAP_SIZES = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'] as const
+export type OverlapSize = (typeof OVERLAP_SIZES)[number]
 
 /** The static steps the spacing roles defaulted to before v79 — the migration
  *  moves a role only while it still holds exactly this. */
@@ -1457,7 +1520,7 @@ export function mergeLayoutRoles(
   const out: Record<string, string> = {}
   for (const role of LAYOUT_ROLES[family]) {
     const hit = bag[role.key]
-    const ok = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit) !== null || (family === 'spacing' && isSpacingResponsiveRef(hit)))
+    const ok = typeof hit === 'string' && (allowed.has(hit) || roleDimensionPx(hit, family === 'spacing') !== null || (family === 'spacing' && isSpacingResponsiveRef(hit)))
     out[role.key] = ok ? hit : role.primitive
   }
   return out
@@ -1474,7 +1537,7 @@ export function layoutRoleIsDefault(
 ): boolean {
   const spec = LAYOUT_ROLES[family].find((r) => r.key === key)
   if (!spec || spec.primitive === value) return true
-  if (!steps || roleDimensionPx(value) === null) return false
+  if (!steps || roleDimensionPx(value, family === 'spacing') === null) return false
   const def = roleValuePx(spec.primitive, steps)
   return def !== null && def === roleValuePx(value, steps)
 }
@@ -1492,7 +1555,7 @@ export function resolveLayoutRole(
   // A responsive spacing reference reads its Desktop step here; viewport-aware
   // callers resolve the roles through `spacingRolesAtViewport` first.
   const step = family === 'spacing' ? spacingRefStep(raw) : raw
-  const pinned = roleDimensionPx(step)
+  const pinned = roleDimensionPx(step, family === 'spacing')
   if (pinned !== null) return `${pinned}px`
   return primitives[step] || fallback
 }
