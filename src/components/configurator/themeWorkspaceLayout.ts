@@ -39,6 +39,27 @@ export const WORKSPACE_CHIP_ACTIVE = 'bg-app text-fg dark:bg-chip-rest'
 export const CHROME_MENU_Z = 200
 
 export const CHROME_CONTROL_SHELL = 'bg-chip-rest'
+
+/**
+ * SEGMENTED CONTROLS — one look for "which of N is on" (inspector tabs, Light /
+ * Dark, Desktop / Tablet / Mobile). Measured before this: the selected segment
+ * was a fill one shade off the track (1.06:1 tabs, 1.18:1 Light/Dark) and, in
+ * dark, DARKER than the track, so it read as a hole rather than a raised key.
+ * A full ring fixed the contrast but was too heavy for a quiet chrome control.
+ *
+ * Now, with no border, the selected segment is told apart by three cues, none
+ * of them colour alone:
+ *  · a RAISED fill — white in light (with a soft shadow, the iOS / macOS key),
+ *    and in dark a lift TOWARD the ink (`fg` at 16 % ≈ 1.55:1 vs the track),
+ *  · full-strength ink, against the unselected segments' 75 % ink,
+ *  · semibold against medium.
+ * Unselected labels use `text-fg/75`, not `text-fg-muted`: muted measured
+ * 4.25:1 on the light track — under AA for a 12px label. 75 % ink clears it in
+ * both appearances while still reading as the quieter state.
+ */
+export const SEGMENT_SELECTED_FILL = 'bg-app shadow-[0_1px_2px_rgba(0,0,0,0.12)] dark:bg-fg/[0.16] dark:shadow-none'
+export const SEGMENT_ACTIVE = `${SEGMENT_SELECTED_FILL} font-semibold text-fg`
+export const SEGMENT_INACTIVE = 'font-medium text-fg/75 hover:bg-fg/[0.06] hover:text-fg'
 export const CHROME_CONTROL_HOVER = 'hover:shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.06)] dark:hover:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.07)] hover:text-fg'
 
 export const CHROME_CONTROL_ACTIVE = 'shadow-[inset_0_0_0_9999px_rgba(0,0,0,0.08)] text-fg dark:shadow-[inset_0_0_0_9999px_rgba(255,255,255,0.09)]'

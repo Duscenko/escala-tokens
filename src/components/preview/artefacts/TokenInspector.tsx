@@ -257,7 +257,7 @@ export function InspectorOverlay({
    *  dead afterwards, since a pin deliberately ignores `pointermove` and the
    *  next component you point at never lights up. */
   editing?: boolean
-  /** Last Escape step — leaves inspector mode (same as "Exit inspector"). */
+  /** Last Escape step — leaves inspector mode (same as "Stop inspecting"). */
   onExitMode?: () => void
 }) {
   const [hover, setHover] = useState<Target | null>(null)

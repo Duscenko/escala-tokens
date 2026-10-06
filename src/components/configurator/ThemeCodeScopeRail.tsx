@@ -4,6 +4,7 @@ import { useI18n } from '../../lib/i18n'
 import { COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { ThemeAvatar, myThemeKeys } from './ThemeLibraryRail'
+import { InspectorPortal } from './WorkspaceInspector'
 
 export type CodeThemeScope = string
 
@@ -49,6 +50,7 @@ export default function ThemeCodeScopeRail({
   }
 
   return (
+    <InspectorPortal>
     <aside
       className={`flex h-full min-h-0 flex-shrink-0 flex-col overflow-y-auto border-r border-line ${WORKSPACE_CHROME}`}
       style={{ width: COLOR_RAIL_WIDTH }}
@@ -99,5 +101,6 @@ export default function ThemeCodeScopeRail({
         </section>
       </div>
     </aside>
+    </InspectorPortal>
   )
 }

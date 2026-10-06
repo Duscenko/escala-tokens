@@ -19,7 +19,7 @@ import {
 } from './blocks'
 import { useItForFoundation, USE_IT_ID, USE_IT_TITLE, USE_IT_LEAD } from './useIt'
 import {
-  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown, PrimitiveRamp,
+  FOUNDATION_DOCS, OVERVIEW_KEY, foundationDoc, foundationMarkdown, presentFoundationDoc, PrimitiveRamp,
   type FoundationDoc, type SystemDoc,
 } from './foundationDocs'
 import { GET_STARTED_KEY, colorPrev, introPager, overviewNext } from './getStarted'
@@ -98,22 +98,23 @@ export function FoundationArticle({
   hubMode?: boolean
 }) {
   const { t } = useI18n()
+  const page = presentFoundationDoc(doc, hubMode)
   const idx = FOUNDATION_DOCS.findIndex((f) => f.key === doc.key)
   const prev = idx === 0 ? colorPrev() : FOUNDATION_DOCS[idx - 1]
   const next = FOUNDATION_DOCS[idx + 1]
-  const count = doc.tokenCount(system)
+  const count = page.tokenCount(system)
   const headerActions = useMemo(() => (
     <>
       <AIContextButton
         scope="variable"
-        markdown={() => withAgentEnvelope('variable', doc.label, foundationMarkdown(doc, system))}
+        markdown={() => withAgentEnvelope('variable', page.label, foundationMarkdown(page, system))}
       />
-      {!hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : null}
+      {!hubMode ? <EditTokensPill label={page.codeSection === 'spacing' ? 'Sizes' : page.label} onEdit={() => onEdit(doc.key)} /> : null}
     </>
-  ), [doc, system, onEdit, hubMode])
+  ), [doc, page, system, onEdit, hubMode])
   useThemeHubHeaderActions(hubMode ? headerActions : null)
 
-  const paletteFirst = PALETTE_FIRST.has(doc.key)
+  const paletteFirst = PALETTE_FIRST.has(page.key)
   const renderSection = (section: FoundationDoc['sections'][number]) => (
     <DocSection
       key={section.id}
@@ -127,8 +128,8 @@ export function FoundationArticle({
   const useItSection = (
     <DocSection id={USE_IT_ID} title={t(USE_IT_TITLE)} description={t(USE_IT_LEAD)}>
       <UseItBlock
-        useIt={useItForFoundation(doc)}
-        trailingActions={hubMode ? <EditTokensPill label={doc.label} onEdit={() => onEdit(doc.key)} /> : undefined}
+        useIt={useItForFoundation(page)}
+        trailingActions={hubMode ? <EditTokensPill label={page.codeSection === 'spacing' ? 'Sizes' : page.label} onEdit={() => onEdit(doc.key)} /> : undefined}
       />
     </DocSection>
   )
@@ -139,15 +140,15 @@ export function FoundationArticle({
         <DocHeader
           section={t('Docs')}
           kind={t('Foundations')}
-          title={t(doc.label)}
+          title={t(page.label)}
           actions={headerActions}
         />
       ) : null}
 
       <DocTitle
-        title={t(doc.label)}
+        title={t(page.label)}
         eyebrow={t('Foundation')}
-        lead={t(doc.lead)}
+        lead={t(page.lead)}
         meta={
           <CountBadge>
             {count === 1 ? t('{count} token', { count }) : t('{count} tokens', { count })}
@@ -159,19 +160,19 @@ export function FoundationArticle({
           any conceptual copy — you can't act on a page until you know how to
           consume what it documents. (Color moves it to the foot: see
           `PALETTE_FIRST`.) */}
-      {paletteFirst ? doc.sections.slice(0, 1).map(renderSection) : useItSection}
+      {paletteFirst ? page.sections.slice(0, 1).map(renderSection) : useItSection}
 
       <DocSection
         id="why"
-        title={t('Why {foundation} tokens', { foundation: t(doc.label).toLowerCase() })}
-        description={t(doc.why)}
+        title={t('Why {foundation} tokens', { foundation: t(page.label).toLowerCase() })}
+        description={t(page.why)}
       />
 
-      <DocSection id="usage" title={t('Usage')} description={t(doc.usage)}>
-        <CodeBlock file="variables.css" code={doc.usageCode} />
+      <DocSection id="usage" title={t('Usage')} description={t(page.usage)}>
+        <CodeBlock file="variables.css" code={page.usageCode} />
       </DocSection>
 
-      {(paletteFirst ? doc.sections.slice(1) : doc.sections).map(renderSection)}
+      {(paletteFirst ? page.sections.slice(1) : page.sections).map(renderSection)}
 
       {paletteFirst ? useItSection : null}
 

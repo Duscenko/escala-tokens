@@ -58,6 +58,42 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ## Navigation model — top-nav workspace ("Escala")
 
+> **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —
+> the side panels moved from the LEFT to a right-hand inspector, and the full-width
+> `ThemeWorkspaceTabs` strip is GONE.** `WorkspaceInspector.tsx` (288px, `--nav`) holds
+> the tabs **Theme · Variables · Code · Docs** and a slot below them. Sync and GitHub are
+> NOT tabs: they are destinations in TopNav's Export menu.
+> - **Every per-view side panel PORTALS into the inspector** (`InspectorPortal`):
+>   `ThemeQuickSettingsRail`, `VariableCollectionRail` (Collections + Groups),
+>   `ThemeLibraryRail`, `ThemeCodeScopeRail`, `IntegrationStatusRail` and, in Theme's
+>   Docs, the "On this page" TOC. Each view still renders its panel and owns its state;
+>   only the DOM lands in the inspector. That is load-bearing: the card carries the
+>   previewed theme's `.light`/`.dark` class (`previewAppearance`), and a panel nested
+>   inside it would repaint in the theme's appearance instead of the chrome's. A new
+>   side panel wraps its root in `InspectorPortal` — it does not add a column.
+> - `useInInspector()` is true when a slot is mounted; a panel then ignores its own
+>   collapse. The slot forces `w-full`/`flex-1`/no `border-r` on its child with `!`
+>   (beating the panels' inline widths) and re-points `--tab-bar` to `--nav`, so the
+>   panels' `WORKSPACE_CHROME` headers read as one surface. Outside the Generator there
+>   is no slot and every panel renders inline exactly as before.
+> - **The centre is a CARD** (`my-3 rounded-2xl border`): your system, painted in its
+>   own appearance, on the platform chrome. Variables' card header names the active
+>   collection and carries the token search (⌘K) — the search left the tab strip with it.
+> - The icon rail has no border; its foot is the Themes library door (labelled
+>   "Themes"). "Dimensions" reads "Dims" in the rail (the full name truncated).
+> - **The inspector NEVER collapses** — a collapse toggle was built and removed on
+>   request: the panel is always wanted. `RailToggle` still renders nothing inside it
+>   (a rail-level toggle would collapse nothing).
+> - **`ThemePanel` docks against the inspector** (`dockSide="right"`,
+>   `dockRightOverride` = `INSPECTOR_WIDTH`, `dockToSelector` =
+>   `#workspace-inspector` for top/bottom), sliding out over the card's right edge.
+> - The hub's Docs button is gone (Docs is a tab); "Exit inspector" is "Stop
+>   inspecting", since "inspector" now names the right column.
+> - Older notes below that place Quick settings / Collections / the Themes library in a
+>   LEFT column, or describe the Theme · Variables · Sync tab strip, describe the
+>   pre-2026-10-06 layout.
+
+
 > **NAMING: the Generator's first workspace tab is called "Theme"** — it was "Theme
 > preview" until 2026-10. The tab is half the rail's edition panels and half the board
 > that repaints, and it is where a theme is edited (modes, Undo / Redo / Reset), so

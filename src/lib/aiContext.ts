@@ -1,6 +1,6 @@
 // Shared AI-context contract — one scope model, one set of microcopy, one
-// markdown envelope. The Rainbow + sparkle button is chrome; this file is
-// the payload and the words on it.
+// markdown envelope. The generator outline + sparkle button is chrome; this
+// file is the payload and the words on it.
 //
 //   global    — whole system (Skill brief)
 //   component — one catalogue page

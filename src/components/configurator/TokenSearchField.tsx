@@ -38,8 +38,8 @@ const FIELD_SHELL = [
 
 const FOUNDATION_LABEL: Record<string, string> = {
   color: 'Color',
-  typography: 'Typography',
-  radius: 'Border radius',
+  typography: 'Font',
+  radius: 'Radius',
   spacing: 'Spacing',
   grid: 'Grid',
   sizes: 'Sizes',

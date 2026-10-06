@@ -7,7 +7,6 @@ import {
   type AIContextScope,
 } from '../../lib/aiContext'
 import { SparkleCircleIcon } from './icons'
-import { RainbowButton } from './rainbow-button'
 import { showToast } from './Toast'
 import { useI18n } from '../../lib/i18n'
 
@@ -25,10 +24,11 @@ export interface AIContextButtonProps {
 /**
  * Unified “copy this as agent context” CTA.
  *
- * Same Rainbow + sparkle chrome everywhere. `scope` swaps the hint, the
- * success toast, and (via the caller) the markdown payload — Overview used
- * to ship a Skill zip, component pages a copy button, foundations a quiet
- * “Copy Page”. One control, three payloads.
+ * Generator chrome, the same shell as Reset and Inspect in the theme header:
+ * an h-8 outline with an h-7 caption label. The rainbow fill stays on About.
+ * `scope` swaps the hint, the success toast, and (via the caller) the
+ * markdown payload — Overview used to ship a Skill zip, component pages a
+ * copy button, foundations a quiet “Copy Page”. One control, three payloads.
  */
 export function AIContextButton({ scope, markdown, label }: AIContextButtonProps) {
   const copy = AI_CONTEXT_COPY[scope]
@@ -51,18 +51,24 @@ export function AIContextButton({ scope, markdown, label }: AIContextButtonProps
   }
 
   return (
-    <RainbowButton type="button" size="sm" onClick={onCopy} className="relative z-10">
-      {done ? (
-        <>
-          <span className="text-caption leading-none">✓</span>
-          {t(copy.done)}
-        </>
-      ) : (
-        <>
-          <SparkleCircleIcon size={14} />
-          {shownLabel}
-        </>
-      )}
-    </RainbowButton>
+    <div className="flex h-8 items-center rounded-lg border border-line p-0.5">
+      <button
+        type="button"
+        onClick={onCopy}
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] text-fg transition-[color,background-color,transform] duration-150 ease-[var(--ease-out-quint)] hover:bg-surface active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+      >
+        {done ? (
+          <>
+            <span className="text-caption leading-none text-status-success">✓</span>
+            {t(copy.done)}
+          </>
+        ) : (
+          <>
+            <SparkleCircleIcon size={14} />
+            {shownLabel}
+          </>
+        )}
+      </button>
+    </div>
   )
 }

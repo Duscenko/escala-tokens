@@ -85,7 +85,7 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
  *
  * Inspect-on fills the inner pill with `--accent-solid` / `--accent-ink` so
  * the mode reads as armed without inventing a second selected-chip language.
- * The visible label switches — **Inspect tokens** to enter, **Exit inspector**
+ * The visible label switches — **Inspect tokens** to enter, **Stop inspecting**
  * to leave — so the exit is on the control itself, not only in the tooltip.
  */
 function InspectorToggle({ active, onChange, accent, ink }: {
@@ -98,7 +98,7 @@ function InspectorToggle({ active, onChange, accent, ink }: {
   ink?: string
 }) {
   const { t } = useI18n()
-  const label = active ? t('Exit inspector') : t('Inspect tokens')
+  const label = active ? t('Stop inspecting') : t('Inspect tokens')
   return (
     <div
       className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
@@ -123,29 +123,6 @@ function InspectorToggle({ active, onChange, accent, ink }: {
       >
         <InspectGlyph size={16} hint={!active} />
         {label}
-      </button>
-    </div>
-  )
-}
-
-function DocsPanelButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  const { t } = useI18n()
-  const mask = `url('/icons/theme-hub-icons/Icon/doc.svg') center / contain no-repeat`
-  return (
-    <div className="flex h-8 items-center rounded-lg border border-line bg-tab-bar p-0.5">
-      <button
-        type="button"
-        onClick={onClick}
-        aria-pressed={active}
-        aria-label={t('Docs')}
-        title={t('Docs')}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${active
-          ? 'bg-elevated font-medium text-fg shadow-sm'
-          : `font-normal text-fg ${CHROME_CONTROL_HOVER}`
-        }`}
-      >
-        <span aria-hidden className="h-3.5 w-3.5 bg-current" style={{ WebkitMask: mask, mask }} />
-        {t('Docs')}
       </button>
     </div>
   )
@@ -490,7 +467,7 @@ export default function ThemePreviewHub({
     : docsOpen
       ? (activeDocKey === OVERVIEW_KEY
         ? t('Theme reference')
-        : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? t('Docs')))
+        : t(activeDocKey === 'sizes' ? 'Spacing' : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? 'Docs')))
       : t('Artefacts')
   // Flip the PREVIEW's appearance (the board), not the workspace chrome.
   // Color edition's Light/Dark is the control. Clearing `accentPreview`
@@ -651,7 +628,6 @@ export default function ThemePreviewHub({
                       ink={boardCanvasTokens.onBrand}
                     />
                   )}
-                  <DocsPanelButton active={docsOpen} onClick={() => onDocsOpenChange(!docsOpen)} />
                 </div>
               </div>
               <ThemeHubHeaderActionsProvider onActions={setHubDocActions}>

@@ -218,7 +218,7 @@ export default function VariablesTable({
                 reserveHandle={g.scrubbable}
               />
             </div>
-            <div className={`flex items-center px-3 py-1.5 overflow-hidden ${TABLE_CELL_DIVIDER}`}>{r.preview}</div>
+            <div className={`flex items-center px-3 py-1.5 overflow-visible ${TABLE_CELL_DIVIDER}`}>{r.preview}</div>
             <button
               onClick={r.onReset}
               disabled={!r.modified}

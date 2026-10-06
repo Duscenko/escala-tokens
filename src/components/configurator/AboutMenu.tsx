@@ -552,7 +552,7 @@ const SHOTS = {
   contrast: { file: 'contrast', size: [1200, 900], alt: 'The contrast grid: every pair of the twelve accent steps measured with APCA' },
   alpha: { file: 'alpha', size: [1200, 900], alt: 'The Primary-Alpha ramp over a checkerboard, with the solved value for dark and light' },
   harmony: { file: 'harmony', size: [1200, 900], alt: 'The colour quick settings: accent hue and tint sliders and the four state colours, beside the repainted artefacts' },
-  type: { file: 'type', size: [1360, 850], alt: 'The Text edition panel: body and heading font and a five-step text scale slider' },
+  type: { file: 'type', size: [1360, 850], alt: 'The Font edition panel: body and heading font and a five-step text scale slider' },
   radius: { file: 'radius', size: [1360, 850], alt: 'The Radius edition panel with Fields at the roundest step while Boxes keep theirs' },
   spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing responsive table with the Mobile platform selected' },
   grid: { file: 'grid', size: [1200, 900], alt: 'The grid at desktop, tablet and mobile: twelve, eight and four columns' },

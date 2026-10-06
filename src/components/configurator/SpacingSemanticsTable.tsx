@@ -79,12 +79,12 @@ function Cell({ step, px, accent, desktopPx }: { step: string; px: number | null
       </div>
     )
   }
-  const w = Math.min(Math.max(px ?? 0, 0), 48)
+  const w = Math.max(px ?? 0, 0)
   return (
     <div className="flex items-center gap-2 px-3 py-2 min-w-0 border-r border-line">
-      {/* The drawing gives way before the words: in a narrow window the bar
-          slot shrinks (and clips) while `space-12 · 48px` stays readable. */}
-      <span aria-hidden className="flex items-center h-5 w-12 min-w-1 flex-shrink overflow-hidden">
+      {/* True px, cropped only past the spacing ladder's top step (128). The
+          old 48px cap made space-12 and space-32 the same bar. */}
+      <span aria-hidden className="flex items-center h-5 max-w-32 min-w-1 flex-shrink overflow-hidden">
         <span className="h-4 rounded-[2px]" style={{ width: Math.max(w, 1.5), backgroundColor: accent + '33', borderLeft: `1px solid ${accent}`, borderRight: `1px solid ${accent}` }} />
       </span>
       <span className="flex-shrink-0 text-caption font-mono text-fg">{pinned ? 'pinned' : `space-${stepLabel(step)}`}</span>

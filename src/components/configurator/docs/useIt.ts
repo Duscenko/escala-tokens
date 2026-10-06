@@ -67,7 +67,8 @@ function sectionKeyFor(doc: FoundationDoc): SectionKey | null {
   const keys: SectionKey[] = [
     'color', 'typography', 'radius', 'spacing', 'shadow', 'grid', 'sizes', 'stroke', 'icons',
   ]
-  return keys.find((k) => k === doc.key) ?? null
+  const named = doc.codeSection ?? doc.key
+  return keys.find((k) => k === named) ?? null
 }
 
 export function useItForFoundation(doc: FoundationDoc): UseIt {

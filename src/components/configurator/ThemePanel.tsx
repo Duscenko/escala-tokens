@@ -644,6 +644,8 @@ export default function ThemePanel({
   railCollapsed = false,
   dockLeftOverride,
   dockToSelector,
+  dockSide = 'left',
+  dockRightOverride = 0,
 }: {
   open: boolean
   onClose: () => void
@@ -664,6 +666,11 @@ export default function ThemePanel({
    * hardcoded row offset.
    */
   dockToSelector?: string
+  /** Which edge the drawer slides out of. The Generator docks it against the
+   *  right-hand inspector (`dockRightOverride` = its width), so editing a theme
+   *  opens beside the panel that lists it, over the canvas card. */
+  dockSide?: 'left' | 'right'
+  dockRightOverride?: number
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [dockTop, setDockTop] = useState(SHELL_ROWS)
@@ -722,9 +729,12 @@ export default function ThemePanel({
 
   const dockLeft = dockLeftOverride ?? (railCollapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH)
   const effectiveDockTop = dockTop
+  const right = dockSide === 'right'
+  const dockInset = right ? dockRightOverride : dockLeft
   const width = typeof window === 'undefined'
     ? PANEL_W
-    : Math.min(PANEL_W, Math.max(280, window.innerWidth - dockLeft - 16))
+    : Math.min(PANEL_W, Math.max(280, window.innerWidth - dockInset - 16))
+  const slide = right ? 16 : -16
 
   return createPortal(
     <AnimatePresence>
@@ -732,20 +742,22 @@ export default function ThemePanel({
         <motion.div
           key={editKey ?? 'new'}
           ref={panelRef}
-          initial={{ opacity: 0, x: -16 }}
+          initial={{ opacity: 0, x: slide }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -16 }}
+          exit={{ opacity: 0, x: slide }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
           role="dialog"
           aria-label={editKey ? 'Edit theme' : 'New theme'}
           style={{
             position: 'fixed',
-            left: dockLeft,
+            ...(right ? { right: dockInset } : { left: dockLeft }),
             top: effectiveDockTop,
             bottom: dockBottom,
             width,
           }}
-          className="z-50 rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
+          className={`z-50 border border-line bg-app flex flex-col overflow-hidden ${right
+            ? 'rounded-l-2xl border-r-0 shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.28)]'
+            : 'rounded-r-2xl border-l-0 shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)]'}`}
         >
           <ThemeForm
             key={editKey ?? 'new'}

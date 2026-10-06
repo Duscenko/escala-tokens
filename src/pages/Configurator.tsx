@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type ComponentType, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type ComponentType, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useDesignStore } from '../store/useDesignStore'
@@ -24,11 +24,12 @@ import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeL
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
+import WorkspaceInspector, { INSPECTOR_ID, INSPECTOR_WIDTH, InspectorSlotProvider, type InspectorTab } from '../components/configurator/WorkspaceInspector'
 import { ThemeAppearanceControl } from '../components/configurator/ThemeSheet'
 import { PreviewPlatformProvider } from '../components/configurator/PlatformRail'
 import NeedMyThemeEmpty from '../components/configurator/NeedMyThemeEmpty'
 import { figmaSyncThemeKeys, resolveListedTheme } from '../lib/themeLibrary'
-import { CHROME_CONTROL_ACTIVE, CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from '../components/configurator/themeWorkspaceLayout'
+import { SHELL_CHROME } from '../components/configurator/themeWorkspaceLayout'
 import { THEME_STYLE_PRESETS } from '../lib/themePresets'
 import { type StylePreview } from '../lib/stylePreviewOverlay'
 import ThemePreviewHub, { type ThemeHubSurface } from '../components/configurator/ThemePreviewHub'
@@ -41,7 +42,7 @@ import { generateTokenJSON, setActiveThemeHint } from '../lib/tokenGenerator'
 import { AboutHome, COPYRIGHT_LINE } from '../components/configurator/AboutMenu'
 import { FooterLinks } from '../components/configurator/FooterLinks'
 import { hasOnboarded, markOnboarded } from '../lib/onboarding'
-import { ChromeTabBackground, ChromeTabDefs } from '../components/ui/ChromeTabShape'
+import { ChromeTabDefs } from '../components/ui/ChromeTabShape'
 import { FigmaGlyph, GitHubGlyph } from '../components/ui/icons'
 import { ResetScopeControl } from '../components/configurator/ThemeResetButton'
 import { COLOR_RAIL_WIDTH, usePopoverPlacement } from '../components/configurator/colorControls'
@@ -128,11 +129,11 @@ const FOUNDATIONS: FoundationSection[] = [
   },
   {
     key: 'typography',
-    label: 'Typography',
+    label: 'Font',
     short: 'Font',
     hint: 'Primitive scale + text roles',
-    title: 'Typography',
-    variablesLabel: 'Text variables',
+    title: 'Font',
+    variablesLabel: 'Font variables',
     subtitle: 'Primitives for the scale, then semantic text styles — labels, placeholders, headings — mapped for desktop and mobile.',
     Component: Step4_Typography,
     Icon: ic('M8 7H16M12 7V17M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z'),
@@ -140,7 +141,9 @@ const FOUNDATIONS: FoundationSection[] = [
   {
     key: 'dimensions',
     label: 'Dimensions',
-    short: 'Dimensions',
+    // The rail label has ~52px; "Dimensions" needs 64 and truncated to
+    // "Dimensi…". The tile's tooltip still reads the full name.
+    short: 'Dims',
     hint: 'Every length, once',
     title: 'Dimensions',
     variablesLabel: 'Dimension variables',
@@ -151,10 +154,10 @@ const FOUNDATIONS: FoundationSection[] = [
   },
   {
     key: 'radius',
-    label: 'Border radius',
+    label: 'Radius',
     short: 'Radius',
     hint: 'Corner-radius personality',
-    title: 'Border radius',
+    title: 'Radius',
     variablesLabel: 'Radius variables',
     subtitle: 'Semantic roles — action, container, overlay — each pointing at a Dimension primitive.',
     Icon: ic('M5 19V11C5 7.68629 7.68629 5 11 5H19', '1.8'),
@@ -212,11 +215,11 @@ const FOUNDATIONS: FoundationSection[] = [
   },
   {
     key: 'icons',
-    label: 'Icon library',
+    label: 'Icons',
     short: 'Icons',
     hint: 'Best icon libraries',
-    title: 'Icon library',
-    variablesLabel: 'Icon library',
+    title: 'Icons',
+    variablesLabel: 'Icons',
     subtitle: 'Pick the icon set your system standardizes on — referenced in your tokens and docs.',
     Component: IconLibrary,
     Icon: ic('M20.5 7.27783L12 12.0001M12 12.0001L3.49997 7.27783M12 12.0001L12 21.5001M21 16.0586V7.94153C21 7.59889 21 7.42757 20.9495 7.27477C20.9049 7.13959 20.8318 7.01551 20.7354 6.91082C20.6263 6.79248 20.4766 6.70928 20.177 6.54288L12.777 2.43177C12.4934 2.27421 12.3516 2.19543 12.2015 2.16454C12.0685 2.13721 11.9315 2.13721 11.7986 2.16454C11.6484 2.19543 11.5066 2.27421 11.223 2.43177L3.82297 6.54288C3.52345 6.70928 3.37369 6.79248 3.26463 6.91082C3.16816 7.01551 3.09515 7.13959 3.05048 7.27477C3 7.42757 3 7.59889 3 7.94153V16.0586C3 16.4013 3 16.5726 3.05048 16.7254C3.09515 16.8606 3.16816 16.9847 3.26463 17.0893C3.37369 17.2077 3.52345 17.2909 3.82297 17.4573L11.223 21.5684C11.5066 21.726 11.6484 21.8047 11.7986 21.8356C11.9315 21.863 12.0685 21.863 12.2015 21.8356C12.3516 21.8047 12.4934 21.726 12.777 21.5684L20.177 17.4573C20.4766 17.2909 20.6263 17.2077 20.7354 17.0893C20.8318 16.9847 20.9049 16.8606 20.9495 16.7254C21 16.5726 21 16.4013 21 16.0586Z'),
@@ -257,8 +260,8 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
     { key: 'semantics', label: 'Color semantics', icon: 'variables' },
   ],
   typography: [
-    { key: 'primitives', label: 'Type primitives' },
-    { key: 'semantics', label: 'Text semantics', icon: 'variables' },
+    { key: 'primitives', label: 'Font primitives' },
+    { key: 'semantics', label: 'Font semantics', icon: 'variables' },
   ],
   // Radius has TWO layers the editor shows: the roles (what a corner is for)
   // and the ten responsive tokens they alias (Desktop · Tablet · Mobile steps).
@@ -277,7 +280,7 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
   sizes: [{ key: 'semantics', label: 'Size semantics', icon: 'variables' }],
   stroke: [{ key: 'semantics', label: 'Stroke semantics', icon: 'variables' }],
   shadow: [{ key: 'primitives', label: 'Shadow styles' }],
-  icons: [{ key: 'primitives', label: 'Icon library' }],
+  icons: [{ key: 'primitives', label: 'Icons' }],
 }
 
 const ComponentsIcon = ic('M21 8 12 3 3 8l9 5 9-5ZM3 8v8l9 5 9-5V8M12 13v8')
@@ -323,7 +326,6 @@ type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | '
 // `sync` is not a workspace of its own: it lights while Theme preview shows
 // its Figma surface.
 type ThemeWorkspaceTab = 'preview' | 'primitives' | 'code' | 'library'
-type ThemeWorkspaceTabStrip = 'preview' | 'primitives' | 'sync'
 
 function themeLabel(key: string): string {
   if (key === 'light') return 'Light'
@@ -412,161 +414,6 @@ function PreviewThemeSwitch({
         </ul>
       )}
     </div>
-  )
-}
-
-const THEME_WORKSPACE_TABS: { key: ThemeWorkspaceTabStrip; label: string; icon: string }[] = [
-  { key: 'preview', label: 'Theme', icon: '/icons/theme-hub-icons/Icon/theme.svg' },
-  { key: 'primitives', label: 'Variables', icon: '/icons/theme-hub-icons/Icon/variables.svg' },
-  { key: 'sync', label: 'Sync', icon: '/icons/theme-hub-icons/Icon/figma.svg' },
-]
-
-function WorkspaceTabIcon({ source }: { source: string }) {
-  const mask = `url('${source}') center / contain no-repeat`
-  return <span aria-hidden className="size-[15.75px] bg-current" style={{ WebkitMask: mask, mask }} />
-}
-
-const WORKSPACE_TAB_PILL = { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
-
-function ThemeWorkspaceTabs({
-  value,
-  onChange,
-  search,
-  leading,
-}: {
-  value: ThemeWorkspaceTabStrip | null
-  onChange: (tab: ThemeWorkspaceTabStrip) => void
-  search?: ReactNode
-  leading?: ReactNode
-}) {
-  const { t } = useI18n()
-  const reduce = useReducedMotion()
-  const stripRef = useRef<HTMLDivElement>(null)
-  const prevTab = useRef(value)
-  const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  const [slide, setSlide] = useState(false)
-
-  const measurePill = useCallback(() => {
-    const track = stripRef.current
-    const item = track?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-    if (!track || !item) {
-      setPill(null)
-      return
-    }
-    const next = { x: item.offsetLeft, y: item.offsetTop, w: item.offsetWidth, h: item.offsetHeight }
-    setPill((prev) =>
-      prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h
-        ? prev
-        : next,
-    )
-  }, [])
-
-  useLayoutEffect(() => {
-    const moved = prevTab.current !== value && prevTab.current != null && value != null
-    prevTab.current = value
-    setSlide(Boolean(moved && !reduce))
-    measurePill()
-  }, [value, measurePill, reduce])
-
-  useEffect(() => {
-    measurePill()
-  }, [value, measurePill])
-
-  useEffect(() => {
-    const track = stripRef.current
-    if (!track) return
-    const ro = new ResizeObserver(() => measurePill())
-    ro.observe(track)
-    for (const child of track.children) {
-      if (child instanceof HTMLElement && child.getAttribute('aria-hidden') !== 'true') {
-        ro.observe(child)
-      }
-    }
-    return () => ro.disconnect()
-  }, [measurePill])
-
-  return (
-    <div className={`theme-workspace-tab-bar h-[52px] flex min-w-0 flex-shrink-0 items-center border-b border-line ${WORKSPACE_CHROME} pr-3 xl:pr-4`}>
-      {leading}
-      <div
-        ref={stripRef}
-        role="tablist"
-        aria-label={t('Theme workspace')}
-        className="theme-workspace-tab-strip color-hub-tab-strip flex h-full min-w-0 items-end"
-        onKeyDown={(event) => {
-          const current = THEME_WORKSPACE_TABS.findIndex((item) => item.key === value)
-          let next = current
-          if (event.key === 'ArrowRight') next = (current + 1) % THEME_WORKSPACE_TABS.length
-          else if (event.key === 'ArrowLeft') next = (current + THEME_WORKSPACE_TABS.length - 1) % THEME_WORKSPACE_TABS.length
-          else if (event.key === 'Home') next = 0
-          else if (event.key === 'End') next = THEME_WORKSPACE_TABS.length - 1
-          else return
-          event.preventDefault()
-          onChange(THEME_WORKSPACE_TABS[next].key)
-          const tabs = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
-          requestAnimationFrame(() => tabs[next]?.focus())
-        }}
-      >
-        {pill && (
-          <motion.span
-            aria-hidden
-            className="theme-workspace-tab-indicator"
-            initial={false}
-            animate={{ x: pill.x, y: pill.y, width: pill.w, height: pill.h }}
-            transition={slide ? WORKSPACE_TAB_PILL : { duration: 0 }}
-          >
-            <ChromeTabBackground flat />
-          </motion.span>
-        )}
-        {THEME_WORKSPACE_TABS.map((item) => {
-          const active = item.key === value
-          return (
-            <button
-              key={item.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              tabIndex={active ? 0 : -1}
-              onClick={() => onChange(item.key)}
-              title={t(item.label)}
-              className={`color-hub-tab theme-workspace-chrome-tab ${active ? 'color-hub-tab-active' : ''}`}
-            >
-              {!active && <ChromeTabBackground flat />}
-              <span className="relative flex min-w-0 items-center gap-2">
-                <WorkspaceTabIcon source={item.icon} />
-                <span className="truncate tracking-[0.18px]">{t(item.label)}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      {search && (
-        <div className="ml-auto flex flex-shrink-0 items-center gap-2 min-w-0">
-          {search}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** Get code's door in the tab strip — an icon, same 32px chrome square as the
- *  Search trigger beside it. Lit (pressed) while the Get code page is open. */
-function GetCodeButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  const { t } = useI18n()
-  const mask = "url('/icons/theme-hub-icons/Icon/code.svg') center / contain no-repeat"
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={t('Get code')}
-      title={t('Get code')}
-      className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg transition-[color,box-shadow] ${CHROME_CONTROL_SHELL} ${CHROME_CONTROL_HOVER} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-        active ? `${CHROME_CONTROL_ACTIVE} text-fg` : 'text-fg-muted'
-      }`}
-    >
-      <span aria-hidden className="h-4 w-4 bg-current" style={{ WebkitMask: mask, mask }} />
-    </button>
   )
 }
 
@@ -789,6 +636,10 @@ export default function Configurator() {
     setThemeSheet('create')
   }
   const [resetOpen, setResetOpen] = useState(false)
+  // The Generator's right-hand inspector column — the DOM node every view's
+  // side panel portals into (see WorkspaceInspector). State, not a ref, so the
+  // portals re-render once it mounts.
+  const [inspectorSlot, setInspectorSlot] = useState<HTMLElement | null>(null)
   const [themeHubSurface, setThemeHubSurface] = useState<ThemeHubSurface>(() => {
     const surface = incomingPlace?.surface ?? 'artefacts'
     if (surface === 'documentation' || surface === 'components') return 'artefacts'
@@ -1882,6 +1733,23 @@ export default function Configurator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [themesCanvas, themeWorkspaceTab, stylePreview, themeOrder, themes])
 
+  // Which inspector tab is lit. The library and the Figma / GitHub surfaces
+  // are pages reached from elsewhere (rail foot, Export menu): no tab.
+  const inspectorTab: InspectorTab | null =
+    themeWorkspaceTab === 'primitives' ? 'variables'
+    : themeWorkspaceTab === 'code' ? 'code'
+    : themeWorkspaceTab === 'preview' && themeHubSurface === 'artefacts'
+      ? (docsPanelOpen ? 'docs' : 'theme')
+      : null
+  const changeInspectorTab = (next: InspectorTab) => {
+    if (next === 'variables') changeThemeWorkspaceTab('primitives')
+    else if (next === 'code') openGetCodePage()
+    else {
+      changeThemeWorkspaceTab('preview')
+      setDocsPanelOpen(next === 'docs')
+    }
+  }
+
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col relative isolate bg-app">
       {/* Chrome tab geometry — mounted once, referenced by every `.color-hub-tab-bg`
@@ -1965,42 +1833,9 @@ export default function Configurator() {
           />
         )}
         <div
-          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas || !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
+          className={`flex-1 min-w-0 flex ${themesCanvas ? 'flex-col' : ''} overflow-hidden ${themesCanvas ? SHELL_CHROME : !foundationCanvas ? 'bg-app border-l border-line' : ''}`}
         >
-          {themesCanvas && (
-            <ThemeWorkspaceTabs
-              value={
-                themeWorkspaceTab === 'preview'
-                  ? (themeHubSurface === 'figma' ? 'sync' : 'preview')
-                  : themeWorkspaceTab === 'primitives' ? 'primitives' : null
-              }
-              onChange={(tab) => (tab === 'sync' ? openFigmaSyncPage() : changeThemeWorkspaceTab(tab))}
-              search={(
-                <>
-                  <GetCodeButton active={themeWorkspaceTab === 'code'} onClick={openGetCodePage} />
-                  {tokenSearchField}
-                </>
-              )}
-              leading={(
-                <>
-                  {/* Transversal: the library is the same list on Theme preview
-                      and Variables, so its door lives in the row both tabs share,
-                      not in the Preview-only icon rail. `tab-bar` placement is
-                      exactly the icon rail's width, so its border-r continues
-                      the rail's divider up through this row. */}
-                  {/* Always mounted on the Themes canvas — also on the Figma /
-                      GitHub pages, where the icon rail is hidden. It is the
-                      library's door, not part of the rail, so it must not
-                      vanish with it. */}
-                  <ThemesLibraryToggle
-                    open={themeWorkspaceTab === 'library'}
-                    onToggle={() => (themeWorkspaceTab === 'library' ? changeThemeWorkspaceTab('preview') : openLibraryPage())}
-                    placement="tab-bar"
-                  />
-                </>
-              )}
-            />
-          )}
+          <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
             // Variables only — which token TABLE the centre column shows.
@@ -2022,6 +1857,15 @@ export default function Configurator() {
                 })) },
                 { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
+              // The Themes library — same list on every tab, so its door is
+              // the rail's foot, not one view's header.
+              footer={(
+                <ThemesLibraryToggle
+                  open={themeWorkspaceTab === 'library'}
+                  onToggle={() => (themeWorkspaceTab === 'library' ? changeThemeWorkspaceTab('preview') : openLibraryPage())}
+                  placement="icon-rail"
+                />
+              )}
             />
           )}
           {/* Themes library page: the library docks in the widget panel's
@@ -2041,7 +1885,16 @@ export default function Configurator() {
             />
           )}
           {/* Center editor */}
-          <main className="flex-1 min-w-0 flex flex-col">
+          {/* On the Generator the centre is a CARD: your system, painted in the
+              previewed theme's appearance, floating on the platform chrome —
+              "the theme paints the canvas, the platform paints the chrome",
+              made visible. Side panels portal OUT of it into the inspector, so
+              the `.light`/`.dark` class here never reaches them. */}
+          <main
+            className={themesCanvas
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${previewAppearance === 'dark' ? 'dark' : 'light'}`
+              : 'flex-1 min-w-0 flex flex-col'}
+          >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
                 title, and the tab strip above owns the header row. */}
             {!skipCenterHeader && (
@@ -2154,6 +2007,16 @@ export default function Configurator() {
                   />
                 </motion.div>
               ) : foundationCanvas ? (
+                <div className="h-full flex flex-col min-h-0">
+                {/* The card names what it shows — the active collection — and
+                    carries the token search (⌘K), which only Variables uses. */}
+                <div className="flex h-[52px] flex-shrink-0 items-center justify-between gap-3 border-b border-line px-4">
+                  <h2 className="min-w-0 truncate text-ui font-semibold text-fg">
+                    {t(activeFoundationCollections.find(({ key }) => key === activeCollection)?.label ?? section.variablesLabel)}
+                  </h2>
+                  <div className="flex min-w-0 flex-1 justify-end">{tokenSearchField}</div>
+                </div>
+                <div className="flex-1 min-h-0">
                 <PreviewPlatformProvider
                   value={{
                     previewPlatform,
@@ -2190,6 +2053,8 @@ export default function Configurator() {
                   </motion.div>
                 </FoundationWorkbench>
                 </PreviewPlatformProvider>
+                </div>
+                </div>
               ) : (
                 <motion.div
                   key={centerKey}
@@ -2203,7 +2068,15 @@ export default function Configurator() {
               )}
             </div>
           </main>
+          {themesCanvas && (
+            <WorkspaceInspector
+              value={inspectorTab}
+              onChange={changeInspectorTab}
+              onSlot={setInspectorSlot}
+            />
+          )}
           </div>
+          </InspectorSlotProvider>
 
           {/* Right live preview (hidden in components tab — full width for docs)
 
@@ -2286,8 +2159,10 @@ export default function Configurator() {
                     if (previewTheme === oldKey) changePreviewTheme(newKey)
                     setThemeEditor(newKey)
                   }}
-                  dockLeftOverride={0}
-                  dockToSelector=""
+                  dockSide="right"
+                  // Inspector width + its 12px right margin + a 12px gap.
+                  dockRightOverride={INSPECTOR_WIDTH + 24}
+                  dockToSelector={`#${INSPECTOR_ID}`}
                 />
                 <ResetScopeControl
                   previewTheme={previewTheme}

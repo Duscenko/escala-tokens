@@ -11,6 +11,7 @@ import { loadGoogleFont } from '../../lib/fonts'
 import { THEME_LIBRARY_WIDTH, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
 import { useI18n } from '../../lib/i18n'
+import { InspectorPortal } from './WorkspaceInspector'
 import {
   MY_THEME_FULL_ERROR,
   MY_THEME_HARD_CAP,
@@ -725,6 +726,7 @@ export default function ThemeLibraryRail({
   }, [allOpen, listedThemes.length])
 
   return (
+    <InspectorPortal>
     <aside
       id="themes-library"
       tabIndex={-1}
@@ -860,5 +862,6 @@ export default function ThemeLibraryRail({
         </div>
       </nav>
     </aside>
+    </InspectorPortal>
   )
 }

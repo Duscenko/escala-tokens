@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { GridFrameAlias, GridViewport } from '../../lib/layoutTokens'
 import { useI18n } from '../../lib/i18n'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE } from './themeWorkspaceLayout'
 
 export type PreviewPlatformContextValue = {
   previewPlatform: GridViewport
@@ -92,9 +92,7 @@ export function PlatformSwitch({
             className={`flex h-7 items-center justify-center rounded-md transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
               fill ? 'min-w-0 flex-1' : 'w-7'
             } ${
-              on
-                ? 'bg-app text-fg shadow-[0_1px_3px_rgba(0,0,0,0.22)] ring-1 ring-line-strong'
-                : `text-fg-faint ${CHROME_CONTROL_HOVER}`
+              on ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
             }`}
           >
             <Icon />

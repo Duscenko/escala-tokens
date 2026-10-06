@@ -17,7 +17,7 @@ interface FigmaDownloadViewProps {
 // Community has no reason to hit /api/tokens. That only happens on FigmaSyncView.
 export default function FigmaDownloadView({ onClose, onOpenSync }: FigmaDownloadViewProps = {}) {
   const { projectName, selectedComponents, pluginBuildSeen, setPluginBuildSeen } = useDesignStore()
-  const synced = ['Colors', 'Typography', 'Spacing', 'Radius', 'Icons', `${selectedComponents.length} components`]
+  const synced = ['Colors', 'Font', 'Spacing', 'Radius', 'Icons', `${selectedComponents.length} components`]
   const updateAvailable = pluginBuildSeen != null && pluginBuildSeen !== PLUGIN_BUILD
 
   return (

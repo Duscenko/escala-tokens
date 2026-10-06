@@ -67,12 +67,12 @@ export function TypeRolesPreview({
               >
                 <span className="block text-mini font-mono text-fg-faint truncate pr-6">text-{role.key}</span>
                 <span
-                  className="block text-fg truncate"
+                  className="block text-fg"
                   style={{
                     fontFamily: fontStack(style.family),
-                    fontSize: Math.min(parseInt(style.size, 10) || 16, 28),
+                    fontSize: style.size || '16px',
                     fontWeight: style.weight,
-                    lineHeight: 1.25,
+                    lineHeight: style.lineHeight || 'normal',
                   }}
                 >
                   {role.label}

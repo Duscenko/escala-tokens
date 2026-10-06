@@ -13,6 +13,7 @@ import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
+import { useInInspector } from './WorkspaceInspector'
 
 export { CHECKER } from './checker'
 
@@ -165,7 +166,10 @@ export function RailToggle({
   noun?: string
   expandedHint?: string
 }) {
-  if (!onClick) return null
+  // The Generator's inspector never collapses, so a rail-level toggle inside
+  // it would collapse nothing.
+  const inInspector = useInInspector()
+  if (!onClick || inInspector) return null
   return (
     <button
       type="button"

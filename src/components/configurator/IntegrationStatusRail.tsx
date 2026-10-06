@@ -9,6 +9,7 @@ import { PLUGIN_BUILD, PLUGIN_VERSION } from '../../lib/pluginVersion'
 import { QUICK_RAIL_STACK_GAP, QUICK_SETTINGS_WIDTH, RailCard, ThemeRailScrollRegion } from './ThemeQuickSettingsRail'
 import { THEME_BAND_H } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { InspectorPortal } from './WorkspaceInspector'
 
 type IntegrationProvider = 'github' | 'figma'
 
@@ -127,6 +128,7 @@ export default function IntegrationStatusRail({
           : 'Not connected'
 
   return (
+    <InspectorPortal>
     <aside
       aria-label={`${isGithub ? 'GitHub' : 'Figma'} integration status`}
       className={`flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-line ${WORKSPACE_CHROME}`}
@@ -229,5 +231,6 @@ export default function IntegrationStatusRail({
         </div>
       </ThemeRailScrollRegion>
     </aside>
+    </InspectorPortal>
   )
 }

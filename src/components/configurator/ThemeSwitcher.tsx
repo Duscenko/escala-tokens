@@ -45,7 +45,9 @@ export function ThemesLibraryToggle({
     <RailTile
       on={open}
       label={t('Themes')}
-      compact
+      // At the rail's foot it reads like every foundation tile above it:
+      // glyph over its name.
+      compact={!iconRail}
       onClick={onToggle}
       aria-pressed={open}
       aria-expanded={open}

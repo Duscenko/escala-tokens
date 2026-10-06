@@ -60,6 +60,35 @@ function rungsDown(from: string, to: string): number {
   return a < 0 || b < 0 ? 0 : Math.max(0, a - b)
 }
 
+/** Top-left corner at the real radius. A 22px box turned every radius above
+ *  ~11px into the same circle; the curve is drawn on a larger tile and cropped
+ *  so 4px and 32px stay different. `full` (9999) is a pill, not a corner. */
+function RadiusMark({ px, accent }: { px: string; accent: string }) {
+  const n = parseFloat(px)
+  const pill = !Number.isFinite(n) || n >= 999
+  if (pill) {
+    return (
+      <span
+        aria-hidden
+        className="h-5 w-8 flex-shrink-0 rounded-full"
+        style={{ backgroundColor: accent + '22', boxShadow: `inset 0 0 0 1.5px ${accent}55` }}
+      />
+    )
+  }
+  return (
+    <span aria-hidden className="relative h-8 w-8 flex-shrink-0 overflow-hidden">
+      <span
+        className="absolute left-0 top-0 block h-[72px] w-[72px]"
+        style={{
+          borderTopLeftRadius: n,
+          backgroundColor: accent + '22',
+          boxShadow: `inset 1.5px 1.5px 0 ${accent}55`,
+        }}
+      />
+    </span>
+  )
+}
+
 /** The value at the selected viewport: corner drawn at its px, `step · px`,
  *  and — off Desktop — how far it stepped down and from what. */
 function Cell({ step, px, accent, from }: { step: string; px: string; accent: string; from?: string }) {
@@ -67,11 +96,7 @@ function Cell({ step, px, accent, from }: { step: string; px: string; accent: st
   const down = from ? rungsDown(from, step) : 0
   return (
     <div className="flex items-center gap-2 px-3 py-2 min-w-0 border-r border-line">
-      <span
-        aria-hidden
-        className="flex-shrink-0"
-        style={{ width: 22, height: 22, borderRadius: px || 0, backgroundColor: accent + '22', border: `1.5px solid ${accent}55` }}
-      />
+      <RadiusMark px={px} accent={accent} />
       <span className="flex-shrink-0 text-caption font-mono text-fg">{pinned ? 'pinned' : step}</span>
       <span className="flex-shrink-0 text-caption font-mono text-fg-faint tabular-nums">{px || '—'}</span>
       {down > 0 && (

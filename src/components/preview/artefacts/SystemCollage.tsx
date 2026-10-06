@@ -1,7 +1,7 @@
 import { fontStack } from '../../../lib/fonts'
 import { cloneElement, createContext, useContext, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { AVATAR_STACK_HUES, Live, PhosphorWeightProvider, SPECIMENS, TokenIcon, type IconOpts, type SpecimenProps } from '../../configurator/docs/specimens'
-import { TokenInspector, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
+import { TokenInspector, INSPECT_EXEMPT_ATTR, inspectGroupAttrs, useInspectorActive } from './TokenInspector'
 import {
   cardSurfaceStyle,
   radiusRoleOf,
@@ -285,7 +285,7 @@ function ModuleSurface({ t, children, style }: { t: PreviewTokens; children: Rea
  * inner — `overflow: hidden` + `scale()` made Strong look like None.
  */
 function ScaledModule({
-  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false,
+  t, appearance = 'light', children, chrome = true, clip = true, elev, style, sourceWidth = MODULE_SOURCE, frameWidth = MODULE_DISPLAY, fill = false, inspect = true,
 }: {
   t: PreviewTokens
   appearance?: ThemeAppearance
@@ -303,6 +303,9 @@ function ScaledModule({
    *  The last tile of each board column takes it, so every column ends on
    *  the same line. Chrome modules only — the surface is what stretches. */
   fill?: boolean
+  /** Style overviews (the palette strip, the type specimen) are not components.
+   *  Inspector mode leaves them alone: no crosshair, no badge, no pin. */
+  inspect?: boolean
 }) {
   const innerRef = useRef<HTMLDivElement>(null)
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null)
@@ -383,9 +386,10 @@ function ScaledModule({
       ref={outerRef}
       className={`relative overflow-visible ${appearanceClass}`}
       data-collage-appearance={appearance}
-      {...inspectGroupAttrs(inspecting)}
+      {...(inspect ? inspectGroupAttrs(inspecting) : { [INSPECT_EXEMPT_ATTR]: '' })}
       style={{
         width: resolvedFrame,
+        cursor: !inspect && inspecting ? 'default' : undefined,
         minWidth: resolvedFrame,
         maxWidth: resolvedFrame,
         height: stretches ? undefined : displayHeight || undefined,
@@ -927,12 +931,12 @@ export function SystemCollage({
     </ScaledModule>
   )
   const colorStyle = (wide: boolean, fill = false) => (
-    <ScaledModule key="colorStyle" t={tile(0)} appearance={appearanceAt(0)} fill={fill} {...(wide ? widePhoto : {})}>
+    <ScaledModule key="colorStyle" t={tile(0)} appearance={appearanceAt(0)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
       <ColorStyleSpecimen t={tile(0)} />
     </ScaledModule>
   )
   const typeStyle = (wide: boolean, fill = false) => (
-    <ScaledModule key="typeStyle" t={tile(1)} appearance={appearanceAt(1)} fill={fill} {...(wide ? widePhoto : {})}>
+    <ScaledModule key="typeStyle" t={tile(1)} appearance={appearanceAt(1)} fill={fill} inspect={false} {...(wide ? widePhoto : {})}>
       <TypeStyleSpecimen t={tile(1)} />
     </ScaledModule>
   )

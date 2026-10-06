@@ -29,12 +29,14 @@ import { useI18n } from '../../lib/i18n'
 
 export type TypeFocus = TypeRoleGroupId | 'all'
 
-// The wrapper's `min-w` below is the SUM of these minimums (10 + 19 + 9.5 + 2.5).
+// The wrapper's `min-w` below is the SUM of these minimums (10 + 22 + 9.5 + 2.5).
 // It was 28rem against 38.5rem of columns, so the grid overflowed its own
 // wrapper and every row's rules and zebra stopped short of the content: the
-// "cut off" table. Keep the two in step.
-const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(19rem,1.9fr)_minmax(9.5rem,1fr)_2.5rem]'
-const GRID_MIN = 'min-w-[41rem]'
+// "cut off" table. Keep the two in step. The value column is 22rem so the
+// three selects can show `display-2xl` · `Semibold` · `Display` with a
+// chevron that isn't sitting on the border.
+const GRID = 'grid grid-cols-[minmax(10rem,1.15fr)_minmax(22rem,1.9fr)_minmax(9.5rem,1fr)_2.5rem]'
+const GRID_MIN = 'min-w-[44rem]'
 
 const rowClass = (index: number) => tableRowClass(index, GRID)
 
@@ -54,6 +56,7 @@ function AliasSelect<T extends string>({
   onChange,
   ariaLabel,
   grow = 1,
+  minWidth,
 }: {
   value: T
   options: { value: T; label: string }[]
@@ -62,19 +65,30 @@ function AliasSelect<T extends string>({
   /** Share of the cell. Size labels (`display-2xl`) are the longest, so they
    *  get the largest share; weight and family are short words. */
   grow?: number
+  /** Floor so the closed label (`Display`, `Semibold`) isn't ellipsized once
+   *  the chevron has reserved its own inset. */
+  minWidth?: string
 }) {
   return (
-    <select
-      aria-label={ariaLabel}
-      value={value}
-      onChange={(e) => onChange(e.target.value as T)}
-      style={{ flex: `${grow} 1 0%` }}
-      className="min-w-0 h-7 px-1.5 rounded-md border border-line bg-app text-caption font-mono text-fg-muted text-ellipsis hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
+    <div className="relative min-w-0" style={{ flex: `${grow} 1 0%`, minWidth }}>
+      <select
+        aria-label={ariaLabel}
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="w-full min-w-0 h-7 appearance-none rounded-md border border-line bg-app pl-2 pr-6 text-caption font-mono text-fg-muted text-ellipsis cursor-pointer hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-fg"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <svg
+        width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-fg-faint"
+      >
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </div>
   )
 }
 
@@ -93,6 +107,7 @@ function ViewportCell({
     <div className="flex items-center gap-1 px-2.5 py-2 border-r border-line min-w-0">
       <AliasSelect
         grow={1.35}
+        minWidth="7.75rem"
         value={alias.size}
         options={SIZE_OPTIONS}
         onChange={(size) => onChange({ ...alias, size })}
@@ -100,12 +115,14 @@ function ViewportCell({
       />
       <AliasSelect
         grow={1.1}
+        minWidth="6.5rem"
         value={alias.weight}
         options={WEIGHT_OPTIONS}
         onChange={(weight) => onChange({ ...alias, weight })}
         ariaLabel={`${roleKey} ${viewport} weight`}
       />
       <AliasSelect
+        minWidth="6.25rem"
         value={alias.family}
         options={FAMILY_OPTIONS}
         onChange={(family) => onChange({ ...alias, family })}
@@ -284,16 +301,18 @@ export default function TypeSemantics({
                       alias={alias}
                       onChange={(next) => patchRole(role.key, typeViewport, next)}
                     />
-                    <div className="flex items-center px-3 py-2 border-r border-line overflow-hidden">
+                    <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
                       <span
-                        className="text-fg truncate leading-none"
+                        className="text-fg whitespace-nowrap"
+                        title={`${role.label} · ${style.size} / ${style.lineHeight} · ${style.weight}`}
                         style={{
                           fontFamily: fontStack(style.family),
-                          fontSize: Math.min(parseInt(style.size, 10) || 16, 22),
+                          fontSize: style.size || '16px',
                           fontWeight: style.weight,
+                          lineHeight: style.lineHeight || 'normal',
                         }}
                       >
-                        {role.label}
+                        Ag
                       </span>
                     </div>
                     <button

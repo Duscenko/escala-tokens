@@ -21,7 +21,6 @@ import { typePrimitivesForViewport, type TypeWeightKey } from '../../lib/typeRol
 import { usePreviewPlatform } from './PlatformRail'
 
 const GRID = 'grid grid-cols-[minmax(10rem,1fr)_8rem_minmax(8rem,1.6fr)_3rem]'
-const PREVIEW = 'Ag — Sphinx of black quartz'
 
 // ── Small reusable bits ─────────────────────────────────────────────────────
 
@@ -205,7 +204,7 @@ const rowClass = (index: number, match: boolean | null = null) =>
 
 const nameCell = `flex items-center py-2.5 pl-4 pr-3 min-w-0 ${TABLE_CELL_DIVIDER}`
 const valueCell = `flex items-center px-2.5 py-1.5 ${TABLE_CELL_DIVIDER}`
-const previewCell = `flex items-center px-3 py-1.5 overflow-hidden ${TABLE_CELL_DIVIDER}`
+const previewCell = `flex items-center px-3 py-1.5 min-w-0 ${TABLE_CELL_DIVIDER}`
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
@@ -294,7 +293,7 @@ export default function Step4_Typography({
                 )}
               </div>
               <div className={previewCell}>
-                <span className="text-fg truncate text-[18px]" style={{ fontFamily: fontStack(family) }}>{PREVIEW}</span>
+                <span className="text-fg whitespace-nowrap text-[18px]" style={{ fontFamily: fontStack(family) }}>Ag</span>
               </div>
               <ResetButton modified={modified} onReset={() => setFamily(r.role, 'Inter')} title="Reset to Inter" />
             </div>
@@ -338,10 +337,10 @@ export default function Step4_Typography({
               </div>
               <div className={previewCell}>
                 <span
-                  className="text-fg truncate"
-                  style={{ fontFamily: fontStack(bodyFont), fontWeight: n, fontStyle: r.italic ? 'italic' : 'normal', fontSize: 18 }}
+                  className="text-fg whitespace-nowrap"
+                  style={{ fontFamily: fontStack(bodyFont), fontWeight: n, fontStyle: r.italic ? 'italic' : 'normal', fontSize: 18, lineHeight: 1 }}
                 >
-                  {PREVIEW}
+                  Ag
                 </span>
               </div>
               <ResetButton modified={modified} onReset={() => setWeight(r.base, FONT_WEIGHT_STANDARD[r.base])} title="Reset to standard" />
@@ -361,8 +360,9 @@ export default function Step4_Typography({
         <TableHeader valueLabel="Size" stacked={activeCategory === 'all' && !lead} />
         {rows.map((key, i) => {
           const val = sizes[key] ?? FONT_SIZE_STANDARD[key]
+          const lh = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
           const modified = val !== FONT_SIZE_STANDARD[key]
-          const px = Math.min(parseInt(val, 10) || 16, 44)
+          const display = key.startsWith('display')
           return (
             <div key={key} className={rowClass(i, hit(used ? used.sizes.has(key) : false))}>
               <div className={nameCell}>
@@ -373,7 +373,18 @@ export default function Step4_Typography({
                 <ValueInput value={val} onChange={(v) => setSize(key, v)} />
               </div>
               <div className={previewCell}>
-                <span className="text-fg truncate leading-none" style={{ fontFamily: fontStack(displayFont), fontSize: px }}>{PREVIEW}</span>
+                <span
+                  className="text-fg whitespace-nowrap"
+                  title={`${val} / ${lh}`}
+                  style={{
+                    fontFamily: fontStack(display ? displayFont : bodyFont),
+                    fontSize: val,
+                    lineHeight: lh,
+                    fontWeight: display ? 600 : 400,
+                  }}
+                >
+                  Ag
+                </span>
               </div>
               <ResetButton modified={modified} onReset={() => setSize(key, FONT_SIZE_STANDARD[key])} title="Reset to standard" />
             </div>
@@ -392,7 +403,9 @@ export default function Step4_Typography({
         <TableHeader valueLabel="Line height" stacked={activeCategory === 'all' && !lead} />
         {rows.map((key, i) => {
           const val = lineHeights[key] ?? LINE_HEIGHT_STANDARD[key]
+          const size = sizes[key] ?? FONT_SIZE_STANDARD[key]
           const modified = val !== LINE_HEIGHT_STANDARD[key]
+          const display = key.startsWith('display')
           return (
             <div key={key} className={rowClass(i, hit(used ? used.sizes.has(key) : false))}>
               <div className={nameCell}>
@@ -403,8 +416,17 @@ export default function Step4_Typography({
                 <ValueInput value={val} onChange={(v) => setLineHeight(key, v)} />
               </div>
               <div className={previewCell}>
-                <span className="text-fg-muted text-[13px] block w-full leading-tight" style={{ lineHeight: val, fontFamily: fontStack(bodyFont) }}>
-                  Sphinx of black quartz,<br />judge my vow.
+                <span
+                  className="text-fg block"
+                  title={`${size} / ${val}`}
+                  style={{
+                    fontFamily: fontStack(display ? displayFont : bodyFont),
+                    fontSize: size,
+                    lineHeight: val,
+                    fontWeight: display ? 600 : 400,
+                  }}
+                >
+                  Ag<br />Ag
                 </span>
               </div>
               <ResetButton modified={modified} onReset={() => setLineHeight(key, LINE_HEIGHT_STANDARD[key])} title="Reset to standard" />
@@ -440,8 +462,8 @@ export default function Step4_Typography({
     // under its Groups band.
     <div className="flex flex-col bg-app flex-1 min-h-0 h-full">
       <div className="flex items-stretch flex-1 min-h-0">
-        <VariableCollectionRail ariaLabel="Typography collections and groups">
-          <div role="navigation" aria-label="Typography groups" className="flex flex-col gap-0.5">
+        <VariableCollectionRail ariaLabel="Font collections and groups">
+          <div role="navigation" aria-label="Font groups" className="flex flex-col gap-0.5">
             {TYPO_CATEGORIES.map((c) => {
               const isActive = activeCategory === c.key
               return (

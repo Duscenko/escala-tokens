@@ -8,10 +8,11 @@ import { OnThisPage } from './docs/blocks'
 import { FoundationArticle, OverviewArticle, foundationToc, overviewToc } from './docs/foundationArticle'
 import { GetStartedArticle, getStartedToc } from './docs/getStartedArticle'
 import { GUIDE_MCP_KEY, isGuideKey, type DocsExits } from './docs/getStarted'
-import { useSystemDoc, OVERVIEW_KEY, foundationDoc, type SystemDocScope } from './docs/foundationDocs'
+import { useSystemDoc, OVERVIEW_KEY, foundationDoc, presentFoundationDoc, type SystemDocScope } from './docs/foundationDocs'
 import { ChangelogArticle, changelogToc, CHANGELOG_KEY } from './docs/changelogArticle'
 import { FaqArticle, faqToc, FAQ_KEY } from './docs/faqArticle'
 import { useI18n } from '../../lib/i18n'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 export { OVERVIEW_KEY }
 export { GET_STARTED_KEY } from './docs/getStarted'
@@ -55,14 +56,16 @@ export default function DocsView({
   const guide = isGuideKey(pageKey)
   const isChangelog = pageKey === CHANGELOG_KEY
   const isFaq = pageKey === FAQ_KEY
-  const doc = allowReference && !guide && !isChangelog && !isFaq && pageKey !== OVERVIEW_KEY
+  const rawDoc = allowReference && !guide && !isChangelog && !isFaq && pageKey !== OVERVIEW_KEY
     ? foundationDoc(pageKey)
     : undefined
+  const doc = rawDoc ? presentFoundationDoc(rawDoc, hubMode) : undefined
 
   useEffect(() => {
     articleRef.current?.scrollTo({ top: 0 })
   }, [pageKey])
 
+  const inInspector = useInInspector()
   const toc = guide
     ? getStartedToc(activeFoundationKey, t)
     : isChangelog
@@ -117,9 +120,20 @@ export default function DocsView({
           Overview sheet's ramps (`min-w-[40rem]` inside an `overflow-x-auto`)
           start hiding tones 11–12 behind a scroll. A TOC is navigation; the
           ramps are the content — don't trade the second for the first. */}
-      <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
-        <OnThisPage entries={toc} scrollRoot={articleRef} />
-      </div>
+      {/* On the Generator (`hubMode` with an inspector mounted) the TOC is the
+          Docs tab's inspector content instead of a third column in the card —
+          the card keeps its full width for the ramps. */}
+      {hubMode && inInspector ? (
+        <InspectorPortal>
+          <div className="overflow-y-auto p-5">
+            <OnThisPage entries={toc} scrollRoot={articleRef} />
+          </div>
+        </InspectorPortal>
+      ) : (
+        <div className="hidden xl:block w-48 flex-shrink-0 border-l border-line p-5 overflow-y-auto">
+          <OnThisPage entries={toc} scrollRoot={articleRef} />
+        </div>
+      )}
     </div>
   )
 }

@@ -75,10 +75,11 @@ import { SHADOW_PRESETS, matchShadowPreset } from '../../lib/shadowTokens'
 import { PHOSPHOR_WEIGHTS, type PhosphorWeight } from '../../lib/phosphorIcons'
 import { IconSizeLadder, IconStyleOverview } from './docs/specimens'
 import { COLOR_RAIL_WIDTH, ColorPickerPopover, STATE_PRESETS, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SEGMENT_ACTIVE, SEGMENT_INACTIVE, SELECT_LIST, SELECT_OPTION, SELECT_OPTION_OFF, SELECT_OPTION_ON, SELECT_TRIGGER, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import SpectrumSlider from '../ui/SpectrumSlider'
 import { showToast } from '../ui/Toast'
 import { useI18n } from '../../lib/i18n'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 /**
  * ONE width for every left column in the Themes workspace — this rail, the
@@ -449,10 +450,8 @@ function ColorAppearanceSwitch({ value, onChange }: {
           onClick={() => onChange(mode)}
           // Same pill as Desktop / Tablet / Mobile (`PlatformSwitch`): one
           // control language for every segmented switch in an edition header.
-          className={`flex h-7 items-center justify-center rounded-md px-2.5 text-caption font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
-            value === mode
-              ? 'bg-app text-fg shadow-[0_1px_3px_rgba(0,0,0,0.22)] ring-1 ring-line-strong'
-              : `text-fg-faint ${CHROME_CONTROL_HOVER}`
+          className={`flex h-7 items-center justify-center rounded-md px-2.5 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+            value === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
           }`}
         >
           {t(mode === 'light' ? 'Light' : 'Dark')}
@@ -770,7 +769,7 @@ function SettingItem({ label, hint, advancedLabel, onAdvanced, children }: {
         <div className={`flex items-center gap-2 ${compact ? 'mb-1 justify-end' : 'mb-1.5 justify-between'}`}>
           {/* `text-fg-muted`, one step under the card title's `text-fg`. Both
               were 11px on `--fg` and differed only by semibold-vs-medium, which
-              at 11px is not a legible difference — "Text edition" and "Body
+              at 11px is not a legible difference — "Font edition" and "Body
               font" read as siblings, so the card's own panel was the only thing
               saying where a set started. Compacting made that worse, not
               better: less air between two levels that look identical is mush.
@@ -1413,6 +1412,7 @@ export default function ThemeQuickSettingsRail({
   onOverlapSizeChange?: (size: OverlapSize) => void
 }) {
   const { t } = useI18n()
+  const inInspector = useInInspector()
   const store = useDesignStore()
   const applyAccent = useApplyAccentColor()
   const applyNeutral = useApplyGrayColor()
@@ -1876,11 +1876,14 @@ export default function ThemeQuickSettingsRail({
   }, [activePanel, onContrastOpenChange])
 
   return (
+    <InspectorPortal>
     <aside
       id={QUICK_SETTINGS_ID}
       aria-label={t('Quick settings')}
-      className={`flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
-      style={{ width: QUICK_SETTINGS_WIDTH }}
+      className={inInspector
+        ? 'flex-1 min-h-0 w-full flex flex-col'
+        : `flex-shrink-0 min-h-0 flex flex-col border-r border-line ${WORKSPACE_CHROME}`}
+      style={inInspector ? undefined : { width: QUICK_SETTINGS_WIDTH }}
     >
       {/* No Name band here any more: a theme is renamed where it is LISTED —
           double-click in the theme switcher or the library, or Rename in a
@@ -2207,7 +2210,7 @@ export default function ThemeQuickSettingsRail({
                 ]
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
-        <EditionCard title="Text edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
+        <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
           <SettingItem>
             <CutFacts rows={typeCutRows} />
           </SettingItem>
@@ -2231,7 +2234,7 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together. Values match Variables · Type · Font size for this theme.">
+          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together. Values match Variables · Font · Font size for this theme.">
             <TypeScaleCard
               sizes={typography.sizes ?? {}}
               usedKeys={typeUsedSizes}
@@ -2415,5 +2418,6 @@ export default function ThemeQuickSettingsRail({
       )}
       </div>
     </aside>
+    </InspectorPortal>
   )
 }

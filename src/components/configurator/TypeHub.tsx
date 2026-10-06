@@ -26,7 +26,7 @@ export default function TypeHub({
   previewPlatform?: GridViewport
   query?: string
 }) {
-  const heading = <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{mode === 'semantics' ? 'Type semantics' : 'Typography primitives'}</span>
+  const heading = <span className="text-caption font-semibold uppercase tracking-widest text-fg-muted">{mode === 'semantics' ? 'Font semantics' : 'Font primitives'}</span>
 
   return (
     <div className="h-full flex flex-col min-h-0">

@@ -53,14 +53,27 @@ function RolePreview({
   accent: string
 }) {
   if (family === 'radius') {
+    const n = parseFloat(value)
+    const pill = !Number.isFinite(n) || n >= 999
+    if (pill) {
+      return (
+        <div
+          className="h-5 w-8 flex-shrink-0 rounded-full"
+          style={{ backgroundColor: accent + '22', boxShadow: `inset 0 0 0 1.5px ${accent}55` }}
+        />
+      )
+    }
     return (
-      <div
-        className="flex-shrink-0"
-        style={{
-          width: 28, height: 28, borderRadius: value,
-          backgroundColor: accent + '22', border: `1.5px solid ${accent}55`,
-        }}
-      />
+      <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-[72px] w-[72px]"
+          style={{
+            borderTopLeftRadius: n,
+            backgroundColor: accent + '22',
+            boxShadow: `inset 1.5px 1.5px 0 ${accent}55`,
+          }}
+        />
+      </div>
     )
   }
   if (family === 'stroke') {
@@ -80,7 +93,17 @@ function RolePreview({
     )
   }
   const px = parseFloat(value) || 0
-  const max = family === 'selector' ? 24 : 64
+  if (family === 'size' || family === 'selector') {
+    const side = Math.max(px, 0)
+    return (
+      <div
+        className="flex-shrink-0 rounded-sm"
+        title={value}
+        style={{ width: side, height: side, backgroundColor: accent + '33', boxShadow: `inset 0 0 0 1px ${accent}88` }}
+      />
+    )
+  }
+  const max = 64
   return (
     <div className="flex-1 h-2.5 bg-elevated rounded-full overflow-hidden">
       <div className="h-full rounded-full" style={{ width: `${Math.max((px / max) * 100, 2)}%`, backgroundColor: accent + '88' }} />

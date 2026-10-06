@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { COLLAPSED_RAIL_WELL, COLOR_RAIL_COLLAPSED_WIDTH, COLOR_RAIL_WIDTH } from './colorControls'
 import { WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import { PlatformRail } from './PlatformRail'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 export type VariableCollectionKey = 'primitives' | 'semantics' | 'gradients' | 'responsive'
 
@@ -202,7 +203,7 @@ export function RailGroupNav<Key extends string>({
 /** One Figma-style column: collection choice first, contextual groups below. */
 export default function VariableCollectionRail({
   children,
-  collapsed = false,
+  collapsed: collapsedProp = false,
   ariaLabel = 'Variable collections and groups',
   navRef,
 }: {
@@ -212,14 +213,20 @@ export default function VariableCollectionRail({
   navRef?: Ref<HTMLElement>
 }) {
   const context = useContext(CollectionContext)
+  // In the inspector the column owns width and collapse.
+  const inInspector = useInInspector()
+  const collapsed = inInspector ? false : collapsedProp
   if (!context) return <>{children}</>
 
   return (
+    <InspectorPortal>
     <nav
       ref={navRef}
       aria-label={ariaLabel}
-      className={`flex-shrink-0 h-full overflow-y-auto border-r border-line ${WORKSPACE_CHROME} transition-[width] duration-200`}
-      style={{ width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
+      className={inInspector
+        ? 'flex-1 min-h-0 w-full overflow-y-auto'
+        : `flex-shrink-0 h-full overflow-y-auto border-r border-line ${WORKSPACE_CHROME} transition-[width] duration-200`}
+      style={inInspector ? undefined : { width: collapsed ? COLOR_RAIL_COLLAPSED_WIDTH : COLOR_RAIL_WIDTH }}
     >
       {context.header}
       <div className={collapsed ? 'px-[8px] py-2' : 'px-3 py-3'}>
@@ -236,6 +243,7 @@ export default function VariableCollectionRail({
             const selected = context.active === collection.key
             return (
               <button
+                key={collection.key}
                 type="button"
                 onClick={() => context.onChange(collection.key)}
                 aria-current={selected ? 'page' : undefined}
@@ -271,5 +279,6 @@ export default function VariableCollectionRail({
       </section>
       </div>
     </nav>
+    </InspectorPortal>
   )
 }

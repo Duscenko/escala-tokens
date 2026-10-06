@@ -107,6 +107,7 @@
   --color-nav: var(--nav);
   --color-tab-bar: var(--tab-bar);
   --color-panel: var(--panel);
+  --color-side-panel: var(--side-panel);
   --color-rail-section: var(--rail-section);
   --color-chip-rest: var(--chip-rest);
   --color-input-bg: var(--input-bg);
@@ -214,6 +215,7 @@
   --nav: #f5f5f5;
   --tab-bar: #ffffff;
   --panel: rgba(255, 255, 255, 0.07);
+  --side-panel: #ffffff;
   --rail-section: #ffffff;
   --chip-rest: #e7e7e7;
   --input-bg: #f2f2f2;
@@ -301,6 +303,7 @@
   --nav: #f5f5f5;
   --tab-bar: #ffffff;
   --panel: rgba(255, 255, 255, 0.07);
+  --side-panel: #ffffff;
   --rail-section: #ffffff;
   --chip-rest: #e7e7e7;
   --input-bg: #f2f2f2;
@@ -418,15 +421,26 @@
      `--fg-faint` moved #6b6b6b → #7b7b83: on the raised surface it measured
      2.68:1, under the 3:1 floor. Now 3.40 on `--elevated`, 4.05 on
      `--surface`. */
-  --nav: #151516;
+  /* Elevation ladder (dark), recalibrated 2026-10-06 for the card + inspector
+     layout — measured in OKLab ΔL, since WCAG is useless this close to black:
+       `--nav`        #070709  L .130  the FRAME behind the card and inspector
+       `--side-panel` #111113  L .180  raised panels (the inspector) — +.050
+       `--chip-rest`  #202022  L .245  control tracks / chips on a panel — +.065
+     Before: the inspector sat ON the frame (#151516, ΔL 0) and its controls
+     at +.026 over it — no step at all. Light's ladder is frame #f5f5f5 →
+     panel #fff (+.030) → recessed chips (−.072); dark needs the larger steps
+     because the luminance range near black is compressed. The generated
+     `--elevated` (#1b1b1c) lands +.044 over the panel. */
+  --nav: #070709;
   --tab-bar: #222223;
   --panel: #1b1b1c;
+  --side-panel: #111113;
   --rail-section: #222223;
-  --chip-rest: #1b1b1c;
+  --chip-rest: #202022;
   --input-bg: #100f12;
   --fg-faint: #7b7b83;
   /* Chrome levels (dark) that are still hand-tuned:
-       `--nav`        #151516  shell frame — TopNav, Themes library, footer,
+       `--nav`        #070709  shell frame — TopNav, Themes library, footer,
                                Artefacts well (`SHELL_CHROME`)
        `--tab-bar`    #222223  workspace chrome — tab strip + editor rails
                                (`WORKSPACE_CHROME`; same hex as `--rail-section`)
@@ -453,7 +467,7 @@
   --rainbow-fill-a: #ffffff;
   --rainbow-fill-b: rgba(255, 255, 255, 0.6);
   --rainbow-fill-c: rgba(0, 0, 0, 0);
-  --rainbow-outline-fill-a: #151516;
+  --rainbow-outline-fill-a: #070709;
   --rainbow-outline-fill-b: rgba(255, 255, 255, 0.6);
   --rainbow-outline-fill-c: rgba(0, 0, 0, 0);
   --color-1: oklch(66.2% 0.225 25.9);

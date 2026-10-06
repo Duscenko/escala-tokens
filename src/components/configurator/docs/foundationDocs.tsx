@@ -732,7 +732,7 @@ function KeyValues({ entries }: { entries: [string, string][] }) {
   )
 }
 
-function LayoutRolesBlock({
+export function LayoutRolesBlock({
   family,
   primitives,
   roles,
@@ -798,6 +798,9 @@ export interface FoundationDoc {
   ships: { json: string; css: string; figma: string }
   tokenCount: (c: SystemDoc) => number
   sections: DocSection[]
+  /** Theme hub only. The Use-it code pane reads this section instead of `key`,
+   *  so the Spacing page can show gap aliases while Edit tokens still opens Sizes. */
+  codeSection?: string
 }
 
 export const FOUNDATION_DOCS: FoundationDoc[] = [
@@ -894,7 +897,7 @@ color:      var(--color-content-on-action);
   // ── Typography ─────────────────────────────────────────────────────────────
   {
     key: 'typography',
-    label: 'Typography',
+    label: 'Font',
     lead: 'Two layers, same idea as Color. Primitives are the scale — display/body families, eleven sizes with matching line-heights, four weights. Semantics are named text styles (label, placeholder, heading, body, button) that alias those primitives, with a Desktop, Tablet and Mobile mapping. Components reference the role; the role points at the scale.',
     why: 'A 15px here and a 17px there read as sloppiness long before anyone can name why. A fixed ramp makes size a CHOICE FROM A SET. Pairing each size with its line-height keeps vertical rhythm. Roles — `text-label`, `text-placeholder` — are the decision you can re-point once. Display and headings step down on a narrow viewport; body, labels and buttons keep the same reading size so line length stays 45–75 characters.',
     usage: 'Reach for a text role first (`text-label`, `text-body-md`, `text-heading-lg`). Use a primitive (`text-sm`, `semibold`) only when defining a new role. Desktop CSS is `var(--text-label-font-size)`; mobile is `var(--text-label-font-size-mobile)` at `max-width: var(--breakpoint-mobile)`. Both alias primitives — never a raw px.',
@@ -1043,7 +1046,7 @@ line-height: var(--text-label-line-height);
   // ── Radius ─────────────────────────────────────────────────────────────────
   {
     key: 'radius',
-    label: 'Border radius',
+    label: 'Radius',
     lead: 'Three layers: an 11-step primitive ramp (none 0 · xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full) that holds the raw px; ten responsive tokens that step down on Tablet and Mobile; and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
     why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising the ramp once, then naming what each corner is FOR, means a personality change is one slider and a nested checkbox never copies a modal’s rounding.',
     usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (sm) under `action` (lg) is for. Roles on a responsive step round less on smaller screens by themselves (a card is 16 / 12 / 12); a role pinned to a raw px does not. Do not invent a new px on a component.',
@@ -1130,7 +1133,7 @@ line-height: var(--text-label-line-height);
   {
     key: 'spacing',
     label: 'Spacing',
-    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` — not a raw 20px collection.',
+    lead: 'Two layers: a 4px-grid primitive scale (0–16, including step 5 = 20px) and intent aliases for gaps and insets. Surface padding aliases `spacing-inset-surface` — not a raw 20px collection. In Variables the number list is Dimensions: every step here points at one of those primitives.',
     why: 'Spacing is what makes a layout read as deliberate. A scale removes the middle values that cause trouble: with 8 and 12 available and nothing between, nobody ships an 11. Semantics then name the job — gap between siblings vs inset inside a surface — so a card never copies a button’s padding by accident.',
     usage: 'Reach for a semantic first: `spacing-gap-control` between related controls, `spacing-gap-section` between blocks, `spacing-inset-control` inside a button, `spacing-inset-surface` inside a card. Use a primitive step only when you are defining a new role.',
     usageCode: `gap:     var(--spacing-gap-group);
@@ -1388,7 +1391,7 @@ grid-template-columns: repeat(var(--grid-columns), 1fr);
   {
     key: 'sizes',
     label: 'Sizes',
-    lead: 'Two layers: an 8px control-height ramp (xs–2xl) and intent aliases — compact, control, touch, hit, fab. Touch is `lg` (48px); 44px is not a step.',
+    lead: 'Two layers: an 8px control-height ramp (xs–2xl) and intent aliases — compact, control, touch, hit, fab. Touch is `lg` (48px); 44px is not a step. Each height points at a Dimension primitive, the same list Spacing uses. In Variables that list is called Dimensions.',
     why: 'Control height is the value most likely to be set per component and then never reconciled. One ramp means "medium" is the same 40px everywhere. Semantics then name density and job, so a toolbar compact never copies a marketing CTA, and a close-button hit area is a named token rather than a magic 24.',
     usage: 'Reach for a semantic first: `size-control` as the default, `size-compact` in dense tables, `size-touch` for mobile CTAs, `size-hit` for icon-only chrome, `size-fab` for floating actions. Size axis SM/MD/LG maps onto `size-sm` / `size-md` / `size-lg` honestly.',
     usageCode: `height: var(--size-control);
@@ -1572,6 +1575,69 @@ export function foundationDoc(key: string): FoundationDoc | undefined {
 
 /** Markdown for "Copy Page" — the same portable-context affordance the
  *  component pages carry. Values are resolved, so the copy is a real spec. */
+const HUB_SPACING_LEAD = 'Gaps, insets, overlap and field height — the room a component takes. In Variables the numbers are one list, Dimensions. Spacing points at that list. Field heights are the Sizes collection on it. Neither one stores a px of its own.'
+
+const HUB_SPACING_WHY = 'The air and the object are different jobs. A phone tightens a gap and keeps the button tall enough to tap, so Spacing and Sizes stay two collections that read the same Dimensions. One list of numbers, two ways of using them.'
+
+const HUB_SPACING_USAGE = 'Reach for a spacing role for the air and a size role for the object. Both resolve to a Dimension primitive, which is the name of that number in Variables.'
+
+const HUB_SPACING_CODE = `gap:     var(--spacing-gap-group);
+padding: var(--spacing-inset-surface);
+height:  var(--size-control);`
+
+/** Theme hub: the rail item is Spacing (field size, inset, overlap, border).
+ *  The article it opens is the Sizes foundation. Present it as Spacing and
+ *  include the gap / inset / overlap roles the Sizes page left out. Edit
+ *  tokens still opens Sizes — `key` does not change. */
+export function presentFoundationDoc(doc: FoundationDoc, hubMode?: boolean): FoundationDoc {
+  if (!hubMode || doc.key !== 'sizes' || doc.codeSection === 'spacing') return doc
+  const spacing = FOUNDATION_DOCS.find((d) => d.key === 'spacing')
+  return {
+    ...doc,
+    label: 'Spacing',
+    lead: HUB_SPACING_LEAD,
+    why: HUB_SPACING_WHY,
+    usage: HUB_SPACING_USAGE,
+    usageCode: HUB_SPACING_CODE,
+    codeSection: 'spacing',
+    ships: spacing
+      ? {
+          json: `${spacing.ships.json}  ·  ${doc.ships.json}`,
+          css: `${spacing.ships.css}  ·  ${doc.ships.css}`,
+          figma: `${spacing.ships.figma}  ·  ${doc.ships.figma}`,
+        }
+      : doc.ships,
+    tokenCount: (c) => doc.tokenCount(c) + LAYOUT_ROLES.spacing.length,
+    sections: [
+      {
+        id: 'air',
+        title: 'Gaps, insets and overlap',
+        description: 'The air. These are the Spacing roles in Variables, and each one points at a Dimension.',
+        render: (c) => (
+          <LayoutRolesBlock family="spacing" primitives={c.spacing} roles={c.spacingRoles} />
+        ),
+      },
+      ...doc.sections.map((section) => {
+        if (section.id === 'scale') {
+          return {
+            ...section,
+            title: 'Field heights',
+            description: 'The object. These are the Sizes steps in Variables, on the same Dimension list. Touch is lg (48px); 44px is not a step.',
+          }
+        }
+        if (section.id === 'roles') {
+          return {
+            ...section,
+            title: 'Field-height roles',
+            description: 'Density and job. Edit them in Variables · Sizes. Touch is lg (48px) so it covers iOS HIG 44 without a 44px step.',
+          }
+        }
+        return section
+      }),
+    ],
+  }
+}
+
 export function foundationMarkdown(doc: FoundationDoc, c: SystemDoc): string {
   const lines = [
     `# ${doc.label}`,

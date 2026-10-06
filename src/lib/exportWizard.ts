@@ -233,7 +233,7 @@ export function collectionMeta(full: TokenJSON = generateTokenJSON()): Collectio
     { key: 'primitives', label: 'Color · Primitives', count: Object.keys(full.colors.primitive).length },
     { key: 'semantics', label: 'Color · Semantics', count: roleCount * themeNames.length, modes: themeNames },
     { key: 'gradients', label: 'Gradients', count: Object.keys(full.gradients).length + Object.keys(full.gradientsDark).length },
-    { key: 'typography', label: 'Typography', count: typographyCount },
+    { key: 'typography', label: 'Font', count: typographyCount },
     { key: 'spacing', label: 'Spacing', count: Object.keys(full.spacing).length + Object.keys(full.spacingRoles ?? {}).length },
     { key: 'radius', label: 'Radius', count: Object.keys(full.radius).length + Object.keys(full.radiusRoles ?? {}).length },
     { key: 'shadow', label: 'Shadow', count: Object.keys(full.shadows).length },

@@ -101,16 +101,34 @@ export const CSS_PREVIEW_LINES = 8
  *  block and the first bare `}` closes it — Grid appends a media query AFTER
  *  that brace, which is why the close is FOUND rather than assumed to be the
  *  last line. */
+/** A declaration of a Dimension primitive (`--dimension-16: 16px`), not an
+ *  alias that points at one (`--spacing-gap-group: var(--dimension-8)`). */
+function isDimensionDecl(line: string): boolean {
+  return line.includes('Dimension primitives') || /--dimension-(-?[\d_]+)\s*:/.test(line)
+}
+
+/** The dimension ladder is prepended so a copied file resolves. An 8-line
+ *  preview that opens on `--dimension-*` never shows the alias you write
+ *  (`--spacing-gap-group`, `--size-control`). Skip that preamble only. */
+function withoutDimensionPreamble(decls: string[]): string[] {
+  if (!decls[0]?.includes('Dimension primitives')) return decls
+  const start = decls.findIndex((line, i) => i > 0 && !isDimensionDecl(line))
+  return start === -1 ? decls : decls.slice(start)
+}
+
 export function cssExcerpt(css: string): string {
   const lines = css.split('\n')
   const close = lines.findIndex((l) => l.trim() === '}')
   if (close < 1) return css.trimEnd()
   const decls = lines.slice(1, close).filter((l) => l.trim())
-  if (decls.length <= CSS_PREVIEW_LINES) return css.trimEnd()
-  const rest = decls.length - CSS_PREVIEW_LINES
+  const body = withoutDimensionPreamble(decls)
+  if (body.length === decls.length && decls.length <= CSS_PREVIEW_LINES) return css.trimEnd()
+  const take = body.slice(0, CSS_PREVIEW_LINES)
+  const rest = decls.length - take.length
+  if (rest <= 0) return css.trimEnd()
   return [
     lines[0],
-    ...decls.slice(0, CSS_PREVIEW_LINES),
+    ...take,
     `  /* …+${rest} more — the full file is Export → Code */`,
     '}',
   ].join('\n')
@@ -326,16 +344,19 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   const simple = SIMPLE[section]!
   // Lengths alias the Dimension primitives (`--radius-lg: var(--dimension-16)`).
   // A shadow is a compound CSS string, so `dimensionVar` passes it through.
-  const lines = Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${dimensionVar(v)};`)
+  // Roles come first: the 8-line Use-it preview is what you write, and the
+  // raw scale follows. Order inside `:root` does not change the value.
+  const lines: string[] = []
   const family = layoutFamilyOf(section)
   if (family) {
+    lines.push(...layoutRoleCssFor(family, store))
     if (family === 'radius') lines.push(...radiusComponentCss())
     if (family === 'spacing') lines.push(...spacingResponsiveCss())
-    lines.push(...layoutRoleCssFor(family, store))
   }
+  if (simple.extra) lines.push(...layoutRoleCssFor(simple.extra.family, store))
+  lines.push(...Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${dimensionVar(v)};`))
   if (simple.extra) {
     Object.entries(simple.extra.get(store)).forEach(([k, v]) => lines.push(`--${simple.extra!.prefix}-${k}: ${dimensionVar(v)};`))
-    lines.push(...layoutRoleCssFor(simple.extra.family, store))
   }
   if (section === 'spacing') {
     Object.entries(store.padding ?? {}).forEach(([k, v]) => lines.push(`--padding-${k}: ${dimensionVar(v)};`))
