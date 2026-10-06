@@ -230,7 +230,7 @@ export function PricingPage() {
     {
       title: 'Figma',
       rows: [
-        { label: t('Themes in one Figma file'), free: t('{n} (Light + Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
+        { label: t('Themes in one Figma file'), free: t('{n} (Light or Dark)', { n: String(FREE_MAX_THEMES) }), pro: t('Up to {max}', { max }) },
         { label: t('Platform modes'), free: 'Desktop', pro: 'Desktop, Tablet, Mobile' },
         { label: t('Manual import of tokens.json'), free: true, pro: true },
         { label: t('Hosted sync (Live Sync and auto-publish)'), free: null, pro: t('12 months') },
@@ -309,7 +309,7 @@ export function PricingPage() {
                     t('All 12 System Styles, unlimited themes while editing'),
                     t('Every export: tokens.json, CSS, W3C, Tailwind, Markdown'),
                     t('Open-source Figma plugin, manual import'),
-                    t('{n} theme (Light + Dark) and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
+                    t('{n} theme in Light or Dark, and Desktop mode in Figma', { n: String(FREE_MAX_THEMES) }),
                     t('Offline agent skill, GitHub push, CLI'),
                   ]} />
                 </div>

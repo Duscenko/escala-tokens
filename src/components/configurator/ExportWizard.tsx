@@ -125,6 +125,7 @@ export default function ExportWizard({
   initialCollections = ALL_WIZARD_COLLECTIONS,
   initialModes,
   activeTheme,
+  activeAppearance,
   themeScope = null,
   themeScopeLabel,
 }: {
@@ -152,6 +153,8 @@ export default function ExportWizard({
    *  every theme in the system (including built-ins they didn't make). The
    *  others are one tap, or "All", away. Ignored when `initialModes` is set. */
   activeTheme?: string
+  /** The appearance (Light / Dark) on screen — the ONE column a free Figma download carries. */
+  activeAppearance?: 'light' | 'dark'
   /** Set when the wizard was opened for ONE theme (Theme Preview → Export). The
    *  Step 3 snapshot then names itself after that theme and saves theme-scoped
    *  (`saveCurrentSystemAsTheme`), instead of the whole-project `saveCurrentSystem`. */
@@ -263,7 +266,7 @@ export default function ExportWizard({
   // the AI zips and GitHub are not narrowed.
   const entitlement = useEntitlement()
   const figmaScope = format === 'escala' && !entitlement.pro
-    ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds)
+    ? freeFigmaScope(activeTheme, store.themeOrder, store.themes, store.themeKinds, activeAppearance)
     : undefined
   // Every family picked = unscoped, so an untouched export keeps producing the
   // exact same payload it did before family scoping existed.
@@ -905,7 +908,7 @@ export default function ExportWizard({
                     </p>
                     {figmaScope && (
                       <p className="mx-3 mb-2 rounded-lg bg-accent-ui/[0.08] px-3 py-2 text-body text-fg-muted">
-                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (Light + Dark)` : 'one theme'} and Desktop.</span>{' '}
+                        <span className="font-semibold text-fg">Free ships {figmaScope.themes?.[0] ? `${themeDisplayName(figmaScope.themes[0], store.themeLabels)} (${figmaScope.modes?.[0]?.appearance === 'dark' ? 'Dark' : 'Light'} only)` : 'one theme'} and Desktop.</span>{' '}
                         Up to {PRO_MAX_THEMES} themes and every viewport come with Escala Pro.{' '}
                         <a href={PRICING_PATH} className="font-medium text-accent-ui underline-offset-2 hover:underline">See pricing</a>
                       </p>

@@ -2335,6 +2335,7 @@ export default function Configurator() {
             key={exportRun}
             initialModes={themeExportScope ? [themeExportScope] : undefined}
             activeTheme={previewTheme}
+            activeAppearance={previewAppearance}
             themeScope={themeExportScope}
             themeScopeLabel={themeExportScope ? (store.themeLabels[themeExportScope] || themeExportScope) : undefined}
             onClose={() => { setSectionExportOpen(false); setThemeExportScope(null) }}

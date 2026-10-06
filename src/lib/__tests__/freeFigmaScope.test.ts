@@ -5,15 +5,17 @@ import { freeFigmaScope } from '../freeFigmaScope'
 const kinds = { core: 'light', night: 'dark', brand: 'light' }
 
 describe('free Figma scope', () => {
-  it('keeps one theme (its Light + Dark) and Desktop only', () => {
+  it('keeps one theme in ONE mode (its own kind) and Desktop only', () => {
     const scope = freeFigmaScope('night', ['light', 'dark', 'core', 'night', 'brand'], { core: {}, night: {}, brand: {} }, kinds)
     expect(scope.themes).toEqual(['night'])
     expect(scope.viewports).toEqual(['desktop'])
     expect(scope.gridStyles).toEqual(['xl-desktop'])
-    expect(scope.modes).toEqual([
-      { theme: 'night', appearance: 'dark' },
-      { theme: 'night', appearance: 'light' },
-    ])
+    expect(scope.modes).toEqual([{ theme: 'night', appearance: 'dark' }])
+  })
+
+  it('ships the appearance on screen, whatever the theme kind', () => {
+    const scope = freeFigmaScope('night', ['night'], { night: {} }, kinds, 'light')
+    expect(scope.modes).toEqual([{ theme: 'night', appearance: 'light' }])
   })
 
   it('falls back to the first theme when the preferred one is not in My themes', () => {
