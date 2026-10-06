@@ -26,7 +26,7 @@ export const LEGAL = {
     site: 'https://vercel.com',
   },
   /** Bump whenever either page's substance changes. */
-  updated: '2026-10-07',
+  updated: '2026-10-08',
 }
 
 /** Contact form topics — shared by /contact and api/contact.ts so the form
