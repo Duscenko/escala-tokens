@@ -17,7 +17,7 @@ The point is **no bloat**: you export the tokens you actually chose, not a frame
 | Figma | Variables (primitives, semantics per theme, type, spacing, radius, component aliases) |
 | Agents | Skill zip + live MCP at `/api/mcp` |
 
-There are **no accounts**. The editor lives in the browser. Durable save is the GitHub repo you connect (`.escala/system.json` + the export). `/api/tokens` is only a live-sync cache so the plugin can poll.
+An **account is optional** (sign in only for online saving and the Pro licence). The editor lives in the browser. Durable save is the GitHub repo you connect (`.escala/system.json` + the export). `/api/tokens` is only a live-sync cache so the plugin can poll.
 
 The systems you build are yours — no licence or attribution requirement on the tokens.
 

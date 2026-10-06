@@ -56,7 +56,7 @@ src/lib/color/apca.ts
 Dependencies shipped in the built application. Listed below are those carrying
 terms beyond MIT boilerplate; the remaining runtime dependencies (react,
 react-dom, framer-motion, zustand, clsx, tailwind-merge,
-class-variance-authority, @vercel/blob, @tailwindcss/vite) are MIT. The
+class-variance-authority, @vercel/blob, @tailwindcss/vite, @supabase/supabase-js) are MIT. The
 complete dependency tree is in package-lock.json.
 
   chroma-js                           — BSD-3-Clause AND Apache-2.0

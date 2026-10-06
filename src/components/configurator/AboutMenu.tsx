@@ -269,7 +269,7 @@ export function useAboutSections(): {
         </P>
         <P>
           <span className="text-fg">{t('Where your work lives:')}</span>{' '}
-          {t("your system is stored in your own browser (localStorage); there are no accounts and no server-side profile. Tokens leave the browser only when you ask: publishing for Figma live-sync uploads the token payload to this project's endpoint, and connecting GitHub pushes files to the repo you pick. A GitHub token you provide stays in your browser and is never sent anywhere but GitHub.")}
+          {t("your system is stored in your own browser (localStorage). An account is optional: signing in only serves online saving and the Pro licence, and without one there is no server-side profile. Tokens leave the browser only when you ask: publishing for Figma live-sync uploads the token payload to this project's endpoint, and connecting GitHub pushes files to the repo you pick. A GitHub token you provide stays in your browser and is never sent anywhere but GitHub.")}
         </P>
         {/* Mirrors the privacy contract in lib/analytics.ts — change both together. */}
         <P>

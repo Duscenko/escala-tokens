@@ -4,7 +4,7 @@ Report vulnerabilities privately to the repository owner (GitHub Security Adviso
 
 ## What this project stores, and where
 
-There is **no user account**. That is deliberate.
+An **account is optional** (Supabase Auth, PKCE; the session lives in `localStorage`). It only serves online saving and the Pro licence — the editor works without one, and signing in never grants repository access (that stays with the GitHub connection).
 
 | Layer | What it is | Trust |
 |---|---|---|
