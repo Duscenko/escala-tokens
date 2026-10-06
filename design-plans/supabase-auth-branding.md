@@ -30,16 +30,10 @@ emails an hour, so custom SMTP is needed for real traffic anyway.
 </div>
 ```
 
-## 2. Google consent screen ("Sign in to yihnyflwmcthygfqszub.supabase.co")
-
-That text is Google's, driven by two things:
-- **Google Cloud Console → APIs & Services → OAuth consent screen**: set App name
-  `Escala Tokens`, logo, support email, and **Authorized domains** `escalatokens.com`
-  (+ homepage, privacy `/privacy` and terms `/terms` links), then **Publish app**.
-  The consent title becomes "Sign in to Escala Tokens" once the app is verified.
-- The line "Google will allow yihnyflwmcthygfqszub.supabase.co…" shows the OAuth redirect
-  host. Only a **Supabase custom domain** (paid add-on, e.g. `auth.escalatokens.com`) removes it.
-  Until then this part stays; the app name above is the free fix.
+## 2. Google — dropped (2026-10-06)
+Sign-in is email + GitHub only. Google would need a published OAuth app and still shows the
+supabase.co host without a paid custom domain. The Google Cloud project `escala-tokens` and its
+branding can stay as they are.
 
 ## 3. GitHub provider
 Same idea: GitHub → Settings → Developer settings → OAuth Apps → name `Escala Tokens`, logo,

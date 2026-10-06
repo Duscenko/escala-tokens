@@ -26,10 +26,10 @@ export const supabase: SupabaseClient | null = accountsEnabled
 
 /** Social sign-in buttons to offer. Empty until the provider is configured in
  *  Supabase (Authentication → Sign In / Providers) AND listed here through
- *  `VITE_AUTH_PROVIDERS="google,github"`, so a button never appears that cannot work.
+ *  `VITE_AUTH_PROVIDERS="github"`, so a button never appears that cannot work.
  *  They ask for identity only — never repository access (GitHubConnectView owns that). */
-export type AuthProvider = 'google' | 'github'
+export type AuthProvider = 'github'
 export const authProviders: AuthProvider[] = (typeof env.VITE_AUTH_PROVIDERS === 'string' ? env.VITE_AUTH_PROVIDERS : '')
   .split(',')
   .map((p) => p.trim())
-  .filter((p): p is AuthProvider => p === 'google' || p === 'github')
+  .filter((p): p is AuthProvider => p === 'github')
