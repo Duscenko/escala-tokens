@@ -1,5 +1,6 @@
 import { figmaDimensionName, figmaPrimitiveName, figmaPrimitiveNameAliases, flatKeyFromFigmaName, figmaSemanticName, figmaSpacingName, webCodeSyntax, type PrimitiveNameContext } from '../agentBundle/names.js'
 import type { ThemeSlot, TokenJSON } from '../agentBundle/types.js'
+import { canonicalTokenId, resolveLayer } from './resolveLayers.js'
 
 export type ResolvedKind = 'semantic' | 'primitive' | 'foundation' | 'unknown'
 
@@ -11,9 +12,17 @@ export interface ResolvedToken {
   css: string
   values: Record<string, string>
   found: boolean
-  /** For a length: the Dimension primitive it aliases, per theme
-   *  (`{ light: 'dimension.16' }`). Absent for colours and for non-lengths. */
+  /** For a length: what this token points at, per theme — a Dimension
+   *  primitive (`dimension.16`) or the next token in the chain (`icon.size.md`). */
   aliases?: Record<string, string>
+  /** Desktop / Tablet / Mobile readings, per theme, when the token steps.
+   *  `values` stays the Desktop reading (or the viewport the query named). */
+  viewports?: Record<string, Record<string, string>>
+  /** Light and dark shadow strings. Present when the payload ships `shadowsDark`
+   *  and every theme's light value is that ramp. */
+  appearances?: { light: string; dark: string }
+  /** Named grid style: columns, column width, gutter, margin, frame width. */
+  spec?: Record<string, Record<string, string>>
 }
 
 const GROUP_FROM_FIGMA: Record<string, string> = {
@@ -192,6 +201,11 @@ function foundationValues(json: TokenJSON, id: string): ResolvedToken | null {
     const values = foundationThemeValues(map.root, byTheme, json.colors.themeOrder, map.themeField, key)
     if (!values) continue
     const aliases = dimensionAliases(json, map.themeField, key, Object.keys(values))
+    const light = map.kind === 'shadow' ? json.shadows?.[key] : undefined
+    const dark = map.kind === 'shadow' ? json.shadowsDark?.[key] : undefined
+    const appearances = light && dark && Object.values(values).every((v) => v === light)
+      ? { light, dark }
+      : undefined
     return {
       query: id,
       id: `${map.kind}.${key}`,
@@ -201,6 +215,7 @@ function foundationValues(json: TokenJSON, id: string): ResolvedToken | null {
       values,
       found: true,
       ...(aliases ? { aliases } : {}),
+      ...(appearances ? { appearances } : {}),
     }
   }
   return null
@@ -281,7 +296,7 @@ function foundationThemeValues(
 }
 
 export function resolveToken(json: TokenJSON, raw: string): ResolvedToken {
-  const id = normalizeTokenId(raw)
+  const id = canonicalTokenId(raw) ?? normalizeTokenId(raw)
   const arch = architectureValues(json, id)
   if (arch) {
     return {
@@ -332,6 +347,8 @@ export function resolveToken(json: TokenJSON, raw: string): ResolvedToken {
   }
   const foundation = foundationValues(json, id)
   if (foundation) return { ...foundation, query: raw }
+  const layer = resolveLayer(json, id)
+  if (layer) return { ...layer, query: raw }
   return {
     query: raw,
     id,

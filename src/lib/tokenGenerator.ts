@@ -699,9 +699,9 @@ export function generateTokenJSON(
     // Hand-set radius roles on Tablet / Mobile (only the ones someone changed);
     // a role absent here follows `radiusResponsive`. Additive.
     radiusRoleViewports: store.radiusRoleViewports ?? {},
-    // Responsive radius: the static step each token reads per viewport (one
-    // smaller on Tablet, one — two from 3xl up — on Mobile). The roles follow
-    // it; the plugin makes Radius/component/<step> a value per viewport mode.
+    // Responsive radius: the static step each role reads per viewport (one
+    // smaller on Tablet, one — two from 3xl up — on Mobile). The plugin writes
+    // each Radius/role/* mode as an alias of that step's dimension primitive.
     // Additive, so no schemaVersion bump.
     radiusResponsive: RADIUS_RESPONSIVE,
     // Named gradients (slug → CSS) + which one drives each preview surface.

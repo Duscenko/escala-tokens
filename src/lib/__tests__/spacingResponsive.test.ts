@@ -61,13 +61,13 @@ describe('responsive spacing', () => {
     expect(resolveLayoutRole('spacing', defaultLayoutRoles('spacing'), base5, 'gap-section')).toBe('30px')
   })
 
-  it('CSS: tokens on :root reference static steps; roles and tokens step down per viewport', () => {
+  it('CSS: roles step down per viewport; the curve is not its own variables', () => {
     expect(layoutValueCss('spacing', 'section-md', SPACING_STANDARD)).toBe('var(--dimension-24)')
     const css = gridFrameMediaCss(defaultLayoutRoles('breakpoint'), { ...BREAKPOINT_STANDARD }, GRID_FRAME_STANDARD, SPACING_STANDARD, undefined, {
       roles: defaultLayoutRoles('spacing'), spacing: SPACING_STANDARD,
     })
     const [tablet, mobile] = css.split('@media').slice(1)
-    expect(tablet).toContain('--spacing-section-md: var(--spacing-4);')
+    expect(tablet).not.toContain('--spacing-section-md')
     expect(tablet).toContain('--spacing-gap-section: var(--dimension-16);')
     expect(mobile).toContain('--spacing-inset-page: var(--dimension-8);')
     expect(css).not.toContain('--spacing-inset-surface')

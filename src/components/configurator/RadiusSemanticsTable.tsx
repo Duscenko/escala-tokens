@@ -1,14 +1,10 @@
-// Radius' tables in the Variables editor — one per LAYER, picked by the rail's
-// Collections (never mixed into one list):
+// Radius roles in the Variables editor. The rail lists one collection.
 //
-//   radius-container  →  radius-component-2xl  →  radius-2xl (16px)
-//        role                responsive              static
+//   radius-container  →  radius-2xl (16px), and that step rounds down on Tablet / Mobile
 //
-//   · Radius semantics — the five roles, grouped Boxes · Fields · Selectors.
-//     Each names the responsive token it aliases.
-//   · Radius responsive — the ten `radius-component-*` tokens, read-only,
-//     grouped by the role group that uses them (or Unassigned). Each names the
-//     roles that alias it.
+//   Five roles, grouped Boxes · Fields · Selectors. Tablet and Mobile follow
+//   the curve unless that viewport has its own value. The curve is not a
+//   second collection.
 //
 // Both show ONE viewport — the rail's Platform switch, like Grid and Type.
 // Every viewport edits with the same Dimension-primitive picker. Desktop sets
@@ -216,10 +212,10 @@ export default function RadiusSemanticsTable({
         const vp = platform === 'desktop' ? null : platform
         const overridden = vp ? viewports?.[vp]?.[role.key] !== undefined : false
         const modified = vp ? overridden : !layoutRoleIsDefault('radius', role.key, step, radius)
-        const token = (RADIUS_RESPONSIVE_STEPS as readonly string[]).includes(step) ? `radius-component-${step}` : null
+        const follows = (RADIUS_RESPONSIVE_STEPS as readonly string[]).includes(step)
         const note = vp
           ? (overridden ? `Set for ${VP_LABEL[platform]} — Desktop is ${step}` : at === step ? 'Follows Desktop' : `Follows Desktop: ${step} ↓ ${rungsDown(step, at)}`)
-          : (token ? `→ ${token}` : 'Pinned — same on every viewport unless set per viewport')
+          : (follows ? 'Steps down on smaller screens' : 'Pinned — same on every viewport unless set per viewport')
         return (
           <div
             key={role.key}
@@ -231,7 +227,7 @@ export default function RadiusSemanticsTable({
                 <code className="font-mono text-body text-fg-muted truncate">radius-{role.key}</code>
                 {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title={vp ? `Set for ${VP_LABEL[platform]}` : 'Modified'} />}
               </span>
-              <span className={`text-caption text-fg-faint truncate ${!vp && token ? 'font-mono' : ''}`} title={role.description}>{note}</span>
+              <span className="text-caption text-fg-faint truncate" title={role.description}>{note}</span>
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">
               <DimensionSelect

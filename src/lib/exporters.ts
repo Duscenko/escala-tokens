@@ -10,7 +10,7 @@ import { resolveFamilyPages } from './colorActions'
 import { mdCell } from './utils'
 import { architectureLabel } from './semanticArchitectures'
 import { typeRoleCssVars, TYPE_ROLES, mergeTypeRoles } from './typeRoles'
-import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, radiusComponentCss, spacingResponsiveCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
+import { allLayoutRoleCssVars, LAYOUT_ROLES, mergeLayoutRoles, mergeGridFrame, extractBreakpoints, BREAKPOINT_STEPS, breakpointKey, gridFrameRootCss, gridFrameMediaCss, layoutValueCss, resolveLayoutRole, radiusRolesViewportCss, spacingRolesViewportCss, breakpointTabletMax, breakpointMobileMax, RADIUS_RESPONSIVE_STEPS, RADIUS_RESPONSIVE, type RadiusRoleViewports } from './layoutTokens'
 import { gradientToCss, gradientSlug } from './gradients'
 import { resolveThemeFoundations } from './themeFoundations'
 import { type ThemeAppearance } from './themeModes'
@@ -141,14 +141,12 @@ export function buildCSS(store: ReturnType<typeof useDesignStore.getState>): str
 
   lines.push('\n  /* Spacing */')
   Object.entries(spacing).forEach(([k, v]) => lines.push(`  --spacing-${k}: ${dimensionVar(v)};`))
-  spacingResponsiveCss().forEach((line) => lines.push(`  ${line}`))
 
   lines.push('\n  /* Padding — per-side surface inset (alias of spacing-inset-surface) */')
   paddingCssEntries(padding, spacing, spacingRoles).forEach(([k, v]) => lines.push(`  --padding-${k}: ${v};`))
 
   lines.push('\n  /* Radius */')
   Object.entries(radius).forEach(([k, v]) => lines.push(`  --radius-${k}: ${dimensionVar(v)};`))
-  radiusComponentCss().forEach((line) => lines.push(`  ${line}`))
 
   lines.push('\n  /* Sizes */')
   Object.entries(sizes).forEach(([k, v]) => lines.push(`  --size-${k}: ${dimensionVar(v)};`))

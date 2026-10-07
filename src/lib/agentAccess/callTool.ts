@@ -45,7 +45,7 @@ export async function callTool(
         throw new Error(
           `Unknown token "${resolved.query}" in project "${String(a.project)}"` +
             (v ? ` (published schemaVersion ${v})` : '') +
-            '. Use a catalogue id (action.primary.default) or Figma name (Action/primary/default). ' +
+            '. Use a catalogue id (action.primary.default), a role (radius.container, spacing.gap-tight, icon.control-md, type.body-md) or a Figma name (Action/primary/default, Radius/role/container). ' +
             'Do not invent a role — but if you expected this token, the published system may predate it: re-publish from the configurator (Sync now) and retry.',
         )
       }
@@ -60,9 +60,25 @@ export async function callTool(
     }
     case 'list_icons': {
       const json = await requireTokens(loadTokens, a.project)
+      const themes = json.colors.themeOrder?.length
+        ? json.colors.themeOrder
+        : Object.keys(json.foundationsByTheme ?? {})
+      const byTheme: Record<string, { weight?: string; sizes?: NonNullable<TokenJSON['icons']>['sizes'] }> = {}
+      for (const theme of themes) {
+        const found = json.foundationsByTheme?.[theme]
+        if (!found?.iconWeight && !found?.iconSizes) continue
+        byTheme[theme] = {
+          ...(found.iconWeight ? { weight: found.iconWeight } : {}),
+          ...(found.iconSizes ? { sizes: found.iconSizes } : {}),
+        }
+      }
       return {
         aiSource: json.icons?.aiSource ?? null,
+        library: json.icons?.library ?? null,
+        weight: json.icons?.weight ?? null,
+        sizes: json.icons?.sizes ?? null,
         custom: (json.icons?.custom ?? []).map((c) => c.name).filter((n): n is string => Boolean(n)),
+        ...(Object.keys(byTheme).length ? { themes: byTheme } : {}),
       }
     }
     case 'check_contrast':

@@ -263,18 +263,14 @@ const VARIABLE_COLLECTIONS: Record<string, VariableCollectionItem[]> = {
     { key: 'primitives', label: 'Font primitives' },
     { key: 'semantics', label: 'Font semantics', icon: 'variables' },
   ],
-  // Radius has TWO layers the editor shows: the roles (what a corner is for)
-  // and the ten responsive tokens they alias (Desktop · Tablet · Mobile steps).
-  // Separate collections, not rail groups — a layer is not a role group.
+  // One collection: the roles. The step-down curve (radiusResponsive /
+  // spacingResponsive) is how a role's Tablet and Mobile values are derived;
+  // it is not a second list of variables.
   radius: [
     { key: 'semantics', label: 'Radius semantics', icon: 'variables' },
-    { key: 'responsive', label: 'Radius responsive', icon: 'variables' },
   ],
-  // Same two layers as Radius: the roles, and the 18 responsive tokens
-  // (Component · Section · Layout) they alias.
   spacing: [
     { key: 'semantics', label: 'Spacing semantics', icon: 'variables' },
-    { key: 'responsive', label: 'Spacing responsive', icon: 'variables' },
   ],
   grid: [{ key: 'semantics', label: 'Grid semantics', icon: 'variables' }],
   sizes: [{ key: 'semantics', label: 'Size semantics', icon: 'variables' }],

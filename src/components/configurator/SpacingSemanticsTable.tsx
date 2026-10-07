@@ -1,15 +1,9 @@
-// Spacing's tables in the Variables editor — one per LAYER, picked by the rail's
-// Collections, the same shape as Radius:
+// Spacing roles in the Variables editor. The rail lists one collection.
 //
-//   spacing-gap-section  →  spacing-section-md  →  spacing-6 (24px)
-//         role                 responsive              static
+//   spacing-gap-section follows section-md (24 / 16 / 12 on a 4px base)
 //
-//   · Spacing semantics — the roles, grouped Gap · Inset. The picker chooses a
-//     responsive token (it then tightens on Tablet / Mobile) or a fixed step
-//     (one value everywhere). A role references a TOKEN, not a viewport value,
-//     so the picker means the same thing on every platform.
-//   · Spacing responsive — the 18 tokens, read-only, grouped Component ·
-//     Section · Layout, each naming the roles that use it.
+//   Roles are grouped Gap · Inset. A role on the curve tightens on smaller
+//   screens; a fixed step holds one value. The curve is not a second collection.
 //
 // Both show ONE viewport — the rail's Platform switch. Docs → Spacing compares
 // all three.
@@ -210,8 +204,8 @@ export default function SpacingSemanticsTable({
                 <code className="font-mono text-body text-fg-muted truncate">spacing-{role.key}</code>
                 {modified && <span className="w-1.5 h-1.5 rounded-full bg-accent-ui flex-shrink-0" title="Modified" />}
               </span>
-              <span className={`text-caption text-fg-faint truncate ${responsive ? 'font-mono' : ''}`} title={role.description}>
-                {responsive ? `→ spacing-${value}` : 'Fixed — same on every viewport'}
+              <span className="text-caption text-fg-faint truncate" title={role.description}>
+                {responsive ? 'Steps down on smaller screens' : 'Fixed — same on every viewport'}
               </span>
             </div>
             <div className="flex items-center px-3 py-2 border-r border-line min-w-0">

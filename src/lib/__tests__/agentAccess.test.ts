@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { evaluate } from '../color/apca'
 import type { TokenJSON } from '../agentBundle'
 import { COMPONENT_KEYS } from '../componentCatalogue'
+import { generateTokenJSON } from '../tokenGenerator'
+import { makeDesignDefaults, useDesignStore } from '../../store/useDesignStore'
 import {
   callTool,
   checkContrast,
@@ -359,5 +361,151 @@ describe('discovery and schema publish', () => {
     const docs = readFileSync(join(repoRoot, 'docs/agent-native/tokens.schema.json'), 'utf8')
     const pub = readFileSync(join(repoRoot, 'public/docs/agent-native/tokens.schema.json'), 'utf8')
     expect(pub).toBe(docs)
+  })
+})
+
+describe('resolve_token matches the current payload', () => {
+  beforeEach(() => {
+    useDesignStore.setState(makeDesignDefaults())
+  })
+
+  function published(): TokenJSON {
+    return generateTokenJSON() as unknown as TokenJSON
+  }
+
+  it('resolves radius roles, and steps them down on smaller viewports', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const step = json.radiusRoles?.container
+    expect(step).toBeTruthy()
+    const desktopStep = step ?? ''
+    const tabletStep = json.radiusResponsive?.[desktopStep]?.tablet ?? ''
+    expect(tabletStep).not.toBe('')
+    expect(json.radius[tabletStep]).not.toBe(json.radius[desktopStep])
+
+    const hit = resolveToken(json, 'radius.container')
+    expect(hit.found).toBe(true)
+    expect(hit.id).toBe('radius.container')
+    expect(hit.kind).toBe('foundation')
+    expect(hit.css).toBe('var(--radius-container)')
+    expect(hit.figma).toBe('Radius/role/container')
+    expect(hit.values[theme]).toBe(json.radius[desktopStep])
+    expect(hit.viewports?.[theme]?.tablet).toBe(json.radius[tabletStep])
+    expect(hit.aliases?.[theme]).toMatch(/^dimension\./)
+
+    expect(resolveToken(json, 'Radius/role/container').id).toBe('radius.container')
+    expect(resolveToken(json, 'var(--radius-container)').values).toEqual(hit.values)
+  })
+
+  it('resolves a spacing role through its responsive token', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const ref = json.spacingRoleRefs?.['gap-section']
+    expect(ref).toBeTruthy()
+    const mobileStep = json.spacingResponsive?.[ref!]?.mobile
+    expect(mobileStep).toBeTruthy()
+    expect(mobileStep).not.toBe(json.spacingResponsive?.[ref!]?.desktop)
+
+    const hit = resolveToken(json, 'Spacing/role/gap-section')
+    expect(hit.css).toBe('var(--spacing-gap-section)')
+    expect(hit.figma).toBe('Spacing/role/gap-section')
+    expect(hit.values[theme]).toBe(json.spacing[json.spacingResponsive![ref!].desktop])
+    expect(hit.viewports?.[theme]?.mobile).toBe(json.spacing[mobileStep!])
+  })
+
+  it('resolves a responsive spacing token on its own', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const row = json.spacingResponsive?.['component-md']
+    expect(row).toBeTruthy()
+    const hit = resolveToken(json, 'var(--spacing-component-md)')
+    expect(hit.id).toBe('spacing.component-md')
+    expect(hit.figma).toBe('12')
+    expect(hit.css).toBe('var(--dimension-12)')
+    expect(hit.values[theme]).toBe(json.spacing[row!.desktop])
+    expect(hit.viewports?.[theme]?.mobile).toBe(json.spacing[row!.mobile])
+  })
+
+  it('resolves icon roles onto the icon scale, and the scale onto a dimension', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const step = json.icons?.sizes?.roles?.['control-md']
+    expect(step).toBeTruthy()
+    const role = resolveToken(json, 'Icon/role/control-md')
+    expect(role.css).toBe('var(--icon-control-md)')
+    expect(role.figma).toBe('Icon/role/control-md')
+    expect(role.values[theme]).toBe(json.icons?.sizes?.scale?.[step!])
+    expect(role.aliases?.[theme]).toMatch(/^dimension\./)
+
+    const size = resolveToken(json, 'icon.size.md')
+    expect(size.css).toBe('var(--icon-size-md)')
+    expect(size.values[theme]).toBe(json.icons?.sizes?.scale?.md)
+    expect(size.aliases?.[theme]).toMatch(/^dimension\./)
+  })
+
+  it('resolves a type role, including the mobile cut named in the CSS variable', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const mobile = json.typography.roles?.display?.mobile
+    expect(mobile?.size).toBeTruthy()
+    const hit = resolveToken(json, 'var(--text-display-font-size-mobile)')
+    expect(hit.css).toBe('var(--text-display-font-size-mobile)')
+    expect(hit.figma).toBe('Type/display (Mobile)')
+    expect(hit.values[theme]).toBe(json.typography.sizes[mobile!.size])
+    expect(hit.aliases?.[theme]).toBe(`font-size.${mobile!.size}`)
+    expect(hit.viewports?.[theme]?.desktop).not.toBe(hit.values[theme])
+
+    const body = resolveToken(json, 'type.body-md')
+    expect(body.css).toBe('var(--text-body-md-font-size)')
+    expect(body.figma).toBe('Type/body-md')
+    const bodyRole = json.typography.roles?.['body-md']
+    expect(body.values[theme]).toBe(json.typography.sizes[bodyRole!.desktop.size])
+  })
+
+  it('pairs a shadow with its dark twin', () => {
+    const json = published()
+    const hit = resolveToken(json, 'shadow.xs')
+    expect(hit.appearances?.light).toBe(json.shadows?.xs)
+    expect(hit.appearances?.dark).toBe(json.shadowsDark?.xs)
+    expect(hit.appearances?.dark).not.toBe(hit.appearances?.light)
+  })
+
+  it('resolves a named grid style', () => {
+    const json = published()
+    const theme = json.colors.themeOrder?.[0] ?? 'light'
+    const style = json.gridStyles?.find((s) => s.key === 'xl-desktop')
+    expect(style?.width).toBeGreaterThan(0)
+    const hit = resolveToken(json, 'Grid/XL Desktop')
+    expect(hit.found).toBe(true)
+    expect(hit.figma).toBe('Grid/XL Desktop')
+    expect(hit.css).toBe('')
+    expect(hit.values[theme]).toBe(`${style!.width}px`)
+    expect(hit.spec?.[theme]?.columns).toBe(String(style!.columns))
+    expect(hit.spec?.[theme]?.gutter).toBe(`${style!.gutter}px`)
+  })
+
+  it('reads a semantic colour from its CSS variable', () => {
+    const hit = resolveToken(JSON_FIXTURE, 'var(--color-action-primary-default)')
+    expect(hit.found).toBe(true)
+    expect(hit.id).toBe('action.primary.default')
+    expect(hit.css).toBe('var(--color-action-primary-default)')
+  })
+
+  it('does not invent a role the payload never shipped', () => {
+    expect(resolveToken(JSON_FIXTURE, 'radius.container').found).toBe(false)
+    expect(resolveToken(JSON_FIXTURE, 'icon.control-md').found).toBe(false)
+  })
+
+  it('list_icons returns the weight and the size scale', async () => {
+    const json = published()
+    const icons = await callTool('list_icons', { project: 'live' }, async () => json) as {
+      weight: string
+      sizes: { roles: Record<string, string>; scale: Record<string, string> }
+      themes: Record<string, { weight?: string }>
+    }
+    expect(icons.weight).toBeTruthy()
+    expect(icons.sizes.roles['control-md']).toBeTruthy()
+    expect(icons.sizes.scale.md).toMatch(/px$/)
+    expect(icons.themes.light?.weight ?? icons.themes[json.colors.themeOrder?.[0] ?? '']?.weight).toBeTruthy()
   })
 })

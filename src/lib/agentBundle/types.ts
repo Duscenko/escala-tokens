@@ -12,6 +12,32 @@ export interface TypeRoleAlias {
   weight: string
 }
 
+/** Icon scale (`16px`) plus roles (`control-md` → a scale step). */
+export interface IconSizeBlock {
+  scale?: Record<string, string>
+  roles?: Record<string, string>
+  minWeight?: { belowPx?: number; weight?: string }
+}
+
+/** One named grid style, already resolved to px by `generateTokenJSON`. */
+export interface GridStyleJSON {
+  key: string
+  label?: string
+  viewport?: string
+  columns?: number
+  column?: number
+  gutter?: number
+  margin?: number
+  width?: number
+  sidebar?: number
+}
+
+/** Hand-set radius role values on Tablet / Mobile. Absent means "follow Desktop". */
+export interface RadiusRoleViewportsJSON {
+  tablet?: Record<string, string>
+  mobile?: Record<string, string>
+}
+
 export interface TokenJSON {
   schemaVersion?: number
   project: string
@@ -38,28 +64,56 @@ export interface TokenJSON {
     sizes: Record<string, string>
     lineHeights?: Record<string, string>
     weights: Record<string, number>
-    roles?: Record<string, { desktop: TypeRoleAlias; mobile: TypeRoleAlias }>
+    roles?: Record<string, { desktop: TypeRoleAlias; tablet?: TypeRoleAlias; mobile: TypeRoleAlias }>
   }
   spacing: Record<string, string>
+  /** Desktop static step each spacing role resolves to. */
+  spacingRoles?: Record<string, string>
+  /** Role → responsive token (`gap-section` → `section-md`) or a static step. */
+  spacingRoleRefs?: Record<string, string>
+  /** Responsive spacing token → Desktop / Tablet / Mobile static step. */
+  spacingResponsive?: Record<string, Record<string, string>>
   padding?: Record<string, string>
   radius: Record<string, string>
+  radiusRoles?: Record<string, string>
+  radiusRoleViewports?: RadiusRoleViewportsJSON
+  /** Responsive radius step → the static step it reads per viewport. */
+  radiusResponsive?: Record<string, Record<string, string>>
   sizes?: Record<string, string>
+  sizeRoles?: Record<string, string>
   selector?: Record<string, string>
+  selectorRoles?: Record<string, string>
   stroke?: Record<string, string>
+  strokeRoles?: Record<string, string>
   grid?: Record<string, string>
+  breakpointRoles?: Record<string, string>
+  gridStyles?: GridStyleJSON[]
   shadows?: Record<string, string>
+  /** Dark-appearance twin of `shadows`. Same keys. */
+  shadowsDark?: Record<string, string>
   /** Per-library-theme copies of the foundation maps. Root fields are the
    *  compatibility fallback — a theme that differs (Material radius vs the
    *  leftover root ramp) is the value consumers must resolve. */
   foundationsByTheme?: Record<string, {
     typography?: TokenJSON['typography']
     spacing?: Record<string, string>
+    spacingRoles?: Record<string, string>
+    spacingRoleRefs?: Record<string, string>
     radius?: Record<string, string>
+    radiusRoles?: Record<string, string>
+    radiusRoleViewports?: RadiusRoleViewportsJSON
     sizes?: Record<string, string>
+    sizeRoles?: Record<string, string>
     selector?: Record<string, string>
+    selectorRoles?: Record<string, string>
     stroke?: Record<string, string>
+    strokeRoles?: Record<string, string>
     grid?: Record<string, string>
+    breakpointRoles?: Record<string, string>
+    gridStyles?: GridStyleJSON[]
     shadows?: Record<string, string>
+    iconWeight?: string
+    iconSizes?: IconSizeBlock
     /** Category → step → `{dimension.N}` for this theme. */
     dimensionRefs?: Record<string, Record<string, string>>
   }>
@@ -70,8 +124,12 @@ export interface TokenJSON {
   gradients?: Record<string, string>
   gradientAssignments?: Record<string, string | null>
   icons?: {
+    library?: string
     aiSource?: { key?: string; label?: string; repo?: string; npm?: string }
     custom?: { name?: string }[]
+    /** Phosphor weight the system renders (`regular`, `light`, `bold`, …). */
+    weight?: string
+    sizes?: IconSizeBlock
   }
   atoms?: string[]
 }

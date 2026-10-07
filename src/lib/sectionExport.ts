@@ -30,8 +30,6 @@ import {
   gridFrameRootCss,
   gridFrameMediaCss,
   radiusMediaCss,
-  radiusComponentCss,
-  spacingResponsiveCss,
   spacingMediaCss,
   breakpointMobileMax,
   breakpointTabletMax,
@@ -350,8 +348,6 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
   const family = layoutFamilyOf(section)
   if (family) {
     lines.push(...layoutRoleCssFor(family, store))
-    if (family === 'radius') lines.push(...radiusComponentCss())
-    if (family === 'spacing') lines.push(...spacingResponsiveCss())
   }
   if (simple.extra) lines.push(...layoutRoleCssFor(simple.extra.family, store))
   lines.push(...Object.entries(simple.get(store)).map(([k, v]) => `--${simple.prefix}-${k}: ${dimensionVar(v)};`))

@@ -12,7 +12,7 @@ Read-only Model Context Protocol endpoint. Does **not** replace `/api/tokens`.
 | Tool | Needs published JSON | Notes |
 |---|---|---|
 | `get_tokens` | yes | Same payload the plugin fetches |
-| `resolve_token` | yes | Catalogue id or Figma slashes → CSS + hex |
+| `resolve_token` | yes | Catalogue id, Figma name or CSS var → CSS + value. Roles (`radius.container`), responsive tokens (`spacing.component-md`), icon sizes, type roles and grid styles included. `viewports` when Tablet/Mobile step down. |
 | `list_components` | no | Catalogue only |
 | `get_component` | no | Props + a11y + Figma sets |
 | `list_icons` | yes | `icons.aiSource` + custom names |

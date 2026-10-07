@@ -1047,7 +1047,7 @@ line-height: var(--text-label-line-height);
   {
     key: 'radius',
     label: 'Radius',
-    lead: 'Three layers: an 11-step primitive ramp (none 0 · xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full) that holds the raw px; ten responsive tokens that step down on Tablet and Mobile; and intent aliases — control, action, container, overlay, pill — that only ever point at a step. Components bind the alias; the ramp is the personality.',
+    lead: 'Two layers: an 11-step primitive ramp (none 0 · xs 2 · sm 4 · md 6 · lg 8 · xl 12 · 2xl 16 · 3xl 24 · 4xl 32 · 5xl 48 · full) that holds the raw px, and intent aliases — control, action, container, overlay, pill — that point at a step. A role on a step rounds less on Tablet and Mobile; a role pinned to a raw px does not. Components bind the alias; the ramp is the personality.',
     why: 'Radius drifts more than any other value because it is invisible in isolation: a 6px card next to an 8px button looks fine alone and wrong together. Tokenising the ramp once, then naming what each corner is FOR, means a personality change is one slider and a nested checkbox never copies a modal’s rounding.',
     usage: 'Reach for a semantic first: `radius-action` for buttons and inputs, `radius-container` for cards, `radius-overlay` for modals, `radius-pill` for badges, `radius-control` for nested chrome. A nested corner should alias a smaller step than its parent — that is what `control` (sm) under `action` (lg) is for. Roles on a responsive step round less on smaller screens by themselves (a card is 16 / 12 / 12); a role pinned to a raw px does not. Do not invent a new px on a component.',
     usageCode: `border-radius: var(--radius-action);
@@ -1058,10 +1058,10 @@ line-height: var(--text-label-line-height);
 .badge  { border-radius: var(--radius-pill); }`,
     ships: {
       json: 'radius · radiusRoles · radiusResponsive',
-      css: '--radius-*  (steps + aliases; aliases step down in the tablet / mobile media queries)',
-      figma: 'Radius/<step> · Radius/component/<step> (a value per Desktop · Tablet · Mobile mode) · Radius/role/*, bound to every component set\'s corner radius',
+      css: '--radius-*  (named steps + role aliases; roles that change step down in the tablet / mobile media queries)',
+      figma: 'Radius/role/* — one variable per role, a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to every component set\'s corner radius',
     },
-    tokenCount: () => RADIUS_STEPS.length + RADIUS_RESPONSIVE_STEPS.length + LAYOUT_ROLES.radius.length,
+    tokenCount: () => RADIUS_STEPS.length + LAYOUT_ROLES.radius.length,
     sections: [
       {
         id: 'scale',
@@ -1086,7 +1086,7 @@ line-height: var(--text-label-line-height);
       {
         id: 'responsive',
         title: 'Responsive radius',
-        description: 'Corner rounding scales with the screen so the same semantic size keeps its proportion. Each token references a static step: one smaller on Tablet, one smaller on Mobile — two from 3xl up. In Figma it is one variable with a value per viewport mode.',
+        description: 'The curve a role follows. Each step references a static step: one smaller on Tablet, one smaller on Mobile — two from 3xl up. Figma publishes the role, with a primitive alias per viewport, not a variable per step.',
         render: (c) => (
           <div className="overflow-x-auto">
             <table className="w-full text-body">
@@ -1143,10 +1143,10 @@ padding: var(--spacing-inset-surface);
 .page { padding: var(--spacing-inset-page); }`,
     ships: {
       json: 'spacing · spacingRoles · spacingRoleRefs · spacingResponsive · padding',
-      css: '--spacing-*  (steps · component/section/layout tokens · aliases; the tokens and the roles on them step down in the tablet / mobile media queries)  ·  --padding-top|right|bottom|left',
-      figma: 'Spacing/<step> · Spacing/component|section|layout/<size> (a value per Desktop · Tablet · Mobile mode) · Spacing/role/*, bound to auto-layout gaps and padding',
+      css: '--spacing-*  (named steps + role aliases; roles that change step down in the tablet / mobile media queries)  ·  --padding-top|right|bottom|left',
+      figma: 'Spacing/role/* — one variable per role, a Dimension-primitive alias per Desktop · Tablet · Mobile mode, bound to auto-layout gaps and padding',
     },
-    tokenCount: (c) => SPACING_STEPS.length + SPACING_RESPONSIVE_KEYS.length + LAYOUT_ROLES.spacing.length + Object.keys(c.padding ?? {}).length,
+    tokenCount: (c) => SPACING_STEPS.length + LAYOUT_ROLES.spacing.length + Object.keys(c.padding ?? {}).length,
     sections: [
       {
         id: 'scale',
@@ -1175,7 +1175,7 @@ padding: var(--spacing-inset-surface);
       {
         id: 'responsive',
         title: 'Responsive spacing',
-        description: 'Three families of six sizes, each referencing a static step: Component (inside one component), Section (between blocks of a page) and Layout (between page regions). Subtle on desktop, tighter on smaller screens. A role on one of these tokens follows it; a role on a fixed step holds one value.',
+        description: 'The curve a role follows: Component (inside one component), Section (between blocks of a page) and Layout (between page regions). A role on one of these steps tightens on smaller screens; a role on a fixed step holds one value. Figma publishes the role, not a variable per step.',
         render: (c) => (
           <div className="overflow-x-auto">
             <table className="w-full text-body">

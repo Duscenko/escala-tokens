@@ -86,7 +86,8 @@
         "panelBackground": { "type": "string" },
         "semanticArchitecture": {
           "type": "string",
-          "enum": ["flat", "astryx", "shadcn", "categorical", "vibrancy", "tonal", "carbon"]
+          "enum": ["flat", "categorical"],
+          "description": "flat is the editing matrix. categorical is the only projection that ships. Astryx, shadcn, Vibrancy, Tonal and Carbon were removed."
         },
         "architecture": {
           "type": "object",
@@ -154,7 +155,20 @@
     "spacingRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. Role → a step of `spacing` (e.g. inset-surface → \"5\"), or a Dimension primitive pinned in the editor (\"dimension-20\" = 20px). Exports resolve both to the primitive."
+      "description": "Desktop static step each spacing role resolves to (gap-tight → \"1\"), or a pinned Dimension primitive (\"dimension-20\"). The responsive link lives in spacingRoleRefs."
+    },
+    "spacingRoleRefs": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Role → the token it aliases. A responsive ref (gap-section → section-md) steps down per viewport; a static step or dimension-* holds one value."
+    },
+    "spacingResponsive": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "description": "18 tokens (component|section|layout × xl…none). Each value is the static spacing step at desktop, tablet and mobile."
     },
     "padding": {
       "type": "object",
@@ -165,7 +179,23 @@
     "radiusRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. Role → a step of `radius` (action → sm on a fresh system), or a pinned Dimension primitive (\"dimension-21\"). Exports resolve both to the primitive."
+      "description": "Role → a radius step (container → 2xl) or a pinned Dimension primitive (\"dimension-21\"). A step follows radiusResponsive on Tablet and Mobile unless radiusRoleViewports overrides it."
+    },
+    "radiusRoleViewports": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "description": "Hand-set radius roles on tablet and mobile. A role absent here follows radiusResponsive."
+    },
+    "radiusResponsive": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "description": "Radius step → the static step it reads at desktop, tablet and mobile (2xl → 2xl / xl / xl)."
     },
     "gradients": { "type": "object", "additionalProperties": { "type": "string" } },
     "gradientsDark": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -178,8 +208,17 @@
       }
     },
     "shadows": { "type": "object", "additionalProperties": { "type": "string" } },
-    "shadowsDark": { "type": "object", "additionalProperties": { "type": "string" } },
+    "shadowsDark": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Dark-appearance twin of shadows. Same keys. Light `shadows` is unchanged."
+    },
     "grid": { "type": "object", "additionalProperties": { "type": "string" } },
+    "gridStyles": {
+      "type": "array",
+      "description": "Named layouts (XL Desktop, SM Mobile, …) resolved to px. Only styles whose viewport ships.",
+      "items": { "type": "object", "additionalProperties": true }
+    },
     "gridFrame": {
       "type": "object",
       "additionalProperties": true,
@@ -199,7 +238,13 @@
     "sizeRoles": {
       "type": "object",
       "additionalProperties": { "type": "string" },
-      "description": "v6 additive. control | compact | touch | hit | fab → a size step, or a pinned Dimension primitive."
+      "description": "control | compact | touch | hit | fab → a size step, or a pinned Dimension primitive."
+    },
+    "selector": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Checkbox / radio / switch box scale." },
+    "selectorRoles": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "control | compact | indicator → a selector step, or a pinned Dimension primitive."
     },
     "stroke": { "type": "object", "additionalProperties": { "type": "string" } },
     "strokeRoles": {
@@ -234,7 +279,20 @@
             "npm": { "type": "string" }
           }
         },
-        "custom": { "type": "array" }
+        "custom": { "type": "array" },
+        "weight": {
+          "type": "string",
+          "description": "Phosphor weight this system renders: thin, light, regular, bold, fill or duotone."
+        },
+        "sizes": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Icon scale (xs 12 … 2xl 32) and roles (control-md → a scale step). Roles are derived from control heights.",
+          "properties": {
+            "scale": { "type": "object", "additionalProperties": { "type": "string" } },
+            "roles": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        }
       }
     },
     "style": { "type": ["string", "null"] },

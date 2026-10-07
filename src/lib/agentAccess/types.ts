@@ -39,7 +39,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   {
     name: 'resolve_token',
     description:
-      'Resolve one token to Figma name, CSS var(), and values (hex/px per theme). Accepts catalogue ids (action.primary.default), Figma slashes (Action/primary/default), primitive keys (accent-6), alpha primitives (accent-a-3, black-a-8), foundations (radius.lg, stroke.sm, selector.md) and Dimension primitives (dimension.16, --dimension-16). A foundation also returns `aliases`: the dimension primitive it points at per theme. Foundation values come from foundationsByTheme when the published payload has it — the root map is only the fallback. A semantic value may come back as 8-digit #rrggbbaa. project is required: this server reads the last published Blob, not unsaved editor state.',
+      'Resolve one published token to its Figma name, CSS var(), and values. Accepts catalogue ids (action.primary.default), Figma names (Action/primary/default, Radius/role/container, Spacing/role/gap-tight, Icon/role/control-md, Type/body-md, Grid/XL Desktop) and the retired curve names (Spacing/component/md, Radius/component/2xl, Icon/size/md), CSS variables (var(--radius-container), var(--spacing-gap-section), var(--icon-control-md), var(--icon-size-md), var(--text-body-md-font-size), var(--color-accent-6)) and primitives (accent-6, accent-a-3, dimension.16, radius.lg). `values` is Desktop per theme (or the viewport the CSS name asked for). `viewports` is set when Tablet or Mobile steps down. `aliases` is the Dimension primitive a length resolves to (a role and an icon role both alias dimension.*). A curve name still resolves, and its figma/css point at that primitive. A shadow includes `appearances.dark` when the payload ships shadowsDark. A grid style has no CSS variable: `values` is the frame width and `spec` carries columns, column, gutter and margin. Foundation values come from foundationsByTheme when the payload has it. A semantic colour may be 8-digit #rrggbbaa. project is required: this server reads the last published Blob, not unsaved editor state.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -75,7 +75,8 @@ export const TOOL_SPECS: ToolSpec[] = [
   },
   {
     name: 'list_icons',
-    description: 'Icon AI source (repo/npm) and custom icon names for a published system. project is required.',
+    description:
+      'Icon source for a published system: library, Phosphor weight, the size scale and roles (control-md → a scale step), per-theme overrides, and custom icon names. project is required.',
     inputSchema: {
       type: 'object',
       properties: {

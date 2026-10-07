@@ -2596,9 +2596,10 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > - It ships everywhere viewports already do: CSS steps `--radius-<role>` down in the
 >   same tablet/mobile media blocks as the grid (`radiusRolesViewportCss`, themes
 >   with their own foundations get scoped blocks); tokens.json carries
->   `radiusResponsive`; the plugin (≥ 0.3.5) writes `Radius/component/<step>` with a
->   value per Desktop · Tablet · Mobile mode aliasing the static `Radius/<step>`, and
->   `Radius/role/*` aliases the component token. Previews read it through
+>   `radiusResponsive`; the plugin writes `Radius/role/*` with a value per
+>   Desktop · Tablet · Mobile mode, each an alias of the Dimension primitive that
+>   step resolves to. The scale and the component ladder are not variables.
+>   Previews read it through
 >   `radiusRoleOf` + `previewPlatform`, and the Radius section shows the Platform
 >   switch. `radiusResponsive.test.ts` locks the table, the roles and the rename.
 > - **The Variables editor shows ONE viewport at a time, like Grid and Type**
@@ -2612,27 +2613,15 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 >   overrides are stored — an untouched system carries `{}` and ships exactly what
 >   v77 did. They reach CSS (the tablet/mobile blocks, `radiusRoleAt`), tokens.json
 >   (`radiusRoleViewports`, root + per theme), the preview (`radiusRoleOf`) and the
->   plugin (≥ 0.3.6: an overridden role gets a value per mode — Desktop and any
->   viewport without its own value alias `Radius/component/<step>`, an override
->   aliases the STATIC `Radius/<step>` or the pinned primitive, never a component
->   token, which would step down a second time). Comparing all three side by
+>   plugin (an overridden role gets a primitive alias per mode — Desktop follows
+>   the curve, an override aliases that viewport's static step or pinned
+>   primitive). Comparing all three side by
 >   side is Docs → Radius' job.
-> - **Radius is TWO COLLECTIONS, one per layer — never one mixed list.** The chain is
->   `radius-container → radius-component-2xl → radius-2xl`. A "Responsive (10)" rail
->   GROUP beside Boxes · Fields · Selectors was tried and reverted: a layer is not a
->   role group, and "All 15" summed roles with tokens.
->   - **Radius semantics** — the 5 roles, grouped Boxes · Fields · Selectors. Each
->     row names the token it aliases (`→ radius-component-2xl`), or "Pinned".
->   - **Radius responsive** — the 10 tokens, read-only, grouped by the SAME words:
->     the tokens each role group's roles alias (`radiusTokensByRoleGroup`), plus
->     **Unassigned** for the ones no role uses (available to a component that needs
->     an exact size). A "Used by" column lists the roles (`rolesUsingRadiusToken`);
->     each chip switches back to Radius semantics and flashes that role
->     (`useSetVariableCollection`). Both views read the rail's Platform switch.
->   CSS ships the tokens too: `--radius-component-<step>: var(--radius-<step>)` on
->   `:root`, overridden in the tablet/mobile blocks (`radiusComponentCss`); they
->   reference the static step, so a theme that redefines the ramp needs no block of
->   its own.
+> - **Radius is ONE collection: the roles.** The curve stays in `RADIUS_RESPONSIVE`
+>   and in tokens.json; CSS steps `--radius-<role>` down in the tablet/mobile
+>   blocks and does not emit `--radius-component-*`. The Variables rail does not
+>   list a responsive collection. A role row says it steps down, and Tablet /
+>   Mobile still show "Follows Desktop".
 > - **A radius PRESET is a bundle of the three axis picks, never a ramp.** The
 >   static ramp is the Corner Radius table and the Variables tables are the truth;
 >   widgets only follow that token pattern. `RADIUS_ROLE_PRESETS`: Sharp 0·0·0 ·
@@ -4288,14 +4277,14 @@ Store uses `persist` middleware with `version: 62`. If you add fields, bump the 
 > `--icon-<role>`), Markdown, and `tokens.json` as `icons.sizes` (additive, no schema bump).
 > **Plugin ≥ 0.3.12 reads it.** tokens.json also ships `icons.weight` and, per theme,
 > `foundationsByTheme[t].iconWeight` / `.iconSizes` (roles follow THAT theme's control
-> heights). The plugin writes `Icon/size/<step>` (alias of the Dimension primitive) and
-> `Icon/role/<role>` (alias of the size step) into Dimension Semantics, and builds an **`Icon`
+> heights). The plugin writes `Icon/role/<role>` (alias of the Dimension primitive)
+> into Dimension Semantics, and builds an **`Icon`
 > component** (catalogue key `Icon`, Indicators, `Size` SM·MD·LG·XL, also on the Overview
 > sheet): Phosphor `house` copied verbatim per weight into `HOUSE_BODY`, width + height bound
 > to `Icon/role/control-*`, every layer constrained SCALE, fill → `content/primary`, theme
 > weight with the small-icon rule. **Also bound:** Button's icon slots → `Icon/role/control-<size>`
-> (the configurator's `iconRoleOf`), Input's field icons → `Icon/size/<step>` from h × 0.42
-> (`iconForControl`), and the ⬡ Icons page variants Large/Medium/Small → `Icon/size/xl·lg·md`
+> (the configurator's `iconRoleOf`), Input's field icons → `Icon/role/control-*` from h × 0.42
+> (`iconForControl`), and the ⬡ Icons page variants Large/Medium/Small → `Icon/role/feature` · `control-lg` · `control-md`
 > (names kept so placed instances survive; every layer SCALE-constrained, placeholder masters
 > too). The ⬡ Icons page imports only a TEST set (`ICON_TEST_SET`: home · search · settings);
 > `ICON_CORE` stays the full vocabulary. **W3C** ships `icon.size.*` (→ `{dimension.N}`),
