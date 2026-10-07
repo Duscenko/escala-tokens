@@ -86,6 +86,7 @@ import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
 import { goToLogin, useAccess } from '../lib/access'
+import { hasStoredSession } from '../lib/auth'
 import { takeLoginIntent } from '../lib/loginReturn'
 import { LoginWall } from '../components/ui/LoginWall'
 import { showToast } from '../components/ui/Toast'
@@ -318,8 +319,8 @@ const ESCALA_CHROME_RAMPS = {
 } as const
 
 type ExportMode = 'code' | 'md' | 'figma-sync' | 'figma-download' | 'github' | 'save' | null
-// `library` is the Themes library page — the folder in the tab bar is its door,
-// it has no tab of its own. Get code is a page too, but not a tab: it already
+// `library` is Home — the file browser. The rail's top tile is its door;
+// the section id stays `library`. Get code is a page too, but not a tab: it already
 // had five doors (Export, library, row menus…), so in the strip it is the
 // `</>` icon beside Search. Its tab slot went to Sync — Figma sync used to be
 // reachable only from Theme preview's header, i.e. not from Variables at all.
@@ -607,11 +608,13 @@ export default function Configurator() {
   // wins over the first-visit About landing.
   const [incomingWorkspace] = useState(() => parseWorkspaceSearch(window.location.search))
   const incomingPlace = incomingWorkspace.place
+  // Signed-in with no `?section=`: Home is the account entry. Anonymous `/`
+  // still follows hasOnboarded (About once, then Theme). A deep link wins.
+  const [signedInEntry] = useState(() => hasStoredSession())
   // Every session lands on Variables · Color — EXCEPT a first-time visitor,
-  // who lands on About instead. This is the one exception to "no separate
-  // landing screen": About is a real tab a returning user can still switch to
-  // any time, not a wizard step.
-  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? (firstRun ? 'about' : 'foundations'))
+  // who lands on About instead, and EXCEPT a signed-in visit with no section,
+  // which opens Home. About is a real tab a returning user can still switch to.
+  const [tab, setTab] = useState<Tab>(() => incomingPlace?.tab ?? (signedInEntry ? 'foundations' : firstRun ? 'about' : 'foundations'))
   // Leaving About for anything else marks this browser onboarded, so the
   // NEXT reload lands on Variables · Color instead. Every existing path that
   // changes tabs (`selectFoundation`, `changeTab`, `selectComponent`,
@@ -624,8 +627,9 @@ export default function Configurator() {
   // Themes is now the entry surface: exploration first, advanced token editing
   // only after the user deliberately opens one of the other tabs.
   const [themeWorkspaceTab, setThemeWorkspaceTab] = useState<ThemeWorkspaceTab>(() => {
-    const w = incomingPlace?.workspace ?? 'preview'
-    return w === 'documentation' ? 'preview' : w
+    const w = incomingPlace?.workspace
+    if (w) return w === 'documentation' ? 'preview' : w
+    return signedInEntry ? 'library' : 'preview'
   })
   const [themeEditor, setThemeEditor] = useState<false | 'new' | string>(false)
   // TopNav's theme sheet (browse the EscalaUI themes · My themes · CREATE).
@@ -1726,23 +1730,17 @@ export default function Configurator() {
   // render.
   const themeHubConnecting = themeWorkspaceTab === 'preview'
     && (themeHubSurface === 'figma' || themeHubSurface === 'github')
-  // Icon rail is Theme widgets + Variables tables only. Library, Get code,
-  // Docs, and Figma/GitHub are reading/destination pages — a Color click
-  // there would leave the tab, and Docs already jumps sections from the
-  // inspector TOC (`OnThisPage`).
-  const themeWorkspaceRailVisible = themesCanvas
-    && !themeHubConnecting
-    && themeWorkspaceTab !== 'library'
-    && themeWorkspaceTab !== 'code'
-    && !(themeWorkspaceTab === 'preview' && docsPanelOpen)
-  const themeWorkspaceCardInset = themesCanvas
-    && (themeWorkspaceTab === 'library'
-      || themeWorkspaceTab === 'code'
-      || (themeWorkspaceTab === 'preview' && docsPanelOpen))
-  /** Foundation icon rail on Theme Preview AND Variables. Preview lights the
-   *  widget that exists (Color → color edition, Font → text edition, …);
-   *  Variables keeps all nine tables. Code, Docs, library, Figma / GitHub
-   *  drop the column so the card can go full width. */
+  // The icon rail stays on every Generator surface except Figma / GitHub
+  // connect (those own a different column). Home is its top tile. Code, Docs
+  // and Home omit the foundation icons — a Color click there would leave the
+  // page. Docs still jumps sections from the inspector TOC (`OnThisPage`).
+  const themeWorkspaceRailVisible = themesCanvas && !themeHubConnecting
+  const homeRailOnly = themeWorkspaceTab === 'library'
+    || themeWorkspaceTab === 'code'
+    || (themeWorkspaceTab === 'preview' && docsPanelOpen)
+  /** Foundation icon rail on the Generator. Preview lights the widget that
+   *  exists (Color → color edition, Font → text edition, …); Variables keeps
+   *  all nine tables. Code, Docs and Home show only the Home tile. */
   // About gets its own hero instead of the dense-editor CenterHeader row —
   // same opt-out `foundationCanvas` already makes for a different reason.
   const skipCenterHeader = themesCanvas || tab === 'about'
@@ -1873,15 +1871,22 @@ export default function Configurator() {
           <InspectorSlotProvider slot={themesCanvas ? inspectorSlot : null}>
           <div className={themesCanvas ? 'flex-1 min-h-0 flex overflow-hidden' : 'contents'}>
           {themeWorkspaceRailVisible && (
-            // Theme Preview: Color / Font / Radius pick the matching widget.
-            // Variables: the same icons pick the token table.
-            // Hidden on Code, Docs, library (see themeWorkspaceRailVisible).
+            // Home is the top tile on every Generator surface that shows this
+            // rail. Theme and Variables keep the foundation icons under it.
+            // Code, Docs and Home pass an empty group list.
             <FoundationIconRail
               orientation="vertical"
-              ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
+              ariaLabel={homeRailOnly ? t('Home') : themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
               active={themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
-              groups={[
+              header={(
+                <ThemesLibraryToggle
+                  open={themeWorkspaceTab === 'library'}
+                  onToggle={openLibraryPage}
+                  placement="icon-rail"
+                />
+              )}
+              groups={homeRailOnly ? [] : [
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
                   key: foundation.key,
                   // Theme preview's "Sizes" edition carries the room things take up
@@ -1892,16 +1897,6 @@ export default function Configurator() {
                 })) },
                 { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
-              // The Themes library's door is the rail's foot on every tab. The
-              // rail isn't shown ON the library (a page of its own, with Back),
-              // so from here the door only ever opens it.
-              footer={(
-                <ThemesLibraryToggle
-                  open={false}
-                  onToggle={openLibraryPage}
-                  placement="icon-rail"
-                />
-              )}
             />
           )}
           {/* Center editor */}
@@ -1912,7 +1907,7 @@ export default function Configurator() {
               the `.light`/`.dark` class here never reaches them. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${themeWorkspaceCardInset ? 'mx-3' : ''} ${previewAppearance === 'dark' ? 'dark' : 'light'}`
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${previewAppearance === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -2004,9 +1999,10 @@ export default function Configurator() {
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                     onGetCode={openCodeForTheme}
                     onSyncFigma={syncFigmaForTheme}
+                    onShareGithub={(key) => { changePreviewTheme(key); openGithubPage() }}
+                    figmaThemes={figmaSyncModes.map((mode) => mode.theme)}
                     onCreateTheme={openCreateTheme}
                     onOpenReset={() => setResetOpen(true)}
-                    onBack={() => changeThemeWorkspaceTab('preview')}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
                   />
@@ -2097,11 +2093,12 @@ export default function Configurator() {
               )}
             </div>
           </main>
-          {themesCanvas && themeWorkspaceTab !== 'library' && (
+          {themesCanvas && (
             <WorkspaceInspector
               value={inspectorTab}
               onChange={changeInspectorTab}
               onSlot={setInspectorSlot}
+              showTabs={themeWorkspaceTab !== 'library'}
             />
           )}
           </div>

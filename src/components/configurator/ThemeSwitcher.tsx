@@ -14,7 +14,6 @@ import { COLOR_RAIL_WIDTH, usePopoverPlacement } from './colorControls'
 import { DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar } from './ThemeLibraryRail'
 import { PRESET_AVATAR_RAMPS } from './StyleOverview'
 import { FOUNDATION_ICON_RAIL_WIDTH, RailTile } from './FoundationIconRail'
-import { FolderIcon } from './VariableCollectionRail'
 
 const MENU_W = 260
 
@@ -26,9 +25,18 @@ const ROW_SELECTED = 'bg-elevated text-fg ring-1 ring-inset ring-line-strong'
 const ITEM =
   'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
-/** Same 64px as the Variables icon column under the tab bar. Opens My themes
- *  in the column after that rail — the list is scannable past the 5-row
- *  dropdown cap (`MY_THEME_RAIL_LIMIT`). */
+/** House, same 18px box the rail's old folder used, painted with currentColor
+ *  so the active tile's accent ink reaches it. */
+function HouseGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" />
+    </svg>
+  )
+}
+
+/** Same 64px as the Variables icon column. Opens Home — the file browser.
+ *  The section id stays `themes-library` so existing controls keep working. */
 export function ThemesLibraryToggle({
   open,
   onToggle,
@@ -39,14 +47,12 @@ export function ThemesLibraryToggle({
   placement?: 'tab-bar' | 'icon-rail'
 }) {
   const { t } = useI18n()
-  const label = open ? t('Hide themes library') : t('Show themes library')
+  const label = t('Home')
   const iconRail = placement === 'icon-rail'
   const tile = (
     <RailTile
       on={open}
-      label={t('Themes')}
-      // At the rail's foot it reads like every foundation tile above it:
-      // glyph over its name.
+      label={label}
       compact={!iconRail}
       onClick={onToggle}
       aria-pressed={open}
@@ -55,7 +61,7 @@ export function ThemesLibraryToggle({
       aria-label={label}
       title={label}
     >
-      <FolderIcon size={18} />
+      <HouseGlyph />
     </RailTile>
   )
   if (iconRail) return tile

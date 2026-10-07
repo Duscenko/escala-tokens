@@ -81,7 +81,10 @@ export function pathForNext(next: LoginNext | null): string {
     const section = readPending()?.section
     return isSection(section) ? `/?section=${encodeURIComponent(section)}` : '/'
   }
-  return next ? NEXT_PATH[next] : '/'
+  // No pending destination: Home. A workspace return that fails its section
+  // check still falls back to `/` above, so a bad section cannot be steered
+  // onto the library by this default.
+  return next ? NEXT_PATH[next] : NEXT_PATH.library
 }
 
 function readPending(): PendingReturn | null {
@@ -111,7 +114,7 @@ export function rememberReturn(next: LoginNext, intent?: LoginIntent | null, sec
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ next, intent: kept, section: keptSection, at: Date.now() }))
   } catch {
-    // Storage blocked: the return simply falls back to `/`.
+    // Storage blocked: the return simply falls back to Home.
   }
 }
 

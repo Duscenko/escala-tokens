@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../lib/i18n'
 import { signOut, useAuth } from '../../lib/auth'
-import { LOGIN_PATH } from '../../lib/legal'
+import { loginHref, rememberReturn } from '../../lib/loginReturn'
 import { accountsEnabled } from '../../lib/supabase'
 import { useDesignStore } from '../../store/useDesignStore'
 
@@ -41,7 +41,8 @@ function AccountControlInner({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   if (!user) {
     return (
       <a
-        href={LOGIN_PATH}
+        href={loginHref({ next: 'library' })}
+        onClick={() => rememberReturn('library')}
         className={`inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-line px-3 text-body font-medium text-fg transition-colors hover:border-line-strong hover:bg-elevated ${FOCUS}`}
       >
         {t('Sign in')}

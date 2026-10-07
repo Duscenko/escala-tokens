@@ -273,9 +273,12 @@ export function ThemeOptionsMenu({
   anchorRef,
   onClose,
   onSyncFigma,
+  onShareGithub,
   onOpenInCode,
   onRename,
   onAskDelete,
+  pinned,
+  onTogglePin,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
@@ -284,14 +287,19 @@ export function ThemeOptionsMenu({
    *  canvas header's Sync button, so the handoff is reachable from the row
    *  that names the theme it would publish. */
   onSyncFigma?: () => void
+  /** Preview this theme and open the GitHub page — Home's per-card share. */
+  onShareGithub?: () => void
   onOpenInCode?: () => void
   onRename: () => void
   onAskDelete: () => void
+  /** Home's Pinned shortcut — omitted where there is no Pinned list. */
+  pinned?: boolean
+  onTogglePin?: () => void
 }) {
   const { t } = useI18n()
   const reduceMotion = useReducedMotion()
   const panelRef = useRef<HTMLDivElement>(null)
-  const place = usePopoverPlacement(anchorRef, open, { prefer: 140, min: 80, max: 200 })
+  const place = usePopoverPlacement(anchorRef, open, { prefer: 210, min: 80, max: 260 })
   const [rect, setRect] = useState<DOMRect | null>(null)
   const lastRect = useRef<DOMRect | null>(null)
 
@@ -364,6 +372,16 @@ export function ThemeOptionsMenu({
             maxHeight: place.max,
           }}
         >
+          {onTogglePin && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onTogglePin}
+              className={THEME_MENU_ITEM}
+            >
+              {pinned ? t('Unpin') : t('Pin to Home')}
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -372,6 +390,16 @@ export function ThemeOptionsMenu({
           >
             {t('Sync with Figma')}
           </button>
+          {onShareGithub && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onShareGithub}
+              className={THEME_MENU_ITEM}
+            >
+              {t('Share via GitHub')}
+            </button>
+          )}
           {onOpenInCode && (
             <button
               type="button"

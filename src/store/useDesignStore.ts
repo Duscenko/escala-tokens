@@ -415,6 +415,12 @@ export interface DesignSnapshot {
    *  Design data, not chrome: it is what "Reset" resets TO. A theme with no
    *  entry was made by hand and resets to the system defaults instead. */
   themeOrigin: Record<string, string>
+  /** When each theme last changed (theme key → ISO). Stamped by
+   *  `useThemeActivity` from what actually changed, never by hand, so Home can
+   *  sort My themes by recency and compare against the last Figma / GitHub
+   *  sync. Design data: it travels with a saved library. Absent = not edited
+   *  since this field existed. */
+  themeUpdatedAt: Record<string, string>
   typography: TypographyTokens
   spacing: Record<string, string>
   radius: Record<string, string>
@@ -563,6 +569,7 @@ export function makeDesignDefaults(): DesignSnapshot {
     themeSources: {},
     themeFoundations: {},
     themeOrigin: {},
+    themeUpdatedAt: {},
     typography: {
       fontFamily: 'Inter',
       headingFontFamily: 'Inter',
@@ -751,6 +758,13 @@ interface DesignStore {
   // null until the first download so a first-time user sees no false "update".
   pluginBuildSeen: string | null
   setPluginBuildSeen: (build: string) => void
+  /** Stamps `themeUpdatedAt` for the given themes (see useThemeActivity). */
+  stampThemesUpdated: (keys: string[], iso: string) => void
+  // Home's Pinned shortcuts: `theme:<key>` / `library:<id>`. A global
+  // preference (not per-system) — an id the system on screen no longer has is
+  // simply not shown, the same pruning-on-read figmaSyncSelection does.
+  pinned: string[]
+  togglePinned: (id: string) => void
   // File & modes: which `theme::appearance` columns and which viewports the
   // live sync publishes. `modes: null` = untouched, follow the default (every
   // theme in My themes). Persisted because it used to be component state: a
@@ -1084,6 +1098,16 @@ export const useDesignStore = create<DesignStore>()(
       setAutoSyncFigma: (v) => set({ autoSyncFigma: v }),
       pluginBuildSeen: null,
       setPluginBuildSeen: (build) => set({ pluginBuildSeen: build }),
+      stampThemesUpdated: (keys, iso) => set((st) => {
+        if (!keys.length) return {}
+        const next = { ...st.themeUpdatedAt }
+        for (const key of keys) next[key] = iso
+        return { themeUpdatedAt: next }
+      }),
+      pinned: [],
+      togglePinned: (id) => set((st) => ({
+        pinned: st.pinned.includes(id) ? st.pinned.filter((p) => p !== id) : [...st.pinned, id],
+      })),
       figmaSyncSelection: { modes: null, viewports: [...FIGMA_VIEWPORTS] },
       setFigmaSyncSelection: (patch) => set((st) => ({ figmaSyncSelection: { ...st.figmaSyncSelection, ...patch } })),
 
@@ -1752,7 +1776,7 @@ export const useDesignStore = create<DesignStore>()(
     }),
     {
       name: 'scalable-designs-store',
-      version: 82,
+      version: 83,
       migrate: (persisted: any, version: number) => {
         if (persisted) {
           // v1→v2: remove styleDirection, rename selectedAtoms → selectedComponents
@@ -3130,6 +3154,18 @@ export const useDesignStore = create<DesignStore>()(
           retarget(persisted)
           if (Array.isArray(persisted.savedSystems)) {
             for (const sys of persisted.savedSystems) retarget(sys?.snapshot)
+          }
+        }
+        if (version < 83) {
+          // Home: per-theme recency + Pinned shortcuts. Nothing is backfilled
+          // with a date — a theme nobody touched since v83 says so instead of
+          // claiming "just now".
+          if (!persisted.themeUpdatedAt || typeof persisted.themeUpdatedAt !== 'object') persisted.themeUpdatedAt = {}
+          if (!Array.isArray(persisted.pinned)) persisted.pinned = []
+          if (Array.isArray(persisted.savedSystems)) {
+            for (const sys of persisted.savedSystems) {
+              if (sys?.snapshot && !sys.snapshot.themeUpdatedAt) sys.snapshot.themeUpdatedAt = {}
+            }
           }
         }
         return persisted

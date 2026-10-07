@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
-import { supabase, type AuthProvider } from './supabase'
+import { accountsEnabled, supabase, type AuthProvider } from './supabase'
 import { LOGIN_PATH } from './legal'
 
 // Thin wrappers over Supabase Auth plus ONE place that turns its errors into
@@ -69,6 +69,32 @@ export async function signInWithProvider(provider: AuthProvider): Promise<AuthRe
 
 export async function signOut(): Promise<void> {
   await supabase?.auth.signOut()
+}
+
+/** True when this browser already has a persisted Supabase session.
+ *  Sync — first paint of the Generator uses it so a signed-in visit to `/`
+ *  opens Home instead of flashing Theme preview while `getSession()` resolves. */
+export function hasStoredSession(): boolean {
+  if (!accountsEnabled || typeof window === 'undefined') return false
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i)
+      if (!key?.startsWith('sb-') || !key.endsWith('-auth-token')) continue
+      const raw = window.localStorage.getItem(key)
+      if (!raw) continue
+      const parsed = JSON.parse(raw) as {
+        access_token?: string
+        user?: unknown
+        currentSession?: { access_token?: string; user?: unknown }
+      }
+      if (parsed.access_token || parsed.user || parsed.currentSession?.access_token || parsed.currentSession?.user) {
+        return true
+      }
+    }
+  } catch {
+    return false
+  }
+  return false
 }
 
 /** Current session, kept in step with Supabase. `event` carries PASSWORD_RECOVERY when a reset link was opened. */

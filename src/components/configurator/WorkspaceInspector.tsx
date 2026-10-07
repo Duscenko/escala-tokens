@@ -56,17 +56,21 @@ export default function WorkspaceInspector({
   value,
   onChange,
   onSlot,
+  showTabs = true,
 }: {
   value: InspectorTab | null
   onChange: (tab: InspectorTab) => void
   onSlot: (el: HTMLElement | null) => void
+  /** Home fills this column with its file menu and does not draw the
+   *  Theme · Variables · Code · Docs strip. */
+  showTabs?: boolean
 }) {
   const { t } = useI18n()
   const reduce = useReducedMotion()
   return (
     <aside
       id={INSPECTOR_ID}
-      aria-label={t('Inspector')}
+      aria-label={showTabs ? t('Inspector') : t('Home')}
       // A RAISED panel on the frame, like the canvas card beside it (white on
       // #f5f5f5 in light, +.050 ΔL in dark — see `--side-panel` in index.css).
       className="my-3 mr-3 ml-3 flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-side-panel"
@@ -75,6 +79,7 @@ export default function WorkspaceInspector({
       // whole column is one surface, so `--tab-bar` resolves to the panel's.
       style={{ width: INSPECTOR_WIDTH, '--tab-bar': 'var(--side-panel)', '--color-tab-bar': 'var(--side-panel)' } as CSSProperties}
     >
+      {showTabs && (
       <div
         className="flex flex-shrink-0 items-center"
         // The strip is 2.5rem tall (h-8 tabs + p-1). The band's left/right inset
@@ -132,13 +137,14 @@ export default function WorkspaceInspector({
           })}
         </div>
       </div>
+      )}
       <div
         // A callback ref feeding STATE in the shell (not a plain ref), so the
         // portals re-render once the target exists.
         ref={onSlot}
         // Each panel was sized as a fixed-width left column (inline width,
         // border-r). `!` beats the inline style: here the column owns both.
-        className={`relative flex min-h-0 flex-1 flex-col overflow-hidden border-t border-line [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
+        className={`relative flex min-h-0 flex-1 flex-col overflow-hidden ${showTabs ? 'border-t border-line' : ''} [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
       />
     </aside>
   )

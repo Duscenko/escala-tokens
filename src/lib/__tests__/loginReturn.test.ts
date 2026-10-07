@@ -41,8 +41,13 @@ describe('loginReturn', () => {
     expect(readLoginSearch('?next=//evil.example').next).toBeNull()
     expect(readLoginSearch('?next=__proto__').next).toBeNull()
     expect(readLoginSearch('?next=library&mode=signup')).toEqual({ next: 'library', mode: 'signup' })
-    expect(pathForNext(null)).toBe('/')
+    expect(pathForNext(null)).toBe('/?section=library')
     expect(pathForNext('library')).toBe('/?section=library')
+  })
+
+  it('header Sign in (next=library, no intent) opens Home', () => {
+    rememberReturn('library')
+    expect(pathForNext(pendingNext())).toBe('/?section=library')
   })
 
   it('keeps next across the OAuth round trip and hands the intent over once', () => {

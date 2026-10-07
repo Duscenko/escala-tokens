@@ -146,9 +146,12 @@ export function LoginPage() {
   const [mode, setMode] = useState<Mode>(search.mode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // Create account and "choose a new password" ask twice: a typo there locks
+  // the person out of the account they just made.
+  const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [problem, setProblem] = useState<AuthProblem | 'short_password' | null>(null)
+  const [problem, setProblem] = useState<AuthProblem | 'short_password' | 'password_mismatch' | null>(null)
   const [done, setDone] = useState<string | null>(null)
 
   // A reset link lands here with a recovery session; show "choose a password".
@@ -174,12 +177,12 @@ export function LoginPage() {
     if (search.next) rememberReturn(search.next)
   }, [search.next])
 
-  // Back from OAuth (or already signed in) with somewhere to return to: go there.
-  // Without a pending return the page shows its own "You are logged in" screen.
+  // Back from OAuth, or already signed in: Home is the account entry
+  // (`pathForNext(null)` → `/?section=library`). A pending `workspace` return
+  // (export, save, the section they left) still wins. Recovery stays here.
   useEffect(() => {
     if (loading || !user || event === 'PASSWORD_RECOVERY') return
-    const next = pendingNext()
-    if (next) window.location.replace(pathForNext(next))
+    window.location.replace(pathForNext(pendingNext()))
   }, [loading, user, event])
 
   const afterSignIn = () => window.location.assign(pathForNext(pendingNext()))
@@ -196,6 +199,7 @@ export function LoginPage() {
     setProblem(null)
     setDone(null)
     setPassword('')
+    setConfirm('')
   }
 
   async function submit(e: React.FormEvent) {
@@ -204,6 +208,7 @@ export function LoginPage() {
     const address = email.trim()
     if (view !== 'recovery' && !address) return
     if ((view === 'signup' || view === 'recovery') && password.length < MIN_PASSWORD) { setProblem('short_password'); return }
+    if ((view === 'signup' || view === 'recovery') && password !== confirm) { setProblem('password_mismatch'); return }
     if (view === 'signin' && !password) return
     setBusy(true)
     setProblem(null)
@@ -242,6 +247,7 @@ export function LoginPage() {
     problem === 'invalid_credentials' ? t('Wrong email or password.')
     : problem === 'email_not_confirmed' ? t('Confirm your email first. Check your inbox.')
     : problem === 'weak_password' || problem === 'short_password' ? t('Use at least {n} characters.', { n: MIN_PASSWORD })
+    : problem === 'password_mismatch' ? t('The passwords do not match.')
     : problem === 'rate_limited' ? t('Too many attempts. Try again in a few minutes.')
     : problem === 'unavailable' ? t('Something went wrong. Try again in a moment.')
     : null
@@ -375,6 +381,25 @@ export function LoginPage() {
                               <EyeIcon off={showPassword} />
                             </button>
                           </div>
+                        </div>
+                      )}
+                      {(view === 'signup' || view === 'recovery') && (
+                        <div className="flex flex-col gap-2">
+                          <label htmlFor={`${titleId}-pw2`} className="text-ui font-medium text-fg">
+                            {t('Confirm password')}
+                          </label>
+                          <input
+                            id={`${titleId}-pw2`}
+                            // Follows the eye toggle on the field above, so both
+                            // read the same way while someone compares them.
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
+                            value={confirm}
+                            onChange={(e) => setConfirm(e.target.value)}
+                            aria-invalid={problem === 'password_mismatch' || undefined}
+                            aria-describedby={message ? `${titleId}-err` : undefined}
+                            className={FIELD}
+                          />
                         </div>
                       )}
                       {message && <p id={`${titleId}-err`} role="alert" className="text-body text-status-danger">{message}</p>}

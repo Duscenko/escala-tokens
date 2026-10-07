@@ -1,44 +1,59 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeLibraryId, libraryMatchesSaved, useDesignStore } from '../../store/useDesignStore'
-import type { DesignSnapshot } from '../../store/useDesignStore'
+import type { DesignSnapshot, SavedSystem } from '../../store/useDesignStore'
 import { resolvePreviewTokens } from '../../lib/previewTokens'
 import { themeDisplayName } from '../../lib/themeSources'
-import { MY_THEME_FULL_ERROR, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
+import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
+import { byRecent } from '../../lib/themeActivity'
+import { THEME_STYLE_PRESETS, type ThemeStylePreset } from '../../lib/themePresets'
+import { openStyleForEditing } from '../../lib/adoptPreset'
+import { goToLogin, useAccess } from '../../lib/access'
 import { useI18n } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { accountsEnabled } from '../../lib/supabase'
 import { loginHref, rememberReturn, takeLoginIntent } from '../../lib/loginReturn'
 import { ARTEFACTS } from '../preview/artefacts'
 import { ScaledArtefactCard } from '../preview/artefacts/ScaledArtefactCard'
+import { FigmaGlyph, GitHubGlyph } from '../ui/icons'
 import { AppearanceGlyph } from './colorControls'
+import { FolderIcon } from './VariableCollectionRail'
+import { InspectorPortal } from './WorkspaceInspector'
+import { PRESET_AVATAR_RAMPS } from './StyleOverview'
 import { AnimatePresence, motion } from 'framer-motion'
-import { DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeOptionsMenu } from './ThemeLibraryRail'
+import {
+  DeleteMyThemesConfirmation, DeleteThemeConfirmation, LibraryOptionsIcon, ThemeAvatar, ThemeOptionsMenu,
+} from './ThemeLibraryRail'
 
-// THE THEMES LIBRARY PAGE — what the folder in the workspace tab bar opens.
+// HOME — what the rail's Home tile opens, and where a signed-in session lands.
+// (Its section id stays `library`, so every old `?section=library` link and the
+// login return keep working; only the name on screen changed.)
 //
-// Two pages used to answer this one door and the "Get code" tab with the SAME
-// screen (the library rail beside the code export), so the folder read as a
-// second way into Get code. They are different questions:
-//   · Library — "which themes do I have, what do they look like, and what have
-//     I saved?" A gallery of the system's own themes, each photographed through
-//     a real artefact, plus My libraries: the saved copies it can load, with
-//     New / Import / Delete and the page's one Save library action.
-//   · Get code — "give me the code of the theme I'm on." Code only.
-// So this page shows no code, and Get code shows no library.
+// Organised the way a design tool's file browser is: the MENU lives in the
+// right-hand panel (portaled into the inspector, like every other view's side
+// panel), the content in the card.
+//   · Recents       — My themes, last edited first, plus recently saved libraries.
+//   · System styles — the curated styles a theme can start from.
+//   · Libraries     — the system on screen is the DEFAULT library: My themes
+//                     live inside it, not beside a separate "My libraries"
+//                     list, which read as two unrelated piles. Every other
+//                     saved library is a folder you can open and load.
+//   · Pinned        — shortcuts to the themes and libraries pinned from a ⋯.
 //
-// It is a page of its OWN, not a view inside the editor: no foundation icon
-// rail (choosing a theme isn't editing one) and no inspector — the library rail
-// that used to sit there listed the very themes this grid shows, so every
-// theme appeared twice. Everything that rail did lives on the cards now: Open ·
-// Get code on the card, Sync with Figma · Rename · Delete in its ⋯ menu, Create
-// as the last card, Reset / Delete my themes in the header's ⋯. A Back link
-// returns to Theme preview.
+// Each theme card says when it last changed (`themeUpdatedAt`, stamped by
+// useThemeActivity) and whether Figma and GitHub have that change yet. A card
+// selects on click and OPENS on double-click — the Open button does the same.
 
-// Cards flow in a grid that fills the row and wraps when it can't fit another;
-// each one measures its own width so the thumbnail scales with the card.
 const CARD_MIN = 248
 const CARD_PAD = 24
 const SOURCE = ARTEFACTS[0]
+
+type HomeSection =
+  | { kind: 'recents' }
+  | { kind: 'styles' }
+  | { kind: 'libraries' }
+  | { kind: 'library'; id: string }
+
+type SyncState = 'synced' | 'behind' | 'off'
 
 function useTimeAgo(): (iso: string) => string {
   const { t } = useI18n()
@@ -51,37 +66,103 @@ function useTimeAgo(): (iso: string) => string {
   }
 }
 
+function syncStateOf(connectedAt: string | null, included: boolean, updatedAt: string | undefined): SyncState {
+  if (!connectedAt || !included) return 'off'
+  return updatedAt && Date.parse(updatedAt) > Date.parse(connectedAt) ? 'behind' : 'synced'
+}
+
+const matches = (query: string, ...values: string[]) => {
+  const q = query.trim().toLowerCase()
+  return !q || values.some((v) => v.toLowerCase().includes(q))
+}
+
 const ACTION =
   'inline-flex h-7 items-center rounded-md px-2.5 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
 const MENU_BTN =
   'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
 
+const LINK =
+  'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+const PRIMARY =
+  'inline-flex h-8 items-center rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
+// ── Glyphs (nav) ─────────────────────────────────────────────────────────────
+const svg = (d: string) => () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+)
+const ClockGlyph = svg('M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2')
+const SparkGlyph = svg('M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M6.3 17.7l2.5-2.5M15.2 8.8l2.5-2.5')
+const StackGlyph = svg('M12 3 3 8l9 5 9-5-9-5ZM3 13l9 5 9-5')
+const PinGlyph = svg('M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 15v5')
+const PlusGlyph = svg('M12 5v14M5 12h14')
+const ImportGlyph = svg('M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4')
+const SearchGlyph = svg('M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-3.5-3.5')
+const PencilGlyph = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4" />
+  </svg>
+)
+
+// ── Theme card ───────────────────────────────────────────────────────────────
+
+function SyncBadge({ state, service, icon }: { state: SyncState; service: string; icon: ReactNode }) {
+  const { t } = useI18n()
+  const words = state === 'synced' ? t('up to date') : state === 'behind' ? t('changes not synced') : t('not connected')
+  const dot = state === 'synced' ? 'bg-status-success-solid' : state === 'behind' ? 'bg-status-warning-solid' : 'bg-fg/25'
+  return (
+    <span
+      role="img"
+      aria-label={`${service} — ${words}`}
+      title={`${service} — ${words}`}
+      className={`relative inline-flex h-5 w-5 items-center justify-center rounded-md ${state === 'off' ? 'text-fg-faint' : 'text-fg-muted'}`}
+    >
+      {icon}
+      <span aria-hidden className={`absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ring-2 ring-surface ${dot}`} />
+    </span>
+  )
+}
+
 function ThemeCard({
   themeKey,
   active,
   isLast,
+  pinned,
+  figma,
+  github,
   onSelect,
   onOpenPreview,
   onGetCode,
   onSyncFigma,
+  onShareGithub,
+  onTogglePin,
   onDelete,
 }: {
   themeKey: string
   active: boolean
   /** The only theme left — the confirmation says what deleting it leaves. */
   isLast: boolean
+  pinned: boolean
+  figma: SyncState
+  github: SyncState
   onSelect: () => void
   onOpenPreview: () => void
   onGetCode: () => void
   onSyncFigma: () => void
+  onShareGithub: () => void
+  onTogglePin: () => void
   onDelete: () => void
 }) {
   const { t } = useI18n()
+  const timeAgo = useTimeAgo()
   const store = useDesignStore()
   const kind = store.themeKinds[themeKey] ?? 'light'
   const tokens = useMemo(() => resolvePreviewTokens(store, themeKey, kind), [store, themeKey, kind])
   const name = themeDisplayName(themeKey, store.themeLabels)
+  const updatedAt = store.themeUpdatedAt?.[themeKey]
   const stageRef = useRef<HTMLDivElement>(null)
   const menuBtnRef = useRef<HTMLButtonElement>(null)
   const [stageW, setStageW] = useState(0)
@@ -116,10 +197,22 @@ function ThemeCard({
         <button
           type="button"
           onClick={onSelect}
+          // The file-browser gesture: one click picks, two open.
+          onDoubleClick={onOpenPreview}
           aria-pressed={active}
           aria-label={t('Select {name} theme', { name })}
+          title={t('Double-click to open')}
           className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/60"
         />
+        {pinned && (
+          <span
+            aria-label={t('Pinned')}
+            title={t('Pinned')}
+            className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-md bg-app/90 text-fg-muted shadow-sm"
+          >
+            <PinGlyph />
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-2 border-t border-line py-1.5 pl-3 pr-1.5">
         <span className="text-fg-muted" title={kind === 'dark' ? t('Dark') : t('Light')}>
@@ -159,10 +252,23 @@ function ThemeCard({
           open={menuOpen}
           anchorRef={menuBtnRef}
           onClose={() => setMenuOpen(false)}
+          pinned={pinned}
+          onTogglePin={() => { setMenuOpen(false); onTogglePin() }}
           onSyncFigma={() => { setMenuOpen(false); onSyncFigma() }}
+          onShareGithub={() => { setMenuOpen(false); onShareGithub() }}
           onRename={() => { setMenuOpen(false); setDraft(name); setRenaming(true) }}
           onAskDelete={() => { setMenuOpen(false); setConfirmDelete(true) }}
         />
+      </div>
+      {/* When it last changed, and whether the two places it ships to have
+          that change yet. Words live in each badge's label; the dot is only
+          the at-a-glance cue. */}
+      <div className="flex items-center gap-2 px-3 pb-2 text-micro text-fg-faint">
+        <span className="min-w-0 flex-1 truncate">
+          {updatedAt ? t('Edited {when}', { when: timeAgo(updatedAt) }) : t('Not edited yet')}
+        </span>
+        <SyncBadge state={figma} service="Figma" icon={<FigmaGlyph size={11} />} />
+        <SyncBadge state={github} service="GitHub" icon={<GitHubGlyph size={11} />} />
       </div>
       {confirmDelete ? (
         <div className="border-t border-line p-2">
@@ -184,9 +290,7 @@ function ThemeCard({
   )
 }
 
-/** The last card of the grid: a cover-shaped door to create a theme. It
- *  stretches to the row's height, so beside a theme it reads as one more
- *  cover; alone it keeps a cover's minimum height. */
+/** The last card of a theme grid: a cover-shaped door to create a theme. */
 function CreateThemeCard({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
   const { t } = useI18n()
   const count = myThemeKeys(useDesignStore.getState().themeOrder, useDesignStore.getState().themes).length
@@ -209,7 +313,44 @@ function CreateThemeCard({ disabled, onClick }: { disabled: boolean; onClick: ()
   )
 }
 
-/** Header ⋯ — the library-wide actions the rail's header menu carried. */
+/** A theme inside a SAVED library — photographed from that library's own
+ *  snapshot. Read-only: it becomes editable once the library is loaded. */
+function SavedThemeCard({ snapshot, themeKey }: { snapshot: DesignSnapshot; themeKey: string }) {
+  const { t } = useI18n()
+  const kind = snapshot.themeKinds?.[themeKey] ?? 'light'
+  const tokens = useMemo(
+    () => resolvePreviewTokens(snapshot as unknown as Parameters<typeof resolvePreviewTokens>[0], themeKey, kind),
+    [snapshot, themeKey, kind],
+  )
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [stageW, setStageW] = useState(0)
+  useLayoutEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => setStageW(Math.round(entries[0].contentRect.width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return (
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-surface">
+      <div ref={stageRef} className="flex justify-center p-3" style={{ background: tokens.surface }}>
+        {stageW > CARD_PAD && <ScaledArtefactCard artefact={SOURCE} t={tokens} targetWidth={stageW - CARD_PAD} />}
+      </div>
+      <div className="flex items-center gap-2 border-t border-line px-3 py-2.5">
+        <span className="text-fg-muted" title={kind === 'dark' ? t('Dark') : t('Light')}>
+          <AppearanceGlyph kind={kind} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-body font-medium text-fg">
+          {themeDisplayName(themeKey, snapshot.themeLabels ?? {})}
+        </span>
+      </div>
+    </article>
+  )
+}
+
+// ── Header pieces ────────────────────────────────────────────────────────────
+
+/** Library ⋯ — Reset and Delete my themes. */
 function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
   hasOwnThemes: boolean
   onReset?: () => void
@@ -237,8 +378,8 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={t('Theme library options')}
-        title={t('Theme library options')}
+        aria-label={t('Library options')}
+        title={t('Library options')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${open ? 'bg-elevated text-fg' : ''}`}
@@ -253,7 +394,7 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
             exit={{ opacity: 0, scale: 0.98, y: -4 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             role="menu"
-            aria-label={t('Theme library options')}
+            aria-label={t('Library options')}
             className="absolute right-0 top-full z-[60] mt-1.5 w-48 origin-top-right overflow-hidden rounded-lg border border-line-strong bg-app p-1.5 shadow-xl"
           >
             {onReset && (
@@ -277,103 +418,7 @@ function LibraryOptions({ hasOwnThemes, onReset, onDeleteMyThemes }: {
   )
 }
 
-const LINK =
-  'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
-
-/** "My libraries" — every saved copy of a system (`savedSystems`), with the
- *  create / import / open / delete actions the System library used to own.
- *  Local only in this phase; see design-plans/themes-library-accounts.md. */
-function MyLibraries({ onNewSystem, onImport }: { onNewSystem: () => void; onImport: () => void }) {
-  const { t } = useI18n()
-  const timeAgo = useTimeAgo()
-  const store = useDesignStore()
-  const { savedSystems, loadSystem, removeSavedSystem } = store
-  const activeId = activeLibraryId(store)
-  // One row at a time asks a question: which row, and whether it asks to open or to delete.
-  const [confirm, setConfirm] = useState<{ id: string; action: 'load' | 'delete' } | null>(null)
-  return (
-    <section aria-labelledby="library-saved" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h3 id="library-saved" className="text-ui font-semibold text-fg">
-          {t('My libraries')} <span className="ml-1 text-caption font-normal text-fg-faint tabular-nums">{savedSystems.length}</span>
-        </h3>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={onNewSystem} className={LINK}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
-            {t('New library')}
-          </button>
-          <button type="button" onClick={onImport} className={LINK}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" /></svg>
-            {t('Import JSON')}
-          </button>
-        </div>
-      </div>
-      <GuestAccountCard />
-      {savedSystems.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-line px-4 py-5 text-caption text-fg-faint">
-          {t('Nothing saved yet. Use Save library to keep a copy of this system and its themes.')}
-        </p>
-      ) : (
-        <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))]">
-          {savedSystems.map((sys) => {
-            const asking = confirm?.id === sys.id ? confirm.action : null
-            const themeCount = myThemeKeys(sys.snapshot.themeOrder ?? [], sys.snapshot.themes ?? {}).length
-            return (
-              <li key={sys.id} className={`flex flex-col gap-2 rounded-xl border bg-surface px-3.5 py-3 ${sys.id === activeId ? 'border-line-strong' : 'border-line'}`}>
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">{sys.name}</span>
-                  {sys.id === activeId && (
-                    <span className="flex-shrink-0 rounded-full bg-elevated px-1.5 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
-                  )}
-                  <span className="flex-shrink-0 text-micro text-fg-faint">{timeAgo(sys.savedAt)}</span>
-                </div>
-                <span className="truncate text-caption text-fg-faint">
-                  {themeCount === 1 ? t('1 theme') : t('{count} themes', { count: themeCount })}
-                  {' · '}
-                  {sys.repo || t('Saved in this browser')}
-                </span>
-                {asking ? (
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 text-caption text-fg-muted">
-                      {asking === 'load' ? t('Replace what is on screen?') : t('Delete this library from this browser?')}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (asking === 'load') loadSystem(sys.id)
-                        else removeSavedSystem(sys.id)
-                        setConfirm(null)
-                      }}
-                      className={`text-caption font-semibold hover:underline ${asking === 'load' ? 'text-accent-ui' : 'text-status-danger'}`}
-                    >
-                      {asking === 'load' ? t('Load') : t('Delete')}
-                    </button>
-                    <button type="button" onClick={() => setConfirm(null)} className="text-caption text-fg-faint hover:text-fg">{t('Cancel')}</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 -ml-2.5">
-                    <button type="button" onClick={() => setConfirm({ id: sys.id, action: 'load' })} className={ACTION}>{t('Load')}</button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirm({ id: sys.id, action: 'delete' })}
-                      aria-label={t('Delete {name}', { name: sys.name })}
-                      className={`${ACTION} hover:text-status-danger`}
-                    >
-                      {t('Delete')}
-                    </button>
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-/** Signed out (and accounts on): say what an account adds here, and offer it.
- *  Never a gate — everything above and below keeps working without one. */
+/** Signed out (and accounts on): say what an account adds here, and offer it. */
 function GuestAccountCard() {
   const { t } = useI18n()
   const { user, loading } = useAuth()
@@ -396,22 +441,28 @@ function GuestAccountCard() {
   )
 }
 
-/** The page's primary action: save the system on screen (every theme) as a
- *  library, with the state beside it so you can tell whether you need to. */
+/** Whether the library on screen matches its saved copy. Shared by the Save
+ *  button and the nav's on-screen dot, so the two can't disagree. */
+function useOnScreenSaved(): { saved: SavedSystem | undefined; matches: boolean } {
+  const store = useDesignStore()
+  const saved = store.savedSystems.find((s) => s.id === activeLibraryId(store))
+  const same = useMemo(
+    () => (saved ? libraryMatchesSaved(store as unknown as DesignSnapshot, saved.snapshot) : false),
+    [store, saved],
+  )
+  return { saved, matches: same }
+}
+
+/** Save the system on screen (every theme) as a library, with its state beside it. */
 function SaveLibraryButton() {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
   const store = useDesignStore()
-  const saved = store.savedSystems.find((s) => s.id === activeLibraryId(store))
-  const matches = useMemo(
-    () => (saved ? libraryMatchesSaved(store as unknown as DesignSnapshot, saved.snapshot) : false),
-    [store, saved],
-  )
+  const { saved, matches: same } = useOnScreenSaved()
   const [justSaved, setJustSaved] = useState(false)
   const { user, loading } = useAuth()
   const guest = accountsEnabled && !loading && !user
-  // Back from /login after "Keep it in your account": finish the save the user
-  // asked for. Local for now; phase 3 sends it to the account.
+  // Back from /login after "Keep it in your account": finish the save.
   useEffect(() => {
     if (loading || !user) return
     if (takeLoginIntent('library') === 'save-library') {
@@ -426,13 +477,13 @@ function SaveLibraryButton() {
   }, [justSaved])
   const status = !saved
     ? t('Not saved yet')
-    : matches
+    : same
       ? t('Saved {when}', { when: timeAgo(saved.savedAt) })
       : t('Unsaved changes')
   return (
     <div className="flex flex-shrink-0 flex-wrap items-center gap-x-3 gap-y-2">
-      <span role="status" className={`text-caption ${saved && !matches ? 'text-fg-muted' : 'text-fg-faint'}`}>
-        {saved && !matches && <span aria-hidden className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-ui align-middle" />}
+      <span role="status" className={`text-caption ${saved && !same ? 'text-fg-muted' : 'text-fg-faint'}`}>
+        {saved && !same && <span aria-hidden className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-ui align-middle" />}
         {status}
         {guest && saved && (
           <>
@@ -450,8 +501,7 @@ function SaveLibraryButton() {
       <button
         type="button"
         onClick={() => {
-          // Saving needs a free account (design-plans/login-funnel.md): a guest
-          // signs up first and the save finishes on return (intent below).
+          // Saving needs a free account (design-plans/login-funnel.md).
           if (guest) {
             rememberReturn('library', 'save-library')
             window.location.assign(loginHref({ next: 'library', mode: 'signup' }))
@@ -460,8 +510,8 @@ function SaveLibraryButton() {
           store.saveCurrentSystem()
           setJustSaved(true)
         }}
-        disabled={Boolean(saved && matches && !justSaved)}
-        className="inline-flex h-8 items-center rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+        disabled={Boolean(saved && same && !justSaved)}
+        className={PRIMARY}
       >
         {justSaved ? t('Saved') : t('Save library')}
       </button>
@@ -469,42 +519,313 @@ function SaveLibraryButton() {
   )
 }
 
+/** Title row shared by every Home view. */
+function ViewHeader({ crumb, title, detail, right }: { crumb?: ReactNode; title: ReactNode; detail?: ReactNode; right?: ReactNode }) {
+  return (
+    <header className="flex flex-col gap-2">
+      {crumb}
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-[16rem] flex-1 flex-col gap-1">
+          <h2 className="flex items-center gap-2 text-heading font-semibold text-fg">{title}</h2>
+          {detail && <p className="text-body text-fg-muted">{detail}</p>}
+        </div>
+        {right && <div className="flex flex-shrink-0 items-center gap-2">{right}</div>}
+      </div>
+    </header>
+  )
+}
+
+function SectionTitle({ id, children, count, right }: { id: string; children: ReactNode; count?: number; right?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <h3 id={id} className="text-ui font-semibold text-fg">
+        {children}
+        {count != null && <span className="ml-1.5 text-caption font-normal text-fg-faint tabular-nums">{count}</span>}
+      </h3>
+      {right}
+    </div>
+  )
+}
+
+function EmptyNote({ children }: { children: ReactNode }) {
+  return <p className="rounded-xl border border-dashed border-line px-4 py-5 text-caption text-fg-faint">{children}</p>
+}
+
+// ── Library rows (saved copies) ──────────────────────────────────────────────
+
+function LibraryRow({ sys, onOpen, pinned, onTogglePin }: {
+  sys: SavedSystem
+  onOpen: () => void
+  pinned: boolean
+  onTogglePin: () => void
+}) {
+  const { t } = useI18n()
+  const timeAgo = useTimeAgo()
+  const themeCount = myThemeKeys(sys.snapshot.themeOrder ?? [], sys.snapshot.themes ?? {}).length
+  return (
+    <li className="group relative flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 transition-colors hover:border-line-strong">
+      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-elevated text-fg-muted">
+        <FolderIcon size={14} />
+      </span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 flex-col items-start text-left after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent-ui/50"
+      >
+        <span className="w-full truncate text-body font-semibold text-fg">{sys.name}</span>
+        <span className="w-full truncate text-caption text-fg-faint">
+          {themeCount === 1 ? t('1 theme') : t('{count} themes', { count: themeCount })}
+          {' · '}
+          {sys.repo || t('Saved in this browser')}
+          {' · '}
+          {timeAgo(sys.savedAt)}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onTogglePin}
+        aria-pressed={pinned}
+        aria-label={pinned ? t('Unpin {name}', { name: sys.name }) : t('Pin {name} to Home', { name: sys.name })}
+        title={pinned ? t('Unpin') : t('Pin to Home')}
+        className={`relative z-[1] ${MENU_BTN} ${pinned ? 'text-fg' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
+      >
+        <PinGlyph />
+      </button>
+    </li>
+  )
+}
+
+// ── Right-panel menu ─────────────────────────────────────────────────────────
+
+function NavRow({ on, icon, label, trailing, onClick, title }: {
+  on: boolean
+  icon: ReactNode
+  label: string
+  trailing?: ReactNode
+  onClick: () => void
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={on ? 'page' : undefined}
+      title={title ?? label}
+      className={`flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50 ${
+        on ? 'bg-fg/[0.08] font-semibold text-fg' : 'font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
+      }`}
+    >
+      <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">{icon}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {trailing}
+    </button>
+  )
+}
+
+function NavGroup({ label, action, children }: { label: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 border-t border-line pt-3">
+      <div className="flex h-6 items-center justify-between pl-2.5 pr-1">
+        <span className="text-micro font-semibold text-fg-faint">{label}</span>
+        {action}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function HomeNav({
+  section, onSection, query, onQuery, onOpenTheme, onNewSystem, onImport,
+}: {
+  section: HomeSection
+  onSection: (next: HomeSection) => void
+  query: string
+  onQuery: (q: string) => void
+  onOpenTheme: (key: string) => void
+  onNewSystem: () => void
+  onImport: () => void
+}) {
+  const { t } = useI18n()
+  const store = useDesignStore()
+  const currentId = activeLibraryId(store)
+  const { saved, matches: same } = useOnScreenSaved()
+  const others = store.savedSystems.filter((s) => s.id !== currentId)
+  const mine = myThemeKeys(store.themeOrder, store.themes)
+  const pinnedThemes = store.pinned.filter((p) => p.startsWith('theme:')).map((p) => p.slice(6)).filter((k) => mine.includes(k))
+  const pinnedLibraries = store.pinned
+    .filter((p) => p.startsWith('library:'))
+    .map((p) => p.slice(8))
+    .filter((id) => id === currentId || others.some((s) => s.id === id))
+  const nameOf = (id: string) => (id === currentId ? store.projectName : others.find((s) => s.id === id)?.name ?? id)
+  const isOn = (kind: HomeSection['kind'], id?: string) => section.kind === kind && (id == null || (section.kind === 'library' && section.id === id))
+  const iconBtn = 'flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+  return (
+    <InspectorPortal>
+      <nav aria-label={t('Home')} className="flex min-h-0 flex-col gap-3 overflow-y-auto px-3 pb-4 pt-3">
+        <label className="relative flex items-center">
+          <span className="pointer-events-none absolute left-2.5 text-fg-faint"><SearchGlyph /></span>
+          <span className="sr-only">{t('Search themes and libraries')}</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder={t('Search')}
+            className="h-8 w-full rounded-lg border border-line bg-app pl-8 pr-2.5 text-caption text-fg placeholder:text-fg-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+          />
+        </label>
+        <div className="flex flex-col gap-0.5">
+          <NavRow on={isOn('recents')} icon={<ClockGlyph />} label={t('Recents')} onClick={() => onSection({ kind: 'recents' })} />
+          <NavRow on={isOn('styles')} icon={<SparkGlyph />} label={t('System styles')} onClick={() => onSection({ kind: 'styles' })} />
+        </div>
+        <NavGroup
+          label={t('Libraries')}
+          action={(
+            <span className="flex items-center">
+              <button type="button" onClick={onImport} aria-label={t('Import JSON')} title={t('Import JSON')} className={iconBtn}><ImportGlyph /></button>
+              <button type="button" onClick={onNewSystem} aria-label={t('New library')} title={t('New library')} className={iconBtn}><PlusGlyph /></button>
+            </span>
+          )}
+        >
+          <NavRow
+            on={isOn('library', currentId)}
+            icon={<FolderIcon size={13} />}
+            label={store.projectName}
+            title={t('{name} — the library on screen', { name: store.projectName })}
+            onClick={() => onSection({ kind: 'library', id: currentId })}
+            trailing={(
+              <span className="flex flex-shrink-0 items-center gap-1.5">
+                {(!saved || !same) && <span aria-label={t('Unsaved changes')} title={t('Unsaved changes')} className="h-1.5 w-1.5 rounded-full bg-accent-ui" />}
+                <span className="text-micro font-normal tabular-nums text-fg-faint">{mine.length}</span>
+              </span>
+            )}
+          />
+          {others.map((sys) => (
+            <NavRow
+              key={sys.id}
+              on={isOn('library', sys.id)}
+              icon={<FolderIcon size={13} />}
+              label={sys.name}
+              onClick={() => onSection({ kind: 'library', id: sys.id })}
+            />
+          ))}
+          <NavRow on={isOn('libraries')} icon={<StackGlyph />} label={t('All libraries')} onClick={() => onSection({ kind: 'libraries' })} />
+        </NavGroup>
+        <NavGroup label={t('Pinned')}>
+          {pinnedThemes.length + pinnedLibraries.length === 0 ? (
+            <p className="px-2.5 py-1 text-micro leading-relaxed text-fg-faint">{t('Pin a theme or a library from its menu to keep it here.')}</p>
+          ) : (
+            <>
+              {pinnedThemes.map((key) => (
+                <NavRow
+                  key={`t-${key}`}
+                  on={false}
+                  icon={<PinGlyph />}
+                  label={themeDisplayName(key, store.themeLabels)}
+                  title={t('Open {name}', { name: themeDisplayName(key, store.themeLabels) })}
+                  onClick={() => onOpenTheme(key)}
+                />
+              ))}
+              {pinnedLibraries.map((id) => (
+                <NavRow
+                  key={`l-${id}`}
+                  on={isOn('library', id)}
+                  icon={<FolderIcon size={13} />}
+                  label={nameOf(id)}
+                  onClick={() => onSection({ kind: 'library', id })}
+                />
+              ))}
+            </>
+          )}
+        </NavGroup>
+      </nav>
+    </InspectorPortal>
+  )
+}
+
+// ── System styles ────────────────────────────────────────────────────────────
+
+function StyleCard({ preset, owned, onUse }: { preset: ThemeStylePreset; owned: boolean; onUse: () => void }) {
+  const { t } = useI18n()
+  return (
+    <article className="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+      <div className="flex items-center gap-3">
+        <ThemeAvatar ramp={PRESET_AVATAR_RAMPS[`${preset.id}:light`]} appearance="light" fallback={preset.accent} size={40} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-body font-semibold text-fg">{preset.label}</span>
+          <span className="truncate text-caption text-fg-muted">{t(preset.description)}</span>
+        </div>
+      </div>
+      <p className="line-clamp-2 min-h-[2.5em] text-caption text-fg-faint">{t(preset.detail)}</p>
+      <div className="flex items-center justify-between gap-2">
+        {owned
+          ? <span className="text-micro font-medium text-fg-muted">{t('In My themes')}</span>
+          : <span />}
+        <button type="button" onClick={onUse} className={owned ? ACTION : PRIMARY}>
+          {owned ? t('Open') : t('Edit theme')}
+        </button>
+      </div>
+    </article>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function ThemeLibraryPage({
   previewTheme,
+  figmaThemes,
   onSelectTheme,
   onOpenPreview,
   onGetCode,
   onSyncFigma,
+  onShareGithub,
   onCreateTheme,
   onOpenReset,
-  onBack,
   onNewSystem,
   onImport,
 }: {
   previewTheme: string
-  /** Make this the theme every other page reads, without leaving the library. */
+  /** Themes the live Figma sync publishes (File & modes). */
+  figmaThemes: string[]
+  /** Make this the theme every other page reads, without leaving Home. */
   onSelectTheme: (key: string) => void
   onOpenPreview: (key: string) => void
   onGetCode: (key: string) => void
   /** Preview the theme and open its Figma sync page. */
   onSyncFigma: (key: string) => void
+  /** Preview the theme and open the GitHub page. */
+  onShareGithub: (key: string) => void
   /** Opens the theme sheet on its create view (owned by the shell). */
   onCreateTheme: () => void
   /** The Reset modal (this theme / whole system), owned by the shell. */
   onOpenReset?: () => void
-  /** Back to Theme preview. */
-  onBack: () => void
   /** Opens the guided New-system modal (owned by the shell). */
   onNewSystem: () => void
   /** Opens the Import-JSON modal (owned by the shell). */
   onImport: () => void
 }) {
   const { t } = useI18n()
-  const { themeOrder, themes, removeTheme } = useDesignStore()
+  const timeAgo = useTimeAgo()
+  const { gated } = useAccess()
+  const store = useDesignStore()
+  const { themeOrder, themes, removeTheme, themeUpdatedAt, pinned, togglePinned } = store
+  const currentId = activeLibraryId(store)
   const mine = myThemeKeys(themeOrder, themes)
+  const recent = byRecent(mine, themeUpdatedAt ?? {})
+  const others = store.savedSystems.filter((s) => s.id !== currentId)
+  const [section, setSection] = useState<HomeSection>({ kind: 'recents' })
+  const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
-  // Deleting the theme on screen hands the preview to another of My themes;
-  // with none left the shell re-adopts Core (it never leaves a system empty).
+  const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
+  const [renamingLibrary, setRenamingLibrary] = useState(false)
+  const [libraryDraft, setLibraryDraft] = useState(store.projectName)
+  const [styleError, setStyleError] = useState<string | null>(null)
+  // A saved library that was loaded (or deleted) under an open view: the id
+  // either became the one on screen or no longer exists — fall back sanely.
+  const viewing: HomeSection = section.kind === 'library' && section.id !== currentId && !others.some((s) => s.id === section.id)
+    ? { kind: 'recents' }
+    : section
+  useEffect(() => { setConfirmSaved(null) }, [section])
+
   const deleteTheme = (key: string) => {
     if (key === previewTheme) {
       const next = mine.find((k) => k !== key) ?? themeOrder.find((k) => k !== key && themes[k])
@@ -518,71 +839,321 @@ export default function ThemeLibraryPage({
     mine.forEach((key) => removeTheme(key))
     setConfirmDeleteAll(false)
   }
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-7">
-        <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="-ml-2 inline-flex h-7 items-center gap-1.5 self-start rounded-md px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+  const useStyle = (preset: ThemeStylePreset) => {
+    if (gated) { goToLogin(); return }
+    const result = openStyleForEditing(preset, 'light')
+    if ('error' in result) { setStyleError(t(result.error, { count: MY_THEME_HARD_CAP })); return }
+    setStyleError(null)
+    onOpenPreview(result.key)
+  }
+
+  const themeGrid = (keys: string[], withCreate: boolean) => (
+    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
+      {keys.map((key) => (
+        <ThemeCard
+          key={key}
+          themeKey={key}
+          active={key === previewTheme}
+          isLast={mine.length <= 1}
+          pinned={pinned.includes(`theme:${key}`)}
+          figma={syncStateOf(store.figmaLastPublishAt, figmaThemes.includes(key), themeUpdatedAt?.[key])}
+          github={syncStateOf(store.githubRepo ? store.githubLastPushAt : null, true, themeUpdatedAt?.[key])}
+          onSelect={() => onSelectTheme(key)}
+          onOpenPreview={() => onOpenPreview(key)}
+          onGetCode={() => onGetCode(key)}
+          onSyncFigma={() => onSyncFigma(key)}
+          onShareGithub={() => onShareGithub(key)}
+          onTogglePin={() => togglePinned(`theme:${key}`)}
+          onDelete={() => deleteTheme(key)}
+        />
+      ))}
+      {withCreate && <CreateThemeCard disabled={!canAddMyTheme(mine.length)} onClick={onCreateTheme} />}
+    </div>
+  )
+  const themeMatches = (key: string) => matches(query, themeDisplayName(key, store.themeLabels))
+  const libraryList = (list: SavedSystem[]) => (
+    <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]">
+      {list.map((sys) => (
+        <LibraryRow
+          key={sys.id}
+          sys={sys}
+          onOpen={() => setSection({ kind: 'library', id: sys.id })}
+          pinned={pinned.includes(`library:${sys.id}`)}
+          onTogglePin={() => togglePinned(`library:${sys.id}`)}
+        />
+      ))}
+    </ul>
+  )
+  const libraryCrumb = (
+    <button
+      type="button"
+      onClick={() => setSection({ kind: 'libraries' })}
+      className="-ml-2 inline-flex h-7 items-center gap-1.5 self-start rounded-md px-2 text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
+      {t('All libraries')}
+    </button>
+  )
+  const commitLibraryName = () => {
+    const next = libraryDraft.trim()
+    if (next && next !== store.projectName) store.setProjectName(next)
+    setRenamingLibrary(false)
+  }
+
+  let body: ReactNode
+  if (viewing.kind === 'recents') {
+    const themesShown = recent.filter(themeMatches)
+    const libs = [...others].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt)).filter((s) => matches(query, s.name))
+    body = (
+      <>
+        <ViewHeader
+          title={t('Recents')}
+          detail={t('Your themes, last edited first. Click to select, double-click to open.')}
+        />
+        <section aria-labelledby="home-recent-themes" className="flex flex-col gap-3">
+          <SectionTitle
+            id="home-recent-themes"
+            count={themesShown.length}
+            right={(
+              <button type="button" onClick={() => setSection({ kind: 'library', id: currentId })} className={LINK}>
+                <FolderIcon size={12} />
+                {store.projectName}
+              </button>
+            )}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 18l-6-6 6-6" /></svg>
-            {t('Theme preview')}
-          </button>
-          <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-            <div className="flex min-w-[16rem] flex-1 flex-col gap-1">
-              <h2 className="text-heading font-semibold text-fg">{t('Themes library')}</h2>
-              <p className="text-body text-fg-muted">
-                {t('Every theme in this system, painted with its own tokens. Pick one to make it the theme you edit, preview and export.')}
-              </p>
-            </div>
-            <div className="flex flex-shrink-0 items-center gap-2">
+            {t('My themes')}
+          </SectionTitle>
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
+        </section>
+        {libs.length > 0 && (
+          <section aria-labelledby="home-recent-libraries" className="flex flex-col gap-3">
+            <SectionTitle id="home-recent-libraries" count={libs.length}>{t('Other libraries')}</SectionTitle>
+            {libraryList(libs)}
+          </section>
+        )}
+      </>
+    )
+  } else if (viewing.kind === 'styles') {
+    const presets = THEME_STYLE_PRESETS.filter((p) => matches(query, p.label, p.description))
+    body = (
+      <>
+        <ViewHeader
+          title={t('System styles')}
+          detail={t('Curated starting points. Editing one adds it to My themes; the style itself never changes.')}
+        />
+        {styleError && <p role="alert" className="text-caption text-status-danger">{styleError}</p>}
+        {presets.length === 0 ? <EmptyNote>{t('No style matches “{q}”.', { q: query })}</EmptyNote> : (
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))]">
+            {presets.map((preset) => (
+              <StyleCard
+                key={preset.id}
+                preset={preset}
+                owned={mine.some((key) => store.themeOrigin?.[key] === preset.id)}
+                onUse={() => useStyle(preset)}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    )
+  } else if (viewing.kind === 'libraries') {
+    const list = others.filter((s) => matches(query, s.name))
+    body = (
+      <>
+        <ViewHeader
+          title={t('All libraries')}
+          detail={t('A library is a whole system: its themes and the foundations they share. One is on screen at a time.')}
+          right={(
+            <>
+              <button type="button" onClick={onImport} className={LINK}><ImportGlyph />{t('Import JSON')}</button>
+              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New library')}</button>
+            </>
+          )}
+        />
+        <GuestAccountCard />
+        <section aria-labelledby="home-on-screen" className="flex flex-col gap-3">
+          <SectionTitle id="home-on-screen">{t('On screen')}</SectionTitle>
+          <ul className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]">
+            <li className="group relative flex items-center gap-3 rounded-xl border border-line-strong bg-surface px-3.5 py-3">
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-ui/[0.14] text-accent-ui">
+                <FolderIcon size={14} />
+              </span>
+              <button
+                type="button"
+                onClick={() => setSection({ kind: 'library', id: currentId })}
+                className="flex min-w-0 flex-1 flex-col items-start text-left after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent-ui/50"
+              >
+                <span className="w-full truncate text-body font-semibold text-fg">{store.projectName}</span>
+                <span className="w-full truncate text-caption text-fg-faint">
+                  {mine.length === 1 ? t('1 theme') : t('{count} themes', { count: mine.length })}
+                </span>
+              </button>
+            </li>
+          </ul>
+        </section>
+        <section aria-labelledby="home-saved" className="flex flex-col gap-3">
+          <SectionTitle id="home-saved" count={list.length}>{t('Saved')}</SectionTitle>
+          {list.length === 0
+            ? <EmptyNote>{query ? t('No library matches “{q}”.', { q: query }) : t('Nothing else saved yet. New library starts another system; Save library keeps a copy of this one.')}</EmptyNote>
+            : libraryList(list)}
+        </section>
+      </>
+    )
+  } else if (viewing.id === currentId) {
+    // The DEFAULT library: the system on screen, with My themes inside it.
+    const themesShown = recent.filter(themeMatches)
+    const libPinned = pinned.includes(`library:${currentId}`)
+    body = (
+      <>
+        <ViewHeader
+          crumb={libraryCrumb}
+          title={(
+            <>
+              <span className="text-fg-muted"><FolderIcon size={18} /></span>
+              {renamingLibrary ? (
+                <input
+                  autoFocus
+                  value={libraryDraft}
+                  onChange={(e) => setLibraryDraft(e.target.value)}
+                  onBlur={commitLibraryName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitLibraryName()
+                    if (e.key === 'Escape') { setLibraryDraft(store.projectName); setRenamingLibrary(false) }
+                  }}
+                  aria-label={t('Library name')}
+                  className="h-9 min-w-0 rounded-lg border border-line-strong bg-app px-2 text-heading font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+                />
+              ) : (
+                <>
+                  <span className="min-w-0 truncate">{store.projectName}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setLibraryDraft(store.projectName); setRenamingLibrary(true) }}
+                    aria-label={t('Rename library')}
+                    title={t('Rename library')}
+                    className={MENU_BTN}
+                  >
+                    <PencilGlyph />
+                  </button>
+                </>
+              )}
+              <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
+            </>
+          )}
+          detail={t('The library you are working in. Every theme here shares its foundations and ships together.')}
+          right={(
+            <>
+              <button
+                type="button"
+                onClick={() => togglePinned(`library:${currentId}`)}
+                aria-pressed={libPinned}
+                aria-label={libPinned ? t('Unpin') : t('Pin to Home')}
+                title={libPinned ? t('Unpin') : t('Pin to Home')}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${libPinned ? 'bg-elevated text-fg' : 'text-fg-muted'}`}
+              >
+                <PinGlyph />
+              </button>
               <SaveLibraryButton />
               <LibraryOptions
                 hasOwnThemes={mine.length > 0}
                 onReset={onOpenReset}
                 onDeleteMyThemes={() => setConfirmDeleteAll(true)}
               />
+            </>
+          )}
+        />
+        <AnimatePresence initial={false}>
+          {confirmDeleteAll && (
+            <div className="max-w-sm self-end">
+              <DeleteMyThemesConfirmation
+                count={mine.length}
+                onCancel={() => setConfirmDeleteAll(false)}
+                onConfirm={deleteMyThemes}
+              />
             </div>
-          </header>
-          <AnimatePresence initial={false}>
-            {confirmDeleteAll && (
-              <div className="max-w-sm self-end">
-                <DeleteMyThemesConfirmation
-                  count={mine.length}
-                  onCancel={() => setConfirmDeleteAll(false)}
-                  onConfirm={deleteMyThemes}
-                />
+          )}
+        </AnimatePresence>
+        <GuestAccountCard />
+        <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
+          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('My themes')}</SectionTitle>
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
+        </section>
+      </>
+    )
+  } else {
+    // A saved library: look inside, then load it to edit.
+    const sys = others.find((s) => s.id === viewing.id)!
+    const keys = myThemeKeys(sys.snapshot.themeOrder ?? [], sys.snapshot.themes ?? {})
+    const shown = byRecent(keys, sys.snapshot.themeUpdatedAt ?? {}).filter((k) => matches(query, themeDisplayName(k, sys.snapshot.themeLabels ?? {})))
+    const libPinned = pinned.includes(`library:${sys.id}`)
+    body = (
+      <>
+        <ViewHeader
+          crumb={libraryCrumb}
+          title={(<><span className="text-fg-muted"><FolderIcon size={18} /></span><span className="min-w-0 truncate">{sys.name}</span></>)}
+          detail={`${sys.repo || t('Saved in this browser')} · ${t('Saved {when}', { when: timeAgo(sys.savedAt) })}`}
+          right={confirmSaved ? (
+            <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+              <span className="text-caption text-fg-muted">
+                {confirmSaved === 'load' ? t('Replace what is on screen?') : t('Delete this library from this browser?')}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirmSaved === 'load') store.loadSystem(sys.id)
+                  else store.removeSavedSystem(sys.id)
+                  setConfirmSaved(null)
+                  setSection(confirmSaved === 'load' ? { kind: 'library', id: sys.id } : { kind: 'libraries' })
+                }}
+                className={`text-caption font-semibold hover:underline ${confirmSaved === 'load' ? 'text-accent-ui' : 'text-status-danger'}`}
+              >
+                {confirmSaved === 'load' ? t('Load') : t('Delete')}
+              </button>
+              <button type="button" onClick={() => setConfirmSaved(null)} className="text-caption text-fg-faint hover:text-fg">{t('Cancel')}</button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => togglePinned(`library:${sys.id}`)}
+                aria-pressed={libPinned}
+                aria-label={libPinned ? t('Unpin') : t('Pin to Home')}
+                title={libPinned ? t('Unpin') : t('Pin to Home')}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border border-line transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${libPinned ? 'bg-elevated text-fg' : 'text-fg-muted'}`}
+              >
+                <PinGlyph />
+              </button>
+              <button type="button" onClick={() => setConfirmSaved('delete')} className={`${ACTION} hover:text-status-danger`}>{t('Delete')}</button>
+              <button type="button" onClick={() => setConfirmSaved('load')} className={PRIMARY}>{t('Load library')}</button>
+            </>
+          )}
+        />
+        <section aria-labelledby="home-saved-themes" className="flex flex-col gap-3">
+          <SectionTitle id="home-saved-themes" count={shown.length}>{t('Themes')}</SectionTitle>
+          {shown.length === 0
+            ? <EmptyNote>{query ? t('No theme matches “{q}”.', { q: query }) : t('This library has no themes of its own yet.')}</EmptyNote>
+            : (
+              <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
+                {shown.map((key) => <SavedThemeCard key={key} snapshot={sys.snapshot} themeKey={key} />)}
               </div>
             )}
-          </AnimatePresence>
-        </div>
-
-        <section aria-labelledby="library-mine" className="flex flex-col gap-3">
-          <h3 id="library-mine" className="text-ui font-semibold text-fg">
-            {t('My themes')} <span className="ml-1 text-caption font-normal text-fg-faint tabular-nums">{mine.length}</span>
-          </h3>
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
-            {mine.map((key) => (
-              <ThemeCard
-                key={key}
-                themeKey={key}
-                active={key === previewTheme}
-                isLast={mine.length <= 1}
-                onSelect={() => onSelectTheme(key)}
-                onOpenPreview={() => onOpenPreview(key)}
-                onGetCode={() => onGetCode(key)}
-                onSyncFigma={() => onSyncFigma(key)}
-                onDelete={() => deleteTheme(key)}
-              />
-            ))}
-            <CreateThemeCard disabled={!canAddMyTheme(mine.length)} onClick={onCreateTheme} />
-          </div>
         </section>
+      </>
+    )
+  }
 
-        <MyLibraries onNewSystem={onNewSystem} onImport={onImport} />
-      </div>
+  return (
+    <div className="h-full overflow-y-auto">
+      <HomeNav
+        section={viewing}
+        onSection={setSection}
+        query={query}
+        onQuery={setQuery}
+        onOpenTheme={onOpenPreview}
+        onNewSystem={onNewSystem}
+        onImport={onImport}
+      />
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-7">{body}</div>
     </div>
   )
 }

@@ -8,7 +8,7 @@ import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import ThemeQuickSettingsRail, { SaveStateBadge, ThemeNameField, useLibrarySaved, isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeQuickSettingsRail, { ThemeNameField, isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
@@ -479,7 +479,6 @@ export default function ThemePreviewHub({
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
-  const librarySaved = useLibrarySaved()
   const { gated: docsGated } = useAccess()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
@@ -701,7 +700,6 @@ export default function ThemePreviewHub({
                       previewTheme={previewTheme}
                       readOnlyLabel={needsMyTheme ? hubViewLabel : stylePreview?.preset.label}
                     />
-                    {!needsMyTheme && !stylePreview && <SaveStateBadge saved={librarySaved} />}
                   </span>
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">

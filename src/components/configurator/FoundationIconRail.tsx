@@ -119,6 +119,7 @@ export default function FoundationIconRail({
   ariaLabel?: string
 }) {
   const vertical = orientation === 'vertical'
+  const headerDivider = vertical && header && groups.length > 0
   return (
     <nav
       aria-label={ariaLabel}
@@ -130,8 +131,11 @@ export default function FoundationIconRail({
       style={vertical ? { width: FOUNDATION_ICON_RAIL_WIDTH } : undefined}
     >
       {vertical && header ? (
-        <div className="flex w-full flex-col items-center pb-3">
+        <div className="flex w-full flex-shrink-0 flex-col items-center">
           {header}
+          {headerDivider ? (
+            <div className="mt-3 w-full border-t border-line" aria-hidden />
+          ) : null}
         </div>
       ) : null}
       <div className={vertical ? 'flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto scrollbar-thin' : 'contents'}>
@@ -139,7 +143,9 @@ export default function FoundationIconRail({
           <div
             key={group.label ?? gi}
             className={vertical
-              ? `flex flex-col items-center gap-1 ${gi > 0 ? 'mt-1' : ''}`
+              ? `flex w-full flex-col items-center gap-1 ${
+                gi > 0 ? 'mt-3 border-t border-line pt-3' : headerDivider ? 'pt-3' : ''
+              }`
               : `flex items-center ${gi === 0 ? 'gap-1' : 'gap-px'}`}
           >
             {group.items.map(({ key, label, Icon }) => {

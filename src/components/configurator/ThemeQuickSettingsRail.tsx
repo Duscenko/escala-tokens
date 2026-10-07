@@ -140,16 +140,95 @@ function defaultThemeLabel(key: string) {
   return key.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
-function EditThemeIcon() {
+/** Name row: muted "Name:" label, value in `text-fg`, edit on double-click. */
+function ThemeNameFieldShell({
+  stored,
+  draftName,
+  setDraftName,
+  nameError,
+  commitName,
+  onRevertDraft,
+  readOnlyDisplay,
+  heightClass = 'h-9',
+  textSizeClass = 'text-body',
+}: {
+  stored: string
+  draftName: string
+  setDraftName: (value: string) => void
+  nameError: boolean
+  commitName: () => void
+  onRevertDraft: () => void
+  readOnlyDisplay?: string
+  heightClass?: string
+  textSizeClass?: string
+}) {
+  const { t } = useI18n()
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  const finishEdit = (commit: boolean) => {
+    if (commit) commitName()
+    else onRevertDraft()
+    setEditing(false)
+  }
+
+  const borderClass = nameError ? 'border-status-danger/70' : 'border-line'
+  const shellClass = `flex w-full min-w-0 items-center gap-2 border bg-transparent pl-3 pr-2 transition-[border-color,box-shadow] ${RAIL_SURFACE_RADIUS} ${heightClass} ${borderClass}`
+
+  if (readOnlyDisplay) {
+    return (
+      <div className={shellClass}>
+        <span className={`flex-shrink-0 font-medium text-fg-faint ${textSizeClass}`}>{t('Name')}:</span>
+        <span className={`min-w-0 flex-1 truncate font-semibold text-fg ${textSizeClass}`}>{readOnlyDisplay}</span>
+      </div>
+    )
+  }
+
+  const displayName = draftName.trim() || stored
+
   return (
-    <span
-      aria-hidden
-      className="h-3.5 w-3.5 flex-shrink-0 bg-current text-fg-faint"
-      style={{
-        WebkitMask: "url('/icons/settings/edit.svg') center / contain no-repeat",
-        mask: "url('/icons/settings/edit.svg') center / contain no-repeat",
+    <div
+      className={`${shellClass} ${editing ? 'ring-2 ring-accent-ui/15 border-accent-ui/70' : 'hover:border-line-strong'}`}
+      title={editing ? undefined : t('Double-click to rename')}
+      onDoubleClick={() => {
+        if (!editing) setEditing(true)
       }}
-    />
+    >
+      <span className={`flex-shrink-0 font-medium text-fg-faint ${textSizeClass}`}>{t('Name')}:</span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={draftName}
+          maxLength={48}
+          aria-label={t('Theme name')}
+          aria-invalid={nameError || undefined}
+          onChange={(event) => { setDraftName(event.target.value); setNameError(false) }}
+          onBlur={() => finishEdit(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              finishEdit(true)
+              inputRef.current?.blur()
+            }
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              onRevertDraft()
+              setEditing(false)
+            }
+          }}
+          className={`min-w-0 flex-1 bg-transparent py-0 font-semibold text-fg outline-none ${textSizeClass}`}
+        />
+      ) : (
+        <span className={`min-w-0 flex-1 truncate font-semibold text-fg ${textSizeClass}`}>{displayName}</span>
+      )}
+    </div>
   )
 }
 
@@ -179,57 +258,39 @@ export function ThemeIdentityBand({
    *  for a name to belong to. */
   tryOnLabel?: string
 }) {
-  const { t } = useI18n()
   const { themeLabels, setThemeLabel } = useDesignStore()
   const stored = themeLabels[previewTheme] || defaultThemeLabel(previewTheme)
   const [draftName, setDraftName] = useState(stored)
   const [nameError, setNameError] = useState(false)
+  useEffect(() => { setDraftName(stored) }, [stored])
   const commitName = () => {
     const next = draftName.trim()
     if (!next) { setNameError(true); return }
     setNameError(false)
-    setThemeLabel(previewTheme, next)
+    if (next !== stored) setThemeLabel(previewTheme, next)
   }
-  if (tryOnLabel) {
-    return (
-      <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
-        <div className={`flex h-9 w-full min-w-0 items-center gap-2 border border-dashed border-line bg-transparent pl-3 pr-3 ${RAIL_SURFACE_RADIUS}`}>
-          <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
-          <span className="min-w-0 flex-1 truncate text-body font-semibold text-fg">{tryOnLabel}</span>
-        </div>
-      </div>
-    )
+  const revertDraft = () => {
+    setDraftName(stored)
+    setNameError(false)
   }
   return (
     <div className="flex-shrink-0 flex items-center px-3" style={{ height: THEME_BAND_H }}>
-      <label
-        className={`group flex h-9 w-full min-w-0 items-center gap-2 border bg-transparent pl-3 pr-2 transition-[color,border-color,box-shadow] hover:border-line-strong focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 ${RAIL_SURFACE_RADIUS} ${nameError ? 'border-status-danger/70' : 'border-line'}`}
-        title={t('Rename theme')}
-      >
-          <span className="flex-shrink-0 text-caption font-medium text-fg-faint">{t('Name')}</span>
-          <input
-            value={draftName}
-            maxLength={48}
-            aria-label={t('Theme name')}
-            aria-invalid={nameError || undefined}
-            onChange={(event) => { setDraftName(event.target.value); setNameError(false) }}
-            onBlur={commitName}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur()
-              if (event.key === 'Escape') { setDraftName(stored); setNameError(false); event.currentTarget.blur() }
-            }}
-            className="min-w-0 flex-1 bg-transparent py-1 text-body font-semibold text-fg outline-none"
-          />
-          <span className="ml-auto grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-elevated group-hover:text-fg-muted group-focus-within:bg-elevated group-focus-within:text-fg"><EditThemeIcon /></span>
-      </label>
+      <ThemeNameFieldShell
+        stored={stored}
+        draftName={draftName}
+        setDraftName={setDraftName}
+        nameError={nameError}
+        commitName={commitName}
+        onRevertDraft={revertDraft}
+        readOnlyDisplay={tryOnLabel}
+      />
     </div>
   )
 }
 
 /**
- * Whether the system on screen matches its entry in My libraries. The ONE
- * condition both Save theme (disabled + ✓ when true) and the canvas header's
- * Saved / Not saved badge read, so the two can never disagree. It is NOT
+ * Whether the system on screen matches its entry in My libraries. Save theme
+ * (disabled + ✓ when true) reads this. It is NOT
  * `themeHasEdits` — that one means "differs from the style it was made from"
  * and drives Reset, a different question from "is this saved".
  */
@@ -254,7 +315,6 @@ export function ThemeNameField({ previewTheme, readOnlyLabel }: {
   previewTheme: string
   readOnlyLabel?: string
 }) {
-  const { t } = useI18n()
   const { themeLabels, setThemeLabel } = useDesignStore()
   const stored = themeLabels[previewTheme] || defaultThemeLabel(previewTheme)
   const [draftName, setDraftName] = useState(stored)
@@ -269,44 +329,23 @@ export function ThemeNameField({ previewTheme, readOnlyLabel }: {
     setNameError(false)
     if (next !== stored) setThemeLabel(previewTheme, next)
   }
+  const revertDraft = () => {
+    setDraftName(stored)
+    setNameError(false)
+  }
   return (
-    <label
-      // Borderless at rest so it reads as the page's title; the edge appears
-      // on hover / focus, which is what says it can be typed into.
-      className={`group flex h-8 min-w-0 items-center gap-1 rounded-lg border pl-2 pr-1 transition-[border-color,box-shadow] hover:border-line focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 ${nameError ? 'border-status-danger/70' : 'border-transparent'}`}
-      title={t('Rename theme')}
-    >
-      <input
-        value={draftName}
-        maxLength={48}
-        size={Math.max(4, draftName.length)}
-        aria-label={t('Theme name')}
-        aria-invalid={nameError || undefined}
-        onChange={(event) => { setDraftName(event.target.value); setNameError(false) }}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur()
-          if (event.key === 'Escape') { setDraftName(stored); setNameError(false); event.currentTarget.blur() }
-        }}
-        className="min-w-0 max-w-[18rem] bg-transparent text-ui font-semibold text-fg outline-none"
+    <div className="min-w-0 max-w-[min(100%,28rem)] flex-1">
+      <ThemeNameFieldShell
+        stored={stored}
+        draftName={draftName}
+        setDraftName={setDraftName}
+        nameError={nameError}
+        commitName={commitName}
+        onRevertDraft={revertDraft}
+        heightClass="h-8"
+        textSizeClass="text-ui"
       />
-      <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors group-hover:text-fg-muted group-focus-within:text-fg"><EditThemeIcon /></span>
-    </label>
-  )
-}
-
-/** Saved / Not saved — reads `useLibrarySaved`, words carry the state, the
- *  dot only reinforces it. */
-export function SaveStateBadge({ saved }: { saved: boolean }) {
-  const { t } = useI18n()
-  return (
-    <span
-      className="inline-flex h-6 flex-shrink-0 items-center gap-1.5 rounded-full bg-fg/[0.06] px-2 text-mini font-medium text-fg-muted"
-      title={saved ? t('Matches the copy in My libraries') : t('Changes since the last save')}
-    >
-      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${saved ? 'bg-status-success-solid' : 'bg-status-warning-solid'}`} />
-      {saved ? t('Saved') : t('Not saved')}
-    </span>
+    </div>
   )
 }
 

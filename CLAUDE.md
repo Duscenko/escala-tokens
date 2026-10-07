@@ -103,31 +103,33 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 >   LEFT column, or describe the Theme · Variables · Sync tab strip, describe the
 >   pre-2026-10-06 layout.
 >
-> **UPDATE (2026-10-07): the foundation icon rail is Theme + Variables only.**
-> Code, Docs, and the Themes library hide `FoundationIconRail`. Hub Docs opens
+> **UPDATE (2026-10-07): the foundation icon rail stays on the Generator.**
+> Its top tile is **Home**. Theme and Variables keep Color · Font · … under it.
+> Code, Docs, and Home show only that tile (a Color click there would leave
+> the page). Figma and GitHub connect still hide the rail. Hub Docs opens
 > the theme reference — a visual sheet of that theme (ramps, type, radius,
 > spacing, shadow, grid, sizes, stroke, icons) — and reads one foundation
 > article at a time, chosen from the inspector or by opening a card (not the
 > foundation the icon rail last selected);
 > “On this page” still jumps inside the open article. The hand-off overview
-> (no hub) still inlines every section. Code stays on `ThemeCodeFormat`
-> without a Color/Font click that would leave the tab. The card uses `mx-3` when
-> that column is gone (same as the library page).
+> (no hub) still inlines every section. Code stays on `ThemeCodeFormat`.
+> The card does not add `mx-3` to stand in for a missing rail — the rail is there.
+> `design-plans/hide-icon-rail-on-code-and-docs.md` is superseded by
+> `design-plans/home-replaces-themes-library.md`.
 >
-> **UPDATE (2026-10-07): the Themes library is a PAGE of its own — no icon rail, no
-> inspector.** `themeWorkspaceTab === 'library'` hides `FoundationIconRail` and
-> `WorkspaceInspector` (the card gets `mx-3`), and `ThemeLibraryRail` is no longer
-> mounted there: it listed the same themes as the grid, so every theme showed twice.
-> Choosing a theme isn't editing one. Everything the rail did lives on
-> `ThemeLibraryPage` now: a **← Theme preview** back link; per card **Open · Get code**
-> plus a ⋯ (`ThemeOptionsMenu`, exported from the rail file, `onOpenInCode` omitted
-> because the card already has Get code) with **Sync with Figma · Rename · Delete**
-> (rename inline, delete via `DeleteThemeConfirmation`); a last **Create your theme**
-> card (dashed cover with a centred +, `openCreateTheme`, disabled at the My-themes
-> cap); and a header ⋯ with **Reset** (the shell's reset modal) and **Delete my
-> themes**. Dropped with the rail: its "Reset system style" (re-trying Core on), which
-> only made sense beside the rail's style try-on. The rail's foot door
-> (`ThemesLibraryToggle`) only opens the library now — the rail isn't shown on it.
+> **UPDATE (2026-10-07): Home is the file browser. The section id stays `library`.**
+> The right inspector on that page has no Theme · Variables · Code · Docs strip;
+> it holds the file menu (Recents, System styles, Libraries, Pinned). My themes
+> live inside the library on screen, not beside a second “My libraries” pile.
+> A finished login with no other return opens `/?section=library`. Sign in in
+> the header records `next=library` (gated export/save still return to that
+> section). A signed-in visit to `/` with no section opens Home. Anonymous
+> visits to `/` are unchanged. `ThemeLibraryRail` is not mounted on the page.
+> Each card has **Open · Get code**, a double-click on the cover that opens,
+> last-edited time, Figma and GitHub status, and **Pin to Home** in the ⋯
+> (Sync with Figma · Share via GitHub · Rename · Delete). A last **Create your
+> theme** card (`openCreateTheme`, disabled at the My-themes cap). Pin is the
+> only shortcut — there is no Favorites list beside it.
 
 
 > **NAMING: the Generator's first workspace tab is called "Theme"** — it was "Theme

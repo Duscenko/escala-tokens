@@ -1,5 +1,7 @@
 # Hide the foundation icon rail on Code and Docs
 
+**Superseded** by `design-plans/home-replaces-themes-library.md`. Code and Docs keep the rail, with only the Home tile. Do not implement this plan.
+
 Written against: `9779a76` (working tree may include later local edits)
 
 ## Evidence chain
