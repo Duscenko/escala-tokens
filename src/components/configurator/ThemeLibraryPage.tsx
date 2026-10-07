@@ -35,10 +35,9 @@ import {
 // panel), the content in the card.
 //   · Recents       — My themes, last edited first, plus recently saved libraries.
 //   · System styles — the curated styles a theme can start from.
-//   · Libraries     — the system on screen is the DEFAULT library: My themes
-//                     live inside it, not beside a separate "My libraries"
-//                     list, which read as two unrelated piles. Every other
-//                     saved library is a folder you can open and load.
+//   · Folders       — the system on screen is the DEFAULT folder: files
+//                     (themes) live inside it. + creates another folder.
+//                     A file is created only inside a folder.
 //   · Pinned        — shortcuts to the themes and libraries pinned from a ⋯.
 //
 // Each theme card says when it last changed (`themeUpdatedAt`, stamped by
@@ -304,8 +303,8 @@ function CreateThemeCard({ disabled, onClick }: { disabled: boolean; onClick: ()
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>
       </span>
       <span className="flex flex-col gap-1">
-        <span className="text-body font-semibold text-fg">{t('Create your theme')}</span>
-        <span className="text-caption text-fg-faint">{t('From a System Style or your own colours.')}</span>
+        <span className="text-body font-semibold text-fg">{t('Create file')}</span>
+        <span className="text-caption text-fg-faint">{t('A new theme in this folder.')}</span>
       </span>
     </button>
   )
@@ -506,12 +505,12 @@ function SaveLibraryButton() {
   )
 }
 
-/** Stays visible while the Home canvas scrolls — root context for every Home view. */
+/** Stays visible while the Home canvas scrolls — where you are on Home. */
 function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: () => void }) {
   const { t } = useI18n()
   return (
     <div
-      className="sticky top-0 z-20 -mx-8 flex flex-shrink-0 items-center gap-2 border-b border-line bg-app/95 px-8 pb-2.5 pt-7 backdrop-blur-sm supports-[backdrop-filter]:bg-app/85"
+      className="sticky top-0 z-20 -mx-8 flex min-h-[52px] w-full flex-shrink-0 items-center justify-start gap-2 border-b border-line bg-app/95 px-8 py-3 backdrop-blur-sm supports-[backdrop-filter]:bg-app/85"
       aria-label={trail ? t('Home — {page}', { page: trail }) : t('Home')}
     >
       {trail ? (
@@ -519,15 +518,15 @@ function HomeStickyBar({ trail, onGoHome }: { trail: string | null; onGoHome: ()
           <button
             type="button"
             onClick={onGoHome}
-            className="text-caption font-semibold text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 rounded-sm"
+            className="flex-shrink-0 rounded-sm text-body font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
             {t('Home')}
           </button>
-          <span className="text-caption text-fg-faint" aria-hidden>/</span>
-          <span className="min-w-0 truncate text-caption font-semibold text-fg">{trail}</span>
+          <span className="flex-shrink-0 text-body text-fg-faint" aria-hidden>/</span>
+          <h1 className="min-w-0 truncate text-left text-heading font-semibold text-fg">{trail}</h1>
         </>
       ) : (
-        <span className="text-caption font-semibold text-fg">{t('Home')}</span>
+        <h1 className="w-full text-left text-heading font-semibold text-fg">{t('Home')}</h1>
       )}
     </div>
   )
@@ -678,7 +677,7 @@ function HomeNav({
       <nav aria-label={t('Home')} className="flex min-h-0 flex-col gap-3 overflow-y-auto px-3 pb-4 pt-3">
         <label className="relative flex items-center">
           <span className="pointer-events-none absolute left-2.5 text-fg-faint"><SearchGlyph /></span>
-          <span className="sr-only">{t('Search themes and libraries')}</span>
+          <span className="sr-only">{t('Search files and folders')}</span>
           <input
             type="search"
             value={query}
@@ -692,11 +691,11 @@ function HomeNav({
           <NavRow on={isOn('styles')} icon={<SparkGlyph />} label={t('System styles')} onClick={() => onSection({ kind: 'styles' })} />
         </div>
         <NavGroup
-          label={t('Libraries')}
+          label={t('Folders')}
           action={(
             <span className="flex items-center">
               <button type="button" onClick={onImport} aria-label={t('Import JSON')} title={t('Import JSON')} className={iconBtn}><ImportGlyph /></button>
-              <button type="button" onClick={onNewSystem} aria-label={t('New library')} title={t('New library')} className={iconBtn}><PlusGlyph /></button>
+              <button type="button" onClick={onNewSystem} aria-label={t('New folder')} title={t('New folder')} className={iconBtn}><PlusGlyph /></button>
             </span>
           )}
         >
@@ -704,7 +703,7 @@ function HomeNav({
             on={isOn('library', currentId)}
             icon={<FolderIcon size={13} />}
             label={store.projectName}
-            title={t('{name} — the library on screen', { name: store.projectName })}
+            title={t('{name} — the folder on screen', { name: store.projectName })}
             onClick={() => onSection({ kind: 'library', id: currentId })}
             trailing={(
               <span className="flex flex-shrink-0 items-center gap-1.5">
@@ -722,11 +721,11 @@ function HomeNav({
               onClick={() => onSection({ kind: 'library', id: sys.id })}
             />
           ))}
-          <NavRow on={isOn('libraries')} icon={<StackGlyph />} label={t('All libraries')} onClick={() => onSection({ kind: 'libraries' })} />
+          <NavRow on={isOn('libraries')} icon={<StackGlyph />} label={t('All folders')} onClick={() => onSection({ kind: 'libraries' })} />
         </NavGroup>
         <NavGroup label={t('Pinned')}>
           {pinnedThemes.length + pinnedLibraries.length === 0 ? (
-            <p className="px-2.5 py-1 text-micro leading-relaxed text-fg-faint">{t('Pin a theme or a library from its menu to keep it here.')}</p>
+            <p className="px-2.5 py-1 text-micro leading-relaxed text-fg-faint">{t('Pin a file or a folder from its menu to keep it here.')}</p>
           ) : (
             <>
               {pinnedThemes.map((key) => (
@@ -927,6 +926,7 @@ export default function ThemeLibraryPage({
   onOpenReset,
   onNewSystem,
   onImport,
+  enterFolderTick = 0,
 }: {
   previewTheme: string
   /** Themes the live Figma sync publishes (File & modes). */
@@ -955,6 +955,8 @@ export default function ThemeLibraryPage({
   onNewSystem: () => void
   /** Opens the Import-JSON modal (owned by the shell). */
   onImport: () => void
+  /** After a new folder is created, open that folder so a file can be added inside it. */
+  enterFolderTick?: number
 }) {
   const { t } = useI18n()
   const timeAgo = useTimeAgo()
@@ -995,6 +997,10 @@ export default function ThemeLibraryPage({
   const recent = byRecent(mine, themeUpdatedAt ?? {})
   const others = store.savedSystems.filter((s) => s.id !== currentId)
   const [section, setSection] = useState<HomeSection>({ kind: 'recents' })
+  useEffect(() => {
+    if (!enterFolderTick) return
+    setSection({ kind: 'library', id: currentId })
+  }, [enterFolderTick, currentId])
   const [query, setQuery] = useState('')
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
   const [confirmSaved, setConfirmSaved] = useState<'load' | 'delete' | null>(null)
@@ -1077,7 +1083,7 @@ export default function ThemeLibraryPage({
     </button>
   )
   const homeRecentsCrumb = sectionBackCrumb(t('Home'), () => setSection({ kind: 'recents' }))
-  const libraryCrumb = sectionBackCrumb(t('All libraries'), () => setSection({ kind: 'libraries' }))
+  const libraryCrumb = sectionBackCrumb(t('All folders'), () => setSection({ kind: 'libraries' }))
   const commitLibraryName = () => {
     const next = libraryDraft.trim()
     if (next && next !== store.projectName) store.setProjectName(next)
@@ -1087,7 +1093,7 @@ export default function ThemeLibraryPage({
   const homeTrail = (() => {
     if (viewing.kind === 'recents') return null
     if (viewing.kind === 'styles') return t('System styles')
-    if (viewing.kind === 'libraries') return t('All libraries')
+    if (viewing.kind === 'libraries') return t('All folders')
     if (viewing.kind === 'library') {
       if (viewing.id === currentId) return store.projectName
       return others.find((s) => s.id === viewing.id)?.name ?? viewing.id
@@ -1101,15 +1107,11 @@ export default function ThemeLibraryPage({
     const libs = [...others].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt)).filter((s) => matches(query, s.name))
     body = (
       <>
-        <ViewHeader
-          title={t('Recents')}
-          detail={t('Your themes, last edited first. Click to select, double-click to open.')}
-        />
         <section aria-labelledby="home-recently" className="flex flex-col gap-3">
           <SectionTitle id="home-recently" count={themesShown.length}>
             {t('Recently')}
           </SectionTitle>
-          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
+          {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, false)}
         </section>
         {!query && (
           <>
@@ -1120,13 +1122,11 @@ export default function ThemeLibraryPage({
                 right={(
                   <button
                     type="button"
-                    onClick={openCreate}
-                    disabled={!canAddMyTheme(mine.length)}
-                    title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : undefined}
+                    onClick={onNewSystem}
                     className={LINK}
                   >
                     <PlusGlyph />
-                    {t('Create file')}
+                    {t('Create folder')}
                   </button>
                 )}
               >
@@ -1186,12 +1186,12 @@ export default function ThemeLibraryPage({
     body = (
       <>
         <ViewHeader
-          title={t('All libraries')}
-          detail={t('A library is a whole system: its themes and the foundations they share. One is on screen at a time.')}
+          title={t('All folders')}
+          detail={t('A folder holds files — each file is a theme. One folder is on screen at a time.')}
           right={(
             <>
               <button type="button" onClick={onImport} className={LINK}><ImportGlyph />{t('Import JSON')}</button>
-              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New library')}</button>
+              <button type="button" onClick={onNewSystem} className={LINK}><PlusGlyph />{t('New folder')}</button>
             </>
           )}
         />
@@ -1219,7 +1219,7 @@ export default function ThemeLibraryPage({
         <section aria-labelledby="home-saved" className="flex flex-col gap-3">
           <SectionTitle id="home-saved" count={list.length}>{t('Saved')}</SectionTitle>
           {list.length === 0
-            ? <EmptyNote>{query ? t('No library matches “{q}”.', { q: query }) : t('Nothing else saved yet. New library starts another system; Save library keeps a copy of this one.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No folder matches “{q}”.', { q: query }) : t('Nothing else saved yet. New folder starts another system; Save library keeps a copy of this one.')}</EmptyNote>
             : libraryList(list)}
         </section>
       </>
@@ -1265,9 +1265,19 @@ export default function ThemeLibraryPage({
               <span className="flex-shrink-0 rounded-full bg-elevated px-2 py-0.5 text-micro font-medium text-fg-muted">{t('On screen')}</span>
             </>
           )}
-          detail={t('The library you are working in. Every theme here shares its foundations and ships together.')}
+          detail={t('The folder you are working in. Every file here is a theme that shares its foundations and ships together.')}
           right={(
             <>
+              <button
+                type="button"
+                onClick={openCreate}
+                disabled={!canAddMyTheme(mine.length)}
+                title={!canAddMyTheme(mine.length) ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : undefined}
+                className={LINK}
+              >
+                <PlusGlyph />
+                {t('Create file')}
+              </button>
               <button
                 type="button"
                 onClick={() => togglePinned(`library:${currentId}`)}
@@ -1300,7 +1310,7 @@ export default function ThemeLibraryPage({
         </AnimatePresence>
         <GuestAccountCard />
         <section aria-labelledby="home-library-themes" className="flex flex-col gap-3">
-          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('My themes')}</SectionTitle>
+          <SectionTitle id="home-library-themes" count={themesShown.length}>{t('Files')}</SectionTitle>
           {themesShown.length === 0 && query ? <EmptyNote>{t('No theme matches “{q}”.', { q: query })}</EmptyNote> : themeGrid(themesShown, !query)}
         </section>
       </>
@@ -1354,9 +1364,9 @@ export default function ThemeLibraryPage({
           )}
         />
         <section aria-labelledby="home-saved-themes" className="flex flex-col gap-3">
-          <SectionTitle id="home-saved-themes" count={shown.length}>{t('Themes')}</SectionTitle>
+          <SectionTitle id="home-saved-themes" count={shown.length}>{t('Files')}</SectionTitle>
           {shown.length === 0
-            ? <EmptyNote>{query ? t('No theme matches “{q}”.', { q: query }) : t('This library has no themes of its own yet.')}</EmptyNote>
+            ? <EmptyNote>{query ? t('No theme matches “{q}”.', { q: query }) : t('This folder has no files of its own yet.')}</EmptyNote>
             : (
               <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN}px, 1fr))` }}>
                 {shown.map((key) => <SavedThemeCard key={key} snapshot={sys.snapshot} themeKey={key} />)}

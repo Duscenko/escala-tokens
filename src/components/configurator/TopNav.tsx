@@ -196,12 +196,15 @@ interface TopNavProps {
   search?: ReactNode
   /** Guided export — transversal, same wizard as elsewhere in the shell. */
   exportAction?: ReactNode
-  /** The grouped `[theme | ☀]` control (`ThemeAppearanceControl`). When given it
-   *  REPLACES the bare appearance toggle — it carries that toggle itself. */
+  /** Home door (`ThemeAppearanceControl`). Light/dark stays its own control. */
   themeControl?: ReactNode
   /** Opens the Themes library page (saved themes and systems). Shown in the
    *  signed-in account menu; absent on public pages, which have no workspace. */
   onOpenLibrary?: () => void
+  /** Generator workspace: ☰ carries the section list and the brand reads
+   *  “Escala Tokens Beta | Generator”. About · Components · Docs · Pricing
+   *  keep the tagged top menu (☰ only below 1080px). */
+  hamburgerNav?: boolean
 }
 
 // A hard-#white asset painted with `currentColor` via a CSS mask — the
@@ -378,6 +381,7 @@ function TopNavCompactMenu({
   onOpenLanguages,
   chromeAppearance,
   onChromeAppearanceChange,
+  always,
 }: {
   nav: TopNavKey | null
   onNav: (key: TopNavKey) => void
@@ -385,6 +389,7 @@ function TopNavCompactMenu({
   onOpenLanguages?: () => void
   chromeAppearance: 'light' | 'dark'
   onChromeAppearanceChange: (appearance: 'light' | 'dark') => void
+  always?: boolean
 }) {
   const { locale, setLocale, t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -393,7 +398,7 @@ function TopNavCompactMenu({
   const close = () => setOpen(false)
 
   return (
-    <div className="relative hidden max-[1079px]:flex flex-shrink-0">
+    <div className={`relative flex-shrink-0 ${always ? 'flex' : 'hidden max-[1079px]:flex'}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -563,6 +568,7 @@ export function DocsNavMenu({ active = false, onOpenDocsPage }: { active?: boole
 export default function TopNav({
   nav, onNav, railCollapsed = false, brandWidth = null,
   chromeAppearance, onChromeAppearanceChange, onOpenLanguages, onOpenDocsPage, search, exportAction, themeControl, onOpenLibrary,
+  hamburgerNav = false,
 }: TopNavProps) {
   const { t } = useI18n()
 
@@ -584,9 +590,15 @@ export default function TopNav({
         <div className="flex w-max items-center gap-2.5">
           <BrandMark size={24} />
           {!railCollapsed && (
-            <div className="flex items-baseline gap-1 whitespace-nowrap leading-none">
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap leading-none">
               <span className="text-ui font-semibold leading-none text-fg">Escala Tokens</span>
               <span className="text-mini font-light leading-none text-fg-faint">Beta</span>
+              {hamburgerNav && (
+                <>
+                  <span className="mx-0.5 text-mini font-light leading-none text-fg-faint" aria-hidden>|</span>
+                  <span className="text-ui font-medium leading-none text-fg">{t('Generator')}</span>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -600,7 +612,7 @@ export default function TopNav({
           longer overlap. Below 1080px (measured: Spanish labels need ~1060) the compact menu takes over. */}
       <nav
         aria-label={t('Sections')}
-        className="hidden min-[1080px]:flex min-w-0 flex-shrink-0 items-center gap-3 pl-5 lg:gap-5 lg:pl-6"
+        className={`${hamburgerNav ? 'hidden' : 'hidden min-[1080px]:flex'} min-w-0 flex-shrink-0 items-center gap-3 pl-5 lg:gap-5 lg:pl-6`}
       >
           {NAV_ITEMS.map(({ key, label }) => {
             const on = nav === key
@@ -633,15 +645,16 @@ export default function TopNav({
             onOpenLanguages={onOpenLanguages}
             chromeAppearance={chromeAppearance}
             onChromeAppearanceChange={onChromeAppearanceChange}
+            always={hamburgerNav}
           />
           {/* Language is a one-click icon again (it briefly moved into the
-              theme sheet and read as noise there). The theme control stays
-              visible at every width: the compact menu carries Language and
-              Appearance but not the theme pick. */}
+              theme sheet and read as noise there). Order: ☰ · language (wide)
+              · appearance · Home — appearance sits between the compact menu
+              and the Home chip, or right before Home when ☰ is hidden. */}
           <div className="hidden min-[1080px]:flex items-center gap-2">
             <LanguageMenu onOpen={onOpenLanguages} />
-            {!themeControl && <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />}
           </div>
+          <AppearanceToggle value={chromeAppearance} onChange={onChromeAppearanceChange} />
           {themeControl}
           <AccountControl onOpenLibrary={onOpenLibrary} />
           {exportAction}

@@ -1007,6 +1007,7 @@ export default function Configurator() {
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
+  const [enterFolderTick, setEnterFolderTick] = useState(0)
   // Components catalogue — filters the master list by label/key. ONE search
   // state now: Documentation carried a second, identical one (`docsSearch`)
   // over the same catalogue, so a filter typed in one section was invisible in
@@ -1824,6 +1825,7 @@ export default function Configurator() {
       <TopNav
         nav={navActive}
         onNav={handleNav}
+        hamburgerNav={tab === 'foundations'}
         onOpenLibrary={openLibraryPage}
         // Export is for the two surfaces that hold a system you're shaping —
         // Generator and Components. About and Docs are reading surfaces.
@@ -1844,18 +1846,17 @@ export default function Configurator() {
         railCollapsed={outerRailVisible && railCollapsed}
         chromeAppearance={theme}
         onChromeAppearanceChange={setTheme}
-        // Transversal: the theme you are looking at belongs to the whole
-        // workspace, so its door sits beside light/dark on every section.
-        themeControl={(
+        // Home + the theme on screen are an account surface. An anonymous
+        // visitor is trying the Generator, not browsing files — Sign in is
+        // the door, not this chip.
+        themeControl={access.tier !== 'anon' ? (
           <ThemeAppearanceControl
             previewTheme={previewTheme}
             stylePreview={stylePreview}
-            appearance={theme}
-            onAppearanceChange={setTheme}
             homeOpen={themesCanvas && themeWorkspaceTab === 'library'}
             onOpenLibrary={openLibraryPage}
           />
-        )}
+        ) : undefined}
         onOpenDocsPage={openDocsPage}
       />
 
@@ -2030,6 +2031,7 @@ export default function Configurator() {
                     onOpenReset={() => setResetOpen(true)}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
+                    enterFolderTick={enterFolderTick}
                   />
                 </motion.div>
               ) : themesCanvas && themeWorkspaceTab === 'code' ? (
@@ -2298,11 +2300,11 @@ export default function Configurator() {
             onClose={() => setNewSystemOpen(false)}
             onCreated={() => {
               setNewSystemOpen(false)
-              // Land on Foundations · Color so the guided flow continues into tokens.
+              // A new folder: stay on Home and open it so a file (theme) is created inside.
               setExportMode(null)
               setTab('foundations')
-              setActiveFoundation('color')
-              setFoundationCollection('color', 'primitives')
+              setThemeWorkspaceTab('library')
+              setEnterFolderTick((n) => n + 1)
             }}
           />
         )}
