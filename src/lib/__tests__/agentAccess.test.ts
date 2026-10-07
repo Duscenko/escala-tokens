@@ -426,21 +426,22 @@ describe('resolve_token matches the current payload', () => {
     expect(hit.viewports?.[theme]?.mobile).toBe(json.spacing[row!.mobile])
   })
 
-  it('resolves icon roles onto the icon scale, and the scale onto a dimension', () => {
+  it('resolves icon sizes onto a dimension, the same px in every viewport', () => {
     const json = published()
     const theme = json.colors.themeOrder?.[0] ?? 'light'
-    const step = json.icons?.sizes?.roles?.['control-md']
-    expect(step).toBeTruthy()
-    const role = resolveToken(json, 'Icon/role/control-md')
-    expect(role.css).toBe('var(--icon-control-md)')
-    expect(role.figma).toBe('Icon/role/control-md')
-    expect(role.values[theme]).toBe(json.icons?.sizes?.scale?.[step!])
-    expect(role.aliases?.[theme]).toMatch(/^dimension\./)
+    const role = resolveToken(json, 'Icon/role/medium')
+    expect(role.css).toBe('var(--icon-medium)')
+    expect(role.figma).toBe('Icon/role/medium')
+    expect(role.values[theme]).toBe('32px')
+    expect(role.aliases?.[theme]).toBe('dimension.32')
+    expect(role.viewports).toBeUndefined()
 
-    const size = resolveToken(json, 'icon.size.md')
-    expect(size.css).toBe('var(--icon-size-md)')
-    expect(size.values[theme]).toBe(json.icons?.sizes?.scale?.md)
-    expect(size.aliases?.[theme]).toMatch(/^dimension\./)
+    const small = resolveToken(json, 'icon.small')
+    expect(small.values[theme]).toBe('24px')
+    const large = resolveToken(json, 'var(--icon-large)')
+    expect(large.values[theme]).toBe('40px')
+    expect(json.icons?.sizes?.viewports?.tablet?.medium).toBe(json.icons?.sizes?.viewports?.desktop?.medium)
+    expect(json.icons?.sizes?.viewports?.mobile?.large).toBe('40px')
   })
 
   it('resolves a type role, including the mobile cut named in the CSS variable', () => {
@@ -493,19 +494,25 @@ describe('resolve_token matches the current payload', () => {
 
   it('does not invent a role the payload never shipped', () => {
     expect(resolveToken(JSON_FIXTURE, 'radius.container').found).toBe(false)
-    expect(resolveToken(JSON_FIXTURE, 'icon.control-md').found).toBe(false)
+    expect(resolveToken(JSON_FIXTURE, 'icon.medium').found).toBe(false)
   })
 
   it('list_icons returns the weight and the size scale', async () => {
     const json = published()
     const icons = await callTool('list_icons', { project: 'live' }, async () => json) as {
       weight: string
-      sizes: { roles: Record<string, string>; scale: Record<string, string> }
+      sizes: {
+        roles: Record<string, string>
+        scale: Record<string, string>
+        viewports?: { mobile?: Record<string, string> }
+      }
       themes: Record<string, { weight?: string }>
     }
     expect(icons.weight).toBeTruthy()
-    expect(icons.sizes.roles['control-md']).toBeTruthy()
-    expect(icons.sizes.scale.md).toMatch(/px$/)
+    expect(icons.sizes.scale.small).toBe('24px')
+    expect(icons.sizes.scale.medium).toBe('32px')
+    expect(icons.sizes.scale.large).toBe('40px')
+    expect(icons.sizes.viewports?.mobile?.small).toBe(icons.sizes.scale.small)
     expect(icons.themes.light?.weight ?? icons.themes[json.colors.themeOrder?.[0] ?? '']?.weight).toBeTruthy()
   })
 })

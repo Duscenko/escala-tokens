@@ -2,7 +2,7 @@
 // Markdown so designers can copy a single slice into an AI prompt or codebase.
 // Whole-system exports live in tokenGenerator.ts + exporters.ts; this is scoped.
 
-import { ICON_CONTROL_RATIO, ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, ICON_SIZE_SCALE, ICON_SIZE_STEPS, iconSizeCssVars, resolveIconRoles } from './iconSizing'
+import { ICON_MIN_WEIGHT_PX, ICON_ROLE_DESCRIPTION, ICON_ROLES, ICON_SIZE_PX, iconSizeCssVars, iconSizePx } from './iconSizing'
 import chroma from 'chroma-js'
 import { toneLabel, darkShadowMap, generateAlphaScale, BLACK_ALPHA_SCALE, WHITE_ALPHA_SCALE } from './colorUtils'
 import { resolveFamilyPages } from './colorActions'
@@ -320,8 +320,8 @@ function cssLines(section: SectionKey, store: Store, cf: ColorFormat, opts: Sect
       `/* Install: npm i ${ai.npm} */`,
     ]
     if (store.customIcons.length) lines.push(`/* Custom icons: ${store.customIcons.map((i) => i.name).join(', ')} */`)
-    lines.push('/* Icon sizes — control roles follow the control heights (Sizes) */')
-    lines.push(...iconSizeCssVars(store.sizes, store.typography.sizes?.['text-md']).map((l) => l.trim()))
+    lines.push('/* Icon sizes — small 24 · medium 32 · large 40. Same px on Desktop, Tablet and Mobile. */')
+    lines.push(...iconSizeCssVars().map((l) => l.trim()))
     return lines
   }
   if (section === 'gradients') {
@@ -679,17 +679,16 @@ function mdFor(section: SectionKey, store: Store, cf: ColorFormat, opts: Section
     const extra = store.customIcons.length
       ? `\n- **Custom:** ${store.customIcons.map((i) => i.name).join(', ')}`
       : ''
-    const icon = resolveIconRoles(store.sizes, store.typography.sizes?.['text-md'])
     const sizesMd = [
       '\n\n## Icon sizes',
       '',
-      `Scale: ${ICON_SIZE_STEPS.map((s) => `\`icon-size-${s}\` ${ICON_SIZE_SCALE[s]}px`).join(' · ')}.`,
+      'Three sizes. Desktop, Tablet and Mobile use the same px — a control\'s height does not step, and the glyph holds with it.',
       '',
-      '| Role | Size | Use |',
-      '|---|---|---|',
-      ...ICON_ROLES.map((r) => `| \`--icon-${r}\` | ${ICON_SIZE_SCALE[icon[r]]}px (\`icon-size-${icon[r]}\`) | ${ICON_ROLE_DESCRIPTION[r]} |`),
+      '| Role | Desktop | Tablet | Mobile | Use |',
+      '|---|---|---|---|---|',
+      ...ICON_ROLES.map((r) => `| \`--icon-${r}\` | ${iconSizePx(r, 'desktop')}px | ${iconSizePx(r, 'tablet')}px | ${iconSizePx(r, 'mobile')}px | ${ICON_ROLE_DESCRIPTION[r]} |`),
       '',
-      `Control roles are DERIVED: control height × ${ICON_CONTROL_RATIO}, snapped to the scale — a bigger control gets a bigger icon automatically. Below ${ICON_MIN_WEIGHT_PX}px, thin and light icons render at regular weight so they stay legible.`,
+      `Each aliases a Dimension primitive (\`--icon-small: var(--dimension-${ICON_SIZE_PX.small})\`). Below ${ICON_MIN_WEIGHT_PX}px, thin and light anatomy glyphs render at regular weight.`,
     ].join('\n')
     return `${ctx.markdown}${extra}${sizesMd}`
   }

@@ -3,7 +3,7 @@
 // component docs render from the exact same resolved values. Fallbacks cover
 // empty semantic tokens so previews never render with undefined colors.
 
-import { ICON_CONTROL_RATIO, ICON_SIZE_SCALE, iconRolePx, resolveIconRoles, snapIconStep, type IconRole } from './iconSizing'
+import { anatomyIconPx, ICON_SIZE_PX, iconRoleForControlStep, iconRoleForHeight, type IconRole } from './iconSizing'
 import { useEffect, type CSSProperties } from 'react'
 import { useDesignStore, DEFAULT_GRAY_DARK_SCALE } from '../store/useDesignStore'
 import type { PreviewTokens } from '../components/preview/ButtonPreview'
@@ -489,24 +489,28 @@ export function spacingRoleOf(t: PreviewTokens, role: string, fallback = ''): st
  * Anatomy that is already ON the scale (2 · 4 · 6 · 8 · 10 · 12 · 16 · 20 · 24 ·
  * 32) comes back byte-identical at the default 4px base.
  */
-/** An icon ROLE's px for this system — `control-md`, `inline`, `feature` —
- *  derived from its control heights and body text (`lib/iconSizing`). */
-export function iconRoleOf(t: PreviewTokens, role: IconRole): number {
-  return iconRolePx(resolveIconRoles(t.sizes, t.typography?.sizes?.['text-md']), role)
+/** An icon size's px — `small` 24 · `medium` 32 · `large` 40. The same number
+ *  in every viewport (`lib/iconSizing`). */
+export function iconRoleOf(_t: PreviewTokens, role: IconRole): number {
+  return ICON_SIZE_PX[role]
 }
 
-/** The icon for a control of a given height — height × ratio, snapped to the
- *  icon scale. For controls that size themselves (an Input's own `h`). */
+/** The icon size for a control of a given height — one of 24 / 32 / 40, picked
+ *  so the glyph stays inside the control. */
 export function iconForControl(height: number | string): number {
   const h = typeof height === 'number' ? height : parseFloat(height)
-  return ICON_SIZE_SCALE[snapIconStep((Number.isFinite(h) ? h : 40) * ICON_CONTROL_RATIO)]
+  return ICON_SIZE_PX[iconRoleForHeight(Number.isFinite(h) ? h : 40)]
 }
 
-/** A specimen's literal icon size snapped onto the icon scale — the icon twin of
- *  `spaceOf`. Anatomy, not a role: it doesn't follow a control, but it can no
- *  longer land between the steps (13, 15, 17px) the way the literals did. */
+/** The icon size a control step (sm / md / lg / xl) uses. */
+export function iconForControlStep(step: string): number {
+  return ICON_SIZE_PX[iconRoleForControlStep(step)]
+}
+
+/** A specimen's literal icon size snapped onto the anatomy ladder — a chevron
+ *  or a close mark, not one of the three published sizes. */
 export function iconOf(px: number): number {
-  return ICON_SIZE_SCALE[snapIconStep(px)]
+  return anatomyIconPx(px)
 }
 
 export function spaceOf(t: PreviewTokens, px: number): string {

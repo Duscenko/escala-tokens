@@ -456,12 +456,10 @@ function w3cSection(key: WizardCollection, full: TokenJSON): W3CNode {
         node.aiSource = token(ai.repo, 'string')
         node.aiPackage = token(ai.npm, 'string')
       }
-      // Sizes: the scale aliases Dimension primitives, each role aliases the
-      // scale step its control resolves to — same chain as the CSS and Figma.
+      // Three sizes, each a Dimension primitive. The same px in every viewport.
       const sizes = full.icons.sizes
-      if (sizes) {
-        node.size = Object.fromEntries(Object.entries(sizes.scale).map(([k, v]) => [k, lengthToken(v)])) as W3CNode
-        node.role = Object.fromEntries(Object.entries(sizes.roles).map(([role, step]) => [role, token(`{icon.size.${step}}`, 'dimension')])) as W3CNode
+      if (sizes?.scale) {
+        for (const [role, px] of Object.entries(sizes.scale)) node[role] = lengthToken(px)
       }
       const glyphs: Record<string, W3CNode> = {}
       for (const concept of W3C_TEST_GLYPHS) {

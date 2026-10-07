@@ -12,10 +12,16 @@ export interface TypeRoleAlias {
   weight: string
 }
 
-/** Icon scale (`16px`) plus roles (`control-md` → a scale step). */
+/** Three icon sizes (`small` 24px · `medium` 32px · `large` 40px).
+ *  `viewports` repeats them per Desktop · Tablet · Mobile; they hold. */
 export interface IconSizeBlock {
   scale?: Record<string, string>
   roles?: Record<string, string>
+  viewports?: {
+    desktop?: Record<string, string>
+    tablet?: Record<string, string>
+    mobile?: Record<string, string>
+  }
   minWeight?: { belowPx?: number; weight?: string }
 }
 

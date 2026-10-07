@@ -2456,8 +2456,8 @@ export default function ThemeQuickSettingsRail({
               onChange={(value) => commit('Icon weight updated', (themeKey) => setIconWeight(themeKey, value))}
             />
           </SettingItem>
-          <SettingItem label="Icon sizes" hint="Each control's icon is derived from its height (× 0.42, snapped to 12 · 14 · 16 · 20 · 24 · 32), so Spacing modes resize icons too. Below 16px, thin and light icons render at regular weight.">
-            <IconSizeLadder sizes={sizes} bodySize={typography.sizes?.['text-md']} weight={iconWeight ?? 'regular'} />
+          <SettingItem label="Icon sizes" hint="Small 24, medium 32, large 40. The same size on Desktop, Tablet and Mobile — a control's height does not step, so the glyph holds with it.">
+            <IconSizeLadder weight={iconWeight ?? 'regular'} />
           </SettingItem>
         </EditionCard>
         )}

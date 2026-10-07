@@ -45,7 +45,7 @@ export async function callTool(
         throw new Error(
           `Unknown token "${resolved.query}" in project "${String(a.project)}"` +
             (v ? ` (published schemaVersion ${v})` : '') +
-            '. Use a catalogue id (action.primary.default), a role (radius.container, spacing.gap-tight, icon.control-md, type.body-md) or a Figma name (Action/primary/default, Radius/role/container). ' +
+            '. Use a catalogue id (action.primary.default), a role (radius.container, spacing.gap-tight, icon.medium, type.body-md) or a Figma name (Action/primary/default, Radius/role/container). ' +
             'Do not invent a role — but if you expected this token, the published system may predate it: re-publish from the configurator (Sync now) and retry.',
         )
       }

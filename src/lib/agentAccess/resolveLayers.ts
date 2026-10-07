@@ -384,30 +384,34 @@ function radiusToken(json: TokenJSON, step: string): ResolvedToken | null {
   return hit(`radius.component-${step}`, primitiveKey(sample), primitiveCss(sample), packed)
 }
 
+function iconPxAt(
+  bag: ThemeBag,
+  role: string,
+  vp: Viewport,
+): string | undefined {
+  return bag.iconSizes?.viewports?.[vp]?.[role]
+    ?? bag.iconSizes?.scale?.[bag.iconSizes?.roles?.[role] ?? '']
+    ?? bag.iconSizes?.scale?.[role]
+}
+
 function iconSize(json: TokenJSON, step: string): ResolvedToken | null {
   const rows: Record<string, Record<Viewport, string>> = {}
   for (const bag of bagsOf(json)) {
-    const px = bag.iconSizes?.scale?.[step]
+    const px = iconPxAt(bag, step, 'desktop')
     if (!px) continue
-    rows[bag.theme] = { desktop: px, tablet: px, mobile: px }
+    rows[bag.theme] = {
+      desktop: px,
+      tablet: iconPxAt(bag, step, 'tablet') ?? px,
+      mobile: iconPxAt(bag, step, 'mobile') ?? px,
+    }
   }
   const packed = pack(rows, 'desktop', (theme) => dimensionAlias(rows[theme]?.desktop))
   if (!packed) return null
-  const sample = Object.values(rows)[0]?.desktop
-  return hit(`icon.size.${step}`, primitiveKey(sample), `var(--icon-size-${step})`, packed)
+  return hit(`icon.${step}`, `Icon/role/${step}`, `var(--icon-${step})`, packed)
 }
 
 function iconRole(json: TokenJSON, role: string): ResolvedToken | null {
-  const rows: Record<string, Record<Viewport, string>> = {}
-  for (const bag of bagsOf(json)) {
-    const step = bag.iconSizes?.roles?.[role]
-    const px = step ? bag.iconSizes?.scale?.[step] : undefined
-    if (!step || !px) continue
-    rows[bag.theme] = { desktop: px, tablet: px, mobile: px }
-  }
-  const packed = pack(rows, 'desktop', (theme) => dimensionAlias(rows[theme]?.desktop))
-  if (!packed) return null
-  return hit(`icon.${role}`, `Icon/role/${role}`, `var(--icon-${role})`, packed)
+  return iconSize(json, role)
 }
 
 interface TypeAlias {

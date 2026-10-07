@@ -12,8 +12,8 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { motion, useReducedMotion } from 'framer-motion'
 import chroma from 'chroma-js'
 import type { PreviewTokens } from '../../preview/ButtonPreview'
-import { effectiveIconWeight, iconRolePx, resolveIconRoles, type IconRole } from '../../../lib/iconSizing'
-import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconOf } from '../../../lib/previewTokens'
+import { effectiveIconWeight, ICON_ROLES, ICON_SIZE_PX, type IconRole } from '../../../lib/iconSizing'
+import { radiusRoleOf, nestedRadiusOf, weightOf, shadowOf, alphaOf, tintOf, paddingOf, cardSurfaceStyle, overlaySurfaceOf, overlaySurfaceStyle, archTokenOf, sizeOf, sizeRoleOf, selectorOf, inputSurfaceOf, selectedSurfaceOf, focusBorderOf, borderHoverOf, borderCriticalOf, linkTextOf, statusSoftFillOf, typeStyleOf, strokeRoleOf, spacingRoleOf, spaceOf, iconRoleOf, iconForControl, iconForControlStep, iconOf } from '../../../lib/previewTokens'
 import { withAlpha } from '../../../lib/colorUtils'
 import { COMPONENTS, type ComponentDef } from '../../../lib/componentCatalogue'
 import { PHOSPHOR_CORE, PHOSPHOR_CORE_COMPONENT } from '../../../lib/iconLibraries'
@@ -516,33 +516,24 @@ const ICON_STYLE_OVERVIEW: IconConcept[] = [
 ]
 
 /**
- * The icon-size ladder: one control per size (sm … xl), each at its true height
- * with the icon its height derives (`icon-control-*`) inside, at the theme's
- * weight — so the min-weight rule shows too: a light theme's 14px icon renders
- * regular. Reads the live `sizes`, so a Spacing mode moves it.
+ * The three icon sizes — small 24, medium 32, large 40 — at the theme's
+ * weight. The same px on every viewport.
  */
-export function IconSizeLadder({ sizes, bodySize, weight = 'regular' }: {
-  sizes: Record<string, string> | undefined
-  bodySize: string | undefined
-  weight?: PhosphorWeight
-}) {
-  const steps = ['sm', 'md', 'lg', 'xl'] as const
-  const roles = resolveIconRoles(sizes, bodySize)
+export function IconSizeLadder({ weight = 'regular' }: { weight?: PhosphorWeight }) {
   return (
     <PhosphorWeightProvider weight={weight}>
-      <div className="flex items-end justify-between gap-1.5" role="img" aria-label="Icon size per control size">
-        {steps.map((step) => {
-          const h = parseFloat(sizes?.[step] ?? '') || 40
-          const px = iconRolePx(roles, `control-${step}`)
+      <div className="flex items-end justify-between gap-1.5" role="img" aria-label="Icon sizes">
+        {ICON_ROLES.map((role) => {
+          const px = ICON_SIZE_PX[role]
           return (
-            <div key={step} className="flex min-w-0 flex-col items-center gap-1">
+            <div key={role} className="flex min-w-0 flex-col items-center gap-1">
               <span
                 className="flex items-center justify-center rounded-md border border-line bg-surface text-fg"
-                style={{ height: h, width: h }}
+                style={{ height: px + 16, width: px + 16 }}
               >
-                <PreviewIcon concept="search" size={px} />
+                <PreviewIcon concept="home" size={px} />
               </span>
-              <span className="text-micro tabular-nums text-fg-faint">{`${step} · ${px}`}</span>
+              <span className="text-micro tabular-nums text-fg-faint">{`${role} · ${px}`}</span>
             </div>
           )
         })}
@@ -644,9 +635,9 @@ function ButtonSpecimen({ t, v, icons, w, children }: SpecimenProps) {
   const style = v.Style ?? 'Solid'
   const state = v.State ?? 'Default'
   const sz = BUTTON_SIZE_SPECS[v.Size ?? 'MD'] ?? BUTTON_SIZE_SPECS.MD
-  // The icon follows the BUTTON's height (`icon-control-<size>`), so a
-  // Compact / Airy system resizes it with no second decision.
-  const iconPx = iconRoleOf(t, `control-${sz.sizeKey}` as IconRole)
+  // One of the three icon sizes, picked from the button's own size step
+  // (sm → 24, md → 32, lg/xl → 40) so the glyph stays inside the control.
+  const iconPx = iconForControlStep(sz.sizeKey)
   const disabled = state === 'Disabled'
   const loading = state === 'Loading'
   const slots = ICON_SLOTS.Button
@@ -1116,12 +1107,13 @@ function ToastSpecimen({ t, v, w, children, elev }: SpecimenProps) {
 }
 
 // ── Icon (Size) ───────────────────────────────────────────────────────────────
-// The home glyph at each control's icon role — the same `icon-control-*`
-// tokens the Figma `Icon` set binds its width and height to.
+// Home glyph at small / medium / large — the same `Icon/role/*` tokens the
+// Figma Icon set binds its width and height to. Same px in every viewport.
 
 function IconSpecimen({ t, v }: { t: PreviewTokens; v: AxisValues }) {
-  const step = ((v.Size ?? 'MD').toLowerCase()) as 'sm' | 'md' | 'lg' | 'xl'
-  return <PreviewIcon concept="home" size={iconRoleOf(t, `control-${step}`)} color={t.neutralText} />
+  const step = (v.Size ?? 'MD').toLowerCase()
+  const role: IconRole = step === 'sm' ? 'small' : step === 'lg' || step === 'xl' ? 'large' : 'medium'
+  return <PreviewIcon concept="home" size={iconRoleOf(t, role)} color={t.neutralText} />
 }
 
 // ── Spinner (Size) ────────────────────────────────────────────────────────────
@@ -3014,7 +3006,10 @@ export function snippetFor(def: ComponentDef, v: AxisValues, icons?: IconOpts): 
       return `<Toast\n  status="${low(v.Status) || 'success'}"\n  message="Changes saved."\n  action={{ label: 'Undo', onClick: undo }}\n/>`
     case 'Icon':
       // Phosphor's `size` is an SVG attribute and can't read a CSS var — size by style.
-      return `<House aria-hidden style={{ width: 'var(--icon-control-${low(v.Size) || 'md'})', height: 'var(--icon-control-${low(v.Size) || 'md'})' }} />`
+    case 'Icon': {
+      const role = (v.Size ?? 'MD') === 'SM' ? 'small' : (v.Size ?? 'MD') === 'LG' ? 'large' : 'medium'
+      return `<House aria-hidden style={{ width: 'var(--icon-${role})', height: 'var(--icon-${role})' }} />`
+    }
     case 'Spinner':
       return `<Spinner size="${low(v.Size) || 'md'}" label="Loading…" />`
     case 'Divider':
