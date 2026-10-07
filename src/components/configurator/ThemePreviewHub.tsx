@@ -8,7 +8,7 @@ import { SystemCollage } from '../preview/artefacts/SystemCollage'
 import { COLLAGE_TILE_COUNT } from '../../lib/randomTheme'
 import { InspectorModeProvider, InspectorOverlay } from '../preview/artefacts/TokenInspector'
 import type { PreviewTokens } from '../preview/ButtonPreview'
-import ThemeQuickSettingsRail, { isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
+import ThemeQuickSettingsRail, { SaveStateBadge, ThemeNameField, useLibrarySaved, isQuickPanelFoundation, PLATFORM_QUICK_PANELS, QUICK_SETTINGS_ID, type QuickPanelFoundation } from './ThemeQuickSettingsRail'
 import ThemeContrastGrid from './ThemeContrastGrid'
 import SemanticTokenDrawer from './SemanticTokenGroups'
 import GitHubConnectView from './GitHubConnectView'
@@ -273,6 +273,10 @@ function withAccentPreview(tokens: PreviewTokens, accentPreview: string | null):
 /** Breathing room between the docked drawer's edge and the first artefact —
  *  without it the board butts straight against the panel. */
 const DRAWER_GUTTER = 24
+/** ONE horizontal inset for the board and the header above it, so the theme
+ *  name, the header's controls and the bento's outer edges sit on the same
+ *  two vertical lines. They were 13.5px (header) against 22.5–31.5px (board). */
+const CANVAS_INSET = 'px-5'
 
 function ArtefactsView({
   previewTheme, previewPlatform, accentPreview, stylePreview, drawerOpen,
@@ -327,6 +331,9 @@ function ArtefactsView({
     const measure = () => {
       const el = canvasRef.current
       if (!el) return
+      // Docked in the right-hand inspector, Token Details never crosses the
+      // canvas — ceding width there slid the whole board out of view.
+      if (document.getElementById(QUICK_SETTINGS_ID)?.closest('#workspace-inspector')) { setDockInset(0); return }
       const rail = document.getElementById(QUICK_SETTINGS_ID)?.getBoundingClientRect()
       const drawerLeft = rail && rail.left >= 0 ? rail.left : 0
       const overlap = drawerLeft + PANEL_W - el.getBoundingClientRect().left
@@ -343,12 +350,16 @@ function ArtefactsView({
       window.removeEventListener('resize', measure)
     }
   }, [editingRole])
-  // Both can be open at once; the wider claim wins.
-  const padLeft = Math.max(drawerOpen ? PANEL_W : 0, dockInset)
+  // Both can be open at once; the wider claim wins. Neither claims anything
+  // when the quick settings live in the right-hand inspector: the picker and
+  // Token Details then open IN that column and never cross the board.
+  const railInInspector = typeof document !== 'undefined'
+    && Boolean(document.getElementById(QUICK_SETTINGS_ID)?.closest('#workspace-inspector'))
+  const padLeft = railInInspector ? 0 : Math.max(drawerOpen ? PANEL_W : 0, dockInset)
   return (
     <div
       ref={canvasRef}
-      className="@container flex-1 min-w-0 min-h-0 overflow-y-auto px-5 py-5 @min-[820px]:px-7 @min-[820px]:py-6 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none"
+      className={`@container flex-1 min-w-0 min-h-0 overflow-y-auto ${CANVAS_INSET} py-5 transition-[padding-left] duration-200 ease-out motion-reduce:transition-none`}
       style={padLeft ? { paddingLeft: padLeft } : undefined}
     >
       <div className="mx-auto w-full">
@@ -466,6 +477,7 @@ export default function ThemePreviewHub({
   const { t } = useI18n()
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
+  const librarySaved = useLibrarySaved()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -669,7 +681,7 @@ export default function ThemePreviewHub({
                   sits top-left; Inspect, Figma sync and Docs stay on the right.
                   Light/Dark lives on Color edition's header so the ramps and
                   the board cannot disagree. */}
-              <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-line px-3" style={{ height: INSPECTOR_TABS_H }}>
+              <div className={`flex flex-shrink-0 items-center justify-between gap-3 border-b border-line ${CANVAS_INSET}`} style={{ height: INSPECTOR_TABS_H }}>
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
                 ) : docsOpen ? (
@@ -678,11 +690,15 @@ export default function ThemePreviewHub({
                     onBack={() => onDocsOpenChange(false)}
                   />
                 ) : (
-                  <span className="min-w-0 flex flex-col">
-                    <span className="truncate text-ui font-semibold text-fg">{hubViewLabel}</span>
-                    {/* The theme's own brand solid, like the armed Inspect toggle beside it —
-                        the board is the theme's page, so its marker is the theme's accent. */}
-                    <span aria-hidden className="mt-1 h-[3px] w-6 rounded-full" style={{ background: boardCanvasTokens.brandSolid }} />
+                  // The board's title is the THEME, editable in place, plus whether
+                  // it is saved — the tab strip already says this is Theme.
+                  <span className="flex min-w-0 items-center gap-2 -ml-2">
+                    <ThemeNameField
+                      key={previewTheme}
+                      previewTheme={previewTheme}
+                      readOnlyLabel={needsMyTheme ? hubViewLabel : stylePreview?.preset.label}
+                    />
+                    {!needsMyTheme && !stylePreview && <SaveStateBadge saved={librarySaved} />}
                   </span>
                 )}
                 <div className="flex flex-shrink-0 items-center gap-2">

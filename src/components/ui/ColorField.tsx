@@ -41,11 +41,30 @@ function toHex({ h, s, v, a }: HSVA): string {
 }
 
 /** Fractional position (0–1) of a pointer event within an element's box. */
+// The thumb is `w-3.5 h-3.5` = 0.875rem. Its CENTRE travels the track inset by
+// half of that on each end, so at 0 % and 100 % the ball sits fully inside the
+// bar instead of hanging half off it (the opacity thumb used to poke past the
+// panel's content edge). `thumbStyle` places it and `ratioIn` maps the pointer
+// onto the same travel, so the ball stays under the cursor along the whole bar.
+const THUMB_REM = 0.875
+function thumbPx() {
+  return THUMB_REM * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+}
+/** `left`/`top` for a thumb whose value is `ratio` (0–1) along its axis. */
+const along = (ratio: number) => `calc(${THUMB_REM / 2}rem + ${ratio} * (100% - ${THUMB_REM}rem))`
+const THUMB_CLASS = 'absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow pointer-events-none'
+// Exact centring (translate, not `-ml-1.5`): the old negative margin was 6.75px
+// against a 7.875px half-thumb, so the ball sat ~1px right/low of its bar.
+const THUMB_CENTER = 'translate(-50%, -50%)'
+
 function ratioIn(el: HTMLElement, clientX: number, clientY: number) {
   const r = el.getBoundingClientRect()
+  const t = thumbPx()
+  const axis = (pos: number, size: number) =>
+    size > t ? Math.min(1, Math.max(0, (pos - t / 2) / (size - t))) : 0.5
   return {
-    x: Math.min(1, Math.max(0, (clientX - r.left) / r.width)),
-    y: Math.min(1, Math.max(0, (clientY - r.top) / r.height)),
+    x: axis(clientX - r.left, r.width),
+    y: axis(clientY - r.top, r.height),
   }
 }
 
@@ -209,8 +228,8 @@ export function ColorPickerPanel({
         <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${svLight}, transparent)` }} />
         <div className="absolute inset-0" style={{ background: `linear-gradient(to top, #000, transparent)` }} />
         <span
-          className="absolute w-3.5 h-3.5 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow pointer-events-none"
-          style={{ left: `${hsva.s * 100}%`, top: `${(1 - hsva.v) * 100}%`, background: chroma.hsv(hsva.h, hsva.s, hsva.v).hex() }}
+          className={THUMB_CLASS}
+          style={{ left: along(hsva.s), top: along(1 - hsva.v), transform: THUMB_CENTER, background: chroma.hsv(hsva.h, hsva.s, hsva.v).hex() }}
         />
       </div>
 
@@ -224,8 +243,8 @@ export function ColorPickerPanel({
         aria-label="Hue"
       >
         <span
-          className="absolute top-1/2 w-3.5 h-3.5 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow pointer-events-none"
-          style={{ left: `${(hsva.h / 360) * 100}%`, background: hueColor }}
+          className={`${THUMB_CLASS} top-1/2`}
+          style={{ left: along(hsva.h / 360), transform: THUMB_CENTER, background: hueColor }}
         />
       </div>
 
@@ -243,8 +262,8 @@ export function ColorPickerPanel({
           style={{ background: `linear-gradient(to right, transparent, ${chroma.hsv(hsva.h, hsva.s, hsva.v).hex()})` }}
         />
         <span
-          className="absolute top-1/2 w-3.5 h-3.5 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow pointer-events-none"
-          style={{ left: `${hsva.a * 100}%`, background: hex }}
+          className={`${THUMB_CLASS} top-1/2`}
+          style={{ left: along(hsva.a), transform: THUMB_CENTER, background: hex }}
         />
       </div>
 

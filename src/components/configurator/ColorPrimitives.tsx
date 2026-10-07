@@ -31,8 +31,9 @@ import {
 } from '../../lib/colorActions'
 import {
   SWATCH, CHECKER, ScaleRow, usePopoverPlacement, TokenDetailsModal, DeleteThemeModal,
-  curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL,
+  curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL, THEME_BAND_H,
 } from './colorControls'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import {
@@ -48,6 +49,9 @@ import { buildFamilyExport, buildAlphaFamilyExport, ALPHA_EXPORT_FORMATS, FAMILY
 import { appearanceOrder, type ThemeAppearance } from '../../lib/themeModes'
 import { TABLE_HEADER_PX, tableHeaderClass, tableRowClass } from './tableChrome'
 import {
+  CHROME_CONTROL_SHELL,
+  SEGMENT_ACTIVE,
+  SEGMENT_INACTIVE,
   measureShellDrawerInsets,
   SHELL_DRAWER_BOTTOM_FALLBACK,
   SHELL_DRAWER_TOP_FALLBACK,
@@ -1298,6 +1302,7 @@ export default function ColorPrimitives({
   const [editFamily, setEditFamily] = useState<string | null>(null)
   const editRef = useRef<HTMLDivElement>(null)
   const editPopRef = useRef<HTMLDivElement>(null)
+  const inInspector = useInInspector()
   const navRef = useRef<HTMLElement>(null)
 
   // Which appearance the family-edit drawer's picker reads against. The base
@@ -1468,53 +1473,71 @@ export default function ColorPrimitives({
     ? neutralFromBrand(pickerThemeAccent, neutralTint)
     : editingFamily?.base ?? ''
   const editingPickerAppearance = editingNeutralCoordinated ? activeAppearance : editAppearance
-  const editPortal = editingFamily
-    ? createPortal(
+  // With the Generator's inspector mounted, the family editor opens IN it —
+  // covering the Collections / Groups panel it was opened from, like Token
+  // Details and Theme preview's colour pickers. The viewport-edge drawer
+  // floated half over the inspector with its own radius and shadow.
+  const editDocked = inInspector
+  const editDrawer = editingFamily ? (
         <AnimatePresence>
           <motion.div
             ref={editPopRef}
             key={editingFamily.key}
-            initial={{ opacity: 0, x: 16 }}
+            initial={{ opacity: 0, x: editDocked ? 8 : 16 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 16 }}
+            exit={{ opacity: 0, x: editDocked ? 8 : 16 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             role="dialog"
             aria-label={`Edit ${editingFamily.label} color`}
-            style={{
+            style={editDocked ? { position: 'absolute', inset: 0 } : {
               position: 'fixed',
               right: 0,
               top: drawerInsets.top,
               bottom: drawerInsets.bottom,
               width: Math.min(DOCK_W, Math.max(280, window.innerWidth - 16)),
             }}
-            className="z-50 rounded-l-2xl border border-r-0 border-line bg-app shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden"
+            className={editDocked
+              ? 'z-20 bg-side-panel flex flex-col overflow-hidden'
+              : 'z-50 rounded-l-2xl border border-r-0 border-line bg-app shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden'}
           >
-            <header className="flex items-center gap-2 px-4 h-[52px] border-b border-line flex-shrink-0">
+            <header
+              className={`flex items-center gap-2 border-b border-line flex-shrink-0 ${editDocked ? 'px-3' : 'px-4 h-[52px]'}`}
+              style={editDocked ? { height: THEME_BAND_H } : undefined}
+            >
               <span className={SWATCH} style={{ backgroundColor: editingFamilyPickerValue }} />
               <span className="flex-1 min-w-0 truncate text-sm font-semibold text-fg">{editingFamily.label}</span>
               {/* Theme Preview's neutral picker follows the hub appearance with
                   no local toggle — match that for the previewed theme's gray. */}
               {!editingNeutralCoordinated && (
-              <div className="flex flex-shrink-0 rounded-md border border-line overflow-hidden" role="group" aria-label="Preview appearance">
-                {(['light', 'dark'] as const).map((mode) => {
-                  const on = editAppearance === mode
-                  const bg = mode === 'dark' ? darkBackground : pageBackground
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setEditAppearance(mode)}
-                      aria-pressed={on}
-                      className={`px-2 py-1 text-mini font-medium capitalize transition-colors ${on ? '' : 'bg-surface text-fg-muted hover:text-fg'}`}
-                      style={on ? { backgroundColor: bg, color: readableInk(bg) } : undefined}
-                    >
-                      {mode}
-                    </button>
-                  )
-                })}
+              // The app's one segmented switch (same shell and pill as Color
+              // edition's Light | Dark), not a bespoke pair painted in the
+              // theme's page colour — that read as a stray label, not a control.
+              <div
+                className={`flex h-8 flex-shrink-0 items-center rounded-lg p-0.5 ${CHROME_CONTROL_SHELL}`}
+                role="group"
+                aria-label="Appearance being edited"
+                title="Which appearance of this family you are editing"
+              >
+                {(['light', 'dark'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setEditAppearance(mode)}
+                    aria-pressed={editAppearance === mode}
+                    className={`flex h-7 items-center justify-center gap-1 rounded-md px-2 text-caption transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                      editAppearance === mode ? SEGMENT_ACTIVE : SEGMENT_INACTIVE
+                    }`}
+                  >
+                    {mode === 'light' ? 'Light' : 'Dark'}
+                  </button>
+                ))}
               </div>
               )}
-              <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamilyPickerValue.toUpperCase()}</span>
+              {/* In the 288px inspector the hex cost the family its NAME
+                  ("Pri…"); the picker's own hex field already shows it. */}
+              {!editDocked && (
+                <span className="text-caption font-mono tabular-nums text-fg-faint flex-shrink-0">{editingFamilyPickerValue.toUpperCase()}</span>
+              )}
               <button
                 type="button"
                 aria-label="Close"
@@ -1527,7 +1550,7 @@ export default function ColorPrimitives({
                 </svg>
               </button>
             </header>
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always px-4 pt-5 pb-4">
+            <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-always ${editDocked ? 'px-3 pt-3 pb-4' : 'px-4 pt-5 pb-4'}`}>
               <ColorPickerPanel
                 value={editingFamilyPickerValue}
                 onChange={(hex) => changeFamilyBase(editingFamily, hex)}
@@ -1544,9 +1567,10 @@ export default function ColorPrimitives({
               />
             </div>
           </motion.div>
-        </AnimatePresence>,
-        document.body,
-      )
+        </AnimatePresence>
+      ) : null
+  const editPortal = editDrawer
+    ? (editDocked ? <InspectorPortal>{editDrawer}</InspectorPortal> : createPortal(editDrawer, document.body))
     : null
 
   // ── Token Details dialog (one tone of the active family) ──

@@ -973,7 +973,12 @@ export function SystemCollage({
     ) : (
     // Room for unscaled elevation to paint into the scrollport padding —
     // without it Strong's blur reads clipped against the canvas edge.
-    <div ref={boardRef} className="w-full" style={{ padding: 10, margin: -10 }}>
+    // `width: calc(100% + 20px)`, not `w-full`: under border-box the 10px
+    // padding sits INSIDE a 100% width, so the -10px margin only shifted the
+    // box left — the board measured 20px narrow and hugged the left edge
+    // (22.5px inset left, 42.5px right). Growing the box by its own padding
+    // keeps the content box exactly the canvas's, so the board centres.
+    <div ref={boardRef} style={{ width: 'calc(100% + 20px)', padding: 10, margin: -10 }}>
       <div className="mx-auto flex flex-col" style={{ width: BOARD_COLUMNS * display + (BOARD_COLUMNS - 1) * gutterPx, gap: gutter }}>
         <div className="flex items-stretch" style={{ gap: gutter }}>
           {colorStyle(true, true)}

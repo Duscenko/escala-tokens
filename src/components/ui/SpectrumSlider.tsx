@@ -66,10 +66,19 @@ export default function SpectrumSlider({
     return `${stop} ${(i / (STOPS - 1)) * 100}%`
   }).join(', ')
 
+  // The thumb's CENTRE travels the bar inset by half its width (1rem), so at
+  // either end the ring sits fully inside the bar — the same travel the native
+  // range thumbs beside it (Neutral tint, Contrast) have. The pointer is mapped
+  // onto that travel, over the track's PADDING box (`clientLeft` / `clientWidth`,
+  // i.e. inside its 1px border), so the ring stays under the cursor.
   const hueAt = useCallback((clientX: number) => {
-    const rect = trackRef.current?.getBoundingClientRect()
-    if (!rect || rect.width === 0) return null
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    const el = trackRef.current
+    if (!el) return null
+    const rect = el.getBoundingClientRect()
+    const thumbPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const travel = el.clientWidth - thumbPx
+    if (travel <= 0) return null
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left - el.clientLeft - thumbPx / 2) / travel))
     return Math.round(ratio * 360) % 360
   }, [])
 
@@ -145,7 +154,7 @@ export default function SpectrumSlider({
         // as it grows. Same rule as the Slider specimen's knob.
         className="pointer-events-none absolute top-1/2 h-4 w-4 rounded-full border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.35)]"
         style={{
-          left: `${(hue / 360) * 100}%`,
+          left: `calc(0.5rem + ${hue / 360} * (100% - 1rem))`,
           background: thumb,
           transform: `translate(-50%, -50%) scale(${dragging ? 1.15 : 1})`,
           transition: dragging ? undefined : 'transform 0.12s ease-out',

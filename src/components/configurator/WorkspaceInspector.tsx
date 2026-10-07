@@ -75,11 +75,16 @@ export default function WorkspaceInspector({
       // whole column is one surface, so `--tab-bar` resolves to the panel's.
       style={{ width: INSPECTOR_WIDTH, '--tab-bar': 'var(--side-panel)', '--color-tab-bar': 'var(--side-panel)' } as CSSProperties}
     >
-      <div className="flex flex-shrink-0 items-center px-3" style={{ height: INSPECTOR_TABS_H }}>
+      <div
+        className="flex flex-shrink-0 items-center"
+        // The strip is 2.5rem tall (h-8 tabs + p-1). The band's left/right inset
+        // equals the space left above and below it, so it sits evenly in the band.
+        style={{ height: INSPECTOR_TABS_H, paddingInline: `calc((${INSPECTOR_TABS_H}px - 2.5rem) / 2)` }}
+      >
         <div
           role="tablist"
           aria-label={t('Theme workspace')}
-          className="inline-flex w-fit max-w-full shrink-0 gap-0.5 rounded-xl bg-chip-rest p-1"
+          className="flex w-full min-w-0 gap-0.5 rounded-xl bg-chip-rest p-1"
           onKeyDown={(event) => {
             const current = TABS.findIndex((item) => item.key === value)
             let next = current
@@ -104,7 +109,7 @@ export default function WorkspaceInspector({
                 aria-selected={active}
                 tabIndex={active || (value == null && item.key === 'theme') ? 0 : -1}
                 onClick={() => onChange(item.key)}
-                className={`relative h-8 shrink-0 rounded-lg px-2 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+                className={`relative flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg px-1 text-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
                   // The label's weight and ink change on the BUTTON; the sliding
                   // pill below carries the fill and the edge.
                   active ? 'font-semibold text-fg' : SEGMENT_INACTIVE
@@ -118,7 +123,10 @@ export default function WorkspaceInspector({
                     transition={reduce ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                   />
                 )}
-                <span className="relative">{t(item.label)}</span>
+                {/* Centred by the button's flex, not by its padding: a label wider
+                    than the padded box (Variables, semibold, ~51px in a 46px
+                    one) used to overflow to the RIGHT and read off-centre. */}
+                <span className="relative whitespace-nowrap">{t(item.label)}</span>
               </button>
             )
           })}
@@ -130,7 +138,7 @@ export default function WorkspaceInspector({
         ref={onSlot}
         // Each panel was sized as a fixed-width left column (inline width,
         // border-r). `!` beats the inline style: here the column owns both.
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden border-t border-line [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
+        className={`relative flex min-h-0 flex-1 flex-col overflow-hidden border-t border-line [&>*]:!w-full [&>*]:!flex-1 [&>*]:!min-h-0 [&>*]:!h-auto [&>*]:!border-r-0`}
       />
     </aside>
   )

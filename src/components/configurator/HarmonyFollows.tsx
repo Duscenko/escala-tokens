@@ -66,8 +66,16 @@ export function PageAppearancePreview({
   )
 }
 
-/** Live Neutral (light/dark page) + four states for an accent — same numbers
- *  the appliers write when both harmony links are on. */
+/** What the accent drags along, as a READOUT: the Neutral's page in each
+ *  appearance and the four states, same numbers the appliers write when both
+ *  harmony links are on.
+ *
+ *  Deliberately NOT a segmented control. It used to render `PageAppearancePreview`
+ *  here — two segments, the active one ringed — which is exactly what a
+ *  clickable switch looks like, while doing nothing, and which repeated the
+ *  Light | Dark the picker already has as a real control. A readout lists
+ *  facts, so it is a plain row of swatches; the previewed appearance is
+ *  carried by ink weight alone. */
 export function HarmonyFollows({
   accentHex,
   tint,
@@ -78,22 +86,38 @@ export function HarmonyFollows({
   appearance?: 'light' | 'dark'
 }) {
   const h = useMemo(() => previewHarmony(accentHex, tint), [accentHex, tint])
+  const pages = [
+    { mode: 'light' as const, label: 'Light', hex: h.pageLight },
+    { mode: 'dark' as const, label: 'Dark', hex: h.pageDark },
+  ]
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Follows</span>
-          <span className="text-caption text-fg-faint">Preview appearance</span>
+    <div className="flex flex-col gap-2 border-t border-line pt-3">
+      <span className="text-mini font-semibold uppercase tracking-widest text-fg-faint">Follows the accent</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="w-12 flex-shrink-0 text-caption text-fg-faint">Neutral</span>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          {pages.map((page) => {
+            const active = page.mode === appearance
+            return (
+              <span
+                key={page.mode}
+                title={`${page.label} page ${page.hex.toUpperCase()}`}
+                aria-current={active ? 'true' : undefined}
+                className={`inline-flex items-center gap-1.5 text-caption ${active ? 'font-semibold text-fg' : 'text-fg-faint'}`}
+              >
+                <span aria-hidden className="relative h-3.5 w-3.5 flex-shrink-0 overflow-hidden rounded-[3px] ring-1 ring-line">
+                  <span className="absolute inset-0" style={SWATCH_CHECKER} />
+                  <span className="absolute inset-0" style={{ background: page.hex }} />
+                </span>
+                {page.label}
+              </span>
+            )
+          })}
         </div>
-        <PageAppearancePreview
-          pageLight={h.pageLight}
-          pageDark={h.pageDark}
-          appearance={appearance}
-        />
       </div>
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="text-caption text-fg-faint flex-shrink-0">Status</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="w-12 flex-shrink-0 text-caption text-fg-faint">Status</span>
         <div className="flex items-center -space-x-0.5 flex-shrink-0" aria-label="States">
           {STATE_ORDER.map((k) => (
             <span

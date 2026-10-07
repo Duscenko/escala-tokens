@@ -13,7 +13,7 @@ import { INDUSTRY_SPECTRUM } from '../../lib/industryPacks'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SELECT_FOCUS, SELECT_SHELL, THEME_LIBRARY_WIDTH } from './themeWorkspaceLayout'
 import { CHECKER } from './checker'
-import { useInInspector } from './WorkspaceInspector'
+import { InspectorPortal, useInInspector } from './WorkspaceInspector'
 
 export { CHECKER } from './checker'
 
@@ -718,17 +718,24 @@ export function ColorPickerPopover({
   containedDockLeft?: number
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
+  // Theme Preview's quick settings live in the right-hand INSPECTOR now. A
+  // `contained` picker used to open at `containedDockLeft` (240px — the old
+  // LEFT rail's width) inside the hub, i.e. floating mid-canvas over the board,
+  // with a left-dock silhouette and painted in the previewed theme's
+  // appearance. With an inspector mounted it opens IN it instead, covering the
+  // panel it was opened from — the same slot Token Details uses.
+  const docked = useInInspector() && contained
   const place = usePopoverPlacement(anchor, open && !contained)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
 
   useLayoutEffect(() => {
-    if (!contained || !open) {
+    if (!contained || !open || docked) {
       setPortalRoot(null)
       return
     }
     setPortalRoot(containedRootRef?.current ?? null)
-  }, [contained, open, containedRootRef])
+  }, [contained, open, containedRootRef, docked])
 
   // `useLayoutEffect`, so the first measurement lands BEFORE paint and the panel
   // never shows for a frame at the previous trigger's position. A stale `rect`
@@ -783,7 +790,7 @@ export function ColorPickerPopover({
   if (!open) return null
 
   const body = (
-    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin px-4 pt-5 pb-4">
+    <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-thin ${docked ? 'px-3 pt-3 pb-4' : 'px-4 pt-5 pb-4'}`}>
       <ColorPickerPanel
         value={value}
         onChange={onChange}
@@ -800,36 +807,40 @@ export function ColorPickerPopover({
   )
 
   if (contained) {
-    if (!portalRoot) return null
-    return createPortal(
+    if (!docked && !portalRoot) return null
+    const drawer = (
       <AnimatePresence>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          onMouseDown={onClose}
-          className="absolute z-[60]"
-          style={{ left: containedDockLeft, top: 0, right: 0, bottom: 0 }}
+          // Docked there is no backdrop: the board stays live beside the picker.
+          onMouseDown={docked ? undefined : onClose}
+          className={docked ? 'absolute inset-0 z-20' : 'absolute z-[60]'}
+          style={docked ? undefined : { left: containedDockLeft, top: 0, right: 0, bottom: 0 }}
         >
           <motion.div
             ref={panelRef}
-            initial={{ opacity: 0, x: -16 }}
+            initial={{ opacity: 0, x: docked ? 8 : -16 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
+            exit={{ opacity: 0, x: docked ? 8 : -16 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             onMouseDown={(event) => event.stopPropagation()}
             role="dialog"
-            aria-modal="true"
+            aria-modal={docked ? undefined : 'true'}
             aria-label={`${label} color`}
-            style={{
+            style={docked ? { position: 'absolute', inset: 0 } : {
               position: 'absolute',
               left: 0,
               top: 0,
               bottom: 0,
               width: `min(${PANEL_W}px, calc(100% - 16px))`,
             }}
-            className="relative flex flex-col overflow-hidden rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)]"
+            className={docked
+              // The inspector's own box frames it — no radius, edge or shadow.
+              ? 'flex flex-col overflow-hidden bg-side-panel'
+              : 'relative flex flex-col overflow-hidden rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)]'}
           >
             <div
               className="flex flex-shrink-0 items-center gap-2 border-b border-line px-3 pr-10"
@@ -851,9 +862,10 @@ export function ColorPickerPopover({
             {body}
           </motion.div>
         </motion.div>
-      </AnimatePresence>,
-      portalRoot,
+      </AnimatePresence>
     )
+    if (docked) return <InspectorPortal>{drawer}</InspectorPortal>
+    return createPortal(drawer, portalRoot!)
   }
 
   if (!rect) return null
@@ -1287,7 +1299,10 @@ export function SystemRampGrid({
       role="group"
       aria-label={ariaLabel}
       className="grid items-center"
-      style={{ gridTemplateColumns: `${onOpenFamily ? '5rem' : '4.25rem'} repeat(12, minmax(0, 1fr))`, columnGap: 3, rowGap: 4 }}
+      // The label column sizes to the longest family name ("neutral-dark"),
+      // not a fixed 5rem — that reserved ~25px nobody read and took it from
+      // twelve swatches.
+      style={{ gridTemplateColumns: 'max-content repeat(12, minmax(0, 1fr))', columnGap: 3, rowGap: 4 }}
     >
       {rows.map((row) => (
         <Fragment key={row.key}>
@@ -1473,6 +1488,7 @@ export function TokenDetailsModal({
   containedDockLeft = COLOR_RAIL_WIDTH,
   dockToSelector,
   coverAnchor = false,
+  inInspector = true,
 }: {
   name: string
   /** The Figma mock doesn't show this, but the inline editor it replaces did
@@ -1528,7 +1544,19 @@ export function TokenDetailsModal({
   /** Sit ON the measured column instead of to its right (`dockLeft`). Theme
    *  Preview Token Details covers Color edition so the two cannot mix. */
   coverAnchor?: boolean
+  /** Theme Preview: render INTO the Generator's right-hand inspector, as a
+   *  sub-page that covers its content — no drawer silhouette of its own. A
+   *  `fixed` drawer floating over the column showed a left-dock's rounded
+   *  right corners and missing left edge mid-column, and, mounted inside the
+   *  canvas card's DOM, it painted in the PREVIEWED theme's appearance instead
+   *  of the chrome's. Falls back to the `dockToSelector` drawer where no
+   *  inspector is mounted. */
+  inInspector?: boolean
 }) {
+  // Docked by DEFAULT wherever an inspector is mounted (Theme preview, the
+  // Primitives table, Semantics): one Token Details, one place. `contained`
+  // (the hub's own fly-out) and an explicit `inInspector={false}` opt out.
+  const docked = useInInspector() && inInspector && !contained
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -1542,7 +1570,7 @@ export function TokenDetailsModal({
     top: THEME_DRAWER_TOP, bottom: THEME_DRAWER_BOTTOM, left: null,
   })
   useLayoutEffect(() => {
-    if (contained) return
+    if (contained || docked) return
     const sel = dockToSelector ?? 'nav[aria-label="Color families"]'
     const measure = () => {
       const r = document.querySelector(sel)?.getBoundingClientRect()
@@ -1561,7 +1589,7 @@ export function TokenDetailsModal({
       window.removeEventListener('resize', measure)
       ro?.disconnect()
     }
-  }, [contained, coverAnchor, dockToSelector])
+  }, [contained, coverAnchor, docked, dockToSelector])
 
   // Only the FIRST mode opens by default. A system with light + dark + two
   // custom themes stacked four full ramp grids into one dialog, so the mode
@@ -1587,20 +1615,22 @@ export function TokenDetailsModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduce ? 0 : 0.15 }}
-      onMouseDown={onClose}
+      // Docked, there is no backdrop: the canvas stays live, so picking another
+      // element swaps the token in place instead of first closing the drawer.
+      onMouseDown={docked ? undefined : onClose}
       // This is an editing task, so it shares ThemePanel's left-docked drawer
       // position. A token-detail panel should never appear as a third modal
       // language beside “New theme” and “Edit family color”. `contained`
       // scopes both the overlay and the panel to ThemePreviewHub's own box
       // instead of the viewport — see the prop's doc comment above.
-      className={contained ? 'absolute z-50' : coverAnchor ? 'fixed inset-0 z-[60]' : 'fixed inset-0 z-50'}
+      className={docked ? 'absolute inset-0 z-20' : contained ? 'absolute z-50' : coverAnchor ? 'fixed inset-0 z-[60]' : 'fixed inset-0 z-50'}
       style={contained ? { left: containedDockLeft, top: 0, right: 0, bottom: 0 } : undefined}
       role="dialog"
       aria-modal="true"
       aria-label="Token Details"
     >
       <motion.div
-        style={contained ? {
+        style={docked ? { position: 'absolute', inset: 0 } : contained ? {
           position: 'absolute',
           left: 0,
           top: 0,
@@ -1613,12 +1643,16 @@ export function TokenDetailsModal({
           bottom: dockV.bottom,
           width: `min(${PANEL_W}px, calc(100vw - ${(dockV.left ?? dockLeft) + 16}px))`,
         }}
-        initial={{ opacity: 0, x: -16 }}
+        initial={{ opacity: 0, x: docked ? 8 : -16 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -16 }}
+        exit={{ opacity: 0, x: docked ? 8 : -16 }}
         transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden"
+        className={docked
+          // The inspector's own surface: its box, radius and edge already frame
+          // this page, so it draws none of its own.
+          ? 'flex flex-col overflow-hidden bg-side-panel'
+          : 'relative flex flex-col rounded-r-2xl border border-l-0 border-line bg-app shadow-[16px_0_48px_-12px_rgba(0,0,0,0.28)] overflow-hidden'}
       >
         {/* Header — `THEME_BAND_H` matches `ThemeIdentityBand` so the title
             row lines up with the Name field when the drawer sits beside the
@@ -1680,25 +1714,36 @@ export function TokenDetailsModal({
             only the "Values" cards below scroll. Shown for context, styled
             like the Figma input/textarea so the dialog still reads as an
             editor, not just a viewer. */}
-        <div className="flex flex-shrink-0 flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line">
-          <div className="flex h-6 rounded-md border border-line overflow-hidden">
-            <span className="px-2 flex items-center bg-elevated text-mini text-fg-faint border-r border-line flex-shrink-0">Name</span>
-            <span className="px-2 flex items-center flex-1 min-w-0 text-caption text-fg-muted font-mono truncate" title={name}>{name}</span>
+        {docked ? (
+          // Name, its CSS variable and what it is for — read-only catalogue
+          // metadata, so plain text, not field boxes that look editable and
+          // cost the Values grid below ~60px of height.
+          <div className="flex flex-shrink-0 flex-col gap-1.5 px-3 py-3 border-b border-line">
+            <p className="m-0 truncate font-mono text-caption text-fg" title={name}>{name}</p>
+            <div className="flex"><CssVarChip name={cssVarName} /></div>
+            <p className="m-0 text-caption leading-relaxed text-fg-muted">{description}</p>
           </div>
-          {/* Below the Name row, not beside it — at this width (w-64,
-              matching the Edit-family-color popover) a copy chip sharing
-              the row with the name pill left ~2 characters of the name
-              visible on anything longer than "error". */}
-          <CssVarChip name={cssVarName} />
-          <div className="flex flex-col gap-1">
-            <span className="text-mini text-fg-faint">Description</span>
-            <p className="px-2 py-1.5 rounded-md border border-line text-caption text-fg-muted leading-relaxed">{description}</p>
+        ) : (
+          <div className="flex flex-shrink-0 flex-col gap-2 px-4 pt-3.5 pb-3.5 border-b border-line">
+            <div className="flex h-6 rounded-md border border-line overflow-hidden">
+              <span className="px-2 flex items-center bg-elevated text-mini text-fg-faint border-r border-line flex-shrink-0">Name</span>
+              <span className="px-2 flex items-center flex-1 min-w-0 text-caption text-fg-muted font-mono truncate" title={name}>{name}</span>
+            </div>
+            {/* Below the Name row, not beside it — at this width (w-64,
+                matching the Edit-family-color popover) a copy chip sharing
+                the row with the name pill left ~2 characters of the name
+                visible on anything longer than "error". */}
+            <CssVarChip name={cssVarName} />
+            <div className="flex flex-col gap-1">
+              <span className="text-mini text-fg-faint">Description</span>
+              <p className="px-2 py-1.5 rounded-md border border-line text-caption text-fg-muted leading-relaxed">{description}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-          <div className="flex flex-col gap-2 px-4 pt-3.5 pb-4">
-            <span className="text-caption font-semibold text-fg">Values</span>
+          <div className={docked ? 'flex flex-col pb-3' : 'flex flex-col gap-2 px-4 pt-3.5 pb-4'}>
+            <span className={`text-caption font-semibold text-fg ${docked ? 'px-3 pt-3 pb-2' : ''}`}>Values</span>
             {sections.map((s) => {
               const isOpen = open.has(s.key)
               return (
@@ -1708,7 +1753,10 @@ export function TokenDetailsModal({
                 // page they actually ship against, and the light card stays
                 // light even while the app chrome is dark. Not a hardcoded
                 // colour: it's the same two token sets the whole app uses.
-                <div key={s.key} className={`${s.kind ?? 'light'} bg-app rounded-xl border border-line overflow-hidden`}>
+                // Docked, a mode is a full-width BAND, not a card inside a padded
+                // column: the nesting (column padding + card border + card
+                // padding) was eating the width the 12-tone grid needs.
+                <div key={s.key} className={`${s.kind ?? 'light'} bg-app overflow-hidden ${docked ? 'border-y border-line -mt-px first-of-type:mt-0' : 'rounded-xl border border-line'}`}>
                   <button
                     type="button"
                     onClick={() => setOpen((prev) => {
@@ -1718,7 +1766,7 @@ export function TokenDetailsModal({
                       return next
                     })}
                     aria-expanded={isOpen}
-                    className={`w-full flex items-center gap-1.5 px-2.5 h-8 text-mini font-semibold uppercase tracking-widest transition-colors ${
+                    className={`w-full flex items-center gap-1.5 ${docked ? 'px-3' : 'px-2.5'} h-8 text-mini font-semibold uppercase tracking-widest transition-colors ${
                       isOpen ? 'text-fg-muted bg-surface' : 'text-fg-faint hover:text-fg-muted hover:bg-surface/60'
                     }`}
                   >
@@ -1737,7 +1785,7 @@ export function TokenDetailsModal({
                         transition={{ duration: reduce ? 0 : 0.18, ease: 'easeOut' }}
                         style={{ overflow: 'hidden' }}
                       >
-                        <div className="px-2.5 pt-2 pb-2.5 border-t border-line">{s.content}</div>
+                        <div className={`${docked ? 'px-3 pt-2.5 pb-3' : 'px-2.5 pt-2 pb-2.5'} border-t border-line`}>{s.content}</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1750,6 +1798,7 @@ export function TokenDetailsModal({
     </motion.div>
   )
 
+  if (docked) return <InspectorPortal>{dialog}</InspectorPortal>
   if (contained) {
     if (!portalRoot) return null
     return createPortal(dialog, portalRoot)

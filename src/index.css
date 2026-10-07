@@ -539,6 +539,36 @@ body {
    The native input still owns pointer capture and keyboard behavior; only its
    paint is replaced. Progress is a CSS variable so dragging changes the track
    in the same frame as the value, without waiting for a transition. */
+/* The painted-bar sliders (Neutral tint, Contrast): a native range whose thumb is
+   the SAME 1rem ring as the Accent hue bar's own thumb (`SpectrumSlider`). Pseudo-
+   elements do not inherit Tailwind's `border-box` reset, so the thumb used to be
+   1rem PLUS its 2px border on every side — ~4px bigger than the Hue thumb beside it. */
+.bar-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.bar-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.bar-slider::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+
 .quick-settings-range {
   --quick-range-progress: 0%;
   display: block;

@@ -77,6 +77,7 @@ export default function SemanticTokenDrawer({
           description={token.description}
           dockToSelector={`#${QUICK_SETTINGS_ID}`}
           coverAnchor
+          inInspector
           onOpenInTable={onOpenInVariables ? () => onOpenInVariables(token.id) : undefined}
           onReset={() => {
             if (stylePreview && onTryOnEdit) {

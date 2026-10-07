@@ -24,7 +24,7 @@ import {
 } from '../../lib/colorActions'
 import { backgroundFromBase, colorAtHue, generateColorScale, generateDarkColorScale, generateFamilyDarkScale, neutralFromBrand, NEUTRAL_TINTS, readHuePosition, type NeutralTint } from '../../lib/colorUtils'
 import { fontStack, FONT_PRESETS, loadGoogleFont } from '../../lib/fonts'
-import { TYPE_SCALE_KEYS, TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
+import { TYPE_SCALE_MODES, buildTypeScale, inferTypeScaleMode } from '../../lib/typographyStandard'
 import {
   BASE_UNIT_RANGE,
   SELECTOR_DEFAULT_BASE,
@@ -67,7 +67,7 @@ import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
-import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, typePrimitivesForViewport, asTypeViewport } from '../../lib/typeRoles'
+import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { PlatformSwitch } from './PlatformRail'
 import RailSelect from '../ui/RailSelect'
 import { radiusPresetOptions } from './radiusPresetOptions'
@@ -222,6 +222,90 @@ export function ThemeIdentityBand({
           <span className="ml-auto grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors group-hover:bg-elevated group-hover:text-fg-muted group-focus-within:bg-elevated group-focus-within:text-fg"><EditThemeIcon /></span>
       </label>
     </div>
+  )
+}
+
+/**
+ * Whether the system on screen matches its entry in My libraries. The ONE
+ * condition both Save theme (disabled + ✓ when true) and the canvas header's
+ * Saved / Not saved badge read, so the two can never disagree. It is NOT
+ * `themeHasEdits` — that one means "differs from the style it was made from"
+ * and drives Reset, a different question from "is this saved".
+ */
+export function useLibrarySaved(): boolean {
+  const store = useDesignStore()
+  const savedLibrary = store.savedSystems.find((entry) => entry.id === activeLibraryId(store))
+  return useMemo(
+    () => (savedLibrary ? libraryMatchesSaved(store as unknown as DesignSnapshot, savedLibrary.snapshot) : false),
+    [store, savedLibrary],
+  )
+}
+
+/**
+ * The theme's name, editable in place — the canvas header's title. Same
+ * commit rules as `ThemeIdentityBand` (blank is refused, Enter commits, Esc
+ * reverts). While a System Style is only tried on, it shows that style's name
+ * read-only: there is no theme of the user's yet for a name to belong to.
+ * Callers key it on the theme so a draft never outlives the theme it was
+ * typed for.
+ */
+export function ThemeNameField({ previewTheme, readOnlyLabel }: {
+  previewTheme: string
+  readOnlyLabel?: string
+}) {
+  const { t } = useI18n()
+  const { themeLabels, setThemeLabel } = useDesignStore()
+  const stored = themeLabels[previewTheme] || defaultThemeLabel(previewTheme)
+  const [draftName, setDraftName] = useState(stored)
+  const [nameError, setNameError] = useState(false)
+  useEffect(() => { setDraftName(stored) }, [stored])
+  if (readOnlyLabel) {
+    return <span className="min-w-0 truncate px-2 text-ui font-semibold text-fg">{readOnlyLabel}</span>
+  }
+  const commitName = () => {
+    const next = draftName.trim()
+    if (!next) { setNameError(true); return }
+    setNameError(false)
+    if (next !== stored) setThemeLabel(previewTheme, next)
+  }
+  return (
+    <label
+      // Borderless at rest so it reads as the page's title; the edge appears
+      // on hover / focus, which is what says it can be typed into.
+      className={`group flex h-8 min-w-0 items-center gap-1 rounded-lg border pl-2 pr-1 transition-[border-color,box-shadow] hover:border-line focus-within:border-accent-ui/70 focus-within:ring-2 focus-within:ring-accent-ui/15 ${nameError ? 'border-status-danger/70' : 'border-transparent'}`}
+      title={t('Rename theme')}
+    >
+      <input
+        value={draftName}
+        maxLength={48}
+        size={Math.max(4, draftName.length)}
+        aria-label={t('Theme name')}
+        aria-invalid={nameError || undefined}
+        onChange={(event) => { setDraftName(event.target.value); setNameError(false) }}
+        onBlur={commitName}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+          if (event.key === 'Escape') { setDraftName(stored); setNameError(false); event.currentTarget.blur() }
+        }}
+        className="min-w-0 max-w-[18rem] bg-transparent text-ui font-semibold text-fg outline-none"
+      />
+      <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md text-fg-faint transition-colors group-hover:text-fg-muted group-focus-within:text-fg"><EditThemeIcon /></span>
+    </label>
+  )
+}
+
+/** Saved / Not saved — reads `useLibrarySaved`, words carry the state, the
+ *  dot only reinforces it. */
+export function SaveStateBadge({ saved }: { saved: boolean }) {
+  const { t } = useI18n()
+  return (
+    <span
+      className="inline-flex h-6 flex-shrink-0 items-center gap-1.5 rounded-full bg-fg/[0.06] px-2 text-mini font-medium text-fg-muted"
+      title={saved ? t('Matches the copy in My libraries') : t('Changes since the last save')}
+    >
+      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${saved ? 'bg-status-success-solid' : 'bg-status-warning-solid'}`} />
+      {saved ? t('Saved') : t('Not saved')}
+    </span>
   )
 }
 
@@ -985,9 +1069,36 @@ function BaseUnitCard({
   )
 }
 
-// The five text steps the readout shows — `TYPE_SCALE_KEYS[0..4]`, i.e. the
-// `text-*` band (the display steps scale with them and are the same decision).
-const TYPE_READOUT_KEYS = TYPE_SCALE_KEYS.slice(0, 5)
+// The readout speaks ROLES, not scale steps: what a designer reads on screen is
+// a caption, a label, body copy, a heading and a display title — each one an
+// alias of some `text-*` / `display-*` step that can differ per platform and be
+// re-pointed in Variables · Type. Reading the steps directly (it used to show
+// `text-xs…text-xl`) hid every heading the slider also moves, and its "16"
+// stayed 16 after `body-md` was re-pointed or the platform switched.
+const TYPE_READOUT_ROLES = [
+  { key: 'caption', label: 'Caption' },
+  { key: 'label', label: 'Label' },
+  { key: 'body-md', label: 'Body' },
+  { key: 'heading-md', label: 'Heading' },
+  { key: 'display', label: 'Display' },
+] as const
+
+/** Px of a type role at a platform, through the theme's own role map. */
+function typeRolePx(typography: TypePrimitives & { roles?: object }, key: string, platform: string): number {
+  const cut = asTypeViewport(platform)
+  const alias = mergeTypeRoles(typography.roles)[key]?.[cut] ?? TYPE_ROLE_BY_KEY[key]?.[cut]
+  return alias ? parseFloat(resolveTypeStyle(alias, typography).size) || 0 : 0
+}
+
+// The "Aa" row is a picture of the RELATIONSHIP between roles, not their size —
+// a 60px display can't sit in a 36px row. Log-mapped onto 9–21px so the ratio
+// between neighbours survives (12 → 14 → 16 still read as steps, 30 → 60 as a
+// jump) where a linear clamp flattened every heading to the same cap.
+function readoutGlyphPx(px: number): number {
+  if (!px) return 9
+  const t = (Math.log(px) - Math.log(12)) / (Math.log(72) - Math.log(12))
+  return Math.round((9 + 12 * Math.min(1, Math.max(0, t))) * 10) / 10
+}
 
 /**
  * Type scale as ONE control — the same "move the whole ramp together" idea as
@@ -996,49 +1107,52 @@ const TYPE_READOUT_KEYS = TYPE_SCALE_KEYS.slice(0, 5)
  * every `text-*`/`display-*` size AND its line-height at the mode's factor, so
  * the vertical rhythm follows. Hand-editing a single size in Advanced makes the
  * readout say "Custom" (no mode matches) — the slider still snaps you back onto
- * a curated scale.
+ * a curated scale. The readout resolves through the ROLES at the previewed
+ * platform, so it shows what the slider actually does to the text on screen.
  */
 function TypeScaleCard({
-  sizes, onScrub, onScrubStart, onScrubEnd, usedKeys,
+  typography, platform, onScrub, onScrubStart, onScrubEnd,
 }: {
-  sizes: Record<string, string>
+  typography: TypePrimitives & { roles?: object }
+  platform: string
   onScrub: (modeIndex: number) => void
   onScrubStart?: () => void
   onScrubEnd?: () => void
-  usedKeys?: ReadonlySet<string>
 }) {
-  const mode = inferTypeScaleMode(sizes)
+  const { t } = useI18n()
+  const mode = inferTypeScaleMode(typography.sizes)
   const index = mode ? TYPE_SCALE_MODES.findIndex((m) => m.key === mode) : 2
-  const px = TYPE_READOUT_KEYS.map((k) => parseFloat(sizes[k] ?? '0') || 0)
+  const px = TYPE_READOUT_ROLES.map((role) => typeRolePx(typography, role.key, platform))
+  const bodyPx = px[TYPE_READOUT_ROLES.findIndex((role) => role.key === 'body-md')]
   return (
     <div>
       <div className="flex items-end justify-between gap-2">
-        <div role="img" aria-label="Type scale preview" className={`flex ${ROW_PREVIEW_H} items-end gap-1.5`}>
+        <div role="img" aria-label={t('Type scale preview')} className={`flex ${ROW_PREVIEW_H} items-end gap-1.5`}>
           {px.map((value, i) => (
             <span
-              key={TYPE_READOUT_KEYS[i]}
-              className={`font-semibold leading-none text-fg/70 ${usedKeys && !usedKeys.has(TYPE_READOUT_KEYS[i]) ? 'opacity-[0.38]' : ''}`}
-              style={{ fontSize: Math.max(9, Math.min(17, value * 0.72)) }}
+              key={TYPE_READOUT_ROLES[i].key}
+              className="font-semibold leading-none text-fg/70"
+              style={{ fontSize: readoutGlyphPx(value) }}
             >
               Aa
             </span>
           ))}
         </div>
         <div className="flex-shrink-0 text-right leading-none">
-          <span className="block text-heading font-semibold tabular-nums text-fg">
-            {Math.round(parseFloat(sizes['text-md'] ?? '16') || 16)}
+          <span className="block text-heading font-semibold tabular-nums text-fg" title={t('Body size')}>
+            {Math.round(bodyPx)}
           </span>
           <span className="mt-1 block text-micro uppercase tracking-wide text-fg-faint">
-            {mode ? TYPE_SCALE_MODES[index].label : 'Custom'}
+            {t(mode ? TYPE_SCALE_MODES[index].label : 'Custom')}
           </span>
         </div>
       </div>
-      <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_KEYS.length}, minmax(0, 1fr))` }}>
-        {TYPE_READOUT_KEYS.map((k) => (
-          <span key={k} className={`text-micro font-medium uppercase ${!usedKeys || usedKeys.has(k) ? 'text-fg-faint' : 'text-fg-faint/40'}`}>{k.replace('text-', '')}</span>
+      <div className={`${ROW_GAP_CONTROL} grid gap-x-1 text-center`} style={{ gridTemplateColumns: `repeat(${TYPE_READOUT_ROLES.length}, minmax(0, 1fr))` }}>
+        {TYPE_READOUT_ROLES.map((role) => (
+          <span key={role.key} className="truncate text-micro font-medium uppercase text-fg-faint">{t(role.label)}</span>
         ))}
-        {TYPE_READOUT_KEYS.map((k, i) => (
-          <span key={k} className={`text-mini tabular-nums ${!usedKeys || usedKeys.has(k) ? 'text-fg-muted' : 'text-fg-faint/50'}`}>{px[i]}</span>
+        {TYPE_READOUT_ROLES.map((role, i) => (
+          <span key={role.key} className="text-mini tabular-nums text-fg-muted">{Math.round(px[i])}</span>
         ))}
       </div>
       <RangeInput
@@ -1274,13 +1388,7 @@ function TintSlider({
           step={1}
           value={index}
           onChange={(event) => onChange(NEUTRAL_TINTS[Number(event.target.value)].key)}
-          className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4
-            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white
-            [&::-webkit-slider-thumb]:bg-transparent [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(0,0,0,0.35)]
-            [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-transparent
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 rounded-full"
+          className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
         />
       </div>
       <div className="mt-1 flex justify-between text-micro font-medium uppercase tracking-wide text-fg-faint" aria-hidden>
@@ -1331,13 +1439,7 @@ function ContrastSlider({
           value={value}
           onChange={(event) => onChange(Number(event.target.value))}
           onDoubleClick={() => onChange(0)}
-          className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4
-            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white
-            [&::-webkit-slider-thumb]:bg-transparent [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(0,0,0,0.35)]
-            [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-transparent
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60 rounded-full"
+          className="bar-slider absolute inset-0 h-full w-full cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/60"
         />
       </div>
       <div className="mt-1 flex justify-between text-micro font-medium uppercase tracking-wide text-fg-faint" aria-hidden>
@@ -1446,11 +1548,7 @@ export default function ThemeQuickSettingsRail({
   // rail and the canvas can't describe different systems.
   const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
   const tryOn = stylePreview ?? null
-  const savedLibrary = store.savedSystems.find((entry) => entry.id === activeLibraryId(store))
-  const libraryUpToDate = useMemo(
-    () => (savedLibrary ? libraryMatchesSaved(store as unknown as DesignSnapshot, savedLibrary.snapshot) : false),
-    [store, savedLibrary],
-  )
+  const librarySaved = useLibrarySaved()
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
@@ -1458,14 +1556,6 @@ export default function ThemeQuickSettingsRail({
   const platformSwitch = onPreviewPlatformChange ? (
     <PlatformCutSwitch value={previewPlatform} onChange={onPreviewPlatformChange} />
   ) : undefined
-  const typeUsedSizes = typePrimitivesForViewport(typography.roles, previewPlatform).sizes
-  const typeCutRows = (['heading-lg', 'body-md', 'button'] as const).flatMap((key) => {
-    const spec = TYPE_ROLE_BY_KEY[key]
-    const alias = mergeTypeRoles(typography.roles)[key]?.[asTypeViewport(previewPlatform)] ?? spec?.[asTypeViewport(previewPlatform)]
-    if (!spec || !alias) return []
-    const style = resolveTypeStyle(alias, typography)
-    return [{ label: spec.label, value: style.size || alias.size }]
-  })
   const sizeUsedStep = previewPlatform === 'mobile'
     ? (foundations.sizeRoles?.touch ?? 'lg')
     : (foundations.sizeRoles?.control ?? 'md')
@@ -2218,9 +2308,6 @@ export default function ThemeQuickSettingsRail({
           const headingFamily = typography.headingFontFamily ?? typography.fontFamily
           return (
         <EditionCard title="Font edition" foundationKey="typography" onOpenAdvanced={onOpenAdvanced} trailing={platformSwitch}>
-          <SettingItem>
-            <CutFacts rows={typeCutRows} />
-          </SettingItem>
           <SettingItem label="Body font">
             <Menu
               ariaLabel="Body font family"
@@ -2241,10 +2328,10 @@ export default function ThemeQuickSettingsRail({
             />
           </SettingItem>
 
-          <SettingItem label="Text scale" hint="Grades every label, body style, and heading together. Values match Variables · Font · Font size for this theme.">
+          <SettingItem label="Text scale" hint="Grades every caption, label, body style and heading together. Values are the type roles at the platform shown above, as in Variables · Type.">
             <TypeScaleCard
-              sizes={typography.sizes ?? {}}
-              usedKeys={typeUsedSizes}
+              typography={typography}
+              platform={previewPlatform}
               onScrubStart={() => beginScrub('Type scale updated')}
               onScrubEnd={endScrub}
               onScrub={(i) => applyScrub('Type scale updated', (themeKey) => {
@@ -2413,9 +2500,16 @@ export default function ThemeQuickSettingsRail({
           <button
             type="button"
             onClick={() => { store.saveCurrentSystem(); setJustSaved(true) }}
-            disabled={Boolean(savedLibrary && libraryUpToDate && !justSaved)}
-            className="flex h-8 w-full items-center justify-center rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
+            disabled={librarySaved && !justSaved}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >
+            {/* Already saved → a check beside the label, so the dimmed button
+                reads as "done", not "unavailable". */}
+            {(librarySaved || justSaved) && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M2.5 6.5 5 9l4.5-5.5" />
+              </svg>
+            )}
             {justSaved ? t('Saved') : t('Save theme')}
           </button>
         </div>
