@@ -1,5 +1,6 @@
 // Public surface of the Import-your-design-system pipeline.
 export { parseTokenSource } from './parse'
+export { approximateSource, isSourceFile, type ApproximateSeed } from './approximateSource'
 export { analyzeTokens } from './analyze'
 export { materializeImport, type MaterializeOptions } from './materialize'
 export type {

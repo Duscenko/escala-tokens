@@ -1,18 +1,21 @@
-// Import your design system — a two-step modal: intake (paste JSON or drop a
-// .json file) → review (what was detected / what gets created by default, with
-// an opt-in "Organize & normalize" pass), then confirm to adopt the import as a
-// NEW system (registered in savedSystems with 'imported' provenance).
+// Import your design system — a two-step modal: intake (paste JSON, drop a
+// .json file, or drop source / a project folder) → review (what was detected /
+// what gets created by default, with an opt-in "Organize & normalize" pass),
+// then confirm to adopt the import as a NEW system (registered in savedSystems
+// with 'imported' provenance). Source that isn't JSON is approximated into the
+// same seed JSON the analyzer already understands.
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDesignStore } from '../../store/useDesignStore'
 import {
-  parseTokenSource, analyzeTokens, materializeImport,
+  parseTokenSource, analyzeTokens, materializeImport, approximateSource, isSourceFile,
   type ImportAnalysis, type FamilyPick, type FoundationKey,
 } from '../../lib/tokenImport'
 import { ALL_ROLES } from '../../lib/semanticRoles'
 
 const MAX_JSON_BYTES = 2 * 1024 * 1024 // 2 MB
+const MAX_SOURCE_FILES = 400
 
 const FOUNDATION_LABELS: Record<FoundationKey, string> = {
   spacing: 'Spacing', radius: 'Radius',
@@ -83,7 +86,9 @@ export default function ImportSystemModal({
   const [systemName, setSystemName] = useState('')
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [sourceNote, setSourceNote] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const folderRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -91,34 +96,92 @@ export default function ImportSystemModal({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  useEffect(() => {
+    folderRef.current?.setAttribute('webkitdirectory', '')
+    folderRef.current?.setAttribute('directory', '')
+  }, [])
+
+  function openReview(json: unknown, label: string) {
+    const result = analyzeTokens(json, { consolidate: mergeFamilies })
+    if (!result.ok) { setParseError(result.error); return }
+    setParsedJson(json)
+    setAnalysis(result.analysis)
+    setNormalize(result.analysis.issues.some((i) => i.kind === 'off-ramp-semantic' || i.kind === 'partial-ramp'))
+    setSystemName(result.analysis.sourceName ?? label)
+    setFileName(label)
+    setStep('review')
+  }
+
   async function handleFiles(files: FileList | null) {
-    const file = files?.[0]
-    if (!file) return
-    if (file.size > MAX_JSON_BYTES) {
-      setParseError('That file is over 2 MB — token files are much smaller. Is this the right JSON?')
-      return
-    }
-    const text = await file.text()
-    setRawText(text)
-    setFileName(file.name)
+    const all = files ? [...files] : []
+    if (!all.length) return
     setParseError(null)
     if (fileRef.current) fileRef.current.value = ''
+    if (folderRef.current) folderRef.current.value = ''
+
+    if (all.length === 1 && /\.json$/i.test(all[0].name)) {
+      const file = all[0]
+      if (file.size > MAX_JSON_BYTES) {
+        setParseError('That file is over 2 MB — token files are much smaller. Is this the right JSON?')
+        return
+      }
+      setSourceNote(null)
+      const text = await file.text()
+      setRawText(text)
+      setFileName(file.name)
+      return
+    }
+
+    const tokensFile = all.find((f) => {
+      const path = f.webkitRelativePath || f.name
+      return /(?:^|\/)[^/]*tokens\.json$/i.test(path) && !/(?:^|\/)node_modules(?:\/|$)/.test(path)
+    })
+    if (tokensFile && tokensFile.size <= MAX_JSON_BYTES) {
+      setSourceNote(null)
+      const text = await tokensFile.text()
+      setRawText(text)
+      setFileName(tokensFile.name)
+      const parsed = parseTokenSource(text)
+      if (parsed.ok) openReview(parsed.json, tokensFile.name.replace(/\.json$/i, ''))
+      else setParseError(parsed.error)
+      return
+    }
+
+    const sources = all.filter((f) => isSourceFile(f.webkitRelativePath || f.name) && f.size <= 500_000)
+    if (!sources.length) {
+      setParseError('No source files in that drop. Use .css, .tsx, .vue, .html — or a tokens JSON.')
+      return
+    }
+    let text = ''
+    let count = 0
+    for (const file of sources) {
+      if (count >= MAX_SOURCE_FILES || text.length >= MAX_JSON_BYTES) break
+      const chunk = await file.text()
+      if (!chunk.includes('\n') && chunk.length > 50_000) continue
+      text += `\n/* ${file.webkitRelativePath || file.name} */\n${chunk}`
+      count++
+    }
+    const folder = (sources[0].webkitRelativePath || '').split('/')[0]
+    const label = folder || 'From code'
+    const approx = approximateSource(text, label)
+    if (!approx.ok) { setParseError(approx.error); return }
+    setRawText(JSON.stringify(approx.json, null, 2))
+    setSourceNote(`${approx.colors} colors in ${count} files. Seeds: ${approx.seeds.map((s) => `${s.slot} ${s.hex}`).join(' · ')}.`)
+    openReview(approx.json, label)
   }
 
   function runAnalysis() {
     setParseError(null)
     const parsed = parseTokenSource(rawText)
-    if (!parsed.ok) { setParseError(parsed.error); return }
-    const result = analyzeTokens(parsed.json, { consolidate: mergeFamilies })
-    if (!result.ok) { setParseError(result.error); return }
-    setParsedJson(parsed.json)
-    setAnalysis(result.analysis)
-    setNormalize(result.analysis.issues.some((i) => i.kind === 'off-ramp-semantic' || i.kind === 'partial-ramp'))
-    setSystemName(
-      result.analysis.sourceName ??
-      (fileName ? fileName.replace(/\.json$/i, '').replace(/[-_]/g, ' ') : 'Imported system'),
-    )
-    setStep('review')
+    if (parsed.ok) {
+      setSourceNote(null)
+      openReview(parsed.json, fileName ? fileName.replace(/\.json$/i, '').replace(/[-_]/g, ' ') : 'Imported system')
+      return
+    }
+    const approx = approximateSource(rawText, 'Pasted code')
+    if (!approx.ok) { setParseError(parsed.error); return }
+    setSourceNote(`${approx.colors} colors pasted. Seeds: ${approx.seeds.map((s) => `${s.slot} ${s.hex}`).join(' · ')}.`)
+    openReview(approx.json, 'Pasted code')
   }
 
   // Re-run the analysis with the merge/fix pass on or off — it's pure and fast.
@@ -173,7 +236,7 @@ export default function ImportSystemModal({
           </h2>
           <span className="text-caption text-fg-faint truncate">
             {step === 'intake'
-              ? 'any tokens JSON — we detect its structure'
+              ? 'tokens JSON, or the code that already uses the colors'
               : fileName ?? 'pasted JSON'}
           </span>
           <button
@@ -192,14 +255,14 @@ export default function ImportSystemModal({
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="import-json" className="text-xs font-medium text-fg">Paste your tokens JSON</label>
                 <p className="text-caption text-fg-faint">
-                  Any structure works — our own tokens.json, W3C design tokens ($value), Tailwind-style
-                  palettes, or ad-hoc maps. We detect ramps, semantic tokens and foundations, and generate
-                  whatever's missing.
+                  A tokens JSON (ours, W3C, or an ad-hoc map), or source that already paints with hex,
+                  rgb, hsl and CSS variables. From code we keep the colors that are actually there and
+                  generate the ramps for you to tune.
                 </p>
                 <textarea
                   id="import-json"
                   value={rawText}
-                  onChange={(e) => { setRawText(e.target.value); setFileName(null); setParseError(null) }}
+                  onChange={(e) => { setRawText(e.target.value); setFileName(null); setParseError(null); setSourceNote(null) }}
                   rows={9}
                   spellCheck={false}
                   placeholder={'{\n  "colors": { "primary": { "500": "#7c3aed", … } },\n  "spacing": { "1": "4px", … }\n}'}
@@ -220,18 +283,34 @@ export default function ImportSystemModal({
                   <path d="M12 15V3m0 0L7 8m5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
                 </svg>
                 <p className="text-xs text-fg-muted">
-                  {fileName ? <span className="font-medium text-fg">{fileName} loaded</span> : 'or drop a .json file here'}
+                  {fileName ? <span className="font-medium text-fg">{fileName} loaded</span> : 'or drop a .json file, source files, or a project folder'}
                 </p>
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="text-caption font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong rounded-lg px-3 py-1.5 transition-colors"
-                >
-                  Browse files
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="text-caption font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong rounded-lg px-3 py-1.5 transition-colors"
+                  >
+                    Browse files
+                  </button>
+                  <button
+                    onClick={() => folderRef.current?.click()}
+                    className="text-caption font-medium text-fg-muted hover:text-fg border border-line hover:border-line-strong rounded-lg px-3 py-1.5 transition-colors"
+                  >
+                    Browse project folder
+                  </button>
+                </div>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".json,application/json"
+                  accept=".json,.css,.scss,.tsx,.ts,.jsx,.js,.vue,.svelte,.html,application/json"
+                  multiple
+                  onChange={(e) => void handleFiles(e.target.files)}
+                  className="hidden"
+                />
+                <input
+                  ref={folderRef}
+                  type="file"
+                  multiple
                   onChange={(e) => void handleFiles(e.target.files)}
                   className="hidden"
                 />
@@ -255,6 +334,12 @@ export default function ImportSystemModal({
                   className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-fg focus:border-fg outline-none transition-colors"
                 />
               </div>
+
+              {sourceNote && (
+                <div className="rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-caption text-fg-muted">
+                  Approximated from code. {sourceNote} Tune the families after import — these seeds are the colors the files used, and the ramps are generated from them.
+                </div>
+              )}
 
               {analysis.fastPath === 'escala' && (
                 <div className="rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-caption text-fg-muted">
