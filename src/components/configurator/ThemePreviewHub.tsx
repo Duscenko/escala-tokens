@@ -17,7 +17,7 @@ import IntegrationStatusRail from './IntegrationStatusRail'
 import DocsView, { OVERVIEW_KEY } from './DocsView'
 import { FOUNDATION_DOCS, foundationDoc } from './docs/foundationDocs'
 import { PANEL_W, THEME_BAND_H } from './colorControls'
-import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, SHELL_CHROME, WORKSPACE_CHROME } from './themeWorkspaceLayout'
+import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL, INSPECTOR_TABS_H, SHELL_CHROME, WORKSPACE_CHROME } from './themeWorkspaceLayout'
 import type { FigmaPublishState } from '../../lib/figmaSync'
 import type { FigmaSyncMode, FigmaViewport } from '../../lib/figmaSyncModes'
 import type { GitHubPushState } from '../../lib/github'
@@ -27,6 +27,7 @@ import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
+import { FigmaGlyph } from './TopNav'
 import { myThemeKeys } from '../../lib/themeLibrary'
 import { showToast } from '../ui/Toast'
 import NeedMyThemeEmpty from './NeedMyThemeEmpty'
@@ -72,21 +73,40 @@ function HubBreadcrumb({ section, onBack }: { section: string; onBack?: () => vo
   )
 }
 
+/** The label of an icon-first header control. Collapsed at rest (the icon
+ *  alone), it slides open on hover and keyboard focus, and stays open while
+ *  `open` — the control is in a state worth naming (inspecting, syncing). */
+function RevealLabel({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <span
+      className={`flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-200 ease-[var(--ease-out-quint)] motion-reduce:transition-none ${
+        open
+          ? 'ml-1.5 max-w-[10rem] opacity-100'
+          : 'ml-0 max-w-0 opacity-0 group-hover:ml-1.5 group-hover:max-w-[10rem] group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100'
+      }`}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Inner button of the header controls: square at rest (the 16px glyph
+ *  centred in the 28px track), widening only by its label. */
+const HEADER_CONTROL_BTN = 'group flex h-7 items-center rounded-md px-[calc((1.75rem_-_16px)/2)] text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50'
+
 /**
  * Inspector mode toggle — Figma `41:1544` / `41:1545` (Button - Inspect tokens).
  * Outline shell — dashed `border-line` (same vocabulary as the Token Inspector
- * overlay and dashed add-rows), no `bg-tab-bar` fill. Sync beside it uses a
- * solid filled track so the two read as mode vs destination. The view switcher
- * keeps the filled track because it is a segmented control, not an outline action.
+ * overlay and dashed add-rows), no `bg-tab-bar` fill; the Figma door beside it
+ * keeps a solid edge so the two read as mode vs destination.
  *
  * It's a TOGGLE, not a momentary key: reading a role, going to the rail and
  * coming back for the next one is a sequence, and a mode that dropped every
  * time the pointer left the canvas couldn't survive it.
  *
- * Inspect-on fills the inner pill with `--accent-solid` / `--accent-ink` so
- * the mode reads as armed without inventing a second selected-chip language.
- * The visible label switches — **Inspect tokens** to enter, **Stop inspecting**
- * to leave — so the exit is on the control itself, not only in the tooltip.
+ * Icon-only at rest; hover/focus slides out **Inspector**. Armed it fills with
+ * the previewed theme's brand solid and stays open reading **Exit inspector**,
+ * so the way out is written on the control itself, not only in a tooltip.
  */
 function InspectorToggle({ active, onChange, accent, ink }: {
   active: boolean
@@ -98,7 +118,7 @@ function InspectorToggle({ active, onChange, accent, ink }: {
   ink?: string
 }) {
   const { t } = useI18n()
-  const label = active ? t('Stop inspecting') : t('Inspect tokens')
+  const label = active ? t('Exit inspector') : t('Inspector')
   return (
     <div
       className={`flex h-8 items-center rounded-lg border border-dashed p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] ${
@@ -114,7 +134,7 @@ function InspectorToggle({ active, onChange, accent, ink }: {
         title={active
           ? t('Return to normal interaction on the canvas')
           : `${t('Inspect tokens')} — ${t('point at a component or the page to see the roles that paint it')}`}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-caption font-medium tracking-[0.18px] transition-[color,box-shadow,transform] duration-150 ease-[var(--ease-out-quint)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50 ${
+        className={`${HEADER_CONTROL_BTN} ${
           active
             ? (accent ? '' : 'bg-accent-solid text-accent-ink')
             : `text-fg ${CHROME_CONTROL_HOVER}`
@@ -122,7 +142,55 @@ function InspectorToggle({ active, onChange, accent, ink }: {
         style={active && accent ? { backgroundColor: accent, color: ink } : undefined}
       >
         <InspectGlyph size={16} hint={!active} />
-        {label}
+        <RevealLabel open={active}>{label}</RevealLabel>
+      </button>
+    </div>
+  )
+}
+
+/**
+ * The Figma door, last (rightmost) in the header, in the same 32px shell as
+ * Inspect. Icon-only at rest; hover/focus slides out **Sync**. While sync runs
+ * (a payload published AND auto sync on — the same honest "active"
+ * `IntegrationStatusRail` uses, never `figmaLastPublishAt` alone), or while a
+ * publish is in flight or failed, it stays open with a status dot: green active
+ * · amber pulsing publishing · red needs attention. Colour is never the only
+ * carrier: `aria-label` / `title` say the state in words.
+ */
+function FigmaSyncButton({ publishState, onOpen }: { publishState: FigmaPublishState; onOpen: () => void }) {
+  const { t } = useI18n()
+  const published = useDesignStore((s) => Boolean(s.figmaLastPublishAt))
+  const autoSync = useDesignStore((s) => s.autoSyncFigma)
+  const busy = publishState === 'publishing'
+  const error = publishState === 'error'
+  const active = published && autoSync
+  const showStatus = active || busy || error
+  const status = error
+    ? t('Figma sync needs attention')
+    : busy
+      ? t('Publishing to Figma…')
+      : active
+        ? t('Figma sync active')
+        : t('Sync with Figma')
+  const dot = error ? 'bg-status-danger-solid' : busy ? 'bg-status-warning-solid animate-pulse' : 'bg-status-success-solid'
+  return (
+    <div className="flex h-8 items-center rounded-lg border border-line p-0.5 transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={status}
+        title={status}
+        className={`${HEADER_CONTROL_BTN} text-fg ${CHROME_CONTROL_HOVER}`}
+      >
+        {/* A 16px-wide box so the glyph centres exactly like Inspect's; the
+            38×57 mark fills its height, so 14 reads level with a 16 square. */}
+        <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
+          <FigmaGlyph className="h-3.5 w-auto" />
+        </span>
+        <RevealLabel open={showStatus}>
+          {t('Sync')}
+          {showStatus && <span aria-hidden className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />}
+        </RevealLabel>
       </button>
     </div>
   )
@@ -468,7 +536,7 @@ export default function ThemePreviewHub({
       ? (activeDocKey === OVERVIEW_KEY
         ? t('Theme reference')
         : t(activeDocKey === 'sizes' ? 'Spacing' : (FOUNDATION_DOCS.find((doc) => doc.key === activeDocKey)?.label ?? 'Docs')))
-      : t('Artefacts')
+      : t('Theme preview')
   // Flip the PREVIEW's appearance (the board), not the workspace chrome.
   // Color edition's Light/Dark is the control. Clearing `accentPreview`
   // mirrors the rail's own wrapper so an optimistic hue paint doesn't linger.
@@ -599,7 +667,7 @@ export default function ThemePreviewHub({
                   sits top-left; Inspect, Figma sync and Docs stay on the right.
                   Light/Dark lives on Color edition's header so the ramps and
                   the board cannot disagree. */}
-              <div className="flex flex-shrink-0 items-center justify-between gap-3 px-3" style={{ height: THEME_BAND_H }}>
+              <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-line px-3" style={{ height: INSPECTOR_TABS_H }}>
                 {contrastOpen ? (
                   <HubBreadcrumb section={t('Contrast grid')} onBack={() => setContrastOpen(false)} />
                 ) : docsOpen ? (
@@ -627,6 +695,9 @@ export default function ThemePreviewHub({
                       accent={boardCanvasTokens.brandSolid}
                       ink={boardCanvasTokens.onBrand}
                     />
+                  )}
+                  {!needsMyTheme && !contrastOpen && !docsOpen && (
+                    <FigmaSyncButton publishState={figmaPublishState} onOpen={() => onSurfaceChange('figma')} />
                   )}
                 </div>
               </div>

@@ -17,7 +17,6 @@ import PluginCommunityBanner from './PluginCommunityBanner'
 import { AppearanceToggle, BrandMark, FigmaGlyph, LanguageMenu, TOP_NAV_H, type DocsMenuPage } from './TopNav'
 import { NumberTicker } from '../ui/number-ticker'
 import { RainbowButton } from '../ui/rainbow-button'
-import { SparkleCircleIcon } from '../ui/icons'
 import { DiaTextReveal } from '../ui/dia-text-reveal'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion'
 import AgentInstallPanel from './AgentInstallPanel'
@@ -522,7 +521,13 @@ function ImagePlaceholder({ label, className }: { label: string; className?: str
  *  never drifts). Dark chrome, 2×, already cropped to the slot's ratio; the
  *  `width`/`height` attributes reserve that space so nothing shifts as they
  *  load, and everything is lazy because the page is long. */
-function AboutShot({ shot, className }: { shot: AboutShotSpec; className?: string }) {
+function AboutShot({ shot, className, ratio }: {
+  shot: AboutShotSpec
+  className?: string
+  /** Force a slot ratio (e.g. one row of cards mixing 16:10 and 4:3 shots);
+   *  the picture keeps its top edge and gives up the bottom. */
+  ratio?: string
+}) {
   const { t } = useI18n()
   const [w, h] = shot.size
   return (
@@ -534,8 +539,8 @@ function AboutShot({ shot, className }: { shot: AboutShotSpec; className?: strin
       loading="lazy"
       decoding="async"
       draggable={false}
-      className={cn('block w-full select-none rounded-xl border border-line object-cover', className)}
-      style={{ aspectRatio: `${w} / ${h}` }}
+      className={cn('block w-full select-none rounded-xl border border-line object-cover object-top', className)}
+      style={{ aspectRatio: ratio ?? `${w} / ${h}` }}
     />
   )
 }
@@ -550,13 +555,13 @@ const SHOTS = {
   primitives: { file: 'primitives', size: [1360, 850], alt: 'The Primitives table: one accent family with a dark and a light column, step 9 marked as the anchor' },
   semantics: { file: 'semantics', size: [1360, 850], alt: 'The Semantics table with Token Details open on a role, showing the ramp it can point at' },
   contrast: { file: 'contrast', size: [1200, 900], alt: 'The contrast grid: every pair of the twelve accent steps measured with APCA' },
-  alpha: { file: 'alpha', size: [1200, 900], alt: 'The Primary-Alpha ramp over a checkerboard, with the solved value for dark and light' },
-  harmony: { file: 'harmony', size: [1200, 900], alt: 'The colour quick settings: accent hue and tint sliders and the four state colours, beside the repainted artefacts' },
   type: { file: 'type', size: [1360, 850], alt: 'The Font edition panel: body and heading font and a five-step text scale slider' },
   radius: { file: 'radius', size: [1360, 850], alt: 'The Radius edition panel with Fields at the roundest step while Boxes keep theirs' },
   spacing: { file: 'spacing', size: [1200, 900], alt: 'The Spacing responsive table with the Mobile platform selected' },
-  grid: { file: 'grid', size: [1200, 900], alt: 'The grid at desktop, tablet and mobile: twelve, eight and four columns' },
-  shadow: { file: 'shadow', size: [1200, 900], alt: 'The shadow ramp in light above and in dark below' },
+  components: { file: 'components', size: [1360, 850], alt: 'The Button page in Components: a live playground with colour, style, size and state controls' },
+  docs: { file: 'docs', size: [1360, 850], alt: 'The Color documentation page, built from the system\'s own accent ramps' },
+  code: { file: 'code', size: [1360, 850], alt: 'The Code tab: the theme\'s variables.css with CSS, Markdown and Agent context views' },
+  figma: { file: 'figma', size: [1360, 850], alt: 'The Figma sync page: themes and viewports to ship, the file name and the ID to paste in the plugin' },
 } satisfies Record<string, AboutShotSpec>
 
 /** One number in the stats row, real counts, imported/derived, never typed
@@ -591,14 +596,6 @@ function Stat({ value, label, delay = 0 }: { value: number; label: string; delay
 
 /** `</>` — the "Code" tile's mark. Kept local (matches `MailIcon`/`GlobeIcon`
  *  above): one glyph, no reason to pull in an icon package for it. */
-function CodeGlyph({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
-      <path d="M9 8 4 12l5 4M15 8l5 4-5 4" />
-    </svg>
-  )
-}
-
 /** Hero stagger — the ONE choreographed moment this page gets (see the
  *  `animate` note on `AboutHome` below): mark → eyebrow → headline → CTA,
  *  each fading/rising in ~70ms after the last. `hidden`/`show` are picked up
@@ -627,7 +624,7 @@ const statsItem = {
 }
 
 /** A small mono eyebrow chip — names a section without competing with its
- *  headline. Section numbers ("01 · Color") give the long page a spine. */
+ *  headline. Section numbers ("01 · Foundations") give the long page a spine. */
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
     // Plain concatenation, NOT `cn`: tailwind-merge reads the custom
@@ -662,7 +659,8 @@ function ShowcaseCard({ title, body, media }: {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-elevated/20 transition-colors hover:border-line-strong">
       <div className="p-2">
-        <AboutShot shot={media} />
+        {/* One ratio for every card, so a row of 16:10 and 4:3 shots lines up. */}
+        <AboutShot shot={media} ratio="16 / 10" />
       </div>
       <div className="flex flex-col gap-1.5 px-4 pb-4 pt-2">
         <h3 className="text-strong font-semibold text-fg">{title}</h3>
@@ -672,24 +670,49 @@ function ShowcaseCard({ title, body, media }: {
   )
 }
 
-/** A destination row in the hand-off section: glyph · name · what lands there. */
-function DestinationRow({ Icon, title, body, action }: {
-  Icon: ComponentType<{ className?: string }>
+/** One destination of the system — what the tokens become (Components ·
+ *  Docs · Code · Figma). A large real capture on one side, the claim, up to
+ *  three facts and an optional action on the other; `flip` alternates the
+ *  sides so four in a row read as a sequence, not a stack. */
+function FeatureSection({ eyebrow, title, body, points, media, flip = false, action, children }: {
+  eyebrow: string
   title: string
   body: string
+  points: string[]
+  media: AboutShotSpec
+  flip?: boolean
   action?: ReactNode
+  children?: ReactNode
 }) {
   return (
-    <div className="flex gap-3 rounded-2xl border border-line bg-elevated/20 p-4">
-      <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-line bg-app text-fg-muted">
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="flex min-w-0 flex-col gap-1">
-        <h3 className="text-ui font-semibold text-fg">{title}</h3>
-        <p className="text-body leading-relaxed text-fg-muted">{body}</p>
-        {action}
+    <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
+      <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <AboutShot shot={media} className={cn('rounded-2xl', flip && 'lg:order-2')} />
+        <div className="flex flex-col gap-3">
+          <Eyebrow className="self-start">{eyebrow}</Eyebrow>
+          <h2 className="text-[26px] font-semibold leading-tight text-fg">{title}</h2>
+          <p className="text-ui leading-relaxed text-fg-muted">{body}</p>
+          <ul className="mt-1 flex flex-col gap-2">
+            {points.map((point) => (
+              <li key={point} className="flex gap-2.5 text-body leading-relaxed text-fg-muted">
+                <CheckGlyph />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+          {action}
+        </div>
       </div>
-    </div>
+      {children}
+    </section>
+  )
+}
+
+function CheckGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="mt-[3px] flex-shrink-0 text-accent-ui" aria-hidden>
+      <path d="m5 12 5 5 9-10" />
+    </svg>
   )
 }
 
@@ -909,14 +932,14 @@ export function AboutHome({
           </div>
         </div>
 
-        {/* ── 01 · Color ── */}
+        {/* ── 01 · Foundations — what you set ── */}
         <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
           <SectionHeader
-            eyebrow={t('01 · Color')}
-            title={t('One accent in. A whole accessible palette out.')}
-            lead={t('Twelve-step ramps for light and dark, semantic roles on top, every pairing checked.')}
+            eyebrow={t('01 · Foundations')}
+            title={t('One accent in. A whole system out.')}
+            lead={t('Colour, type, radius and spacing from the same settings, checked for contrast in light and dark.')}
           />
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <ShowcaseCard
               title={t('Ramps in both appearances')}
               body={t('Every family ships a light ramp and a dark twin. Step 9 is always your exact brand colour.')}
@@ -927,34 +950,11 @@ export function AboutHome({
               body={t('Buttons, borders and status colours pick the tone that clears WCAG AA on the surface they sit on, in every theme.')}
               media={SHOTS.semantics}
             />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
             <ShowcaseCard
               title={t('WCAG and APCA, side by side')}
               body={t('Every pair is measured both ways, so a colour that passes on paper but reads poorly still shows up.')}
               media={SHOTS.contrast}
             />
-            <ShowcaseCard
-              title={t('Translucent tokens that stay true')}
-              body={t('Alpha twins are solved against their page, so a hover wash renders the colour you meant in light and dark.')}
-              media={SHOTS.alpha}
-            />
-            <ShowcaseCard
-              title={t('Harmony with your accent')}
-              body={t('Neutral and state colours can follow the accent, so the whole palette reads as one system.')}
-              media={SHOTS.harmony}
-            />
-          </div>
-        </section>
-
-        {/* ── 02 · Type, shape and layout ── */}
-        <section className="flex flex-col gap-10 border-b border-line px-6 py-16">
-          <SectionHeader
-            eyebrow={t('02 · Type, shape and layout')}
-            title={t('The rest of the system, from the same settings.')}
-            lead={t('Type, radius, spacing, grids and shadows. All tokens, responsive where it matters.')}
-          />
-          <div className="grid gap-4 lg:grid-cols-2">
             <ShowcaseCard
               title={t('A type scale with a density dial')}
               body={t('Five densities from compact to spacious. Sizes and line heights move together, so the rhythm holds.')}
@@ -965,74 +965,90 @@ export function AboutHome({
               body={t('Boxes, fields and selectors round independently, so a pill button never turns your cards into stadiums.')}
               media={SHOTS.radius}
             />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
             <ShowcaseCard
               title={t('Spacing that tightens on mobile')}
               body={t('Component, section and layout tokens step down per viewport, all from one base unit.')}
               media={SHOTS.spacing}
             />
-            <ShowcaseCard
-              title={t('Grids that add up')}
-              body={t('Named grids from mobile to wide desktop. Column widths are derived, so every frame sums to its viewport.')}
-              media={SHOTS.grid}
-            />
-            <ShowcaseCard
-              title={t('Shadows that work in dark')}
-              body={t('A derived dark twin adds a soft light rim, so elevation still reads on a near-black page.')}
-              media={SHOTS.shadow}
-            />
           </div>
         </section>
 
-        {/* ── 03 · Hand-off — destinations left, diagram right ── */}
-        <section className="flex flex-col gap-8 border-b border-line px-6 py-16">
-          {/* The diagram slot (foundations → Figma · agent · code, 1:1) is hidden
-              until the artwork exists — re-add it as the grid's second column
-              (`lg:grid-cols-2`) when it does. Never ship a visible placeholder. */}
-          <div className="grid items-center gap-10">
-            <div className="flex flex-col gap-4">
-              <Eyebrow className="self-start">{t('03 · Hand-off')}</Eyebrow>
-              <h2 className="text-[26px] font-semibold leading-tight text-fg">
-                {t('One system, three destinations.')}
-              </h2>
-              <div className="grid gap-3 lg:grid-cols-3">
-                <DestinationRow
-                  Icon={FigmaGlyph}
-                  title="Figma"
-                  body={t('Plugin and live sync. Variables and styles land in your file, light and dark, with a mode per viewport.')}
-                />
-                <DestinationRow
-                  Icon={SparkleCircleIcon}
-                  title={t('AI agents')}
-                  body={t('A live MCP server your agent queries for real tokens, plus an offline package for when it cannot connect.')}
-                  action={(
-                    <button
-                      type="button"
-                      onClick={onLearnAI}
-                      className="mt-1 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg"
-                    >
-                      {t('See how to connect')}
-                      <ArrowGlyph size={10} />
-                    </button>
-                  )}
-                />
-                <DestinationRow
-                  Icon={CodeGlyph}
-                  title={t('Code')}
-                  body={t('CSS variables, W3C JSON, Tailwind, or a push to your GitHub repo.')}
-                />
-              </div>
-            </div>
-          </div>
+        {/* ── 02–05 · What the tokens become. Figma goes last on purpose: it
+            is where Pro comes in, and it hands straight to the closing CTA. ── */}
+        <FeatureSection
+          eyebrow={t('02 · Components')}
+          title={t('A component catalogue, painted with your tokens.')}
+          body={t('{count} components, each on one page: a live playground, every variant the Figma library ships, and the snippet for exactly what is on screen.', { count: COMPONENT_KEYS.length })}
+          points={[
+            t('Change colour, style, size and state, and see the real variant'),
+            t('Usage, accessibility and API reference beside the preview'),
+            t('Copy the page as context for your AI agent'),
+          ]}
+          media={SHOTS.components}
+          action={(
+            <button type="button" onClick={onOpenComponents} className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
+              {t('Browse components')}
+              <ArrowGlyph size={10} />
+            </button>
+          )}
+        />
 
+        <FeatureSection
+          flip
+          eyebrow={t('03 · Docs')}
+          title={t('Documentation written from your own values.')}
+          body={t('Every foundation gets a reference page built from your ramps, roles and scales. Change a token and its page changes with it, so the spec never goes stale.')}
+          points={[
+            t('Primitives, semantic roles and usage for each foundation'),
+            t('A Use it block on every page: Figma, code and AI'),
+            t('One click copies the page as context for an agent'),
+          ]}
+          media={SHOTS.docs}
+        />
+
+        <FeatureSection
+          eyebrow={t('04 · Code and agents')}
+          title={t('Real files for your repo. Live tokens for your agent.')}
+          body={t('Each theme as variables.css, Markdown and agent context, plus W3C JSON and Tailwind from Export. Push it to GitHub, or let an agent read the published system over MCP.')}
+          points={[
+            t('CSS variables with light and dark in one file'),
+            t('W3C design tokens that keep their aliases'),
+            t('{count} MCP tools that resolve tokens when your agent asks', { count: TOOL_SPECS.length }),
+          ]}
+          media={SHOTS.code}
+          action={(
+            <button type="button" onClick={onLearnAI} className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
+              {t('See how to connect')}
+              <ArrowGlyph size={10} />
+            </button>
+          )}
+        >
           {/* The real "Connect your agent" widget — same component Docs and the
               Export wizard use, every string from `agentInstall.ts`. */}
           <div className="flex flex-col gap-3 rounded-2xl border border-line bg-elevated/20 p-4">
             <span className="text-ui font-semibold text-fg">{t('Connect your agent')}</span>
             <AgentInstallPanel variant="about" />
           </div>
-        </section>
+        </FeatureSection>
+
+        <FeatureSection
+          flip
+          eyebrow={t('05 · Sync with Figma')}
+          title={t('Your system in Figma, one mode per theme and viewport.')}
+          body={t('Paste one ID into the Escala plugin. Variables, text styles, effect styles, grids and components land in your file, with Light and Dark per theme and Desktop, Tablet and Mobile for every length.')}
+          points={[
+            t('One ID that survives renaming the theme or the file'),
+            t('Pick which themes and viewports ship'),
+            t('Live sync republishes as you edit, with Pro'),
+          ]}
+          media={SHOTS.figma}
+          action={(
+            <a href={FIGMA_PLUGIN_COMMUNITY} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 self-start rounded text-body font-semibold text-accent-ui hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg">
+              {t('Get the plugin')}
+              <ArrowGlyph size={10} />
+            </a>
+          )}
+        />
 
         {/* ── Closing CTA — a background slot behind the copy ── */}
         <div className="px-6 py-16">

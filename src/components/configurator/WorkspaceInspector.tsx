@@ -2,7 +2,7 @@ import { createContext, useContext, type CSSProperties, type ReactNode } from 'r
 import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useI18n } from '../../lib/i18n'
-import { SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
+import { INSPECTOR_TABS_H, SEGMENT_INACTIVE, SEGMENT_SELECTED_FILL } from './themeWorkspaceLayout'
 
 // ─── The Generator's right-hand INSPECTOR ───────────────────────────────────
 // Layout: [icon rail] [canvas card — your system] [inspector — edit it].
@@ -75,7 +75,7 @@ export default function WorkspaceInspector({
       // whole column is one surface, so `--tab-bar` resolves to the panel's.
       style={{ width: INSPECTOR_WIDTH, '--tab-bar': 'var(--side-panel)', '--color-tab-bar': 'var(--side-panel)' } as CSSProperties}
     >
-      <div className="flex-shrink-0 px-3 pt-3 pb-2">
+      <div className="flex-shrink-0 px-3 pt-3 pb-2" style={{ height: INSPECTOR_TABS_H }}>
         <div
           role="tablist"
           aria-label={t('Theme workspace')}

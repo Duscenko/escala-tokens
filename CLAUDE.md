@@ -92,6 +92,21 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 > - Older notes below that place Quick settings / Collections / the Themes library in a
 >   LEFT column, or describe the Theme · Variables · Sync tab strip, describe the
 >   pre-2026-10-06 layout.
+>
+> **UPDATE (2026-10-07): the Themes library is a PAGE of its own — no icon rail, no
+> inspector.** `themeWorkspaceTab === 'library'` hides `FoundationIconRail` and
+> `WorkspaceInspector` (the card gets `mx-3`), and `ThemeLibraryRail` is no longer
+> mounted there: it listed the same themes as the grid, so every theme showed twice.
+> Choosing a theme isn't editing one. Everything the rail did lives on
+> `ThemeLibraryPage` now: a **← Theme preview** back link; per card **Open · Get code**
+> plus a ⋯ (`ThemeOptionsMenu`, exported from the rail file, `onOpenInCode` omitted
+> because the card already has Get code) with **Sync with Figma · Rename · Delete**
+> (rename inline, delete via `DeleteThemeConfirmation`); a last **Create your theme**
+> card (dashed cover with a centred +, `openCreateTheme`, disabled at the My-themes
+> cap); and a header ⋯ with **Reset** (the shell's reset modal) and **Delete my
+> themes**. Dropped with the rail: its "Reset system style" (re-trying Core on), which
+> only made sense beside the rail's style try-on. The rail's foot door
+> (`ThemesLibraryToggle`) only opens the library now — the rail isn't shown on it.
 
 
 > **NAMING: the Generator's first workspace tab is called "Theme"** — it was "Theme
@@ -1201,12 +1216,21 @@ and Import JSON used to sit here too and are retired, see the Navigation model n
 > `AboutMenu.tsx`'s `SHOTS` map holds each file's pixel size + translatable alt text, and
 > `AboutShot` renders it with `width`/`height` so nothing shifts. **When the interface changes,
 > re-run the script — that is what keeps the guide honest.** Notes: a shot declares the ratio of
-> its slot (4:3 / 16:10) and the script crops to it; wide tables use a narrower window
-> (`NARROW` / 1320) so a 4:3 crop fills instead of leaving a dead band; Shadow is two real
-> captures (light over dark) stacked, because dark elevation only reads next to light; Radius sets
-> Fields to the roundest tile by POSITION (the tiles have no accessible name) — if the rail's
-> layout moves, that click is the one to fix. Still placeholders: the hand-off diagram and the
-> closing band (not screenshots).
+> its slot (4:3 / 16:10) and the script crops to it; crops are measured against the 2026-10
+> layout (`card()` = rail → inspector, `WIDE` = card + inspector); Radius sets Fields to the
+> roundest tile by POSITION (the tiles have no accessible name) — if the inspector's layout moves,
+> that click is the one to fix; Figma hides the launch-promo strip before capturing so the
+> picture doesn't date. Still placeholders: the closing band (not a screenshot).
+>
+> **The page's spine (2026-10-07): what you SET, then what the tokens BECOME.** Hero · stats ·
+> Start from a style · **01 Foundations** (six `ShowcaseCard`s, one 16:10 ratio forced so 16:10
+> and 4:3 shots line up) · then four `FeatureSection`s, large capture beside claim + three
+> facts, alternating sides: **02 Components · 03 Docs · 04 Code and agents** (carries the
+> `AgentInstallPanel`) **· 05 Sync with Figma** — last on purpose, it's where Pro comes in and
+> it hands straight to the closing CTA. The old 03 · Hand-off (three text rows) is gone; alpha,
+> harmony, grid and shadow shots were dropped (detail better shown in the product — and Docs no
+> longer has a Grid page to capture). Counts in the copy come from `COMPONENT_KEYS` /
+> `TOOL_SPECS`, never typed.
 
 > **The "Escala Tokens on GitHub" repo link lives in the FOOTER, not TopNav's
 > global cluster.** It used to lead that cluster and was the odd one out on two

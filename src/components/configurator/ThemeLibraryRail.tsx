@@ -139,7 +139,7 @@ function ThemeLibraryOptionsPopover({
   )
 }
 
-function DeleteMyThemesConfirmation({ count, onCancel, onConfirm }: { count: number; onCancel: () => void; onConfirm: () => void }) {
+export function DeleteMyThemesConfirmation({ count, onCancel, onConfirm }: { count: number; onCancel: () => void; onConfirm: () => void }) {
   const { t } = useI18n()
   const cancelRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -268,7 +268,7 @@ const THEME_OPTIONS_MENU_PAD = 8
 const THEME_MENU_ITEM =
   'flex h-8 w-full items-center rounded-md px-2.5 text-left text-caption font-medium text-fg-muted transition-colors hover:bg-elevated hover:text-fg active:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ui/50'
 
-function ThemeOptionsMenu({
+export function ThemeOptionsMenu({
   open,
   anchorRef,
   onClose,
@@ -372,14 +372,16 @@ function ThemeOptionsMenu({
           >
             {t('Sync with Figma')}
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onOpenInCode}
-            className={THEME_MENU_ITEM}
-          >
-            {t('Open in code')}
-          </button>
+          {onOpenInCode && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onOpenInCode}
+              className={THEME_MENU_ITEM}
+            >
+              {t('Open in code')}
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

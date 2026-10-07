@@ -20,7 +20,7 @@ import FoundationWorkbench from '../components/configurator/FoundationWorkbench'
 import type { VariableCollectionItem, VariableCollectionKey } from '../components/configurator/VariableCollectionRail'
 import ThemeCodeFormat, { resolveCodeTheme } from '../components/configurator/ThemeCodeFormat'
 import ThemeLibraryPage from '../components/configurator/ThemeLibraryPage'
-import ThemeLibraryRail, { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
+import { myThemeKeys } from '../components/configurator/ThemeLibraryRail'
 import { previewWidgetKey, QUICK_PANEL_FOUNDATIONS } from '../components/configurator/ThemeQuickSettingsRail'
 import ThemePanel from '../components/configurator/ThemePanel'
 import { ThemesLibraryToggle } from '../components/configurator/ThemeSwitcher'
@@ -1704,6 +1704,8 @@ export default function Configurator() {
   // foundation's widget.
   const themeWorkspaceRailVisible = themesCanvas
     && !themeHubConnecting
+    // The Themes library is a page of its own: picking a theme isn't editing one.
+    && themeWorkspaceTab !== 'library'
   /** Foundation icon rail on Theme Preview AND Variables. Preview lights the
    *  widget that exists (Color → color edition, Font → text edition, …);
    *  Variables keeps all nine tables. Get code uses its own scope rail.
@@ -1844,7 +1846,7 @@ export default function Configurator() {
             <FoundationIconRail
               orientation="vertical"
               ariaLabel={themeWorkspaceTab === 'preview' ? t('Quick settings') : 'Variable foundations'}
-              active={themeWorkspaceTab === 'code' || themeWorkspaceTab === 'library' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
+              active={themeWorkspaceTab === 'code' ? '' : themeWorkspaceTab === 'preview' ? previewWidgetKey(activeFoundation) : activeFoundation}
               onSelect={selectWorkspaceFoundation}
               groups={[
                 { label: t('Variables'), items: VARIABLE_FOUNDATIONS.filter((foundation) => themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key)).map((foundation) => ({
@@ -1857,31 +1859,16 @@ export default function Configurator() {
                 })) },
                 { label: t('Styles'), items: FOUNDATIONS.filter((foundation) => ['icons', 'shadow'].includes(foundation.key) && (themeWorkspaceTab === 'primitives' || (QUICK_PANEL_FOUNDATIONS as readonly string[]).includes(foundation.key))).map((foundation) => ({ key: foundation.key, label: t(foundation.short), Icon: foundation.Icon })) },
               ].filter((group) => group.items.length > 0)}
-              // The Themes library — same list on every tab, so its door is
-              // the rail's foot, not one view's header.
+              // The Themes library's door is the rail's foot on every tab. The
+              // rail isn't shown ON the library (a page of its own, with Back),
+              // so from here the door only ever opens it.
               footer={(
                 <ThemesLibraryToggle
-                  open={themeWorkspaceTab === 'library'}
-                  onToggle={() => (themeWorkspaceTab === 'library' ? changeThemeWorkspaceTab('preview') : openLibraryPage())}
+                  open={false}
+                  onToggle={openLibraryPage}
                   placement="icon-rail"
                 />
               )}
-            />
-          )}
-          {/* Themes library page: the library docks in the widget panel's
-              slot (same 240px), the canvas shows the selected theme's export. */}
-          {themesCanvas && themeWorkspaceTab === 'library' && (
-            <ThemeLibraryRail
-              width={COLOR_RAIL_WIDTH}
-              previewTheme={previewTheme}
-              onPreviewThemeChange={changePreviewTheme}
-              onStylePreview={setStylePreview}
-              activeStylePreview={stylePreview}
-              onSyncFigma={syncFigmaForTheme}
-              onOpenInCode={openCodeForTheme}
-              onCreateTheme={openCreateTheme}
-              onEditTheme={(key) => { setStylePreview(null); setThemeEditor(key) }}
-              onOpenReset={() => setResetOpen(true)}
             />
           )}
           {/* Center editor */}
@@ -1892,7 +1879,7 @@ export default function Configurator() {
               the `.light`/`.dark` class here never reaches them. */}
           <main
             className={themesCanvas
-              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${previewAppearance === 'dark' ? 'dark' : 'light'}`
+              ? `flex-1 min-w-0 flex flex-col my-3 overflow-hidden rounded-2xl border border-line bg-app ${themeWorkspaceTab === 'library' ? 'mx-3' : ''} ${previewAppearance === 'dark' ? 'dark' : 'light'}`
               : 'flex-1 min-w-0 flex flex-col'}
           >
             {/* No CenterHeader on the Themes canvas — the icons ARE the section
@@ -1984,6 +1971,10 @@ export default function Configurator() {
                     onSelectTheme={changePreviewTheme}
                     onOpenPreview={(key) => { changePreviewTheme(key); changeThemeWorkspaceTab('preview') }}
                     onGetCode={openCodeForTheme}
+                    onSyncFigma={syncFigmaForTheme}
+                    onCreateTheme={openCreateTheme}
+                    onOpenReset={() => setResetOpen(true)}
+                    onBack={() => changeThemeWorkspaceTab('preview')}
                     onNewSystem={() => setNewSystemOpen(true)}
                     onImport={() => setImportOpen(true)}
                   />
@@ -2068,7 +2059,7 @@ export default function Configurator() {
               )}
             </div>
           </main>
-          {themesCanvas && (
+          {themesCanvas && themeWorkspaceTab !== 'library' && (
             <WorkspaceInspector
               value={inspectorTab}
               onChange={changeInspectorTab}

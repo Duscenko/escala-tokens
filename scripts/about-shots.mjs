@@ -44,37 +44,57 @@ async function findChromium() {
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
-const tab = (p, name) => p.locator(`button:has-text("${name}")`).first()
+// Layout (2026-10): [icon rail 64] [canvas CARD] [INSPECTOR 288] — the inspector
+// holds the tabs Theme · Variables · Code · Docs. Docs is no longer a canvas
+// button: it is an inspector tab that shows the page of the rail's foundation.
+const inspectorTab = (p, name) => p.getByRole('tab', { name, exact: true }).click()
 const rail = (p, name) => p.locator(`nav button:has-text("${name}")`).first()
 const settle = (p, ms = 700) => p.waitForTimeout(ms)
 const blur = (p) => p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
 
+/** The Theme board opens in inspect mode; shots want the plain board. */
+async function stopInspecting(p) {
+  await p.getByRole('button', { name: 'Stop inspecting' }).click().catch(() => {})
+  await settle(p, 400)
+}
 async function openVariables(p, foundation) {
-  await tab(p, 'Variables').click()
+  // The rail lists every foundation only outside Theme, so switch tab first.
+  await inspectorTab(p, 'Variables')
   await settle(p, 500)
   if (foundation) await rail(p, foundation).click()
   await settle(p)
 }
 async function openDocs(p, foundation) {
-  await p.mouse.click(1389, 133) // canvas "Docs"
-  await settle(p, 700)
+  // Docs' own rail is the short one; pick the foundation from Variables' full
+  // rail, then flip to Docs — the page follows the selected foundation.
+  await inspectorTab(p, 'Variables')
+  await settle(p, 500)
   await rail(p, foundation).click()
-  await settle(p)
+  await settle(p, 400)
+  await inspectorTab(p, 'Docs')
+  await settle(p, 900)
 }
 async function openPreview(p, foundation) {
-  await p.getByRole('tab', { name: 'Theme', exact: true }).click()
+  await inspectorTab(p, 'Theme')
   await settle(p, 500)
   if (foundation) await rail(p, foundation).click()
+  await stopInspecting(p)
   await settle(p)
 }
 
-// Content area: below the nav (52) + workspace tab strip (54), to the right of
-// the 64px foundation rail. Every clip is expressed from here.
-const TOP = 106
+const TOP = 66
 const LEFT = 65
+/** The canvas card, measured: from the icon rail to the inspector's left edge.
+ *  `maxW` keeps a 4:3 crop inside the card's own height. */
+async function card(p, maxW = 1040) {
+  const i = await p.locator('#workspace-inspector').boundingBox()
+  return { x: LEFT, y: TOP, width: Math.min(maxW, Math.floor(i.x - 14 - LEFT)) }
+}
+/** Card + inspector, for the 16:10 shots (the inspector is half the story). */
+const WIDE = { x: 60, y: 54, width: 1370 }
 /** A 1200px window: wide tables compact, so a 4:3 crop fills instead of leaving
  *  a dead band under a table that only has twelve rows. */
-const NARROW = { width: 1200, height: 900 }
+const NARROW = { width: 1200, height: 940 }
 
 /** A shot: where it goes, its slot ratio, how to reach the state, what to crop. */
 const SHOTS = [
@@ -90,7 +110,7 @@ const SHOTS = [
   },
   {
     name: 'primitives', ratio: '16:10',
-    async setup(p) { await openVariables(p, 'Color'); return { x: 305, y: TOP, width: 1135 } },
+    async setup(p) { await openVariables(p, 'Color'); return WIDE },
   },
   {
     name: 'semantics', ratio: '16:10',
@@ -98,38 +118,25 @@ const SHOTS = [
       await openVariables(p, 'Color')
       await p.getByText('Color semantics', { exact: true }).first().click()
       await settle(p)
-      // The row's sliders icon (far-right column) opens Token Details beside the table.
+      // The row's sliders icon (far-right column of the card) opens Token Details.
       const row = await p.getByText('action.primary.default', { exact: true }).first().boundingBox()
-      await p.mouse.click(1415, row.y + row.height / 2)
+      await p.mouse.click(1099, row.y + row.height / 2)
       await settle(p, 900)
-      return { x: 185, y: TOP, width: 1200 }
+      return WIDE
     },
   },
   {
-    name: 'contrast', ratio: '4:3', viewport: { width: 1320, height: 900 },
+    name: 'contrast', ratio: '4:3',
     async setup(p) {
       await openPreview(p, 'Color')
       await p.locator('button:has-text("Show")').first().click()
       await settle(p, 900)
-      return { x: 305, y: TOP, width: 1015 }
+      return card(p)
     },
-  },
-  {
-    name: 'alpha', ratio: '4:3', viewport: NARROW,
-    async setup(p) {
-      await openVariables(p, 'Color')
-      await p.getByText('Primary-Alpha', { exact: true }).first().click()
-      await settle(p, 900)
-      return { x: 305, y: TOP, width: 895 }
-    },
-  },
-  {
-    name: 'harmony', ratio: '4:3',
-    async setup(p) { await openPreview(p, 'Color'); return { x: LEFT, y: TOP, width: 640 } },
   },
   {
     name: 'type', ratio: '16:10',
-    async setup(p) { await openPreview(p, 'Font'); return { x: LEFT, y: TOP, width: 1000 } },
+    async setup(p) { await openPreview(p, 'Font'); return WIDE },
   },
   {
     name: 'radius', ratio: '16:10',
@@ -137,10 +144,10 @@ const SHOTS = [
       await openPreview(p, 'Radius')
       // The About copy's point: Fields go as round as they can while Boxes stay put —
       // a pill button never turns the cards into stadiums. The last tile of the
-      // Fields row (by position: the rail's tiles carry no accessible name).
-      await p.mouse.click(274, 360)
+      // Fields row, in the inspector (by position: the tiles carry no accessible name).
+      await p.mouse.click(1394, 389)
       await settle(p, 600)
-      return { x: LEFT, y: TOP, width: 1000 }
+      return WIDE
     },
   },
   {
@@ -149,39 +156,53 @@ const SHOTS = [
       await openVariables(p, 'Spacing')
       await p.locator('button:has-text("Spacing responsive")').first().click()
       await settle(p, 500)
-      // Platform switch: Desktop · Tablet · Mobile — pick the last.
-      await p.locator('[aria-label*="latform"] button, [role=radiogroup] button').last().click().catch(() => {})
+      // Platform switch (inspector): Desktop · Tablet · Mobile — pick the last.
+      await p.locator('#workspace-inspector [aria-label*="latform"] button, #workspace-inspector [role=radiogroup] button').last().click().catch(() => {})
       await settle(p)
-      return { x: LEFT, y: TOP, width: 960 }
+      return card(p)
+    },
+  },
+  // ── The four destinations: what the tokens become ──
+  {
+    name: 'components', ratio: '16:10', viewport: { width: 1440, height: 960 },
+    async setup(p) {
+      await p.getByRole('button', { name: 'Components', exact: true }).first().click()
+      await settle(p, 1200)
+      return { x: 0, y: 52, width: 1400 }
     },
   },
   {
-    name: 'grid', ratio: '4:3',
+    name: 'docs', ratio: '16:10',
     async setup(p) {
-      await openDocs(p, 'Grid')
-      // The frames start at the first "N col · gutter · margin" caption (Desktop).
-      await p.locator('text=/\\d+ col · /').first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
-      await p.mouse.move(640, 500)
-      await p.mouse.wheel(0, -70)
-      await settle(p, 600)
-      return { x: 170, y: TOP, width: 960 }
+      await inspectorTab(p, 'Docs')
+      await settle(p, 1200)
+      return WIDE
     },
   },
   {
-    // Light over dark, each a real capture of Docs · Shadow · Elevation: in dark
-    // the ramp is a soft light rim, in light a black blur, and that difference
-    // IS the feature — it only reads side by side. Stacked, not blended.
-    name: 'shadow', ratio: '4:3', appearances: ['light', 'dark'],
+    name: 'code', ratio: '16:10',
     async setup(p) {
-      await openDocs(p, 'Shadow')
-      const heading = p.getByText('Elevation', { exact: true }).first()
-      await heading.evaluate((el) => el.scrollIntoView({ block: 'start' }))
-      await p.mouse.move(640, 500)
-      await p.mouse.wheel(0, -60) // clear the sticky breadcrumb
-      await settle(p, 600)
-      // Crop from the heading itself, through the swatches and into the values.
-      const box = await heading.boundingBox()
-      return { x: 170, y: box.y - 24, width: 960, height: 360 }
+      await inspectorTab(p, 'Code')
+      await settle(p, 1200)
+      return WIDE
+    },
+  },
+  {
+    name: 'figma', ratio: '16:10', viewport: { width: 1440, height: 990 },
+    async setup(p) {
+      await p.getByRole('button', { name: 'More export destinations' }).click()
+      await settle(p, 400)
+      await p.getByText('Sync Figma', { exact: true }).click()
+      await settle(p, 1200)
+      // The launch-promo strip ("free until October 31 · N days left") dates the
+      // picture within weeks; the guide shows the page without it.
+      await p.getByText(/is free until/).first().evaluate((el) => {
+        let n = el
+        while (n.parentElement && n.getBoundingClientRect().width < 700) n = n.parentElement
+        n.style.display = 'none'
+      })
+      await settle(p, 300)
+      return { x: 0, y: 54, width: 1440 }
     },
   },
 ]
@@ -203,7 +224,7 @@ async function encode(png, ratio, name) {
  *  the same Core theme every time), the plugin banner closed so every shot
  *  starts from the same top edge, then the shot's own steps and crop. */
 async function capture(browser, shot, appearance) {
-  const ctx = await browser.newContext({ viewport: shot.viewport ?? { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: appearance })
+  const ctx = await browser.newContext({ viewport: shot.viewport ?? { width: 1440, height: 940 }, deviceScaleFactor: 2, colorScheme: appearance })
   await ctx.addInitScript((mode) => {
     localStorage.setItem('sd-onboarded', '1')
     localStorage.setItem('sd-theme', mode)
@@ -215,6 +236,7 @@ async function capture(browser, shot, appearance) {
     await p.mouse.click(p.viewportSize().width - 28, 14) // banner ✕, right-aligned
     await settle(p, 400)
     const crop = await shot.setup(p)
+    if (process.env.DEBUG_SHOTS) await p.screenshot({ path: `/private/tmp/claude-502/-Users-duscenko-sync-ds-platform-escala-tokens/082f8afb-4457-4f25-ab8c-be627cbc8a27/scratchpad/dbg-${shot.name}-${appearance}.png` })
     await blur(p)
     const [rw, rh] = shot.ratio.split(':').map(Number)
     // A composed shot gives each part an explicit height; otherwise the slot's ratio.

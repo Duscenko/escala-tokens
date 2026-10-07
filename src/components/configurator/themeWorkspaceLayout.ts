@@ -1,5 +1,9 @@
 /** Shared outer boundary for every drawer opened from the Themes workspace. */
 export const THEME_LIBRARY_WIDTH = 196
+/** Height of the inspector's tab block (Theme · Variables · Code · Docs) —
+ *  and of the Theme preview header beside it, so the two rules under them
+ *  run on ONE line across the card and the inspector. */
+export const INSPECTOR_TABS_H = 60
 
 /**
  * Shell frame — TopNav, the Themes library (same 196px column as the brand
