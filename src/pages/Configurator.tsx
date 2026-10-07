@@ -85,6 +85,10 @@ import GridSemantics from '../components/configurator/GridSemantics'
 import { COMPONENTS, type ComponentDef } from '../lib/componentCatalogue'
 import { PaletteIcon } from '../components/ui/icons'
 import { useI18n } from '../lib/i18n'
+import { goToLogin, useAccess } from '../lib/access'
+import { takeLoginIntent } from '../lib/loginReturn'
+import { LoginWall } from '../components/ui/LoginWall'
+import { showToast } from '../components/ui/Toast'
 
 // ── Stroke-icon factory (16px on a 24 grid, tracks currentColor) ────────────
 // Multiple subpaths: separate them with "|".
@@ -563,6 +567,9 @@ function CenterHeader({ Icon, title, subtitle, accentColor, right }: { Icon: Com
 export default function Configurator() {
   const reduceMotion = useReducedMotion() ?? false
   const { t } = useI18n()
+  // Anonymous wall (design-plans/login-funnel.md): Variables / Code / Docs show
+  // a part, Export and Save ask for a free account first.
+  const access = useAccess()
   // Component include/exclude lives in Export wizard only — Components rail is browse-only.
   const store = useDesignStore()
   const { markFoundationComplete, iconLibrary, themeKinds, themeOrder, themes, projectCreated } = store
@@ -958,15 +965,37 @@ export default function Configurator() {
   // per open makes "opened again" mean "started again".
   const [exportRun, setExportRun] = useState(0)
   const openSectionExport = () => {
+    // Downloading is what an account buys: anonymous → sign up, then the
+    // wizard opens on return (the `export` intent below).
+    if (access.gated) { goToLogin('export'); return }
     setThemeExportScope(null)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
   const openThemeExport = (themeKey: string) => {
+    if (access.gated) { goToLogin('export'); return }
     setThemeExportScope(themeKey)
     setExportRun((n) => n + 1)
     setSectionExportOpen(true)
   }
+  // Back from `/login` with a session: finish what was started while signed
+  // out — once (`takeLoginIntent` forgets the return).
+  useEffect(() => {
+    if (access.loading || access.tier === 'anon') return
+    const intent = takeLoginIntent('workspace')
+    if (intent === 'export') {
+      // One-shot sync from sessionStorage (the action started before the login
+      // round trip), not derived state — it cannot run during render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setThemeExportScope(null)
+      setExportRun((n) => n + 1)
+      setSectionExportOpen(true)
+    } else if (intent === 'save-library') {
+      useDesignStore.getState().saveCurrentSystem()
+      showToast(t('Theme saved'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [access.loading, access.tier])
   // Import-your-design-system modal (paste/drop a tokens JSON → review → adopt).
   const [importOpen, setImportOpen] = useState(false)
   const [newSystemOpen, setNewSystemOpen] = useState(false)
@@ -1315,13 +1344,15 @@ export default function Configurator() {
   }, [previewTheme])
   const publishFigmaNow = useCallback(() => {
     commitVisit()
+    // Publishing hands Figma the whole system: a guest signs up first.
+    if (access.gated) { goToLogin(); return }
     if (!isLiveEnvironment() || figmaPublishState === 'publishing' || !figmaSyncModes.length) return
     handleFigmaPublishState('publishing')
     void publishTokens({ ...figmaPublishBase, section: workspaceSection }).then((result) => {
       if (result.superseded) return
       handleFigmaPublishState(result.ok ? 'done' : 'error', result.reason)
     })
-  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection])
+  }, [commitVisit, figmaPublishState, handleFigmaPublishState, figmaPublishBase, workspaceSection, access.gated])
   const syncFigmaNow = useCallback(() => {
     setExportMode('figma-sync')
     publishFigmaNow()
@@ -2009,6 +2040,11 @@ export default function Configurator() {
                   <div className="flex min-w-0 flex-1 justify-end">{tokenSearchField}</div>
                 </div>
                 <div className="flex-1 min-h-0">
+                <LoginWall
+                  active={access.gated}
+                  title={t('See every token')}
+                  detail={t('Create a free account to see the full table, export it and save your theme.')}
+                >
                 <PreviewPlatformProvider
                   value={{
                     previewPlatform,
@@ -2045,6 +2081,7 @@ export default function Configurator() {
                   </motion.div>
                 </FoundationWorkbench>
                 </PreviewPlatformProvider>
+                </LoginWall>
                 </div>
                 </div>
               ) : (

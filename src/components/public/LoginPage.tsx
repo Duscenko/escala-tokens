@@ -158,7 +158,7 @@ export function LoginPage() {
   useEffect(() => {
     applyDocumentHead({
       title: `${t('Sign in')} — Escala Tokens`,
-      description: t('Optional. You only need an account to save in the cloud and to use your Pro licence.'),
+      description: t('Free. An account lets you see every token, export your system and save your theme.'),
       canonicalPath: LOGIN_PATH,
       robots: 'noindex, nofollow',
     })
@@ -252,10 +252,10 @@ export function LoginPage() {
     : view === 'recovery' ? t('Choose a new password')
     : t('Sign in to Escala')
   const sub =
-    view === 'signup' ? t('Optional. You only need an account to save in the cloud and to use your Pro licence.')
+    view === 'signup' ? t('Free. An account lets you see every token, export your system and save your theme.')
     : view === 'reset' ? t('Enter your email and we will send you a link to choose a new password.')
     : view === 'recovery' ? null
-    : t('Sign in or create an account. The configurator works without one.')
+    : t('Sign in or create a free account to see every token, export and save.')
   const cta =
     view === 'signup' ? t('Create account')
     : view === 'reset' ? t('Send reset link')

@@ -63,4 +63,27 @@ describe('loginReturn', () => {
     expect(pendingNext()).toBeNull()
     expect(takeLoginIntent('library')).toBeNull()
   })
+
+  describe('workspace return (login funnel)', () => {
+    it('returns to the exact Generator section the person left from', () => {
+      rememberReturn('workspace', 'export', 'variables/core--minimalist/color/semantics')
+      expect(pathForNext(pendingNext())).toBe('/?section=variables%2Fcore--minimalist%2Fcolor%2Fsemantics')
+      expect(takeLoginIntent('workspace')).toBe('export')
+      expect(takeLoginIntent('workspace')).toBeNull()
+    })
+
+    it('refuses a section outside the workspace grammar (no open redirect)', () => {
+      rememberReturn('workspace', null, '//evil.example/path')
+      expect(pathForNext('workspace')).toBe('/')
+      rememberReturn('workspace', null, 'not-a-section')
+      expect(pathForNext('workspace')).toBe('/')
+    })
+
+    it('keeps the section when the login page re-remembers the same destination', () => {
+      rememberReturn('workspace', 'save-library', 'code/core--minimalist')
+      rememberReturn('workspace')
+      expect(pathForNext('workspace')).toBe('/?section=code%2Fcore--minimalist')
+      expect(takeLoginIntent('workspace')).toBe('save-library')
+    })
+  })
 })

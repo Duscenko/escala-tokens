@@ -15,14 +15,20 @@
 // See design-plans/themes-library-accounts.md (phase 2).
 
 import { LOGIN_PATH } from './legal'
+import { decodeWorkspaceSection } from './workspaceLink'
 
-export type LoginNext = 'library'
+/** `workspace` returns to the Generator section the person left from (see
+ *  `section` below). Still a closed list: the section is re-validated against
+ *  the workspace grammar on the way back, so it can only ever produce
+ *  `/?section=<a real section id>`, never an arbitrary URL. */
+export type LoginNext = 'library' | 'workspace'
 /** Something the user started while signed out and should be finished on return. */
-export type LoginIntent = 'save-library'
+export type LoginIntent = 'save-library' | 'export'
 export type LoginMode = 'signin' | 'signup'
 
 const NEXT_PATH: Record<LoginNext, string> = {
   library: '/?section=library',
+  workspace: '/',
 }
 
 const STORAGE_KEY = 'escala-login-return'
@@ -32,6 +38,8 @@ const MAX_AGE_MS = 30 * 60 * 1000
 interface PendingReturn {
   next: LoginNext
   intent: LoginIntent | null
+  /** Workspace section id for `next: 'workspace'`. */
+  section?: string
   at: number
 }
 
@@ -40,7 +48,11 @@ function isNext(value: unknown): value is LoginNext {
 }
 
 function isIntent(value: unknown): value is LoginIntent {
-  return value === 'save-library'
+  return value === 'save-library' || value === 'export'
+}
+
+function isSection(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length < 200 && decodeWorkspaceSection(value) !== null
 }
 
 /** `/login` URL for a link. Pure — an `intent` never goes in the URL (a shared
@@ -65,6 +77,10 @@ export function readLoginSearch(search: string): { next: LoginNext | null; mode:
 }
 
 export function pathForNext(next: LoginNext | null): string {
+  if (next === 'workspace') {
+    const section = readPending()?.section
+    return isSection(section) ? `/?section=${encodeURIComponent(section)}` : '/'
+  }
   return next ? NEXT_PATH[next] : '/'
 }
 
@@ -75,7 +91,12 @@ function readPending(): PendingReturn | null {
     const parsed = JSON.parse(raw) as Partial<PendingReturn>
     if (!isNext(parsed.next) || typeof parsed.at !== 'number') return null
     if (Date.now() - parsed.at > MAX_AGE_MS) return null
-    return { next: parsed.next, intent: isIntent(parsed.intent) ? parsed.intent : null, at: parsed.at }
+    return {
+      next: parsed.next,
+      intent: isIntent(parsed.intent) ? parsed.intent : null,
+      section: isSection(parsed.section) ? parsed.section : undefined,
+      at: parsed.at,
+    }
   } catch {
     return null
   }
@@ -83,11 +104,12 @@ function readPending(): PendingReturn | null {
 
 /** Keeps `next` for the OAuth round trip. Called by the login page on open;
  *  an existing intent for the same destination is preserved. */
-export function rememberReturn(next: LoginNext, intent?: LoginIntent | null): void {
+export function rememberReturn(next: LoginNext, intent?: LoginIntent | null, section?: string | null): void {
   const prev = readPending()
   const kept = intent ?? (prev?.next === next ? prev.intent : null)
+  const keptSection = isSection(section) ? section : (prev?.next === next ? prev.section : undefined)
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ next, intent: kept, at: Date.now() }))
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ next, intent: kept, section: keptSection, at: Date.now() }))
   } catch {
     // Storage blocked: the return simply falls back to `/`.
   }

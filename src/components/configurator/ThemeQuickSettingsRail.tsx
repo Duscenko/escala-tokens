@@ -67,6 +67,7 @@ import { randomTheme, randomBoardAppearance } from '../../lib/randomTheme'
 import { isScaffoldTheme, myThemeKeys, resolveListedTheme } from '../../lib/themeLibrary'
 import { presetHarmony } from '../../lib/themePresets'
 import { resolveThemeFoundations } from '../../lib/themeFoundations'
+import { goToLogin, useAccess } from '../../lib/access'
 import { mergeTypeRoles, resolveTypeStyle, TYPE_ROLE_BY_KEY, asTypeViewport, type TypePrimitives } from '../../lib/typeRoles'
 import { PlatformSwitch } from './PlatformRail'
 import RailSelect from '../ui/RailSelect'
@@ -1549,6 +1550,7 @@ export default function ThemeQuickSettingsRail({
   const ownThemeCount = myThemeKeys(store.themeOrder, store.themes).length
   const tryOn = stylePreview ?? null
   const librarySaved = useLibrarySaved()
+  const access = useAccess()
   const foundations = tryOn
     ? { ...resolveThemeFoundations(store, previewTheme), ...tryOn.preset.foundations }
     : resolveThemeFoundations(store, previewTheme)
@@ -2499,7 +2501,12 @@ export default function ThemeQuickSettingsRail({
         <div className={`flex-shrink-0 border-t border-line px-3 py-3 ${WORKSPACE_CHROME}`}>
           <button
             type="button"
-            onClick={() => { store.saveCurrentSystem(); setJustSaved(true) }}
+            onClick={() => {
+              // A guest signs up first; the shell finishes the save on return.
+              if (access.gated) { goToLogin('save-library'); return }
+              store.saveCurrentSystem()
+              setJustSaved(true)
+            }}
             disabled={librarySaved && !justSaved}
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-accent-solid text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
           >

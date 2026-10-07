@@ -449,7 +449,17 @@ function SaveLibraryButton() {
       </span>
       <button
         type="button"
-        onClick={() => { store.saveCurrentSystem(); setJustSaved(true) }}
+        onClick={() => {
+          // Saving needs a free account (design-plans/login-funnel.md): a guest
+          // signs up first and the save finishes on return (intent below).
+          if (guest) {
+            rememberReturn('library', 'save-library')
+            window.location.assign(loginHref({ next: 'library', mode: 'signup' }))
+            return
+          }
+          store.saveCurrentSystem()
+          setJustSaved(true)
+        }}
         disabled={Boolean(saved && matches && !justSaved)}
         className="inline-flex h-8 items-center rounded-lg bg-accent-solid px-3.5 text-caption font-semibold text-accent-ink transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/50"
       >

@@ -25,6 +25,8 @@ import { type ThemeAppearance } from '../../lib/themeModes'
 import type { GridViewport, OverlapSize } from '../../lib/layoutTokens'
 import { themeHasEdits } from '../../lib/adoptPreset'
 import { useI18n } from '../../lib/i18n'
+import { useAccess } from '../../lib/access'
+import { LoginWall } from '../ui/LoginWall'
 import { ThemeHubHeaderActionsProvider } from './themeHubHeaderActions'
 import { InspectGlyph } from '../ui/icons'
 import { FigmaGlyph } from './TopNav'
@@ -478,6 +480,7 @@ export default function ThemePreviewHub({
   const themeLabels = useDesignStore((s) => s.themeLabels)
   const themeName = themeDisplayName(previewTheme, themeLabels)
   const librarySaved = useLibrarySaved()
+  const { gated: docsGated } = useAccess()
   const [accentPreview, setAccentPreview] = useState<string | null>(null)
   // Whether a contained colour picker from the quick rail is open — the canvas
   // cedes `PANEL_W` so artefacts reflow instead of sitting under the fly-out.
@@ -729,6 +732,12 @@ export default function ThemePreviewHub({
                   <ThemeContrastGrid previewTheme={previewTheme} previewAppearance={effectiveBoardAppearance} />
                 ) : null}
                 {!contrastOpen && docsOpen ? (
+                  <LoginWall
+                    active={docsGated}
+                    visible={420}
+                    title={t('Read the full docs')}
+                    detail={t('Create a free account to read every section of this theme’s reference.')}
+                  >
                   <DocumentationView
                     active={activeDocKey}
                     onChange={handleDocNavigate}
@@ -739,6 +748,7 @@ export default function ThemePreviewHub({
                     stylePreview={paintedPreview}
                     exits={{ ...docsExits, onOpenFigmaSync: () => onSurfaceChange('figma'), onOpenGithub: () => onSurfaceChange('github') }}
                   />
+                  </LoginWall>
                 ) : null}
                 {!contrastOpen && !docsOpen ? (
                   <ArtefactsView

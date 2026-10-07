@@ -19,6 +19,7 @@ import type { StylePreview } from '../../lib/stylePreviewOverlay'
 import { openStyleForEditing } from '../../lib/adoptPreset'
 import { MY_THEME_FULL_ERROR, MY_THEME_HARD_CAP, canAddMyTheme, myThemeKeys } from '../../lib/themeLibrary'
 import { useI18n } from '../../lib/i18n'
+import { goToLogin, useAccess } from '../../lib/access'
 import { CHROME_CONTROL_HOVER, CHROME_CONTROL_SHELL } from './themeWorkspaceLayout'
 import { AVATAR_RADIUS, ThemeAvatar } from './ThemeLibraryRail'
 import { PRESET_AVATAR_RAMPS, StyleOverview } from './StyleOverview'
@@ -187,8 +188,13 @@ function ThemeSheet({
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose, view, onViewChange])
 
+  // A guest can browse and preview every style; making one theirs (Edit theme,
+  // Create) needs a free account — design-plans/login-funnel.md.
+  const { gated } = useAccess()
+
   /** The one commit — see `openStyleForEditing`. */
   const editStyle = (preset: ThemeStylePreset) => {
+    if (gated) { goToLogin(); return }
     const result = openStyleForEditing(preset, appearance)
     if ('error' in result) { setError(t(result.error, { count: MY_THEME_HARD_CAP })); return }
     setError(null)
@@ -301,7 +307,7 @@ function ThemeSheet({
                     disabled={!canAdd}
                     aria-label={t('Create your theme')}
                     title={!canAdd ? t(MY_THEME_FULL_ERROR, { count: MY_THEME_HARD_CAP }) : t('Create your theme')}
-                    onClick={() => onViewChange('create')}
+                    onClick={() => { if (gated) { goToLogin(); return } onViewChange('create') }}
                     style={{ width: STYLE_AVATAR, height: STYLE_AVATAR, borderRadius: STYLE_AVATAR * AVATAR_RADIUS }}
                     className={`grid flex-shrink-0 place-items-center border border-dashed border-line-strong text-fg-muted transition-[color,background-color,transform] hover:scale-105 hover:bg-elevated hover:text-fg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 ${FOCUS}`}
                   >
@@ -323,7 +329,7 @@ function ThemeSheet({
                 {error && <p role="alert" className="text-body text-status-danger">{error}</p>}
               </section>
 
-              {listed.length > 0 && (
+              {listed.length > 0 && !gated && (
                 <section className="flex flex-col gap-2">
                   <h3 className="text-ui font-medium text-fg">{t('My themes')}</h3>
                   <div role="radiogroup" aria-label={t('My themes')} className="flex flex-col gap-1">

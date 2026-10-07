@@ -56,6 +56,16 @@ explicitly out of scope. Individual components still adapt between `md` and `xl`
 
 ---
 
+> **UPDATE (2026-10-07): LOGIN FUNNEL — anonymous → free account → Pro.** Supersedes every note
+> below that says accounts are optional or that the workspace "never gates". The Generator still
+> OPENS without an account (no login screen in front of it, the theme on screen is editable), but
+> an anonymous visitor sees only PART of Variables / Code / Docs (`ui/LoginWall`) and must sign
+> up to export, copy a page, sync to Figma or save. ONE hook decides: `useAccess()` in
+> `lib/access.ts` — never read `useAuth`/`useEntitlement` to make that call yourself. Signing in
+> returns to the same section (`loginReturn` `workspace` + intent). Public pages (`/about`,
+> `/docs/*`, `/components`, `/pricing`) stay fully open. Plan, decisions and what is left:
+> `design-plans/login-funnel.md`.
+
 ## Navigation model — top-nav workspace ("Escala")
 
 > **UPDATE (2026-10-06): the Generator is `[icon rail] [canvas CARD] [INSPECTOR]` —

@@ -27,6 +27,20 @@ hay pantalla de login delante del Generator. Lo que se pide es la cuenta en el m
 **profundizar** (ver todo) o de **quedarse** (guardar). Así la primera impresión sigue siendo
 "abrir y usar", que es lo que ese principio protegía.
 
+## Decidido el 2026-10-07 (respuestas a las decisiones abiertas)
+
+1. **Modo gratis = 1 apariencia (Light O Dark, la que está en pantalla) + Desktop.** Cualquier otra
+   columna (la otra apariencia, Tablet, Mobile, un 2.º theme) es Pro. Es exactamente lo que
+   `freeFigmaScope` ya hace para Figma.
+2. **Descargar exige cuenta (gratis), y el recorte de (1) se aplica a TODAS las descargas** (Figma,
+   CSS, W3C, Tailwind, Markdown, AI…), no solo a la de Figma. Cambiar ese modo en el wizard abre el
+   upgrade.
+3. **Guardar Free = local exigiendo sesión.** Sin nube, sin Supabase Pro (no hay presupuesto). La
+   fase 4 de accounts queda aplazada. Coste cero: solo el keepalive (cron de Vercel) para que
+   Supabase Free no se pause.
+4. **El muro de login sale hoy**, con el próximo push. Los muros de upgrade se activan solos el
+   1-nov (fin de la promo).
+
 ## Tres niveles, una tabla
 
 Es la única fuente de verdad: el código la lee (`lib/access.ts`, ver Arquitectura) y `/pricing`
@@ -203,3 +217,20 @@ guardar, sincronizar ni servir por MCP** sin Pro. Es suficiente.
   de `accounts-and-login.md` (SIRET, términos revisados).
 - **Coherencia del texto**: README, About y `/pricing` dicen hoy "free, no account". Hay que
   cambiarlo en F2, en el mismo commit que el muro.
+
+## Estado (2026-10-07)
+
+**Hecho: el muro de login (F1 + F2) y guardar con sesión (F3 rápida).**
+- `lib/access.ts` (`useAccess`: anon / free / pro; `goToLogin(intent)`) y `ui/LoginWall` (fundido + tarjeta, bloquea la rueda).
+- Variables, Code y Docs (en el Generator): parcial + "Create a free account".
+- Pide login: Export (pill y wizard), Copy page de Code y de Docs (solo dentro del Generator), el menú de exportar por rampa de Primitives, **Sync now** a Figma, Save theme (panel Theme) y Save library.
+- Customize: My themes oculto; Edit theme y "+" llevan al login.
+- `loginReturn`: destino `workspace` que vuelve a la MISMA sección (validada contra la gramática de `workspaceLink`, sin redirección abierta) + intenciones `export` y `save-library`, que el shell termina al volver.
+- Textos del login actualizados ("Free. An account lets you…").
+
+**Pendiente, antes del 1-nov:**
+1. Recorte de TODAS las descargas a 1 modo + Desktop sin Pro. Hoy solo el JSON de Figma pasa por `freeFigmaScope`; CSS, W3C, Tailwind y Markdown se construyen desde el store (`sectionExport`) y hay que acotarlos por apariencia. Hasta el 31-oct todos son Pro (promo), así que no afecta a nadie todavía.
+2. Muros de upgrade (2.º theme, 2.º modo, MCP) con `UpgradePrompt`.
+3. Keepalive de Supabase (cron de Vercel) para que el plan Free no se pause.
+4. Auto-sync a Figma (`useAutoFigmaSync`) no pasa por `publishFigmaNow`: un invitado con auto-sync activado de antes seguiría publicando.
+5. Prueba de punta a punta con un login real (crear cuenta → volver → la acción pendiente se completa).

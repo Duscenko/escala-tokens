@@ -9,6 +9,8 @@ import {
 import { SparkleCircleIcon } from './icons'
 import { showToast } from './Toast'
 import { useI18n } from '../../lib/i18n'
+import { goToLogin, useAccess } from '../../lib/access'
+import { useInInspector } from '../configurator/WorkspaceInspector'
 
 export type { AIContextScope }
 
@@ -35,8 +37,15 @@ export function AIContextButton({ scope, markdown, label }: AIContextButtonProps
   const { t } = useI18n()
   const [done, setDone] = useState(false)
   const shownLabel = label ? t(label) : t(copy.label)
+  // Inside the Generator (an inspector is mounted) copying a page is taking
+  // it, so anonymous → sign up. The public /docs and /components pages have no
+  // inspector and stay fully open (design-plans/login-funnel.md).
+  const { gated } = useAccess()
+  const inGenerator = useInInspector()
+  const walled = gated && inGenerator
 
   async function onCopy() {
+    if (walled) { goToLogin('export'); return }
     try {
       await navigator.clipboard.writeText(resolveMarkdown(markdown))
       setDone(true)

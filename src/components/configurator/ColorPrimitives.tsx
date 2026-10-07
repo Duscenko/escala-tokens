@@ -34,6 +34,7 @@ import {
   curatedPaletteFor, COLOR_RAIL_WIDTH, COLOR_RAIL_COLLAPSED_WIDTH, COLLAPSED_RAIL_WELL, THEME_BAND_H,
 } from './colorControls'
 import { InspectorPortal, useInInspector } from './WorkspaceInspector'
+import { goToLogin, useAccess } from '../../lib/access'
 import { ColorPickerPanel } from '../ui/ColorField'
 import { SlidersIcon, PaletteIcon } from '../ui/icons'
 import {
@@ -314,6 +315,8 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
   scale?: Record<number, string>
 }) {
   const [open, setOpen] = useState(false)
+  // Copying or downloading a ramp is an export: a guest signs up first.
+  const { gated: exportGated } = useAccess()
   const [copied, setCopied] = useState<WizardFormat | null>(null)
   const [downloaded, setDownloaded] = useState<WizardFormat | null>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -505,7 +508,7 @@ function ColumnExportMenu({ family, label, appearance, isAlpha, scale }: {
     <div ref={ref} className="relative flex-shrink-0">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { if (exportGated) { goToLogin('export'); return } setOpen((o) => !o) }}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Export the ${label} family — ${appearance}`}

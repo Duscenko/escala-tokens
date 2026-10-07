@@ -15,6 +15,8 @@ import {
 import { publishOrigin, syncProjectId } from '../../lib/figmaSync'
 import { themeDisplayName } from '../../lib/themeSources'
 import { useI18n } from '../../lib/i18n'
+import { goToLogin, useAccess } from '../../lib/access'
+import { LoginWall } from '../ui/LoginWall'
 import { showToast } from '../ui/Toast'
 import { WORKSPACE_CHIP_ACTIVE } from './themeWorkspaceLayout'
 import { usePopoverPlacement } from './colorControls'
@@ -89,6 +91,8 @@ function CopyPageSplit({
   projectName: string
 }) {
   const { t } = useI18n()
+  // Copying the file IS taking it: anonymous → sign up first, like Export.
+  const { gated } = useAccess()
   const rootRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
@@ -127,6 +131,7 @@ function CopyPageSplit({
   }
 
   const copyPage = async () => {
+    if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(pageContent))) {
       showToast(t('Couldn’t copy — try again'))
       return
@@ -137,6 +142,7 @@ function CopyPageSplit({
 
   const copyMarkdown = async () => {
     setOpen(false)
+    if (gated) { goToLogin('export'); return }
     if (!(await writeClipboard(markdown))) {
       showToast(t('Couldn’t copy — try again'))
       return
@@ -146,6 +152,7 @@ function CopyPageSplit({
   }
 
   const openClaude = async () => {
+    if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), 'claude')
     const copiedOk = await writeClipboard(prompt)
     openHandoff(claudeChatUrl(prompt))
@@ -156,6 +163,7 @@ function CopyPageSplit({
   }
 
   const openCursor = async () => {
+    if (gated) { goToLogin(); return }
     const prompt = agentSetupPrompt(publishOrigin(), syncProjectId(), 'cursor')
     const copiedOk = await writeClipboard(prompt)
     openHandoff(cursorPromptUrl(prompt))
@@ -166,6 +174,7 @@ function CopyPageSplit({
   }
 
   const openFigmaAgent = async () => {
+    if (gated) { goToLogin('export'); return }
     const copiedOk = await writeClipboard(`${figmaAgentLead(projectName)}${skillMd}`)
     openHandoff(FIGMA_MAKE_URL)
     setOpen(false)
@@ -387,6 +396,7 @@ export default function ThemeCodeFormat({
   const store = useDesignStore()
   const [format, setFormat] = useState<Format>('css')
   const [expanded, setExpanded] = useState(false)
+  const { gated } = useAccess()
   const active = FORMATS.find((item) => item.key === format) ?? FORMATS[0]
   const listed = myThemeKeys(store.themeOrder, store.themes)
   const effectiveScope = resolveCodeTheme(listed, scope, previewTheme)
@@ -521,12 +531,20 @@ export default function ThemeCodeFormat({
           it read as a dark BAR across the bottom instead of a dissolve. One
           opaque token on both sides is the only way the two can't disagree. */}
             <div className="relative min-h-0 flex-1">
+              <LoginWall
+                active={gated}
+                visible={300}
+                title={t('See the full file')}
+                detail={t('Create a free account to read, copy and export every line.')}
+                intent="export"
+              >
               <div className={`h-full bg-app py-3 ${format === 'agent' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}`} role="region" aria-label={`${active.file} preview`} tabIndex={0}>
                 {effectiveScope
                   ? visibleLines.map((line, index) => <CodeLine key={`${index}-${line}`} value={line} number={index + 1} format={format} />)
                   : <p className="px-7 py-2 text-caption text-fg-faint">{t('Add a theme to get its code.')}</p>}
               </div>
-              {!expanded && lines.length > PREVIEW_LINE_LIMIT ? (
+              </LoginWall>
+              {!gated && !expanded && lines.length > PREVIEW_LINE_LIMIT ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-24 items-end justify-center bg-gradient-to-t from-app via-app/90 to-transparent pb-4 pt-8">
                   <button type="button" onClick={() => setExpanded(true)} className="pointer-events-auto h-8 rounded-lg border border-line-strong bg-elevated px-3 text-caption font-semibold text-fg shadow-sm transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ui/55">
                     Show full file <span className="ml-1 font-normal text-fg-faint">{lines.length} lines</span>
